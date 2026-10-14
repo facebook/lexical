@@ -335,6 +335,21 @@ export function flushRootMutations(editor: LexicalEditor): void {
   }
 }
 
+/**
+ * Revert the DOM changes the observer has recorded but not reported yet, as
+ * a commit is about to disconnect it, which drops them: a change made inside
+ * an update, or in the same task as an update whose commit was queued first.
+ */
+export function flushPendingMutations(editor: LexicalEditor): void {
+  const observer = editor._observer;
+  if (observer !== null) {
+    const mutations = observer.takeRecords();
+    if (mutations.length > 0) {
+      flushMutations(editor, mutations, observer);
+    }
+  }
+}
+
 export function initMutationObserver(editor: LexicalEditor): void {
   initTextEntryListener(editor);
   editor._observer = new MutationObserver(

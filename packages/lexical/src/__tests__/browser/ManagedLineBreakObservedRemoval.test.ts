@@ -15,7 +15,8 @@
  * block, that line break, or both, the revert must leave the DOM exactly as
  * Lexical renders the unchanged editor state: keyed children back in order,
  * the managed line break present once and last, nodes Lexical does not
- * manage kept in place, and no error.
+ * manage kept in place, and no error. That holds too for a change the
+ * observer recorded but had not reported when a commit disconnected it.
  *
  * Running in browser mode exercises the real engine: WebKit renders the
  * img+br line break and Chromium / Firefox the plain br, from the same file,
@@ -532,4 +533,27 @@ describe('native editing with execCommand', () => {
       expectRendersEditorState(mounted);
     },
   );
+});
+
+// The reconciler disconnects the observer while it renders a commit, which
+// drops what the observer has recorded and not yet reported. An engine
+// reports a change after the commit that an update in the same task queued
+// before it, so the change is reverted first.
+describe('a DOM change recorded before a commit runs', () => {
+  test('removing text after an update queued its commit', async () => {
+    const mounted = mountEditor(() => [
+      $createParagraphNode().append($createTextNode('ab')),
+    ]);
+    const {block, editor, root} = mounted;
+    await observeBatch(root, () => {
+      editor.update(() => {
+        $assertNodeType($getRoot().getFirstChild(), $isElementNode).append(
+          $create(InlineDecoratorNode),
+        );
+      });
+      remove(block.querySelector('[data-lexical-text]')!);
+    });
+    expectRendersEditorState(mounted);
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('ab');
+  });
 });

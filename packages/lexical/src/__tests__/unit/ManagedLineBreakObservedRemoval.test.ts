@@ -17,7 +17,8 @@
  * line break, or both, the DOM must again be what Lexical renders for the
  * unchanged editor state, with no error reported, and nodes Lexical does not
  * manage (a slot's boundaries, DOM marked with setDOMUnmanaged) must keep
- * their place.
+ * their place. That holds too for a change the observer recorded but had not
+ * reported when a commit disconnected it to render.
  *
  * jsdom models the Chromium / Firefox shape of the managed line break (a
  * plain `<br>`); the WebKit img+br shape and native editing are covered by
@@ -650,4 +651,31 @@ describe('the root ending with a block decorator', () => {
     });
     expectRestored(mounted);
   });
+});
+
+// The reconciler disconnects the observer while it renders a commit, which
+// drops what the observer has recorded and not yet reported, such as a change
+// made inside a discrete update. That change is reverted first.
+describe('a DOM change recorded before a commit runs', () => {
+  test.each([
+    ['an element between two children', 1, () => document.createElement('i')],
+    ['an element at the head', 0, () => document.createElement('i')],
+    ['a text node between two children', 1, () => document.createTextNode('z')],
+  ])(
+    'adding %s inside a discrete update, then removing a child',
+    async (_, index, createDOM) => {
+      const mounted = mountEditor(() => [$tokens()]);
+      const {block, editor, renderedHTML, root} = mounted;
+      editor.update(
+        () => {
+          block.insertBefore(createDOM(), textSpans(block)[index]);
+          $getRoot().getFirstChildOrThrow().markDirty();
+        },
+        {discrete: true},
+      );
+      expectHtmlToBeEqual(root.innerHTML, renderedHTML);
+      await observeBatch(root, () => remove(textSpans(block)[2]));
+      expectRestored(mounted);
+    },
+  );
 });

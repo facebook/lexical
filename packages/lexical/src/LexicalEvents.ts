@@ -17,9 +17,11 @@ import warnOnlyOnce from '@lexical/internal/warnOnlyOnce';
 
 import {
   $createTextNode,
+  $getChildCaret,
   $getPreviousSelection,
   $getRoot,
   $getSelection,
+  $getSiblingCaret,
   $isBlockElementNode,
   $isDecoratorNode,
   $isElementNode,
@@ -30,7 +32,9 @@ import {
   $isTabNode,
   $isTextNode,
   $setCompositionKey,
+  $setPointFromCaret,
   BLUR_COMMAND,
+  type CaretDirection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
   COMPOSITION_END_TAG,
@@ -65,6 +69,7 @@ import {
   PASTE_COMMAND,
   REDO_COMMAND,
   REMOVE_TEXT_COMMAND,
+  type SiblingCaret,
   SKIP_SELECTION_FOCUS_TAG,
   UNDO_COMMAND,
 } from '.';
@@ -939,39 +944,31 @@ function $moveMouseDragFocus(
   // Not in a document without layout (jsdom).
   const target = doc.elementFromPoint && doc.elementFromPoint(x, y);
   const hit = target && $getNearestNodeFromDOMNode(target);
-  const $leaf = (node: LexicalNode | null, isFirst: boolean) =>
+  const $leaf = (node: LexicalNode | null, dir: CaretDirection) =>
     $isElementNode(node)
-      ? isFirst
-        ? node.getFirstDescendant()
-        : node.getLastDescendant()
+      ? dir === 'next'
+        ? node.getLastDescendant()
+        : node.getFirstDescendant()
       : node;
-  // The node under the pointer, then, when the pointer is over a block
-  // rather than its content, the first and last of each of its children
-  // that are decorators, with the node beside it there (none at a line
-  // break), which the pointer must be beyond at the edge of a line.
-  const candidates: [LexicalNode | null, boolean | null, LexicalNode | null][] =
-    [[hit, null, null]];
+  // The node under the pointer (null in this list), then, when the pointer is
+  // over a block rather than its content, a caret at each end of each of its
+  // children, facing the node beside it there, for the decorator at that end,
+  // which the pointer must be beyond at the edge of a line.
+  const candidates: (SiblingCaret | null)[] = [null];
   const block =
     $isElementNode(hit) &&
     !hit.isInline() &&
     ($isRootNode(hit)
       ? $findMatchingParent(focus.getNode(), $isBlockElementNode)
       : hit);
-  for (const child of block ? block.getChildren() : []) {
-    for (const isStart of [true, false]) {
-      const node = $leaf(child, isStart);
-      if ($isDecoratorNode(node)) {
-        const sib = isStart
-          ? child.getPreviousSibling()
-          : child.getNextSibling();
-        candidates.push([node, isStart, $isLineBreakNode(sib) ? null : sib]);
-      }
-    }
+  for (const caret of block ? $getChildCaret(block, 'next') : []) {
+    candidates.push($getSiblingCaret(caret.origin, 'previous'), caret);
   }
   const win = getWindow(editor);
   const range = win.document.createRange();
   let offLine: LexicalNode | null = null;
-  for (const [node, isStart, sib] of candidates) {
+  for (const caret of candidates) {
+    const node = caret ? $leaf(caret.origin, caret.direction) : hit;
     if (!$isDecoratorNode(node) || !node.isInline() || node === offLine) {
       continue;
     }
@@ -987,7 +984,7 @@ function $moveMouseDragFocus(
     const {bottom, left, right, top} =
       contents.height > rect.height ? contents : rect;
     // Off the pointer's line, and so not measured again for its other edge.
-    if (isStart !== null && (y < top || y > bottom)) {
+    if (caret && (y < top || y > bottom)) {
       offLine = node;
       continue;
     }
@@ -995,31 +992,34 @@ function $moveMouseDragFocus(
     const isRtl =
       win.getComputedStyle(getParentElement(dom) || dom).direction === 'rtl';
     const isAfter = x * 2 > left + right !== isRtl;
-    // On its line, the nearest box of the node beside it there is beyond
-    // it, and where the line wraps between them, past its middle. A node
-    // without a box tells neither.
+    const dir = isAfter ? 'next' : 'previous';
+    // On its line, the nearest box of the node beside it there (none at a
+    // line break) is beyond it, and where the line wraps between them, past
+    // its middle. A node without a box tells neither.
+    const sib = caret && caret.getNodeAtCaret();
     const sibDOM = sib && editor.getElementByKey(sib.getKey());
     const sibRects = sibDOM ? sibDOM.getClientRects() : [];
     const sibRect: DOMRect | undefined =
-      sibRects[isStart ? sibRects.length - 1 : 0];
+      sibRects[isAfter ? 0 : sibRects.length - 1];
     if (
-      isStart === null ||
+      !caret ||
       // A float is at the edge of no line.
-      (isAfter !== isStart &&
+      (caret.direction === dir &&
         win.getComputedStyle(dom).cssFloat === 'none' &&
         (!sib ||
+          $isLineBreakNode(sib) ||
           (sibRect &&
-            (isStart !== isRtl
+            (isAfter === isRtl
               ? sibRect.right * 2 > left + right
               : sibRect.left * 2 < left + right))))
     ) {
       // A focus already beside it stays, as WebKit reports no move to a
       // point it takes for the same one.
-      if (!node.is($leaf($getAdjacentNode(focus, isAfter), !isAfter))) {
-        const offset = node.getIndexWithinParent() + (isAfter ? 1 : 0);
-        focus.set(node.getParentOrThrow().getKey(), offset, 'element');
+      if (!node.is($leaf($getAdjacentNode(focus, isAfter), dir))) {
+        const beside = $getSiblingCaret(node, dir);
+        $setPointFromCaret(focus, beside);
         if (isCaret) {
-          anchor.set(focus.key, focus.offset, focus.type);
+          $setPointFromCaret(anchor, beside);
         }
       }
       return;

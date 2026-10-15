@@ -863,7 +863,7 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
       // Drag & drop should not recompute selection until mouse up; otherwise the initially
       // selected content is lost.
       if (!isDOMCapturingSelection(target, editor)) {
-        editor._inputState.isSelectionChangeFromMouseDown = true;
+        editor._inputState.isSelectionChangeFromMouseDown = event;
       }
     });
   }
@@ -2285,6 +2285,7 @@ function $selectMouseDown(
   domSelection: Selection,
   event: Event,
   registration: DocumentRegistration | undefined,
+  isPressCancelled?: boolean,
 ): void {
   // Clear the flag on all editors registered on this document — a
   // pointerdown inside a nested editor bubbles to the parent, setting
@@ -2300,7 +2301,15 @@ function $selectMouseDown(
     domSelection,
     editor._rootElement,
   ).anchorNode;
-  if (isHTMLElement(domAnchorNode) || isDOMTextNode(domAnchorNode)) {
+  if (
+    // Not for a press that a listener cancelled, which the browser does not
+    // select from: the listener took it, as a table takes a Shift-click into
+    // another cell in Firefox, and what the selectionchange reports, such as
+    // a caret put at the start of the editor once the native selection is
+    // gone, is not the press's.
+    !isPressCancelled &&
+    (isHTMLElement(domAnchorNode) || isDOMTextNode(domAnchorNode))
+  ) {
     // If the user is attempting to click selection back onto text, then
     // we should attempt create a range selection.
     // When we click on an empty paragraph node or the end of a paragraph that ends
@@ -2426,9 +2435,16 @@ function onDocumentSelectionChange(event: Event): void {
     return;
   }
 
-  if (nextActiveEditor._inputState.isSelectionChangeFromMouseDown) {
+  const press = nextActiveEditor._inputState.isSelectionChangeFromMouseDown;
+  if (press) {
     updateEditorSync(nextActiveEditor, () =>
-      $selectMouseDown(nextActiveEditor, domSelection, event, registration),
+      $selectMouseDown(
+        nextActiveEditor,
+        domSelection,
+        event,
+        registration,
+        press.defaultPrevented,
+      ),
     );
   }
 

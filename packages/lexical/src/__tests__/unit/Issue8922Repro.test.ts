@@ -285,6 +285,37 @@ describe('Issue #8922: select-all with a boundary block decorator', () => {
       .toEqual(['boundary', 'decorator', 'p']);
   });
 
+  test('an anchor removed before the block cursor goes back on its edge', async () => {
+    container.tabIndex = 0;
+    container.focus();
+    setRootChildren('decorator', 'text');
+    editor.update(
+      () => {
+        $getRoot().select(0, 0);
+      },
+      {discrete: true},
+    );
+    expect(rootChildNames(container)).toEqual([
+      'boundary',
+      'div',
+      'decorator',
+      'p',
+    ]);
+    const [anchor, cursor] = Array.from(container.childNodes);
+    // One record each, so the block cursor the anchor's record names as its
+    // next sibling is gone when that record is read, and the anchor has no
+    // previous sibling to go after.
+    anchor.remove();
+    cursor.remove();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(rootChildNames(container)).toEqual([
+      'boundary',
+      'div',
+      'decorator',
+      'p',
+    ]);
+  });
+
   test('anchors do not shift the child offsets $selectAll resolves to', () => {
     setRootChildren('decorator', 'text', 'decorator');
 

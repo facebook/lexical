@@ -23,6 +23,7 @@ import {
   renderVersionBlock,
   selectRange,
 } from '../../changesets/changelog.mjs';
+import {isRemoval} from '../../changesets/entry.mjs';
 import {main as range} from '../../changesets/range.mjs';
 import {
   commitsSince,
@@ -310,9 +311,32 @@ describe('parseChangelog', () => {
       fs.readFileSync(path.join(ROOT, 'CHANGELOG.md'), 'utf8'),
     );
     expect(versions.length).toBeGreaterThan(100);
-    const v052 = versions.find(v => v.version === '0.52.0')!;
-    expect(v052.date).toBe('2026-09-27');
-    expect(v052.sections[0].entries[0].pr).toBe(9242);
+    const counts = {behavior: 0, breaking: 0, deprecation: 0};
+    for (const v of selectRange(versions, {from: '0.22.0', to: '0.52.0'})) {
+      // Every version from v0.23.0 has curated sections over the commits.
+      expect(v.sections.map(s => s.title).at(-1)).toBe('All changes');
+      for (const s of v.sections) {
+        for (const entry of s.entries) {
+          const label = `v${v.version} ${entry.summary}`;
+          if (s.kind === 'breaking') {
+            counts.breaking++;
+            expect(entry.sections.detect, label).toBeTruthy();
+            expect(entry.sections.migration, label).toBeTruthy();
+          } else if (s.kind === 'behavior') {
+            counts.behavior++;
+            expect(entry.sections.verify, label).toBeTruthy();
+          } else if (s.kind === 'deprecation') {
+            counts.deprecation++;
+            expect(entry.sections.replacement, label).toBeTruthy();
+            expect(isRemoval(entry.sections.removal || ''), label).toBe(true);
+          } else {
+            continue;
+          }
+          expect(entry.pr, label).not.toBeNull();
+        }
+      }
+    }
+    expect(counts).toEqual({behavior: 43, breaking: 35, deprecation: 29});
   });
 });
 

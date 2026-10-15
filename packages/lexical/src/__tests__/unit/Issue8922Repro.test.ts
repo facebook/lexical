@@ -257,6 +257,12 @@ describe('Issue #8922: select-all with a boundary block decorator', () => {
       },
     ],
     [
+      'an anchor moved to the end of its element',
+      (anchor: Node) => {
+        container.appendChild(anchor);
+      },
+    ],
+    [
       'a copy of an anchor',
       (anchor: Node) => {
         container.insertBefore(anchor.cloneNode(true), anchor);

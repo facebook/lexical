@@ -238,10 +238,12 @@ function flushMutations(
           }
 
           for (const removedDOM of mutation.removedNodes) {
-            const isScaffolding =
-              blockCursorElement === removedDOM ||
-              isDecoratorBoundaryAnchorDOM(removedDOM);
-            if (isScaffolding || isManagedLineBreakDOM(removedDOM)) {
+            const isBlockCursor = blockCursorElement === removedDOM;
+            if (
+              isBlockCursor ||
+              isDecoratorBoundaryAnchorDOM(removedDOM) ||
+              isManagedLineBreakDOM(removedDOM)
+            ) {
               // Back in its place, wherever the edit put it, which matters for
               // the scaffolding and for DOM an extension keeps beside the
               // line break: after its previous sibling when a later record
@@ -259,11 +261,13 @@ function flushMutations(
                       : null,
               );
             }
-            if (!isScaffolding) {
+            if (!isBlockCursor) {
               // A removed child is put back, and a line break that is no
-              // longer whole is rebuilt, by reconcileObservedMutation once
-              // every record has been seen, since a later record can still
-              // move what it would sit next to.
+              // longer whole or a decorator boundary anchor that is gone (a
+              // later record evicts one the edit moved within its element) is
+              // rebuilt, by reconcileObservedMutation once every record has
+              // been seen, since a later record can still move what it would
+              // sit next to.
               badDOMTargets.set(nodeDOM, targetNode);
             }
           }

@@ -263,6 +263,7 @@ function $resolveDropPointCaret(
   if ($isTextNode(node)) {
     return $getTextPointCaret(node, 'next', hit.offset);
   }
+  const parent = node.getParent();
   if ($isElementNode(node)) {
     // The DOM offset also counts the DOM the editor renders between the
     // children (such as a zero-size anchor before a leading decorator), and
@@ -272,18 +273,17 @@ function $resolveDropPointCaret(
       return null;
     }
     const slot = $getDOMSlot(node, dom, editor);
-    return hit.node === slot.element || node.getParent()
+    return hit.node === slot.element || parent
       ? $getChildCaretAtIndex(
           ...slot.resolveChildIndex(node, dom, hit.node, hit.offset),
           'next',
         )
       : null;
   }
-  const parent = node.getParent();
-  if (parent === null) {
-    return null;
-  }
-  return $getChildCaretAtIndex(parent, node.getIndexWithinParent() + 1, 'next');
+  return (
+    parent &&
+    $getChildCaretAtIndex(parent, node.getIndexWithinParent() + 1, 'next')
+  );
 }
 
 // A text edge and the element point beside it are the same drop position.

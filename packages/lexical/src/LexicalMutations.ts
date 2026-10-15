@@ -139,6 +139,11 @@ function flushMutations(
 ): void {
   isProcessingMutations = true;
   const shouldFlushTextMutations =
+    // Not while the browser makes an insertion the editor left to it: the
+    // editor's input listener reads that text, and an input listener that
+    // runs before it (React has one above the root) lets this run first,
+    // however long after the text entry.
+    editor._inputState.unprocessedBeforeInputData === null &&
     performance.now() - lastTextEntryTimeStamp > TEXT_MUTATION_VARIANCE;
   try {
     updateEditorSync(editor, () => {

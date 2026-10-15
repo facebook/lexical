@@ -477,15 +477,6 @@ function $updateSelectionFormatStyleFromTextNode(
   $updateSelectionFormatStyle(selection, format, style);
 }
 
-function $updateSelectionFormatStyleFromElementNode(
-  selection: RangeSelection,
-  node: ElementNode,
-) {
-  const format = node.getTextFormat();
-  const style = node.getTextStyle();
-  $updateSelectionFormatStyle(selection, format, style);
-}
-
 /**
  * Gives a caret the format and style of where it is, as a selectionchange
  * does, unless the editor has just put it there with its own.
@@ -511,37 +502,34 @@ function $updateCollapsedSelectionFormatStyle(
     timeStamp,
   } = editor._inputState.collapsedSelectionFormat;
 
-  const root = $getRoot();
-  const isRootTextContentEmpty =
-    editor.isComposing() === false && root.getTextContent() === '';
-
   if (
     currentTimeStamp < timeStamp + 200 &&
     anchor.offset === lastOffset &&
     anchor.key === lastKey
   ) {
     $updateSelectionFormatStyle(selection, lastFormat, lastStyle);
-  } else {
-    if (anchor.type === 'text') {
-      invariant(
-        $isTextNode(anchorNode),
-        'Point.getNode() must return TextNode when type is text',
-      );
-      $updateSelectionFormatStyleFromTextNode(selection, anchorNode);
-    } else if (anchor.type === 'element' && !isRootTextContentEmpty) {
-      invariant(
-        $isElementNode(anchorNode),
-        'Point.getNode() must return ElementNode when type is element',
-      );
-      const lastNode = anchor.getNode();
-      if (
-        // This previously applied to all ParagraphNode
-        lastNode.isEmpty()
-      ) {
-        $updateSelectionFormatStyleFromElementNode(selection, lastNode);
-      } else {
-        $updateSelectionFormatStyle(selection, selection.format, '');
-      }
+  } else if (anchor.type === 'text') {
+    invariant(
+      $isTextNode(anchorNode),
+      'Point.getNode() must return TextNode when type is text',
+    );
+    $updateSelectionFormatStyleFromTextNode(selection, anchorNode);
+  } else if (
+    // An element point, unless nothing is composing and the root has no text
+    editor.isComposing() ||
+    $getRoot().getTextContent() !== ''
+  ) {
+    invariant(
+      $isElementNode(anchorNode),
+      'Point.getNode() must return ElementNode when type is element',
+    );
+    if (
+      // This previously applied to all ParagraphNode
+      anchorNode.isEmpty()
+    ) {
+      $internalRefreshSelectionFormatAndStyle(selection, '');
+    } else {
+      $updateSelectionFormatStyle(selection, selection.format, '');
     }
   }
 }

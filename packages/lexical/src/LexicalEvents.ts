@@ -820,7 +820,7 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
       // Drag & drop should not recompute selection until mouse up; otherwise the initially
       // selected content is lost.
       if (!isDOMCapturingSelection(target, editor)) {
-        editor._inputState.isSelectionChangeFromMouseDown = event;
+        editor._inputState.isSelectionChangeFromMouseDown = true;
       }
     });
   }
@@ -2242,7 +2242,6 @@ function $selectMouseDown(
   domSelection: Selection,
   event: Event,
   registration: DocumentRegistration | undefined,
-  isPressCancelled?: boolean,
 ): void {
   // Clear the flag on all editors registered on this document — a
   // pointerdown inside a nested editor bubbles to the parent, setting
@@ -2258,15 +2257,7 @@ function $selectMouseDown(
     domSelection,
     editor._rootElement,
   ).anchorNode;
-  if (
-    // Not for a press that a listener cancelled, which the browser does not
-    // select from: the listener took it, as a table takes a Shift-click into
-    // another cell in Firefox, and what the selectionchange reports, such as
-    // a caret put at the start of the editor once the native selection is
-    // gone, is not the press's.
-    !isPressCancelled &&
-    (isHTMLElement(domAnchorNode) || isDOMTextNode(domAnchorNode))
-  ) {
+  if (isHTMLElement(domAnchorNode) || isDOMTextNode(domAnchorNode)) {
     // If the user is attempting to click selection back onto text, then
     // we should attempt create a range selection.
     // When we click on an empty paragraph node or the end of a paragraph that ends
@@ -2392,16 +2383,9 @@ function onDocumentSelectionChange(event: Event): void {
     return;
   }
 
-  const press = nextActiveEditor._inputState.isSelectionChangeFromMouseDown;
-  if (press) {
+  if (nextActiveEditor._inputState.isSelectionChangeFromMouseDown) {
     updateEditorSync(nextActiveEditor, () =>
-      $selectMouseDown(
-        nextActiveEditor,
-        domSelection,
-        event,
-        registration,
-        press.defaultPrevented,
-      ),
+      $selectMouseDown(nextActiveEditor, domSelection, event, registration),
     );
   }
 
@@ -2517,6 +2501,8 @@ export function addRootElementEvents(
       registerEventListener(rootElement, eventName, eventHandler),
     );
   }
+  // The latest pointerdown in the root element.
+  let press: PointerEvent | undefined;
   // Follows a mouse press that can start a selection drag: not on a decorator,
   // nor a double or triple click, which selects by words or paragraphs.
   const endMouseDrag = () => {
@@ -2528,6 +2514,14 @@ export function addRootElementEvents(
   const onMouseDragMove = (event: PointerEvent) => {
     const inputState = editor._inputState;
     const drag = inputState.mouseDrag;
+    // The browser selects nothing from a press that a listener cancelled.
+    // A selectionchange during it is still the press's, as it can report a
+    // selection that the listener made, but not one after its release: in
+    // Firefox, that of a Shift-click that a table took can come after the
+    // click, and report a caret put since.
+    if (press && press.defaultPrevented && !event.buttons) {
+      inputState.isSelectionChangeFromMouseDown = false;
+    }
     if (!drag || event.pointerType !== 'mouse') {
       return;
     }
@@ -2647,6 +2641,7 @@ export function addRootElementEvents(
       rootElement,
       'pointerdown',
       event => {
+        press = event;
         editor._inputState.lastPointerType = event.pointerType;
       },
       true,

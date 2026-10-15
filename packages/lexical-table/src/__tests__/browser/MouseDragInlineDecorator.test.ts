@@ -13,8 +13,10 @@
  * to the table, also on release: a drag into a cell over an inline decorator
  * (an image, or a chip of text that a browser can put the drag's focus in)
  * selects the cells, and a drag out of the table below it selects the whole
- * table. So does a Shift-click from one cell into the next, which Lexical
- * handles at the release when its selectionchange comes later.
+ * table. So does a Shift-click from one cell into the next. Lexical handles
+ * it at the release when its selectionchange comes later, except in Firefox,
+ * where the table takes the press, and a selectionchange after the release is
+ * not the press's.
  */
 
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
@@ -298,87 +300,95 @@ test('a drag out of a table below it leaves the table selected whole', async () 
   );
 });
 
-test.each([
-  ['', false],
-  // In Firefox the table makes its selection of the cells at the press,
-  // which it cancels, so that the browser selects nothing from it. The
-  // release and its click can come before the selectionchange of the native
-  // selection that the table removed, when Firefox draws a frame in between,
-  // and that selectionchange then reports the caret.
-  [', whose selectionchange comes after its click,', true],
-])(
-  'a caret put at the start of the editor after a Shift-click into the next cell%s leaves the cells selected',
-  async (_name, isSelectionChangeLate) => {
-    const {cellTextBox, editor, image} = mount();
-    const textY = (cellTextBox.top + cellTextBox.bottom) / 2;
-    await commands.mouseDrag('#table-mouse-drag-root', [
-      [cellTextBox.left + 20, textY],
-    ]);
-    const root = editor.getRootElement();
-    assert(root !== null, 'Expected the root element');
-    // A table selection removes the native one, and macOS Chromium then puts a
-    // caret at the start of the focused editor as it handles the release. The
-    // selectionchange of a click as quick as a test's comes after that, and
-    // the editor, which handled the press at the release, must not take that
-    // caret for the press's selection.
+/**
+ * The Shift-click of the tests below. With `isSelectionChangeLate`, the editor
+ * gets none of the selectionchanges of the press before its click.
+ */
+async function shiftClickIntoNextCell(isSelectionChangeLate: boolean) {
+  const {cellTextBox, editor, image} = mount();
+  const textY = (cellTextBox.top + cellTextBox.bottom) / 2;
+  await commands.mouseDrag('#table-mouse-drag-root', [
+    [cellTextBox.left + 20, textY],
+  ]);
+  const root = editor.getRootElement();
+  assert(root !== null, 'Expected the root element');
+  // A table selection removes the native one, and macOS Chromium then puts a
+  // caret at the start of the focused editor as it handles the release. The
+  // selectionchange of a click as quick as a test's comes after that, and
+  // the editor, which handled the press at the release, must not take that
+  // caret for the press's selection.
+  onTestFinished(
+    registerEventListener(window, 'click', () => {
+      const domSelection = window.getSelection();
+      if (domSelection !== null && domSelection.rangeCount === 0) {
+        domSelection.collapse(root, 0);
+      }
+    }),
+  );
+  if (isSelectionChangeLate) {
+    // Firefox reports the changes made until it dispatches a selectionchange
+    // in that one, so the editor gets none from the press before the click,
+    // and then one that reports the caret.
+    let isPressed = false;
     onTestFinished(
-      registerEventListener(window, 'click', () => {
-        const domSelection = window.getSelection();
-        if (domSelection !== null && domSelection.rangeCount === 0) {
-          domSelection.collapse(root, 0);
-        }
-      }),
-    );
-    if (isSelectionChangeLate) {
-      // Firefox reports the changes made until it dispatches a
-      // selectionchange in that one, so the editor gets none from the press
-      // before the click, and then one that reports the caret.
-      let isPressed = false;
-      onTestFinished(
-        registerEventListeners(
-          window,
-          {
-            click: () => {
-              isPressed = false;
-            },
-            pointerdown: () => {
-              isPressed = true;
-            },
-            selectionchange: event => {
-              if (isPressed) {
-                event.stopImmediatePropagation();
-              }
-            },
+      registerEventListeners(
+        window,
+        {
+          click: () => {
+            isPressed = false;
           },
-          true,
-        ),
-      );
-    }
-    const cellBox = root.querySelectorAll('td')[1].getBoundingClientRect();
-    await commands.mouseDrag(
-      '#table-mouse-drag-root',
-      [
-        [
-          cellBox.right - root.getBoundingClientRect().left - 8,
-          (image.top + image.bottom) / 2,
-        ],
-      ],
-      {modifiers: ['Shift'], quickStart: true},
+          pointerdown: () => {
+            isPressed = true;
+          },
+          selectionchange: event => {
+            if (isPressed) {
+              event.stopImmediatePropagation();
+            }
+          },
+        },
+        true,
+      ),
     );
-    editor.read('latest', () => {
-      const selection = $getSelection();
-      assert(
-        $isTableSelection(selection),
-        `expected a table selection, got ${selection && selection.constructor.name}`,
-      );
-      const [cellA, cellB] = Array.from(root.querySelectorAll('td'), cell =>
-        $getNearestNodeFromDOMNode(cell),
-      );
-      assert(
-        selection.anchor.getNode().is(cellA) &&
-          selection.focus.getNode().is(cellB),
-        'expected the selection from the first cell to the second',
-      );
-    });
-  },
-);
+  }
+  const cellBox = root.querySelectorAll('td')[1].getBoundingClientRect();
+  await commands.mouseDrag(
+    '#table-mouse-drag-root',
+    [
+      [
+        cellBox.right - root.getBoundingClientRect().left - 8,
+        (image.top + image.bottom) / 2,
+      ],
+    ],
+    {modifiers: ['Shift'], quickStart: true},
+  );
+  editor.read('latest', () => {
+    const selection = $getSelection();
+    assert(
+      $isTableSelection(selection),
+      `expected a table selection, got ${selection && selection.constructor.name}`,
+    );
+    const [cellA, cellB] = Array.from(root.querySelectorAll('td'), cell =>
+      $getNearestNodeFromDOMNode(cell),
+    );
+    assert(
+      selection.anchor.getNode().is(cellA) &&
+        selection.focus.getNode().is(cellB),
+      'expected the selection from the first cell to the second',
+    );
+  });
+}
+
+test('a caret put at the start of the editor after a Shift-click into the next cell leaves the cells selected', () =>
+  shiftClickIntoNextCell(false));
+
+// In Firefox the table makes its selection of the cells at the press, which
+// it cancels, so that the browser selects nothing from it. The release and
+// its click can come before the selectionchange of the native selection that
+// the table removed, when Firefox draws a frame in between, and that
+// selectionchange then reports the caret. Chromium and WebKit select from the
+// press, which the table does not cancel there, and the editor takes their
+// selection at the release when the selectionchange comes later: the first
+// case only reaches that path when the timing allows (never in WebKit here),
+// and this one always does.
+test('a caret put at the start of the editor after a Shift-click into the next cell, whose selectionchange comes after its click, leaves the cells selected', () =>
+  shiftClickIntoNextCell(true));

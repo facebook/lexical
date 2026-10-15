@@ -302,12 +302,7 @@ export interface InputState {
     focusNode: Node;
     focusOffset: number;
   };
-  /**
-   * The pointerdown of a mouse press whose selection the editor takes from
-   * the next selectionchange, or from its first move or release if that
-   * comes first, unless a listener cancelled it; false otherwise.
-   */
-  isSelectionChangeFromMouseDown: false | PointerEvent;
+  isSelectionChangeFromMouseDown: boolean;
   /** A mouse press that may start a selection drag, then its latest move. */
   mouseDrag: MouseEvent | null;
   /**

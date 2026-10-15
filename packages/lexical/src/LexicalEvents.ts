@@ -363,7 +363,7 @@ function onSelectionChange(
     }
     // Whether the adjustment for the drag's latest mouse event moved the
     // selection from the DOM's, which notified it.
-    const isAdjusted = drag !== null && adjustedMouseEvents.has(drag);
+    const isAdjusted = adjustedMouseEvents.has(drag as MouseEvent);
 
     let selection = $getSelection();
 
@@ -2543,13 +2543,10 @@ export function addRootElementEvents(
     if (!drag || event.pointerType !== 'mouse') {
       return;
     }
-    if (
-      event.type === 'pointercancel' ||
-      (event.type === 'pointermove' && event.buttons !== 1)
-    ) {
+    const isRelease = event.type === 'pointerup';
+    if (event.type === 'pointercancel' || (!isRelease && event.buttons !== 1)) {
       return endMouseDrag();
     }
-    const isRelease = event.type === 'pointerup';
     inputState.mouseDrag = isRelease ? null : event;
     updateEditorSync(editor, () => {
       const domSelection = getDOMSelection(getWindow(editor));
@@ -2580,8 +2577,7 @@ export function addRootElementEvents(
       }
       // Not adjusted on the first move: Chromium and WebKit start a drag and
       // drop of a selection that holds the press when they handle it.
-      const selection =
-        domSelection && $createRangeSelectionFromDom(domSelection, editor);
+      const selection = $createRangeSelectionFromDom(domSelection, editor);
       if (
         drag.defaultPrevented ||
         // A press on a selection drags it rather than selecting.
@@ -2600,7 +2596,7 @@ export function addRootElementEvents(
           editor,
           domSelection,
           new Event('selectionchange'),
-          documentRegistrations.get(doc),
+          registration,
         );
         $adjustMouseDrag(
           editor,
@@ -2640,7 +2636,6 @@ export function addRootElementEvents(
       // modifier keys, which Windows repeats while they are held.
       keydown: event => event.getModifierState(event.key) || endMouseDrag(),
       mousedown: event => {
-        const target = getComposedEventTarget(event);
         const inputState = editor._inputState;
         inputState.mouseDrag =
           event.button === 0 &&
@@ -2649,8 +2644,10 @@ export function addRootElementEvents(
           inputState.lastPointerType === 'mouse' &&
           editor.isEditable() &&
           !editor.isComposing() &&
-          isDOMNode(target) &&
-          !isDOMCapturingSelection(target, editor)
+          !isDOMCapturingSelection(
+            getComposedEventTarget(event) as Node,
+            editor,
+          )
             ? event
             : null;
       },
@@ -2664,7 +2661,7 @@ export function addRootElementEvents(
       event => {
         editor._inputState.lastPointerType = event.pointerType;
       },
-      {capture: true},
+      true,
     ),
   );
   if (IS_IOS) {

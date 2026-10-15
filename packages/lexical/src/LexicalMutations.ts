@@ -55,6 +55,13 @@ function initTextEntryListener(editor: LexicalEditor): void {
   }
 }
 
+// A node of an element's managed line break (ElementDOMSlot).
+function isManagedLineBreakDOM(dom: Node): boolean {
+  return (
+    isHTMLElement(dom) && dom.hasAttribute('data-lexical-managed-linebreak')
+  );
+}
+
 function getLastSelection(editor: LexicalEditor): null | BaseSelection {
   return editor.read('latest', () => {
     const selection = $getSelection();
@@ -144,8 +151,7 @@ function flushMutations(
       let shouldRevertSelection = false;
       let possibleTextForFirefoxPaste = '';
 
-      for (let i = 0; i < mutations.length; i++) {
-        const mutation = mutations[i];
+      for (const mutation of mutations) {
         const type = mutation.type;
         const targetDOM = mutation.target;
         const pair = $getNearestManagedNodePairFromDOMNode(
@@ -178,23 +184,19 @@ function flushMutations(
           ) {
             $handleTextMutation(targetDOM, targetNode, editor);
           }
-        } else if (type === 'childList') {
+        } else {
+          // childList, the only other type the observer records
           shouldRevertSelection = true;
           // We attempt to "undo" any changes that have occurred outside
           // of Lexical. We want Lexical's editor state to be source of truth.
           // To the user, these will look like no-ops.
-          const addedDOMs = mutation.addedNodes;
-
-          for (let s = 0; s < addedDOMs.length; s++) {
-            const addedDOM = addedDOMs[s];
+          for (const addedDOM of mutation.addedNodes) {
             const key = getNodeKeyFromDOMNode(addedDOM, editor);
-            const parentDOM = addedDOM.parentNode;
 
             if (
-              parentDOM != null &&
               addedDOM !== blockCursorElement &&
               // Not when it has moved on: scaffolding is put back below.
-              parentDOM === targetDOM &&
+              addedDOM.parentNode === targetDOM &&
               // Keyed DOM stays only when it is the DOM its node renders
               // to: a stale copy (of a removed node, or from before a node
               // was rendered anew) is evicted like foreign DOM. So is a node
@@ -231,7 +233,7 @@ function flushMutations(
                 }
               }
 
-              parentDOM.removeChild(addedDOM);
+              targetDOM.removeChild(addedDOM);
             }
           }
 
@@ -239,11 +241,7 @@ function flushMutations(
             const isScaffolding =
               blockCursorElement === removedDOM ||
               isDecoratorBoundaryAnchorDOM(removedDOM);
-            if (
-              isScaffolding ||
-              (isHTMLElement(removedDOM) &&
-                removedDOM.hasAttribute('data-lexical-managed-linebreak'))
-            ) {
+            if (isScaffolding || isManagedLineBreakDOM(removedDOM)) {
               // Back in its place, wherever the edit put it, which matters for
               // the scaffolding and for DOM an extension keeps beside the
               // line break: after its previous sibling when a later record
@@ -276,10 +274,8 @@ function flushMutations(
       // to restore their contents back to the source of truth, which
       // is Lexical's "current" editor state. This is basically like
       // an internal revert on the DOM.
-      if (badDOMTargets.size > 0) {
-        for (const [nodeDOM, targetNode] of badDOMTargets) {
-          targetNode.reconcileObservedMutation(nodeDOM, editor);
-        }
+      for (const [nodeDOM, targetNode] of badDOMTargets) {
+        targetNode.reconcileObservedMutation(nodeDOM, editor);
       }
 
       // Capture all the mutations made during this function. This
@@ -290,33 +286,22 @@ function flushMutations(
       // Check for any random auto-added <br> elements, and remove them.
       // These get added by the browser when we undo the above mutations
       // and this can lead to a broken UI.
-      if (records.length > 0) {
-        for (let i = 0; i < records.length; i++) {
-          const record = records[i];
-          const addedNodes = record.addedNodes;
-
-          for (let s = 0; s < addedNodes.length; s++) {
-            const addedDOM = addedNodes[s];
-            const parentDOM = addedDOM.parentNode;
-
-            // Keep the line breaks the revert put back: a LineBreakNode's
-            // and the managed one.
-            if (
-              parentDOM != null &&
-              addedDOM.nodeName === 'BR' &&
-              !getNodeKeyFromDOMNode(addedDOM, editor) &&
-              !(addedDOM as Element).hasAttribute(
-                'data-lexical-managed-linebreak',
-              )
-            ) {
-              parentDOM.removeChild(addedDOM);
-            }
+      for (const record of records) {
+        for (const addedDOM of record.addedNodes) {
+          // Keep the line breaks the revert put back: a LineBreakNode's
+          // and the managed one.
+          if (
+            addedDOM.nodeName === 'BR' &&
+            !getNodeKeyFromDOMNode(addedDOM, editor) &&
+            !isManagedLineBreakDOM(addedDOM)
+          ) {
+            (addedDOM as Element).remove();
           }
         }
-
-        // Clear any of those removal mutations
-        observer.takeRecords();
       }
+
+      // Clear any of those removal mutations
+      observer.takeRecords();
 
       if (selection !== null) {
         if (shouldRevertSelection) {

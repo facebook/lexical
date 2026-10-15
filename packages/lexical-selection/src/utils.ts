@@ -9,7 +9,6 @@
 import {
   $getEditor,
   $getElementAndOffsetForPoint,
-  $isElementNode,
   $isRootNode,
   $isTextNode,
   type ElementNode,
@@ -33,16 +32,14 @@ function getDOMPoint(
   if (dom === null || $isTextNode(node)) {
     return [getDOMTextNode(dom), offset];
   }
-  if ($isElementNode(node)) {
-    // createDOMRange is also called outside a read, as by collab cursors.
-    return editor.read('latest', () =>
-      $getElementAndOffsetForPoint(editor, node, offset),
-    );
-  }
   const parent = dom.parentNode;
-  return parent && dom.nodeName === 'BR'
-    ? [parent, Array.from(parent.childNodes).indexOf(dom)]
-    : [dom, offset];
+  if (parent && dom.nodeName === 'BR') {
+    return [parent, Array.from(parent.childNodes).indexOf(dom)];
+  }
+  // createDOMRange is also called outside a read, as by collab cursors.
+  return editor.read('latest', () =>
+    $getElementAndOffsetForPoint(editor, node, offset),
+  );
 }
 
 /**
@@ -61,8 +58,6 @@ export function createDOMRange(
   focusNode: LexicalNode,
   _focusOffset: number,
 ): Range | null {
-  const anchorKey = anchorNode.getKey();
-  const focusKey = focusNode.getKey();
   // Resolve through the editor's own document so iframe / shadow-mounted
   // editors don't end up with a Range bound to the wrong realm.
   const range = getRootOwnerDocument(editor.getRootElement()).createRange();
@@ -103,7 +98,7 @@ export function createDOMRange(
 
   if (
     range.collapsed &&
-    (anchorOffset !== focusOffset || anchorKey !== focusKey)
+    (anchorOffset !== focusOffset || !anchorNode.is(focusNode))
   ) {
     // Range is backwards, we need to reverse it
     range.setStart(focusDOM, focusOffset);

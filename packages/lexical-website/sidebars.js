@@ -143,6 +143,7 @@ const sidebars = {
       type: 'category',
     },
     'testing',
+    'upgrading',
     'faq',
     'maintainers-guide',
   ],

@@ -48,7 +48,7 @@ import {
   $garbageCollectDetachedDecorators,
   $garbageCollectDetachedNodes,
 } from './LexicalGC';
-import {flushPendingMutations, initMutationObserver} from './LexicalMutations';
+import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {$normalizeTextNode} from './LexicalNormalization';
 import {$reconcileRoot} from './LexicalReconciler';
 import {
@@ -600,7 +600,7 @@ export function $commitPendingUpdates(
   if (editor._pendingEditorState !== null) {
     // The commit disconnects the observer, which drops the DOM changes it has
     // recorded but not reported yet, so they are reverted first.
-    flushPendingMutations(editor);
+    flushRootMutations(editor, false, true);
   }
   // Save and restore rather than set and clear because the reconciler error
   // recovery path re-enters $commitPendingUpdates, and the enqueued update

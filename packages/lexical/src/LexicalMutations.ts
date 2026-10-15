@@ -333,29 +333,23 @@ function flushMutations(
   }
 }
 
+/**
+ * Revert the DOM changes the observer has recorded but not reported yet.
+ * With `ifRecorded` nothing runs when there are none, for a commit that is
+ * about to disconnect the observer, which drops them: a change made inside an
+ * update, or in the same task as an update whose commit was queued first.
+ */
 export function flushRootMutations(
   editor: LexicalEditor,
   rerenderText?: boolean,
+  ifRecorded?: boolean,
 ): void {
   const observer = editor._observer;
 
   if (observer !== null) {
     const mutations = observer.takeRecords();
-    flushMutations(editor, mutations, observer, rerenderText);
-  }
-}
-
-/**
- * Revert the DOM changes the observer has recorded but not reported yet, as
- * a commit is about to disconnect it, which drops them: a change made inside
- * an update, or in the same task as an update whose commit was queued first.
- */
-export function flushPendingMutations(editor: LexicalEditor): void {
-  const observer = editor._observer;
-  if (observer !== null) {
-    const mutations = observer.takeRecords();
-    if (mutations.length > 0) {
-      flushMutations(editor, mutations, observer);
+    if (!ifRecorded || mutations.length > 0) {
+      flushMutations(editor, mutations, observer, rerenderText);
     }
   }
 }

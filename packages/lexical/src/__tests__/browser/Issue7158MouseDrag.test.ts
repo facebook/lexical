@@ -2032,11 +2032,19 @@ function withholdPressSelectionChanges(untilRelease = false): void {
 /**
  * Keeps the selectionchange events of a drag's move to `x` (relative to
  * `root`) from the editor until its release, as a busy main thread can
- * deliver them after that. The editor then gets one after the release.
+ * deliver them after that. The editor then gets one after the release, and
+ * the promise resolves once it has handled that one.
  */
-function withholdLastMoveSelectionChanges(root: HTMLElement, x: number): void {
+function withholdLastMoveSelectionChanges(
+  root: HTMLElement,
+  x: number,
+): Promise<void> {
   const clientX = root.getBoundingClientRect().left + x;
   let isWithheld = false;
+  let onHandled = () => {};
+  const handled = new Promise<void>(resolve => {
+    onHandled = resolve;
+  });
   onTestFinished(
     registerEventListeners(document, {
       pointermove: event => {
@@ -2047,14 +2055,16 @@ function withholdLastMoveSelectionChanges(root: HTMLElement, x: number): void {
       pointerup: () => {
         if (isWithheld) {
           isWithheld = false;
-          setTimeout(() =>
-            document.dispatchEvent(new Event('selectionchange')),
-          );
+          setTimeout(() => {
+            document.dispatchEvent(new Event('selectionchange'));
+            onHandled();
+          });
         }
       },
     }),
   );
   withholdSelectionChanges(() => isWithheld);
+  return handled;
 }
 
 describe('Issue #7158: mouse drags whose events come in another order', () => {
@@ -2185,6 +2195,32 @@ describe('Issue #7158: mouse drags whose events come in another order', () => {
       [left(2) + SIZE / 4, y],
     ]);
     await expectSelectedDecoratorCount(editor, COUNT - 2, pointerLog);
+  });
+
+  // Past the end of a line between line breaks, WebKit puts a drag's focus at
+  // the end of the line above, which the editor moves back beside the last
+  // decorator. When the selectionchange of the last such move comes after the
+  // release, the release must do that, or the selectionchange then selects
+  // the line break above instead of the decorators.
+  test('a drag from left of the first decorator of a line between line breaks to past its end, released before the selectionchange of its last move, selects to the end of the line', async () => {
+    const {editor, left, pointerLog, right, root, y} = mount(
+      false,
+      ImageLikeDecoratorNode,
+      BETWEEN_LINE_BREAKS,
+    );
+    const lastMoveHandled = withholdLastMoveSelectionChanges(
+      root,
+      right(COUNT - 1) + 30,
+    );
+    await mouseDrag([
+      [left(0) - 5, y],
+      [left(1) + SIZE / 2, y],
+      [left(COUNT - 2) + SIZE / 2, y],
+      [right(COUNT - 1) + 30, y],
+    ]);
+    await lastMoveHandled;
+    await expectSelectedDecoratorCount(editor, COUNT, pointerLog);
+    assertNoLineBreakSelected(editor, pointerLog);
   });
 
   // On a busy main thread the release of a click can come before the

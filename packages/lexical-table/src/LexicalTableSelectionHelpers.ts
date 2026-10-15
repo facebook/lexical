@@ -255,7 +255,15 @@ export function registerTableWindowHandlers(
       ) {
         return;
       }
-      const selectionInfo = getTableObserverFromCellNode(target);
+      // The nearest table can belong to another editor: a nested editor's
+      // table inside this root, or the parent's table around a nested root.
+      // Its node is not in this editor's node map, so leave it to the editor
+      // that owns it. The highlight below is still cleared.
+      const cellInfo = getTableObserverFromCellNode(target);
+      const selectionInfo =
+        cellInfo !== null && cellInfo.tableObserver.editor === editor
+          ? cellInfo
+          : null;
 
       editor.update(() => {
         // Clear highlights from all tables (even one we're actively clicking on)

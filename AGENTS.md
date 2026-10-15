@@ -279,6 +279,7 @@ When adding/modifying APIs, types must be maintained for both systems.
 - Do NOT change the signature, return type, or behavior of existing public APIs in ways that could break callers. Prefer additive, optional parameters.
 - Preserve the serialization format of `EditorState` and node JSON. Serialized content produced by older versions must continue to deserialize correctly.
 - If an API genuinely must change, deprecate the old one first (keep it working, document the replacement) rather than removing it outright.
+- A breaking change that cannot be avoided ships in a minor release with a `[breaking]` changeset whose `Migration:` paragraph tells callers what to change.
 - When in doubt, assume external code depends on the current behavior and keep it intact.
 
 ## Dependencies: Lexical is a singleton within one app
@@ -457,6 +458,25 @@ from memory, and fill in its sections:
 Drop any template section that does not apply to the diff instead of carrying
 an empty heading, and treat the template's HTML comments as instructions to
 follow, not text to copy into the message.
+
+- **Changesets**: a changeset is required for user-facing changes (a
+  published package's behavior, API, types or shipped Flow types). Add it
+  in `.changeset/` with `pnpm run changeset:new` or by hand (format in
+  `.changeset/README.md`): frontmatter listing each affected npm package
+  with `patch` (or `minor` for `[breaking]`, never `major`), then
+  `[category] one-line summary` with category `breaking`, `deprecation`,
+  `feature`, `fix`, `perf`, `docs` or `chore`, and no PR number. A
+  `[breaking]` entry needs `Migration:` and `Detect:` (usually just the
+  affected symbol, import or CSS class; add `Codemod:` when useful); a
+  `[deprecation]` entry needs `Replacement:` and `Removal:` (`v0.NN`,
+  `no earlier than v0.NN`, or `not scheduled`). A non-breaking change that
+  alters observable output or behavior gets a `Verify:` paragraph saying what
+  to test (it renders under "Behavior changes"); add one when reviewing a fix
+  that changes output. No Markdown headings in the body. Add a
+  `PR: #123` line only when the changeset lands in a different PR than the
+  change. Validate with `pnpm run check-changesets`. Tests,
+  website, playground, examples and tooling need none. The changeset file is
+  the record, so the commit message's `## Changeset` section is optional.
 
 ### Commit and PR Hygiene for Agents
 This is an open source project: never include agent-session URLs or other

@@ -40,7 +40,8 @@
     "!src/**/*.bench.ts",
     "!src/**/*.bench.tsx",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "dependencies": {
     "@lexical/internal": "workspace:*"

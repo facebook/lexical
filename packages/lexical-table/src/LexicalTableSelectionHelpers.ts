@@ -147,17 +147,33 @@ const AUTO_SCROLL_FPS = 60;
 const AUTO_SCROLL_MAX_ELAPSED_MS = 100;
 
 // Given a pointer position and the start/end edges of a scroll container on one
-// axis, return the signed per-frame scroll delta: negative near the start edge,
-// positive near the end edge, 0 while outside both edge zones. The delta ramps
-// up the deeper the pointer is into the zone (and is capped once it reaches or
-// passes the edge).
-function autoScrollStep(pos: number, start: number, end: number): number {
+// axis, return the signed scroll delta for a tick covering `elapsed` ms (a
+// frame by default): negative near the start edge, positive near the end edge,
+// 0 while outside both edge zones. The per-frame delta ramps up the deeper the
+// pointer is into the zone (and is capped once it reaches or passes the edge).
+// The magnitude is scaled before the sign is applied, since Math.round rounds
+// halves up and would favour positive steps, and stays at least one pixel: the
+// loop stops on a tick that scrolls nothing.
+function autoScrollStep(
+  pos: number,
+  start: number,
+  end: number,
+  elapsed = 1000 / AUTO_SCROLL_FPS,
+): number {
   const speed = (depth: number) =>
     Math.max(
       1,
-      Math.ceil(
-        (Math.min(AUTO_SCROLL_EDGE_ZONE, depth) / AUTO_SCROLL_EDGE_ZONE) *
-          AUTO_SCROLL_MAX_STEP,
+      Math.round(
+        (Math.max(
+          1,
+          Math.ceil(
+            (Math.min(AUTO_SCROLL_EDGE_ZONE, depth) / AUTO_SCROLL_EDGE_ZONE) *
+              AUTO_SCROLL_MAX_STEP,
+          ),
+        ) *
+          elapsed *
+          AUTO_SCROLL_FPS) /
+          1000,
       ),
     );
   if (pos <= start + AUTO_SCROLL_EDGE_ZONE) {
@@ -167,17 +183,6 @@ function autoScrollStep(pos: number, start: number, end: number): number {
     return speed(pos - (end - AUTO_SCROLL_EDGE_ZONE));
   }
   return 0;
-}
-
-// Scale a per-frame delta from autoScrollStep to a tick covering `elapsed` ms.
-// It rounds the magnitude, since Math.round rounds halves up and would favour
-// positive steps, and keeps at least one pixel: the loop stops on a tick that
-// scrolls nothing.
-function scaleAutoScrollStep(step: number, elapsed: number): number {
-  return (
-    Math.sign(step) *
-    Math.max(1, Math.round((Math.abs(step) * elapsed * AUTO_SCROLL_FPS) / 1000))
-  );
 }
 
 export function isHTMLTableElement(el: unknown): el is HTMLTableElement {
@@ -362,8 +367,9 @@ function $handleTableClick(
     let lastClientX = event.clientX;
     let lastClientY = event.clientY;
     let autoScrollRafId: number | null = null;
-    // The previous tick of the running auto-scroll, or null before its first.
-    let lastAutoScrollTime: number | null = null;
+    // The previous tick of the running auto-scroll. Starting a run sets it to
+    // Infinity, which no tick comes after.
+    let lastAutoScrollTime: number;
     // Removes every listener below. Assigned once they are defined; nothing
     // can call stopSelecting before then, since only those listeners do.
     let removeGestureListeners: (() => void) | null = null;
@@ -498,11 +504,10 @@ function $handleTableClick(
         start = axis === 'x' ? rect.left : rect.top;
         end = axis === 'x' ? rect.right : rect.bottom;
       }
-      const frameStep = autoScrollStep(pos, start, end);
-      if (frameStep === 0) {
+      const step = autoScrollStep(pos, start, end, elapsed);
+      if (step === 0) {
         return false;
       }
-      const step = scaleAutoScrollStep(frameStep, elapsed);
       if (container === null) {
         const before =
           axis === 'x' ? editorWindow.scrollX : editorWindow.scrollY;
@@ -572,9 +577,9 @@ function $handleTableClick(
       // The first tick of a run covers a frame, as does one whose clock did
       // not advance.
       const elapsed =
-        lastAutoScrollTime === null || time <= lastAutoScrollTime
-          ? 1000 / AUTO_SCROLL_FPS
-          : Math.min(time - lastAutoScrollTime, AUTO_SCROLL_MAX_ELAPSED_MS);
+        time > lastAutoScrollTime
+          ? Math.min(time - lastAutoScrollTime, AUTO_SCROLL_MAX_ELAPSED_MS)
+          : 1000 / AUTO_SCROLL_FPS;
       lastAutoScrollTime = time;
       const hContainer = findScrollContainer('x');
       const vContainer = findScrollContainer('y');
@@ -606,7 +611,7 @@ function $handleTableClick(
       ) {
         return;
       }
-      lastAutoScrollTime = null;
+      lastAutoScrollTime = Infinity;
       autoScrollRafId = editorWindow.requestAnimationFrame(tickAutoScroll);
     };
 

@@ -6,7 +6,12 @@
  *
  */
 
-import type {InputState, LexicalCommand, LexicalEditor} from './LexicalEditor';
+import type {
+  AnyLexicalCommand,
+  InputState,
+  LexicalCommand,
+  LexicalEditor,
+} from './LexicalEditor';
 import type {KeyboardShortcutMatch} from './LexicalKeyboardShortcuts';
 import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
@@ -163,50 +168,14 @@ import {registerEventListener} from './utils/registerEventListener';
 import {registerEventListeners} from './utils/registerEventListeners';
 
 type RootElementRemoveHandles = (() => void)[];
-type RootElementEvents = [
+// Each root element event is handled by a function or dispatched as a
+// command. A method type, so that a handler can take the event's own type.
+type RootElementEvents = Record<
   string,
-  Record<string, unknown> | ((event: Event, editor: LexicalEditor) => void),
-][];
-const PASS_THROUGH_COMMAND = /* @__PURE__ */ Object.freeze({});
+  | AnyLexicalCommand
+  | {handle(event: Event, editor: LexicalEditor): void}['handle']
+>;
 const ANDROID_COMPOSITION_LATENCY = 30;
-let rootElementEvents: RootElementEvents | undefined;
-
-function getRootElementEvents(): RootElementEvents {
-  if (rootElementEvents !== undefined) {
-    return rootElementEvents;
-  }
-  const events: RootElementEvents = [
-    ['keydown', onKeyDown],
-    ['pointerdown', onPointerDown],
-    ['compositionstart', onCompositionStart],
-    ['compositionend', onCompositionEnd],
-    ['input', onInput],
-    ['click', onClick],
-    ['cut', PASS_THROUGH_COMMAND],
-    ['copy', PASS_THROUGH_COMMAND],
-    ['dragstart', PASS_THROUGH_COMMAND],
-    ['dragover', PASS_THROUGH_COMMAND],
-    ['dragend', PASS_THROUGH_COMMAND],
-    ['paste', PASS_THROUGH_COMMAND],
-    ['focus', PASS_THROUGH_COMMAND],
-    ['blur', PASS_THROUGH_COMMAND],
-    ['drop', PASS_THROUGH_COMMAND],
-  ];
-  if (CAN_USE_BEFORE_INPUT) {
-    events.push([
-      'beforeinput',
-      (event, editor) => onBeforeInput(event as InputEvent, editor),
-    ]);
-  }
-  if (IS_IOS) {
-    events.push(
-      ['keyup', (event, editor) => onKeyUp(event as KeyboardEvent, editor)],
-      ['mousedown', onMouseDownIOS],
-    );
-  }
-  rootElementEvents = events;
-  return events;
-}
 
 // Node can be moved between documents (for example using createPortal), so we
 // need to track the document each root element was originally registered on.
@@ -2513,91 +2482,49 @@ export function addRootElementEvents(
   // with this root element's other listeners in removeRootElementEvents.
   removeHandles.push(documentSelectionChange.register(doc));
 
-  const events = getRootElementEvents();
-  for (let i = 0; i < events.length; i++) {
-    const [eventName, onEvent] = events[i];
-    const eventHandler =
-      typeof onEvent === 'function'
-        ? (event: Event) => {
-            if (hasStoppedLexicalPropagation(event)) {
-              return;
-            }
-            stopLexicalPropagation(event);
-            if (editor.isEditable() || eventName === 'click') {
-              onEvent(event, editor);
-            }
-          }
-        : (event: Event) => {
-            if (hasStoppedLexicalPropagation(event)) {
-              return;
-            }
-            stopLexicalPropagation(event);
-            const isEditable = editor.isEditable();
-            switch (eventName) {
-              case 'cut':
-                return (
-                  isEditable &&
-                  dispatchCommand(editor, CUT_COMMAND, event as ClipboardEvent)
-                );
-
-              case 'copy':
-                return dispatchCommand(
-                  editor,
-                  COPY_COMMAND,
-                  event as ClipboardEvent,
-                );
-
-              case 'paste':
-                return (
-                  isEditable &&
-                  dispatchCommand(
-                    editor,
-                    PASTE_COMMAND,
-                    event as ClipboardEvent,
-                  )
-                );
-
-              case 'dragstart':
-                return (
-                  isEditable &&
-                  dispatchCommand(editor, DRAGSTART_COMMAND, event as DragEvent)
-                );
-
-              case 'dragover':
-                return (
-                  isEditable &&
-                  dispatchCommand(editor, DRAGOVER_COMMAND, event as DragEvent)
-                );
-
-              case 'dragend':
-                return (
-                  isEditable &&
-                  dispatchCommand(editor, DRAGEND_COMMAND, event as DragEvent)
-                );
-
-              case 'focus':
-                return (
-                  isEditable &&
-                  dispatchCommand(editor, FOCUS_COMMAND, event as FocusEvent)
-                );
-
-              case 'blur': {
-                restoreInputModeIOS(editor, rootElement);
-                editor._inputState.isShiftKeyDown = false;
-                editor._inputState.isInsertLineBreak = false;
-                return (
-                  isEditable &&
-                  dispatchCommand(editor, BLUR_COMMAND, event as FocusEvent)
-                );
-              }
-
-              case 'drop':
-                return (
-                  isEditable &&
-                  dispatchCommand(editor, DROP_COMMAND, event as DragEvent)
-                );
-            }
-          };
+  const events: RootElementEvents = {
+    blur: BLUR_COMMAND,
+    click: onClick,
+    compositionend: onCompositionEnd,
+    compositionstart: onCompositionStart,
+    copy: COPY_COMMAND,
+    cut: CUT_COMMAND,
+    dragend: DRAGEND_COMMAND,
+    dragover: DRAGOVER_COMMAND,
+    dragstart: DRAGSTART_COMMAND,
+    drop: DROP_COMMAND,
+    focus: FOCUS_COMMAND,
+    input: onInput,
+    keydown: onKeyDown,
+    paste: PASTE_COMMAND,
+    pointerdown: onPointerDown,
+    ...(CAN_USE_BEFORE_INPUT && {beforeinput: onBeforeInput}),
+    ...(IS_IOS && {keyup: onKeyUp, mousedown: onMouseDownIOS}),
+  };
+  for (const [eventName, onEvent] of Object.entries(events)) {
+    const eventHandler = (event: Event) => {
+      if (hasStoppedLexicalPropagation(event)) {
+        return;
+      }
+      stopLexicalPropagation(event);
+      if (eventName === 'blur') {
+        restoreInputModeIOS(editor, rootElement);
+        editor._inputState.isShiftKeyDown = false;
+        editor._inputState.isInsertLineBreak = false;
+      }
+      // A read-only editor still handles clicks and copies.
+      if (
+        editor.isEditable() ||
+        eventName === 'click' ||
+        eventName === 'copy'
+      ) {
+        if (typeof onEvent === 'function') {
+          onEvent(event, editor);
+        } else {
+          dispatchCommand(editor, onEvent, event);
+        }
+      }
+    };
     removeHandles.push(
       registerEventListener(rootElement, eventName, eventHandler),
     );

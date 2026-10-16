@@ -15,8 +15,8 @@ import {
 } from '@lexical/markdown';
 import {MarkdownTestExtension} from '@lexical/markdown/src/__tests__/utils';
 import {$createParagraphNode, $getRoot, defineExtension} from 'lexical';
-import {expect, onTestFinished, test} from 'vitest';
-import {userEvent} from 'vitest/browser';
+import {assert, expect, onTestFinished, test} from 'vitest';
+import {page, userEvent} from 'vitest/browser';
 
 import {
   assertHTML,
@@ -174,36 +174,56 @@ test.each(cases)(
     }
   },
 );
-test('transforms Markdown shortcuts when the editor root is in an iframe', async () => {
-  const iframe = document.createElement('iframe');
-  document.body.append(iframe);
-  const iframeDocument = iframe.contentDocument;
-  if (iframeDocument === null) {
-    throw new Error('Expected the test iframe to have a document');
-  }
-  const root = iframeDocument.createElement('div');
-  root.contentEditable = 'true';
-  root.style.whiteSpace = 'pre-wrap';
-  iframeDocument.body.append(root);
-  const editor = buildEditorFromExtensions([extension]);
-  editor.setRootElement(root);
-  editor.update(
-    () => {
-      $getRoot().clear().append($createParagraphNode());
-      $getRoot().selectEnd();
-    },
-    {discrete: true},
-  );
-  onTestFinished(() => {
-    editor.dispose();
-    iframe.remove();
-  });
-  iframe.contentWindow?.focus();
-  root.focus();
-  await userEvent.keyboard('*world*');
-  await expect.poll(() => root.textContent).toBe('world');
-  expect(root.querySelector('em')?.textContent).toBe('world');
-});
+// An iframe has its own performance.timeOrigin, and a capture-phase input
+// listener above the root (React adds one to a portal's container) lets the
+// mutation observer run before Lexical handles the native insertion.
+test.each([
+  {keys: '*hi*', selector: 'em', text: 'hi'},
+  {keys: '**hi**', selector: 'strong', text: 'hi'},
+  {keys: '`hi`', selector: 'code', text: 'hi'},
+  {keys: '# hi', selector: 'h1', text: 'hi'},
+  // userEvent.keyboard reads a single [ as the start of a key name
+  {keys: '[[hi](https://lexical.dev)', selector: 'a', text: 'hi'},
+])(
+  'transforms $keys when the editor root is in an iframe',
+  async ({keys, selector, text}) => {
+    const iframe = document.createElement('iframe');
+    document.body.append(iframe);
+    const iframeDocument = iframe.contentDocument;
+    assert(
+      iframeDocument !== null,
+      'Expected the test iframe to have a document',
+    );
+    iframeDocument.body.addEventListener('input', () => {}, true);
+    const root = iframeDocument.createElement('div');
+    root.contentEditable = 'true';
+    root.style.whiteSpace = 'pre-wrap';
+    root.dataset.testid = 'editor';
+    iframeDocument.body.append(root);
+    const editor = buildEditorFromExtensions([extension]);
+    editor.setRootElement(root);
+    editor.update(
+      () => {
+        $getRoot().clear().append($createParagraphNode());
+        $getRoot().selectEnd();
+      },
+      {discrete: true},
+    );
+    onTestFinished(() => {
+      editor.dispose();
+      iframe.remove();
+    });
+    // Firefox keeps keyboard focus in the parent frame after a programmatic
+    // focus() inside the iframe, so click into the editor instead
+    await page
+      .frameLocator(page.elementLocator(iframe))
+      .getByTestId('editor')
+      .click();
+    await userEvent.keyboard(keys);
+    await expect.poll(() => root.textContent).toBe(text);
+    expect(root.querySelector(selector)?.textContent).toBe(text);
+  },
+);
 test('can undo/redo nested transformations', async () => {
   const {root} = setup();
   await typeText('~~_**hello world**_~~');

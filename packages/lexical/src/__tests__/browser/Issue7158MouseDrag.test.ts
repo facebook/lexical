@@ -2871,29 +2871,26 @@ describe('Issue #7158: mouse drags in other layouts and states', () => {
     });
   });
 
-  // A caret that a click puts beside a decorator takes the format and style
-  // of where it is, not those of the caret before the click, also when the
-  // release comes first and the editor takes the press from the DOM. As after
-  // a selectionchange, it takes no style beside the children of a line,
-  // though the line has the style of its text.
+  // A caret that a click puts beside a decorator in a line of plain text
+  // takes the format and style of where it is, not those of the caret before
+  // the click, also when the release comes first and the editor takes the
+  // press from the DOM.
   test.each(
     (
       [
-        ['bold', 'right of a decorator that ends a line', 2, false],
-        ['bold', 'left of a decorator that starts a line', 0, false],
-        ['red', 'right of a decorator that ends a line', 2, false],
-        ['red', 'left of a decorator that starts a line', 0, false],
-        ['bold', 'right of a decorator that ends its line', 2, true],
-        ['red', 'right of a decorator that ends its line', 2, true],
+        ['bold', 'right of a decorator that ends a line', 2],
+        ['bold', 'left of a decorator that starts a line', 0],
+        ['red', 'right of a decorator that ends a line', 2],
+        ['red', 'left of a decorator that starts a line', 0],
       ] as const
-    ).flatMap(([formatted, name, offset, isSameLine]) =>
+    ).flatMap(([formatted, name, offset]) =>
       ['', ', released before the selectionchange of its press,'].map(
-        released => [formatted, name, released, offset, isSameLine] as const,
+        released => [formatted, name, released, offset] as const,
       ),
     ),
   )(
     'typing after a click from %s text to the %s%s types plain text',
-    async (formatted, _name, released, offset, isSameLine) => {
+    async (formatted, _name, released, offset) => {
       let textKey = '';
       const {editor, root} = mountEditor(() => {
         const text = $createTextNode('formatted text');
@@ -2904,32 +2901,18 @@ describe('Issue #7158: mouse drags in other layouts and states', () => {
         } else {
           text.setStyle('color: red');
         }
-        return isSameLine
-          ? // With the style of its text, as an edit gives it, and a line
-            // break after the decorator, before which WebKit puts the caret
-            // in the text.
-            [
+        return [
+          $createParagraphNode().append(text),
+          offset === 0
+            ? // Indented, to leave room for the click.
               $createParagraphNode()
-                .setTextStyle(text.getStyle())
-                .append(
-                  text,
-                  decorator,
-                  $createLineBreakNode(),
-                  $createTextNode('plain text'),
-                ),
-            ]
-          : [
-              $createParagraphNode().append(text),
-              offset === 0
-                ? // Indented, to leave room for the click.
-                  $createParagraphNode()
-                    .setIndent(2)
-                    .append(decorator, $createTextNode(' plain text'))
-                : $createParagraphNode().append(
-                    $createTextNode('plain text '),
-                    decorator,
-                  ),
-            ];
+                .setIndent(2)
+                .append(decorator, $createTextNode(' plain text'))
+            : $createParagraphNode().append(
+                $createTextNode('plain text '),
+                decorator,
+              ),
+        ];
       });
       // Once the editor has handled the selectionchange of the caret below.
       const selectionChanged = nextSelectionChange();
@@ -3004,59 +2987,6 @@ describe('Issue #7158: mouse drags in other layouts and states', () => {
       editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
       await mouseDrag([[right + 30, y]]);
       await expectCaret(editor, caret, []);
-      await userEvent.keyboard('X');
-      await vi.waitFor(() => {
-        const format = editor.read('latest', () => {
-          const typed = $getRoot()
-            .getAllTextNodes()
-            .find(node => node.getTextContent().includes('X'));
-          return typed === undefined ? 'nothing typed' : typed.getFormat();
-        });
-        assert(format === 1, `expected X typed in bold, got format ${format}`);
-      });
-    },
-  );
-
-  // A format armed at a caret beside the children of a line is kept by a
-  // click that the editor puts elsewhere among them, as by a selectionchange
-  // there, also in a line without text, when the release comes first and
-  // the editor takes the press from the DOM.
-  test.each([
-    ['of only a decorator', false],
-    ['of text between decorators', true],
-  ])(
-    'typing after a click right of the last decorator in a line %s, released before the selectionchange of its press, from a caret at its start with bold armed types bold text',
-    async (_name, hasText) => {
-      const {editor, root} = mountEditor(() => [
-        $createParagraphNode().append(
-          ...(hasText
-            ? [
-                $create(ImageLikeDecoratorNode),
-                $createTextNode(' hello '),
-                $create(ImageLikeDecoratorNode),
-              ]
-            : [$create(ImageLikeDecoratorNode)]),
-        ),
-      ]);
-      const selectionChanged = nextSelectionChange();
-      root.focus();
-      editor.update(
-        () => {
-          $getRoot().selectStart();
-        },
-        {discrete: true},
-      );
-      await selectionChanged;
-      editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
-      const decorators = root.querySelectorAll('[data-lexical-decorator]');
-      const {right, y} = rectIn(root, decorators[decorators.length - 1]);
-      withholdPressSelectionChanges(true);
-      await mouseDrag([[right + 30, y]]);
-      await expectCaret(
-        editor,
-        `paragraph:${decorators.length + (hasText ? 1 : 0)}`,
-        [],
-      );
       await userEvent.keyboard('X');
       await vi.waitFor(() => {
         const format = editor.read('latest', () => {

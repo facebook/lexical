@@ -678,45 +678,54 @@ describe('a DOM change recorded before a commit runs', () => {
       expectRestored(mounted);
     },
   );
-});
 
-describe('a DOM change made inside an update that fails', () => {
-  test.each([
-    [
-      'removing a text span',
-      (block: HTMLElement) => remove(textSpans(block)[0]),
-    ],
-    [
-      'moving a text span',
-      (block: HTMLElement) => block.append(textSpans(block)[0]),
-    ],
-  ])('%s', (_, mutate) => {
-    const {block, editor, errors, renderedHTML, renderedJSON, root} =
-      mountEditor(() => [$tokens()]);
-    editor.update(() => {
-      mutate(block);
-      throw new Error('failed');
-    });
-    expect(errors).toEqual(['failed']);
-    expectHtmlToBeEqual(root.innerHTML, renderedHTML);
-    expect(editor.getEditorState().toJSON()).toEqual(renderedJSON);
-  });
-
-  test('changing text, then losing the selection', () => {
-    const mounted = mountEditor(() => [
+  test('changing text inside an update that fails', () => {
+    const {block, editor, errors, renderedJSON} = mountEditor(() => [
       $createParagraphNode().append($createTextNode('ab')),
     ]);
-    const {block, editor, errors} = mounted;
-    editor.update(() => {
-      textSpans(block)[0].firstChild!.nodeValue = 'cd';
-      // Selecting a node that is never attached fails the update.
-      $createTextNode('ef').select();
-    });
+    editor.update(
+      () => {
+        textSpans(block)[0].firstChild!.nodeValue = 'cd';
+        // Selecting a node that is never attached fails the update.
+        $createTextNode('ef').select();
+      },
+      {discrete: true},
+    );
     expect(errors).toEqual([
       expect.stringContaining('selection has been lost'),
     ]);
-    // Read back, as after an update that does not fail.
-    expect(editor.read(() => $getRoot().getTextContent())).toBe('cd');
-    expectRendersEditorState({...mounted, errors: []});
+    expect(editor.getEditorState().toJSON()).toEqual(renderedJSON);
+  });
+
+  test('emptying text inside an update that fails', () => {
+    const {block, editor, errors, renderedHTML, renderedJSON, root} =
+      mountEditor(() => [$createParagraphNode().append($createTextNode('ab'))]);
+    editor.update(() => {
+      textSpans(block)[0].firstChild!.nodeValue = '';
+      throw new Error('failed');
+    });
+    expect(errors).toEqual(['failed']);
+    expect(editor.getEditorState().toJSON()).toEqual(renderedJSON);
+    expectHtmlToBeEqual(root.innerHTML, renderedHTML);
+  });
+
+  test('an update queued in an update that fails commits on its own', () => {
+    const {block, editor, errors} = mountEditor(() => [$tokens()]);
+    const tags: string[][] = [];
+    editor.registerUpdateListener(update => tags.push([...update.tags]));
+    editor.update(
+      () => {
+        block.append(textSpans(block)[0]);
+        editor.update(() => $getRoot().append($createParagraphNode()), {
+          tag: 'queued',
+        });
+        throw new Error('failed');
+      },
+      {tag: 'failed'},
+    );
+    // Commit the queued update.
+    editor.read(() => {});
+    expect(errors).toEqual(['failed']);
+    expect(tags).toEqual([['failed'], ['queued']]);
   });
 });

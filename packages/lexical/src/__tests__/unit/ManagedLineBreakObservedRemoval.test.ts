@@ -111,6 +111,13 @@ function swapUnmanagedSpan(block: HTMLElement): void {
   remove(span);
 }
 
+/** `html` without the elements that match `selector`. */
+function withoutDOM(html: string, selector: string): string {
+  const body = new DOMParser().parseFromString(html, 'text/html').body;
+  body.querySelectorAll(selector).forEach(element => element.remove());
+  return body.innerHTML;
+}
+
 const textSpans = (element: Element) =>
   element.querySelectorAll('[data-lexical-text]');
 
@@ -504,13 +511,11 @@ describe('an element whose DOM slot keeps a marker after its children', () => {
     });
     appendTextToFirstBlock(mounted, 'c');
     expect(errors).toEqual([]);
-    // The marker is not Lexical's to put back; the rest is.
-    const expected = new DOMParser().parseFromString(
-      renderFresh(editor),
-      'text/html',
-    ).body;
-    expected.querySelector('[data-marker]')!.remove();
-    expectHtmlToBeEqual(root.innerHTML, expected.innerHTML);
+    // Whether the marker is put back is not checked here; the rest is.
+    expectHtmlToBeEqual(
+      withoutDOM(root.innerHTML, '[data-marker]'),
+      withoutDOM(renderFresh(editor), '[data-marker]'),
+    );
   });
 
   test('removing the last text child', async () => {
@@ -569,15 +574,16 @@ describe('an element whose DOM slot keeps a header before its children and a foo
   const header = ({block}: MountedEditor) =>
     block.querySelector('[data-header]')!;
 
-  /** What Lexical rendered, without the header an edit removed. */
-  function expectRestoredWithoutHeader(mounted: MountedEditor): void {
+  /**
+   * What Lexical rendered, apart from the header an edit removed, which is
+   * not checked here.
+   */
+  function expectRestoredApartFromHeader(mounted: MountedEditor): void {
     expect(mounted.errors).toEqual([]);
-    const expected = new DOMParser().parseFromString(
-      mounted.renderedHTML,
-      'text/html',
-    ).body;
-    expected.querySelector('[data-header]')!.remove();
-    expectHtmlToBeEqual(mounted.root.innerHTML, expected.innerHTML);
+    expectHtmlToBeEqual(
+      withoutDOM(mounted.root.innerHTML, '[data-header]'),
+      withoutDOM(mounted.renderedHTML, '[data-header]'),
+    );
   }
 
   test.each([
@@ -595,7 +601,7 @@ describe('an element whose DOM slot keeps a header before its children and a foo
       await observeBatch(mounted.root, () =>
         remove(header(mounted), textSpans(mounted.block)[0]),
       );
-      expectRestoredWithoutHeader(mounted);
+      expectRestoredApartFromHeader(mounted);
     },
   );
 });

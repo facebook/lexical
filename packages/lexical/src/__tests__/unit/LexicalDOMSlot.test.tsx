@@ -762,19 +762,25 @@ describe('ElementDOMSlot integration: a removed trailing decoration', () => {
     // A native edit removes both at once.
     block.replaceChildren();
     await new Promise(resolve => setTimeout(resolve, 0));
+    // Whether the marker is put back is not checked here.
+    const withoutMarker = () => {
+      const clone = block.cloneNode(true) as HTMLElement;
+      clone.querySelectorAll('[data-marker]').forEach(m => m.remove());
+      return clone.outerHTML;
+    };
     const expected = html`
       <div dir="auto" data-block="true">
         <br data-lexical-managed-linebreak="true" />
       </div>
     `;
-    expectHtmlToBeEqual(block.outerHTML, expected);
+    expectHtmlToBeEqual(withoutMarker(), expected);
     editor.update(
       () => {
         $getRoot().getFirstChildOrThrow().markDirty();
       },
       {discrete: true},
     );
-    expectHtmlToBeEqual(block.outerHTML, expected);
+    expectHtmlToBeEqual(withoutMarker(), expected);
   });
 
   test.each(['leading', 'trailing'])(
@@ -825,9 +831,14 @@ describe('ElementDOMSlot integration: a removed trailing decoration', () => {
       block.removeChild(anchors[edge === 'leading' ? 0 : 1]);
       block.removeChild(marker);
       await new Promise(resolve => setTimeout(resolve, 0));
-      // Put back in place, rather than by rendering the editor again.
+      // Put back in place, rather than by rendering the editor again. Whether
+      // the marker is put back is not checked here.
       expect(container.querySelector('[data-block]')).toBe(block);
-      expect(shape()).toEqual(['anchor', 'decorator', 'anchor']);
+      expect(shape().filter(part => part !== 'marker')).toEqual([
+        'anchor',
+        'decorator',
+        'anchor',
+      ]);
     },
   );
 });

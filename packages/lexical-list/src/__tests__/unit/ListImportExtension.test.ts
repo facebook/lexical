@@ -16,7 +16,6 @@ import {
   $isListItemNode,
   $isListNode,
   ListExtension,
-  ListImportExtension,
   ListItemNode,
   ListNode,
   WordListImportExtension,
@@ -61,8 +60,11 @@ function buildEditor() {
 function $generate(html: string): LexicalNode[] {
   const editor = $getEditor();
   const dep = getExtensionDependencyFromEditor(editor, DOMImportExtension);
-  const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`);
-  return dep.output.$generateNodesFromDOM(dom.window.document);
+  const dom = new DOMParser().parseFromString(
+    `<!doctype html><html><body>${html}</body></html>`,
+    'text/html',
+  );
+  return dep.output.$generateNodesFromDOM(dom);
 }
 
 function importInto(editor: LexicalEditor, html: string): void {
@@ -185,19 +187,6 @@ describe('ListImportExtension', () => {
       }
     });
   });
-
-  test('deprecated ListImportExtension alias still imports lists', () => {
-    using editor = buildEditorFromExtensions(
-      defineExtension({
-        dependencies: [ListImportExtension],
-        name: 'list-alias-host',
-      }),
-    );
-    importInto(editor, '<ul><li>a</li></ul>');
-    editor.read(() => {
-      expect($items($rootList()).map(i => i.getTextContent())).toEqual(['a']);
-    });
-  });
 });
 
 // ----------------------------------------------------------------------------
@@ -229,6 +218,7 @@ function importHTMLDocument(editor: LexicalEditor, html: string): void {
   editor.update(
     () => {
       const dep = getExtensionDependencyFromEditor(editor, DOMImportExtension);
+      // Word list imports need CSSOM rules; jsdom's DOMParser omits styleSheets.
       const dom = new JSDOM(html);
       const nodes = dep.output.$generateNodesFromDOM(dom.window.document);
       $getRoot().clear().splice(0, 0, nodes);

@@ -89,24 +89,12 @@ the production dist artifacts, and prints their sizes. All include the
 lexical core, so the deltas are the markdown machinery itself. Snapshot at
 the time of writing:
 
-| bundle                         | minified  | min+gzip |
-| ------------------------------ | --------- | -------- |
-| legacy `@lexical/markdown`     | 287.3 kB  | 77.3 kB  |
-| `@lexical/mdast`               | 408.6 kB  | 103.6 kB |
-| `@lexical/mdast` (import only) | 393.5 kB  | 99.9 kB  |
-| delta (full vs legacy)         | +121.4 kB | +26.3 kB |
+| bundle                     | minified  | min+gzip |
+| -------------------------- | --------- | -------- |
+| legacy `@lexical/markdown` | 287.3 kB  | 77.3 kB  |
+| `@lexical/mdast`           | 408.6 kB  | 103.6 kB |
+| delta (full vs legacy)     | +121.4 kB | +26.3 kB |
 
-Two packaging decisions keep the delta down:
-
-- The dist build keeps the micromark/mdast dependencies **external**, so
-  the app bundler resolves them with browser export conditions (named
-  character references decode through the DOM instead of shipping a
-  ~36 kB entity table) and tree-shakes what's unused.
-- Import and export are **separate extensions**; the import-only row
-  omits `MdastExportExtension` and with it most of
-  `mdast-util-to-markdown`.
-
-That ~26 kB (gzip) buys spec-compliant CommonMark + GFM parsing, a single
-grammar shared by import and typing shortcuts, and the micromark/mdast
-extension ecosystem (footnotes, frontmatter, directives, ...) as the path
-for new syntax.
+The dist build keeps the micromark/mdast dependencies external, so the app
+bundler resolves them with browser export conditions and tree-shakes what's
+unused.

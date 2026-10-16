@@ -1,7 +1,6 @@
 # Vanilla JS example in an iframe
 
-Here we have simplest Lexical setup in rich text configuration (`@lexical/rich-text`) with history (`@lexical/history`) and accessibility (`@lexical/dragon`) features enabled using an iframe
-for the contentEditable surface.
+A minimal Lexical editor built with `buildEditorFromExtensions` and no framework, using `RichTextExtension`, `HistoryExtension`, and `DragonExtension` (accessibility). The contentEditable lives inside an iframe, so the editor reads selection and focus from the iframe's window rather than the page's.
 
 **Run it locally:** `pnpm i && pnpm run dev`
 

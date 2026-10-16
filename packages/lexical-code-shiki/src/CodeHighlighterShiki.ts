@@ -15,6 +15,7 @@ import {
   CodeIndentExtension,
   CodeNode,
   DEFAULT_CODE_LANGUAGE,
+  registerCodeGutter,
   registerCodeIndentation,
 } from '@lexical/code-core';
 import {effect, namedSignals} from '@lexical/extension';
@@ -94,30 +95,6 @@ function $textNodeTransform(
     // code highlight nodes converted back to normal text
     node.replace($createTextNode(node.__text));
   }
-}
-
-function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
-  const codeElement = editor.getElementByKey(node.getKey());
-  if (codeElement === null) {
-    return;
-  }
-  const children = node.getChildren();
-  const childrenLength = children.length;
-  // @ts-ignore: internal field
-  if (childrenLength === codeElement.__cachedChildrenLength) {
-    // Avoid updating the attribute if the children length hasn't changed.
-    return;
-  }
-  // @ts-ignore:: internal field
-  codeElement.__cachedChildrenLength = childrenLength;
-  let gutter = '1';
-  let count = 1;
-  for (let i = 0; i < childrenLength; i++) {
-    if ($isLineBreakNode(children[i])) {
-      gutter += '\n' + ++count;
-    }
-  }
-  codeElement.setAttribute('data-gutter', gutter);
 }
 
 interface TransformState {
@@ -395,27 +372,7 @@ export function registerHighlightingOnly(
 ): () => void {
   const registrations = [];
 
-  // Only register the mutation listener if not in headless mode
-  if (editor._headless !== true) {
-    registrations.push(
-      editor.registerMutationListener(
-        CodeNode,
-        mutations => {
-          editor.read('latest', () => {
-            for (const [key, type] of mutations) {
-              if (type !== 'destroyed') {
-                const node = $getNodeByKey(key);
-                if (node !== null) {
-                  updateCodeGutter(node as CodeNode, editor);
-                }
-              }
-            }
-          });
-        },
-        {skipInitialization: false},
-      ),
-    );
-  }
+  registrations.push(registerCodeGutter(editor));
 
   const transformState: TransformState = {
     didTransform: false,
@@ -497,33 +454,4 @@ export const CodeShikiExtension = defineExtension({
       return registerHighlightingOnly(editor, stores.tokenizer.value);
     });
   },
-});
-
-/**
- * @deprecated Use {@link CodeShikiExtension} instead. This type is a
- * flat alias for {@link Tokenizer} kept for backward compatibility with
- * {@link CodeHighlighterShikiExtension}.
- */
-export type CodeHighlighterShikiConfig = Tokenizer;
-
-/**
- * @deprecated Use {@link CodeShikiExtension} instead.
- *
- * This is a thin backward-compatibility shim that preserves the original
- * flat {@link Tokenizer} config API. It depends on
- * {@link CodeShikiExtension} and routes its configured tokenizer to the
- * underlying extension during `init` (before `CodeShikiExtension` builds),
- * so consumers using
- * `configExtension(CodeHighlighterShikiExtension, customTokenizer)`
- * continue to work without modification.
- */
-export const CodeHighlighterShikiExtension = defineExtension({
-  config: safeCast<CodeHighlighterShikiConfig>(ShikiTokenizer),
-  dependencies: [CodeShikiExtension],
-  init: (editorConfig, config, state) => {
-    // Forward the flat Tokenizer config to CodeShikiExtension's `tokenizer`
-    // field before it builds.
-    state.getDependency(CodeShikiExtension).config.tokenizer = config;
-  },
-  name: '@lexical/code-shiki/legacy',
 });

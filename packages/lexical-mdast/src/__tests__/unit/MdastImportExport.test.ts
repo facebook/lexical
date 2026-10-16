@@ -6,6 +6,8 @@
  *
  */
 
+// @vitest-environment node
+
 import {
   buildEditorFromExtensions,
   configExtension,
@@ -52,9 +54,8 @@ import {
   ImportContextMarkdown,
   MdastAutolinkLiteralExtension,
   MdastCommonMarkExtension,
-  MdastExportExtension,
+  MdastExtension,
   MdastHeadingExtension,
-  MdastImportExtension,
   MdastShadowRootQuoteExtension,
   MdastStrikethroughExtension,
   MdastTableExtension,
@@ -71,7 +72,7 @@ function createEditor(withTable = false): LexicalEditorWithDispose {
         // GFM constructs under test that aren't part of CommonMark.
         MdastStrikethroughExtension,
         MdastTaskListExtension,
-        MdastExportExtension,
+        MdastExtension,
         ...(withTable ? [MdastTableExtension] : []),
       ],
       name: '[root]',
@@ -91,6 +92,24 @@ function importExport(markdown: string, withTable = false): string {
 }
 
 describe('@lexical/mdast import/export', () => {
+  it('omits a node and its children when its import handler returns null', () => {
+    using editor = buildEditorFromExtensions(
+      configExtension(MdastExtension, {
+        importRules: [
+          {$import: () => null, type: 'strong'},
+          {
+            $import: (_node, context) => context.createText('lower-priority'),
+            type: 'strong',
+          },
+        ],
+      }),
+    );
+    editor.update(() => $convertFromMarkdownString('a **b** c'), {
+      discrete: true,
+    });
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('a  c');
+  });
+
   describe('round-trips simple constructs', () => {
     const cases: [string, string][] = [
       ['paragraph', 'Hello world'],
@@ -343,7 +362,7 @@ describe('@lexical/mdast import/export', () => {
         dependencies: [
           MdastCommonMarkExtension,
           MdastAutolinkLiteralExtension,
-          MdastExportExtension,
+          MdastExtension,
         ],
         name: '[root]',
       }),
@@ -446,8 +465,7 @@ describe('@lexical/mdast import/export', () => {
       defineExtension({
         dependencies: [
           MdastCommonMarkExtension,
-          MdastExportExtension,
-          configExtension(MdastImportExtension, {
+          configExtension(MdastExtension, {
             toMarkdownExtensions: [{bullet: '+'}],
           }),
         ],
@@ -679,8 +697,7 @@ describe('@lexical/mdast import/export', () => {
         defineExtension({
           dependencies: [
             MdastCommonMarkExtension,
-            MdastExportExtension,
-            configExtension(MdastImportExtension, {
+            configExtension(MdastExtension, {
               toMarkdownExtensions: [
                 {
                   handlers: {
@@ -729,8 +746,7 @@ describe('@lexical/mdast import/export', () => {
         defineExtension({
           dependencies: [
             MdastCommonMarkExtension,
-            MdastExportExtension,
-            configExtension(MdastImportExtension, {
+            configExtension(MdastExtension, {
               importRules: [
                 {
                   $import: (node, ctx) => {
@@ -788,7 +804,7 @@ describe('@lexical/mdast import/export', () => {
     // children (a paragraph) instead of corrupting or dropping content.
     using editor = buildEditorFromExtensions(
       defineExtension({
-        dependencies: [MdastHeadingExtension, MdastExportExtension],
+        dependencies: [MdastHeadingExtension, MdastExtension],
         name: '[root]',
       }),
     );
@@ -923,7 +939,7 @@ describe('@lexical/mdast import/export', () => {
         defineExtension({
           dependencies: [
             MdastCommonMarkExtension,
-            MdastExportExtension,
+            MdastExtension,
             MdastShadowRootQuoteExtension,
           ],
           name: '[root]',
@@ -1004,31 +1020,39 @@ describe('@lexical/mdast import/export', () => {
     });
   });
 
-  it('imports tab characters as TabNodes', () => {
-    using editor = createEditor();
-    editor.update(
-      () => {
-        $convertFromMarkdownString('foo\tbar');
-      },
-      {discrete: true},
-    );
-    editor.read(() => {
-      const paragraph = $assertNodeType(
-        $getRoot().getFirstChild(),
-        $isElementNode,
+  it.each(['foo\tbar', '**foo\tbar**'])(
+    'round-trips tabs with their text format: %s',
+    markdown => {
+      using editor = createEditor();
+      editor.update(
+        () => {
+          $convertFromMarkdownString(markdown);
+        },
+        {discrete: true},
       );
-      const types = paragraph.getChildren().map(n => n.getType());
-      expect(types).toEqual(['text', 'tab', 'text']);
-    });
-  });
+      editor.read(() => {
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isElementNode,
+        );
+        const types = paragraph.getChildren().map(n => n.getType());
+        expect(types).toEqual(['text', 'tab', 'text']);
+        for (const child of paragraph.getChildren()) {
+          expect($assertNodeType(child, $isTextNode).hasFormat('bold')).toBe(
+            markdown.startsWith('**'),
+          );
+        }
+        expect($convertToMarkdownString()).toBe(markdown);
+      });
+    },
+  );
 
   it('tolerates explicitly-undefined config keys in configExtension', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [
           MdastCommonMarkExtension,
-          MdastExportExtension,
-          configExtension(MdastImportExtension, {
+          configExtension(MdastExtension, {
             importRules: undefined,
             mdastExtensions: undefined,
           }),

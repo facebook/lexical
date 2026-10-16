@@ -31,6 +31,12 @@ export default class ActionIconWatchdog {
 
     // Listen to URL changes on the active tab and update the DevTools icon.
     browser.tabs.onUpdated.addListener(this.handleTabsUpdatedEvent.bind(this));
+
+    // Serialized editor state lives as long as this service worker, so drop a
+    // tab's contents once they can no longer describe anything on screen.
+    browser.tabs.onRemoved.addListener(tabId => {
+      this.extensionStore.getState().clearTab(tabId);
+    });
   }
 
   private async setIcon(
@@ -73,9 +79,15 @@ export default class ActionIconWatchdog {
 
   private handleTabsUpdatedEvent(
     tabId: number,
-    _changeInfo: unknown,
+    changeInfo: {status?: string},
     tab: Browser.tabs.Tab,
   ): void {
+    // A navigation tears down every editor the previous document had, so the
+    // state retained for it is stale the moment loading starts.
+    if (changeInfo.status === 'loading') {
+      this.extensionStore.getState().clearTab(tabId);
+    }
+
     this.checkAndHandleRestrictedPageIfSo(tab);
   }
 

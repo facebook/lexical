@@ -33,7 +33,14 @@ import {
   PASTE_TAG,
   type TextNode,
 } from 'lexical';
-import {type JSX, useCallback, useEffect, useMemo, useState} from 'react';
+import {
+  type JSX,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 export {
   AutoEmbedOption,
@@ -84,6 +91,22 @@ type LexicalAutoEmbedPluginProps<TEmbedConfig extends EmbedConfig> = {
   menuCommandPriority?: CommandListenerPriority;
 };
 
+type EmbedMatch<TEmbedConfig extends EmbedConfig> = {
+  embedConfig: TEmbedConfig;
+  key: NodeKey;
+  result: Parameters<TEmbedConfig['insertNode']>[1];
+  url: string;
+};
+
+function $getCurrentLink(key: NodeKey, url: string): LinkNode | null {
+  const linkNode = $getNodeByKey(key);
+  return $isLinkNode(linkNode) &&
+    linkNode.isAttached() &&
+    linkNode.getURL() === url
+    ? linkNode
+    : null;
+}
+
 /**
  * Watches for pasted AutoLink nodes that match any of the provided embed configurations (e.g., YouTube, Twitter URLs).
  * When a match is found, it shows a menu offering to replace the link with an embedded node.
@@ -121,17 +144,22 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
 }: LexicalAutoEmbedPluginProps<TEmbedConfig>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
-  const [nodeKey, setNodeKey] = useState<NodeKey | null>(null);
-  const [activeEmbedConfig, setActiveEmbedConfig] =
-    useState<TEmbedConfig | null>(null);
+  const [embedMatch, setEmbedMatch] = useState<EmbedMatch<TEmbedConfig> | null>(
+    null,
+  );
+  const nodeKey = embedMatch === null ? null : embedMatch.key;
+  const activeEmbedConfig = embedMatch === null ? null : embedMatch.embedConfig;
+  // Only the most recent paste may open the menu, even when an older
+  // asynchronous parseUrl result resolves after a newer one.
+  const latestCheckRef = useRef(0);
 
   const reset = useCallback(() => {
-    setNodeKey(null);
-    setActiveEmbedConfig(null);
+    setEmbedMatch(null);
   }, []);
 
   const checkIfLinkNodeIsEmbeddable = useCallback(
     async (key: NodeKey) => {
+      const check = ++latestCheckRef.current;
       const url = editor.read('latest', function () {
         const linkNode = $getNodeByKey(key);
         if ($isLinkNode(linkNode)) {
@@ -141,11 +169,23 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
       if (url === undefined) {
         return;
       }
-      for (const embedConfig of embedConfigs) {
-        const urlMatch = await Promise.resolve(embedConfig.parseUrl(url));
-        if (urlMatch != null) {
-          setActiveEmbedConfig(embedConfig);
-          setNodeKey(key);
+      // When several configs match, the last one wins, so check them from
+      // the end and stop at the first match to call parseUrl no more often
+      // than needed.
+      for (let i = embedConfigs.length - 1; i >= 0; i--) {
+        const embedConfig = embedConfigs[i];
+        const result = await Promise.resolve(embedConfig.parseUrl(url));
+        if (check !== latestCheckRef.current) {
+          return;
+        }
+        if (result != null) {
+          // Edits made while parseUrl was pending may not be committed yet
+          if (
+            editor.read('pending', () => $getCurrentLink(key, url) !== null)
+          ) {
+            setEmbedMatch({embedConfig, key, result, url});
+          }
+          return;
         }
       }
     },
@@ -211,37 +251,25 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
     );
   }, [editor, embedConfigs, onOpenEmbedModalForConfig]);
 
-  const embedLinkViaActiveEmbedConfig = useCallback(
-    async function () {
-      if (activeEmbedConfig != null && nodeKey != null) {
-        const linkNode = editor.read('latest', () => {
-          const node = $getNodeByKey(nodeKey);
-          if ($isLinkNode(node)) {
-            return node;
-          }
-          return null;
-        });
-
-        if ($isLinkNode(linkNode)) {
-          const result = await Promise.resolve(
-            activeEmbedConfig.parseUrl(linkNode.__url),
-          );
-          if (result != null) {
-            editor.update(() => {
-              if (!$getSelection()) {
-                linkNode.selectEnd();
-              }
-              activeEmbedConfig.insertNode(editor, result);
-              if (linkNode.isAttached()) {
-                linkNode.remove();
-              }
-            });
-          }
-        }
+  const embedLinkViaActiveEmbedConfig = useCallback(() => {
+    if (embedMatch == null) {
+      return;
+    }
+    const {embedConfig, key, result, url} = embedMatch;
+    editor.update(() => {
+      const linkNode = $getCurrentLink(key, url);
+      if (linkNode === null) {
+        return;
       }
-    },
-    [activeEmbedConfig, editor, nodeKey],
-  );
+      if (!$getSelection()) {
+        linkNode.selectEnd();
+      }
+      embedConfig.insertNode(editor, result);
+      if (linkNode.isAttached()) {
+        linkNode.remove();
+      }
+    });
+  }, [editor, embedMatch]);
 
   const options = useMemo(() => {
     return activeEmbedConfig != null && nodeKey != null

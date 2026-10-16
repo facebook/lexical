@@ -13,6 +13,7 @@ import type {
   KlassConstructor,
   LexicalEditor,
 } from './LexicalEditor';
+import type {GeneratedJSONFactory} from './LexicalGeneratedJSON';
 
 import invariant from '@lexical/internal/invariant';
 
@@ -20,6 +21,7 @@ import {
   $createParagraphNode,
   $getCommonAncestor,
   $getCommonAncestorResultBranchOrder,
+  $getSiblingCaret,
   $isDecoratorNode,
   $isElementNode,
   $isRootNode,
@@ -28,6 +30,13 @@ import {
   type ElementNode,
   type NODE_STATE_KEY,
 } from '.';
+import {
+  $collectSiblingNodes,
+  $detachNodeWithSelection,
+  $insertNodeBetween,
+  $insertSibling,
+  $selectAdjacentNode,
+} from './caret/LexicalCaretTree';
 import {DOMSlot} from './LexicalDOMSlot';
 import {
   $updateStateFromJSON,
@@ -37,13 +46,12 @@ import {
   type RequiredNodeStateConfig,
 } from './LexicalNodeState';
 import {CACHED_TEXT_SIZE_KEY} from './LexicalReconciler';
+import {type NodeSerializationSchema} from './LexicalSchema';
 import {
   $getSelection,
   $isNodeSelection,
   $isRangeSelection,
   $moveSelectionPointToEnd,
-  $selectionTouchesElement,
-  $updateElementSelectionOnCreateDeleteNode,
   type BaseSelection,
   moveSelectionPointToSibling,
   type RangeSelection,
@@ -60,13 +68,15 @@ import {
   getActiveEditorState,
 } from './LexicalUpdates';
 import {
+  $applyJSONSetters,
   $cloneWithProperties,
+  $exportNodeJSONOnce,
   $getCompositionKey,
+  $getEditorDOMRenderConfig,
   $getNodeByKey,
   $hasAncestor,
   $isRootOrShadowRoot,
   $maybeMoveChildrenSelectionToParent,
-  $removeFromParent,
   $setCompositionKey,
   $setNodeKey,
   $setSelection,
@@ -87,7 +97,18 @@ export type NodeMap = Map<NodeKey, LexicalNode>;
 export type SerializedLexicalNode = {
   /** The type string used by the Node class */
   type: string;
-  /** A numeric version for this schema, defaulting to 1, but not generally recommended for use */
+  /**
+   * @deprecated A numeric schema version. Nothing reads it — parsing ignores
+   * it entirely — and nothing should.
+   *
+   * `exportJSON()` still writes it as `1` so the output stays readable by
+   * older versions, which is the only reason it remains, and it stays required
+   * here so that the legacy form promises what it actually writes. The two
+   * places it is genuinely absent relax it themselves: a compact export omits
+   * it along with everything else parsing restores on its own (see
+   * {@link SerializedPartial}), and the parse shapes drop it outright (see
+   * {@link LexicalUpdateJSON}).
+   */
   version: number;
   /**
    * Any state persisted with the NodeState API that is not
@@ -141,8 +162,15 @@ export interface StaticNodeConfigValue<
   /**
    * An alternative to the static importJSON() method
    * that provides better type inference.
+   *
+   * A method signature rather than a function-typed property, so that the
+   * parameter is checked bivariantly: the JSON handed in may be the compact
+   * form, so a callback may take `SerializedPartial<SerializedLexicalNode>`,
+   * while one written before that form existed takes `SerializedLexicalNode`
+   * (`version` required) and has to stay assignable. A property's parameter
+   * is compared contravariantly and would refuse it.
    */
-  readonly $importJSON?: (serializedNode: SerializedLexicalNode) => T;
+  $importJSON?(serializedNode: SerializedPartial<SerializedLexicalNode>): T;
   /**
    * An alternative to the static importDOM() method
    */
@@ -197,15 +225,60 @@ export interface StaticNodeConfigValue<
    */
   readonly slots?: readonly string[];
   /**
-   * If specified, this must be the exact superclass of the node. It is not
-   * checked at compile time and it is provided automatically at runtime.
+   * The exact superclass of the node. Always name it.
    *
-   * You would want to specify this when you are extending a node that
-   * has non-trivial configuration in its $config such
-   * as required state. If you do not specify this, the inferred
-   * types for your node class might be missing some of that.
+   * The runtime fills it in from the prototype chain when it is left out, but
+   * the type system cannot: `extends` is what the composed serialization types
+   * follow from one config to the next. A node that omits it still contributes
+   * its own declarations — `LexicalSchemaInput` reads the config in hand — but
+   * the walk stops there, so every property the node inherits is missing from
+   * the type while the runtime keeps applying it. Where the superclass itself
+   * declares a `$config()` — which `TextNode`, `ElementNode` and
+   * `LineBreakNode` all do — omitting it is a compile error on the override
+   * rather than a silent loss.
+   *
+   * It must be the *exact* superclass. Nothing checks that: naming a class
+   * further up the chain silently skips everything in between, which drops
+   * those classes' schema fields, `$transform`, `slots` and `stateConfigs`
+   * from every walk.
    */
   readonly extends?: Klass<LexicalNode>;
+  /**
+   * EXPERIMENTAL
+   *
+   * A {@link SerializationSchema} describing this node's serialized JSON (the
+   * node-specific properties it adds over its parent's, not including
+   * `type`/`version`/`children` or node state). When provided it is the single
+   * source of truth for parsing those properties — a node's `updateFromJSON`
+   * can apply it — and, because the schema is introspectable, tooling such as
+   * `@lexical/fast-check` can use it to generate example serializations.
+   *
+   * It is named `json` rather than `schema` to avoid ambiguity with other kinds
+   * of node schema (e.g. a schema of allowed children).
+   */
+  readonly json?: NodeSerializationSchema<T>;
+  /**
+   * @internal
+   *
+   * Specialized `exportJSON`/`updateFromJSON` implementations compiled from
+   * this class's serialization schema by `scripts/generate-node-json.mjs`,
+   * which the schema-driven walks use in place of walking. Set by the core
+   * node classes
+   * that are code-generated; there is no reason to write it by hand.
+   *
+   * Carried here rather than looked up by node type, because a type does not
+   * identify a class: a subclass that declares no `$config` of its own inherits
+   * its ancestor's, type included, and may still override an accessor the
+   * generated code compiled away. Passing the code through the config makes the
+   * association the same one the schema itself has — the class whose `$config`
+   * named it — so the two cannot come apart.
+   *
+   * A factory rather than the functions themselves: registration calls it
+   * with the class's composed schema, and the generated code reads the lookup
+   * tables it needs off that schema, so a generated module carries no copy of
+   * a table and a subclass that inherits the code runs it over its own.
+   */
+  readonly generated?: GeneratedJSONFactory;
 }
 
 /**
@@ -280,6 +353,15 @@ export type AnyStaticNodeConfigValue = StaticNodeConfigValue<any, any>;
  * `extends`; a subclass adds nothing by hand.
  */
 export declare const STATIC_NODE_TYPE: unique symbol;
+
+/**
+ * The brand every {@link LexicalNode} carries in its type and nothing else
+ * does, for a check that has to say "a node" without relating a class to
+ * `LexicalNode` member by member; see `SetterReturn` in LexicalSchema.ts.
+ * Declared only — `instanceof LexicalNode` is what a runtime check uses.
+ * @internal
+ */
+export declare const LEXICAL_NODE_BRAND: unique symbol;
 
 /**
  * @internal
@@ -413,25 +495,212 @@ export type GetStaticNodeOwnConfig<T extends LexicalNode> =
     : never;
 
 /**
- * The most precise type we can infer for the JSON that will
- * be produced by T.exportJSON().
+ * What `T.exportJSON(compact)` returns for the *legacy* form, which is the one
+ * that writes every property. The compact form omits properties and so returns
+ * the {@link SerializedPartial} of this.
  *
- * Do not use this for the return type of T.exportJSON()! It must be
- * a more generic type to be compatible with subclassing.
+ * Matched against the whole overload set rather than read with `ReturnType`,
+ * which resolves an overloaded type to its *last* signature — the compact one,
+ * where nothing is promised. Both signatures have to appear in the pattern:
+ * matching only the first infers `never`, because an overloaded source is
+ * assignable to a single-signature target through its last overload.
+ *
+ * A node that declares one `exportJSON(compact?: boolean)` signature — a
+ * narrowing of both overloads at once, which therefore cannot distinguish
+ * them — satisfies both and matches too.
  */
+type LexicalFullExportJSON<T extends LexicalNode> = T['exportJSON'] extends {
+  (compact?: false): infer R;
+  (compact: boolean): unknown;
+}
+  ? R
+  : ReturnType<T['exportJSON']>;
+
 export type LexicalExportJSON<T extends LexicalNode> = Prettify<
-  Omit<ReturnType<T['exportJSON']>, 'type'> & {
+  Omit<LexicalFullExportJSON<T>, 'type' | 'version'> & {
     type: GetStaticNodeType<T>;
+    /**
+     * Written by `exportJSON()` so the output remains readable by older
+     * versions. Required, like {@link SerializedLexicalNode.version}: this is
+     * the legacy form, which writes it unconditionally. `exportJSON(true)`
+     * returns the {@link SerializedPartial} of this, where it is optional
+     * along with everything else parsing restores on its own.
+     */
+    version: number;
   } & NodeStateJSON<T>
 >;
 
 /**
  * Omit the children, type, and version properties from the given SerializedLexicalNode definition.
+ *
+ * This is the shape a hand-written `updateFromJSON` override reads: each
+ * property keeps its declared type. The parser behind a serialization schema
+ * faces wider input than that — see {@link LexicalParseJSON}.
  */
 export type LexicalUpdateJSON<T extends SerializedLexicalNode> = Omit<
   T,
   'children' | 'type' | 'version'
 >;
+
+/**
+ * The serialized form of a node as accepted by the parsing methods
+ * ({@link LexicalNode.importJSON} and {@link LexicalNode.updateFromJSON}).
+ *
+ * Only `type` identifies the node here: every node-specific property is made
+ * optional via `Partial`. Parsing is generally untrusted and must tolerate
+ * missing or out-of-domain values, so implementations are expected to
+ * substitute sensible defaults — see the {@link Parse} helpers such as
+ * {@link stringValue}, {@link numberValue}, and {@link enumValue}. This also
+ * enables a "compact" serialization variant in which any property left at its
+ * default is omitted.
+ *
+ * The deprecated `version` is relaxed here rather than on
+ * {@link SerializedLexicalNode}: a compact export omits it, but the legacy
+ * form always writes it, and making it optional at the base would take that
+ * promise away from the full output type as well.
+ */
+export type SerializedPartial<T extends SerializedLexicalNode> = Omit<
+  SerializedLexicalNode & Partial<T>,
+  '$slots' | 'children' | 'version'
+> & {
+  /**
+   * Slot values are parsed by the same rules, so they relax the same way —
+   * and, like the parse entry point, name the declared form too: naming only
+   * the indexed `SerializedPartialNode` meant a slot could not hold a value
+   * whose type is a declared interface, since TypeScript gives an interface no
+   * implicit index signature.
+   */
+  $slots?: Record<string, SerializedPartialNode | SerializedLexicalNode>;
+  /** Omitted by a compact export, like every other restorable property. */
+  version?: number;
+} & (T extends {children: readonly SerializedLexicalNode[]}
+    ? {
+        /**
+         * An element's children are nodes of the same document, written in the
+         * same form, so they relax too: `Partial<T>` alone would make the array
+         * optional while still promising that everything in it is fully
+         * serialized, which is untrue of every compact element but the leaves.
+         */
+        children?: SerializedPartialNode[];
+      }
+    : // Not an element. Intersecting with `unknown` leaves the type alone,
+      // rather than giving every node an optional `children` it never has.
+      unknown);
+
+/**
+ * A node of a compact document read without knowing its type, which is every
+ * child: a node cannot declare what kind of children it accepts, so any node
+ * may appear under any element and there is no type to name their properties
+ * from. The outer node of a {@link SerializedPartial} is refinable — you know
+ * what you asked for — and its children never are.
+ *
+ * So the framework properties are named and a node's own arrive as `unknown`,
+ * which a reader narrows by `type` as it would any untrusted JSON. `children`
+ * and `$slots` recurse, because a compact export applies to a subtree exactly
+ * as it does to its root: naming `SerializedPartial<SerializedLexicalNode>` for
+ * them instead would leave a nested element unable to carry the children it has.
+ *
+ * The index signature is what lets a document be *written*. Without it every
+ * node-specific property on a child is an excess-property error, so
+ * `editor.parseEditorState({root: {children: [{children: [{text: 'hi', type:
+ * 'text'}], …}], …}})` — a hand-authored initial state, the most ordinary
+ * literal a caller writes — does not compile, and neither does a fixture, a
+ * migration script, or `$parseSerializedNode` on a literal. Closing the type
+ * was tried for the misspelling it would catch; excess-property checking fires
+ * only on fresh literals, and everything arriving at load comes from
+ * `JSON.parse`, so it caught no misspelling that mattered and cost every
+ * correct property. Flow's counterpart is inexact for the same reason.
+ */
+export type SerializedPartialNode = {
+  /** The one property every node carries and a reader narrows by. */
+  type: string;
+  /** Omitted by a compact export, like every other restorable property. */
+  version?: number;
+  /** Node state, parsed by the same rules whatever the node turns out to be. */
+  [NODE_STATE_KEY]?: Record<string, unknown>;
+  /** A slot holds a node subtree, so it relaxes exactly as `children` do. */
+  $slots?: Record<string, SerializedPartialNode | SerializedLexicalNode>;
+  /** Present when the node is an element; the same form all the way down. */
+  children?: SerializedPartialNode[];
+  /** A node's own properties: there is no type here to name them from. */
+  [key: string]: unknown;
+};
+
+/**
+ * The least a value has to be for {@link $parseSerializedNode} to read it: a
+ * `type` to look the class up by, and subtrees of the same shape.
+ *
+ * A type alias rather than an `interface`, which is what lets it stand in for
+ * the internal shape the parse walks: TypeScript gives an alias an implicit
+ * index signature and an interface none, and the walk's own parameter carries
+ * one. An interface is still assignable *to* it, which is the direction that
+ * matters for a caller like `@lexical/clipboard`'s `BaseSerializedNode`.
+ *
+ * `version` is optional because the parser drops it — it is deprecated and
+ * nothing reads it — so requiring it described the caller rather than the
+ * parameter. That mattered because {@link SerializedPartialNode} carries an
+ * index signature, which an `interface` never satisfies, and
+ * {@link SerializedLexicalNode} requires `version`: a caller holding an
+ * interface with an optional `version`, such as `@lexical/clipboard`'s
+ * `BaseSerializedNode`, matched neither, and the mismatch repeated at every
+ * level because `children` and `$slots` recurse.
+ */
+export type ParsableSerializedNode = {
+  /** A slot holds a node subtree, so it relaxes exactly as `children` do. */
+  $slots?: Record<string, ParsableSerializedNode>;
+  /** Present when the node is an element; the same form all the way down. */
+  children?: ParsableSerializedNode[];
+  /** The one property every node carries and a reader narrows by. */
+  type: string;
+  /**
+   * @deprecated Dropped when parsing; see {@link SerializedLexicalNode.version}.
+   */
+  version?: number;
+};
+
+/**
+ * The shape {@link LexicalNode.updateFromJSON} accepts for a node whose
+ * serialized type is `S`, as a schema-driven parser faces it: every
+ * node-specific property optional (a compact export omits a default-valued
+ * one, and an older document predates a newer one) and `unknown`, with
+ * `type`, `version` and `children` dropped.
+ *
+ * `unknown`, because this is the untrusted-JSON boundary and a parser here is
+ * *total*: it validates every property against the schema's domain and
+ * substitutes a default for anything outside it. Typing a property as what it
+ * parses *to* would claim the caller has already done that validation, which
+ * is both untrue and narrower than what is accepted — a schema reads more than
+ * it writes wherever it has an alias table or reads a number spelled as a
+ * string, so `format: 'bold'` and `width: '640'` are valid input that the
+ * narrower type rejected. The property *names* stay, so a misspelled one is
+ * still an excess-property error. NodeState and slots keep their declared
+ * shapes: neither is a schema-declared property, and each is read structurally
+ * by the code that applies it rather than validated against a domain.
+ *
+ * A node that declares a serialization schema narrows both JSON methods to its
+ * own serialized type by declaration merging, which is the one thing a schema
+ * cannot do for it:
+ *
+ * ```ts
+ * export interface MarkNode {
+ *   exportJSON(compact?: false): SerializedMarkNode;
+ *   exportJSON(compact: boolean): SerializedPartial<SerializedMarkNode>;
+ *   updateFromJSON(serializedNode: LexicalParseJSON<SerializedMarkNode>): this;
+ * }
+ * ```
+ *
+ * A hand-written override that reads its properties typed uses
+ * {@link LexicalUpdateJSON} instead, as it always has.
+ */
+export type LexicalParseJSON<S extends SerializedLexicalNode> = Pick<
+  SerializedPartial<S>,
+  Extract<keyof SerializedPartial<S>, typeof NODE_STATE_KEY | '$slots'>
+> & {
+  [K in keyof Omit<
+    SerializedPartial<S>,
+    '$slots' | 'children' | 'type' | typeof NODE_STATE_KEY | 'version'
+  >]?: unknown;
+};
 
 /** @internal */
 export interface LexicalPrivateDOM {
@@ -532,20 +801,12 @@ export function $removeNode(
     nodeToRemove.selectPrevious();
   }
 
-  if (
-    $isRangeSelection(selection) &&
-    restoreSelection &&
-    !selectionMoved &&
-    // getIndexWithinParent is O(n) in the parent's child count, so skip it
-    // unless the update below can observe the index (#5194).
-    $selectionTouchesElement(selection, parent)
-  ) {
-    const index = nodeToRemove.getIndexWithinParent();
-    $removeFromParent(nodeToRemove);
-    $updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1);
-  } else {
-    $removeFromParent(nodeToRemove);
-  }
+  $detachNodeWithSelection(
+    nodeToRemove.getWritable(),
+    restoreSelection && !selectionMoved && $isRangeSelection(selection)
+      ? selection
+      : null,
+  );
 
   if (
     !preserveEmptyParent &&
@@ -716,6 +977,8 @@ export interface SlotChildNode {
 export class LexicalNode {
   /** @internal Allow us to look up the type including static props */
   declare ['constructor']: KlassConstructor<typeof LexicalNode>;
+  /** @internal See {@link LEXICAL_NODE_BRAND}. */
+  declare readonly [LEXICAL_NODE_BRAND]: true;
   /** @internal */
   // `__type` is assigned once, in the constructor, and is never valid to
   // mutate afterward.
@@ -1174,20 +1437,10 @@ export class LexicalNode {
    */
   getPreviousSiblings<T extends LexicalNode>(): T[];
   getPreviousSiblings(): LexicalNode[] {
-    const siblings: LexicalNode[] = [];
-    const parent = this.getParent();
-    if (parent === null) {
-      return siblings;
-    }
-    let node = parent.getFirstChild();
-    while (node !== null) {
-      if (node.is(this)) {
-        break;
-      }
-      siblings.push(node);
-      node = node.getNextSibling();
-    }
-    return siblings;
+    return $collectSiblingNodes(
+      this.getPreviousSibling(),
+      'previous',
+    ).reverse();
   }
 
   /**
@@ -1221,32 +1474,7 @@ export class LexicalNode {
    */
   getNextSiblings<T extends LexicalNode>(): T[];
   getNextSiblings(): LexicalNode[] {
-    const siblings: LexicalNode[] = [];
-    let node = this.getNextSibling();
-    while (node !== null) {
-      siblings.push(node);
-      node = node.getNextSibling();
-    }
-    return siblings;
-  }
-
-  /**
-   * @deprecated use {@link $getCommonAncestor}
-   *
-   * Returns the closest common ancestor of this node and the provided one or null
-   * if one cannot be found.
-   *
-   * @param node - the other node to find the common ancestor of.
-   */
-  getCommonAncestor<T extends ElementNode = ElementNode>(
-    node: LexicalNode,
-  ): T | null {
-    const a = $isElementNode(this) ? this : this.getParent();
-    const b = $isElementNode(node) ? node : node.getParent();
-    const result = a && b ? $getCommonAncestor(a, b) : null;
-    return result
-      ? (result.commonAncestor as T) /* TODO this type cast is a lie, but fixing it would break backwards compatibility */
-      : null;
+    return $collectSiblingNodes(this.getNextSibling(), 'next');
   }
 
   /**
@@ -1300,7 +1528,6 @@ export class LexicalNode {
     return $hasAncestor(targetNode, this);
   }
 
-  // TO-DO: this function can be simplified a lot
   /**
    * Returns a list of nodes that are between this node and
    * the target node in the EditorState.
@@ -1308,69 +1535,38 @@ export class LexicalNode {
    * @param targetNode - the node that marks the other end of the range of nodes to be returned.
    */
   getNodesBetween(targetNode: LexicalNode): LexicalNode[] {
-    const isBefore = this.isBefore(targetNode);
-    const nodes = [];
-    const visited = new Set();
-    let node: LexicalNode | this | null = this;
-    while (true) {
-      if (node === null) {
-        break;
-      }
-      const key = node.__key;
-      if (!visited.has(key)) {
-        visited.add(key);
+    const forward = this.isBefore(targetNode);
+    const nodes: LexicalNode[] = [];
+    let node: LexicalNode | null = this;
+    let entering = true;
+    let openElements = 0;
+    while (node !== null) {
+      // Only ancestors above the starting point lack an enter event. Count
+      // open elements to recognize their first visit without a visited Set.
+      if (entering || openElements === 0) {
         nodes.push(node);
       }
-      if (node === targetNode) {
+      if (node.is(targetNode)) {
         break;
       }
-      const child: LexicalNode | null = $isElementNode(node)
-        ? isBefore
-          ? node.getFirstChild()
-          : node.getLastChild()
-        : null;
+      if (!entering && openElements > 0) {
+        openElements--;
+      }
+      const child: LexicalNode | null =
+        entering && $isElementNode(node)
+          ? forward
+            ? node.getFirstChild()
+            : node.getLastChild()
+          : null;
       if (child !== null) {
-        node = child;
-        continue;
+        openElements++;
       }
-      const nextSibling: LexicalNode | null = isBefore
-        ? node.getNextSibling()
-        : node.getPreviousSibling();
-      if (nextSibling !== null) {
-        node = nextSibling;
-        continue;
-      }
-      const parent: LexicalNode | null = node.getParentOrThrow();
-      if (!visited.has(parent.__key)) {
-        nodes.push(parent);
-      }
-      if (parent === targetNode) {
-        break;
-      }
-      let parentSibling = null;
-      let ancestor: LexicalNode | null = parent;
-      do {
-        if (ancestor === null) {
-          invariant(false, 'getNodesBetween: ancestor is null');
-        }
-        parentSibling = isBefore
-          ? ancestor.getNextSibling()
-          : ancestor.getPreviousSibling();
-        ancestor = ancestor.getParent();
-        if (ancestor !== null) {
-          if (parentSibling === null && !visited.has(ancestor.__key)) {
-            nodes.push(ancestor);
-          }
-        } else {
-          break;
-        }
-      } while (parentSibling === null);
-      node = parentSibling;
+      const adjacent: LexicalNode | null =
+        child || (forward ? node.getNextSibling() : node.getPreviousSibling());
+      entering = adjacent !== null;
+      node = adjacent || node.getParent();
     }
-    if (!isBefore) {
-      nodes.reverse();
-    }
-    return nodes;
+    return forward ? nodes : nodes.reverse();
   }
 
   /**
@@ -1416,25 +1612,30 @@ export class LexicalNode {
     errorOnReadOnly();
     const editorState = getActiveEditorState();
     const editor = getActiveEditor();
-    const nodeMap = editorState._nodeMap;
     const key = this.__key;
-    // Ensure we get the latest node from pending state
-    const latestNode = this.getLatest();
     const cloneNotNeeded = editor._cloneNotNeeded;
-    const selection = $getSelection();
+    // Cast: a key always identifies the same node class.
+    const writableNode = cloneNotNeeded.get(key) as this | undefined;
+    const selection = editorState._selection;
     if (selection !== null) {
       selection.setCachedNodes(null);
     }
-    if (cloneNotNeeded.has(key)) {
+    if (writableNode !== undefined) {
       // Transforms clear the dirty node set on each iteration to keep track on newly dirty nodes
-      internalMarkNodeAsDirty(latestNode);
-      return latestNode;
+      internalMarkNodeAsDirty(writableNode);
+      return writableNode;
     }
+    const nodeMap = editorState._nodeMap;
+    // Cast: the nodeMap entry for this key is always the same node class.
+    const latestNode = nodeMap.get(key) as this | undefined;
+    invariant(
+      latestNode !== undefined,
+      'Lexical node does not exist in active editor state. Avoid using the same node references between nested closures from editorState.read/editor.update.',
+    );
     const mutableNode = $cloneWithProperties(latestNode);
-    cloneNotNeeded.add(key);
-    internalMarkNodeAsDirty(mutableNode);
-    // Update reference in node map
+    cloneNotNeeded.set(key, mutableNode);
     nodeMap.set(key, mutableNode);
+    internalMarkNodeAsDirty(mutableNode);
 
     return mutableNode;
   }
@@ -1523,7 +1724,7 @@ export class LexicalNode {
    *
    * */
   exportDOM(editor: LexicalEditor): DOMExportOutput {
-    const element = this.createDOM(editor._config, editor);
+    const element = $getEditorDOMRenderConfig(editor).$createDOM(this, editor);
     return {element};
   }
 
@@ -1531,27 +1732,75 @@ export class LexicalNode {
    * Controls how the this node is serialized to JSON. This is important for
    * copy and paste between Lexical editors sharing the same namespace. It's also important
    * if you're serializing to JSON for persistent storage somewhere.
-   * See [Serialization & Deserialization](https://lexical.dev/docs/concepts/serialization#lexical---html).
+   * See [Serialization & Deserialization](https://lexical.dev/docs/serialization/serialization#json).
    *
+   * The base implementation writes every property the node's schema declares
+   * (its own and those it inherits), reading each through its getter —
+   * `get<Prop>` by default, or the name recorded with `withAccessors`. A getter
+   * that returns `undefined` omits its property. Override this only for output
+   * a schema can not describe, and call `super.exportJSON(compact)` when you do.
+   *
+   * **This may serialize the instance as-is, without resolving the latest
+   * version.** A property declared with {@link withField} is read straight off
+   * the node, which is the optimization the serialization walk is built on —
+   * every node the walk reaches comes from the EditorState's node map and is
+   * already current, so it resolves nothing per node.
+   *
+   * So on a reference that a `getWritable()` (any `set<Prop>`) has since
+   * superseded, this writes pre-mutation values. Which properties do is not
+   * something to rely on: a property whose accessor a subclass overrode still
+   * goes through that accessor and resolves the latest, so one node can write
+   * a current `text` beside a stale `style`. Call
+   * `node.getLatest().exportJSON()` whenever you hold such a reference rather
+   * than reasoning about which properties resolve.
+   *
+   * This is a breaking change. Every property previously went through an
+   * accessor, and every accessor resolves `getLatest()`, so a stale reference
+   * exported current values.
+   *
+   * @param compact Write the compact form: omit a property the parser derives
+   *   rather than reads, one whose value is the schema default parsing would
+   *   restore, and the deprecated `version`. The two forms describe the same
+   *   document. A node that overrides this and ignores the flag simply keeps
+   *   writing the full form, which still parses.
    * */
-  exportJSON(): SerializedLexicalNode {
+  exportJSON(compact?: false): SerializedLexicalNode;
+  /**
+   * The compact form omits properties, so what it returns is the *partial*
+   * serialized type — every node-specific property optional — rather than the
+   * full one. Passing a `boolean` whose value is not statically known selects
+   * this overload too, which is right: neither form can be promised then.
+   *
+   * @see {@link SerializedPartial}
+   */
+  exportJSON(compact: boolean): SerializedPartial<SerializedLexicalNode>;
+  exportJSON(compact = false): SerializedPartial<SerializedLexicalNode> {
+    // One resolution of the class record for both: `$generatedExportJSON`
+    // returning `undefined` used to send the walk back to look the same class
+    // up again, a second WeakMap read and a second DEV field validation per
+    // node per export — on the path every node without generated code takes.
+    const json = $exportNodeJSONOnce(this, compact);
+    // Neither a generated exporter nor the walk writes NodeState: what a node
+    // carries is not known when code is generated, and the walk's table is
+    // compiled from the schema alone. Appended here so the two paths cannot
+    // disagree about how it is written.
     const state = this.__state ? this.__state.toJSON() : undefined;
-    return {
-      type: this.__type,
-      version: 1,
-      ...state,
-    };
+    if (state !== undefined) {
+      Object.assign(json, state);
+    }
+    return json as unknown as SerializedLexicalNode;
   }
 
   /**
    * Controls how the this node is deserialized from JSON. This is usually boilerplate,
    * but provides an abstraction between the node implementation and serialized interface that can
    * be important if you ever make breaking changes to a node schema (by adding or removing properties).
-   * See [Serialization & Deserialization](https://lexical.dev/docs/concepts/serialization#lexical---html).
+   * See [Serialization & Deserialization](https://lexical.dev/docs/serialization/serialization#json).
    *
    * */
   static importJSON(
-    _serializedNode: SerializedLexicalNode & Record<string, unknown>,
+    _serializedNode: SerializedPartial<SerializedLexicalNode> &
+      Record<string, unknown>,
   ): LexicalNode {
     invariant(
       false,
@@ -1587,11 +1836,21 @@ export class LexicalNode {
    *   }
    * }
    * ```
-   **/
+   *
+   * The whole schema is applied, so a property the JSON omits is set to
+   * its schema default rather than left as it is — that is what lets the
+   * compact form omit a default-valued property and have parsing restore it.
+   * (A flat NodeState is the exception: it is applied only when present.) Pass
+   * the node's complete serialized form unless you mean to reset what you
+   * leave out.
+   */
   updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
+    serializedNode: LexicalParseJSON<SerializedLexicalNode>,
   ): this {
-    return $updateStateFromJSON(this, serializedNode);
+    return $applyJSONSetters(
+      $updateStateFromJSON(this, serializedNode),
+      serializedNode,
+    );
   }
 
   /**
@@ -1666,55 +1925,21 @@ export class LexicalNode {
     // close a cycle through a slot up-link (reverse of $setSlot's guard).
     $errorOnSlotCycleChild(writableParent, writableReplaceWith);
     const size = writableParent.__size;
-    // Capture replaceWith's old parent / index before removeFromParent so the
-    // cloned selection's element offsets in that old parent can be adjusted
-    // afterwards. See #6031.
+    // Detaching repairs the cloned selection's old-parent offsets (#6031).
     const replaceWithOldParent = writableReplaceWith.getParent();
-    // getIndexWithinParent is O(n) in that parent's child count and the index
-    // is only read by the update below, which is a no-op unless a selection
-    // point sits on replaceWithOldParent itself (#5194).
-    const restoreInReplaceWithOldParent =
-      replaceWithOldParent !== null &&
-      $isRangeSelection(selection) &&
-      $selectionTouchesElement(selection, replaceWithOldParent);
-    const replaceWithOldIndex = restoreInReplaceWithOldParent
-      ? writableReplaceWith.getIndexWithinParent()
-      : -1;
-    $removeFromParent(writableReplaceWith);
-    if (
-      restoreInReplaceWithOldParent &&
-      replaceWithOldParent !== null &&
-      $isRangeSelection(selection)
-    ) {
-      $updateElementSelectionOnCreateDeleteNode(
-        selection,
-        replaceWithOldParent,
-        replaceWithOldIndex,
-        -1,
-      );
-    }
+    $detachNodeWithSelection(
+      writableReplaceWith,
+      $isRangeSelection(selection) ? selection : null,
+    );
     const prevSibling = self.getPreviousSibling();
     const nextSibling = self.getNextSibling();
-    const prevKey = self.__prev;
-    const nextKey = self.__next;
-    const parentKey = self.__parent;
     $removeNode(self, false, true);
-
-    if (prevSibling === null) {
-      writableParent.__first = key;
-    } else {
-      const writablePrevSibling = prevSibling.getWritable();
-      writablePrevSibling.__next = key;
-    }
-    writableReplaceWith.__prev = prevKey;
-    if (nextSibling === null) {
-      writableParent.__last = key;
-    } else {
-      const writableNextSibling = nextSibling.getWritable();
-      writableNextSibling.__prev = key;
-    }
-    writableReplaceWith.__next = nextKey;
-    writableReplaceWith.__parent = parentKey;
+    $insertNodeBetween(
+      writableParent,
+      writableReplaceWith,
+      prevSibling && prevSibling.getWritable(),
+      nextSibling && nextSibling.getWritable(),
+    );
     // `size` was read before replaceWith was detached. When replaceWith was
     // already a child of this same parent, two children collapse into one, so
     // the restored size must account for the node that is not coming back.
@@ -1740,35 +1965,19 @@ export class LexicalNode {
     }
     if ($isRangeSelection(selection)) {
       $setSelection(selection);
-      const anchor = selection.anchor;
-      const focus = selection.focus;
-      // For an element-anchored point on `this` with includeChildren, the
-      // transferred children land at offsets [prevSize ... prevSize + N) in
-      // writableReplaceWith, so the equivalent point is at
-      // `prevSize + originalOffset`. Without this remap the caller (e.g.
-      // `$setBlocksType`) has to re-anchor afterwards from a stale clone.
-      // For non-element points or !includeChildren the children are gone, so
-      // fall back to the previous "move to end" behavior.
-      if (anchor.key === toReplaceKey) {
-        if (includeChildren && anchor.type === 'element') {
-          anchor.set(
-            writableReplaceWith.__key,
-            prevSizeBeforeChildrenTransfer + anchor.offset,
-            'element',
-          );
-        } else {
-          $moveSelectionPointToEnd(anchor, writableReplaceWith);
-        }
-      }
-      if (focus.key === toReplaceKey) {
-        if (includeChildren && focus.type === 'element') {
-          focus.set(
-            writableReplaceWith.__key,
-            prevSizeBeforeChildrenTransfer + focus.offset,
-            'element',
-          );
-        } else {
-          $moveSelectionPointToEnd(focus, writableReplaceWith);
+      // Children transfer maps element offsets into the replacement's existing
+      // children. Other points retain replace's move-to-end behavior.
+      for (const point of [selection.anchor, selection.focus]) {
+        if (point.key === toReplaceKey) {
+          if (includeChildren && point.type === 'element') {
+            point.set(
+              writableReplaceWith.__key,
+              prevSizeBeforeChildrenTransfer + point.offset,
+              'element',
+            );
+          } else {
+            $moveSelectionPointToEnd(point, writableReplaceWith);
+          }
         }
       }
     }
@@ -1786,103 +1995,7 @@ export class LexicalNode {
    * selection to the appropriate place after the operation is complete.
    * */
   insertAfter(nodeToInsert: LexicalNode, restoreSelection = true): LexicalNode {
-    errorOnReadOnly();
-    errorOnInsertTextNodeOnRoot(this, nodeToInsert);
-    const writableSelf = this.getWritable();
-    const writableNodeToInsert = nodeToInsert.getWritable();
-    // Before any mutation: becoming a sibling of this node must not close a
-    // cycle through a slot up-link (reverse of $setSlot's guard).
-    $errorOnSlotCycleChild(this.getParentOrThrow(), writableNodeToInsert);
-    const oldParent = writableNodeToInsert.getParent();
-    const selection = $getSelection();
-    let elementAnchorSelectionOnNode = false;
-    let elementFocusSelectionOnNode = false;
-    // nodeToInsert's index in oldParent, or -1 when it was never computed
-    // because nothing below can observe it.
-    let oldIndex = -1;
-    // getIndexWithinParent walks oldParent's children from the first one, so
-    // calling it unconditionally makes a bulk insert quadratic (#5194). The
-    // index is only ever read through the selection: the comparisons below
-    // arm a flag only for a point whose key is oldParentKey, and
-    // $updateElementSelectionOnCreateDeleteNode is a no-op under the same
-    // condition $selectionTouchesElement tests. restoreSelection gates the
-    // block because the flags are read only under it, further down.
-    if (
-      oldParent !== null &&
-      restoreSelection &&
-      $isRangeSelection(selection) &&
-      $selectionTouchesElement(selection, oldParent)
-    ) {
-      const oldParentKey = oldParent.__key;
-      const anchor = selection.anchor;
-      const focus = selection.focus;
-      oldIndex = nodeToInsert.getIndexWithinParent();
-      elementAnchorSelectionOnNode =
-        anchor.type === 'element' &&
-        anchor.key === oldParentKey &&
-        anchor.offset === oldIndex + 1;
-      elementFocusSelectionOnNode =
-        focus.type === 'element' &&
-        focus.key === oldParentKey &&
-        focus.offset === oldIndex + 1;
-    }
-    $removeFromParent(writableNodeToInsert);
-    // Adjust element-anchored offsets in oldParent to track its reduced
-    // child count. The boolean flags captured above
-    // (elementAnchorSelectionOnNode / elementFocusSelectionOnNode) recorded
-    // whether anchor/focus sat at oldIndex+1 before this removal; the
-    // post-insertion block below uses them to re-anchor onto the moved
-    // node in its new parent. See #6031.
-    if (oldIndex !== -1 && oldParent !== null && $isRangeSelection(selection)) {
-      $updateElementSelectionOnCreateDeleteNode(
-        selection,
-        oldParent,
-        oldIndex,
-        -1,
-      );
-    }
-    const nextSibling = this.getNextSibling();
-    const writableParent = this.getParentOrThrow().getWritable();
-    const insertKey = writableNodeToInsert.__key;
-    const nextKey = writableSelf.__next;
-    if (nextSibling === null) {
-      writableParent.__last = insertKey;
-    } else {
-      const writableNextSibling = nextSibling.getWritable();
-      writableNextSibling.__prev = insertKey;
-    }
-    writableParent.__size++;
-    writableSelf.__next = insertKey;
-    writableNodeToInsert.__next = nextKey;
-    writableNodeToInsert.__prev = writableSelf.__key;
-    writableNodeToInsert.__parent = writableSelf.__parent;
-    if (restoreSelection && $isRangeSelection(selection)) {
-      const writableParentKey = writableParent.__key;
-      // Same reasoning as the oldParent block above, plus one more consumer:
-      // when the node was moved out of a different parent, the flags re-anchor
-      // the selection onto it here (#6031) and need the index even though no
-      // selection point is on writableParent yet. Check the flags as well as
-      // the points before paying for the sibling walk.
-      if (
-        elementAnchorSelectionOnNode ||
-        elementFocusSelectionOnNode ||
-        $selectionTouchesElement(selection, writableParent)
-      ) {
-        const index = this.getIndexWithinParent();
-        $updateElementSelectionOnCreateDeleteNode(
-          selection,
-          writableParent,
-          index + 1,
-        );
-        if (elementAnchorSelectionOnNode) {
-          selection.anchor.set(writableParentKey, index + 2, 'element');
-        }
-        if (elementFocusSelectionOnNode) {
-          selection.focus.set(writableParentKey, index + 2, 'element');
-        }
-      }
-    }
-    return nodeToInsert;
+    return $insertSibling(this, 'next', nodeToInsert, restoreSelection);
   }
 
   /**
@@ -1896,75 +2009,7 @@ export class LexicalNode {
     nodeToInsert: LexicalNode,
     restoreSelection = true,
   ): LexicalNode {
-    errorOnReadOnly();
-    errorOnInsertTextNodeOnRoot(this, nodeToInsert);
-    const writableSelf = this.getWritable();
-    const writableNodeToInsert = nodeToInsert.getWritable();
-    // Before any mutation: becoming a sibling of this node must not close a
-    // cycle through a slot up-link (reverse of $setSlot's guard).
-    $errorOnSlotCycleChild(this.getParentOrThrow(), writableNodeToInsert);
-    const insertKey = writableNodeToInsert.__key;
-    const selection = $getSelection();
-    // Capture nodeToInsert's old parent / index before detaching so the
-    // selection's element offsets in that old parent can be adjusted
-    // afterwards. See #6031.
-    const insertOldParent = writableNodeToInsert.getParent();
-    // getIndexWithinParent walks insertOldParent's children from the first
-    // one, so calling it unconditionally makes a bulk insert quadratic
-    // (#5194). The index is only read by the update below, which is a no-op
-    // unless a selection point sits on insertOldParent itself.
-    const restoreInOldParent =
-      insertOldParent !== null &&
-      restoreSelection &&
-      $isRangeSelection(selection) &&
-      $selectionTouchesElement(selection, insertOldParent);
-    const insertOldIndex = restoreInOldParent
-      ? writableNodeToInsert.getIndexWithinParent()
-      : -1;
-    $removeFromParent(writableNodeToInsert);
-    if (
-      restoreInOldParent &&
-      insertOldParent !== null &&
-      $isRangeSelection(selection)
-    ) {
-      $updateElementSelectionOnCreateDeleteNode(
-        selection,
-        insertOldParent,
-        insertOldIndex,
-        -1,
-      );
-    }
-    const prevSibling = this.getPreviousSibling();
-    const writableParent = this.getParentOrThrow().getWritable();
-    const prevKey = writableSelf.__prev;
-    // Same reasoning as the insertOldParent block above. Unlike insertAfter
-    // there is no #6031 re-anchor here, so the points are the only consumer.
-    // This node's index before the splice is where nodeToInsert lands, so it
-    // has to be read now rather than after the pointers are rewired.
-    const restoreInNewParent =
-      restoreSelection &&
-      $isRangeSelection(selection) &&
-      $selectionTouchesElement(selection, writableParent);
-    const index = restoreInNewParent ? this.getIndexWithinParent() : -1;
-    if (prevSibling === null) {
-      writableParent.__first = insertKey;
-    } else {
-      const writablePrevSibling = prevSibling.getWritable();
-      writablePrevSibling.__next = insertKey;
-    }
-    writableParent.__size++;
-    writableSelf.__prev = insertKey;
-    writableNodeToInsert.__prev = prevKey;
-    writableNodeToInsert.__next = writableSelf.__key;
-    writableNodeToInsert.__parent = writableSelf.__parent;
-    if (restoreInNewParent && $isRangeSelection(selection)) {
-      $updateElementSelectionOnCreateDeleteNode(
-        selection,
-        writableParent,
-        index,
-      );
-    }
-    return nodeToInsert;
+    return $insertSibling(this, 'previous', nodeToInsert, restoreSelection);
   }
 
   /**
@@ -2000,26 +2045,11 @@ export class LexicalNode {
    * @param focusOffset -  The focus offset for selection
    * */
   selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection {
-    errorOnReadOnly();
-    // Slot value root has __parent === null, so the regular sibling walk
-    // would throw via getParentOrThrow. Defer to the host so the cursor
-    // moves past the slot-bearing host's previous sibling.
-    const slotHost = $getSlotHost(this);
-    if (slotHost !== null) {
-      return slotHost.selectPrevious(anchorOffset, focusOffset);
-    }
-    const prevSibling = this.getPreviousSibling();
-    const parent = this.getParentOrThrow();
-    if (prevSibling === null) {
-      return parent.select(0, 0);
-    }
-    if ($isElementNode(prevSibling)) {
-      return prevSibling.select();
-    } else if (!$isTextNode(prevSibling)) {
-      const index = prevSibling.getIndexWithinParent() + 1;
-      return parent.select(index, index);
-    }
-    return prevSibling.select(anchorOffset, focusOffset);
+    return $selectAdjacentNode(
+      $getSiblingCaret(this, 'previous'),
+      anchorOffset,
+      focusOffset,
+    );
   }
 
   /**
@@ -2029,26 +2059,11 @@ export class LexicalNode {
    * @param focusOffset -  The focus offset for selection
    * */
   selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection {
-    errorOnReadOnly();
-    // Slot value root has __parent === null, so the regular sibling walk
-    // would throw via getParentOrThrow. Defer to the host so the cursor
-    // moves past the slot-bearing host's next sibling.
-    const slotHost = $getSlotHost(this);
-    if (slotHost !== null) {
-      return slotHost.selectNext(anchorOffset, focusOffset);
-    }
-    const nextSibling = this.getNextSibling();
-    const parent = this.getParentOrThrow();
-    if (nextSibling === null) {
-      return parent.select();
-    }
-    if ($isElementNode(nextSibling)) {
-      return nextSibling.select(0, 0);
-    } else if (!$isTextNode(nextSibling)) {
-      const index = nextSibling.getIndexWithinParent();
-      return parent.select(index, index);
-    }
-    return nextSibling.select(anchorOffset, focusOffset);
+    return $selectAdjacentNode(
+      $getSiblingCaret(this, 'next'),
+      anchorOffset,
+      focusOffset,
+    );
   }
 
   /**

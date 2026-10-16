@@ -5,8 +5,8 @@ In addition to using the Lexical React plugins offered by the core library, you 
 Lexical's React plugin interface is simple - just create a React component and add it as a child of your LexicalComposer component:
 
 ```jsx
- <LexicalComposer>
-    <MyLexicalPlugin>
+ <LexicalComposer initialConfig={initialConfig}>
+    <MyLexicalPlugin />
  </LexicalComposer>
 ```
 
@@ -21,7 +21,7 @@ const initialConfig = {
 
 ```jsx
  <LexicalComposer initialConfig={initialConfig}>
-    <MyLexicalPlugin>
+    <MyLexicalPlugin />
  </LexicalComposer>
 ```
 

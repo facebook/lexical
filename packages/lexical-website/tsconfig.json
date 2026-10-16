@@ -31,6 +31,9 @@
       "@lexical/compiler/PureAnnotations": [
         "../lexical-compiler/src/PureAnnotations.ts"
       ],
+      "@lexical/compiler/SchemaJsonCodegen": [
+        "../lexical-compiler/src/SchemaJsonCodegen.ts"
+      ],
       "@lexical/compiler/SubpathImports": [
         "../lexical-compiler/src/SubpathImports.ts"
       ],
@@ -121,12 +124,25 @@
       "@lexical/extension/watchedSignal": [
         "../lexical-extension/src/watchedSignal.ts"
       ],
+      "@lexical/fast-check": ["../lexical-fast-check/src/index.ts"],
       "@lexical/file": ["../lexical-file/src/index.ts"],
       "@lexical/hashtag": ["../lexical-hashtag/src/index.ts"],
       "@lexical/headless": ["../lexical-headless/src/index.ts"],
       "@lexical/headless/dom": ["../lexical-headless/src/dom.ts"],
+      "@lexical/headless/HeadlessExtension": [
+        "../lexical-headless/src/HeadlessExtension.ts"
+      ],
       "@lexical/history": ["../lexical-history/src/index.ts"],
       "@lexical/html": ["../lexical-html/src/index.ts"],
+      "@lexical/internal/createDevError": [
+        "../lexical-internal/src/createDevError.ts"
+      ],
+      "@lexical/internal/createError": [
+        "../lexical-internal/src/createError.ts"
+      ],
+      "@lexical/internal/createProdError": [
+        "../lexical-internal/src/createProdError.ts"
+      ],
       "@lexical/internal/devInvariant": [
         "../lexical-internal/src/devInvariant.ts"
       ],

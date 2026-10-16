@@ -8,9 +8,9 @@ configurations.
 
 ### Workspaces
 
-The top-level `package.json` uses
-[pnpm workspaces](https://pnpm.io/workspaces) to
-configure the monorepo. This mostly means that all packages share a
+The monorepo is configured with
+[pnpm workspaces](https://pnpm.io/workspaces); the set of workspace
+packages is declared in the top-level `pnpm-workspace.yaml`. This mostly means that all packages share a
 top-level `pnpm-lock.yaml` and `pnpm -C {package} run {command}` is often
 used to run a command from a nested package's package.json.
 
@@ -24,9 +24,6 @@ Some packages in the monorepo do not get published to npm, for example:
   [playground.lexical.dev](https://playground.lexical.dev/) demo site
 * `packages/lexical-website` - the [lexical.dev](https://lexical.dev/)
   docusaurus website that you may even be reading right now
-* `packages/lexical-test-utils` - `@lexical/test-utils`, private React
-  testing helpers shared across package unit tests
-
 Internal runtime code shared by more than one package lives in
 `packages/lexical-internal` (`@lexical/internal`). Unlike the others above
 it **is** published, but only so its source resolves through normal package
@@ -260,6 +257,110 @@ Run the unit tests
 
 Run eslint
 
+### pnpm run generate-node-json
+
+Regenerate the specialized JSON serialization code for the built-in node
+classes. A node's [serialization schema](/docs/serialization/#declarative-serialization-schemas-with-config)
+states everything about a serialized property ahead of time — which accessor
+or field it uses, what its default is, what its domain admits — so the
+generic walk over that schema can be compiled into straight-line code. This
+script does that compiling; the output is checked in.
+
+It writes one module per package, beside the nodes it serializes:
+
+| Module | Classes |
+| --- | --- |
+| `packages/lexical/src/LexicalGeneratedJSON.ts` | ElementNode, TextNode, ParagraphNode, LineBreakNode, TabNode |
+| `packages/lexical-rich-text/src/LexicalRichTextGeneratedJSON.ts` | HeadingNode, QuoteNode |
+| `packages/lexical-link/src/LexicalLinkGeneratedJSON.ts` | LinkNode, AutoLinkNode |
+| `packages/lexical-mark/src/LexicalMarkGeneratedJSON.ts` | MarkNode |
+| `packages/lexical-list/src/LexicalListGeneratedJSON.ts` | ListNode, ListItemNode |
+| `packages/lexical-table/src/LexicalTableGeneratedJSON.ts` | TableNode, TableRowNode, TableCellNode |
+| `packages/lexical-code-core/src/LexicalCodeCoreGeneratedJSON.ts` | CodeNode, CodeHighlightNode |
+| `packages/lexical-react/src/shared/LexicalReactGeneratedJSON.ts` | DecoratorBlockNode |
+
+Each class receives its own generated code through its `$config`'s
+`generated` property, so nothing has to match code to class by type string at
+runtime. What the property holds is a factory: registration calls it with the
+class's composed schema, and the generated code reads the lookup tables it
+needs (`getterTable`, `setterTable`, `aliasedValue`'s) off that schema through
+`getterTableOf`, `setterTableOf` and `aliasTableOf`, so a generated module
+carries no copy of a table and nothing about a table's contents is written at
+build time — only its type, so the field a value is assigned to is still
+checked. A subclass inherits the code along with the schema when its compiled
+accessor tables are the ones the code was generated from — checked entry for
+entry at registration — and runs it over its own schema, while one that
+overrides an accessor a field stands in for, or declares a serialized property
+of its own, resolves differently and takes the schema-driven walk instead.
+Generated exporters read `type` off the node for the same reason.
+
+Three things are worth knowing before touching it:
+
+- **The output is verified, not trusted.** The import direction is the
+  untrusted-JSON boundary, so every generated parser is run against the schema
+  it was compiled from over a corpus drawn from that schema plus a fixed set of
+  hostile values (`'__proto__'`, `'toString'`, `'1e999'`, …). A property whose
+  schema cannot be compiled faithfully takes its class out of the import half
+  rather than shipping a parser that disagrees with the walk — the script says
+  so on stdout when it happens.
+- **A stale checkout fails the tests.** `LexicalGeneratedJSON.test.ts`
+  regenerates into a temporary directory and compares every file byte for
+  byte, and separately asserts that each generated exporter agrees with the
+  schema-driven walk for both the legacy and compact forms. Change a schema
+  without rerunning this script and that test fails.
+- **Two lists, deliberately.** The script runs in two phases, because reading
+  the schemas means importing the packages and each package imports the file
+  the script writes for it. Phase one replaces every output with a valid
+  do-nothing stub from the static `MANIFEST` in
+  `scripts/shared/generateNodeJSONManifest.mjs` so the imports always succeed;
+  phase two re-enters under `tsx` and writes the real thing from `PACKAGES` in
+  `scripts/shared/generateNodeJSON.mjs`, which is also what the drift test
+  runs in-process. Adding a class means editing both lists, and the generation
+  fails loudly if they disagree.
+
+The compact form compares each property against its default. A primitive
+default is a literal; a reference-typed default has no literal a value could
+be `===`, so it gets the structural test the schema's own equality reduces to
+where that can be stated — MarkNode's `ids`, whose default is an empty array,
+becomes a length test — and every emitted comparison is verified against that
+equality over a corpus, the way a parse is. A default the generator cannot
+state that way (an object, a non-empty array, a non-finite number) takes the
+class out of the compact half only: the script says so on stdout and the other
+forms are generated as usual. A class that carries flat NodeState is generated
+like any other; the walk applies the state before handing the node to the
+generated parser, the mirror of how export appends it after the generated
+literal.
+
+`afterCloneFrom` is generated too, and is the one direction whose fallback is
+not the walk. A schema field is where a property is *stored*, so every class
+that declares one gets an `afterCloneFrom` synthesized at registration —
+generated straight-line code when the class has some, and otherwise a loop over
+the field names — copying the fields that class's own `$config` declared and
+delegating the rest through `super`, which is why the emitted function covers
+one class's own fields and nothing above it. A field an ancestor declares too
+is left to the ancestor, whose method has already assigned it: re-declaring an
+inherited property changes how it is serialized, not where it is stored, so a
+class that only re-declares gets no method at all — `TabNode`, which restates
+`TextNode`'s `text`, `detail` and `mode`, is the in-tree case and simply
+inherits `TextNode`'s. Both accessor directions are read
+for a field name, and the declared field is used rather than the one
+`resolveGetterAccessor` resolves to: an override changes how a property is
+serialized, not where it lives. A class that writes its own `afterCloneFrom` is
+left alone and owns all of its properties, which is how `ElementNode` keeps
+carrying `__first`/`__last`/`__size` and its slot bookkeeping; so is a property
+declared through accessor methods on both sides, which names no field for
+anything to copy. No in-tree node is in that second position — a property held
+in a field says so with `setter: {field, method}` and stays derived, as
+`MarkNode`'s `ids` does — so the boilerplate that remains is `ElementNode`'s
+and `CodeNode`'s, and each of those calls the generated `afterClone<Class>`
+for its schema half and writes only the fields no schema describes.
+`ownSchemaFields` in `LexicalUtils.ts` is the single definition of that field
+list, called by both the generator and the synthesized fallback.
+
+The schema-to-JavaScript compiler itself lives in `@lexical/compiler`'s
+`SchemaJsonCodegen` entry point, so it is testable independently of the
+generator that drives it.
+
 ## Scripts for release managers
 
 ### pnpm run extract-codes
@@ -283,12 +384,15 @@ Increment the monorepo version. The `-i` argument must be one of
 `minor` | `patch` | `prerelease`.
 
 The postversion script will:
-- Create a local `${npm_package_version}__release` branch
+- Create a local `${CHANNEL}__release` branch (the version-named
+  `${npm_package_version}__release` branch is only a remote push target,
+  and only when the channel is not `nightly`)
 - `pnpm run update-version` to update example and sub-package monorepo dependencies
 - `pnpm install` to update the pnpm-lock.yaml
 - `pnpm run update-packages` to update other generated config
-- `pnpm run extract-codes` to extract the error codes
-- `pnpm run update-changelog` to update the changelog (if it's not a prerelease)
+- `pnpm run extract-codes` to extract the error codes and
+  `pnpm run update-changelog` to update the changelog (both only when
+  `CHANNEL` is `latest`)
 - Create a version commit and tag from the branch
 
 This is typically executed through the `version.yml` GitHub Workflow which

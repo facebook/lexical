@@ -46,6 +46,11 @@ import {parserPluginsFor} from './parserPlugins.mjs';
  * @type {ReadonlyArray<string>}
  */
 export const PURE_FACTORY_FUNCTIONS = [
+  // The combinators that build a node's serialization schema at module
+  // scope, nested inside each other and inside createState.
+  'aliasedValue',
+  'arrayValue',
+  'booleanValue',
   'configExtension',
   'createCommand',
   'createContextState',
@@ -59,8 +64,23 @@ export const PURE_FACTORY_FUNCTIONS = [
   'defineImportRule',
   'defineOverlayRules',
   'domOverride',
+  'enumValue',
+  // @lexical/react publishes each module as its own entry, so this is public
+  // and callable by name from another package even though it is @internal.
+  'newContext',
+  'nodeSchema',
+  'nullable',
+  'numberValue',
+  'objectValue',
+  'optional',
+  'rawValue',
   'safeCast',
+  'stringValue',
+  'transformValue',
+  'unionValue',
   'warnOnlyOnce',
+  'withAccessors',
+  'withField',
 ];
 
 /**

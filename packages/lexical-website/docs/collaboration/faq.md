@@ -43,7 +43,6 @@ It's achievable by leveraging headless Lexical and no-op provider for Yjs:
     LexicalNode,
     LexicalNodeReplacement,
     SerializedEditorState,
-    SerializedLexicalNode,
   } from 'lexical';
 
   import {createHeadlessEditor} from '@lexical/headless';
@@ -57,7 +56,7 @@ It's achievable by leveraging headless Lexical and no-op provider for Yjs:
   export default function headlessConvertYDocStateToLexicalJSON(
     nodes: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
     yDocState: Uint8Array,
-  ): SerializedEditorState<SerializedLexicalNode> {
+  ): SerializedEditorState {
     return withHeadlessCollaborationEditor(nodes, (editor, binding) => {
       applyUpdate(binding.doc, yDocState, {isUpdateRemote: true});
       editor.update(() => {}, {discrete: true});
@@ -71,7 +70,7 @@ It's achievable by leveraging headless Lexical and no-op provider for Yjs:
    * connect to message distribution infra) and binding. It also sets up
    * bi-directional synchronization between yDoc and editor
    */
-  function withHeadlessCollaborationEditor<T>(
+  export function withHeadlessCollaborationEditor<T>(
     nodes: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
     callback: (editor: LexicalEditor, binding: Binding, provider: Provider) => T,
   ): T {
@@ -147,6 +146,7 @@ It's achievable by leveraging headless Lexical and no-op provider for Yjs:
         off: emptyFunction,
         on: emptyFunction,
         setLocalState: emptyFunction,
+        setLocalStateField: emptyFunction,
       },
       connect: emptyFunction,
       disconnect: emptyFunction,

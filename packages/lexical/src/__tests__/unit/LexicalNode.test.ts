@@ -20,6 +20,7 @@ import {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
+  $isParagraphNode,
   $isRangeSelection,
   $isTabNode,
   $setSelection,
@@ -31,6 +32,7 @@ import {
   type NodeKey,
   ParagraphNode,
   type RangeSelection,
+  type SerializedTextNode,
   type TabNode,
   TextNode,
 } from 'lexical';
@@ -45,8 +47,13 @@ import {
   vi,
 } from 'vitest';
 
-import {LexicalNode} from '../../LexicalNode';
 import {
+  type GetStaticNodeType,
+  type LexicalExportJSON,
+  LexicalNode,
+} from '../../LexicalNode';
+import {
+  $assertNodeType,
   $createTestElementNode,
   $createTestInlineElementNode,
   initializeUnitTest,
@@ -773,59 +780,6 @@ describe('LexicalNode tests', () => {
           ]);
         });
         expect(() => textNode.getNextSiblings()).toThrow();
-      });
-
-      test('LexicalNode.getCommonAncestor()', async () => {
-        const {editor} = testEnv;
-        let quxTextNode: TextNode;
-        let barParagraphNode: ParagraphNode;
-        let barTextNode: TextNode;
-        let bazParagraphNode: ParagraphNode;
-        let bazTextNode: TextNode;
-
-        editor.update(
-          () => {
-            const rootNode = $getRoot();
-            barParagraphNode = new ParagraphNode();
-            barTextNode = new TextNode('bar');
-            barTextNode.toggleUnmergeable();
-            bazParagraphNode = new ParagraphNode();
-            bazTextNode = new TextNode('baz');
-            bazTextNode.toggleUnmergeable();
-            expect(bazTextNode.getCommonAncestor(bazTextNode)).toBe(null);
-            quxTextNode = new TextNode('qux');
-            quxTextNode.toggleUnmergeable();
-            paragraphNode.append(quxTextNode);
-            expect(barTextNode.getCommonAncestor(bazTextNode)).toBe(null);
-            barParagraphNode.append(barTextNode);
-            bazParagraphNode.append(bazTextNode);
-            expect(barTextNode.getCommonAncestor(bazTextNode)).toBe(null);
-            expect(bazTextNode.getCommonAncestor(bazTextNode)).toBe(
-              bazParagraphNode,
-            );
-            rootNode.append(barParagraphNode, bazParagraphNode);
-          },
-          {discrete: true},
-        );
-
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">qux</span></p><p dir="auto"><span data-lexical-text="true">bar</span></p><p dir="auto"><span data-lexical-text="true">baz</span></p></div>',
-        );
-
-        await editor.read('latest', () => {
-          const rootNode = $getRoot();
-          expect(textNode.getCommonAncestor(rootNode)).toBe(rootNode);
-          expect(quxTextNode.getCommonAncestor(rootNode)).toBe(rootNode);
-          expect(barTextNode.getCommonAncestor(rootNode)).toBe(rootNode);
-          expect(bazTextNode.getCommonAncestor(rootNode)).toBe(rootNode);
-          expect(textNode.getCommonAncestor(quxTextNode)).toBe(
-            paragraphNode.getLatest(),
-          );
-          expect(barTextNode.getCommonAncestor(bazTextNode)).toBe(rootNode);
-          expect(barTextNode.getCommonAncestor(bazTextNode)).toBe(rootNode);
-        });
-
-        expect(() => textNode.getCommonAncestor(barTextNode)).toThrow();
       });
 
       test('LexicalNode.isBefore()', async () => {
@@ -1566,7 +1520,7 @@ describe('LexicalNode tests', () => {
                 text: 'codegen!',
                 type: 'custom-text',
                 version: 1,
-              });
+              } as SerializedTextNode);
               expect(node).toBeInstanceOf(CustomTextNode);
               expect(node.getType()).toBe('custom-text');
               expect(node.getTextContent()).toBe('codegen!');
@@ -1578,7 +1532,7 @@ describe('LexicalNode tests', () => {
           class SNCVersionedTextNode extends TextNode {
             __version = 0;
             $config() {
-              return this.config('snc-vtext', {});
+              return this.config('snc-vtext', {extends: TextNode});
             }
             afterCloneFrom(node: this): void {
               super.afterCloneFrom(node);
@@ -3090,6 +3044,17 @@ describe('replace(other, includeChildren) selection mapping', () => {
   });
 });
 
+describe('LexicalNode.$config() inferred types', () => {
+  test('GetStaticNodeType / LexicalExportJSON recover the literal node type', () => {
+    // Left to inference (not widened to BaseStaticNodeConfig), $config()'s
+    // return type lets GetStaticNodeType recover the literal node `type`, so
+    // LexicalExportJSON can build the full serialized type from it. Annotating
+    // `$config(): BaseStaticNodeConfig` would collapse both to `string`.
+    expectTypeOf<GetStaticNodeType<TextNode>>().toEqualTypeOf<'text'>();
+    expectTypeOf<LexicalExportJSON<TextNode>['type']>().toEqualTypeOf<'text'>();
+  });
+});
+
 // These are outside of the above suite because of the
 // LexicalNode getType mock which ruins it
 describe('LexicalNode.$config() without registration', () => {
@@ -3234,6 +3199,7 @@ describe('LexicalNode.$config() without registration', () => {
           $transform: (node: AbstractBaseNode) => {
             transformed.push(node.getType());
           },
+          extends: ElementNode,
         });
       }
     }
@@ -3375,5 +3341,43 @@ describe('LexicalNode.$config() without registration', () => {
       },
       {discrete: true},
     );
+  });
+});
+
+describe('a setter returns the version it wrote to', () => {
+  initializeUnitTest(testEnv => {
+    test('setFormat/setStyle/setIndent return the writable, not the receiver', () => {
+      // Each takes a writable, writes to it, and used to return `this` — the
+      // version it was called on, which getWritable() had just superseded.
+      // Their neighbours setTextFormat/setTextStyle return `self`, which is
+      // what makes this a slip rather than a decision.
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          $getRoot().clear().append($createParagraphNode());
+        },
+        {discrete: true},
+      );
+      // A node is cloned only *across* updates: within the one that created it
+      // getWritable() hands back the same object, so the two never diverge.
+      editor.update(
+        () => {
+          const paragraph = $assertNodeType(
+            $getRoot().getFirstChildOrThrow(),
+            $isParagraphNode,
+          );
+          const afterIndent = paragraph.setIndent(2);
+          expect(afterIndent).not.toBe(paragraph);
+          expect(afterIndent).toBe(paragraph.getLatest());
+          // The rest of the update no longer clones, so the remaining two are
+          // checked against the latest rather than against a fresh receiver.
+          expect(afterIndent.setStyle('color: red')).toBe(
+            paragraph.getLatest(),
+          );
+          expect(afterIndent.setFormat('center')).toBe(paragraph.getLatest());
+        },
+        {discrete: true},
+      );
+    });
   });
 });

@@ -6,6 +6,8 @@
  *
  */
 
+// @vitest-environment node
+
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {HashtagExtension} from '@lexical/hashtag';
 import {registerMarkdownShortcuts} from '@lexical/markdown';

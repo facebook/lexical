@@ -10,16 +10,20 @@ import {
   $applyNodeReplacement,
   $createParagraphNode,
   $getDocument,
+  $getEditor,
   $isInlineElementOrDecoratorNode,
   $isLineBreakNode,
   $isTextNode,
+  $markSlotEditable,
   $setDirectionFromDOM,
   addClassNamesToElement,
   type DOMConversionOutput,
   type DOMExportOutput,
   type EditorConfig,
+  type ElementDOMSlot,
   ElementNode,
   enumValue,
+  IS_IOS,
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
@@ -51,6 +55,26 @@ const NO_STATUS = 0;
 const ROW = 1;
 const COLUMN = 2;
 const BOTH = 3;
+const TABLE_CELL_CONTENT_ATTRIBUTE = 'data-lexical-table-cell-content';
+
+/**
+ * The editing-host wrapper a cell renders around its content on iOS, or null
+ * on other platforms (and for cell DOM created before the editor existed).
+ * @internal
+ */
+export function getTableCellContentWrapper(
+  cellDOM: HTMLElement,
+): HTMLElement | null {
+  for (const child of cellDOM.children) {
+    if (
+      isHTMLElement(child) &&
+      child.hasAttribute(TABLE_CELL_CONTENT_ATTRIBUTE)
+    ) {
+      return child;
+    }
+  }
+  return null;
+}
 
 export const TableCellHeaderStates = {
   BOTH,
@@ -173,7 +197,10 @@ export class TableCellNode extends ElementNode {
     this.__verticalAlign = undefined;
   }
 
-  createDOM(config: EditorConfig): HTMLTableCellElement {
+  createDOM(
+    config: EditorConfig,
+    editor?: LexicalEditor,
+  ): HTMLTableCellElement {
     const element = $getDocument().createElement(this.getTag());
 
     if (this.__width) {
@@ -198,7 +225,24 @@ export class TableCellNode extends ElementNode {
       this.hasHeader() && config.theme.tableCellHeader,
     );
 
+    if (IS_IOS && editor !== undefined) {
+      element.contentEditable = 'false';
+      const content = $getDocument().createElement('div');
+      content.setAttribute(TABLE_CELL_CONTENT_ATTRIBUTE, 'true');
+      content.style.outline = 'none';
+      content.style.boxShadow = 'none';
+      content.style.setProperty('-webkit-tap-highlight-color', 'transparent');
+      $markSlotEditable(content, editor);
+      element.append(content);
+    }
+
     return element;
+  }
+
+  getDOMSlot(element: HTMLElement): ElementDOMSlot<HTMLElement> {
+    const content = getTableCellContentWrapper(element);
+    const slot = super.getDOMSlot(element);
+    return content !== null ? slot.withElement(content) : slot;
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
@@ -206,6 +250,13 @@ export class TableCellNode extends ElementNode {
 
     if (isHTMLElement(output.element)) {
       const element = output.element as HTMLTableCellElement;
+      // The wrapper and its contenteditable are live-editing scaffolding;
+      // exported HTML keeps the <td><p> shape.
+      const content = getTableCellContentWrapper(element);
+      if (content !== null) {
+        content.remove();
+      }
+      element.removeAttribute('contenteditable');
       element.setAttribute(
         'data-temporary-table-cell-lexical-key',
         this.getKey(),
@@ -327,7 +378,13 @@ export class TableCellNode extends ElementNode {
     return this.getLatest().__headerState !== TableCellHeaderStates.NO_STATUS;
   }
 
-  updateDOM(prevNode: this): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement): boolean {
+    if (IS_IOS) {
+      const slot = this.getDOMSlot(dom);
+      if (slot.element !== dom) {
+        $markSlotEditable(slot.element, $getEditor());
+      }
+    }
     return (
       prevNode.__headerState !== this.__headerState ||
       prevNode.__width !== this.__width ||

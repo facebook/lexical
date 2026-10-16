@@ -678,22 +678,45 @@ describe('a DOM change recorded before a commit runs', () => {
       expectRestored(mounted);
     },
   );
+});
 
-  test('changing text inside an update that fails', () => {
-    const {block, editor, errors, renderedJSON} = mountEditor(() => [
+describe('a DOM change made inside an update that fails', () => {
+  test.each([
+    [
+      'removing a text span',
+      (block: HTMLElement) => remove(textSpans(block)[0]),
+    ],
+    [
+      'moving a text span',
+      (block: HTMLElement) => block.append(textSpans(block)[0]),
+    ],
+  ])('%s', (_, mutate) => {
+    const {block, editor, errors, renderedHTML, renderedJSON, root} =
+      mountEditor(() => [$tokens()]);
+    editor.update(() => {
+      mutate(block);
+      throw new Error('failed');
+    });
+    expect(errors).toEqual(['failed']);
+    expectHtmlToBeEqual(root.innerHTML, renderedHTML);
+    expect(editor.getEditorState().toJSON()).toEqual(renderedJSON);
+  });
+
+  test('changing text, then losing the selection', () => {
+    const mounted = mountEditor(() => [
       $createParagraphNode().append($createTextNode('ab')),
     ]);
-    editor.update(
-      () => {
-        textSpans(block)[0].firstChild!.nodeValue = 'cd';
-        // Selecting a node that is never attached fails the update.
-        $createTextNode('ef').select();
-      },
-      {discrete: true},
-    );
+    const {block, editor, errors} = mounted;
+    editor.update(() => {
+      textSpans(block)[0].firstChild!.nodeValue = 'cd';
+      // Selecting a node that is never attached fails the update.
+      $createTextNode('ef').select();
+    });
     expect(errors).toEqual([
       expect.stringContaining('selection has been lost'),
     ]);
-    expect(editor.getEditorState().toJSON()).toEqual(renderedJSON);
+    // Read back, as after an update that does not fail.
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('cd');
+    expectRendersEditorState({...mounted, errors: []});
   });
 });

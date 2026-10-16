@@ -597,9 +597,7 @@ export function $commitPendingUpdates(
   editor: LexicalEditor,
   recoveryEditorState?: EditorState,
 ): void {
-  // Not in the recovery from a failed update, which commits inside it, where
-  // the flush would run against the failed editor state.
-  if (editor._pendingEditorState !== null && activeEditor !== editor) {
+  if (editor._pendingEditorState !== null) {
     // The commit disconnects the observer, which drops the DOM changes it has
     // recorded but not reported yet, so they are reverted first.
     flushRootMutations(editor, false, true);
@@ -1371,6 +1369,11 @@ function $beginUpdate(
 
     editor._dirtyElements.clear();
 
+    // Commit outside the failed update, so that the DOM changes recorded in it
+    // are handled against the committed editor state, not the failed one.
+    activeEditorState = previousActiveEditorState;
+    isReadOnlyMode = previousReadOnlyMode;
+    activeEditor = previousActiveEditor;
     $commitPendingUpdates(editor);
     return;
   } finally {

@@ -45,14 +45,12 @@ export function getIsProcessingMutations(): boolean {
   return isProcessingMutations;
 }
 
-function updateTimeStamp(event: Event) {
-  lastTextEntryTimeStamp = event.timeStamp;
+function updateTimeStamp() {
+  lastTextEntryTimeStamp = performance.now();
 }
 
 function initTextEntryListener(editor: LexicalEditor): void {
-  if (lastTextEntryTimeStamp === 0) {
-    getWindow(editor).addEventListener('textInput', updateTimeStamp, true);
-  }
+  getWindow(editor).addEventListener('textInput', updateTimeStamp, true);
 }
 
 // A node of an element's managed line break (ElementDOMSlot).

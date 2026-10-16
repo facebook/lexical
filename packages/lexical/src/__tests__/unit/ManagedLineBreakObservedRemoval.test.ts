@@ -678,4 +678,22 @@ describe('a DOM change recorded before a commit runs', () => {
       expectRestored(mounted);
     },
   );
+
+  test('changing text inside an update that fails', () => {
+    const {block, editor, errors, renderedJSON} = mountEditor(() => [
+      $createParagraphNode().append($createTextNode('ab')),
+    ]);
+    editor.update(
+      () => {
+        textSpans(block)[0].firstChild!.nodeValue = 'cd';
+        // Selecting a node that is never attached fails the update.
+        $createTextNode('ef').select();
+      },
+      {discrete: true},
+    );
+    expect(errors).toEqual([
+      expect.stringContaining('selection has been lost'),
+    ]);
+    expect(editor.getEditorState().toJSON()).toEqual(renderedJSON);
+  });
 });

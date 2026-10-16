@@ -597,7 +597,9 @@ export function $commitPendingUpdates(
   editor: LexicalEditor,
   recoveryEditorState?: EditorState,
 ): void {
-  if (editor._pendingEditorState !== null) {
+  // Not in the recovery from a failed update, which commits inside it, where
+  // the flush would run against the failed editor state.
+  if (editor._pendingEditorState !== null && activeEditor !== editor) {
     // The commit disconnects the observer, which drops the DOM changes it has
     // recorded but not reported yet, so they are reverted first.
     flushRootMutations(editor, false, true);

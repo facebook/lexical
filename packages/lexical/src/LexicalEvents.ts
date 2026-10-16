@@ -2615,8 +2615,11 @@ export function addRootElementEvents(
       contextmenu: endMouseDrag,
       dragstart: endMouseDrag,
       // As after a release that the window did not get, but not for the
-      // modifier keys, which Windows repeats while they are held.
-      keydown: event => event.getModifierState(event.key) || endMouseDrag(),
+      // modifier keys, which Windows repeats while they are held. Chrome's
+      // keydown for an accepted autofill suggestion is not a KeyboardEvent.
+      keydown: event =>
+        (event.getModifierState && event.getModifierState(event.key)) ||
+        endMouseDrag(),
       mousedown: event => {
         const inputState = editor._inputState;
         inputState.mouseDrag =

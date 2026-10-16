@@ -37,9 +37,9 @@ function mount(editor: LexicalEditor): HTMLElement {
 
 function dispatchRootEvent(root: HTMLElement, type: string): Event {
   const init = {bubbles: true, cancelable: true};
-  // The root element's other keydown listener reads the modifier keys.
-  const event =
-    type === 'keydown' ? new KeyboardEvent(type, init) : new Event(type, init);
+  // A plain Event for every type: Chrome's keydown for an accepted autofill
+  // suggestion is not a KeyboardEvent either.
+  const event = new Event(type, init);
   root.dispatchEvent(event);
   return event;
 }

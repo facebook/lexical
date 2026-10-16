@@ -66,7 +66,7 @@ export function registerClickableLink(
     }
     const nearestEditor = getNearestEditorFromDOMNode(target);
 
-    if (nearestEditor === null) {
+    if (nearestEditor !== editor) {
       return;
     }
 

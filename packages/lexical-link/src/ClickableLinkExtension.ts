@@ -64,6 +64,11 @@ export function registerClickableLink(
     if (!isDOMNode(target)) {
       return;
     }
+    const ownerWindow =
+      target.ownerDocument && target.ownerDocument.defaultView;
+    if (ownerWindow === null) {
+      return;
+    }
     const nearestEditor = getNearestEditorFromDOMNode(target);
 
     if (nearestEditor === null) {
@@ -114,8 +119,7 @@ export function registerClickableLink(
     // Unlike an `<a target="_blank">` the browser follows itself,
     // `window.open` gives the new page a `window.opener` unless told not
     // to, and with it that page can navigate this one away.
-    // eslint-disable-next-line no-restricted-syntax
-    window.open(url, ...(newTab ? ['_blank', 'noopener'] : ['_self']));
+    ownerWindow.open(url, ...(newTab ? ['_blank', 'noopener'] : ['_self']));
     event.preventDefault();
   };
 

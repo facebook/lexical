@@ -843,10 +843,14 @@ export function $setSelection(selection: null | BaseSelection): void {
   editorState._selection = selection;
 }
 
-export function $flushMutations(): void {
+/**
+ * @param rerenderText Render the text that the browser changed from the
+ * editor state, as the editor applied the input that changed it itself.
+ */
+export function $flushMutations(rerenderText?: boolean): void {
   errorOnReadOnly();
   const editor = getActiveEditor();
-  flushRootMutations(editor);
+  flushRootMutations(editor, rerenderText);
 }
 
 export function $getNodeFromDOM(dom: Node): null | LexicalNode {

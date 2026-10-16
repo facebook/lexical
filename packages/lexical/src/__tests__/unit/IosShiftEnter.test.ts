@@ -234,6 +234,35 @@ describe('iOS line breaks and auto-capitalization', () => {
     ]);
   });
 
+  // A read-only editor dispatches no BLUR_COMMAND, but a blur still ends
+  // the keyboard state of its last edit.
+  test('clears explicit Shift on blur while read-only', () => {
+    using editor = editorWithText();
+    dispatchKey(editor, 'keydown', 'Shift', true);
+    editor.setEditable(false);
+    editor.getRootElement()!.dispatchEvent(new FocusEvent('blur'));
+    editor.setEditable(true);
+    pressEnter(editor, true);
+    expect(paragraphs(editor)).toEqual([
+      {text: 'Some words', type: 'paragraph'},
+      {text: '', type: 'paragraph'},
+    ]);
+  });
+
+  test('clears Enter intent on blur while read-only', () => {
+    using editor = editorWithText();
+    dispatchKey(editor, 'keydown', 'Shift', true);
+    dispatchKey(editor, 'keydown', 'Enter', true);
+    editor.setEditable(false);
+    editor.getRootElement()!.dispatchEvent(new FocusEvent('blur'));
+    editor.setEditable(true);
+    beforeInput(editor);
+    expect(paragraphs(editor)).toEqual([
+      {text: 'Some words', type: 'paragraph'},
+      {text: '', type: 'paragraph'},
+    ]);
+  });
+
   test('does not share explicit Shift between editors', () => {
     using first = editorWithText();
     using second = editorWithText();

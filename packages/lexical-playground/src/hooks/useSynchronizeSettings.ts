@@ -8,6 +8,7 @@
 
 import type {AnyLexicalExtension, LexicalEditor} from 'lexical';
 
+import {CodeLineNumbersExtension} from '@lexical/code';
 import {
   batch,
   effect,
@@ -89,6 +90,8 @@ export function synchronizeSettingsToSignals(
       !settings.isAutocomplete;
     output(editor, VisibleNonPrintingExtension).disabled.value =
       !settings.isVisibleNonPrinting;
+    output(editor, CodeLineNumbersExtension).onlyWordWrapped.value =
+      !settings.isCodeLineNumbers;
     output(editor, MaxLengthExtension).disabled.value = !settings.isMaxLength;
     const codeHighlight = peerOutput(editor, CodeHighlightExtension);
     if (codeHighlight) {

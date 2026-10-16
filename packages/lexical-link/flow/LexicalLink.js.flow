@@ -99,6 +99,7 @@ declare export function formatUrl(url: string): string;
 export type ClickableLinkConfig = {
   newTab: boolean;
   disabled: boolean;
+  getWindow?: (editor: LexicalEditor) => Window | null;
 }
 
 declare export function registerClickableLink(

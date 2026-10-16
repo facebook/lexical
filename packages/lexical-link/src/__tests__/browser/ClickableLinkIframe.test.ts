@@ -6,7 +6,11 @@
  *
  */
 
-import {buildEditorFromExtensions, configExtension} from '@lexical/extension';
+import {
+  buildEditorFromExtensions,
+  configExtension,
+  getExtensionDependencyFromEditor,
+} from '@lexical/extension';
 import {$createLinkNode, ClickableLinkExtension} from '@lexical/link';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
@@ -20,12 +24,14 @@ import {expect, onTestFinished, test, vi} from 'vitest';
 const url = 'https://lexical.dev/';
 
 test.each([
-  {button: 0, newTab: false, target: '_self'},
-  {button: 1, newTab: false, target: '_blank'},
-  {button: 0, newTab: true, target: '_blank'},
+  ...['default', 'owner', 'none'].flatMap(windowChoice => [
+    {button: 0, newTab: false, target: '_self', windowChoice},
+    {button: 1, newTab: false, target: '_blank', windowChoice},
+    {button: 0, newTab: true, target: '_blank', windowChoice},
+  ]),
 ])(
-  'iframe link click: $button, newTab: $newTab',
-  ({button, newTab, target}) => {
+  'iframe link click: $button, newTab: $newTab, window: $windowChoice',
+  ({button, newTab, target, windowChoice}) => {
     const iframe = document.createElement('iframe');
     document.body.append(iframe);
     const frameDocument = iframe.contentDocument!;
@@ -41,7 +47,17 @@ test.each([
       defineExtension({
         dependencies: [
           RichTextExtension,
-          configExtension(ClickableLinkExtension, {newTab}),
+          configExtension(ClickableLinkExtension, {
+            ...(windowChoice === 'owner'
+              ? {
+                  getWindow: linkEditor =>
+                    linkEditor.getRootElement()!.ownerDocument.defaultView,
+                }
+              : windowChoice === 'none'
+                ? {getWindow: () => null}
+                : {}),
+            newTab,
+          }),
         ],
         name: 'ClickableLinkIframe',
       }),
@@ -71,12 +87,45 @@ test.each([
     });
     root.querySelector('a')!.dispatchEvent(event);
 
-    expect(frameOpen).toHaveBeenCalledExactlyOnceWith(
-      url,
-      target,
-      ...(target === '_blank' ? ['noopener'] : []),
-    );
-    expect(parentOpen).not.toHaveBeenCalled();
-    expect(event.defaultPrevented).toBe(true);
+    if (windowChoice === 'none') {
+      expect(frameOpen).not.toHaveBeenCalled();
+      expect(parentOpen).not.toHaveBeenCalled();
+      expect(event.defaultPrevented).toBe(false);
+    } else {
+      const expectedOpen = windowChoice === 'owner' ? frameOpen : parentOpen;
+      const otherOpen = windowChoice === 'owner' ? parentOpen : frameOpen;
+      expect(expectedOpen).toHaveBeenCalledExactlyOnceWith(
+        url,
+        target,
+        ...(target === '_blank' ? ['noopener'] : []),
+      );
+      expect(otherOpen).not.toHaveBeenCalled();
+      expect(event.defaultPrevented).toBe(true);
+    }
+
+    if (windowChoice === 'default' && button === 0 && !newTab) {
+      parentOpen.mockClear();
+      const getWindow = getExtensionDependencyFromEditor(
+        editor,
+        ClickableLinkExtension,
+      ).output.getWindow!;
+      getWindow.value = () => frameWindow;
+      root
+        .querySelector('a')!
+        .dispatchEvent(
+          new MouseEvent('click', {bubbles: true, cancelable: true}),
+        );
+      expect(frameOpen).toHaveBeenCalledExactlyOnceWith(url, '_self');
+      expect(parentOpen).not.toHaveBeenCalled();
+
+      getWindow.value = undefined;
+      root
+        .querySelector('a')!
+        .dispatchEvent(
+          new MouseEvent('click', {bubbles: true, cancelable: true}),
+        );
+      expect(parentOpen).toHaveBeenCalledExactlyOnceWith(url, '_self');
+      expect(frameOpen).toHaveBeenCalledTimes(1);
+    }
   },
 );

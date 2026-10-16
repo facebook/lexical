@@ -7,7 +7,7 @@
  */
 
 import {namedSignals} from '@lexical/extension';
-import {registerClickableLink} from '@lexical/link';
+import {type ClickableLinkConfig, registerClickableLink} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 
@@ -24,15 +24,20 @@ import {useEffect} from 'react';
 export function ClickableLinkPlugin({
   newTab = true,
   disabled = false,
+  getWindow,
 }: {
   newTab?: boolean;
   disabled?: boolean;
+  getWindow?: ClickableLinkConfig['getWindow'];
 }): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    return registerClickableLink(editor, namedSignals({disabled, newTab}));
-  }, [editor, newTab, disabled]);
+    return registerClickableLink(
+      editor,
+      namedSignals({disabled, getWindow, newTab}),
+    );
+  }, [editor, newTab, disabled, getWindow]);
 
   return null;
 }

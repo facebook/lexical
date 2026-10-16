@@ -44,6 +44,11 @@ export interface ClickableLinkConfig {
   newTab: boolean;
   /** Disable this extension when true (default false) */
   disabled: boolean;
+  /**
+   * Resolve the window used to open links (defaults to the global window).
+   * Return null to leave the click unhandled.
+   */
+  getWindow?: (editor: LexicalEditor) => Window | null;
 }
 
 export function registerClickableLink(
@@ -64,14 +69,9 @@ export function registerClickableLink(
     if (!isDOMNode(target)) {
       return;
     }
-    const ownerWindow =
-      target.ownerDocument && target.ownerDocument.defaultView;
-    if (ownerWindow === null) {
-      return;
-    }
     const nearestEditor = getNearestEditorFromDOMNode(target);
 
-    if (nearestEditor === null) {
+    if (nearestEditor !== editor) {
       return;
     }
 
@@ -116,10 +116,15 @@ export function registerClickableLink(
       event.metaKey ||
       event.ctrlKey ||
       urlTarget === '_blank';
+    const getWindow = stores.getWindow && stores.getWindow.peek();
+    const targetWindow = getWindow ? getWindow(editor) : window;
+    if (targetWindow === null) {
+      return;
+    }
     // Unlike an `<a target="_blank">` the browser follows itself,
     // `window.open` gives the new page a `window.opener` unless told not
     // to, and with it that page can navigate this one away.
-    ownerWindow.open(url, ...(newTab ? ['_blank', 'noopener'] : ['_self']));
+    targetWindow.open(url, ...(newTab ? ['_blank', 'noopener'] : ['_self']));
     event.preventDefault();
   };
 
@@ -152,6 +157,7 @@ export const ClickableLinkExtension = defineExtension({
   },
   config: safeCast<ClickableLinkConfig>({
     disabled: false,
+    getWindow: undefined,
     newTab: false,
   }),
   dependencies: [LinkExtension],

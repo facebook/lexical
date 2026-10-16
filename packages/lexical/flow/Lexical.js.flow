@@ -1365,6 +1365,12 @@ declare export function $getDOMTextNode(
   dom: HTMLElement,
   editor?: LexicalEditor,
 ): Text | null;
+/** @internal */
+declare export function $getElementAndOffsetForPoint(
+  editor: LexicalEditor,
+  node: LexicalNode,
+  offset: number,
+): [HTMLElement, number];
 declare export function $isElementDOMSlot(
   slot: DOMSlot<HTMLElement>,
 ): slot is ElementDOMSlot<HTMLElement>;

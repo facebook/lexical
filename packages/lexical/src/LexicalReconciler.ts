@@ -943,14 +943,7 @@ function $isLastChildLineBreakOrDecorator(
   return null;
 }
 
-function $isBlockDecoratorChild(
-  key: null | NodeKey,
-  nodeMap: NodeMap,
-): boolean {
-  if (!key) {
-    return false;
-  }
-  const node = nodeMap.get(key);
+function $isBlockDecoratorChild(node: LexicalNode | null): boolean {
   return $isDecoratorNode(node) && !node.isInline();
 }
 
@@ -962,19 +955,20 @@ function $isBlockDecoratorChild(
  * out-of-flow anchor parked outside each such boundary child so the browser has
  * an editable inline box to resolve the boundary position against. Interior
  * decorators are unaffected, so only the first / last child is considered.
+ * Outside a reconcile (ElementNode.reconcileObservedMutation), pass the slot.
  */
-function $reconcileDecoratorBoundaryAnchors(
+export function $reconcileDecoratorBoundaryAnchors(
   nextElement: ElementNode,
   dom: HTMLElement & LexicalPrivateDOM,
+  slot: ElementDOMSlot = $getDOMSlot(nextElement, dom, activeEditor),
 ): void {
-  const slot = $getDOMSlot(nextElement, dom, activeEditor);
   slot.setDecoratorBoundaryAnchor(
     'leading',
-    $isBlockDecoratorChild(nextElement.__first, activeNextNodeMap),
+    $isBlockDecoratorChild(nextElement.getFirstChild()),
   );
   slot.setDecoratorBoundaryAnchor(
     'trailing',
-    $isBlockDecoratorChild(nextElement.__last, activeNextNodeMap),
+    $isBlockDecoratorChild(nextElement.getLastChild()),
   );
 }
 

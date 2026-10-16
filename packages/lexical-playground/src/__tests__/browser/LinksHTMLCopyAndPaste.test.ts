@@ -17,19 +17,26 @@ import {
   pasteFromClipboard,
   setupPasteEditor,
 } from './htmlPasteUtils';
-import {html, press, typeText} from './utils';
+import {assertCaret, html, press, typeText} from './utils';
+
+// A paste uses the editor's selection, which follows a key that moved the
+// caret only once its selectionchange is handled. A person cannot paste before
+// that, but a test can on a busy runner, so these wait for the caret with
+// assertCaret first.
 
 test('Copy + paste in front of or after a link', async () => {
-  const {root} = setupPasteEditor();
+  const {editor, root} = setupPasteEditor();
 
   await pasteFromClipboard(root, {
     'text/html': `text<a href="https://test.com/1">link</a>text`,
   });
   await press(IS_APPLE ? 'Meta+ArrowUp' : 'Control+Home');
+  await assertCaret(editor, 'p > span:first-child', 0);
   await pasteFromClipboard(root, {
     'text/html': 'before',
   });
   await press(IS_APPLE ? 'Meta+ArrowDown' : 'Control+End');
+  await assertCaret(editor, 'p > span:last-child', 'text'.length);
   await pasteFromClipboard(root, {
     'text/html': 'after',
   });
@@ -48,7 +55,7 @@ test('Copy + paste in front of or after a link', async () => {
 });
 
 test('Copy + paste link by selecting its (partial) content', async () => {
-  const {root} = setupPasteEditor();
+  const {editor, root} = setupPasteEditor();
 
   await pasteFromClipboard(root, {
     'text/html': `text<a href="https://test.com/">link</a>text`,
@@ -60,6 +67,7 @@ test('Copy + paste link by selecting its (partial) content', async () => {
   {
     const clipboard = await copyToClipboard(root);
     await press(IS_APPLE ? 'Meta+ArrowDown' : 'Control+End');
+    await assertCaret(editor, 'p > span:last-child', 'text'.length);
     await pasteFromClipboard(root, clipboard);
   }
 

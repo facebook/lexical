@@ -26,6 +26,7 @@ import {
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
+  $normalizeSelection__EXPERIMENTAL,
   $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
@@ -205,7 +206,11 @@ function $tableClickCommand(event: MouseEvent): boolean {
   if (!$isTableCellNode(rootNode)) {
     return false;
   }
-  blockNode.select(0);
+  // Select the block with the text points a native selection of it resolves
+  // to. Outside Apple platforms, WebKit fires no selectionchange when element
+  // points cover the same text as the DOM selection (as after a double click
+  // on a one-word block), so nothing would replace them in the DOM.
+  $normalizeSelection__EXPERIMENTAL(blockNode.select(0));
   return true;
 }
 

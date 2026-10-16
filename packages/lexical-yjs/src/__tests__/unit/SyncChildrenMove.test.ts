@@ -5,12 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+// @vitest-environment node
+
 import {
   buildEditorFromExtensions,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
 import {
   createBinding,
+  createUndoManager,
   type Provider,
   syncLexicalUpdateToYjs,
   syncYjsChangesToLexical,
@@ -18,6 +21,7 @@ import {
 import {
   $createParagraphNode,
   $createTextNode,
+  $getNodeByKeyOrThrow,
   $getRoot,
   $isElementNode,
   defineExtension,
@@ -168,11 +172,12 @@ describe('syncChildrenFromLexical: moving children among siblings', () => {
 
   function $move(from: number, to: number) {
     // Moves the child at `from` so that it ends up at index `to`
-    const root = $getRoot();
-    const children = root.getChildren();
-    const [node] = children.splice(from, 1);
-    children.splice(to, 0, node);
-    root.splice(0, root.getChildrenSize(), children);
+    const children = $getRoot().getChildren();
+    if (from < to) {
+      children[to].insertAfter(children[from]);
+    } else {
+      children[to].insertBefore(children[from]);
+    }
   }
 
   test.each([
@@ -200,12 +205,256 @@ describe('syncChildrenFromLexical: moving children among siblings', () => {
       expected.splice(to, 0, moved);
       expect(a.texts()).toEqual(expected);
       expect(after.filter(child => !before.includes(child))).toHaveLength(1);
+      for (let i = 0; i < before.length; i++) {
+        const collabNode = a.binding.collabNodeMap.get(before[i].getKey());
+        if (i === from) {
+          expect(collabNode).not.toBe(before[i]);
+        } else {
+          expect(collabNode).toBe(before[i]);
+        }
+      }
 
       await syncClients(a, b);
       expect(b.texts()).toEqual(expected);
       expect(a.texts()).toEqual(expected);
     },
   );
+
+  test.each([
+    [
+      'insertAfter',
+      (children: ElementNode[]) => children[4].insertAfter(children[3]),
+    ],
+    [
+      'insertBefore',
+      (children: ElementNode[]) => children[3].insertBefore(children[4]),
+    ],
+    [
+      'splice',
+      (children: ElementNode[]) => $getRoot().splice(5, 0, [children[3]]),
+    ],
+    [
+      'remove and insert',
+      (children: ElementNode[]) => {
+        children[3].remove();
+        children[4].insertAfter(children[3]);
+      },
+    ],
+  ])(
+    'a concurrent edit to an adjacent shifted sibling survives %s',
+    async (name, move) => {
+      const a = buildClient();
+      const b = buildClient();
+      seed(a, 10);
+      await syncClients(a, b);
+      const editedIndex = name === 'insertBefore' ? 3 : 4;
+      const before = rootChildren(a);
+
+      a.editor.update(() => move($getRoot().getChildren<ElementNode>()), {
+        discrete: true,
+      });
+      b.editor.update(
+        () => {
+          $getRoot()
+            .getChildAtIndex<ElementNode>(editedIndex)!
+            .getFirstChildOrThrow<TextNode>()
+            .setTextContent(`P${editedIndex} edited`);
+        },
+        {discrete: true},
+      );
+
+      expect(a.binding.collabNodeMap.get(before[editedIndex].getKey())).toBe(
+        before[editedIndex],
+      );
+      await syncClients(a, b);
+      const expected = labels(10);
+      [expected[3], expected[4]] = [expected[4], expected[3]];
+      expected[editedIndex === 3 ? 4 : 3] = `P${editedIndex} edited`;
+      expect(a.texts()).toEqual(expected);
+      expect(b.texts()).toEqual(expected);
+    },
+  );
+
+  test('moving a majority of siblings preserves a concurrent edit to an untouched sibling', async () => {
+    const a = buildClient();
+    const b = buildClient();
+    seed(a, 10);
+    await syncClients(a, b);
+    const before = rootChildren(a);
+    a.editor.update(
+      () => {
+        const children = $getRoot().getChildren();
+        for (let i = 3; i < 10; i++) {
+          children[0].insertBefore(children[i]);
+        }
+      },
+      {discrete: true},
+    );
+    b.editor.update(
+      () => {
+        $getRoot()
+          .getChildAtIndex<ElementNode>(1)!
+          .getFirstChildOrThrow<TextNode>()
+          .setTextContent('P1 edited');
+      },
+      {discrete: true},
+    );
+    for (let i = 0; i < 3; i++) {
+      expect(a.binding.collabNodeMap.get(before[i].getKey())).toBe(before[i]);
+    }
+    await syncClients(a, b);
+    const expected = [...labels(10).slice(3), 'P0', 'P1 edited', 'P2'];
+    expect(a.texts()).toEqual(expected);
+    expect(b.texts()).toEqual(expected);
+  });
+
+  test('batched moves, an insertion, and a removal preserve untouched siblings', async () => {
+    const a = buildClient();
+    const b = buildClient();
+    seed(a, 10);
+    await syncClients(a, b);
+    const before = rootChildren(a);
+    const keys = a.editor.read(() => $getRoot().getChildrenKeys());
+    a.editor.update(() =>
+      $getNodeByKeyOrThrow(keys[4]).insertAfter($getNodeByKeyOrThrow(keys[3])),
+    );
+    a.editor.update(
+      () => {
+        $getNodeByKeyOrThrow(keys[6]).insertBefore(
+          $getNodeByKeyOrThrow(keys[7]),
+        );
+        $getNodeByKeyOrThrow(keys[0]).remove();
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('new')),
+        );
+      },
+      {discrete: true},
+    );
+    b.editor.update(
+      () => {
+        $getRoot()
+          .getChildAtIndex<ElementNode>(4)!
+          .getFirstChildOrThrow<TextNode>()
+          .setTextContent('P4 edited');
+        $getRoot()
+          .getChildAtIndex<ElementNode>(6)!
+          .getFirstChildOrThrow<TextNode>()
+          .setTextContent('P6 edited');
+      },
+      {discrete: true},
+    );
+    expect(a.binding.collabNodeMap.get(before[4].getKey())).toBe(before[4]);
+    expect(a.binding.collabNodeMap.get(before[6].getKey())).toBe(before[6]);
+    await syncClients(b, a);
+    expect(a.texts()).toEqual([
+      'P1',
+      'P2',
+      'P4 edited',
+      'P3',
+      'P5',
+      'P7',
+      'P6 edited',
+      'P8',
+      'P9',
+      'new',
+    ]);
+    expect(b.texts()).toEqual(a.texts());
+  });
+
+  test('restoring an editor state does not reuse movement hints from a different transition', async () => {
+    const a = buildClient();
+    const b = buildClient();
+    seed(a, 6);
+    a.editor.update(() => $move(1, 5), {discrete: true});
+    const snapshot = a.editor.getEditorState();
+    a.editor.update(() => $move(4, 5), {discrete: true});
+    await syncClients(a, b);
+    const before = rootChildren(a);
+    const p1 = before[4];
+    a.editor.setEditorState(snapshot);
+    expect(a.texts()).toEqual(['P0', 'P2', 'P3', 'P4', 'P5', 'P1']);
+    expect(a.binding.collabNodeMap.get(p1.getKey())).toBe(p1);
+    expect(
+      rootChildren(a).filter(child => !before.includes(child)),
+    ).toHaveLength(1);
+    await syncClients(a, b);
+    expect(b.texts()).toEqual(a.texts());
+  });
+
+  test('bulk reorder snapshots still minimize re-created nodes', async () => {
+    const a = buildClient();
+    const b = buildClient();
+    seed(a, 10);
+    await syncClients(a, b);
+    const before = rootChildren(a);
+    a.editor.update(
+      () => {
+        const root = $getRoot();
+        const children = root.getChildren();
+        [children[3], children[4]] = [children[4], children[3]];
+        root.splice(0, children.length, children);
+      },
+      {discrete: true},
+    );
+    expect(
+      rootChildren(a).filter(child => !before.includes(child)),
+    ).toHaveLength(1);
+    await syncClients(a, b);
+    expect(b.texts()).toEqual(a.texts());
+  });
+
+  test('undo and redo an adjacent move without losing the shifted sibling edit', async () => {
+    const a = buildClient();
+    const b = buildClient();
+    seed(a, 10);
+    await syncClients(a, b);
+    const undo = createUndoManager(a.binding, a.binding.root.getSharedType());
+    try {
+      a.editor.update(() => $move(3, 4), {discrete: true});
+      b.editor.update(
+        () => {
+          $getRoot()
+            .getChildAtIndex<ElementNode>(4)!
+            .getFirstChildOrThrow<TextNode>()
+            .setTextContent('P4 edited');
+        },
+        {discrete: true},
+      );
+      await syncClients(a, b);
+      const moved = a.texts();
+      undo.undo();
+      await flush();
+      await syncClients(a, b);
+      const expected = labels(10);
+      expected[4] = 'P4 edited';
+      expect(a.texts()).toEqual(expected);
+      expect(b.texts()).toEqual(expected);
+      undo.redo();
+      await flush();
+      await syncClients(a, b);
+      expect(a.texts()).toEqual(moved);
+      expect(b.texts()).toEqual(moved);
+
+      // A subsequent remote edit must still target the live collab node.
+      b.editor.update(
+        () => {
+          $getRoot()
+            .getChildAtIndex<ElementNode>(3)!
+            .getFirstChildOrThrow<TextNode>()
+            .setTextContent('P4 edited again');
+        },
+        {discrete: true},
+      );
+      await syncClients(a, b);
+      expect(a.texts()[3]).toBe('P4 edited again');
+      expect(b.texts()).toEqual(a.texts());
+      const restored = buildClient();
+      await syncClients(a, restored);
+      expect(restored.texts()).toEqual(a.texts());
+    } finally {
+      undo.destroy();
+    }
+  });
 
   test('a concurrent edit to a sibling that shifted position is preserved', async () => {
     const a = buildClient();

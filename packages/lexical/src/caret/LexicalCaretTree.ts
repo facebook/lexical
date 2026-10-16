@@ -26,7 +26,11 @@ import {
   $getSlotHost,
   $getSlotHostKey,
 } from '../LexicalSlot';
-import {errorOnReadOnly} from '../LexicalUpdates';
+import {
+  errorOnReadOnly,
+  getActiveEditor,
+  getActiveEditorState,
+} from '../LexicalUpdates';
 import {errorOnInsertTextNodeOnRoot} from '../LexicalUtils';
 
 /**
@@ -50,6 +54,22 @@ function $linkSiblings(
     writableParent.__last = previousKey;
   } else {
     writableNext.__prev = previousKey;
+  }
+}
+
+// Record the operation rather than infer it from changed sibling pointers:
+// shifted siblings also have different pointers, but must keep their identity.
+function $recordNodeMove(node: LexicalNode): void {
+  const prevNodeMap = getActiveEditor()._editorState._nodeMap;
+  if (prevNodeMap.has(node.__key)) {
+    const editorState = getActiveEditorState();
+    const movedNodes = (editorState._movedNodes ||= new WeakMap());
+    let movedKeys = movedNodes.get(prevNodeMap);
+    if (movedKeys === undefined) {
+      movedKeys = new Set();
+      movedNodes.set(prevNodeMap, movedKeys);
+    }
+    movedKeys.add(node.__key);
   }
 }
 
@@ -92,6 +112,7 @@ export function $detachNode(writableNode: LexicalNode): void {
   const parent = writableNode.getParent();
   if (parent !== null) {
     const writableParent = parent.getWritable();
+    $recordNodeMove(writableNode);
     const previous = writableNode.getPreviousSibling();
     const next = writableNode.getNextSibling();
     $linkSiblings(
@@ -130,6 +151,7 @@ export function $detachSiblingRange(
   $linkSiblings(writableParent, previous, next);
   writableParent.__size -= nodes.length;
   return nodes.map(writable => {
+    $recordNodeMove(writable);
     writable.__prev = null;
     writable.__next = null;
     writable.__parent = null;

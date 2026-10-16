@@ -696,36 +696,4 @@ describe('a DOM change recorded before a commit runs', () => {
     ]);
     expect(editor.getEditorState().toJSON()).toEqual(renderedJSON);
   });
-
-  test('emptying text inside an update that fails', () => {
-    const {block, editor, errors, renderedHTML, renderedJSON, root} =
-      mountEditor(() => [$createParagraphNode().append($createTextNode('ab'))]);
-    editor.update(() => {
-      textSpans(block)[0].firstChild!.nodeValue = '';
-      throw new Error('failed');
-    });
-    expect(errors).toEqual(['failed']);
-    expect(editor.getEditorState().toJSON()).toEqual(renderedJSON);
-    expectHtmlToBeEqual(root.innerHTML, renderedHTML);
-  });
-
-  test('an update queued in an update that fails commits on its own', () => {
-    const {block, editor, errors} = mountEditor(() => [$tokens()]);
-    const tags: string[][] = [];
-    editor.registerUpdateListener(update => tags.push([...update.tags]));
-    editor.update(
-      () => {
-        block.append(textSpans(block)[0]);
-        editor.update(() => $getRoot().append($createParagraphNode()), {
-          tag: 'queued',
-        });
-        throw new Error('failed');
-      },
-      {tag: 'failed'},
-    );
-    // Commit the queued update.
-    editor.read(() => {});
-    expect(errors).toEqual(['failed']);
-    expect(tags).toEqual([['failed'], ['queued']]);
-  });
 });

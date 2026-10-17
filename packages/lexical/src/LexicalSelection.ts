@@ -97,6 +97,7 @@ import {
   $needsBlockCursorBeside,
   $restoreEmptyContainerParagraph,
   $setCompositionKey,
+  $updateCompositionPlaceholder,
   doesContainSurrogatePair,
   getActiveElement,
   getActiveElementDeep,
@@ -390,6 +391,7 @@ function $insertTextAtPoint(
     anchorNode.remove();
   }
   textNode.selectEnd();
+  $updateCompositionPlaceholder(textNode.getLatest(), 0, 0, text);
   if (textNode.isComposing() && selection.anchor.type === 'text') {
     selection.anchor.set(
       selection.anchor.key,
@@ -1055,6 +1057,7 @@ export class RangeSelection implements BaseSelection {
       newNode.setStyle(style);
       anchorNode.replace(newNode);
       newNode.select();
+      $updateCompositionPlaceholder(newNode.getLatest(), 0, 0, text);
       return;
     }
 

@@ -11,6 +11,7 @@
 import {$createLinkNode, LinkNode} from '@lexical/link';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
+  $cloneWithPropertiesEphemeral,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
@@ -103,6 +104,29 @@ describe('$sliceSelectedTextNodeContent', () => {
     },
   );
   describe('clone', () => {
+    test.each(['set', 'splice', 'json'])(
+      'ephemeral %s edits work without an active editor',
+      method => {
+        const editor = createInitializedEditor();
+        const copy = editor.read(() =>
+          $cloneWithPropertiesEphemeral($getRoot().getAllTextNodes()[0]),
+        );
+        editor.getEditorState().read(() => {
+          if (method === 'set') {
+            copy.setTextContent('export-copy');
+          } else if (method === 'splice') {
+            copy.spliceText(0, 5, 'export-copy');
+          } else {
+            copy.updateFromJSON({...copy.exportJSON(), text: 'export-copy'});
+          }
+          expect(copy.getTextContent()).toBe('export-copy');
+        });
+        editor.read(() => {
+          expect($getRoot().getTextContent()).toBe('0123456789');
+        });
+      },
+    );
+
     test('does not clone with full selection (both nodes)', () => {
       const editor = createInitializedEditor();
       editor.read(() => {

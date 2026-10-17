@@ -374,7 +374,7 @@ describe('registerCommentMarkHistorySync', () => {
     }
   });
 
-  test('a dangling id with no tombstone is pruned instead of restored', async () => {
+  test('a dangling id with no tombstone is pruned instead of restored', () => {
     let markKey = '';
     editor.update(
       () => {
@@ -396,8 +396,8 @@ describe('registerCommentMarkHistorySync', () => {
     );
 
     editor.dispatchCommand(UNDO_COMMAND, undefined);
+    // flush the prune update queued by the update listener
     editor.read(() => {});
-    await new Promise(resolve => setTimeout(resolve));
 
     const result = editor.read(() => {
       const node = $getNodeByKey(markKey);

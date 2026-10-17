@@ -8,13 +8,12 @@
 
 import type {CommentStore} from './index';
 
-import {$isMarkNode, $unwrapMarkNode, MarkNode} from '@lexical/mark';
+import {$unwrapMarkNode, MarkNode} from '@lexical/mark';
 import {
-  $getNodeByKey,
+  $nodesOfType,
   HISTORIC_TAG,
   HISTORY_MERGE_TAG,
   type LexicalEditor,
-  type NodeKey,
 } from 'lexical';
 
 export function $pruneStaleMarkNodeIDs(
@@ -31,84 +30,53 @@ export function $pruneStaleMarkNodeIDs(
   }
 }
 
+function $collectMarkIDs(): Set<string> {
+  const ids = new Set<string>();
+  for (const node of $nodesOfType(MarkNode)) {
+    for (const id of node.getIDs()) {
+      ids.add(id);
+    }
+  }
+  return ids;
+}
+
 export function registerCommentMarkHistorySync(
   editor: LexicalEditor,
   commentStore: CommentStore,
 ): () => void {
-  const priorIDs = new Map<NodeKey, readonly string[]>();
-
-  return editor.registerMutationListener(
-    MarkNode,
-    (mutations, {updateTags}) => {
-      const isHistoric = updateTags.has(HISTORIC_TAG);
-      const toRestore = new Set<string>();
-      const toRetire = new Set<string>();
-      const afterByKey = new Map<NodeKey, readonly string[]>();
-
-      editor.read('latest', () => {
-        for (const [key, mutation] of mutations) {
-          const before = priorIDs.get(key) ?? [];
-          const node = mutation === 'destroyed' ? null : $getNodeByKey(key);
-          const after = $isMarkNode(node) ? node.getIDs() : [];
-          afterByKey.set(key, after);
-
-          if (isHistoric) {
-            for (const id of after) {
-              if (!before.includes(id) && !commentStore.hasThread(id)) {
-                toRestore.add(id);
-              }
-            }
-            for (const id of before) {
-              if (!after.includes(id) && commentStore.hasThread(id)) {
-                toRetire.add(id);
-              }
-            }
-          }
-
-          if (mutation === 'destroyed') {
-            priorIDs.delete(key);
-          } else {
-            priorIDs.set(key, after);
-          }
-        }
-      });
-
-      if (!isHistoric) {
+  return editor.registerUpdateListener(
+    ({editorState, prevEditorState, tags}) => {
+      if (!tags.has(HISTORIC_TAG)) {
         return;
       }
+      const before = prevEditorState.read($collectMarkIDs);
+      const after = editorState.read($collectMarkIDs);
 
-      for (const id of toRestore) {
-        commentStore.restoreThread(id);
+      for (const id of after) {
+        if (!before.has(id) && !commentStore.hasThread(id)) {
+          commentStore.restoreThread(id);
+        }
       }
-      for (const id of toRetire) {
-        commentStore.retireThread(id);
-      }
-
-      const staleKeys: NodeKey[] = [];
-      for (const [key, after] of afterByKey) {
-        if (after.some(id => !commentStore.hasThread(id))) {
-          staleKeys.push(key);
+      for (const id of before) {
+        if (!after.has(id) && commentStore.hasThread(id)) {
+          commentStore.retireThread(id);
         }
       }
 
-      if (staleKeys.length === 0) {
+      const hasDanglingID = Array.from(after).some(
+        id => !commentStore.hasThread(id),
+      );
+      if (!hasDanglingID) {
         return;
       }
-
-      setTimeout(() => {
-        editor.update(
-          () => {
-            for (const key of staleKeys) {
-              const node = $getNodeByKey(key);
-              if ($isMarkNode(node)) {
-                $pruneStaleMarkNodeIDs(node, id => commentStore.hasThread(id));
-              }
-            }
-          },
-          {tag: HISTORY_MERGE_TAG},
-        );
-      });
+      editor.update(
+        () => {
+          for (const node of $nodesOfType(MarkNode)) {
+            $pruneStaleMarkNodeIDs(node, id => commentStore.hasThread(id));
+          }
+        },
+        {tag: HISTORY_MERGE_TAG},
+      );
     },
-    {skipInitialization: true},
   );
 }

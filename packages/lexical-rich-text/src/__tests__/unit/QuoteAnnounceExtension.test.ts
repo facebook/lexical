@@ -6,24 +6,31 @@
  *
  */
 
-import {AriaLiveRegionExtension} from '@lexical/a11y';
+import {AriaLiveRegionExtension, HistoryAnnounceExtension} from '@lexical/a11y';
 import {
   buildEditorFromExtensions,
   defineExtension,
   getExtensionDependencyFromEditor,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
+import {HistoryExtension} from '@lexical/history';
 import {PlainTextExtension} from '@lexical/plain-text';
 import {
+  $createHeadingNode,
   $createQuoteNode,
+  $isQuoteNode,
   QuoteAnnounceExtension,
   RichTextExtension,
 } from '@lexical/rich-text';
+import {$setBlocksType} from '@lexical/selection';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getSelection,
   configExtension,
+  REDO_COMMAND,
+  UNDO_COMMAND,
 } from 'lexical';
 import {afterEach, describe, expect, onTestFinished, test} from 'vitest';
 
@@ -203,6 +210,77 @@ describe('QuoteAnnounceExtension', () => {
     );
 
     expect(readLiveRegion()).toBe('Block quote removed, in block quote');
+  });
+
+  test('lets the new block speak when a quote becomes another block type', () => {
+    using editor = buildEditor();
+    addQuote(editor);
+    clearLiveRegion();
+
+    editor.update(
+      () => $setBlocksType($getSelection(), () => $createHeadingNode('h2')),
+      {discrete: true},
+    );
+
+    // The heading announcer speaks from a mutation listener, while this one
+    // speaks from an update listener that runs after it. Reporting the quote
+    // here would overwrite the heading in the live region.
+    expect(readLiveRegion()).toBe('Heading level 2');
+  });
+
+  test('still reports removal when a quote becomes a plain paragraph', () => {
+    using editor = buildEditor();
+    addQuote(editor);
+    clearLiveRegion();
+
+    editor.update(
+      () => $setBlocksType($getSelection(), () => $createParagraphNode()),
+      {discrete: true},
+    );
+
+    // Nothing announces a paragraph, so this is the only report there is.
+    expect(readLiveRegion()).toBe('Block quote removed');
+  });
+
+  test('leaves undo and redo to the history announcer', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          RichTextExtension,
+          HistoryExtension,
+          HistoryAnnounceExtension,
+        ],
+        name: '[root]',
+      }),
+    );
+    mountRoot(editor);
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('text');
+        paragraph.append(text);
+        $getRoot().append(paragraph);
+        text.selectEnd();
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => $setBlocksType($getSelection(), () => $createQuoteNode()),
+      {discrete: true},
+    );
+    const quoteCount = () =>
+      editor.read(() => $getRoot().getChildren().filter($isQuoteNode).length);
+    expect(quoteCount()).toBe(1);
+
+    clearLiveRegion();
+    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    expect(quoteCount()).toBe(0);
+    expect(readLiveRegion()).toBe('Undone');
+
+    clearLiveRegion();
+    editor.dispatchCommand(REDO_COMMAND, undefined);
+    expect(quoteCount()).toBe(1);
+    expect(readLiveRegion()).toBe('Redone');
   });
 
   test('honours a configured message', () => {

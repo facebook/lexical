@@ -12,9 +12,11 @@ import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
+  $isParagraphNode,
   $isRangeSelection,
   defineExtension,
   type EditorState,
+  HISTORIC_TAG,
   type NodeKey,
   safeCast,
 } from 'lexical';
@@ -97,6 +99,35 @@ export const QuoteAnnounceExtension = defineExtension({
     const isMissingFrom = (editorState: EditorState, key: NodeKey): boolean =>
       editorState.read(() => $getNodeByKey(key) === null);
 
+    /**
+     * True when the caret now sits in a block that this commit created and
+     * that is not a plain paragraph — the shape of converting one block type
+     * to another, as `$setBlocksType` does.
+     *
+     * A converted-to block speaks for itself: the heading announcer reports
+     * "Heading level 2" from a mutation listener, which runs while the commit
+     * is still being applied. This announcer runs afterwards, from an update
+     * listener, and the live region keeps only the last message — so saying
+     * the quote went away here would erase what the new block said. Staying
+     * quiet lets the more useful message stand.
+     *
+     * Converting to a plain paragraph is excluded because nothing announces a
+     * paragraph, so "Block quote removed" is the only report the user gets.
+     */
+    const $replacedByAnotherBlockType = (
+      editorState: EditorState,
+      prevEditorState: EditorState,
+      blockKey: NodeKey,
+    ): boolean =>
+      editorState.read(() => {
+        const block = $getNodeByKey(blockKey);
+        return (
+          block !== null &&
+          !$isParagraphNode(block) &&
+          isMissingFrom(prevEditorState, blockKey)
+        );
+      });
+
     // Recorded by the mutation listener, read by the update listener that runs
     // after it.
     let quotesChanged: 'created' | 'destroyed' | null = null;
@@ -126,12 +157,26 @@ export const QuoteAnnounceExtension = defineExtension({
               {skipInitialization: true},
             ),
             editor.registerUpdateListener(
-              ({dirtyElements, dirtyLeaves, editorState, prevEditorState}) => {
+              ({
+                dirtyElements,
+                dirtyLeaves,
+                editorState,
+                prevEditorState,
+                tags,
+              }) => {
                 const changed = quotesChanged;
                 quotesChanged = null;
                 // Nothing was made or unmade, so nothing can have appeared or
                 // disappeared beside the caret.
                 if (dirtyElements.size === 0 && dirtyLeaves.size === 0) {
+                  return;
+                }
+                // Undo and redo are reported by HistoryAnnounceExtension,
+                // which speaks from the command handler while the commit is
+                // still running. Describing the quote afterwards would erase
+                // "Undone" and leave the user told that a quote went away
+                // rather than that their edit was reversed.
+                if (tags.has(HISTORIC_TAG)) {
                   return;
                 }
                 if (changed === 'created') {
@@ -143,6 +188,17 @@ export const QuoteAnnounceExtension = defineExtension({
                 const after = $caretAt(editorState);
 
                 if (changed === 'destroyed') {
+                  if (
+                    after !== null &&
+                    after.quote === null &&
+                    $replacedByAnotherBlockType(
+                      editorState,
+                      prevEditorState,
+                      after.block,
+                    )
+                  ) {
+                    return;
+                  }
                   // Removing the lower of two quotes leaves the caret inside
                   // the one above, which is worth saying as well.
                   announce(

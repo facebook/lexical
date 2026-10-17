@@ -39,6 +39,7 @@ import {
 import {contextValue} from '../ContextRecord';
 import {defineImportRule} from './defineImportRule';
 import {
+  createImportState,
   ImportTextFormat,
   ImportTextStyle,
   ImportWhitespaceConfig,
@@ -48,6 +49,13 @@ import {$propagateTextAlignToBlockChildren, BlockSchema} from './schemas';
 import {selBase} from './sel';
 
 const sel = selBase;
+
+// Only the default BR rule can retain a transparent block's placeholder.
+// A higher-priority rule that removes it must remain authoritative.
+const ImportPlaceholderBlock = createImportState<Node | null>(
+  'placeholderBlock',
+  () => null,
+);
 
 const ALIGNMENT_VALUES: ReadonlySet<string> = new Set<ElementFormatType>([
   'center',
@@ -470,16 +478,21 @@ const IgnoreScriptStyleRule = defineImportRule({
 });
 
 const LineBreakRule = defineImportRule({
-  // Mirror the legacy LineBreakNode.importDOM filter: stray `<br>` that
-  // are the sole or trailing child of a block parent (e.g. Apple's
-  // `<br class="Apple-interchange-newline">` clipboard sentinel, or the
-  // trailing `<br>` browsers insert after the last text in a `<div>`)
-  // would otherwise survive as a LineBreakNode and tack an extra blank
-  // line onto the imported content.
-  $import: (_ctx, el) =>
-    isOnlyChildInBlockNode(el) || isLastChildInBlockNode(el)
-      ? []
-      : [$createLineBreakNode()],
+  // Keep a sole placeholder only while its transparent block is importing
+  // children: BlockSchema turns it into an empty paragraph. Otherwise mirror
+  // the legacy filter for sole or trailing BRs. Clipboard sentinels such as
+  // `<br class="Apple-interchange-newline">` and trailing BRs after text
+  // must not add another blank line to the imported content.
+  $import: (ctx, el) => {
+    if (isOnlyChildInBlockNode(el)) {
+      if (ctx.get(ImportPlaceholderBlock) !== el.parentNode) {
+        return [];
+      }
+    } else if (isLastChildInBlockNode(el)) {
+      return [];
+    }
+    return [$createLineBreakNode()];
+  },
   match: sel.tag('br'),
   name: '@lexical/html/br',
 });
@@ -572,7 +585,10 @@ const TransparentBlockRule = defineImportRule({
       return $next();
     }
     return $propagateTextAlignToBlockChildren(
-      ctx.$importChildren(el, {schema: BlockSchema}),
+      ctx.$importChildren(el, {
+        context: [contextValue(ImportPlaceholderBlock, el)],
+        schema: BlockSchema,
+      }),
       el,
     );
   },

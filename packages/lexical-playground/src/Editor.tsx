@@ -27,6 +27,7 @@ import EmojiPickerPlugin from './plugins/EmojiPickerPlugin';
 import {ExcalidrawPlugin} from './plugins/ExcalidrawExtension';
 import FloatingLinkEditorPlugin from './plugins/FloatingLinkEditorPlugin';
 import FloatingTextFormatToolbarPlugin from './plugins/FloatingTextFormatToolbarPlugin';
+import MarkdownPastePlugin from './plugins/MarkdownPastePlugin';
 import {MentionsPlugin} from './plugins/MentionsExtension';
 import FloatingRubyEditorPlugin from './plugins/RubyExtension/FloatingRubyEditor';
 import {ShortcutsExtension} from './plugins/ShortcutsExtension';
@@ -133,6 +134,7 @@ export default function Editor(): JSX.Element {
         <ComponentPickerPlugin />
         <EmojiPickerPlugin />
         <AutoEmbedPlugin />
+        {isRichText && <MarkdownPastePlugin />}
         <MentionsPlugin />
         <SpeechToTextPlugin />
         {!(isCollab && useCollabV2) && (

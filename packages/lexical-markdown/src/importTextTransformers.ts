@@ -150,8 +150,11 @@ export function importTextTransformers(
     }
   }
 
-  // Handle escape characters
-  const textContent = textNode.getTextContent();
-  const unescapedText = unescapeText(textContent);
-  textNode.setTextContent(unescapedText);
+  // A transformer may have converted the original node to inline code,
+  // whose backslashes and character references must remain literal.
+  if (!textNode.hasFormat('code')) {
+    const textContent = textNode.getTextContent();
+    const unescapedText = unescapeText(textContent);
+    textNode.setTextContent(unescapedText);
+  }
 }

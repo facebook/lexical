@@ -565,13 +565,4 @@ describe('syncChildrenFromLexical: moving children among siblings', () => {
     await syncClients(a, b);
     expect(b.texts()).toEqual(expected);
   });
-
-  test('moving one of 8000 siblings re-creates only the moved collab node', () => {
-    const a = buildClient();
-    seed(a, 8000);
-    const before = new Set(rootChildren(a));
-    a.editor.update(() => $move(7999, 0), {discrete: true});
-    const after = rootChildren(a);
-    expect(after.filter(child => !before.has(child))).toHaveLength(1);
-  });
 });

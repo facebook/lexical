@@ -7,6 +7,7 @@
  */
 
 import {
+  deleteLineBackward,
   moveToLineBeginning,
   moveToLineEnd,
   selectAll,
@@ -18,6 +19,7 @@ import {
   expect,
   focusEditor,
   initialize,
+  IS_MAC,
   sleep,
   test,
   waitForSelector,
@@ -195,6 +197,24 @@ test.describe('PullQuote slot host', () => {
     await expect.poll(() => slotText(page, 'quote')).toBe('QUOTESECOND');
     expect(await slotText(page, 'attribution')).toBe('Arthur C. Clarke');
     expect(await pullquoteCount(page)).toBe(1);
+  });
+
+  // Cmd+Backspace deletes the line, not one character (#9363).
+  test('deleteLineBackward inside the quote slot deletes the line', async ({
+    page,
+  }) => {
+    test.skip(!IS_MAC, 'deleteLineBackward is only bound on Mac');
+    await focusEditor(page);
+    await insertPullQuote(page);
+
+    await selectSlotText(page, 'quote');
+    await page.keyboard.type('QUOTE');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('SECOND');
+    await expect.poll(() => slotText(page, 'quote')).toBe(`QUOTE${PARA}SECOND`);
+    await deleteLineBackward(page);
+    await expect.poll(() => slotText(page, 'quote')).toBe(`QUOTE${PARA}`);
+    expect(await slotText(page, 'attribution')).toBe('Arthur C. Clarke');
   });
 
   // The attribution slot's value is a bare ParagraphNode — the slot link

@@ -326,6 +326,7 @@ export {
   $formatText,
   $generateNodesFromRawText,
   $getCharacterOffsets,
+  $getElementAndOffsetForPoint,
   $getPreviousSelection,
   $getSelection,
   $getTextContent,

@@ -48,7 +48,7 @@ import {
   $garbageCollectDetachedDecorators,
   $garbageCollectDetachedNodes,
 } from './LexicalGC';
-import {initMutationObserver} from './LexicalMutations';
+import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {$normalizeTextNode} from './LexicalNormalization';
 import {$reconcileRoot} from './LexicalReconciler';
 import {
@@ -95,6 +95,9 @@ let isCommittingPendingUpdates = false;
 // budget. See `scheduleCascadeReset`.
 const editorsWithPendingCascadeReset = new Set<LexicalEditor>();
 const editorsWithPendingSelectionChange = new Set<LexicalEditor>();
+// Editors that are notifying the listeners of a commit. See
+// `isDispatchingCommitListeners`.
+const editorsDispatchingCommitListeners = new Set<LexicalEditor>();
 let infiniteTransformCount = 0;
 
 const observerOptions = {
@@ -102,6 +105,16 @@ const observerOptions = {
   childList: true,
   subtree: true,
 };
+
+/**
+ * Returns true while the editor is notifying the mutation, decorator, text
+ * content, and update listeners of a commit. Committing another update at that
+ * point would notify the remaining listeners of the current commit after the
+ * listeners of the newer one, with an editor state that is no longer current.
+ */
+export function isDispatchingCommitListeners(editor: LexicalEditor): boolean {
+  return editorsDispatchingCommitListeners.has(editor);
+}
 
 /** Returns true if the current editor update context is read-only. */
 export function isCurrentlyReadOnlyMode(): boolean {
@@ -597,6 +610,13 @@ export function $commitPendingUpdates(
   editor: LexicalEditor,
   recoveryEditorState?: EditorState,
 ): void {
+  // Not in the recovery from a failed update, which commits inside it, where
+  // the flush would run against the failed editor state.
+  if (editor._pendingEditorState !== null && activeEditor !== editor) {
+    // The commit disconnects the observer, which drops the DOM changes it has
+    // recorded but not reported yet, so they are reverted first.
+    flushRootMutations(editor, false, true);
+  }
   // Save and restore rather than set and clear because the reconciler error
   // recovery path re-enters $commitPendingUpdates, and the enqueued update
   // pump at the tail of a commit can commit discrete updates synchronously.
@@ -800,44 +820,54 @@ function $commitPendingUpdatesImpl(
     }
   }
 
-  if (mutatedNodes !== null) {
-    triggerMutationListeners(
-      editor,
-      mutatedNodes,
-      tags,
-      dirtyLeaves,
-      currentEditorState,
-    );
-  }
-  /**
-   * Capture pendingDecorators after garbage collecting detached decorators
-   */
-  const pendingDecorators = editor._pendingDecorators;
-  if (pendingDecorators !== null) {
-    editor._decorators = pendingDecorators;
-    editor._pendingDecorators = null;
-    triggerListeners('decorator', editor, true, pendingDecorators);
-  }
+  // Save and restore because a listener can force a nested commit of this
+  // editor (e.g. a discrete update), whose listeners run inside this block.
+  const previouslyDispatching = editorsDispatchingCommitListeners.has(editor);
+  editorsDispatchingCommitListeners.add(editor);
+  try {
+    if (mutatedNodes !== null) {
+      triggerMutationListeners(
+        editor,
+        mutatedNodes,
+        tags,
+        dirtyLeaves,
+        currentEditorState,
+      );
+    }
+    /**
+     * Capture pendingDecorators after garbage collecting detached decorators
+     */
+    const pendingDecorators = editor._pendingDecorators;
+    if (pendingDecorators !== null) {
+      editor._decorators = pendingDecorators;
+      editor._pendingDecorators = null;
+      triggerListeners('decorator', editor, true, pendingDecorators);
+    }
 
-  // If reconciler fails, we reset whole editor (so current editor state becomes empty)
-  // and attempt to re-render pendingEditorState. If that goes through we trigger
-  // listeners, but instead use recoverEditorState which is current editor state before reset
-  // This specifically important for collab that relies on prevEditorState from update
-  // listener to calculate delta of changed nodes/properties
-  triggerTextContentListeners(
-    editor,
-    recoveryEditorState || currentEditorState,
-    pendingEditorState,
-  );
-  triggerListeners('update', editor, true, {
-    dirtyElements,
-    dirtyLeaves,
-    editorState: pendingEditorState,
-    mutatedNodes,
-    normalizedNodes,
-    prevEditorState: recoveryEditorState || currentEditorState,
-    tags,
-  });
+    // If reconciler fails, we reset whole editor (so current editor state becomes empty)
+    // and attempt to re-render pendingEditorState. If that goes through we trigger
+    // listeners, but instead use recoverEditorState which is current editor state before reset
+    // This specifically important for collab that relies on prevEditorState from update
+    // listener to calculate delta of changed nodes/properties
+    triggerTextContentListeners(
+      editor,
+      recoveryEditorState || currentEditorState,
+      pendingEditorState,
+    );
+    triggerListeners('update', editor, true, {
+      dirtyElements,
+      dirtyLeaves,
+      editorState: pendingEditorState,
+      mutatedNodes,
+      normalizedNodes,
+      prevEditorState: recoveryEditorState || currentEditorState,
+      tags,
+    });
+  } finally {
+    if (!previouslyDispatching) {
+      editorsDispatchingCommitListeners.delete(editor);
+    }
+  }
   // A commit can be forced while an outer update is still running (for
   // example, setEditorState() inside editor.update()). Keep $onUpdate
   // callbacks queued so the outer update drains them after updateFn returns.

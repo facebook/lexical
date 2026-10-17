@@ -6,12 +6,38 @@
  *
  */
 
+import type {Plugin} from 'vite';
+
 import react from '@vitejs/plugin-react';
 import {playwright} from '@vitest/browser-playwright';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {configDefaults, defineConfig} from 'vitest/config';
+
+import {browserCommands} from './scripts/vitest/browserCommands.ts';
+
+// @vitest/browser adds @vitest/mocker's interceptor plugin with
+// `registerWebSocketEvents: false`, which still defines a configureServer
+// hook that does nothing, so Vite warns on every browser run that the hook is
+// ignored. Vitest installs its own logger, so drop the warning from the
+// resolved one.
+const IGNORED_INTERCEPTOR_WARNING =
+  'Plugin "vitest:mocks:interceptor" defines Vite-specific hooks (configureServer)';
+function ignoreInterceptorWarning(): Plugin {
+  return {
+    configResolved(config) {
+      const {logger} = config;
+      const {warnOnce} = logger;
+      logger.warnOnce = (message, options) => {
+        if (!message.startsWith(IGNORED_INTERCEPTOR_WARNING)) {
+          warnOnce(message, options);
+        }
+      };
+    },
+    name: 'lexical:ignore-interceptor-warning',
+  };
+}
 
 // Resolve monorepo imports to TypeScript source from the test tsconfig's
 // `paths`. This includes the cross-package and deep `*/src/__tests__/utils`
@@ -56,7 +82,37 @@ const browserInstances = (process.env.VITEST_BROWSER || 'chromium')
   .filter(
     name => name === 'webkit' || name === 'chromium' || name === 'firefox',
   )
-  .map(browser => ({browser}));
+  // Test files run in parallel pages of one browser. Playwright's Firefox
+  // activates a page's window for every mouse event it dispatches, so a click
+  // or drag in one file deactivates the window of a file that is pressing
+  // keys, and Firefox can drop caret navigation (arrow keys, Home, End) in an
+  // inactive window. Chromium and WebKit pages each behave as focused, so
+  // only Firefox runs its files one at a time.
+  //
+  // A mouse move that Playwright dispatches in Chromium or Firefox completes
+  // at the next frame, and both pace frames at 60Hz, so tests that drag the
+  // mouse spent most of their time waiting for frames. Both draw frames as
+  // soon as they can instead.
+  .map(browser =>
+    browser === 'firefox'
+      ? {
+          browser,
+          maxWorkers: 1,
+          provider: playwright({
+            launchOptions: {firefoxUserPrefs: {'layout.frame_rate': 0}},
+          }),
+        }
+      : browser === 'chromium'
+        ? {
+            browser,
+            provider: playwright({
+              launchOptions: {
+                args: ['--disable-frame-rate-limit', '--disable-gpu-vsync'],
+              },
+            }),
+          }
+        : {browser},
+  );
 
 const compilerUnitTests =
   'packages/lexical-compiler/**/__tests__/unit/**/*.test{.ts,.tsx,.js,.jsx}';
@@ -126,35 +182,11 @@ export default defineConfig({
             'react-dom/client',
           ],
         },
-        plugins: [react()],
+        plugins: [react(), ignoreInterceptorWarning()],
         test: {
           api: {port: 8315},
           browser: {
-            commands: {
-              // Vitest's keyboard descriptor parser splits non-BMP text into
-              // UTF-16 code units. Native Playwright typing preserves code
-              // points, matching the E2E driver's input behavior. Bound each
-              // code point so long input can make progress on a busy runner,
-              // and stop if the fixture is removed. Keep the loop in one
-              // command to avoid a Vitest RPC round trip for every character.
-              typeText: async ({frame}, text: string, selector: string) => {
-                // Capture the element once: type() fails immediately if it
-                // detaches, instead of resolving another fixture's editor.
-                const target = await (await frame())
-                  .locator(selector)
-                  .elementHandle({timeout: 5000});
-                if (target === null) {
-                  throw new Error('typeText target was removed');
-                }
-                try {
-                  for (const character of text) {
-                    await target.type(character, {timeout: 5000});
-                  }
-                } finally {
-                  await target.dispose();
-                }
-              },
-            },
+            commands: browserCommands,
             // Vitest's default browser server port (63315) is in the
             // ephemeral range, and Windows reserves randomized blocks of
             // that range (Hyper-V excluded port ranges), so on Windows CI

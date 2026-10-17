@@ -386,7 +386,7 @@ describe.each([false, true])('Safari composition (richText=%s)', richText => {
     t.composition('compositionstart');
     await t.flush();
     const placeholder = {...t.editor._inputState.compositionPlaceholder};
-    const slice = () => {
+    const $slice = () => {
       const live = $getRoot().getAllTextNodes()[0];
       const node =
         mode === 'live'
@@ -404,9 +404,9 @@ describe.each([false, true])('Safari composition (richText=%s)', richText => {
       expect(result.getTextContent()).toBe('a\u00a0b\u00a0c'.slice(start));
     };
     if (mode === 'live') {
-      t.editor.update(slice, {discrete: true});
+      t.editor.update($slice, {discrete: true});
     } else {
-      t.editor.read(slice);
+      t.editor.read($slice);
       expect(t.editor._inputState.compositionPlaceholder).toEqual(placeholder);
     }
     t.composition('compositionend');

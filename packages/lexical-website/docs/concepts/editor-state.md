@@ -241,6 +241,12 @@ This is why a node reference taken earlier in an update stays usable after the
 node changes. Keys exist only at runtime: they are not serialized, and you
 should treat them as opaque.
 
+A node captured by a later callback may have been removed by the time that
+callback runs. Check `node.isAttached()` inside the read or update where you
+use it; checking that a JavaScript reference is non-null is not enough.
+See [Referencing a node in a later callback](./key-management.md#referencing-a-node-in-a-later-callback)
+for examples of guarding a node reference or resolving a stored key.
+
 Because the callbacks are synchronous, do any asynchronous work (fetching
 data, awaiting a promise) first, and then enter an update with the result.
 

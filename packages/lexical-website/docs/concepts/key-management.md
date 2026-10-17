@@ -14,7 +14,9 @@ The `__key` property is a unique identifier assigned to each node in the Lexical
 
 ### ✅ Correct Usage
 
-Keys should ONLY be used in two specific situations:
+Pass `__key` through constructors and clone methods in these two situations.
+To reference a node from application code, use `node.getKey()` and the
+[key-related APIs](#key-related-apis) instead of accessing `__key` directly.
 
 1. **In Node Constructors**
 ```typescript
@@ -118,6 +120,72 @@ These internal pointers maintain the tree structure and should never be manipula
    // Get mutable version for updates
    const mutable = node.getWritable();
    ```
+
+### Referencing a node in a later callback
+
+A callback (for example, a React event handler or a promise continuation) can
+run after its target node has been removed. A non-null JavaScript reference
+does not guarantee that the node still exists in the active editor state.
+Methods that use `getLatest()` or `getWritable()` can then throw
+`Lexical node does not exist in active editor state.`
+
+You can store a node reference and use it in a later read or update. Node
+methods resolve the latest version from the active editor state, so keeping a
+reference preserves the node's type. For an action that targets a node in the
+document, check `node.isAttached()` inside the same `editor.update()` callback
+before using it:
+
+```typescript
+import type {LexicalEditor, LexicalNode} from 'lexical';
+
+function createSelectNodeCallback(editor: LexicalEditor, node: LexicalNode) {
+  return () => {
+    editor.update(() => {
+      if (node.isAttached()) {
+        node.selectEnd();
+      }
+    });
+  };
+}
+```
+
+`isAttached()` checks whether the node is still connected to the root in the
+active state. It returns `false` if the node is detached or is no longer in
+that state's node map, so it is safe to call on a reference to a removed node
+inside a read or update.
+
+Alternatively, you can capture `node.getKey()` and resolve that key when the
+callback runs. Keep the lookup, attachment check, and mutation inside the same
+`editor.update()` callback:
+
+```typescript
+import type {LexicalEditor, NodeKey} from 'lexical';
+
+import {$getNodeByKey} from 'lexical';
+
+function createSelectNodeCallback(editor: LexicalEditor, nodeKey: NodeKey) {
+  return () => {
+    editor.update(() => {
+      const node = $getNodeByKey(nodeKey);
+      if (node !== null && node.isAttached()) {
+        node.selectEnd();
+      }
+    });
+  };
+}
+```
+
+`$getNodeByKey()` returns `null` when the key is absent from the active state.
+A node can also still be in that state's node map after being detached, before
+garbage collection removes it. For an action that targets a node in the
+document, check `isAttached()` as well.
+
+Both `$getNodeByKey()` and `isAttached()` require an active read or update
+context. Checking them before `editor.update()`, or keeping a check's result
+across an `await`, does not validate the state in which the mutation runs.
+For a read-only callback, perform the lookup, check, and read together inside
+`editor.read()`. Use the editor that owns the node; keys are not persistent
+identifiers for use across editors or serialization.
 
 ### Key Lifecycle
 
@@ -256,7 +324,7 @@ Understanding key management is crucial for performance:
 ## Common Questions
 
 **Q: How do I reference a node later?**
-A: Store a reference to the node. Conventionally, all node methods will use `getLatest()` or `getWritable()` which will look up the latest version of that node before reading or writing its properties, which is equivalent to using the key but is type-safe (but may cause errors if you try to use a reference to a node that no longer exists). In some situations it may be preferable to use the key directly, which is also fine.
+A: Store a reference to the node. Its methods resolve the latest version inside a read or update, preserving the node's type. If the node may have been removed, check `node.isAttached()` in that same context before using it. Storing the key and resolving it with `$getNodeByKey()` is also supported. See [Referencing a node in a later callback](#referencing-a-node-in-a-later-callback) for both patterns.
 
 **Q: How do I ensure unique nodes?**
-A: Let Lexical handle key generation and management. Focus on node content and structure. 
+A: Let Lexical handle key generation and management. Focus on node content and structure.

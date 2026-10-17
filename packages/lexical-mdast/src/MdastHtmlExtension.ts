@@ -55,6 +55,7 @@ import {
 } from 'lexical';
 import {fromMarkdown} from 'mdast-util-from-markdown';
 
+import {htmlBlockPlaceholder, splitHtmlBlock} from './htmlBlockParts';
 import {MdastExtension} from './MdastExtension';
 
 // The mdast nodes raw HTML is normalized into — one for a block-level tag
@@ -191,7 +192,7 @@ function tryBuildHtmlBlock(parent: Parent, index: number): HtmlBlock | null {
         // Splice the Markdown blocks since the previous fragment in as
         // placeholders, then continue the raw stream.
         for (const child of pending) {
-          value += `<template data-mdast-child="${children.length}"></template>`;
+          value += htmlBlockPlaceholder(children.length);
           children.push(child);
         }
         pending = [];
@@ -679,8 +680,7 @@ export type RawHtmlBlockPart =
 export function rawHtmlBlock(...parts: RawHtmlBlockPart[]): HtmlBlock {
   let value = '';
   const children: BlockContent[] = [];
-  const placeholder = () =>
-    `<template data-mdast-child="${children.length}"></template>`;
+  const placeholder = () => htmlBlockPlaceholder(children.length);
   for (const part of parts) {
     if (typeof part === 'string') {
       value += part;
@@ -941,10 +941,6 @@ export const $exportViaDOM: MdastExportHandler = (node, ctx) => {
   return rawHtmlBlock(...parts);
 };
 
-// Split on the placeholder elements, capturing the child index: even
-// segments are raw HTML, odd segments are indices.
-const PLACEHOLDER_SPLIT_RE = /<template data-mdast-child="(\d+)"><\/template>/;
-
 // Serializes an `htmlBlock`: raw segments verbatim, each placeholder through
 // the regular handler for its child so the embedded Markdown gets correct
 // escaping and syntax.
@@ -952,7 +948,7 @@ const htmlBlockToMarkdown: ToMarkdownExtension = {
   handlers: {
     htmlBlock: ((node: HtmlBlock, _parent, state, info) => {
       const tracker = state.createTracker(info);
-      const segments = node.value.split(PLACEHOLDER_SPLIT_RE);
+      const segments = splitHtmlBlock(node.value);
       let value = '';
       for (let i = 0; i < segments.length; i++) {
         if (i % 2 === 0) {

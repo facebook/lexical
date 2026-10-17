@@ -414,3 +414,10 @@ br[data-lexical-managed-linebreak] + .footnote-def-backlinks {
 [data-lexical-editor][contenteditable='false'] .markdown-alert-title::after {
   content: none;
 }
+
+/* The blink for theme.blockCursor (the after: bar) in Editor.tsx. */
+@keyframes block-cursor-blink {
+  to {
+    visibility: hidden;
+  }
+}

@@ -503,6 +503,8 @@ function exportTextFormat(
     output = shouldPreserveNewLines
       ? output.replace(/([*_`~])/g, '\\$1')
       : output.replace(/([*_`~\\])/g, '\\$1');
+    // Text that reads as a character reference keeps its `&` (`\&#65;`).
+    output = output.replace(/&(?=#\d{1,7};)/g, '\\&');
   }
 
   let leadingSpace: string;

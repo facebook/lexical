@@ -38,6 +38,7 @@ For E2E testing workflow:
 - `pnpm run prettier:fix` - Auto-fix formatting issues
 - `pnpm run flow` - Run a full foreground Flow check (does not reuse a server)
 - `pnpm run tsc` - Run TypeScript compiler
+- `pnpm run tsc-dev-examples` - Type-check each `dev-examples/*` app with its own tsconfig (the root `tsc` doesn't cover them)
 - `pnpm run ci-check` - Run all checks (TypeScript, Flow, Prettier, ESLint)
 
 **Never commit changes to `scripts/error-codes/codes.json`.**

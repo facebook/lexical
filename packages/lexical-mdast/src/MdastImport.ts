@@ -29,9 +29,9 @@ import {
   $getSelection,
   tokenizeRawText,
 } from 'lexical';
-import {fromMarkdown} from 'mdast-util-from-markdown';
 
 import {$append, $isBlockLevelNode, $prepend} from './handlers';
+import {parseMarkdown} from './sourceOffsets';
 
 /**
  * Import context state that is true for the whole of a Markdown/mdast
@@ -241,14 +241,9 @@ export function createMdastImport(compiled: CompiledMdast): {
     return blocks;
   };
 
-  const $generateNodesFromMarkdown = (markdown: string): LexicalNode[] =>
-    $generateNodes(
-      fromMarkdown(markdown, {
-        extensions: compiled.micromarkExtensions,
-        mdastExtensions: compiled.mdastExtensions,
-      }),
-      markdown,
-    );
+  const $generateNodesFromMarkdown = (markdown: string): LexicalNode[] => {
+    return $generateNodes(parseMarkdown(compiled, markdown), markdown);
+  };
 
   const $generateNodesFromMdast = (tree: Root): LexicalNode[] =>
     $generateNodes(tree, '');

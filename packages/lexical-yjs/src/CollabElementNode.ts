@@ -649,15 +649,12 @@ export class CollabElementNode {
           nextIndex++;
           continue;
         }
-        const movedNodes = binding.editor.getEditorState()._movedNodes;
         stableKeys = getStableChildKeys(
           prevChildren,
           prevIndex,
           nextChildren,
           nextIndex,
-          prevNodeMap === null || movedNodes === null
-            ? undefined
-            : movedNodes.get(prevNodeMap),
+          binding._movedNodeKeys,
         );
       }
 

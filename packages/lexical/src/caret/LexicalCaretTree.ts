@@ -60,7 +60,11 @@ function $linkSiblings(
 // Record the operation rather than infer it from changed sibling pointers:
 // shifted siblings also have different pointers, but must keep their identity.
 function $recordNodeMove(node: LexicalNode): void {
-  const prevNodeMap = getActiveEditor()._editorState._nodeMap;
+  const editor = getActiveEditor();
+  if (!editor._recordNodeMoves) {
+    return;
+  }
+  const prevNodeMap = editor._editorState._nodeMap;
   if (prevNodeMap.has(node.__key)) {
     const editorState = getActiveEditorState();
     const movedNodes = (editorState._movedNodes ||= new WeakMap());

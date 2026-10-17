@@ -7,10 +7,7 @@
  */
 // @vitest-environment node
 
-import {
-  buildEditorFromExtensions,
-  type LexicalEditorWithDispose,
-} from '@lexical/extension';
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   createBinding,
   createUndoManager,
@@ -28,7 +25,7 @@ import {
   type ElementNode,
   type TextNode,
 } from 'lexical';
-import {afterEach, describe, expect, test} from 'vitest';
+import {describe, expect, onTestFinished, test} from 'vitest';
 import {applyUpdate, Doc, encodeStateAsUpdate, encodeStateVector} from 'yjs';
 
 import {type CollabElementNode} from '../../CollabElementNode';
@@ -50,17 +47,9 @@ const provider = {
 } as unknown as Provider;
 
 describe('syncChildrenFromLexical: moving children among siblings', () => {
-  const editors: LexicalEditorWithDispose[] = [];
-  afterEach(() => {
-    for (const editor of editors) {
-      editor.dispose();
-    }
-    editors.length = 0;
-  });
-
   // A client that mirrors useYjsCollaboration: local updates are written to
   // its own Doc, and Doc changes from other origins are applied to the editor.
-  function buildClient() {
+  function buildClient(deferSync = false) {
     const editor = buildEditorFromExtensions(
       defineExtension({
         $initialEditorState: null,
@@ -70,8 +59,9 @@ describe('syncChildrenFromLexical: moving children among siblings', () => {
         },
       }),
     );
-    editors.push(editor);
+    onTestFinished(() => editor.dispose());
     const doc = new Doc();
+    onTestFinished(() => doc.destroy());
     const binding = createBinding(
       editor,
       provider,
@@ -79,7 +69,7 @@ describe('syncChildrenFromLexical: moving children among siblings', () => {
       doc,
       new Map([['test', doc]]),
     );
-    let syncMs = 0;
+    const pendingSyncs: (() => void)[] = [];
     editor.registerUpdateListener(
       ({
         prevEditorState,
@@ -89,18 +79,22 @@ describe('syncChildrenFromLexical: moving children among siblings', () => {
         normalizedNodes,
         tags,
       }) => {
-        const start = performance.now();
-        syncLexicalUpdateToYjs(
-          binding,
-          provider,
-          prevEditorState,
-          editorState,
-          dirtyElements,
-          dirtyLeaves,
-          normalizedNodes,
-          tags,
-        );
-        syncMs = performance.now() - start;
+        const sync = () =>
+          syncLexicalUpdateToYjs(
+            binding,
+            provider,
+            prevEditorState,
+            editorState,
+            dirtyElements,
+            dirtyLeaves,
+            normalizedNodes,
+            tags,
+          );
+        if (deferSync) {
+          pendingSyncs.push(sync);
+        } else {
+          sync();
+        }
       },
     );
     binding.root.getSharedType().observeDeep((events, transaction) => {
@@ -119,7 +113,11 @@ describe('syncChildrenFromLexical: moving children among siblings', () => {
       binding,
       doc,
       editor,
-      getSyncMs: () => syncMs,
+      syncPendingUpdates: () => {
+        for (const sync of pendingSyncs.splice(0)) {
+          sync();
+        }
+      },
       texts: () =>
         editor.read(() =>
           $getRoot()
@@ -381,6 +379,44 @@ describe('syncChildrenFromLexical: moving children among siblings', () => {
     expect(b.texts()).toEqual(a.texts());
   });
 
+  test('queued transitions use their own movement hints', async () => {
+    const a = buildClient(true);
+    const b = buildClient();
+    seed(a, 10);
+    a.syncPendingUpdates();
+    await syncClients(a, b);
+    const before = rootChildren(a);
+
+    a.editor.update(() => $move(3, 4), {discrete: true});
+    a.editor.update(() => $move(7, 8), {discrete: true});
+    a.syncPendingUpdates();
+
+    for (const index of [4, 8]) {
+      expect(a.binding.collabNodeMap.get(before[index].getKey())).toBe(
+        before[index],
+      );
+    }
+    for (const index of [3, 7]) {
+      expect(a.binding.collabNodeMap.get(before[index].getKey())).not.toBe(
+        before[index],
+      );
+    }
+    expect(a.texts()).toEqual([
+      'P0',
+      'P1',
+      'P2',
+      'P4',
+      'P3',
+      'P5',
+      'P6',
+      'P8',
+      'P7',
+      'P9',
+    ]);
+    await syncClients(a, b);
+    expect(b.texts()).toEqual(a.texts());
+  });
+
   test('bulk reorder snapshots still minimize re-created nodes', async () => {
     const a = buildClient();
     const b = buildClient();
@@ -530,14 +566,12 @@ describe('syncChildrenFromLexical: moving children among siblings', () => {
     expect(b.texts()).toEqual(expected);
   });
 
-  test('moving one of many siblings syncs in roughly linear time', () => {
+  test('moving one of 8000 siblings re-creates only the moved collab node', () => {
     const a = buildClient();
     seed(a, 8000);
-    const before = rootChildren(a);
+    const before = new Set(rootChildren(a));
     a.editor.update(() => $move(7999, 0), {discrete: true});
     const after = rootChildren(a);
-    expect(after.filter(child => !before.includes(child))).toHaveLength(1);
-    // Quadratic behavior took over a second here; leave generous headroom
-    expect(a.getSyncMs()).toBeLessThan(500);
+    expect(after.filter(child => !before.has(child))).toHaveLength(1);
   });
 });

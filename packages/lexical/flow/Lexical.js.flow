@@ -275,6 +275,7 @@ declare export class LexicalEditor {
   _key: string;
   _editable: boolean;
   _headless: boolean;
+  _recordNodeMoves: boolean;
   isComposing(): boolean;
   registerUpdateListener(listener: UpdateListener): () => void;
   registerRootListener(listener: RootListener): () => void;

@@ -81,6 +81,9 @@ jobs:
           CHANNEL: ${{ inputs.channel }}
           LATEST_RELEASE: ${{ steps.latest.outputs.release }}
           DRY_RUN: ${{ inputs.dry-run && '1' || '' }}
+          # Lets update-changelog look up pull requests and contributor
+          # logins that git history does not show (read-only API calls).
+          GITHUB_TOKEN: ${{ github.token }}
 
   publish:
     if: ${{ inputs.publish && !cancelled() && !failure() }}

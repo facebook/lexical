@@ -317,7 +317,7 @@ export const GENERATED_CODEHIGHLIGHT: GeneratedJSONFactory = fields => {
     const style = json.style;
     node.__style = typeof style === 'string' ? style : '';
     const text = json.text;
-    node.__text = typeof text === 'string' ? text : '';
+    node.setTextContent(typeof text === 'string' ? text : '');
     const highlightType = json.highlightType;
     node.setHighlightType(
       highlightType == null

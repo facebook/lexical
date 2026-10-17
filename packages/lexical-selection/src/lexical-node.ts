@@ -73,13 +73,21 @@ export function $sliceSelectedTextNodeContent<T extends TextNode>(
           textNode.__key === end.key ? end.offset : undefined,
         ];
     const text = textNode.__text.slice(startOffset, endOffset);
-    // This may be an ephemeral clone: do not resolve getLatest() or insert
-    // it into the editor state when changing its own text.
     if (text !== textNode.__text) {
       if (mutates === 'clone') {
         textNode = $cloneWithPropertiesEphemeral(textNode);
       }
-      textNode.__text = text;
+      if ($getNodeByKey(textNode.__key) === textNode) {
+        // Keep the known slice range: equal NBSPs cannot identify ownership
+        // from a whole-text replacement. Delete the suffix, then the prefix.
+        const size = textNode.__text.length;
+        const prefixSize = size - textNode.__text.slice(startOffset).length;
+        textNode.spliceText(prefixSize + text.length, size, '');
+        textNode.spliceText(0, prefixSize, '');
+      } else {
+        // Export copies keep their own text, without invoking live setters.
+        textNode.__text = text;
+      }
     }
   }
   return textNode;

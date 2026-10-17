@@ -10,8 +10,14 @@ import {
   buildEditorFromExtensions,
   configExtension,
   getExtensionDependencyFromEditor,
+  namedSignals,
 } from '@lexical/extension';
-import {$createLinkNode, ClickableLinkExtension} from '@lexical/link';
+import {
+  $createLinkNode,
+  ClickableLinkExtension,
+  LinkExtension,
+  registerClickableLink,
+} from '@lexical/link';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
@@ -108,7 +114,9 @@ test.each([
       const getWindow = getExtensionDependencyFromEditor(
         editor,
         ClickableLinkExtension,
-      ).output.getWindow!;
+      ).output.getWindow;
+      const defaultGetWindow = getWindow.peek();
+      expect(defaultGetWindow).toEqual(expect.any(Function));
       getWindow.value = () => frameWindow;
       root
         .querySelector('a')!
@@ -118,7 +126,7 @@ test.each([
       expect(frameOpen).toHaveBeenCalledExactlyOnceWith(url, '_self');
       expect(parentOpen).not.toHaveBeenCalled();
 
-      getWindow.value = undefined;
+      getWindow.value = defaultGetWindow;
       root
         .querySelector('a')!
         .dispatchEvent(
@@ -129,3 +137,42 @@ test.each([
     }
   },
 );
+
+test('registerClickableLink keeps the default for callers without a getWindow signal', () => {
+  const open = vi.spyOn(window, 'open').mockImplementation(() => null);
+  const editor = buildEditorFromExtensions(
+    defineExtension({
+      dependencies: [RichTextExtension, LinkExtension],
+      name: 'LegacyClickableLink',
+    }),
+  );
+  const root = document.createElement('div');
+  root.contentEditable = 'true';
+  document.body.append(root);
+  const unregister = registerClickableLink(
+    editor,
+    namedSignals({disabled: false, newTab: false}),
+  );
+  onTestFinished(() => {
+    unregister();
+    editor.dispose();
+    open.mockRestore();
+    root.remove();
+  });
+  editor.setRootElement(root);
+  editor.update(
+    () => {
+      $getRoot().append(
+        $createParagraphNode().append(
+          $createLinkNode(url).append($createTextNode('Link')),
+        ),
+      );
+    },
+    {discrete: true},
+  );
+
+  const event = new MouseEvent('click', {bubbles: true, cancelable: true});
+  root.querySelector('a')!.dispatchEvent(event);
+  expect(open).toHaveBeenCalledExactlyOnceWith(url, '_self');
+  expect(event.defaultPrevented).toBe(true);
+});

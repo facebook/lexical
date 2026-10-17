@@ -6,7 +6,11 @@
  *
  */
 
-import {namedSignals, type NamedSignalsOutput} from '@lexical/extension';
+import {
+  namedSignals,
+  type NamedSignalsOutput,
+  signal,
+} from '@lexical/extension';
 import {
   $findMatchingParent,
   $getNearestNodeFromDOMNode,
@@ -48,14 +52,27 @@ export interface ClickableLinkConfig {
    * Resolve the window used to open links (defaults to the global window).
    * Return null to leave the click unhandled.
    */
-  getWindow?: (editor: LexicalEditor) => Window | null;
+  getWindow: (editor: LexicalEditor) => Window | null;
+}
+
+function defaultGetWindow(): Window {
+  return window;
 }
 
 export function registerClickableLink(
   editor: LexicalEditor,
-  stores: NamedSignalsOutput<ClickableLinkConfig>,
+  // Older registration callers only provide disabled and newTab signals.
+  stores: Pick<
+    NamedSignalsOutput<ClickableLinkConfig>,
+    'disabled' | 'newTab'
+  > & {
+    getWindow?: NamedSignalsOutput<ClickableLinkConfig>['getWindow'];
+  },
   eventOptions: Pick<AddEventListenerOptions, 'signal'> = {},
 ): () => void {
+  const getWindow =
+    stores.getWindow ??
+    signal<ClickableLinkConfig['getWindow']>(defaultGetWindow);
   const onClick = (event: MouseEvent) => {
     // `click` only fires for the primary button; every other button arrives
     // as `auxclick` (middle, right, and the back / forward buttons). Only the
@@ -116,8 +133,7 @@ export function registerClickableLink(
       event.metaKey ||
       event.ctrlKey ||
       urlTarget === '_blank';
-    const getWindow = stores.getWindow && stores.getWindow.peek();
-    const targetWindow = getWindow ? getWindow(editor) : window;
+    const targetWindow = getWindow.peek()(editor);
     if (targetWindow === null) {
       return;
     }
@@ -157,7 +173,7 @@ export const ClickableLinkExtension = defineExtension({
   },
   config: safeCast<ClickableLinkConfig>({
     disabled: false,
-    getWindow: undefined,
+    getWindow: defaultGetWindow,
     newTab: false,
   }),
   dependencies: [LinkExtension],

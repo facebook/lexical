@@ -7,7 +7,11 @@
  */
 
 import {namedSignals} from '@lexical/extension';
-import {type ClickableLinkConfig, registerClickableLink} from '@lexical/link';
+import {
+  type ClickableLinkConfig,
+  ClickableLinkExtension,
+  registerClickableLink,
+} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 
@@ -24,7 +28,7 @@ import {useEffect} from 'react';
 export function ClickableLinkPlugin({
   newTab = true,
   disabled = false,
-  getWindow,
+  getWindow = ClickableLinkExtension.config!.getWindow,
 }: {
   newTab?: boolean;
   disabled?: boolean;

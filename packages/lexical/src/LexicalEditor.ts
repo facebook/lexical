@@ -1172,6 +1172,11 @@ export class LexicalEditor {
 
   /** @internal */
   _headless: boolean;
+  /**
+   * @internal Enabled by the v1 Yjs binding to distinguish moved nodes from
+   * shifted siblings. Once enabled, persists for the lifetime of this editor.
+   */
+  _recordNodeMoves: boolean;
   /** @internal */
   _parentEditor: null | LexicalEditor;
   /** @internal */
@@ -1315,6 +1320,7 @@ export class LexicalEditor {
     this._htmlConversions = htmlConversions;
     this._editable = editable;
     this._headless = parentEditor !== null && parentEditor._headless;
+    this._recordNodeMoves = false;
     this._window = null;
     this._blockCursorElement = null;
     this._slotsUsed = false;

@@ -275,6 +275,7 @@ declare export class LexicalEditor {
   _key: string;
   _editable: boolean;
   _headless: boolean;
+  _recordNodeMoves: boolean;
   isComposing(): boolean;
   registerUpdateListener(listener: UpdateListener): () => void;
   registerRootListener(listener: RootListener): () => void;
@@ -452,6 +453,7 @@ declare export function createEditor(editorConfig?: {
 
 export interface EditorState {
   _nodeMap: NodeMap;
+  _movedNodes: null | WeakMap<NodeMap, Set<NodeKey>>;
   _selection: null | BaseSelection;
   _flushSync: boolean;
   _readOnly: boolean;

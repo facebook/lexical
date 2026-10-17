@@ -21,6 +21,9 @@ overrides:
   yjs: ^13.6.31
   qs: '>=6.15.2'
 
+patchedDependencies:
+  publish-browser-extension@6.1.1: 84ac1ad8ad2e83a1078b95ffd402de890d6b0e336967bacaf22e8c935257eeb1
+
 importers:
 
   .:
@@ -25576,7 +25579,7 @@ snapshots:
   prr@1.0.1:
     optional: true
 
-  publish-browser-extension@6.1.1:
+  publish-browser-extension@6.1.1(patch_hash=84ac1ad8ad2e83a1078b95ffd402de890d6b0e336967bacaf22e8c935257eeb1):
     dependencies:
       '@topcli/prompts': 4.0.0
       cac: 7.0.0
@@ -27814,7 +27817,7 @@ snapshots:
       magicast: 0.5.3
       nypm: 0.6.6
       picomatch: 4.0.7
-      publish-browser-extension: 6.1.1
+      publish-browser-extension: 6.1.1(patch_hash=84ac1ad8ad2e83a1078b95ffd402de890d6b0e336967bacaf22e8c935257eeb1)
       superlock: 1.3.5
       tiny-open: 1.3.0
       tinyexec: 1.3.0

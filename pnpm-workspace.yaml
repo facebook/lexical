@@ -48,3 +48,6 @@ allowBuilds:
   protobufjs: false
   spawn-sync: false
   unrs-resolver: false
+
+patchedDependencies:
+  publish-browser-extension@6.1.1: patches/publish-browser-extension@6.1.1.patch

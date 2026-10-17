@@ -1,0 +1,58 @@
+diff --git a/dist/init-DhMr270n.mjs b/dist/init-DhMr270n.mjs
+index ce7add85e19c639c27ff2f095606371fa4b71a7d..dd956ee58f2f1708d89adcdb0aeea0fd6c66278a 100644
+--- a/dist/init-DhMr270n.mjs
++++ b/dist/init-DhMr270n.mjs
+@@ -1,4 +1,5 @@
+ import tasuku from "tasuku";
++import { setTimeout as delay } from "node:timers/promises";
+ import fs, { ReadStream, createReadStream, openAsBlob } from "node:fs";
+ import fs$1, { copyFile, readFile, writeFile } from "node:fs/promises";
+ import path, { basename } from "node:path";
+@@ -98,7 +99,8 @@ function createHttpClient(options) {
+ 				...inputs.headers
+ 			},
+ 			body: body?.value,
+-			duplex: body?.duplex
++			duplex: body?.duplex,
++			signal: inputs.signal
+ 		};
+ 		const res = await globalThis.fetch(url, init);
+ 		if (!res.ok) throw new Error(`Fetch request failed with code ${res.status} ${res.statusText}: ${await res.text()}`);
+@@ -1923,7 +1925,7 @@ var ChromeWebStoreV2 = class {
+ 			params: { name: this.nameParam },
+ 			body: file
+ 		});
+-		this.checkUploadState(uploadRes);
++		await this.checkUploadState(uploadRes);
+ 		if (this.options.skipSubmitReview) {
+ 			this.setStatus?.("Skipping submission (skipSubmitReview=true)");
+ 			return;
+@@ -1977,7 +1979,27 @@ var ChromeWebStoreV2 = class {
+ 	get nameParam() {
+ 		return `publishers/${this.options.publisherId}/items/${this.options.extensionId}`;
+ 	}
+-	checkUploadState(item) {
++	async checkUploadState(item) {
++		// The enum uses IN_PROGRESS; the API's prose also uses UPLOAD_IN_PROGRESS.
++		const isProcessing = (state) => state === "IN_PROGRESS" || state === "UPLOAD_IN_PROGRESS";
++		if (isProcessing(item.uploadState)) {
++			this.setStatus?.("Waiting for Chrome Web Store upload processing");
++			// Bound both the polling delay and any in-flight status request.
++			const signal = AbortSignal.timeout(300000);
++			try {
++				do {
++					await delay(5000, void 0, { signal });
++					const status = await this.client.get("/v2/{+name}:fetchStatus", {
++						params: { name: this.nameParam },
++						signal
++					});
++					item = { ...item, uploadState: status.lastAsyncUploadState };
++				} while (isProcessing(item.uploadState));
++			} catch (error) {
++				if (signal.aborted) throw new Error("Timed out after 300 seconds waiting for Chrome Web Store upload processing", { cause: error });
++				throw error;
++			}
++		}
+ 		if (item.uploadState !== "SUCCEEDED") throw new ChromeWebStoreUploadStateError(item);
+ 	}
+ };

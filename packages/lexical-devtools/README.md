@@ -84,13 +84,9 @@ Before the first v2 release, a Chrome publisher administrator and the Google Clo
 
 `EXTENSION_CHROME_CLIENT_ID`, `EXTENSION_CHROME_CLIENT_SECRET`, `EXTENSION_CHROME_REFRESH_TOKEN`, and `EXTENSION_CHROME_PUBLISH_TARGET` are no longer read by this workflow. No refresh-token regeneration is needed for this service-account path. Owners can assess retirement of the old secrets separately after the migration is verified. Firefox still uses the existing `EXTENSION_FIREFOX_EXTENSION_ID`, `EXTENSION_FIREFOX_JWT_ISSUER`, and `EXTENSION_FIREFOX_JWT_SECRET` secrets; Safari uses its existing flow.
 
-Run the focused offline check from the repository root:
+The locked publisher has a small [pnpm patch](../../patches/publish-browser-extension@6.1.1.patch) registered in `pnpm-workspace.yaml` to handle asynchronous uploads. After an `IN_PROGRESS` response (also accepting the `UPLOAD_IN_PROGRESS` spelling used in Google's prose), it polls `fetchStatus.lastAsyncUploadState` every five seconds for up to five minutes. The timeout also aborts an in-flight status request. Only `SUCCEEDED` allows submission for review; failure, an unexpected state, a request error, or timeout fails the Chrome submission without uploading the ZIP again. Keep this exact-version patch when updating dependencies until the publisher provides equivalent bounded polling.
 
-```bash
-pnpm exec vitest --project scripts-unit --no-watch devtoolsPublishing
-```
-
-These tests validate the real locked publisher's configuration and mock all HTTP calls, including successful and unsuccessful uploads. They do not verify real credentials, publisher linkage, store review, or a live release. WXT's `submit --dry-run` **does contact Google to authenticate and fetch item status**; it is not an offline validation command. A permitted owner must perform that live access check separately before the first release. Do not dispatch the publishing workflow merely to check configuration: it uploads and submits to both stores.
+Offline reproductions and repository CI do not verify real credentials, publisher linkage, store review, or a live release. WXT's `submit --dry-run` **does contact Google to authenticate and fetch item status**; it is not an offline validation command. A permitted owner must perform that live access check separately before the first release. Do not dispatch the publishing workflow merely to check configuration: it uploads and submits to both stores.
 
 References: [v1.1 migration deadline (October 15, 2026)](https://developer.chrome.com/blog/cws-api-v2#migration-timeline), [official API setup and visibility rules](https://developer.chrome.com/docs/webstore/using-api), [v2 publishing semantics](https://developer.chrome.com/docs/webstore/api/reference/rest/v2/publishers.items/publish), and [locked publishing tool's configuration reference](https://github.com/aklinker1/publish-browser-extension/blob/v6.1.1/docs/config-reference.md).
 
@@ -108,7 +104,7 @@ At this moment all marketplaces are governed by [EPAM Open Source Office](https:
 
 **Chrome:**
 
-A publisher administrator can grant access using the [current publisher ownership controls](https://developer.chrome.com/docs/webstore/share-ownership). Please reach out to the marketplace contacts listed above to identify the current administrator if you need access to the listing. API publishing also requires the service account linkage described above. Use the publishing flow described above to release new versions.
+A publisher administrator can grant access using the [current publisher ownership controls](https://developer.chrome.com/docs/webstore/share-ownership). Please reach out to the marketplace contacts listed above to identify the current administrator if you need access to the listing. This publishing workflow also requires the service account linkage described above. Use the publishing flow described above to release new versions.
 
 **Safari:**
 

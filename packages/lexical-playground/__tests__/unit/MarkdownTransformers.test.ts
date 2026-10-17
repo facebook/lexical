@@ -1362,6 +1362,16 @@ describe('playground TABLE markdown transformer', () => {
     expect(markdown.split('\n')[2]).toBe('| a<br><br>b |');
   });
 
+  it.each([
+    ['\\|q\\|', ['|q|']],
+    ['\\|a\\|b\\|', ['|a|b|']],
+  ])('reads the escaped pipes in %j as text', (cell, texts) => {
+    using imported = importMarkdown(
+      ['| h |', '| --- |', `| ${cell} |`].join('\n'),
+    );
+    expect(cellTexts(imported)[1]).toEqual([texts]);
+  });
+
   it('keeps a code span that is only whitespace', () => {
     const markdown = exportTable(() =>
       $cellOf(

@@ -914,7 +914,11 @@ function decodeTableCell(
     } else {
       const body = splitCodeSpans(line.text)
         .map((part, k) => {
-          const unescaped = part.replace(/\\\|/g, '|');
+          // An escaped pipe that starts the line stays a reference, or the
+          // line would read as a table row nested in the cell (`\|q\|`).
+          const unescaped = (
+            k === 0 ? part.replace(/^([ \t]*)\\\|/, '$1&#124;') : part
+          ).replace(/\\\|/g, '|');
           return k % 2 === 1
             ? unescaped
             : unescaped.replace(

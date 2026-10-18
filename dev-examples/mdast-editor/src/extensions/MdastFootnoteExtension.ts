@@ -33,7 +33,7 @@ import {
   RenderContextMarkdownSelection,
   type RootContent,
 } from '@lexical/mdast';
-import {mergeRegister} from '@lexical/utils';
+import {$dfsIterator, mergeRegister} from '@lexical/utils';
 import {
   $addUpdateTag,
   $create,
@@ -733,24 +733,34 @@ function $isBodyEmpty(root: RootNode): boolean {
     .every(child => $isParagraphNode(child) && child.isEmpty());
 }
 
+/** Whether the body (the root's children, not its slots) has a reference. */
+function $bodyHasRef(): boolean {
+  for (const {node} of $dfsIterator()) {
+    if ($isFootnoteRefNode(node)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /**
  * A RootNode transform: once everything outside the footnotes section has
  * been deleted (select-all and Backspace, cut, ...), the section goes too,
  * since a definition with no reference to it doesn't render in GFM and the
  * empty editor would otherwise still show stale notes.
  *
- * Left alone: a body that was already empty before this update (only a
- * deletion clears, not Enter in an empty body), the Markdown pane's sync
- * (tagged history-merge), so a note typed there before any body text isn't
- * dropped mid-edit, and an editor whose caret is in a definition, which is
- * being edited.
+ * Only a deletion that took references with it clears, so a note written
+ * before any reference to it (in the Markdown pane, or in an empty body that
+ * was then typed in and erased) stays. Also left alone: the Markdown pane's
+ * sync (tagged history-merge), and an editor whose caret is in a definition,
+ * which is being edited.
  */
 function $clearFootnotesOfEmptyDocument(root: RootNode): void {
   if (
     $hasUpdateTag(HISTORY_MERGE_TAG) ||
     !$isFootnotesNode($getSlot(root, FOOTNOTES_SLOT)) ||
     !$isBodyEmpty(root) ||
-    $getEditor().read('latest', () => $isBodyEmpty($getRoot()))
+    !$getEditor().read('latest', $bodyHasRef)
   ) {
     return;
   }

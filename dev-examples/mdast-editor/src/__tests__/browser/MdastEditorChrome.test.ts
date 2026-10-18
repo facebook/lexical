@@ -306,6 +306,21 @@ describe('footnotes', () => {
     expect(markdownOf(editor).trim()).toBe('[^a]: saved note');
   });
 
+  test('typing and erasing in an empty body keeps definitions', () => {
+    const {editor} = mountEditor('');
+    editor.update(() => $convertFromMarkdownString('[^a]: saved note'), {
+      discrete: true,
+      tag: HISTORY_MERGE_TAG,
+    });
+    editor.update(() => $getRoot().selectEnd().insertText('a'), {
+      discrete: true,
+    });
+    editor.update(() => $getRoot().selectEnd().deleteCharacter(true), {
+      discrete: true,
+    });
+    expect(markdownOf(editor).trim()).toBe('[^a]: saved note');
+  });
+
   test('removing the last definition drops the section and its refs', async () => {
     const {editor, root} = mountEditor(
       'body[^a] and[^a] again\n\n[^a]: the note',

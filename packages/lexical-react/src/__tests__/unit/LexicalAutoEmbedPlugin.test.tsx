@@ -104,7 +104,7 @@ const editorRef = React.createRef<LexicalEditor>();
 function App({
   disableMenuFor,
 }: {
-  disableMenuFor?: ((node: LexicalNode) => boolean)[];
+  disableMenuFor?: (node: LexicalNode) => boolean;
 }) {
   return (
     <LexicalComposer
@@ -499,9 +499,9 @@ describe('LexicalAutoEmbedPlugin', () => {
     await act(async () => {
       reactRoot.render(
         <App
-          disableMenuFor={[
-            node => $getNearestNodeOfType(node, QuoteNode) !== null,
-          ]}
+          disableMenuFor={node =>
+            $getNearestNodeOfType(node, QuoteNode) !== null
+          }
         />,
       );
     });
@@ -540,9 +540,9 @@ describe('LexicalAutoEmbedPlugin', () => {
     await act(async () => {
       reactRoot.render(
         <App
-          disableMenuFor={[
-            node => $getNearestNodeOfType(node, QuoteNode) !== null,
-          ]}
+          disableMenuFor={node =>
+            $getNearestNodeOfType(node, QuoteNode) !== null
+          }
         />,
       );
     });

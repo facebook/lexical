@@ -250,10 +250,9 @@ function $isInHostSlot(
 
 // Slots that only accept inline content: showing the embed menu there would
 // bypass the slot's protection against block insertion.
-const DISABLE_MENU_FOR: ((node: LexicalNode) => boolean)[] = [
-  node => $isInHostSlot(node, 'attribution', $isPullQuoteNode),
-  node => $isInHostSlot(node, 'author', $isReviewNode),
-];
+const DISABLE_MENU_FOR: (node: LexicalNode) => boolean = node =>
+  $isInHostSlot(node, 'attribution', $isPullQuoteNode) ||
+  $isInHostSlot(node, 'author', $isReviewNode);
 
 export default function AutoEmbedPlugin(): JSX.Element {
   const [modal, showModal] = useModal();

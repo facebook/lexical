@@ -91,14 +91,14 @@ type LexicalAutoEmbedPluginProps<TEmbedConfig extends EmbedConfig> = {
    */
   menuCommandPriority?: CommandListenerPriority;
   /**
-   * Optional predicates to suppress the menu for specific locations, e.g.
-   * inside nodes that only accept inline content. Each predicate receives
-   * the matched AutoLinkNode; if any returns true, the menu is not shown
-   * and the pasted link is left as-is (the Tab/Enter/Esc handling is part
-   * of the menu, so it is skipped too). A predicate can inspect the node's
-   * ancestors, e.g. with `$getNearestNodeOfType` from `@lexical/utils`.
+   * Optional predicate to suppress the menu for specific locations, e.g.
+   * inside nodes that only accept inline content. It receives the matched
+   * AutoLinkNode; if it returns true, the menu is not shown and the pasted
+   * link is left as-is (the Tab/Enter/Esc handling is part of the menu,
+   * so it is skipped too). The predicate can inspect the node's ancestors,
+   * e.g. with `$getNearestNodeOfType` from `@lexical/utils`.
    */
-  disableMenuFor?: ((node: LexicalNode) => boolean)[];
+  disableMenuFor?: (node: LexicalNode) => boolean;
 };
 
 type EmbedMatch<TEmbedConfig extends EmbedConfig> = {
@@ -119,12 +119,9 @@ function $getCurrentLink(key: NodeKey, url: string): LinkNode | null {
 
 function $isMenuDisabledForNode(
   linkNode: LexicalNode,
-  disableMenuFor?: ((node: LexicalNode) => boolean)[],
+  disableMenuFor?: (node: LexicalNode) => boolean,
 ): boolean {
-  return (
-    disableMenuFor != null &&
-    disableMenuFor.some(predicate => predicate(linkNode))
-  );
+  return disableMenuFor != null && disableMenuFor(linkNode);
 }
 
 /**

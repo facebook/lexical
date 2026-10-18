@@ -285,7 +285,7 @@ export default function AutoEmbedPlugin(): JSX.Element {
         embedConfigs={EmbedConfigs}
         onOpenEmbedModalForConfig={openEmbedModal}
         getMenuOptions={getMenuOptions}
-        disableMenuFor={DISABLE_MENU_FOR}
+        $disableMenuFor={DISABLE_MENU_FOR}
       />
     </>
   );

@@ -102,9 +102,9 @@ let embedConfig: EmbedConfig;
 const editorRef = React.createRef<LexicalEditor>();
 
 function App({
-  disableMenuFor,
+  $disableMenuFor,
 }: {
-  disableMenuFor?: (node: LexicalNode) => boolean;
+  $disableMenuFor?: (node: LexicalNode) => boolean;
 }) {
   return (
     <LexicalComposer
@@ -127,7 +127,7 @@ function App({
           new AutoEmbedOption('Embed', {onSelect: embedFn}),
         ]}
         menuRenderFn={menuRenderFn}
-        disableMenuFor={disableMenuFor}
+        $disableMenuFor={$disableMenuFor}
       />
     </LexicalComposer>
   );
@@ -495,11 +495,11 @@ describe('LexicalAutoEmbedPlugin', () => {
     });
   });
 
-  it('does not show the menu when a disableMenuFor predicate matches the link location', async () => {
+  it('does not show the menu when a $disableMenuFor predicate matches the link location', async () => {
     await act(async () => {
       reactRoot.render(
         <App
-          disableMenuFor={node =>
+          $disableMenuFor={node =>
             $getNearestNodeOfType(node, QuoteNode) !== null
           }
         />,
@@ -536,11 +536,11 @@ describe('LexicalAutoEmbedPlugin', () => {
     });
   });
 
-  it('shows the menu when no disableMenuFor predicate matches', async () => {
+  it('shows the menu when no $disableMenuFor predicate matches', async () => {
     await act(async () => {
       reactRoot.render(
         <App
-          disableMenuFor={node =>
+          $disableMenuFor={node =>
             $getNearestNodeOfType(node, QuoteNode) !== null
           }
         />,

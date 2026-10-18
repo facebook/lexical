@@ -98,7 +98,7 @@ type LexicalAutoEmbedPluginProps<TEmbedConfig extends EmbedConfig> = {
    * so it is skipped too). The predicate can inspect the node's ancestors,
    * e.g. with `$getNearestNodeOfType` from `@lexical/utils`.
    */
-  disableMenuFor?: (node: LexicalNode) => boolean;
+  $disableMenuFor?: (node: LexicalNode) => boolean;
 };
 
 type EmbedMatch<TEmbedConfig extends EmbedConfig> = {
@@ -119,9 +119,9 @@ function $getCurrentLink(key: NodeKey, url: string): LinkNode | null {
 
 function $isMenuDisabledForNode(
   linkNode: LexicalNode,
-  disableMenuFor?: (node: LexicalNode) => boolean,
+  $disableMenuFor?: (node: LexicalNode) => boolean,
 ): boolean {
-  return disableMenuFor != null && disableMenuFor(linkNode);
+  return $disableMenuFor != null && $disableMenuFor(linkNode);
 }
 
 /**
@@ -158,7 +158,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
   getMenuOptions,
   menuRenderFn,
   menuCommandPriority = COMMAND_PRIORITY_LOW,
-  disableMenuFor,
+  $disableMenuFor,
 }: LexicalAutoEmbedPluginProps<TEmbedConfig>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
@@ -181,7 +181,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
       const url = editor.read('latest', function () {
         const linkNode = $getNodeByKey(key);
         if ($isLinkNode(linkNode)) {
-          if ($isMenuDisabledForNode(linkNode, disableMenuFor)) {
+          if ($isMenuDisabledForNode(linkNode, $disableMenuFor)) {
             return undefined;
           }
           return linkNode.getURL();
@@ -207,7 +207,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
               const linkNode = $getCurrentLink(key, url);
               return (
                 linkNode !== null &&
-                !$isMenuDisabledForNode(linkNode, disableMenuFor)
+                !$isMenuDisabledForNode(linkNode, $disableMenuFor)
               );
             })
           ) {
@@ -217,7 +217,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
         }
       }
     },
-    [disableMenuFor, editor, embedConfigs],
+    [$disableMenuFor, editor, embedConfigs],
   );
 
   useEffect(() => {

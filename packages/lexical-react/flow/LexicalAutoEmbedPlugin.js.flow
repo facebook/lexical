@@ -45,7 +45,7 @@ type LexicalAutoEmbedPluginProps<TEmbedConfig> = {
   ) => AutoEmbedOption[],
   menuRenderFn?: MenuRenderFn<AutoEmbedOption>,
   menuCommandPriority?: CommandListenerPriority,
-  disableMenuFor?: (node: LexicalNode) => boolean,
+  $disableMenuFor?: (node: LexicalNode) => boolean,
 };
 
 declare export class AutoEmbedOption extends MenuOption {

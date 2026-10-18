@@ -382,12 +382,12 @@ const YouTubeEmbedConfig = {
 />
 ```
 
-The optional `disableMenuFor` predicate suppresses the menu for specific locations, e.g. inside nodes that only accept inline content. It receives the matched `AutoLinkNode`; when it returns true the menu is not shown and the pasted link is left as-is. The predicate can inspect the node's ancestors, e.g. with `$getNearestNodeOfType` from `@lexical/utils`.
+The optional `$disableMenuFor` predicate suppresses the menu for specific locations, e.g. inside nodes that only accept inline content. It receives the matched `AutoLinkNode`; when it returns true the menu is not shown and the pasted link is left as-is. The predicate can inspect the node's ancestors, e.g. with `$getNearestNodeOfType` from `@lexical/utils`.
 
 ```jsx
 <LexicalAutoEmbedPlugin
   embedConfigs={[YouTubeEmbedConfig]}
-  disableMenuFor={(linkNode) =>
+  $disableMenuFor={(linkNode) =>
     $getNearestNodeOfType(linkNode, InlineOnlyNode) !== null
   }
   // ...

@@ -24,6 +24,8 @@ import {EditorRefPlugin} from '@lexical/react/LexicalEditorRefPlugin';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {type MenuRenderFn} from '@lexical/react/LexicalNodeMenuPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
+import {$createQuoteNode, $isQuoteNode, QuoteNode} from '@lexical/rich-text';
+import {$getNearestNodeOfType} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -34,6 +36,7 @@ import {
   $isTextNode,
   $setSelection,
   type LexicalEditor,
+  type LexicalNode,
   type NodeKey,
   type ParagraphNode,
   PASTE_COMMAND,
@@ -89,14 +92,48 @@ function createPasteEvent(data: Record<string, string>): ClipboardEvent {
   return new ClipboardEvent('paste', {clipboardData});
 }
 
-describe('LexicalAutoEmbedPlugin', () => {
-  let container: HTMLDivElement;
-  let reactRoot: Root;
-  let editor: LexicalEditor;
-  let onError: Mock<(error: Error) => void>;
-  let parseUrl: Mock<EmbedConfig['parseUrl']>;
-  let insertNode: Mock<EmbedConfig['insertNode']>;
+let container: HTMLDivElement;
+let reactRoot: Root;
+let editor: LexicalEditor;
+let onError: Mock<(error: Error) => void>;
+let parseUrl: Mock<EmbedConfig['parseUrl']>;
+let insertNode: Mock<EmbedConfig['insertNode']>;
+let embedConfig: EmbedConfig;
+const editorRef = React.createRef<LexicalEditor>();
 
+function App({
+  disableMenuFor,
+}: {
+  disableMenuFor?: ((node: LexicalNode) => boolean)[];
+}) {
+  return (
+    <LexicalComposer
+      initialConfig={{
+        namespace: 'test-auto-embed',
+        nodes: [LinkNode, AutoLinkNode, QuoteNode],
+        onError,
+        theme: {},
+      }}>
+      <RichTextPlugin
+        contentEditable={<ContentEditable />}
+        placeholder={null}
+        ErrorBoundary={LexicalErrorBoundary}
+      />
+      <AutoLinkPlugin matchers={MATCHERS} />
+      <EditorRefPlugin editorRef={editorRef} />
+      <LexicalAutoEmbedPlugin
+        embedConfigs={[embedConfig]}
+        getMenuOptions={(_config, embedFn) => [
+          new AutoEmbedOption('Embed', {onSelect: embedFn}),
+        ]}
+        menuRenderFn={menuRenderFn}
+        disableMenuFor={disableMenuFor}
+      />
+    </LexicalComposer>
+  );
+}
+
+describe('LexicalAutoEmbedPlugin', () => {
   beforeEach(async () => {
     class ResizeObserverMock {
       // LexicalMenu only constructs ResizeObserver and calls observe/unobserve/disconnect.
@@ -118,39 +155,11 @@ describe('LexicalAutoEmbedPlugin', () => {
       return match ? {id: match[1], url} : null;
     });
     insertNode = vi.fn();
-    const embedConfig: EmbedConfig = {
+    embedConfig = {
       insertNode,
       parseUrl,
       type: 'youtube-video',
     };
-    const editorRef = React.createRef<LexicalEditor>();
-
-    function App() {
-      return (
-        <LexicalComposer
-          initialConfig={{
-            namespace: 'test-auto-embed',
-            nodes: [LinkNode, AutoLinkNode],
-            onError,
-            theme: {},
-          }}>
-          <RichTextPlugin
-            contentEditable={<ContentEditable />}
-            placeholder={null}
-            ErrorBoundary={LexicalErrorBoundary}
-          />
-          <AutoLinkPlugin matchers={MATCHERS} />
-          <EditorRefPlugin editorRef={editorRef} />
-          <LexicalAutoEmbedPlugin
-            embedConfigs={[embedConfig]}
-            getMenuOptions={(_config, embedFn) => [
-              new AutoEmbedOption('Embed', {onSelect: embedFn}),
-            ]}
-            menuRenderFn={menuRenderFn}
-          />
-        </LexicalComposer>
-      );
-    }
 
     await act(async () => {
       reactRoot.render(<App />);
@@ -484,5 +493,69 @@ describe('LexicalAutoEmbedPlugin', () => {
     editor.read(() => {
       expect($getRoot().getTextContent()).toBe('replaced');
     });
+  });
+
+  it('does not show the menu when a disableMenuFor predicate matches the link location', async () => {
+    await act(async () => {
+      reactRoot.render(
+        <App
+          disableMenuFor={[
+            node => $getNearestNodeOfType(node, QuoteNode) !== null,
+          ]}
+        />,
+      );
+    });
+    await act(async () => {
+      editor.update(
+        () => {
+          $getRoot().append($createQuoteNode().append($createParagraphNode()));
+        },
+        {discrete: true},
+      );
+    });
+
+    await paste({'text/plain': YOUTUBE_URL}, () => {
+      const quote = $assertNodeType($getRoot().getLastChild(), $isQuoteNode);
+      $assertNodeType(quote.getFirstChild(), $isParagraphNode).selectEnd();
+    });
+
+    // The menu never opens, so the URL is never even parsed and the pasted
+    // link is left untouched.
+    expect(parseUrl).not.toHaveBeenCalled();
+    expect(getMenu()).toBeNull();
+    expect(onError).not.toHaveBeenCalled();
+    editor.read(() => {
+      const quote = $assertNodeType($getRoot().getLastChild(), $isQuoteNode);
+      const paragraph = $assertNodeType(
+        quote.getFirstChild(),
+        $isParagraphNode,
+      );
+      expect($assertNodeType(paragraph.getFirstChild(), $isLinkNode)).toBe(
+        paragraph.getFirstChild(),
+      );
+    });
+  });
+
+  it('shows the menu when no disableMenuFor predicate matches', async () => {
+    await act(async () => {
+      reactRoot.render(
+        <App
+          disableMenuFor={[
+            node => $getNearestNodeOfType(node, QuoteNode) !== null,
+          ]}
+        />,
+      );
+    });
+
+    // The default paste target is the root paragraph, outside any quote.
+    await paste({'text/plain': YOUTUBE_URL});
+
+    expect(getMenu()).not.toBeNull();
+    await selectEmbedOption();
+    expect(insertNode).toHaveBeenCalledExactlyOnceWith(editor, {
+      id: 'jNQXAC9IVRw',
+      url: YOUTUBE_URL,
+    });
+    expect(onError).not.toHaveBeenCalled();
   });
 });

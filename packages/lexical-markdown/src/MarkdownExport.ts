@@ -503,11 +503,14 @@ function $exportTextFormat(
     output = shouldPreserveNewLines
       ? output.replace(/([*_`~])/g, '\\$1')
       : output.replace(/([*_`~\\])/g, '\\$1');
-    // Text that reads as a character reference keeps its `&` (`\&#65;`).
+    // Text that reads as a character reference keeps its `&` (`\&#65;`),
+    // as does one that the next text node may complete (`&am` + `p;`).
     // When backslashes are kept as they are, the ones right before it are
     // escaped too, or the last would escape the escape instead.
     output = output.replace(
-      /(\\*)&(?=#\d{1,7};)/g,
+      $isTextNode(node.getNextSibling())
+        ? /(\\*)&(?=(?:#x?)?\w*(?:;|$))/gi
+        : /(\\*)&(?=(?:#x?)?\w+;)/gi,
       (_, backslashes: string) =>
         (shouldPreserveNewLines
           ? backslashes.replace(/\\/g, '\\\\')

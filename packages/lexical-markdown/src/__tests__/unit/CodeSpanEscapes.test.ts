@@ -239,6 +239,35 @@ describe('a character reference', () => {
     );
   });
 
+  it.each([
+    [['&#x41; &amp;'], '\\&#x41; \\&amp;'],
+    // Adjacent text nodes are written next to each other.
+    [['&#6', '5;'], '\\&#65;'],
+    [['&am', 'p;'], '\\&amp;'],
+  ])(
+    'escapes the & of text %j that other readers take as a reference',
+    (texts, markdown) => {
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                // Different styles keep the nodes apart.
+                ...texts.map((text, i) =>
+                  $createTextNode(text).setStyle(`order: ${i}`),
+                ),
+              ),
+            ),
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertToMarkdownString(TRANSFORMERS))).toBe(
+        markdown,
+      );
+    },
+  );
+
   it('round-trips text that reads as one', () => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
     editor.update(

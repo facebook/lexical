@@ -6,11 +6,13 @@
  *
  */
 
-import {moveToLineEnd} from '../../../keyboardShortcuts/index.mjs';
+import {moveToLineEnd, selectAll} from '../../../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   click,
   doubleClick,
+  evaluate,
+  expect,
   focusEditor,
   getPageOrFrame,
   html,
@@ -37,7 +39,9 @@ test.describe('ContextMenuCopyAndPaste', () => {
     await doubleClick(page, 'div[contenteditable="false"] span');
     await withExclusiveClipboardAccess(async () => {
       await click(page, 'div[contenteditable="false"] span', {button: 'right'});
-      await getPageOrFrame(page).getByRole('menuitem', {name: 'Copy'}).click();
+      await getPageOrFrame(page)
+        .getByRole('menuitem', {exact: true, name: 'Copy'})
+        .click();
       await click(page, '.unlock');
       await focusEditor(page);
 
@@ -80,7 +84,7 @@ test.describe('ContextMenuCopyAndPaste', () => {
           button: 'right',
         });
         await getPageOrFrame(page)
-          .getByRole('menuitem', {name: 'Copy'})
+          .getByRole('menuitem', {exact: true, name: 'Copy'})
           .click();
 
         await click(page, '.unlock');
@@ -103,6 +107,31 @@ test.describe('ContextMenuCopyAndPaste', () => {
           </p>
         `,
       );
+    });
+
+    test('Copy as Markdown', async ({page}) => {
+      await withExclusiveClipboardAccess(async () => {
+        await page
+          .context()
+          .grantPermissions(['clipboard-read', 'clipboard-write']);
+
+        await focusEditor(page);
+        await page.keyboard.type('# Title');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('Some **bold** text');
+        await selectAll(page);
+
+        await click(page, 'div[contenteditable="true"] strong', {
+          button: 'right',
+        });
+        await getPageOrFrame(page)
+          .getByRole('menuitem', {name: 'Copy as Markdown'})
+          .click();
+
+        expect(await evaluate(page, () => navigator.clipboard.readText())).toBe(
+          '# Title\n\nSome **bold** text',
+        );
+      });
     });
   });
 });

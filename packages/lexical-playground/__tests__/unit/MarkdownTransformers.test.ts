@@ -470,6 +470,24 @@ describe('playground TABLE markdown transformer', () => {
     },
   );
 
+  it.each(['a\\|b', 'a\\<br>b'])(
+    'keeps code %j with a backslash before a pipe or <br> in one cell',
+    code => {
+      const markdown = exportTable(() =>
+        $cellOf(
+          $createParagraphNode().append(
+            $createTextNode(code).toggleFormat('code'),
+          ),
+        ),
+      );
+      using imported = importMarkdown(markdown);
+      const [, row] = cellTexts(imported);
+      expect(row).toHaveLength(1);
+      expect(row[0]).toHaveLength(1);
+      expect(row[0][0].endsWith(code.slice(2))).toBe(true);
+    },
+  );
+
   it('round-trips a code block with a pipe and a blank line in a cell', () => {
     const markdown = exportTable(() =>
       $cellOf($createCodeNode('js').append($createTextNode('a | b\n\nc'))),

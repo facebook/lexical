@@ -217,18 +217,41 @@ const TABLE_CELL_LINE_BREAK: TextMatchTransformer = {
   type: 'text-match',
 };
 
+let cellTransformers: {export: Transformer[]; import: Transformer[]} | null =
+  null;
+
+/**
+ * The transformers that write and read a cell, taken from
+ * PLAYGROUND_TRANSFORMERS once so both directions agree. A GFM cell can't
+ * hold a table, and its pipes are unescaped before it is read, so a line
+ * such as `\|q\|` must not read as one.
+ */
+function getCellTransformers(): {export: Transformer[]; import: Transformer[]} {
+  if (cellTransformers === null) {
+    const transformers = PLAYGROUND_TRANSFORMERS.filter(t => t !== TABLE);
+    cellTransformers = {
+      export: [TABLE_CELL_LINE_BREAK, ...transformers],
+      import: transformers,
+    };
+  }
+  return cellTransformers;
+}
+
 /**
  * A cell's content as the Markdown of one GFM cell: each newline is a
  * `<br>`, and a pipe or a `<br>` that is text is backslash-escaped, which
- * {@link $createTableCell} undoes.
+ * {@link $createTableCell} undoes. Code takes no escapes, so a backslash
+ * of its own right before one (`a\|b`) gets another, or the escape would
+ * be read as an escaped backslash; GFM can't write that code exactly.
  */
 function $exportTableCell(cell: TableCellNode): string {
-  return $convertToMarkdownString(
-    [TABLE_CELL_LINE_BREAK, ...PLAYGROUND_TRANSFORMERS],
-    cell,
-  )
+  return $convertToMarkdownString(getCellTransformers().export, cell)
     .replace(/^[ \t]+|[ \t]+$/g, '')
-    .replace(/\||<(?=br\s*\/?>)/gi, '\\$&')
+    .replace(
+      /(\\*)(\||<(?=br\s*\/?>))/gi,
+      (_, backslashes: string, char: string) =>
+        backslashes + (backslashes.length % 2 ? '\\\\' : '\\') + char,
+    )
     .replace(/\n/g, '<br>');
 }
 export const TABLE: ElementTransformer = {
@@ -400,12 +423,7 @@ function $getTableColumnsSize(table: TableNode) {
   return $isTableRowNode(row) ? row.getChildrenSize() : 0;
 }
 
-let cellTransformers: Transformer[] | null = null;
-
 const $createTableCell = (textContent: string): TableCellNode => {
-  // A GFM cell can't hold a table, and its pipes are unescaped before it
-  // is read, so a line such as `\|q\|` must not read as one.
-  cellTransformers ||= PLAYGROUND_TRANSFORMERS.filter(t => t !== TABLE);
   // Generating the nodes, unlike converting into the cell, leaves the
   // selection alone.
   return $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
@@ -419,7 +437,7 @@ const $createTableCell = (textContent: string): TableCellNode => {
           match =>
             match[0] !== '\\' ? '\n' : match[1] === '\\' ? match : match[1],
         ),
-      cellTransformers,
+      getCellTransformers().import,
     ),
   );
 };

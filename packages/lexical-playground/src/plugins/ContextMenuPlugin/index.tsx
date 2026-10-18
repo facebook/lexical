@@ -76,7 +76,9 @@ export default function ContextMenuPlugin({
           }
         },
         disabled: false,
-        icon: <i className="PlaygroundEditorTheme__contextMenuItemIcon copy" />,
+        icon: (
+          <i className="PlaygroundEditorTheme__contextMenuItemIcon markdown" />
+        ),
       }),
       new NodeContextMenuOption(`Paste`, {
         $onSelect: () => {

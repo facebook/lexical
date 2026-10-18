@@ -504,11 +504,17 @@ function $exportTextFormat(
       ? output.replace(/([*_`~])/g, '\\$1')
       : output.replace(/([*_`~\\])/g, '\\$1');
     // Text that reads as a character reference keeps its `&` (`\&#65;`),
-    // as does one that the next text node may complete (`&am` + `p;`).
-    // When backslashes are kept as they are, the ones right before it are
-    // escaped too, or the last would escape the escape instead.
+    // as does one that the next text node, written right after it with the
+    // same format, completes (`&am` + `p;`). When backslashes are kept as
+    // they are, the ones right before it are escaped too, or the last would
+    // escape the escape instead.
+    const next = node.getNextSibling();
+    const tail = /&(?:#x?)?\w*$/.exec(textContent);
     output = output.replace(
-      $isTextNode(node.getNextSibling())
+      tail !== null &&
+        $isTextNode(next) &&
+        next.getFormat() === node.getFormat() &&
+        /^&(?:#x?)?\w+;/.test(tail[0] + next.getTextContent())
         ? /(\\*)&(?=(?:#x?)?\w*(?:;|$))/gi
         : /(\\*)&(?=(?:#x?)?\w+;)/gi,
       (_, backslashes: string) =>

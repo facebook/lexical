@@ -268,6 +268,32 @@ describe('a character reference', () => {
     },
   );
 
+  it.each([
+    [
+      () => [
+        $createTextNode('AT&T'),
+        $createTextNode(' rocks').toggleFormat('bold'),
+      ],
+      'AT&T **rocks**',
+    ],
+    [
+      () => [$createTextNode('a &'), $createTextNode('b').setStyle('order: 1')],
+      'a &b',
+    ],
+  ])('leaves an & that no reference follows alone: %#', (build, markdown) => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(
+      () =>
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append(...build())),
+      {discrete: true},
+    );
+    expect(editor.read(() => $convertToMarkdownString(TRANSFORMERS))).toBe(
+      markdown,
+    );
+  });
+
   it('round-trips text that reads as one', () => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
     editor.update(

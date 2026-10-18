@@ -34,7 +34,6 @@ import {
   $createParagraphNode,
   $getState,
   $isElementNode,
-  $setState,
   arrayValue,
   createState,
   defineExtension,
@@ -52,11 +51,8 @@ const alignValue = enumValue<AlignType>([null, 'left', 'center', 'right']);
 
 /**
  * The per-column alignment (`| :-: |`) a table's delimiter row declared, as
- * imported before alignment moved to the cells' element format. An editor
- * moves it onto the cells and clears it as soon as such a table is loaded
- * (see {@link $migrateTableAlign}); export reads it as the fallback only
- * where that hasn't happened, such as a read of an `EditorState` that was
- * never set on an editor.
+ * imported before alignment moved to the cells' element format. Export
+ * still reads it for a column whose cells have no alignment.
  */
 const tableAlignState = createState('mdastTableAlign', {
   parse: arrayValue(alignValue),
@@ -276,24 +272,6 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
 }
 
 /**
- * Whether a cell or one of its blocks has a format of its own, which may
- * be one that GFM can't write (`justify`, `start`, `end`).
- */
-function $hasFormat(cell: TableCellNode): boolean {
-  return (
-    cell.getFormatType() !== '' ||
-    cell
-      .getChildren()
-      .some(
-        child =>
-          $isElementNode(child) &&
-          !child.isInline() &&
-          child.getFormatType() !== '',
-      )
-  );
-}
-
-/**
  * The column each cell of `table` starts in, which is not its index in its
  * row once cells are merged.
  */
@@ -308,33 +286,6 @@ function $cellColumns(table: TableNode): Map<NodeKey, number> {
     }
   }
   return columns;
-}
-
-/**
- * Moves a table's legacy alignment state onto the element format of its
- * cells that have none, and clears it, so it can no longer override a
- * column's alignment after the column is cleared or moved.
- */
-function $migrateTableAlign(table: TableNode): void {
-  const legacyAlign = $getState(table, tableAlignState);
-  if (legacyAlign.length === 0) {
-    return;
-  }
-  const cellColumns = $cellColumns(table);
-  for (const row of table.getChildren()) {
-    if ($isTableRowNode(row)) {
-      row
-        .getChildren()
-        .filter($isTableCellNode)
-        .forEach((cell, index) => {
-          const align = legacyAlign[cellColumns.get(cell.getKey()) ?? index];
-          if (align && !$hasFormat(cell)) {
-            cell.setFormat(align);
-          }
-        });
-    }
-  }
-  $setState(table, tableAlignState, []);
 }
 
 const $exportTable: MdastExportHandler = (node, ctx) => {
@@ -452,9 +403,4 @@ export const MdastTableExtension = defineExtension({
   ],
   name: '@lexical/mdast/Table',
   nodes: [TableNode, TableRowNode, TableCellNode],
-  // A node transform runs before anything edits a table: in the update that
-  // creates or pastes it, when the editor loads a parsed editor state (which
-  // marks every node dirty), and when the transform is registered.
-  register: editor =>
-    editor.registerNodeTransform(TableNode, $migrateTableAlign),
 });

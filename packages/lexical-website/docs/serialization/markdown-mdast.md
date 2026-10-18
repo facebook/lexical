@@ -132,10 +132,8 @@ the element format of each of its cells, so it renders as their
 GFM can't align a single cell, so on export a column takes the alignment
 most of its cells have, or if none has a majority, the alignment of its
 header cell. Documents saved before alignment moved to the cells kept it
-as one array on the table; when such a table loads, each alignment is moved
-onto the cells of its column that have no format of their own, and a cell
-that already has one, including one GFM can't write (`justify`, `start`,
-`end`), keeps it.
+as one array on the table, which export still reads for a column whose
+cells have no alignment.
 
 ## unified / remark interop
 

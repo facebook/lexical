@@ -382,6 +382,18 @@ const YouTubeEmbedConfig = {
 />
 ```
 
+The optional `disableMenuFor` predicate suppresses the menu for specific locations, e.g. inside nodes that only accept inline content. It receives the matched `AutoLinkNode`; when it returns true the menu is not shown and the pasted link is left as-is. The predicate can inspect the node's ancestors, e.g. with `$getNearestNodeOfType` from `@lexical/utils`.
+
+```jsx
+<LexicalAutoEmbedPlugin
+  embedConfigs={[YouTubeEmbedConfig]}
+  disableMenuFor={(linkNode) =>
+    $getNearestNodeOfType(linkNode, InlineOnlyNode) !== null
+  }
+  // ...
+/>
+```
+
 ### `LexicalCharacterLimitPlugin`
 
 Tracks the number of characters in the editor and renders a count of remaining characters. Uses `OverflowNode` to visually indicate when the limit is exceeded.

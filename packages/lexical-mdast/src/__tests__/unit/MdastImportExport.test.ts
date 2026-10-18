@@ -10,8 +10,10 @@
 
 import {$createCodeNode} from '@lexical/code-core';
 import {
+  $createHorizontalRuleNode,
   buildEditorFromExtensions,
   configExtension,
+  HorizontalRuleNode,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
 import {
@@ -1291,6 +1293,44 @@ describe('@lexical/mdast import/export', () => {
           importExport('| a |\n| - |\n| x <br/> y<BR /><br>**z<br>w** |', true),
         ),
       ).toBe('x<br>y<br><br>**z**<br>**w**');
+    });
+
+    it('keeps phrasing a block exports to at the top level of a cell', () => {
+      using editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            MdastCommonMarkExtension,
+            MdastTableExtension,
+            configExtension(MdastExtension, {
+              exportRules: [
+                {
+                  $export: () => ({alt: 'a', type: 'image', url: 'u'}),
+                  type: HorizontalRuleNode,
+                },
+              ],
+            }),
+          ],
+          name: '[root]',
+        }),
+      );
+      editor.update(
+        () => {
+          $convertFromMarkdownString('| a |\n| - |\n| b |');
+          const table = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isTableNode,
+          );
+          const cell = $assertNodeType(
+            table.getLastChildOrThrow<ElementNode>().getFirstChild(),
+            $isElementNode,
+          );
+          cell.clear().append($createHorizontalRuleNode());
+        },
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertToMarkdownString())).toContain(
+        '| ![a](u) |',
+      );
     });
 
     it('keeps spaces written as references at the edges of a cell', () => {

@@ -213,6 +213,9 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
   });
 }
 
+// The phrasing content that holds phrasing content.
+const PHRASING_PARENT_RE = /^(?:delete|emphasis|link|linkReference|strong)$/;
+
 /**
  * The phrasing content of a cell's exported blocks as one line: a GFM cell
  * can't hold blocks, so each one with phrasing (a paragraph, a heading, a
@@ -240,11 +243,12 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
       case 'definition':
         return;
     }
-    if ('children' in node) {
+    if ('children' in node && !PHRASING_PARENT_RE.test(node.type)) {
       node.children.forEach(visit);
-    } else if ('value' in node) {
-      // Phrasing content exported at the cell's top level (an inline
-      // decorator's fallback, for one) stays on the current line.
+    } else {
+      // Phrasing content exported at the cell's top level (an image, a
+      // footnote reference, an inline decorator's fallback) stays on the
+      // current line.
       if (lines.length === 0) {
         lines.push([]);
       }

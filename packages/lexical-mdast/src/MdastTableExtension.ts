@@ -27,6 +27,7 @@ import type {
 
 import {$getPeerDependency, configExtension} from '@lexical/extension';
 import {
+  $computeTableMapSkipCellCheck,
   $createTableCellNode,
   $createTableNode,
   $createTableRowNode,
@@ -50,6 +51,7 @@ import {
   defineExtension,
   enumValue,
   type LexicalNode,
+  type NodeKey,
   type ParagraphNode,
 } from 'lexical';
 import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
@@ -826,18 +828,36 @@ function $hasFormat(cell: TableCellNode): boolean {
  * cells that have none, and clears it, so it can no longer override a
  * column's alignment after the column is cleared or moved.
  */
+/**
+ * The column each cell of `table` starts in, which is not its index in its
+ * row once cells are merged.
+ */
+function $cellColumns(table: TableNode): Map<NodeKey, number> {
+  const columns = new Map<NodeKey, number>();
+  const [map] = $computeTableMapSkipCellCheck(table, null, null);
+  for (const row of map) {
+    for (const value of row) {
+      if (value && !columns.has(value.cell.getKey())) {
+        columns.set(value.cell.getKey(), value.startColumn);
+      }
+    }
+  }
+  return columns;
+}
+
 function $migrateTableAlign(table: TableNode): void {
   const legacyAlign = $getState(table, tableAlignState);
   if (legacyAlign.length === 0) {
     return;
   }
+  const cellColumns = $cellColumns(table);
   for (const row of table.getChildren()) {
     if ($isTableRowNode(row)) {
       row
         .getChildren()
         .filter($isTableCellNode)
-        .forEach((cell, column) => {
-          const align = legacyAlign[column];
+        .forEach((cell, index) => {
+          const align = legacyAlign[cellColumns.get(cell.getKey()) ?? index];
           if (align && !$hasFormat(cell)) {
             cell.setFormat(align);
           }
@@ -863,10 +883,20 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     .find(
       row => $isTableRowNode(row) && row.getChildren().some($isTableCellNode),
     );
+  // Cells are counted in the column they start in, which merged cells
+  // before them move past their index in the row.
+  const cellColumns = $cellColumns(node);
   // Read even when a selection's export leaves the header row out.
-  const headerAlign = $isTableRowNode(headerRow)
-    ? headerRow.getChildren().filter($isTableCellNode).map($getCellAlign)
-    : [];
+  const headerAlign: AlignType[] = [];
+  if ($isTableRowNode(headerRow)) {
+    headerRow
+      .getChildren()
+      .filter($isTableCellNode)
+      .forEach((cell, index) => {
+        headerAlign[cellColumns.get(cell.getKey()) ?? index] =
+          $getCellAlign(cell);
+      });
+  }
   for (const row of node.getChildren()) {
     // Structural iteration bypasses the walk's selection filter, so rows a
     // selection export does not reach are skipped here. Cells stay: dropping
@@ -880,7 +910,9 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
         continue;
       }
       const cellAlign = $getCellAlign(cell);
-      const column = (columns[cells.length] ??= {aligned: new Map(), cells: 0});
+      const column = (columns[
+        cellColumns.get(cell.getKey()) ?? cells.length
+      ] ??= {aligned: new Map(), cells: 0});
       column.cells++;
       if (cellAlign !== null) {
         column.aligned.set(cellAlign, (column.aligned.get(cellAlign) ?? 0) + 1);
@@ -898,10 +930,12 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   // of its cells have, so aligning one body cell doesn't align its column,
   // or else that of its header cell, the cell the delimiter row is under,
   // so rows inserted into an aligned column don't clear it.
-  const align = columns.map((column, i): AlignType => {
-    for (const [cellAlign, count] of column.aligned) {
-      if (count * 2 > column.cells) {
-        return cellAlign;
+  const align = Array.from(columns, (column, i): AlignType => {
+    if (column) {
+      for (const [cellAlign, count] of column.aligned) {
+        if (count * 2 > column.cells) {
+          return cellAlign;
+        }
       }
     }
     return headerAlign[i] || legacyAlign[i] || null;

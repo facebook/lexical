@@ -1264,6 +1264,20 @@ describe('@lexical/mdast import/export', () => {
       );
     });
 
+    it('counts a cell after a merged one in the column it is in', () => {
+      const markdown = editColumns(
+        '| a | b | c |\n| :- | - | -: |\n| 1 | 2 | 3 |',
+        row => {
+          const [first, second] = row.getChildren();
+          if (row.getIndexWithinParent() === 0) {
+            $assertNodeType(first, $isTableCellNode).setColSpan(2);
+            second.remove();
+          }
+        },
+      );
+      expect(markdown.split('\n')[1]).toMatch(/^\| :-+ \| -+ \| -+: \|$/);
+    });
+
     it('gives an inserted column no alignment', () => {
       expect(
         editColumns('| a | b |\n| :- | -: |\n| 1 | 2 |', row =>

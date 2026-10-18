@@ -15,7 +15,7 @@ import {
   CodeNode,
 } from '@lexical/code-core';
 import {buildEditorFromExtensions} from '@lexical/extension';
-import {LinkNode} from '@lexical/link';
+import {$isLinkNode, LinkNode} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
@@ -332,7 +332,14 @@ describe('playground TABLE markdown transformer', () => {
   const TableMarkdownTestExtension = defineExtension({
     dependencies: [RichTextExtension, TableExtension],
     name: 'TableMarkdownTest',
-    nodes: [CodeNode, CodeHighlightNode, LinkNode, ListNode, ListItemNode],
+    nodes: [
+      CodeNode,
+      CodeHighlightNode,
+      EquationNode,
+      LinkNode,
+      ListNode,
+      ListItemNode,
+    ],
   });
 
   function importMarkdown(
@@ -418,6 +425,72 @@ describe('playground TABLE markdown transformer', () => {
       ['| a |', '| --- |', '| x <br/> y<BR /><br>z |'].join('\n'),
     );
     expect(cellTexts(editor)).toEqual([[['a']], [['x\ny', 'z']]]);
+  });
+
+  it.each([
+    ['**a<br>b**', 'bold'],
+    ['*a<br>b*', 'italic'],
+    ['~~a<br>b~~', 'strikethrough'],
+  ] as const)('keeps %j whole in a cell', (body, format) => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', `| ${body} |`].join('\n'),
+    );
+    expect(cellTexts(editor)).toEqual([[['h']], [['a\nb']]]);
+    editor.read(() => {
+      const texts = $getRoot()
+        .getLastChildOrThrow<ElementNode>()
+        .getAllTextNodes();
+      expect(texts.slice(-2).map(text => text.hasFormat(format))).toEqual([
+        true,
+        true,
+      ]);
+    });
+  });
+
+  it('keeps a line break in an inline equation in a cell', () => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', '| $a<br>b$ |'].join('\n'),
+    );
+    editor.read(() => {
+      const equation = $getRoot().getLastDescendant();
+      assert($isEquationNode(equation), 'The cell must hold an equation');
+      expect(equation.getEquation()).toBe('a\nb');
+    });
+  });
+
+  it('keeps a link with a <br> in its text whole', () => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', '| [a<br>b](https://example.com) |'].join('\n'),
+    );
+    expect(cellTexts(editor)).toEqual([[['h']], [['a\nb']]]);
+    editor.read(() => {
+      const link = $getRoot().getLastDescendant()?.getParent();
+      assert($isLinkNode(link), 'The cell must hold a link');
+      expect(link.getTextContent()).toBe('a\nb');
+    });
+  });
+
+  it.each(['`<br>`', '`a<br>b` c'])(
+    'reads a <br> in a code span as code: %j',
+    body => {
+      using editor = importMarkdown(
+        ['| h |', '| --- |', `| ${body} |`].join('\n'),
+      );
+      expect(cellTexts(editor)).toEqual([[['h']], [[body.replace(/`/g, '')]]]);
+      expect(editor.read(() => $convertToMarkdownString([TABLE]))).toBe(
+        ['| h |', '| --- |', `| ${body} |`].join('\n'),
+      );
+    },
+  );
+
+  it.each([
+    ['one\\ntwo', [['one\ntwo']]],
+    ['one\\n\\ntwo', [['one', 'two']]],
+  ])('reads the legacy \\n in %j as a line break', (body, cell) => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', `| ${body} |`].join('\n'),
+    );
+    expect(cellTexts(editor)).toEqual([[['h']], cell]);
   });
 
   it('writes a hard line break marked with a backslash as a bare <br>', () => {

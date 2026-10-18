@@ -37,7 +37,9 @@ import {
   TableNode,
   TableRowNode,
 } from '@lexical/table';
+import {$dfsIterator} from '@lexical/utils';
 import {
+  $createLineBreakNode,
   $createTextNode,
   $isLineBreakNode,
   $isParagraphNode,
@@ -245,14 +247,27 @@ function getCellTransformers(): {export: Transformer[]; import: Transformer[]} {
  * be read as an escaped backslash; GFM can't write that code exactly.
  */
 function $exportTableCell(cell: TableCellNode): string {
-  return $convertToMarkdownString(getCellTransformers().export, cell)
-    .replace(/^[ \t]+|[ \t]+$/g, '')
-    .replace(
-      /(\\*)(\||<(?=br\s*\/?>))/gi,
-      (_, backslashes: string, char: string) =>
-        backslashes + (backslashes.length % 2 ? '\\\\' : '\\') + char,
-    )
-    .replace(/\n/g, '<br>');
+  return (
+    $convertToMarkdownString(getCellTransformers().export, cell)
+      .replace(/^[ \t]+|[ \t]+$/g, '')
+      // A code span keeps its `<br>` as text, which it reads as.
+      .replace(
+        /(\\*)(\||<(?=br\s*\/?>))|\\[^]|(`{1,2})(?!`)[^]*?[^`]\3(?!`)|(`{3,})(?!`)[^\n]*?[^`\n]\4(?!`)|`+/gi,
+        (match, backslashes?: string, char?: string, ...spans: unknown[]) =>
+          char !== undefined
+            ? escapeInCell(backslashes!, char)
+            : spans[0] !== undefined || spans[1] !== undefined
+              ? match.replace(/(\\*)\|/g, (_, inCode: string) =>
+                  escapeInCell(inCode, '|'),
+                )
+              : match,
+      )
+      .replace(/\n/g, '<br>')
+  );
+}
+
+function escapeInCell(backslashes: string, char: string): string {
+  return backslashes + (backslashes.length % 2 ? '\\\\' : '\\') + char;
 }
 export const TABLE: ElementTransformer = {
   dependencies: [TableNode, TableRowNode, TableCellNode],
@@ -423,23 +438,87 @@ function $getTableColumnsSize(table: TableNode) {
   return $isTableRowNode(row) ? row.getChildrenSize() : 0;
 }
 
+// A line that starts a block, which a `<br>` before it ends a line for.
+const CELL_BLOCK_START_REG_EXP =
+  /^[ \t]*(?:<br|```|\$\$|#{1,6}\s|>|[-*+]\s|\d{1,9}[.)]\s)/i;
+
 const $createTableCell = (textContent: string): TableCellNode => {
+  // GFM trims a cell's padding, which is only spaces and tabs.
+  const text = textContent.replace(/^[ \t]+|[ \t]+$/g, '');
+  // A `<br>` inside a paragraph is read as a space-like mark, so that
+  // formatting and links around it (`**a<br>b**`) stay whole, and the mark
+  // becomes a line break once the cell is read.
+  const mark = ['\u3000', '\u205f', '\u2009'].find(c => !text.includes(c));
+  // The legacy `\n` separates a cell's lines where it has no `<br>`.
+  const legacy = !/<br\s*\/?>/i.test(text);
+  let fenced = false;
+  let lineStart = 0;
+  const markdown = text.replace(
+    /\\[^]|(`{1,2})(?!`)[^]*?[^`]\1(?!`)|(`{3,})(?!`)(?:(?!<br)[^])*?[^`]\2(?!`)|`+|[ \t]*<br\s*\/?>[ \t]*/gi,
+    (match: string, short?: string, long?: string, offset?: number) => {
+      if (match[0] === '`') {
+        // Code spans take no escapes but a pipe's.
+        return short !== undefined || long !== undefined
+          ? match.replace(/\\\|/g, '|')
+          : match;
+      }
+      if (match[0] === '\\') {
+        const char = match[1];
+        return char === '|' ||
+          (char === '<' && /^br\s*\/?>/i.test(text.slice(offset! + 2)))
+          ? char
+          : char === 'n' && legacy
+            ? '\n'
+            : match;
+      }
+      // The whitespace a `<br>` is written with is padding too.
+      const line = text.slice(lineStart, offset);
+      lineStart = offset! + match.length;
+      const fenceLine = /^[ \t]*```/.test(line);
+      if (fenceLine) {
+        fenced = !fenced;
+      }
+      return mark === undefined ||
+        fenced ||
+        fenceLine ||
+        line === '' ||
+        CELL_BLOCK_START_REG_EXP.test(text.slice(lineStart))
+        ? '\n'
+        : mark;
+    },
+  );
   // Generating the nodes, unlike converting into the cell, leaves the
   // selection alone.
-  return $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
-    ...$generateNodesFromMarkdownString(
-      // GFM trims a cell's padding, which is only spaces and tabs.
-      textContent
-        .replace(/^[ \t]+|[ \t]+$/g, '')
-        // The whitespace a `<br>` is written with is padding too.
-        .replace(
-          /\\(?:\||<(?=br\s*\/?>))|\\\\|[ \t]*<br\s*\/?>[ \t]*/gi,
-          match =>
-            match[0] !== '\\' ? '\n' : match[1] === '\\' ? match : match[1],
-        ),
-      getCellTransformers().import,
-    ),
+  const cell = $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
+    ...$generateNodesFromMarkdownString(markdown, getCellTransformers().import),
   );
+  if (mark !== undefined) {
+    // An inline equation holds its line breaks as newlines.
+    for (const {node} of $dfsIterator(cell)) {
+      if ($isEquationNode(node)) {
+        node.setEquation(node.getEquation().split(mark).join('\n'));
+      }
+    }
+    for (const node of cell.getAllTextNodes()) {
+      const offsets: number[] = [];
+      const nodeText = node.getTextContent();
+      for (
+        let i = nodeText.indexOf(mark);
+        i !== -1;
+        i = nodeText.indexOf(mark, i + 1)
+      ) {
+        offsets.push(i, i + 1);
+      }
+      for (const piece of offsets.length > 0
+        ? node.splitText(...offsets)
+        : []) {
+        if (piece.getTextContent() === mark) {
+          piece.replace($createLineBreakNode());
+        }
+      }
+    }
+  }
+  return cell;
 };
 
 const $mapToTableCells = (textContent: string): TableCellNode[] | null => {

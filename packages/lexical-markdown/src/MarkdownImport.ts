@@ -21,7 +21,7 @@ import {
   type TextNode,
 } from 'lexical';
 
-import {importTextTransformers} from './importTextTransformers';
+import {$importTextTransformers} from './importTextTransformers';
 import {
   $createMarkdownLineBreakNode,
   type ElementTransformer,
@@ -31,7 +31,7 @@ import {
   type Transformer,
   withListIndentColumns,
 } from './MarkdownTransformers';
-import {isEmptyParagraph, transformersByType} from './utils';
+import {$isEmptyParagraph, transformersByType} from './utils';
 
 export type TextFormatTransformersIndex = Readonly<{
   fullMatchRegExpByTag: Readonly<Record<string, RegExp>>;
@@ -91,7 +91,7 @@ export function $importMarkdownNodes(
   for (const child of children) {
     if (
       !shouldPreserveNewLines &&
-      isEmptyParagraph(child) &&
+      $isEmptyParagraph(child) &&
       container.getChildrenSize() > 1
     ) {
       child.remove();
@@ -256,7 +256,7 @@ function $importBlocks(
     }
   }
 
-  importTextTransformers(
+  $importTextTransformers(
     textNode,
     textFormatTransformersIndex,
     textMatchTransformers,

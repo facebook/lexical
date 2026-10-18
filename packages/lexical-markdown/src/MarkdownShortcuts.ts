@@ -33,7 +33,7 @@ import {
   type TextNode,
 } from 'lexical';
 
-import {canContainTransformableMarkdown} from './importTextTransformers';
+import {$canContainTransformableMarkdown} from './importTextTransformers';
 import {
   type ElementTransformer,
   type MultilineElementTransformer,
@@ -44,7 +44,7 @@ import {
 } from './MarkdownTransformers';
 import {indexBy, PUNCTUATION_OR_SPACE, transformersByType} from './utils';
 
-function runElementTransformers(
+function $runElementTransformers(
   parentNode: ElementNode,
   anchorNode: TextNode,
   anchorOffset: number,
@@ -98,7 +98,7 @@ function runElementTransformers(
   return false;
 }
 
-function runMultilineElementTransformers(
+function $runMultilineElementTransformers(
   parentNode: ElementNode,
   anchorNode: TextNode,
   anchorOffset: number,
@@ -164,7 +164,7 @@ function runMultilineElementTransformers(
   return false;
 }
 
-function runTextMatchTransformers(
+function $runTextMatchTransformers(
   anchorNode: TextNode,
   anchorOffset: number,
   transformersByTrigger: Readonly<Record<string, TextMatchTransformer[]>>,
@@ -534,7 +534,7 @@ export function registerMarkdownShortcuts(
     anchorOffset: number,
   ): boolean => {
     if (
-      runElementTransformers(
+      $runElementTransformers(
         parentNode,
         anchorNode,
         anchorOffset,
@@ -545,7 +545,7 @@ export function registerMarkdownShortcuts(
     }
 
     if (
-      runMultilineElementTransformers(
+      $runMultilineElementTransformers(
         parentNode,
         anchorNode,
         anchorOffset,
@@ -556,7 +556,7 @@ export function registerMarkdownShortcuts(
     }
 
     if (
-      runTextMatchTransformers(
+      $runTextMatchTransformers(
         anchorNode,
         anchorOffset,
         textMatchTransformersByTrigger,
@@ -643,7 +643,7 @@ export function registerMarkdownShortcuts(
         }
 
         editor.update(() => {
-          if (!canContainTransformableMarkdown(anchorNode)) {
+          if (!$canContainTransformableMarkdown(anchorNode)) {
             return;
           }
 
@@ -677,7 +677,7 @@ export function registerMarkdownShortcuts(
 
         if (
           !$isTextNode(anchorNode) ||
-          !canContainTransformableMarkdown(anchorNode)
+          !$canContainTransformableMarkdown(anchorNode)
         ) {
           return false;
         }
@@ -695,14 +695,14 @@ export function registerMarkdownShortcuts(
         }
 
         if (
-          runMultilineElementTransformers(
+          $runMultilineElementTransformers(
             parentNode,
             anchorNode,
             anchorOffset,
             byType.multilineElement,
             true,
           ) ||
-          runElementTransformers(
+          $runElementTransformers(
             parentNode,
             anchorNode,
             anchorOffset,

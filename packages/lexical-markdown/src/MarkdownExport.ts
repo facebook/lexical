@@ -31,7 +31,7 @@ import {
   type TextMatchTransformer,
   type Transformer,
 } from './MarkdownTransformers';
-import {isEmptyParagraph, transformersByType} from './utils';
+import {$isEmptyParagraph, transformersByType} from './utils';
 
 /**
  * Renders string from markdown. The selection is moved to the start after the operation.
@@ -76,8 +76,8 @@ export function createMarkdownExport(
           // separate consecutive group of texts with a line break: eg. ["hello", "world"] -> ["hello", "/nworld"]
           isNewlineDelimited &&
             i > 0 &&
-            !isEmptyParagraph(child) &&
-            !isEmptyParagraph(children[i - 1])
+            !$isEmptyParagraph(child) &&
+            !$isEmptyParagraph(children[i - 1])
             ? '\n'.concat(result)
             : result,
         );
@@ -133,8 +133,8 @@ export function createSelectionMarkdownExport(
         output.push(
           isNewlineDelimited &&
             previousExported !== null &&
-            !isEmptyParagraph(child) &&
-            !isEmptyParagraph(previousExported)
+            !$isEmptyParagraph(child) &&
+            !$isEmptyParagraph(previousExported)
             ? '\n'.concat(markdown)
             : markdown,
         );
@@ -259,7 +259,7 @@ function $exportChildrenForSelection(
             textNode,
             'clone',
           );
-          return exportTextFormat(
+          return $exportTextFormat(
             textNode,
             slicedNode.getTextContent(),
             textFormatTransformers,
@@ -297,7 +297,7 @@ function $exportChildrenForSelection(
       if (childIncluded) {
         const target = $sliceSelectedTextNodeContent(selection, child, 'clone');
         output.push(
-          exportTextFormat(
+          $exportTextFormat(
             child,
             target.getTextContent(),
             textFormatTransformers,
@@ -427,7 +427,7 @@ function $exportChildren(
             shouldPreserveNewLines,
           ),
         (textNode, textContent) =>
-          exportTextFormat(
+          $exportTextFormat(
             textNode,
             textContent,
             textTransformersIndex,
@@ -447,7 +447,7 @@ function $exportChildren(
       output.push($exportLineBreak(child));
     } else if ($isTextNode(child)) {
       output.push(
-        exportTextFormat(
+        $exportTextFormat(
           child,
           child.getTextContent(),
           textTransformersIndex,
@@ -480,7 +480,7 @@ function $exportLineBreak(node: LineBreakNode): string {
   return $getState(node, hardLineBreakState) + '\n';
 }
 
-function exportTextFormat(
+function $exportTextFormat(
   node: TextNode,
   textContent: string,
   textTransformers: TextFormatTransformer[],
@@ -544,8 +544,8 @@ function exportTextFormat(
   let closingTagsBefore = '';
   let closingTagsAfter = '';
 
-  const prevNode = getTextSibling(node, true);
-  const nextNode = getTextSibling(node, false);
+  const prevNode = $getTextSibling(node, true);
+  const nextNode = $getTextSibling(node, false);
 
   const applied = new Set();
 
@@ -567,7 +567,7 @@ function exportTextFormat(
     // whitespace-only nodes, so this guard only affects sliced content.
     if (
       !isWhitespaceOnly &&
-      checkHasFormat(node, format) &&
+      $checkHasFormat(node, format) &&
       !applied.has(format)
     ) {
       applied.add(format);
@@ -575,7 +575,7 @@ function exportTextFormat(
       // append the tag to openingTags, if it's not applied to the previous nodes,
       // or the nodes before that (which would result in an unclosed tag)
       if (
-        !checkHasFormat(prevNode, format) ||
+        !$checkHasFormat(prevNode, format) ||
         !unclosedTags.find(element => element.tag === tag)
       ) {
         unclosedTags.push({format, tag});
@@ -586,8 +586,8 @@ function exportTextFormat(
 
   // close any tags in the same order they were applied, if necessary
   for (let i = 0; i < unclosedTags.length; i++) {
-    const nodeHasFormat = hasFormat(node, unclosedTags[i].format);
-    const nextNodeHasFormat = hasFormat(nextNode, unclosedTags[i].format);
+    const nodeHasFormat = $hasFormat(node, unclosedTags[i].format);
+    const nextNodeHasFormat = $hasFormat(nextNode, unclosedTags[i].format);
 
     // prevent adding closing tag if next sibling will do it
     if (nodeHasFormat && nextNodeHasFormat) {
@@ -640,7 +640,7 @@ function exportTextFormat(
   );
 }
 
-function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
+function $getTextSibling(node: TextNode, backward: boolean): TextNode | null {
   const sibling = backward ? node.getPreviousSibling() : node.getNextSibling();
 
   if ($isTextNode(sibling)) {
@@ -650,15 +650,15 @@ function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
   return null;
 }
 
-function hasFormat(
+function $hasFormat(
   node: LexicalNode | null | undefined,
   format: TextFormatType,
 ): boolean {
   return $isTextNode(node) && node.hasFormat(format);
 }
 
-function checkHasFormat(n: TextNode | null, f: TextFormatType): boolean {
-  if (!hasFormat(n, f)) {
+function $checkHasFormat(n: TextNode | null, f: TextFormatType): boolean {
+  if (!$hasFormat(n, f)) {
     return false;
   }
   if (f === 'code') {

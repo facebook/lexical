@@ -8,7 +8,7 @@
 import type {TextMatchTransformer} from './MarkdownTransformers';
 import type {TextNode} from 'lexical';
 
-export function findOutermostTextMatchTransformer(
+export function $findOutermostTextMatchTransformer(
   textNode_: TextNode,
   textMatchTransformers: TextMatchTransformer[],
 ): {
@@ -74,7 +74,7 @@ export function findOutermostTextMatchTransformer(
   };
 }
 
-export function importFoundTextMatchTransformer(
+export function $importFoundTextMatchTransformer(
   textNode: TextNode,
   startIndex: number,
   endIndex: number,

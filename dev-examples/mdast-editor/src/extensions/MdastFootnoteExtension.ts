@@ -243,7 +243,7 @@ function selectReference(
  * marked unmanaged so the reconciler and the mutation observer leave it
  * alone inside the managed content DOM.
  */
-function renderBacklinks(
+function $renderBacklinks(
   editor: LexicalEditor,
   definition: FootnoteDefinitionNode,
   host: HTMLElement,
@@ -347,7 +347,7 @@ export function registerFootnoteAnchors(editor: LexicalEditor): () => void {
           continue;
         }
         if (host !== null && count > 0) {
-          renderBacklinks(editor, definition, host, count);
+          $renderBacklinks(editor, definition, host, count);
         }
       }
     });

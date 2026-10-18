@@ -490,7 +490,7 @@ export const $exportHeading: MdastExportHandler = (node, ctx) => {
   return heading;
 };
 
-export const exportQuote: MdastExportHandler = (node, ctx) => {
+export const $exportQuote: MdastExportHandler = (node, ctx) => {
   if (!$isQuoteNode(node)) {
     return null;
   }
@@ -757,7 +757,7 @@ export function phrasingFromTextRuns(
   return out;
 }
 
-export const exportText = (node: LexicalNode): PhrasingContent | null => {
+export const $exportText = (node: LexicalNode): PhrasingContent | null => {
   if (!$isTextNode(node)) {
     return null;
   }

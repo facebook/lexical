@@ -266,7 +266,7 @@ function $appendInline(target: ElementNode, nodes: LexicalNode[]): void {
 function $wrapInlineInBlocks(nodes: LexicalNode[]): LexicalNode[] {
   const blocks: LexicalNode[] = [];
   let pending: LexicalNode[] = [];
-  const flushPending = () => {
+  const $flushPending = () => {
     const significant = pending.some(
       node => !($isTextNode(node) && node.getTextContent().trim() === ''),
     );
@@ -277,13 +277,13 @@ function $wrapInlineInBlocks(nodes: LexicalNode[]): LexicalNode[] {
   };
   for (const node of nodes) {
     if (($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline()) {
-      flushPending();
+      $flushPending();
       blocks.push(node);
     } else {
       pending.push(node);
     }
   }
-  flushPending();
+  $flushPending();
   return blocks;
 }
 

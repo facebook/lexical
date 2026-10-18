@@ -11,12 +11,12 @@ import type {TextMatchTransformer} from './MarkdownTransformers';
 import {$isTextNode, type LexicalNode, type TextNode} from 'lexical';
 
 import {
-  findOutermostTextFormatTransformer,
-  importTextFormatTransformer,
+  $findOutermostTextFormatTransformer,
+  $importTextFormatTransformer,
 } from './importTextFormatTransformer';
 import {
-  findOutermostTextMatchTransformer,
-  importFoundTextMatchTransformer,
+  $findOutermostTextMatchTransformer,
+  $importFoundTextMatchTransformer,
 } from './importTextMatchTransformer';
 import {unescapeText} from './utils';
 
@@ -26,7 +26,7 @@ import {unescapeText} from './utils';
  * For example, `code **bold**` should not be transformed to
  * <code>code <strong>bold</strong></code>.
  */
-export function canContainTransformableMarkdown(
+export function $canContainTransformableMarkdown(
   node: LexicalNode | undefined,
 ): node is TextNode {
   return $isTextNode(node) && !node.hasFormat('code');
@@ -38,17 +38,17 @@ export function canContainTransformableMarkdown(
  * then recursively calls itself to apply the next outermost transformer,
  * until there are no more transformers to apply.
  */
-export function importTextTransformers(
+export function $importTextTransformers(
   textNode: TextNode,
   textFormatTransformersIndex: TextFormatTransformersIndex,
   textMatchTransformers: TextMatchTransformer[],
 ) {
-  let foundTextFormat = findOutermostTextFormatTransformer(
+  let foundTextFormat = $findOutermostTextFormatTransformer(
     textNode,
     textFormatTransformersIndex,
   );
 
-  let foundTextMatch = findOutermostTextMatchTransformer(
+  let foundTextMatch = $findOutermostTextMatchTransformer(
     textNode,
     textMatchTransformers,
   );
@@ -86,7 +86,7 @@ export function importTextTransformers(
   }
 
   if (foundTextFormat) {
-    const result = importTextFormatTransformer(
+    const result = $importTextFormatTransformer(
       textNode,
       foundTextFormat.startIndex,
       foundTextFormat.endIndex,
@@ -94,22 +94,22 @@ export function importTextTransformers(
       foundTextFormat.match,
     );
 
-    if (canContainTransformableMarkdown(result.nodeAfter)) {
-      importTextTransformers(
+    if ($canContainTransformableMarkdown(result.nodeAfter)) {
+      $importTextTransformers(
         result.nodeAfter,
         textFormatTransformersIndex,
         textMatchTransformers,
       );
     }
-    if (canContainTransformableMarkdown(result.nodeBefore)) {
-      importTextTransformers(
+    if ($canContainTransformableMarkdown(result.nodeBefore)) {
+      $importTextTransformers(
         result.nodeBefore,
         textFormatTransformersIndex,
         textMatchTransformers,
       );
     }
-    if (canContainTransformableMarkdown(result.transformedNode)) {
-      importTextTransformers(
+    if ($canContainTransformableMarkdown(result.transformedNode)) {
+      $importTextTransformers(
         result.transformedNode,
         textFormatTransformersIndex,
         textMatchTransformers,
@@ -118,7 +118,7 @@ export function importTextTransformers(
     // Each piece, `textNode` among them, has had its escapes read.
     return;
   } else if (foundTextMatch) {
-    const result = importFoundTextMatchTransformer(
+    const result = $importFoundTextMatchTransformer(
       textNode,
       foundTextMatch.startIndex,
       foundTextMatch.endIndex,
@@ -129,29 +129,29 @@ export function importTextTransformers(
       return;
     }
 
-    if (canContainTransformableMarkdown(result.nodeAfter)) {
-      importTextTransformers(
+    if ($canContainTransformableMarkdown(result.nodeAfter)) {
+      $importTextTransformers(
         result.nodeAfter,
         textFormatTransformersIndex,
         textMatchTransformers,
       );
     }
-    if (canContainTransformableMarkdown(result.nodeBefore)) {
-      importTextTransformers(
+    if ($canContainTransformableMarkdown(result.nodeBefore)) {
+      $importTextTransformers(
         result.nodeBefore,
         textFormatTransformersIndex,
         textMatchTransformers,
       );
     }
-    if (canContainTransformableMarkdown(result.transformedNode)) {
-      importTextTransformers(
+    if ($canContainTransformableMarkdown(result.transformedNode)) {
+      $importTextTransformers(
         result.transformedNode,
         textFormatTransformersIndex,
         textMatchTransformers,
       );
     } else if (
       result.transformedNode === undefined &&
-      canContainTransformableMarkdown(result.matchedNode) &&
+      $canContainTransformableMarkdown(result.matchedNode) &&
       result.matchedNode.getParent() !== null &&
       result.matchedNode.getTextContent() === result.matchedText
     ) {
@@ -169,7 +169,7 @@ export function importTextTransformers(
 
   // Handle escape characters, which a code span doesn't take. The node is
   // the code span itself when the span was all of its text.
-  if (canContainTransformableMarkdown(textNode)) {
+  if ($canContainTransformableMarkdown(textNode)) {
     const textContent = textNode.getTextContent();
     const unescapedText = unescapeText(textContent);
     textNode.setTextContent(unescapedText);

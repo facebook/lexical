@@ -62,7 +62,7 @@ export const PUNCTUATION = /[!"#$%&'()*+,\-./:;<=>?@[\]^_`{|}~]/;
 
 const MARKDOWN_EMPTY_LINE_REG_EXP = /^\s{0,3}$/;
 
-export function isEmptyParagraph(node: LexicalNode): boolean {
+export function $isEmptyParagraph(node: LexicalNode): boolean {
   if (!$isParagraphNode(node)) {
     return false;
   }

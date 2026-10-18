@@ -49,7 +49,7 @@ import {
   type TextNode,
 } from 'lexical';
 
-import {isEmptyParagraph, unescapeText} from './utils';
+import {$isEmptyParagraph, unescapeText} from './utils';
 
 export type Transformer =
   | ElementTransformer
@@ -337,7 +337,7 @@ export function parseMarkdownHardLineBreak(
   return spaces ? [spaces[1], spaces[2]] : null;
 }
 
-function hasNonWhitespaceContentOnLine(
+function $hasNonWhitespaceContentOnLine(
   children: LexicalNode[],
   endIndex: number,
 ): boolean {
@@ -374,7 +374,7 @@ function $extractMarkdownHardLineBreakMarker(
 
   if (
     /^ {2,}$/.test(lastText) &&
-    hasNonWhitespaceContentOnLine(children, lastChildIndex)
+    $hasNonWhitespaceContentOnLine(children, lastChildIndex)
   ) {
     lastChild.setTextContent('');
     return lastText;
@@ -621,7 +621,7 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
     let precedingBlock = previousNode;
     if (columns !== null) {
       if (importJoinsLooseLists) {
-        while (precedingBlock !== null && isEmptyParagraph(precedingBlock)) {
+        while (precedingBlock !== null && $isEmptyParagraph(precedingBlock)) {
           precedingBlock = precedingBlock.getPreviousSibling();
         }
       }

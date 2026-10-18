@@ -519,7 +519,7 @@ export const TABLE: ElementTransformer = {
     let target = table;
     if (
       $isTableNode(previousSibling) &&
-      getTableColumnsSize(previousSibling) === maxCells
+      $getTableColumnsSize(previousSibling) === maxCells
     ) {
       previousSibling.append(...table.getChildren());
       parentNode.remove();
@@ -552,7 +552,7 @@ function isTableDelimiterRow(line: string): boolean {
   );
 }
 
-function getTableColumnsSize(table: TableNode) {
+function $getTableColumnsSize(table: TableNode) {
   const row = table.getFirstChild();
   return $isTableRowNode(row) ? row.getChildrenSize() : 0;
 }
@@ -981,7 +981,7 @@ function $marksToNodes(cell: TableCellNode, marks: CellMarks): void {
     // many line breaks is read in linear time.
     const nodes: LexicalNode[] = [];
     let start = 0;
-    const pushText = (end: number) => {
+    const $pushText = (end: number) => {
       if (end > start) {
         const piece = $copyNode(node).setTextContent(text.slice(start, end));
         nodes.push(
@@ -996,7 +996,7 @@ function $marksToNodes(cell: TableCellNode, marks: CellMarks): void {
         char === marks.codeStart ||
         char === marks.codeEnd
       ) {
-        pushText(i);
+        $pushText(i);
         start = i + 1;
         if (char === marks.lineBreak) {
           nodes.push($createLineBreakNode());
@@ -1011,7 +1011,7 @@ function $marksToNodes(cell: TableCellNode, marks: CellMarks): void {
       }
       continue;
     }
-    pushText(text.length);
+    $pushText(text.length);
     node.getParentOrThrow().splice(node.getIndexWithinParent(), 1, nodes);
   }
   // An inline equation holds its line breaks as newlines, which it writes

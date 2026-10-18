@@ -67,6 +67,8 @@ import {
   $exportLineBreak,
   $exportLink,
   $exportList,
+  $exportQuote,
+  $exportText,
   $importBlockquote,
   $importBreak,
   $importCode,
@@ -80,8 +82,6 @@ import {
   $importShadowRootBlockquote,
   $importStrong,
   exportParagraph,
-  exportQuote,
-  exportText,
   importDefinition,
   importDelete,
   importHtml,
@@ -210,7 +210,7 @@ const CORE_IMPORT_RULES: readonly MdastImportRule[] = [
 ];
 const CORE_EXPORT_RULES: readonly MdastExportRule[] = [
   {$export: exportParagraph, type: ParagraphNode},
-  {$export: exportText, type: TextNode},
+  {$export: $exportText, type: TextNode},
   {$export: $exportLineBreak, type: LineBreakNode},
 ];
 
@@ -341,7 +341,7 @@ export const MdastHeadingExtension = defineExtension({
 export const MdastBlockquoteExtension = defineExtension({
   dependencies: [
     configExtension(MdastExtension, {
-      exportRules: [{$export: exportQuote, type: QuoteNode}],
+      exportRules: [{$export: $exportQuote, type: QuoteNode}],
       importRules: [{$import: $importBlockquote, type: 'blockquote'}],
     }),
   ],

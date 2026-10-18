@@ -21,7 +21,7 @@ interface Delimiter {
   active: boolean;
 }
 
-export function findOutermostTextFormatTransformer(
+export function $findOutermostTextFormatTransformer(
   textNode: TextNode,
   textFormatTransformersIndex: TextFormatTransformersIndex,
 ): {
@@ -428,7 +428,7 @@ function isFlanking(
   );
 }
 
-export function importTextFormatTransformer(
+export function $importTextFormatTransformer(
   textNode: TextNode,
   startIndex: number,
   endIndex: number,

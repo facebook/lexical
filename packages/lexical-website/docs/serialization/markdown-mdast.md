@@ -131,9 +131,7 @@ the element format of each of its cells, so it renders as their
 `text-align` and stays with the column when columns are added or removed.
 GFM can't align a single cell, so on export a column takes the alignment
 most of its cells have, or if none has a majority, the alignment of its
-header cell. Documents saved before alignment moved to the cells kept it
-as one array on the table, which export still reads for a column whose
-cells have no alignment.
+header cell.
 
 ## unified / remark interop
 

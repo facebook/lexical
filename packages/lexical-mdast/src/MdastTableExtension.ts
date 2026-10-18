@@ -32,10 +32,7 @@ import {
 } from '@lexical/table';
 import {
   $createParagraphNode,
-  $getState,
   $isElementNode,
-  arrayValue,
-  createState,
   defineExtension,
   enumValue,
   type NodeKey,
@@ -48,16 +45,6 @@ import {MdastExtension} from './MdastExtension';
 
 /** A GFM column alignment as mdast spells it; anything else reads as `null`. */
 const alignValue = enumValue<AlignType>([null, 'left', 'center', 'right']);
-
-/**
- * The per-column alignment (`| :-: |`) a table's delimiter row declared, as
- * imported before alignment moved to the cells' element format. Export
- * still reads it for a column whose cells have no alignment.
- */
-const tableAlignState = createState('mdastTableAlign', {
-  parse: arrayValue(alignValue),
-  resetOnCopyNode: true,
-});
 
 /**
  * The GFM alignment a cell renders with: its own element format (what
@@ -294,7 +281,6 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     return null;
   }
   const rows: TableRow[] = [];
-  const legacyAlign = $getState(node, tableAlignState);
   // The cells in each column, and how many of them have each alignment.
   const columns: {aligned: Map<AlignType, number>; cells: number}[] = [];
   // The header is the table's first row of cells, which a selection's
@@ -357,7 +343,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
         }
       }
     }
-    return headerAlign[i] || legacyAlign[i] || null;
+    return headerAlign[i] || null;
   });
   return {
     align,

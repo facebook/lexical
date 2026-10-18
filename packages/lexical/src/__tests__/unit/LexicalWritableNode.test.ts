@@ -253,7 +253,7 @@ describe('writable node reuse', () => {
 describe('stale node references', () => {
   function $staleMessage(node: TextNode) {
     return (
-      `Lexical node does not exist in active editor state (node ${node.getKey()}, type text). ` +
+      `Lexical node does not exist in active editor state (key ${node.getKey()}, type text). ` +
       'The reference was probably kept from another read or update, for example in a closure, event handler or component state, ' +
       'and the node has since been removed or is not part of this editor state. ' +
       'Before using a node reference that may be stale, check node.isAttached() or look the node up again with ' +

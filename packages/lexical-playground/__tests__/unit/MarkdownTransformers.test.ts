@@ -1340,6 +1340,35 @@ describe('playground TABLE markdown transformer', () => {
     );
   });
 
+  it('writes a list with many items in a cell in linear time', () => {
+    const items = 100000;
+    const markdown = exportTable(() =>
+      $cellOf(
+        $createListNode('bullet').append(
+          ...Array.from({length: items}, () =>
+            $createListItemNode().append($createTextNode('i')),
+          ),
+        ),
+      ),
+    );
+    expect(markdown.split('<br>')).toHaveLength(items);
+  });
+
+  it('reads an escaped pipe after a <br> in an equation as a pipe', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [TableMarkdownTestExtension],
+        name: 'TableEquationTest',
+        nodes: [EquationNode],
+      }),
+    );
+    const markdown = ['| h |', '| --- |', '| $x<br>\\|y$ |'].join('\n');
+    editor.update(() => $convertFromMarkdownString(markdown, [TABLE]), {
+      discrete: true,
+    });
+    expect(editor.read(() => $convertToMarkdownString([TABLE]))).toBe(markdown);
+  });
+
   it('writes a paragraph whose content writes nothing as an empty line', () => {
     using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
     let markdown = '';

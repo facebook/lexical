@@ -45,6 +45,7 @@ import {
   $isLineBreakNode,
   $isParagraphNode,
   $isTextNode,
+  type ElementNode,
   type LexicalNode,
   LineBreakNode,
   type TextNode,
@@ -317,14 +318,9 @@ function tableCellParagraph(
 
 /**
  * `line` with the marker that makes it start a block in a cell escaped, so
- * it reads as text: `\# a`, `\- a`, `1\. a`, `\---`, `\$$`. A line that
- * reads as a table row (`|q|`), which a cell can hold as a nested table,
- * starts with `&#124;` instead, since `\|` is how a cell's pipe is written.
+ * it reads as text: `\# a`, `\- a`, `1\. a`, `\---`, `\$$`.
  */
 function escapeBlockStart(line: string): string {
-  if (TABLE_ROW_REG_EXP.test(line)) {
-    return '&#124;' + line.slice(1);
-  }
   if (!BLOCK_START_REG_EXP.test(line)) {
     return line;
   }
@@ -342,11 +338,13 @@ function spaceReference(space: string): string {
 /** A cell's content as the Markdown of one GFM cell. */
 function $exportTableCell(cell: TableCellNode): string {
   // The marks must not be in the Markdown, which also holds what isn't
-  // text, such as link URLs, so a mark that turns up more often than it was
-  // written (a node written twice counts twice) is passed over. A retry
-  // avoids all of the last try's Markdown, so its marks can't collide.
+  // text, such as link URLs, so marks that don't turn up as often as they
+  // were written are passed over once. The retry avoids all of the first
+  // try's Markdown, so every mark in it was written as one, and it is taken
+  // even if a transformer wrote a node it then dropped, which no choice of
+  // marks would change.
   let avoid = cell.getTextContent();
-  for (;;) {
+  for (let retried = false; ; retried = true) {
     const [mark, emptyMark] = unusedChars(avoid, 2);
     const written: string[] = [];
     const writtenEmpty: string[] = [];
@@ -364,8 +362,9 @@ function $exportTableCell(cell: TableCellNode): string {
     const parts = markdown.split(mark);
     const emptyParts = markdown.split(emptyMark);
     if (
-      parts.length - 1 === written.length &&
-      emptyParts.length - 1 === writtenEmpty.length
+      retried ||
+      (parts.length - 1 === written.length &&
+        emptyParts.length - 1 === writtenEmpty.length)
     ) {
       // An empty paragraph is an empty line between the `<br>`s around it.
       // A line after a line break is escaped like a paragraph's first.
@@ -688,6 +687,11 @@ function encodeTableCell(markdown: string, emptyMark: string = ''): string {
   let result = '';
   let text = '';
   const flushText = () => {
+    // Where the last blank line (`\n\n`) before a separator starts, kept as
+    // the separators are replaced in order rather than searched for, which
+    // would make a cell with many lines quadratic.
+    let lastBlank = -1;
+    let previousEnd = -1;
     result += splitCodeSpans(text)
       .map((part, i) =>
         i % 2 === 1
@@ -703,16 +707,22 @@ function encodeTableCell(markdown: string, emptyMark: string = ''): string {
         // The blank line that ends a list or a quote is kept as an empty
         // line, or the paragraph after it would continue its last line.
         // So does the line that ends one before an empty paragraph.
-        const start = encoded.lastIndexOf('\n\n', offset - 1);
-        const block = encoded.slice(start === -1 ? 0 : start + 2);
+        if (previousEnd === offset) {
+          lastBlank = offset - 1;
+        }
+        CONTAINER_START_STICKY_REG_EXP.lastIndex =
+          lastBlank === -1 ? 0 : lastBlank + 2;
+        const startsContainer = CONTAINER_START_STICKY_REG_EXP.test(encoded);
+        if (separator.length > 1) {
+          lastBlank = offset;
+        }
+        previousEnd = offset + separator.length;
         const endsBlock =
           separator.length > 1 ||
           (emptyMark !== '' &&
             encoded[offset + 1] === emptyMark &&
             encoded[offset - 1] !== emptyMark);
-        return endsBlock && CONTAINER_START_REG_EXP.test(block)
-          ? '<br><br>'
-          : '<br>';
+        return endsBlock && startsContainer ? '<br><br>' : '<br>';
       });
     text = '';
   };
@@ -754,8 +764,9 @@ interface CellLine {
 
 // The line separators in a cell: `<br>`, or the legacy `\n`.
 const CELL_BREAK_REG_EXP = /<br\s*\/?>/iy;
-const CELL_FENCE_OPEN_REG_EXP = /^[ \t]*(`{3,})[^`]*?(?=<br\s*\/?>|\\n|$)/i;
-const CELL_FENCE_CLOSE_REG_EXP = /^[ \t]*(`{3,})[ \t]*(?=<br\s*\/?>|\\n|$)/i;
+// Sticky, so they match at a line's start without copying the rest.
+const CELL_FENCE_OPEN_REG_EXP = /[ \t]*(`{3,})[^`]*?(?=<br\s*\/?>|\\n|$)/iy;
+const CELL_FENCE_CLOSE_REG_EXP = /[ \t]*(`{3,})[ \t]*(?=<br\s*\/?>|\\n|$)/iy;
 
 /** Splits a cell's Markdown into its lines. */
 function splitCellLines(text: string): CellLine[] {
@@ -763,16 +774,17 @@ function splitCellLines(text: string): CellLine[] {
   let fence: string | null = null;
   let i = 0;
   for (;;) {
-    const rest = text.slice(i);
     let kind: CellLine['fence'] = null;
     if (fence === null) {
-      const open = CELL_FENCE_OPEN_REG_EXP.exec(rest);
+      CELL_FENCE_OPEN_REG_EXP.lastIndex = i;
+      const open = CELL_FENCE_OPEN_REG_EXP.exec(text);
       if (open !== null) {
         fence = open[1];
         kind = 'open';
       }
     } else {
-      const close = CELL_FENCE_CLOSE_REG_EXP.exec(rest);
+      CELL_FENCE_CLOSE_REG_EXP.lastIndex = i;
+      const close = CELL_FENCE_CLOSE_REG_EXP.exec(text);
       kind =
         close !== null && close[1].length >= fence.length ? 'close' : 'code';
     }
@@ -869,6 +881,7 @@ const NESTED_LIST_ITEM_REG_EXP = /^[ \t]*(?:[-*+]|\d{1,9}[.)])\s/;
 
 // A line that starts a list item or a quote.
 const CONTAINER_START_REG_EXP = /^ {0,3}(?:>|[-*+]\s|\d{1,9}[.)]\s)/;
+const CONTAINER_START_STICKY_REG_EXP = / {0,3}(?:>|[-*+]\s|\d{1,9}[.)]\s)/y;
 
 function isContainerStart(line: CellLine): boolean {
   return line.fence === null && CONTAINER_START_REG_EXP.test(line.text);
@@ -914,11 +927,7 @@ function decodeTableCell(
     } else {
       const body = splitCodeSpans(line.text)
         .map((part, k) => {
-          // An escaped pipe that starts the line stays a reference, or the
-          // line would read as a table row nested in the cell (`\|q\|`).
-          const unescaped = (
-            k === 0 ? part.replace(/^([ \t]*)\\\|/, '$1&#124;') : part
-          ).replace(/\\\|/g, '|');
+          const unescaped = part.replace(/\\\|/g, '|');
           return k % 2 === 1
             ? unescaped
             : unescaped.replace(
@@ -1005,6 +1014,39 @@ function $marksToNodes(cell: TableCellNode, marks: CellMarks): void {
     pushText(text.length);
     node.getParentOrThrow().splice(node.getIndexWithinParent(), 1, nodes);
   }
+  // An inline equation holds its line breaks as newlines, which it writes
+  // back as `<br>`.
+  const $visit = (element: ElementNode) => {
+    for (const child of element.getChildren()) {
+      if ($isElementNode(child)) {
+        $visit(child);
+      } else if (
+        $isEquationNode(child) &&
+        child.getEquation().includes(marks.lineBreak)
+      ) {
+        child.setEquation(
+          child.getEquation().split(marks.lineBreak).join('\n'),
+        );
+      }
+    }
+  };
+  $visit(cell);
+}
+
+let cellTransformers: Transformer[] | null = null;
+
+/**
+ * The transformers that read a cell's content: all but TABLE. A GFM cell
+ * can't hold a table, and a cell's pipes are decoded before its Markdown is
+ * read, so a line such as `\|q\|` would otherwise read as one.
+ */
+function getCellTransformers(): Transformer[] {
+  if (cellTransformers === null) {
+    cellTransformers = PLAYGROUND_TRANSFORMERS.filter(
+      transformer => transformer !== TABLE,
+    );
+  }
+  return cellTransformers;
 }
 
 const $createTableCell = (textContent: string): TableCellNode => {
@@ -1028,7 +1070,7 @@ const $createTableCell = (textContent: string): TableCellNode => {
           breaks.map(kind => kind === 'newline'),
           marks,
         ),
-        PLAYGROUND_TRANSFORMERS,
+        getCellTransformers(),
       ),
     );
     const marked = $markNodes(probe, lineBreak);
@@ -1056,7 +1098,7 @@ const $createTableCell = (textContent: string): TableCellNode => {
         breaks.map(kind => kind !== 'inline'),
         marks,
       ),
-      PLAYGROUND_TRANSFORMERS,
+      getCellTransformers(),
     ),
   );
   $marksToNodes(cell, marks);

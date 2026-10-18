@@ -443,15 +443,38 @@ const $createTableCell = (
   const text = textContent.replace(/^[ \t]+|[ \t]+$/g, '');
   // A `<br>` inside a paragraph is read as a space-like mark, so that
   // formatting and links around it (`**a<br>b**`) stay whole, and the mark
-  // becomes a line break once the cell is read.
-  const mark = ['\u3000', '\u205f', '\u2009'].find(c => !text.includes(c));
+  // becomes a line break once the cell is read. The cell must not have the
+  // mark, as a character or as a reference.
+  const mark = ['\u3000', '\u205f', '\u2009'].find(
+    c => !text.includes(c) && !RegExp(`&#0*${c.charCodeAt(0)};`).test(text),
+  );
   // The legacy `\n` separates a cell's lines where it has no `<br>`.
   const legacy = !/<br\s*\/?>/i.test(text);
   let fenced = false;
   let lineStart = 0;
+  // The emphasis runs and link brackets open in the current paragraph: a
+  // `<br>` inside them (`**a<br># b**`) doesn't end it.
+  const runs = new Set<string>();
+  let brackets = 0;
   const markdown = text.replace(
-    /\\[^]|(`{1,2})(?!`)[^]*?[^`]\1(?!`)|(`{3,})(?!`)(?:(?!<br)[^])*?[^`]\2(?!`)|`+|[ \t]*<br\s*\/?>[ \t]*/gi,
+    /\\[^]|(`{1,2})(?!`)[^]*?[^`]\1(?!`)|(`{3,})(?!`)(?:(?!<br)[^])*?[^`]\2(?!`)|`+|\*+|_+|~~|[[\]]|[ \t]*<br\s*\/?>[ \t]*/gi,
     (match: string, short?: string, long?: string, offset?: number) => {
+      const end = offset! + match.length;
+      if (match === '[' || match === ']') {
+        brackets = Math.max(0, brackets + (match === '[' ? 1 : -1));
+        return match;
+      }
+      if (/^[*_~]/.test(match)) {
+        // A run between spaces (a list marker, `2 * 3`) or an underscore
+        // inside a word neither opens nor closes.
+        const around = (re: RegExp) =>
+          re.test(offset === lineStart ? ' ' : text[offset! - 1]) &&
+          re.test(text[end] ?? ' ');
+        if (!around(/\s/) && !(match[0] === '_' && around(/\w/))) {
+          runs[runs.has(match) ? 'delete' : 'add'](match);
+        }
+        return match;
+      }
       if (match[0] === '`') {
         // Code spans take no escapes but a pipe's.
         return short !== undefined || long !== undefined
@@ -469,18 +492,25 @@ const $createTableCell = (
       }
       // The whitespace a `<br>` is written with is padding too.
       const line = text.slice(lineStart, offset);
-      lineStart = offset! + match.length;
+      lineStart = end;
       const fenceLine = /^[ \t]*```/.test(line);
       if (fenceLine) {
         fenced = !fenced;
       }
-      return mark === undefined ||
+      if (
+        mark === undefined ||
         fenced ||
         fenceLine ||
         line === '' ||
-        CELL_BLOCK_START_REG_EXP.test(text.slice(lineStart))
-        ? '\n'
-        : mark;
+        (runs.size === 0 &&
+          brackets === 0 &&
+          CELL_BLOCK_START_REG_EXP.test(text.slice(lineStart)))
+      ) {
+        runs.clear();
+        brackets = 0;
+        return '\n';
+      }
+      return mark;
     },
   );
   // Generating the nodes, unlike converting into the cell, leaves the

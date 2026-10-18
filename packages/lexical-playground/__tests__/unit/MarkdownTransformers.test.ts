@@ -448,6 +448,57 @@ describe('playground TABLE markdown transformer', () => {
     });
   });
 
+  it.each([
+    ['**a<br># b**', 'bold', '# b'],
+    ['*a<br>- b*', 'italic', '- b'],
+    ['_a<br>1. b_', 'italic', '1. b'],
+  ] as const)(
+    'keeps %j whole before block-looking text',
+    (body, format, text) => {
+      using editor = importMarkdown(
+        ['| h |', '| --- |', `| ${body} |`].join('\n'),
+      );
+      expect(cellTexts(editor)).toEqual([[['h']], [[`a\n${text}`]]]);
+      editor.read(() => {
+        const texts = $getRoot()
+          .getLastChildOrThrow<ElementNode>()
+          .getAllTextNodes();
+        expect(texts.slice(-2).map(node => node.hasFormat(format))).toEqual([
+          true,
+          true,
+        ]);
+      });
+    },
+  );
+
+  it('keeps a link whole before block-looking text', () => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', '| [a<br># b](https://example.com) |'].join('\n'),
+    );
+    editor.read(() => {
+      const link = $getRoot().getLastDescendant()?.getParent();
+      assert($isLinkNode(link), 'The cell must hold a link');
+      expect(link.getTextContent()).toBe('a\n# b');
+    });
+  });
+
+  it('still reads a block after a paragraph in a cell', () => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', '| **a** b<br># c |'].join('\n'),
+    );
+    expect(cellTexts(editor)).toEqual([[['h']], [['a b', 'c']]]);
+  });
+
+  it.each([
+    ['a&#12288;b', 'a\u3000b'],
+    ['&#12288;&#8287;&#8201;<br>c', '\u3000\u205f\u2009\nc'],
+  ])('reads the reference in %j as text', (body, cell) => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', `| ${body} |`].join('\n'),
+    );
+    expect(cellTexts(editor)).toEqual([[['h']], [[cell]]]);
+  });
+
   it('keeps a line break in an inline equation in a cell', () => {
     using editor = importMarkdown(
       ['| h |', '| --- |', '| $a<br>b$ |'].join('\n'),

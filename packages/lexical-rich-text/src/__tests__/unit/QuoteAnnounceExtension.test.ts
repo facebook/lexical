@@ -242,7 +242,7 @@ describe('QuoteAnnounceExtension', () => {
     expect(readLiveRegion()).toBe('Block quote removed');
   });
 
-  test('leaves undo and redo to the history announcer', () => {
+  test('says what undo and redo actually changed', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [
@@ -272,15 +272,18 @@ describe('QuoteAnnounceExtension', () => {
       editor.read(() => $getRoot().getChildren().filter($isQuoteNode).length);
     expect(quoteCount()).toBe(1);
 
+    // "Undone" alone does not say what was undone. The merged heading
+    // announcer already reports the change itself rather than the fact of an
+    // undo, so quotes match it.
     clearLiveRegion();
     editor.dispatchCommand(UNDO_COMMAND, undefined);
     expect(quoteCount()).toBe(0);
-    expect(readLiveRegion()).toBe('Undone');
+    expect(readLiveRegion()).toBe('Block quote removed');
 
     clearLiveRegion();
     editor.dispatchCommand(REDO_COMMAND, undefined);
     expect(quoteCount()).toBe(1);
-    expect(readLiveRegion()).toBe('Redone');
+    expect(readLiveRegion()).toBe('Block quote');
   });
 
   test('honours a configured message', () => {

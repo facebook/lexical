@@ -16,7 +16,6 @@ import {
   $isRangeSelection,
   defineExtension,
   type EditorState,
-  HISTORIC_TAG,
   type NodeKey,
   safeCast,
 } from 'lexical';
@@ -157,26 +156,12 @@ export const QuoteAnnounceExtension = defineExtension({
               {skipInitialization: true},
             ),
             editor.registerUpdateListener(
-              ({
-                dirtyElements,
-                dirtyLeaves,
-                editorState,
-                prevEditorState,
-                tags,
-              }) => {
+              ({dirtyElements, dirtyLeaves, editorState, prevEditorState}) => {
                 const changed = quotesChanged;
                 quotesChanged = null;
                 // Nothing was made or unmade, so nothing can have appeared or
                 // disappeared beside the caret.
                 if (dirtyElements.size === 0 && dirtyLeaves.size === 0) {
-                  return;
-                }
-                // Undo and redo are reported by HistoryAnnounceExtension,
-                // which speaks from the command handler while the commit is
-                // still running. Describing the quote afterwards would erase
-                // "Undone" and leave the user told that a quote went away
-                // rather than that their edit was reversed.
-                if (tags.has(HISTORIC_TAG)) {
                   return;
                 }
                 if (changed === 'created') {

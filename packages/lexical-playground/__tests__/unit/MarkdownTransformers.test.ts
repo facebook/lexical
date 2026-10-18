@@ -630,8 +630,8 @@ describe('playground TABLE markdown transformer', () => {
     },
   );
 
-  it.each(['a\\|b', 'a\\<br>b'])(
-    'keeps code %j with a backslash before a pipe or <br> in one cell',
+  it.each(['a\\|b', 'a\\\\|b', 'a\\\\\\|b', 'a\\<br>b'])(
+    'round-trips code %j with a backslash before a pipe or <br>',
     code => {
       const markdown = exportTable(() =>
         $cellOf(
@@ -641,10 +641,43 @@ describe('playground TABLE markdown transformer', () => {
         ),
       );
       using imported = importMarkdown(markdown);
-      const [, row] = cellTexts(imported);
-      expect(row).toHaveLength(1);
-      expect(row[0]).toHaveLength(1);
-      expect(row[0][0].endsWith(code.slice(2))).toBe(true);
+      expect(cellTexts(imported)).toEqual([[['h']], [[code]]]);
+      expect(imported.read(() => $convertToMarkdownString([TABLE]))).toBe(
+        markdown,
+      );
+    },
+  );
+
+  it('splits code before a backslash and pipe with an empty comment', () => {
+    const markdown = exportTable(() =>
+      $cellOf(
+        $createParagraphNode().append(
+          $createTextNode('a\\|b').toggleFormat('code'),
+        ),
+      ),
+    );
+    expect(markdown.split('\n')[2]).toBe('| `a\\`<!---->`\\|b` |');
+  });
+
+  it.each(['**a&#12288;&#8287;&#8201;<br>b**', '**a\u3000\u205f\u2009<br>b**'])(
+    'keeps %j whole with the old line-break marks in it',
+    body => {
+      using editor = importMarkdown(
+        ['| h |', '| --- |', `| ${body} |`].join('\n'),
+      );
+      expect(cellTexts(editor)).toEqual([
+        [['h']],
+        [['a\u3000\u205f\u2009\nb']],
+      ]);
+      editor.read(() => {
+        const texts = $getRoot()
+          .getLastChildOrThrow<ElementNode>()
+          .getAllTextNodes();
+        expect(texts.slice(-2).map(node => node.hasFormat('bold'))).toEqual([
+          true,
+          true,
+        ]);
+      });
     },
   );
 

@@ -231,9 +231,9 @@ function getCellTransformers(): Transformer[] {
 /**
  * A cell's content as the Markdown of one GFM cell: each newline is a
  * `<br>`, and a pipe or a `<br>` that is text is backslash-escaped, which
- * {@link $createTableCell} undoes. Code takes no escapes, so a backslash
- * of its own right before one (`a\|b`) gets another, or the escape would
- * be read as an escaped backslash; GFM can't write that code exactly.
+ * {@link $createTableCell} undoes. Code takes no escapes but a pipe's, so
+ * code with an odd run of backslashes before a pipe (`a\|b`), which GFM
+ * can't write in one span, is split there by an empty HTML comment.
  */
 function $exportTableCell(
   cell: TableCellNode,
@@ -249,8 +249,13 @@ function $exportTableCell(
           char !== undefined
             ? escapeInCell(backslashes!, char)
             : spans[0] !== undefined || spans[1] !== undefined
-              ? match.replace(/(\\*)\|/g, (_, inCode: string) =>
-                  escapeInCell(inCode, '|'),
+              ? match.replace(
+                  /(\\*)\|/g,
+                  (_, inCode: string) =>
+                    inCode +
+                    (inCode.length % 2
+                      ? `${spans[0] ?? spans[1]}<!---->${spans[0] ?? spans[1]}\\|`
+                      : '\\|'),
                 )
               : match,
       )
@@ -439,8 +444,11 @@ const $createTableCell = (
   textContent: string,
   transformers: Transformer[] = [],
 ): TableCellNode => {
-  // GFM trims a cell's padding, which is only spaces and tabs.
-  const text = textContent.replace(/^[ \t]+|[ \t]+$/g, '');
+  // GFM trims a cell's padding, which is only spaces and tabs. A code span
+  // split before an escaped pipe is joined again.
+  const text = textContent
+    .replace(/^[ \t]+|[ \t]+$/g, '')
+    .replace(/\\(`+)<!---->\1\\\|/g, '\\\\|');
   // A `<br>` inside a paragraph is read as a space-like mark, so that
   // formatting and links around it (`**a<br>b**`) stay whole, and the mark
   // becomes a line break once the cell is read. The cell must not have the

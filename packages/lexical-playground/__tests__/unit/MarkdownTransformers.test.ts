@@ -27,6 +27,7 @@ import {
   $convertToMarkdownString,
   $generateNodesFromMarkdownString,
   registerMarkdownShortcuts,
+  type TextMatchTransformer,
   TRANSFORMERS,
 } from '@lexical/markdown';
 import {RichTextExtension} from '@lexical/rich-text';
@@ -54,7 +55,7 @@ import {
   type ElementNode,
   type LexicalEditor,
 } from 'lexical';
-import {assert, describe, expect, it} from 'vitest';
+import {assert, describe, expect, it, onTestFinished} from 'vitest';
 
 import {
   $createEquationNode,
@@ -624,6 +625,29 @@ describe('playground TABLE markdown transformer', () => {
   it('trims only spaces and tabs from a cell', () => {
     using editor = importMarkdown(['| h |', '| --- |', '|  a　 |'].join('\n'));
     expect(cellTexts(editor)).toEqual([[['h']], [[' a　']]]);
+  });
+
+  it('reads cells with transformers added to PLAYGROUND_TRANSFORMERS later', () => {
+    const markdown = ['| h |', '| --- |', '| :) |'].join('\n');
+    importMarkdown(markdown).dispose();
+    const smiley: TextMatchTransformer = {
+      dependencies: [],
+      importRegExp: /:\)/,
+      regExp: /:\)$/,
+      replace: node => {
+        node.setTextContent('\u263a');
+      },
+      type: 'text-match',
+    };
+    PLAYGROUND_TRANSFORMERS.push(smiley);
+    onTestFinished(() => {
+      PLAYGROUND_TRANSFORMERS.splice(
+        PLAYGROUND_TRANSFORMERS.indexOf(smiley),
+        1,
+      );
+    });
+    using editor = importMarkdown(markdown);
+    expect(cellTexts(editor)).toEqual([[['h']], [['\u263a']]]);
   });
 
   it('leaves the selection alone when it generates a table', () => {

@@ -219,24 +219,13 @@ const TABLE_CELL_LINE_BREAK: TextMatchTransformer = {
   type: 'text-match',
 };
 
-let cellTransformers: {export: Transformer[]; import: Transformer[]} | null =
-  null;
-
 /**
- * The transformers that write and read a cell, taken from
- * PLAYGROUND_TRANSFORMERS once so both directions agree. A GFM cell can't
- * hold a table, and its pipes are unescaped before it is read, so a line
- * such as `\|q\|` must not read as one.
+ * The transformers that read a cell: PLAYGROUND_TRANSFORMERS as it is now,
+ * but TABLE. A GFM cell can't hold a table, and its pipes are unescaped
+ * before it is read, so a line such as `\|q\|` must not read as one.
  */
-function getCellTransformers(): {export: Transformer[]; import: Transformer[]} {
-  if (cellTransformers === null) {
-    const transformers = PLAYGROUND_TRANSFORMERS.filter(t => t !== TABLE);
-    cellTransformers = {
-      export: [TABLE_CELL_LINE_BREAK, ...transformers],
-      import: transformers,
-    };
-  }
-  return cellTransformers;
+function getCellTransformers(): Transformer[] {
+  return PLAYGROUND_TRANSFORMERS.filter(t => t !== TABLE);
 }
 
 /**
@@ -246,9 +235,12 @@ function getCellTransformers(): {export: Transformer[]; import: Transformer[]} {
  * of its own right before one (`a\|b`) gets another, or the escape would
  * be read as an escaped backslash; GFM can't write that code exactly.
  */
-function $exportTableCell(cell: TableCellNode): string {
+function $exportTableCell(
+  cell: TableCellNode,
+  transformers: Transformer[],
+): string {
   return (
-    $convertToMarkdownString(getCellTransformers().export, cell)
+    $convertToMarkdownString(transformers, cell)
       .replace(/^[ \t]+|[ \t]+$/g, '')
       // A code span keeps its `<br>` as text, which it reads as.
       .replace(
@@ -277,6 +269,7 @@ export const TABLE: ElementTransformer = {
     }
 
     const output: string[] = [];
+    const transformers = [TABLE_CELL_LINE_BREAK, ...getCellTransformers()];
 
     for (const row of node.getChildren()) {
       const rowOutput = [];
@@ -288,7 +281,7 @@ export const TABLE: ElementTransformer = {
       for (const cell of row.getChildren()) {
         // It's TableCellNode so it's just to make flow happy
         if ($isTableCellNode(cell)) {
-          rowOutput.push($exportTableCell(cell));
+          rowOutput.push($exportTableCell(cell, transformers));
           // The top-left cell of a table with both header kinds is ROW|COLUMN.
           if (cell.hasHeaderState(TableCellHeaderStates.ROW)) {
             isHeaderRow = true;
@@ -442,7 +435,10 @@ function $getTableColumnsSize(table: TableNode) {
 const CELL_BLOCK_START_REG_EXP =
   /^[ \t]*(?:<br|```|\$\$|#{1,6}\s|>|[-*+]\s|\d{1,9}[.)]\s)/i;
 
-const $createTableCell = (textContent: string): TableCellNode => {
+const $createTableCell = (
+  textContent: string,
+  transformers: Transformer[] = [],
+): TableCellNode => {
   // GFM trims a cell's padding, which is only spaces and tabs.
   const text = textContent.replace(/^[ \t]+|[ \t]+$/g, '');
   // A `<br>` inside a paragraph is read as a space-like mark, so that
@@ -490,7 +486,7 @@ const $createTableCell = (textContent: string): TableCellNode => {
   // Generating the nodes, unlike converting into the cell, leaves the
   // selection alone.
   const cell = $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
-    ...$generateNodesFromMarkdownString(markdown, getCellTransformers().import),
+    ...$generateNodesFromMarkdownString(markdown, transformers),
   );
   if (mark !== undefined) {
     // An inline equation holds its line breaks as newlines.
@@ -526,7 +522,10 @@ const $mapToTableCells = (textContent: string): TableCellNode[] | null => {
   if (!match || !match[1]) {
     return null;
   }
-  return splitTableRow(match[1]).map(text => $createTableCell(text));
+  const transformers = getCellTransformers();
+  return splitTableRow(match[1]).map(text =>
+    $createTableCell(text, transformers),
+  );
 };
 
 /** Splits a row on its pipes; escaped pipes (`\|`) are cell content. */

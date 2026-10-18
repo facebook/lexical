@@ -445,102 +445,106 @@ const $createTableCell = (
   // formatting and links around it (`**a<br>b**`) stay whole, and the mark
   // becomes a line break once the cell is read. The cell must not have the
   // mark, as a character or as a reference.
-  const mark = ['\u3000', '\u205f', '\u2009'].find(
+  const mark = Array.from({length: 11}, (_, i) =>
+    String.fromCharCode(0x2000 + i),
+  ).find(
     c => !text.includes(c) && !RegExp(`&#0*${c.charCodeAt(0)};`).test(text),
   );
   // The legacy `\n` separates a cell's lines where it has no `<br>`.
   const legacy = !/<br\s*\/?>/i.test(text);
-  let fenced = false;
-  let lineStart = 0;
-  // The emphasis runs and link brackets open in the current paragraph: a
-  // `<br>` inside them (`**a<br># b**`) doesn't end it.
-  const runs = new Set<string>();
-  let brackets = 0;
-  const markdown = text.replace(
-    /\\[^]|(`{1,2})(?!`)[^]*?[^`]\1(?!`)|(`{3,})(?!`)(?:(?!<br)[^])*?[^`]\2(?!`)|`+|\*+|_+|~~|[[\]]|[ \t]*<br\s*\/?>[ \t]*/gi,
-    (match: string, short?: string, long?: string, offset?: number) => {
-      const end = offset! + match.length;
-      if (match === '[' || match === ']') {
-        brackets = Math.max(0, brackets + (match === '[' ? 1 : -1));
-        return match;
-      }
-      if (/^[*_~]/.test(match)) {
-        // A run between spaces (a list marker, `2 * 3`) or an underscore
-        // inside a word neither opens nor closes.
-        const around = (re: RegExp) =>
-          re.test(offset === lineStart ? ' ' : text[offset! - 1]) &&
-          re.test(text[end] ?? ' ');
-        if (!around(/\s/) && !(match[0] === '_' && around(/\w/))) {
-          runs[runs.has(match) ? 'delete' : 'add'](match);
-        }
-        return match;
-      }
-      if (match[0] === '`') {
-        // Code spans take no escapes but a pipe's.
-        return short !== undefined || long !== undefined
-          ? match.replace(/\\\|/g, '|')
-          : match;
-      }
-      if (match[0] === '\\') {
-        const char = match[1];
-        return char === '|' ||
-          (char === '<' && /^br\s*\/?>/i.test(text.slice(offset! + 2)))
-          ? char
-          : char === 'n' && legacy
-            ? '\n'
+  // Reads the cell with the marks numbered in `blocks` (`<br>`s before text
+  // that starts a block) ending their paragraph, and returns the numbers of
+  // all such marks.
+  const $read = (blocks: number[]): [TableCellNode, number[]] => {
+    const candidates: number[] = [];
+    let marks = 0;
+    let fenced = false;
+    let lineStart = 0;
+    const markdown = text.replace(
+      /\\[^]|(`{1,2})(?!`)[^]*?[^`]\1(?!`)|(`{3,})(?!`)(?:(?!<br)[^])*?[^`]\2(?!`)|`+|[ \t]*<br\s*\/?>[ \t]*/gi,
+      (match: string, short?: string, long?: string, offset?: number) => {
+        if (match[0] === '`') {
+          // Code spans take no escapes but a pipe's.
+          return short !== undefined || long !== undefined
+            ? match.replace(/\\\|/g, '|')
             : match;
-      }
-      // The whitespace a `<br>` is written with is padding too.
-      const line = text.slice(lineStart, offset);
-      lineStart = end;
-      const fenceLine = /^[ \t]*```/.test(line);
-      if (fenceLine) {
-        fenced = !fenced;
-      }
-      if (
-        mark === undefined ||
-        fenced ||
-        fenceLine ||
-        line === '' ||
-        (runs.size === 0 &&
-          brackets === 0 &&
-          CELL_BLOCK_START_REG_EXP.test(text.slice(lineStart)))
-      ) {
-        runs.clear();
-        brackets = 0;
-        return '\n';
-      }
-      return mark;
-    },
-  );
-  // Generating the nodes, unlike converting into the cell, leaves the
-  // selection alone.
-  const cell = $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
-    ...$generateNodesFromMarkdownString(markdown, transformers),
-  );
-  if (mark !== undefined) {
-    // An inline equation holds its line breaks as newlines.
-    for (const {node} of $dfsIterator(cell)) {
-      if ($isEquationNode(node)) {
-        node.setEquation(node.getEquation().split(mark).join('\n'));
+        }
+        if (match[0] === '\\') {
+          const char = match[1];
+          return char === '|' ||
+            (char === '<' && /^br\s*\/?>/i.test(text.slice(offset! + 2)))
+            ? char
+            : char === 'n' && legacy
+              ? '\n'
+              : match;
+        }
+        // The whitespace a `<br>` is written with is padding too.
+        const line = text.slice(lineStart, offset);
+        lineStart = offset! + match.length;
+        const fenceLine = /^[ \t]*```/.test(line);
+        if (fenceLine) {
+          fenced = !fenced;
+        }
+        if (mark === undefined || fenced || fenceLine || line === '') {
+          return '\n';
+        }
+        const index = marks++;
+        if (CELL_BLOCK_START_REG_EXP.test(text.slice(lineStart))) {
+          candidates.push(index);
+        }
+        return blocks.includes(index) ? '\n' : mark;
+      },
+    );
+    // Generating the nodes, unlike converting into the cell, leaves the
+    // selection alone.
+    return [
+      $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
+        ...$generateNodesFromMarkdownString(markdown, transformers),
+      ),
+      candidates,
+    ];
+  };
+  const [read, candidates] = $read([]);
+  if (mark === undefined) {
+    return read;
+  }
+  // A `<br>` before text that starts a block ends the paragraph, unless
+  // formatting, a link or an equation reads as spanning it.
+  const spanned: boolean[] = [];
+  for (const {node} of candidates.length > 0 ? $dfsIterator(read) : []) {
+    const equation = $isEquationNode(node);
+    if (equation || $isTextNode(node)) {
+      const inline =
+        equation ||
+        node.getFormat() !== 0 ||
+        node.getParentOrThrow().isInline();
+      const nodeText = equation ? node.getEquation() : node.getTextContent();
+      for (const _ of nodeText.split(mark).slice(1)) {
+        spanned.push(inline);
       }
     }
-    for (const node of cell.getAllTextNodes()) {
-      const offsets: number[] = [];
-      const nodeText = node.getTextContent();
-      for (
-        let i = nodeText.indexOf(mark);
-        i !== -1;
-        i = nodeText.indexOf(mark, i + 1)
-      ) {
-        offsets.push(i, i + 1);
-      }
-      for (const piece of offsets.length > 0
-        ? node.splitText(...offsets)
-        : []) {
-        if (piece.getTextContent() === mark) {
-          piece.replace($createLineBreakNode());
-        }
+  }
+  const blocks = candidates.filter(index => !spanned[index]);
+  const cell = blocks.length > 0 ? $read(blocks)[0] : read;
+  // An inline equation holds its line breaks as newlines.
+  for (const {node} of $dfsIterator(cell)) {
+    if ($isEquationNode(node)) {
+      node.setEquation(node.getEquation().split(mark).join('\n'));
+    }
+  }
+  for (const node of cell.getAllTextNodes()) {
+    const offsets: number[] = [];
+    const nodeText = node.getTextContent();
+    for (
+      let i = nodeText.indexOf(mark);
+      i !== -1;
+      i = nodeText.indexOf(mark, i + 1)
+    ) {
+      offsets.push(i, i + 1);
+    }
+    for (const piece of offsets.length > 0 ? node.splitText(...offsets) : []) {
+      if (piece.getTextContent() === mark) {
+        piece.replace($createLineBreakNode());
       }
     }
   }

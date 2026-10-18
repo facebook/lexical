@@ -15,7 +15,7 @@ import {
   CodeNode,
 } from '@lexical/code-core';
 import {buildEditorFromExtensions} from '@lexical/extension';
-import {$isLinkNode, LinkNode} from '@lexical/link';
+import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
@@ -30,7 +30,7 @@ import {
   type TextMatchTransformer,
   TRANSFORMERS,
 } from '@lexical/markdown';
-import {RichTextExtension} from '@lexical/rich-text';
+import {$createHeadingNode, RichTextExtension} from '@lexical/rich-text';
 import {
   $createTableCellNode,
   $createTableNode,
@@ -471,6 +471,41 @@ describe('playground TABLE markdown transformer', () => {
     },
   );
 
+  it.each([
+    ['5*<br># b', ['5*', 'b']],
+    ['_id<br>- x', ['_id', 'x']],
+    ['a_b_<br># h', ['a_b_', 'h']],
+    ['[TODO<br># b<br># c', ['[TODO', 'b', 'c']],
+    ['$x*y$ z_<br># h', ['x*y z_', 'h']],
+    ['[a](https://e.com/_a)<br># h', ['a', 'h']],
+    ['***a** b*<br># h', ['a b', 'h']],
+    ['a *<br># b', ['a *', 'b']],
+  ])('reads the block after the <br> in %j', (body, blocks) => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', `| ${body} |`].join('\n'),
+    );
+    expect(cellTexts(editor)).toEqual([[['h']], [blocks]]);
+  });
+
+  it('round-trips a link with an underscore in its URL before a heading', () => {
+    const markdown = exportTable(() =>
+      $cellOf(
+        $createParagraphNode().append(
+          $createLinkNode('https://e.com/_a').append($createTextNode('a')),
+        ),
+        $createHeadingNode('h1').append($createTextNode('b')),
+      ),
+    );
+    using imported = importMarkdown(markdown);
+    expect(markdown.split('\n')[2]).toBe(
+      '| [a](https://e.com/_a)<br><br># b |',
+    );
+    expect(cellTexts(imported)).toEqual([[['h']], [['a', 'b']]]);
+    expect(imported.read(() => $convertToMarkdownString([TABLE]))).toBe(
+      markdown,
+    );
+  });
+
   it('keeps a link whole before block-looking text', () => {
     using editor = importMarkdown(
       ['| h |', '| --- |', '| [a<br># b](https://example.com) |'].join('\n'),
@@ -490,8 +525,8 @@ describe('playground TABLE markdown transformer', () => {
   });
 
   it.each([
-    ['a&#12288;b', 'a\u3000b'],
-    ['&#12288;&#8287;&#8201;<br>c', '\u3000\u205f\u2009\nc'],
+    ['a&#8192;b', 'a\u2000b'],
+    ['a&#08193;b<br>c', 'a\u2001b\nc'],
   ])('reads the reference in %j as text', (body, cell) => {
     using editor = importMarkdown(
       ['| h |', '| --- |', `| ${body} |`].join('\n'),

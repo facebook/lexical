@@ -1806,7 +1806,6 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
     const node = selection.anchor.getNode();
     $setCompositionKey(anchor.key);
     $addUpdateTag(COMPOSITION_START_TAG);
-    inputState.compositionPlaceholder = null;
 
     if (
       // If it has been 30ms since the last keydown, then we should
@@ -1827,12 +1826,11 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
           (anchor.offset === node.getTextContentSize() &&
             !node.canInsertTextAfter())))
     ) {
-      // We insert a zero width character, ready for the composition
-      // to get inserted into the new node we create. If
-      // we don't do this, Safari will fail on us because
-      // there is no text node matching the selection.
-      // Only an actual text insertion may establish placeholder ownership.
-      inputState.isInsertingCompositionPlaceholder =
+      // Prepare a text node for the native composition. Desktop WebKit uses
+      // the rendered composition suffix instead of adding a placeholder to
+      // the document text.
+      const wasPreparingComposition = inputState.isPreparingComposition;
+      inputState.isPreparingComposition =
         !IS_IOS && (IS_SAFARI || IS_APPLE_WEBKIT);
       try {
         dispatchCommand(
@@ -1841,7 +1839,7 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
           COMPOSITION_START_CHAR,
         );
       } finally {
-        inputState.isInsertingCompositionPlaceholder = false;
+        inputState.isPreparingComposition = wasPreparingComposition;
       }
       const updatedSelection = $getSelection();
       if ($isRangeSelection(updatedSelection)) {
@@ -1894,12 +1892,6 @@ function $cleanupComposedSubclass(compositionKey: NodeKey | null): void {
 
 function $onCompositionEndImpl(editor: LexicalEditor, data?: string): boolean {
   const compositionKey = editor._compositionKey;
-  const inputState = editor._inputState;
-  const isSafariCancellation =
-    data === '' && !IS_IOS && (IS_SAFARI || IS_APPLE_WEBKIT);
-  if (!isSafariCancellation) {
-    inputState.compositionPlaceholder = null;
-  }
   $setCompositionKey(null);
 
   // Handle termination of composition.
@@ -1940,46 +1932,7 @@ function $onCompositionEndImpl(editor: LexicalEditor, data?: string): boolean {
           anchorOffset,
           focusOffset,
           true,
-          isSafariCancellation,
         );
-      }
-      if (isSafariCancellation) {
-        const placeholder = inputState.compositionPlaceholder;
-        inputState.compositionPlaceholder = null;
-        if (placeholder !== null) {
-          const placeholderNode = $getNodeByKey(placeholder.key);
-          if (
-            $isTextNode(placeholderNode) &&
-            placeholderNode.isAttached() &&
-            placeholderNode
-              .getTextContent()
-              .slice(
-                placeholder.offset,
-                placeholder.offset + COMPOSITION_START_CHAR.length,
-              ) === COMPOSITION_START_CHAR
-          ) {
-            placeholderNode.spliceText(
-              placeholder.offset,
-              COMPOSITION_START_CHAR.length,
-              '',
-            );
-            const selection = $getSelection();
-            if ($isRangeSelection(selection)) {
-              for (const point of [selection.anchor, selection.focus]) {
-                if (
-                  point.key === placeholder.key &&
-                  point.offset > placeholder.offset
-                ) {
-                  point.set(
-                    point.key,
-                    point.offset - COMPOSITION_START_CHAR.length,
-                    'text',
-                  );
-                }
-              }
-            }
-          }
-        }
       }
       $cleanupComposedSubclass(compositionKey);
       return false;
@@ -2036,8 +1989,8 @@ function onCompositionEnd(
     inputState.compositionPhase = 'ending-safari';
     inputState.compositionEndData = event.data;
   } else {
-    // A cancelled Safari composition has no insertFromComposition to clear
-    // the composition key. Finish now so the next ordinary key can dispatch.
+    // Cancellation has no insertFromComposition event to finish the Safari
+    // composition. Release it now so the next ordinary key can dispatch.
     dispatchCommand(editor, COMPOSITION_END_COMMAND, event);
   }
 }
@@ -2059,8 +2012,6 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   }
   if (
     editor.isComposing() ||
-    // Safari may deliver the key already consumed by the IME after ending
-    // composition (#7061). It must not delete text or dispatch Enter again.
     (!IS_IOS && (IS_SAFARI || IS_APPLE_WEBKIT) && event.keyCode === 229)
   ) {
     return;

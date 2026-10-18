@@ -68,7 +68,6 @@ import {
   type EditorConfig,
   type EditorDOMRenderConfig,
   type EditorThemeClasses,
-  type InputState,
   type Klass,
   LexicalEditor,
   type MutatedNodes,
@@ -630,42 +629,15 @@ export function $getCompositionKey(): null | NodeKey {
   return editor._compositionKey;
 }
 
-/** Composition bookkeeping belongs to the active node, never an export copy. */
-export function $getCompositionInputState(node: TextNode): InputState | null {
-  if ($isEphemeral(node) || $getNodeByKey(node.__key) !== node) {
-    return null;
-  }
-  return getActiveEditor()._inputState;
-}
-
-/** Track only a placeholder that was actually inserted by the start command. */
-export function $updateCompositionPlaceholder(
-  node: TextNode,
-  offset: number,
-  deleted: number,
-  inserted: string,
-): void {
-  const inputState = $getCompositionInputState(node);
-  if (inputState === null) {
-    return;
-  }
-  const key = node.__key;
-  const placeholder = inputState.compositionPlaceholder;
-  if (placeholder !== null && placeholder.key === key) {
-    if (offset <= placeholder.offset) {
-      if (offset + deleted > placeholder.offset) {
-        inputState.compositionPlaceholder = null;
-      } else {
-        placeholder.offset += inserted.length - deleted;
-      }
-    }
-  }
-  if (
-    inputState.isInsertingCompositionPlaceholder &&
-    inserted === COMPOSITION_START_CHAR
-  ) {
-    inputState.compositionPlaceholder = {key, offset};
-  }
+/** Desktop WebKit renders a suffix so an empty composing node can host the IME. */
+export function $isEmptyCompositionTarget(node: TextNode): boolean {
+  return (
+    !IS_IOS &&
+    (IS_SAFARI || IS_APPLE_WEBKIT) &&
+    node.__text === '' &&
+    // DOM selection reconciliation runs after the state becomes read-only.
+    node.__key === getActiveEditor()._compositionKey
+  );
 }
 
 /**
@@ -1014,12 +986,12 @@ export function $updateTextNodeFromDOMContent(
   anchorOffset: null | number,
   focusOffset: null | number,
   compositionEnd: boolean,
-  preserveCompositionStartChar = false,
 ): void {
   let node = textNode;
 
   if (node.isAttached() && (compositionEnd || !node.isDirty())) {
     const isComposing = node.isComposing();
+    const isSafariComposition = !IS_IOS && (IS_SAFARI || IS_APPLE_WEBKIT);
 
     if (node.isToken() && isComposing) {
       return;
@@ -1030,14 +1002,14 @@ export function $updateTextNodeFromDOMContent(
     if (isComposing || compositionEnd) {
       if (
         textContent.endsWith(COMPOSITION_SUFFIX) &&
-        (!preserveCompositionStartChar || textContent !== node.getTextContent())
+        (!isSafariComposition || textContent !== node.getTextContent())
       ) {
         normalizedTextContent = textContent.slice(
           0,
           -COMPOSITION_SUFFIX.length,
         );
       }
-      if (compositionEnd && !preserveCompositionStartChar) {
+      if (compositionEnd && !isSafariComposition) {
         const char = COMPOSITION_START_CHAR;
         let index;
         while ((index = normalizedTextContent.indexOf(char)) !== -1) {
@@ -1060,6 +1032,11 @@ export function $updateTextNodeFromDOMContent(
       const selection = $getSelection();
 
       if (normalizedTextContent === '') {
+        if (isComposing && !compositionEnd && isSafariComposition) {
+          // The composition key owns this target until composition ends.
+          $setTextContentWithSelection(node, '', selection);
+          return;
+        }
         $setCompositionKey(null);
         if (!IS_SAFARI && !IS_IOS && !IS_APPLE_WEBKIT) {
           // For composition (mainly Android), we have to remove the node on a later update

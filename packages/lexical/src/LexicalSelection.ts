@@ -57,7 +57,12 @@ import {
   type TextNode,
 } from '.';
 import {IS_FIREFOX} from './environment';
-import {DOM_TEXT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
+import {
+  COMPOSITION_START_CHAR,
+  COMPOSITION_SUFFIX,
+  DOM_TEXT_TYPE,
+  TEXT_TYPE_TO_FORMAT,
+} from './LexicalConstants';
 import {
   markCollapsedSelectionFormat,
   markSelectionChangeFromDOMUpdate,
@@ -90,6 +95,7 @@ import {
   $getNodeFromDOM,
   $getRoot,
   $hasAncestor,
+  $isEmptyCompositionTarget,
   $isInlineElementOrDecoratorNode,
   $isRootOrShadowRoot,
   $isSelectionCapturedInDecoratorInput,
@@ -97,7 +103,6 @@ import {
   $needsBlockCursorBeside,
   $restoreEmptyContainerParagraph,
   $setCompositionKey,
-  $updateCompositionPlaceholder,
   doesContainSurrogatePair,
   getActiveElement,
   getActiveElementDeep,
@@ -360,6 +365,13 @@ function $transferStartingElementPointToTextPoint(
   start.set(textNode.__key, 0, 'text');
 }
 
+function $getCompositionInsertionText(text: string): string {
+  return getActiveEditor()._inputState.isPreparingComposition &&
+    text === COMPOSITION_START_CHAR
+    ? ''
+    : text;
+}
+
 function $insertTextAtPoint(
   selection: RangeSelection,
   text: string,
@@ -369,7 +381,10 @@ function $insertTextAtPoint(
   const anchorNode = selection.anchor.getNode();
   invariant($isTextNode(anchorNode), 'insertText: anchor is not a text node');
   const offset = selection.anchor.offset;
-  const textNode = $createTextNode(text).setFormat(format).setStyle(style);
+  const insertedText = $getCompositionInsertionText(text);
+  const textNode = $createTextNode(insertedText)
+    .setFormat(format)
+    .setStyle(style);
   const parent = anchorNode.getParentOrThrow();
   const before = offset === 0;
   const atBoundary = before || offset === anchorNode.getTextContentSize();
@@ -391,11 +406,10 @@ function $insertTextAtPoint(
     anchorNode.remove();
   }
   textNode.selectEnd();
-  $updateCompositionPlaceholder(textNode.getLatest(), 0, 0, text);
   if (textNode.isComposing() && selection.anchor.type === 'text') {
     selection.anchor.set(
       selection.anchor.key,
-      selection.anchor.offset - text.length,
+      selection.anchor.offset - insertedText.length,
       selection.anchor.type,
     );
   }
@@ -1052,12 +1066,11 @@ export class RangeSelection implements BaseSelection {
         this.insertText(text);
         return;
       }
-      const newNode = $createTextNode(text);
+      const newNode = $createTextNode($getCompositionInsertionText(text));
       newNode.setFormat(format);
       newNode.setStyle(style);
       anchorNode.replace(newNode);
       newNode.select();
-      $updateCompositionPlaceholder(newNode.getLatest(), 0, 0, text);
       return;
     }
 
@@ -1086,11 +1099,12 @@ export class RangeSelection implements BaseSelection {
       }
     }
 
-    anchorNode.spliceText(offset, 0, text, true);
+    const insertedText = $getCompositionInsertionText(text);
+    anchorNode.spliceText(offset, 0, insertedText, true);
     if (anchorNode.isComposing() && this.anchor.type === 'text') {
       this.anchor.set(
         this.anchor.key,
-        this.anchor.offset - text.length,
+        this.anchor.offset - insertedText.length,
         this.anchor.type,
       );
     }
@@ -3110,6 +3124,10 @@ function $resolveSelectionPointOnBoundary(
   isCollapsed: boolean,
 ): void {
   const node = point.getNode();
+  if ($isEmptyCompositionTarget(node)) {
+    // Keep the native IME's empty target rather than moving into the body.
+    return;
+  }
   const before = point.offset === 0;
   if (!before && point.offset !== node.getTextContent().length) {
     return;
@@ -3997,7 +4015,7 @@ export function $updateDOMSelection(
     anchorNode,
     anchor.offset,
   );
-  const [focusDOM, nextFocusOffset] = $getElementAndOffsetForPoint(
+  const [focusDOM, modelFocusOffset] = $getElementAndOffsetForPoint(
     editor,
     focusNode,
     focus.offset,
@@ -4034,6 +4052,17 @@ export function $updateDOMSelection(
   if (nextAnchorNode === null || nextFocusNode === null) {
     return;
   }
+
+  // Select the rendered suffix so WebKit replaces it in the empty target.
+  // A collapsed caret at its start can insert into the previous text node.
+  const nextFocusOffset =
+    isCollapsed &&
+    $isTextNode(focusNode) &&
+    $isEmptyCompositionTarget(focusNode) &&
+    isDOMTextNode(nextFocusNode) &&
+    nextFocusNode.nodeValue === COMPOSITION_SUFFIX
+      ? COMPOSITION_SUFFIX.length
+      : modelFocusOffset;
 
   if (
     isCollapsed &&

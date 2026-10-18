@@ -276,9 +276,7 @@ export interface CollapsedSelectionFormat {
 export interface InputState {
   compositionPhase: 'idle' | 'composing' | 'ending-firefox' | 'ending-safari';
   compositionEndData: string;
-  /** The editor-inserted model placeholder, tracked through text edits. */
-  compositionPlaceholder: {key: NodeKey; offset: number} | null;
-  isInsertingCompositionPlaceholder: boolean;
+  isPreparingComposition: boolean;
   /**
    * The segmented node that insertText switched to normal mode to compose
    * into, which becomes a plain TextNode when the composition ends. No other
@@ -347,12 +345,11 @@ export function createInputState(): InputState {
     composedSegmentedKey: null,
     compositionEndData: '',
     compositionPhase: 'idle',
-    compositionPlaceholder: null,
     hadOrphanedCompositionEvents: false,
     handledSelectionCommandTimeoutId: null,
     isInsertLineBreak: false,
     isInsertTextAfterHandledSelectionCommand: false,
-    isInsertingCompositionPlaceholder: false,
+    isPreparingComposition: false,
     isSelectionChangeFromDOMUpdate: false,
     isSelectionChangeFromMouseDown: false,
     isShiftKeyDown: false,

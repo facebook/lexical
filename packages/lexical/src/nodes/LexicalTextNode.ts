@@ -54,7 +54,6 @@ import {
   nodeSchema,
   numberValue,
   stringValue,
-  withAccessors,
   withField,
 } from '../LexicalSchema';
 import {
@@ -71,13 +70,11 @@ import {
 import {errorOnReadOnly} from '../LexicalUpdates';
 import {
   $applyNodeReplacement,
-  $getCompositionInputState,
   $getCompositionKey,
   $getDocument,
   $getEditor,
   $getEditorDOMRenderConfig,
   $setCompositionKey,
-  $updateCompositionPlaceholder,
   getCachedClassNameArray,
   internalMarkSiblingsAsDirty,
   isDOMTextNode,
@@ -123,10 +120,11 @@ export type TextMarks = TextMark[];
 // Single source of truth for parsing the node-specific properties of a
 // SerializedTextNode; declared on the node via `$config`.
 //
-// Most properties here are plain fields in both directions, avoiding the
+// Every property here *is* one of TextNode's own fields in both directions, so
+// each is declared as the field it is rather than as the accessor pair that
+// wraps it — a read and a write with no method call, and none of the
 // getWritable() a set<Prop> repeats for a node updateFromJSON already holds
-// writable. Text writes use the setter to maintain composition placeholder
-// ownership. Each field names the accessor it stands in for, so a subclass that
+// writable. Each names the accessor it stands in for, so a subclass that
 // overrides one is still the one that decides: see {@link SchemaFieldBase.method}.
 //
 // Nothing here is a transformValue, which is what lets the codegen emit a
@@ -153,10 +151,11 @@ const textNodeSchema = nodeSchema<TextNode>()({
   style: withField(stringValue(), {
     field: '__style',
   }),
-  // Reads can use the field; writes must maintain composition placeholder
-  // ownership through setTextContent, including generated JSON updates.
-  text: withAccessors(stringValue(), {
-    getter: {field: '__text', method: 'getTextContent'},
+  // The accessors are getTextContent/setTextContent rather than the
+  // conventional getText/setText, which TextNode does not have.
+  text: withField(stringValue(), {
+    field: '__text',
+    getter: 'getTextContent',
     setter: 'setTextContent',
   }),
 });
@@ -873,55 +872,10 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
    * @returns this TextNode.
    */
   setTextContent(text: string): this {
-    const previousText = this.getLatest().__text;
-    if (previousText === text) {
+    if (this.getLatest().__text === text) {
       return this;
     }
     const self = this.getWritable();
-    const inputState = $getCompositionInputState(self);
-    const placeholder =
-      inputState === null ? null : inputState.compositionPlaceholder;
-    if (
-      inputState !== null &&
-      ((placeholder !== null && placeholder.key === self.__key) ||
-        inputState.isInsertingCompositionPlaceholder)
-    ) {
-      const [offset, deleted, inserted] = diffComposedText(previousText, text);
-      const placeholderOffset =
-        placeholder !== null && placeholder.key === self.__key
-          ? placeholder.offset
-          : null;
-      $updateCompositionPlaceholder(self, offset, deleted, inserted);
-      if (
-        placeholderOffset !== null &&
-        !inputState.isInsertingCompositionPlaceholder &&
-        inputState.compositionPlaceholder !== null
-      ) {
-        // A replacement does not identify which of two equal characters was
-        // removed. Retain ownership only if prefix-first and suffix-first
-        // alignments agree; never guess that a real NBSP is our placeholder.
-        let suffix = 0;
-        const minLength = Math.min(previousText.length, text.length);
-        while (
-          suffix < minLength &&
-          previousText[previousText.length - suffix - 1] ===
-            text[text.length - suffix - 1]
-        ) {
-          suffix++;
-        }
-        const start = Math.min(offset, minLength - suffix);
-        const end = previousText.length - suffix;
-        const alternativeOffset =
-          placeholderOffset < start
-            ? placeholderOffset
-            : placeholderOffset < end
-              ? null
-              : placeholderOffset + text.length - previousText.length;
-        if (alternativeOffset !== inputState.compositionPlaceholder.offset) {
-          inputState.compositionPlaceholder = null;
-        }
-      }
-    }
     self.__text = text;
     return self;
   }
@@ -1025,12 +979,6 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
     const updatedText =
       text.slice(0, index) + newText + text.slice(index + delCount);
 
-    $updateCompositionPlaceholder(
-      writableSelf,
-      Math.min(index, text.length),
-      Math.min(delCount, text.length - index),
-      newText,
-    );
     writableSelf.__text = updatedText;
     return writableSelf;
   }
@@ -1074,13 +1022,6 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
     }
     const key = self.__key;
     const compositionKey = $getCompositionKey();
-    const inputState = $getCompositionInputState(self);
-    const placeholder =
-      inputState === null ? null : inputState.compositionPlaceholder;
-    const placeholderOffset =
-      placeholder !== null && placeholder.key === key
-        ? placeholder.offset
-        : null;
     const textLength = textContent.length;
     splitOffsets.sort((a, b) => a - b);
     splitOffsets.push(textLength);
@@ -1157,21 +1098,6 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
       }
       textSize = nextTextSize;
       splitNodes.push(sibling);
-    }
-
-    if (placeholderOffset !== null && inputState !== null) {
-      let start = 0;
-      for (const node of splitNodes) {
-        const end = start + node.getTextContentSize();
-        if (placeholderOffset < end) {
-          inputState.compositionPlaceholder = {
-            key: node.getKey(),
-            offset: placeholderOffset - start,
-          };
-          break;
-        }
-        start = end;
-      }
     }
 
     // Move the selection to the best location in the split string.
@@ -1265,10 +1191,6 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
     const text = this.__text;
     const textLength = text.length;
     const compositionKey = $getCompositionKey();
-    const inputState = $getCompositionInputState(this.getLatest());
-    const placeholder =
-      inputState === null ? null : inputState.compositionPlaceholder;
-    const placeholderOffset = placeholder === null ? 0 : placeholder.offset;
 
     if (compositionKey === targetKey) {
       $setCompositionKey(key);
@@ -1299,22 +1221,6 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
     const targetText = target.__text;
     const newText = isBefore ? targetText + text : text + targetText;
     this.setTextContent(newText);
-    if (placeholder !== null && inputState !== null) {
-      if (placeholder.key === key || placeholder.key === targetKey) {
-        inputState.compositionPlaceholder = {
-          key,
-          offset:
-            placeholderOffset +
-            (placeholder.key === key
-              ? isBefore
-                ? targetText.length
-                : 0
-              : isBefore
-                ? 0
-                : textLength),
-        };
-      }
-    }
     const writableSelf = this.getWritable();
     target.remove();
     return writableSelf;

@@ -128,7 +128,9 @@ test.describe('ContextMenuCopyAndPaste', () => {
           .getByRole('menuitem', {name: 'Copy as Markdown'})
           .click();
 
-        expect(await evaluate(page, () => navigator.clipboard.readText())).toBe(
+        // The Windows clipboard converts line endings to CRLF
+        const text = await evaluate(page, () => navigator.clipboard.readText());
+        expect(text.replace(/\r\n/g, '\n')).toBe(
           '# Title\n\nSome **bold** text',
         );
       });

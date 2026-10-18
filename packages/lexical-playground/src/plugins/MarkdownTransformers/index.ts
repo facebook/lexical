@@ -460,7 +460,7 @@ export const TABLE: ElementTransformer = {
       return;
     }
 
-    const matchCells = mapToTableCells(match[0]);
+    const matchCells = $mapToTableCells(match[0]);
 
     if (matchCells == null) {
       return;
@@ -491,7 +491,7 @@ export const TABLE: ElementTransformer = {
         break;
       }
 
-      const cells = mapToTableCells(textContent);
+      const cells = $mapToTableCells(textContent);
 
       if (cells == null) {
         break;
@@ -1105,7 +1105,7 @@ const $createTableCell = (textContent: string): TableCellNode => {
   return cell;
 };
 
-const mapToTableCells = (textContent: string): TableCellNode[] | null => {
+const $mapToTableCells = (textContent: string): TableCellNode[] | null => {
   const match = textContent.match(TABLE_ROW_REG_EXP);
   if (!match || !match[1]) {
     return null;

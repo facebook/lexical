@@ -824,11 +824,6 @@ function $hasFormat(cell: TableCellNode): boolean {
 }
 
 /**
- * Moves a table's legacy alignment state onto the element format of its
- * cells that have none, and clears it, so it can no longer override a
- * column's alignment after the column is cleared or moved.
- */
-/**
  * The column each cell of `table` starts in, which is not its index in its
  * row once cells are merged.
  */
@@ -845,6 +840,11 @@ function $cellColumns(table: TableNode): Map<NodeKey, number> {
   return columns;
 }
 
+/**
+ * Moves a table's legacy alignment state onto the element format of its
+ * cells that have none, and clears it, so it can no longer override a
+ * column's alignment after the column is cleared or moved.
+ */
 function $migrateTableAlign(table: TableNode): void {
   const legacyAlign = $getState(table, tableAlignState);
   if (legacyAlign.length === 0) {

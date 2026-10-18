@@ -67,13 +67,17 @@ import {
   $exportLineBreak,
   $exportLink,
   $exportList,
+  $exportParagraph,
   $exportQuote,
   $exportText,
   $importBlockquote,
   $importBreak,
   $importCode,
+  $importDelete,
   $importEmphasis,
   $importHeading,
+  $importHtml,
+  $importInlineCode,
   $importLink,
   $importLinkReference,
   $importList,
@@ -81,12 +85,8 @@ import {
   $importParagraph,
   $importShadowRootBlockquote,
   $importStrong,
-  exportParagraph,
+  $importText,
   importDefinition,
-  importDelete,
-  importHtml,
-  importInlineCode,
-  importText,
 } from './handlers';
 import {createMdastExport} from './MdastExport';
 import {createMdastImport} from './MdastImport';
@@ -201,15 +201,15 @@ export interface MdastExtensionOutput {
 // formatting (CommonMark handles these without any micromark extension).
 const CORE_IMPORT_RULES: readonly MdastImportRule[] = [
   {$import: $importParagraph, type: 'paragraph'},
-  {$import: importText, type: 'text'},
-  {$import: importHtml, type: 'html'},
-  {$import: importInlineCode, type: 'inlineCode'},
+  {$import: $importText, type: 'text'},
+  {$import: $importHtml, type: 'html'},
+  {$import: $importInlineCode, type: 'inlineCode'},
   {$import: $importEmphasis, type: 'emphasis'},
   {$import: $importStrong, type: 'strong'},
   {$import: $importBreak, type: 'break'},
 ];
 const CORE_EXPORT_RULES: readonly MdastExportRule[] = [
-  {$export: exportParagraph, type: ParagraphNode},
+  {$export: $exportParagraph, type: ParagraphNode},
   {$export: $exportText, type: TextNode},
   {$export: $exportLineBreak, type: LineBreakNode},
 ];
@@ -540,7 +540,7 @@ export const MdastHorizontalRuleExtension = defineExtension({
 export const MdastStrikethroughExtension = defineExtension({
   dependencies: [
     configExtension(MdastExtension, {
-      importRules: [{$import: importDelete, type: 'delete'}],
+      importRules: [{$import: $importDelete, type: 'delete'}],
       inlineShortcutTriggers: ['~'],
       inlineShortcutTypes: ['delete'],
       mdastExtensions: [/* @__PURE__ */ gfmStrikethroughFromMarkdown()],

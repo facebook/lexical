@@ -169,7 +169,7 @@ Lexical is built around several key architectural concepts that work together:
 
 This is similar to React hooks' restrictions but enforces synchronous context instead of call order.
 
-Name every function you write that needs that context with the `$` prefix too, including private helpers and closures: any function that calls a `$` function or a method of a node (`node.getTextContent()`, `node.hasFormat()`, ...), since node methods read the active editor state. `@lexical/rules-of-lexical` only flags calls to `$` functions, so a helper that reads a node through its methods alone is not caught by lint. A function that takes the context itself (it calls `editor.update()` or `editor.read()`, or registers a listener) and a factory that only returns such a function keep plain names.
+Name every function you write that needs that context with the `$` prefix too, including private helpers and closures: any function that calls a `$` function (a `$is*` type guard included), a method of a node (`node.getTextContent()`, `node.hasFormat()`, ...), or a callback that does either (an import/export context's methods), since node methods read the active editor state. `@lexical/rules-of-lexical` only flags calls to `$` functions other than `$is*` guards, so lint does not catch a helper that reaches the state only through node methods, guards, or such callbacks. A function that takes the context itself (it calls `editor.update()` or `editor.read()`, or registers a listener) and a factory that only returns such a function keep plain names.
 
 **Double-Buffering Updates** - When `editor.update()` is called:
 1. Current EditorState is cloned as work-in-progress

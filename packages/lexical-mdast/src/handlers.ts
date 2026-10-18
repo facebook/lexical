@@ -334,13 +334,13 @@ export const $importCode: MdastImportHandler<Code> = (node, ctx) => {
   return code;
 };
 
-export const importText: MdastImportHandler<MdastText> = (node, ctx) =>
+export const $importText: MdastImportHandler<MdastText> = (node, ctx) =>
   ctx.createText(node.value);
 
-export const importHtml: MdastImportHandler<Html> = (node, ctx) =>
+export const $importHtml: MdastImportHandler<Html> = (node, ctx) =>
   ctx.createText(node.value);
 
-export const importInlineCode: MdastImportHandler<InlineCode> = (node, ctx) =>
+export const $importInlineCode: MdastImportHandler<InlineCode> = (node, ctx) =>
   ctx.createText(node.value, ctx.format | FORMAT_CODE);
 
 /**
@@ -371,7 +371,7 @@ export const $importEmphasis: MdastImportHandler<Emphasis | Strong> =
 export const $importStrong: MdastImportHandler<Emphasis | Strong> =
   /* @__PURE__ */ makeEmphasisImporter(FORMAT_BOLD, strongMarkerState);
 
-export const importDelete: MdastImportHandler<Delete> = (node, ctx) =>
+export const $importDelete: MdastImportHandler<Delete> = (node, ctx) =>
   ctx.importChildren(node, FORMAT_STRIKETHROUGH);
 
 export const $importBreak: MdastImportHandler<Break> = (node, ctx) => {
@@ -454,7 +454,7 @@ export const importDefinition: MdastImportHandler = () => [];
  * Export handlers: Lexical node -> mdast node(s)                             *
  * -------------------------------------------------------------------------- */
 
-export const exportParagraph: MdastExportHandler = (node, ctx) => {
+export const $exportParagraph: MdastExportHandler = (node, ctx) => {
   if (!$isParagraphNode(node)) {
     return null;
   }

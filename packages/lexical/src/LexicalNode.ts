@@ -1583,6 +1583,12 @@ export class LexicalNode {
    * Returns the latest version of the node from the active EditorState.
    * This is used to avoid getting values from stale node references.
    *
+   * Throws if the node is not in the active EditorState, for example when a
+   * reference kept from an earlier read or update points to a node that has
+   * since been removed. Check {@link LexicalNode.isAttached} first, which
+   * does not throw for a removed node, or look the node up with
+   * {@link $getNodeByKey}.
+   *
    */
   getLatest(): this {
     if ($isEphemeral(this)) {
@@ -1593,7 +1599,9 @@ export class LexicalNode {
     if (latest === null) {
       invariant(
         false,
-        'Lexical node does not exist in active editor state. Avoid using the same node references between nested closures from editorState.read/editor.update.',
+        'Lexical node does not exist in active editor state (node %s, type %s). The reference was probably kept from another read or update, for example in a closure, event handler or component state, and the node has since been removed or is not part of this editor state. Before using a node reference that may be stale, check node.isAttached() or look the node up again with $getNodeByKey(node.getKey()), inside the read or update where it is used.',
+        this.__key,
+        this.__type,
       );
     }
     return latest;
@@ -1602,7 +1610,8 @@ export class LexicalNode {
   /**
    * Returns a mutable version of the node using {@link $cloneWithProperties}
    * if necessary. Will throw an error if called outside of a Lexical Editor
-   * {@link LexicalEditor.update} callback.
+   * {@link LexicalEditor.update} callback, or if the node is not in the
+   * active EditorState (see {@link LexicalNode.getLatest}).
    *
    */
   getWritable(): this {
@@ -1630,7 +1639,9 @@ export class LexicalNode {
     const latestNode = nodeMap.get(key) as this | undefined;
     invariant(
       latestNode !== undefined,
-      'Lexical node does not exist in active editor state. Avoid using the same node references between nested closures from editorState.read/editor.update.',
+      'Lexical node does not exist in active editor state (node %s, type %s). The reference was probably kept from another read or update, for example in a closure, event handler or component state, and the node has since been removed or is not part of this editor state. Before using a node reference that may be stale, check node.isAttached() or look the node up again with $getNodeByKey(node.getKey()), inside the read or update where it is used.',
+      key,
+      this.__type,
     );
     const mutableNode = $cloneWithProperties(latestNode);
     cloneNotNeeded.set(key, mutableNode);

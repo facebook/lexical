@@ -23,6 +23,7 @@ import {
   mountSlotContainer,
 } from 'lexical';
 import {assert, describe, expect, onTestFinished, test} from 'vitest';
+import {userEvent} from 'vitest/browser';
 
 // Regression tests for #9363: deleteLine inside a decorator-host slot
 // deleted one character instead of the line.
@@ -203,4 +204,30 @@ describe('deleteLine inside a decorator-host slot (#9363)', () => {
     expect(textOf(fixture, fixture.quoteKey)).toBe(QUOTE);
     expect(textOf(fixture, fixture.attributionKey)).toBe(ATTRIBUTION);
   });
+
+  // The slot container is the keydown target, so rich text leaves a plain
+  // Delete to the browser, whose deleteContentForward must still delete one
+  // character.
+  test.each([
+    [3, 'Artur'],
+    [ATTRIBUTION.length, ATTRIBUTION],
+  ])(
+    'a plain Delete at offset %i deletes forward one character',
+    async (offset, expected) => {
+      const fixture = mountEditor();
+      const textDOM = fixture.editor.getElementByKey(
+        fixture.attributionKey,
+      )?.firstChild;
+      assert(textDOM instanceof Text, 'Expected a rendered text node');
+      const slotContainer = textDOM.parentElement?.closest(
+        '[data-lexical-slot]',
+      );
+      assert(slotContainer instanceof HTMLElement, 'Expected a slot container');
+      slotContainer.focus();
+      document.getSelection()?.collapse(textDOM, offset);
+      await userEvent.keyboard('{Delete}');
+      expect(textOf(fixture, fixture.attributionKey)).toBe(expected);
+      expect(textOf(fixture, fixture.quoteKey)).toBe(QUOTE);
+    },
+  );
 });

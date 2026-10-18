@@ -50,8 +50,10 @@ import {
   $getNearestNodeFromDOMNode,
   $getRoot,
   $getSelection,
+  $getSelectionSlotFrame,
   $getSiblingCaret,
   $getSlotFrame,
+  $getSlotHost,
   $getState,
   $hasAncestor,
   $insertNodes,
@@ -77,6 +79,7 @@ import {
   $setState,
   $setTextFormat,
   addClassNamesToElement,
+  type BaseSelection,
   booleanValue,
   CAN_USE_BEFORE_INPUT,
   type CaretDirection,
@@ -617,9 +620,17 @@ async function onCutForRichText(
 
 export {eventFiles} from '@lexical/utils';
 
-function $isTargetWithinDecorator(target: HTMLElement): boolean {
+function $isTargetWithinDecorator(
+  target: HTMLElement,
+  selection: BaseSelection | null,
+): boolean {
   const node = $getNearestNodeFromDOMNode(target);
-  return $isDecoratorNode(node);
+  // A slot of a decorator host is editor content: the keydown target is the
+  // slot container, but the selection is in the slot (#9363).
+  const frame = $getSelectionSlotFrame(selection);
+  return (
+    $isDecoratorNode(node) && (frame === null || $getSlotHost(frame) !== node)
+  );
 }
 
 function $isSelectionAtEndOfRoot(selection: RangeSelection) {
@@ -1736,7 +1747,9 @@ export function registerRichText(
         // NodeSelection is exactly the case where the user wants us to
         // handle backspace ourselves.
         if (!$isNodeSelection(selection)) {
-          if ($isTargetWithinDecorator(event.target as HTMLElement)) {
+          if (
+            $isTargetWithinDecorator(event.target as HTMLElement, selection)
+          ) {
             return false;
           }
         }
@@ -1771,7 +1784,9 @@ export function registerRichText(
         // that selected a block decorator is the user's "delete this node"
         // gesture, even though the click target lives inside a decorator.
         if (!$isNodeSelection(selection)) {
-          if ($isTargetWithinDecorator(event.target as HTMLElement)) {
+          if (
+            $isTargetWithinDecorator(event.target as HTMLElement, selection)
+          ) {
             return false;
           }
         }

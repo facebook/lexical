@@ -36,7 +36,7 @@ export default function ContextMenuPlugin(): JSX.Element {
         },
         $showOn: (node: LexicalNode) => $isLinkNode(node.getParent()),
         disabled: false,
-        icon: <i className="PlaygroundEditorTheme__contextMenuItemIcon" />,
+        icon: <i className="PlaygroundEditorTheme__contextMenuItemIcon link" />,
       }),
       new NodeContextMenuSeparator({
         $showOn: (node: LexicalNode) => $isLinkNode(node.getParent()),
@@ -123,7 +123,9 @@ export default function ContextMenuPlugin(): JSX.Element {
           });
         },
         disabled: false,
-        icon: <i className="PlaygroundEditorTheme__contextMenuItemIcon" />,
+        icon: (
+          <i className="PlaygroundEditorTheme__contextMenuItemIcon paragraph" />
+        ),
       }),
       new NodeContextMenuSeparator(),
       new NodeContextMenuOption(`Delete Node`, {

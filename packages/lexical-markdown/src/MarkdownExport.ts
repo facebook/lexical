@@ -504,7 +504,15 @@ function exportTextFormat(
       ? output.replace(/([*_`~])/g, '\\$1')
       : output.replace(/([*_`~\\])/g, '\\$1');
     // Text that reads as a character reference keeps its `&` (`\&#65;`).
-    output = output.replace(/&(?=#\d{1,7};)/g, '\\&');
+    // When backslashes are kept as they are, the ones right before it are
+    // escaped too, or the last would escape the escape instead.
+    output = output.replace(
+      /(\\*)&(?=#\d{1,7};)/g,
+      (_, backslashes: string) =>
+        (shouldPreserveNewLines
+          ? backslashes.replace(/\\/g, '\\\\')
+          : backslashes) + '\\&',
+    );
   }
 
   let leadingSpace: string;

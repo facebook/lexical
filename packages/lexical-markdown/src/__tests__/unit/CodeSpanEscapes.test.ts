@@ -71,6 +71,25 @@ describe('a code span', () => {
     expect(editor.read(() => $getRoot().getTextContent())).toBe(text);
   });
 
+  it('pads a span whose ends are line endings', () => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(
+      () =>
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $createTextNode('\nx\n').toggleFormat('code'),
+            ),
+          ),
+      {discrete: true},
+    );
+    // A reader turns each line ending into a space and strips one per end.
+    expect(editor.read(() => $convertToMarkdownString(TRANSFORMERS))).toBe(
+      '` \nx\n `',
+    );
+  });
+
   it('leaves the text after it to read its escapes', () => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
     editor.update(
@@ -134,6 +153,26 @@ describe('text a text match leaves in place', () => {
     },
   );
 
+  it('leaves the text a transformer writes as it wrote it', () => {
+    const LITERAL: TextMatchTransformer = {
+      dependencies: [],
+      importRegExp: /@\S+/,
+      regExp: /@\S+$/,
+      replace: node => {
+        node.setTextContent('&#65;\\*').setFormat('bold');
+      },
+      type: 'text-match',
+    };
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(() => $convertFromMarkdownString('x @a', [LITERAL]), {
+      discrete: true,
+    });
+    expect(editor.read(() => textOf($getRoot().getAllTextNodes()))).toEqual([
+      ['x ', false],
+      ['&#65;\\*', true],
+    ]);
+  });
+
   it('reads its escapes in nodes generated outside the root', () => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
     let text;
@@ -175,6 +214,29 @@ describe('a character reference', () => {
       discrete: true,
     });
     expect(editor.read(() => $getRoot().getTextContent())).toBe(text);
+  });
+
+  it('round-trips one after a backslash when backslashes are kept', () => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(
+      () =>
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append($createTextNode('\\&#65; \\\\&#65;')),
+          ),
+      {discrete: true},
+    );
+    const markdown = editor.read(() =>
+      $convertToMarkdownString(TRANSFORMERS, undefined, true),
+    );
+    editor.update(
+      () => $convertFromMarkdownString(markdown, TRANSFORMERS, undefined, true),
+      {discrete: true},
+    );
+    expect(editor.read(() => $getRoot().getTextContent())).toBe(
+      '\\&#65; \\\\&#65;',
+    );
   });
 
   it('round-trips text that reads as one', () => {

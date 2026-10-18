@@ -307,11 +307,14 @@ export interface InputState {
     focusOffset: number;
   };
   isSelectionChangeFromMouseDown: boolean;
+  /** A mouse press that may start a selection drag, then its latest move. */
+  mouseDrag: MouseEvent | null;
   /**
    * The pointerType of the latest pointerdown in the root element ('touch',
-   * 'pen' or 'mouse'), so the compatibility mousedown and click that follow a
-   * tap can tell it from an iPadOS trackpad or mouse press. Recorded on iOS
-   * only; '' until the first pointerdown, and always '' elsewhere.
+   * 'pen' or 'mouse'; '' until the first), on every platform. The
+   * compatibility mousedown and click that follow a tap on iOS tell it from an
+   * iPadOS trackpad or mouse press by it, and a mousedown starts a mouseDrag
+   * only after a 'mouse' one.
    */
   lastPointerType: '' | PointerEvent['pointerType'];
   /**
@@ -352,6 +355,7 @@ export function createInputState(): InputState {
     lastKeyCode: null,
     lastKeyDownTimeStamp: 0,
     lastPointerType: '',
+    mouseDrag: null,
     postDeleteSelectionToRestore: null,
     savedInputMode: undefined,
     selectionChangeFromDOMUpdatePoints: null,
@@ -1168,6 +1172,11 @@ export class LexicalEditor {
 
   /** @internal */
   _headless: boolean;
+  /**
+   * @internal Enabled by the v1 Yjs binding to distinguish moved nodes from
+   * shifted siblings. Once enabled, persists for the lifetime of this editor.
+   */
+  _recordNodeMoves: boolean;
   /** @internal */
   _parentEditor: null | LexicalEditor;
   /** @internal */
@@ -1311,6 +1320,7 @@ export class LexicalEditor {
     this._htmlConversions = htmlConversions;
     this._editable = editable;
     this._headless = parentEditor !== null && parentEditor._headless;
+    this._recordNodeMoves = false;
     this._window = null;
     this._blockCursorElement = null;
     this._slotsUsed = false;

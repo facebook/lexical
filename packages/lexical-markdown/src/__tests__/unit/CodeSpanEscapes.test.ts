@@ -244,6 +244,7 @@ describe('a character reference', () => {
     // Adjacent text nodes are written next to each other.
     [['&#6', '5;'], '\\&#65;'],
     [['&am', 'p;'], '\\&amp;'],
+    [['&#', '6', '5;'], '\\&#65;'],
   ])(
     'escapes the & of text %j that other readers take as a reference',
     (texts, markdown) => {
@@ -267,6 +268,25 @@ describe('a character reference', () => {
       );
     },
   );
+
+  it('escapes a reference completed by text with a format Markdown omits', () => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(
+      () =>
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $createTextNode('&#6'),
+              $createTextNode('5;').toggleFormat('underline'),
+            ),
+          ),
+      {discrete: true},
+    );
+    expect(editor.read(() => $convertToMarkdownString(TRANSFORMERS))).toBe(
+      '\\&#65;',
+    );
+  });
 
   it.each([
     [

@@ -1331,6 +1331,18 @@ describe('@lexical/mdast import/export', () => {
         ),
       ).toBe('x<br>y<br><br>**z**<br>**w**');
     });
+
+    it('keeps spaces written as references at the edges of a cell', () => {
+      using editor = createEditor(true);
+      editor.update(
+        () => $convertFromMarkdownString('| a |\n| - |\n| &#32;&#32;b&#32; |'),
+        {discrete: true},
+      );
+      editor.read(() => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        expect(table.getLastChildOrThrow().getTextContent()).toBe('  b ');
+      });
+    });
   });
 
   describe('with MdastShadowRootQuoteExtension', () => {

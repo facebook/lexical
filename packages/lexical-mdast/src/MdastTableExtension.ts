@@ -142,17 +142,18 @@ function cellLines(cell: TableCell): PhrasingContent[][] {
       );
     }
   }
-  return lines.map(line =>
+  // The cell's own edges were trimmed by the parser, and keep what it left.
+  return lines.map((line, lineIndex) =>
     line
       .map((node, i): PhrasingContent => {
         if (node.type !== 'text') {
           return node;
         }
         let {value} = node;
-        if (i === 0) {
+        if (i === 0 && lineIndex > 0) {
           value = value.replace(/^[ \t]+/, '');
         }
-        if (i === line.length - 1) {
+        if (i === line.length - 1 && lineIndex < lines.length - 1) {
           value = value.replace(/[ \t]+$/, '');
         }
         return {...node, value};

@@ -20,9 +20,10 @@ overrides:
   tmp: '>=0.2.6'
   yjs: ^13.6.31
   qs: '>=6.15.2'
+  wxt>publish-browser-extension: 6.2.0
 
 patchedDependencies:
-  publish-browser-extension@6.1.1: 84ac1ad8ad2e83a1078b95ffd402de890d6b0e336967bacaf22e8c935257eeb1
+  publish-browser-extension@6.2.0: 21ba8f7411fff5955667f1cab745d2887a2f723c8009d7ffcadcdd6150cbe384
 
 importers:
 
@@ -11228,8 +11229,8 @@ packages:
   prr@1.0.1:
     resolution: {integrity: sha512-yPw4Sng1gWghHQWj0B3ZggWUm4qVbPwPFcRG8KyxiU7J2OHFSoEHKS+EZ3fv5l1t9CyCiop6l/ZYeWbrgoQejw==}
 
-  publish-browser-extension@6.1.1:
-    resolution: {integrity: sha512-ovfBOz+cZIOBHZ+oxTfpv1kSGU7ruzy8CXoFGvhXsUbJuty45srGzf1ufEePs69virOWXfFbhZRoNQUdgPvwXA==}
+  publish-browser-extension@6.2.0:
+    resolution: {integrity: sha512-yIxoJ54RdTqyfdLrc+8mswCmEeh9x/03JrtF8Ney8zjzKplKgg4fdTs3hRP33IcWImak98yAHSI8ZBVAflsDNg==}
     engines: {node: '>=22.0.0'}
     hasBin: true
 
@@ -25579,7 +25580,7 @@ snapshots:
   prr@1.0.1:
     optional: true
 
-  publish-browser-extension@6.1.1(patch_hash=84ac1ad8ad2e83a1078b95ffd402de890d6b0e336967bacaf22e8c935257eeb1):
+  publish-browser-extension@6.2.0(patch_hash=21ba8f7411fff5955667f1cab745d2887a2f723c8009d7ffcadcdd6150cbe384):
     dependencies:
       '@topcli/prompts': 4.0.0
       cac: 7.0.0
@@ -27817,7 +27818,7 @@ snapshots:
       magicast: 0.5.3
       nypm: 0.6.6
       picomatch: 4.0.7
-      publish-browser-extension: 6.1.1(patch_hash=84ac1ad8ad2e83a1078b95ffd402de890d6b0e336967bacaf22e8c935257eeb1)
+      publish-browser-extension: 6.2.0(patch_hash=21ba8f7411fff5955667f1cab745d2887a2f723c8009d7ffcadcdd6150cbe384)
       superlock: 1.3.5
       tiny-open: 1.3.0
       tinyexec: 1.3.0

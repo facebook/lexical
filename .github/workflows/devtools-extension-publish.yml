@@ -8,19 +8,35 @@ on:
         required: true
         default: 0
         type: number
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Exact npm release commit to build'
+        required: true
+        type: string
+      build_version:
+        description: 'Build version'
+        required: false
+        default: 0
+        type: number
 
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}
+  # Manual and npm release calls must not publish to the stores concurrently.
+  group: devtools-extension-publish
   cancel-in-progress: false
 
 jobs:
   release:
     if: github.repository_owner == 'facebook'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
       - uses: ./.github/actions/setup-pnpm
         with:
           node-version: 24.x

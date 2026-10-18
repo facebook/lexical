@@ -32,6 +32,8 @@ overrides:
   tmp: '>=0.2.6'
   yjs: 'catalog:'
   qs: '>=6.15.2'
+  # Keep WXT's submit CLI on the current stable publisher.
+  'wxt>publish-browser-extension': '6.2.0'
 
 peerDependencyRules:
   allowedVersions:
@@ -50,4 +52,4 @@ allowBuilds:
   unrs-resolver: false
 
 patchedDependencies:
-  publish-browser-extension@6.1.1: patches/publish-browser-extension@6.1.1.patch
+  publish-browser-extension@6.2.0: patches/publish-browser-extension@6.2.0.patch

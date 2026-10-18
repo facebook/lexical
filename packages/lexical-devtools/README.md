@@ -57,7 +57,9 @@ If new version of the extension contains big changes to it's UI or functionality
 
 **Chrome, Firefox:**
 
-Go to the ["Publish DevTools extension to stores" GitHub action](https://github.com/facebook/lexical/actions/workflows/devtools-extension-publish.yml) and start it manually. Increase "Build version" in case publish happens more than once within single Lexical monorepo version.
+After a successful production npm release (`channel=latest`, with publishing enabled and dry-run disabled), the npm release workflow automatically calls the ["Publish DevTools extension to stores" workflow](https://github.com/facebook/lexical/actions/workflows/devtools-extension-publish.yml). It builds Chrome and Firefox from the exact commit used for npm, with "Build version" set to `0`. Nightly, `next`, and `dev` releases, version-only runs, dry runs, failed npm releases, and forks do not submit extensions.
+
+For an extension-only update or retry, start that workflow manually on the intended release tag or branch. Increase "Build version" if the same Lexical version has already been uploaded to either store. An extension submission failure fails the release workflow after npm has published; npm packages are not rolled back. Use the manual extension workflow to retry rather than republishing npm packages. Store review and approval still determine when an update becomes available.
 
 **Safari:**
 
@@ -65,7 +67,7 @@ Automation is pending, pls contact vladlen_fedosov@epam.com
 
 ### Chrome Web Store API v2 setup
 
-The publishing command explicitly selects API v2 and `DEFAULT_PUBLISH`: submit for review and publish after approval. WXT's locked `publish-browser-extension@6.1.1` already supports v2, so no replacement publisher or dependency upgrade is required. The workflow remains manual, runs only for the `facebook` repository owner, and serializes releases without cancelling an in-progress run. Chrome and Firefox submissions are independent; one can succeed while the other fails.
+The publishing command explicitly selects API v2 and `DEFAULT_PUBLISH`: submit for review and publish after approval. WXT's submit CLI uses `publish-browser-extension@6.2.0`, selected by the scoped `wxt>publish-browser-extension` override in `pnpm-workspace.yaml`. The publisher requires Node 22 or newer; the workflow uses Node 24. Manual and automatic extension releases run only for the `facebook` repository owner and share one concurrency group without cancelling an in-progress run. Chrome and Firefox submissions are independent; one can succeed while the other fails.
 
 Before the first v2 release, a Chrome publisher administrator and the Google Cloud project owner must complete these steps manually. The marketplace contacts below are contact information, not confirmation of current ownership or access.
 
@@ -84,11 +86,13 @@ Before the first v2 release, a Chrome publisher administrator and the Google Clo
 
 `EXTENSION_CHROME_CLIENT_ID`, `EXTENSION_CHROME_CLIENT_SECRET`, `EXTENSION_CHROME_REFRESH_TOKEN`, and `EXTENSION_CHROME_PUBLISH_TARGET` are no longer read by this workflow. No refresh-token regeneration is needed for this service-account path. Owners can assess retirement of the old secrets separately after the migration is verified. Firefox still uses the existing `EXTENSION_FIREFOX_EXTENSION_ID`, `EXTENSION_FIREFOX_JWT_ISSUER`, and `EXTENSION_FIREFOX_JWT_SECRET` secrets; Safari uses its existing flow.
 
-The locked publisher has a small [pnpm patch](../../patches/publish-browser-extension@6.1.1.patch) registered in `pnpm-workspace.yaml` to handle asynchronous uploads. After an `IN_PROGRESS` response (also accepting the `UPLOAD_IN_PROGRESS` spelling used in Google's prose), it polls `fetchStatus.lastAsyncUploadState` every five seconds for up to five minutes. The timeout also aborts an in-flight status request. Only `SUCCEEDED` allows submission for review; failure, an unexpected state, a request error, or timeout fails the Chrome submission without uploading the ZIP again. Keep this exact-version patch when updating dependencies until the publisher provides equivalent bounded polling.
+The npm release caller forwards repository/organization secrets through both reusable-workflow calls using `secrets: inherit`; the Chrome repository variables remain available to the called workflow. Configure these settings before the first production npm release that includes this automation. No additional token or credential is needed for the workflow calls.
+
+The locked publisher has a small [pnpm patch](../../patches/publish-browser-extension@6.2.0.patch) registered in `pnpm-workspace.yaml` to handle asynchronous uploads. After an `IN_PROGRESS` response (also accepting the `UPLOAD_IN_PROGRESS` spelling used in Google's prose), it polls `fetchStatus.lastAsyncUploadState` every five seconds for up to five minutes. The timeout also aborts an in-flight status request. Only `SUCCEEDED` allows submission for review; failure, an unexpected state, a request error, or timeout fails the Chrome submission without uploading the ZIP again. Update the override and exact-version patch together when upgrading the publisher, until a release provides equivalent bounded polling.
 
 Offline reproductions and repository CI do not verify real credentials, publisher linkage, store review, or a live release. WXT's `submit --dry-run` **does contact Google to authenticate and fetch item status**; it is not an offline validation command. A permitted owner must perform that live access check separately before the first release. Do not dispatch the publishing workflow merely to check configuration: it uploads and submits to both stores.
 
-References: [v1.1 migration deadline (October 15, 2026)](https://developer.chrome.com/blog/cws-api-v2#migration-timeline), [official API setup and visibility rules](https://developer.chrome.com/docs/webstore/using-api), [v2 publishing semantics](https://developer.chrome.com/docs/webstore/api/reference/rest/v2/publishers.items/publish), and [locked publishing tool's configuration reference](https://github.com/aklinker1/publish-browser-extension/blob/v6.1.1/docs/config-reference.md).
+References: [v1.1 migration deadline (October 15, 2026)](https://developer.chrome.com/blog/cws-api-v2#migration-timeline), [official API setup and visibility rules](https://developer.chrome.com/docs/webstore/using-api), [v2 publishing semantics](https://developer.chrome.com/docs/webstore/api/reference/rest/v2/publishers.items/publish), and [locked publishing tool's configuration reference](https://github.com/aklinker1/publish-browser-extension/blob/v6.2.0/docs/config-reference.md).
 
 ## Requesting maintainer access to extension marketplaces
 

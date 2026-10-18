@@ -1,7 +1,7 @@
-diff --git a/dist/init-DhMr270n.mjs b/dist/init-DhMr270n.mjs
-index ce7add85e19c639c27ff2f095606371fa4b71a7d..dd956ee58f2f1708d89adcdb0aeea0fd6c66278a 100644
---- a/dist/init-DhMr270n.mjs
-+++ b/dist/init-DhMr270n.mjs
+diff --git a/dist/init-BsBUXJJ5.mjs b/dist/init-BsBUXJJ5.mjs
+index 9957c0e8d1abd511086c2ccb05a201c6bae8c215..799507597df636e9f7dc91e44ab2183e91cabf3b 100644
+--- a/dist/init-BsBUXJJ5.mjs
++++ b/dist/init-BsBUXJJ5.mjs
 @@ -1,4 +1,5 @@
  import tasuku from "tasuku";
 +import { setTimeout as delay } from "node:timers/promises";
@@ -18,7 +18,7 @@ index ce7add85e19c639c27ff2f095606371fa4b71a7d..dd956ee58f2f1708d89adcdb0aeea0fd
  		};
  		const res = await globalThis.fetch(url, init);
  		if (!res.ok) throw new Error(`Fetch request failed with code ${res.status} ${res.statusText}: ${await res.text()}`);
-@@ -1923,7 +1925,7 @@ var ChromeWebStoreV2 = class {
+@@ -1942,7 +1944,7 @@ var ChromeWebStoreV2 = class {
  			params: { name: this.nameParam },
  			body: file
  		});
@@ -27,7 +27,7 @@ index ce7add85e19c639c27ff2f095606371fa4b71a7d..dd956ee58f2f1708d89adcdb0aeea0fd
  		if (this.options.skipSubmitReview) {
  			this.setStatus?.("Skipping submission (skipSubmitReview=true)");
  			return;
-@@ -1977,7 +1979,27 @@ var ChromeWebStoreV2 = class {
+@@ -1997,7 +1999,27 @@ var ChromeWebStoreV2 = class {
  	get nameParam() {
  		return `publishers/${this.options.publisherId}/items/${this.options.extensionId}`;
  	}

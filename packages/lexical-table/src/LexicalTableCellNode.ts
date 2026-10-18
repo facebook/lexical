@@ -220,7 +220,7 @@ export class TableCellNode extends ElementNode {
       element.style.width = `${this.getWidth() || COLUMN_WIDTH}px`;
 
       element.style.verticalAlign = this.getVerticalAlign() || 'top';
-      element.style.textAlign = 'start';
+      element.style.textAlign = this.getFormatType() || 'start';
       if (this.__backgroundColor === null && this.hasHeader()) {
         element.style.backgroundColor = '#f2f3f5';
       }

@@ -9,12 +9,19 @@
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {
   $createTableCellNode,
+  $createTableNode,
+  $createTableRowNode,
   $isTableCellNode,
   type SerializedTableCellNode,
   TableCellHeaderStates,
   TableCellNode,
 } from '@lexical/table';
-import {$createTextNode, $getRoot, type DOMConversionOutput} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  type DOMConversionOutput,
+} from 'lexical';
 import {
   $runDOMConversion,
   expectHtmlToBeEqual,
@@ -152,6 +159,26 @@ describe('LexicalTableCellNode tests', () => {
         ).toBe(
           `<td style="vertical-align: ${validVerticalAlign};" class="${editorConfig.theme.tableCell}"></td>`,
         );
+      });
+    });
+
+    test('TableCellNode.exportDOM writes its format as text-align', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        $getRoot()
+          .clear()
+          .append(
+            $createTableNode().append(
+              $createTableRowNode().append(
+                $createTableCellNode()
+                  .setFormat('center')
+                  .append($createParagraphNode()),
+              ),
+            ),
+          );
+      });
+      editor.read(() => {
+        expect($generateHtmlFromNodes(editor)).toContain('text-align: center');
       });
     });
 

@@ -77,6 +77,7 @@ class QuoteHostNode extends DecoratorNode<null> {
 interface Fixture {
   attributionKey: string;
   editor: LexicalEditor;
+  input: HTMLInputElement;
   quoteKey: string;
 }
 
@@ -135,12 +136,15 @@ function mountEditor(): Fixture {
   const chrome = document.createElement('div');
   const quoteTarget = document.createElement('div');
   const attributionTarget = document.createElement('div');
-  chrome.append(quoteTarget, attributionTarget);
+  // A native control in the host's own chrome, beside its slots.
+  const input = document.createElement('input');
+  input.value = 'abc';
+  chrome.append(quoteTarget, attributionTarget, input);
   hostDOM.append(chrome);
   mountSlotContainer(editor, hostKey, 'quote', quoteTarget);
   mountSlotContainer(editor, hostKey, 'attribution', attributionTarget);
 
-  return {attributionKey, editor, quoteKey};
+  return {attributionKey, editor, input, quoteKey};
 }
 
 function deleteLineAt(
@@ -165,6 +169,19 @@ function deleteLineAt(
     },
     {discrete: true},
   );
+}
+
+function placeCaretInSlot(
+  {editor}: Fixture,
+  key: string,
+  offset: number,
+): void {
+  const textDOM = editor.getElementByKey(key)?.firstChild;
+  assert(textDOM instanceof Text, 'Expected a rendered text node');
+  const slotContainer = textDOM.parentElement?.closest('[data-lexical-slot]');
+  assert(slotContainer instanceof HTMLElement, 'Expected a slot container');
+  slotContainer.focus();
+  document.getSelection()?.collapse(textDOM, offset);
 }
 
 function textOf({editor}: Fixture, key: string): string | null {
@@ -206,28 +223,34 @@ describe('deleteLine inside a decorator-host slot (#9363)', () => {
   });
 
   // The slot container is the keydown target, so rich text leaves a plain
-  // Delete to the browser, whose deleteContentForward must still delete one
-  // character.
+  // Backspace or Delete to the browser, and the beforeinput must still
+  // delete one character, not the line Chromium's target range covers.
   test.each([
-    [3, 'Artur'],
-    [ATTRIBUTION.length, ATTRIBUTION],
+    ['{Delete}', 3, 'Artur'],
+    ['{Delete}', ATTRIBUTION.length, ATTRIBUTION],
+    ['{Backspace}', 3, 'Arhur'],
+    ['{Backspace}', ATTRIBUTION.length, 'Arthu'],
   ])(
-    'a plain Delete at offset %i deletes forward one character',
-    async (offset, expected) => {
+    'a plain %s at offset %i deletes one character',
+    async (key, offset, expected) => {
       const fixture = mountEditor();
-      const textDOM = fixture.editor.getElementByKey(
-        fixture.attributionKey,
-      )?.firstChild;
-      assert(textDOM instanceof Text, 'Expected a rendered text node');
-      const slotContainer = textDOM.parentElement?.closest(
-        '[data-lexical-slot]',
-      );
-      assert(slotContainer instanceof HTMLElement, 'Expected a slot container');
-      slotContainer.focus();
-      document.getSelection()?.collapse(textDOM, offset);
-      await userEvent.keyboard('{Delete}');
+      placeCaretInSlot(fixture, fixture.attributionKey, offset);
+      await userEvent.keyboard(key);
       expect(textOf(fixture, fixture.attributionKey)).toBe(expected);
       expect(textOf(fixture, fixture.quoteKey)).toBe(QUOTE);
     },
   );
+
+  test('Backspace and Delete in a native control of the host edit the control', async () => {
+    const fixture = mountEditor();
+    placeCaretInSlot(fixture, fixture.attributionKey, 3);
+    await userEvent.keyboard('{Delete}');
+    expect(textOf(fixture, fixture.attributionKey)).toBe('Artur');
+    const {input} = fixture;
+    input.focus();
+    input.setSelectionRange(1, 1);
+    await userEvent.keyboard('{Backspace}{Delete}');
+    expect(input.value).toBe('c');
+    expect(textOf(fixture, fixture.attributionKey)).toBe('Artur');
+  });
 });

@@ -18,7 +18,6 @@ import type {
 
 import {configExtension} from '@lexical/extension';
 import {
-  $computeTableMapSkipCellCheck,
   $createTableCellNode,
   $createTableNode,
   $createTableRowNode,
@@ -35,7 +34,6 @@ import {
   $isElementNode,
   defineExtension,
   enumValue,
-  type NodeKey,
 } from 'lexical';
 import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
 import {gfmTable} from 'micromark-extension-gfm-table';
@@ -259,23 +257,6 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
   );
 }
 
-/**
- * The column each cell of `table` starts in, which is not its index in its
- * row once cells are merged.
- */
-function $cellColumns(table: TableNode): Map<NodeKey, number> {
-  const columns = new Map<NodeKey, number>();
-  const [map] = $computeTableMapSkipCellCheck(table, null, null);
-  for (const row of map) {
-    for (const value of row) {
-      if (value && !columns.has(value.cell.getKey())) {
-        columns.set(value.cell.getKey(), value.startColumn);
-      }
-    }
-  }
-  return columns;
-}
-
 const $exportTable: MdastExportHandler = (node, ctx) => {
   if (!$isTableNode(node)) {
     return null;
@@ -290,9 +271,6 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     .find(
       row => $isTableRowNode(row) && row.getChildren().some($isTableCellNode),
     );
-  // Cells are counted in the column they start in, which merged cells
-  // before them move past their index in the row.
-  const cellColumns = $cellColumns(node);
   // Read even when a selection's export leaves the header row out.
   const headerAlign: AlignType[] = [];
   if ($isTableRowNode(headerRow)) {
@@ -300,8 +278,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
       .getChildren()
       .filter($isTableCellNode)
       .forEach((cell, index) => {
-        headerAlign[cellColumns.get(cell.getKey()) ?? index] =
-          $getCellAlign(cell);
+        headerAlign[index] = $getCellAlign(cell);
       });
   }
   for (const row of node.getChildren()) {
@@ -317,9 +294,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
         continue;
       }
       const cellAlign = $getCellAlign(cell);
-      const column = (columns[
-        cellColumns.get(cell.getKey()) ?? cells.length
-      ] ??= {aligned: new Map(), cells: 0});
+      const column = (columns[cells.length] ??= {aligned: new Map(), cells: 0});
       column.cells++;
       if (cellAlign !== null) {
         column.aligned.set(cellAlign, (column.aligned.get(cellAlign) ?? 0) + 1);

@@ -116,6 +116,7 @@ export type BaseBinding = {
 
 export type Binding = {
   ...BaseBinding,
+  _movedNodeKeys?: Set<NodeKey>,
   collabNodeMap: Map<
     NodeKey,
     | CollabElementNode

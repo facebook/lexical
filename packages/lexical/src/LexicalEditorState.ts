@@ -9,6 +9,7 @@
 import type {LexicalEditor} from './LexicalEditor';
 import type {
   LexicalNode,
+  NodeKey,
   NodeMap,
   ParsableSerializedNode,
   SerializedLexicalNode,
@@ -144,6 +145,14 @@ export function $isEditorState(x: unknown): x is EditorState {
 
 export class EditorState {
   _nodeMap: NodeMap;
+  /**
+   * Nodes detached during the update, keyed by the previous node map. Yjs
+   * uses these hints to distinguish moved nodes from shifted siblings. A
+   * restored state must not replay hints from a different transition, and
+   * weak keys avoid retaining previous editor states through this metadata.
+   * @internal
+   */
+  _movedNodes: null | WeakMap<NodeMap, Set<NodeKey>>;
   _selection: null | BaseSelection;
   _flushSync: boolean;
   _readOnly: boolean;
@@ -163,6 +172,7 @@ export class EditorState {
     slotsUsed: boolean = false,
   ) {
     this._nodeMap = nodeMap;
+    this._movedNodes = null;
     this._selection = selection || null;
     this._flushSync = false;
     this._readOnly = false;

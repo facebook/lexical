@@ -209,21 +209,6 @@ Makes `LinkNode` elements in the editor clickable, navigating to the link URL on
 <ClickableLinkPlugin newTab={true} disabled={false} />
 ```
 
-Links open using the global window by default. For an editor mounted in an
-iframe, pass `getWindow` to navigate within that frame instead:
-
-```jsx
-<ClickableLinkPlugin
-  newTab={false}
-  getWindow={editor => editor.getRootElement()?.ownerDocument.defaultView ?? null}
-/>
-```
-
-`getWindow` is called for each link click. Returning `null` leaves the click
-unhandled. The same option is available on `ClickableLinkExtension`. Each
-editor handles its own links; a parent editor does not handle link clicks from
-a nested editor.
-
 :::tip
 
 Use [ClickableLinkExtension](/docs/api/modules/lexical_link#clickablelinkextension) when using extensions

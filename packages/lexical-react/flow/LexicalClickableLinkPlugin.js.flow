@@ -7,10 +7,6 @@
  * @flow strict
  */
 
-import type {ClickableLinkConfig} from '@lexical/link';
-
 declare export function ClickableLinkPlugin({
   newTab?: boolean,
-  disabled?: boolean,
-  getWindow?: ClickableLinkConfig['getWindow'],
 }): null;

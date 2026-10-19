@@ -15,18 +15,27 @@ import {
   $getStateChange,
   $isParagraphNode,
   $setState,
+  arrayValue,
   createEditor,
   createState,
   ElementNode,
+  enumValue,
   type LexicalExportJSON,
   NODE_STATE_DIRECT,
   NODE_STATE_KEY,
+  nodeSchema,
   type NodeStateJSON,
+  nullable,
+  objectValue,
   ParagraphNode,
   type RootNode,
   type SerializedElementNode,
   type SerializedLexicalNode,
+  setValue,
+  type StateConfig,
   type StateValueOrUpdater,
+  stringValue as stringSchema,
+  withField,
 } from 'lexical';
 import {beforeEach, describe, expect, expectTypeOf, test} from 'vitest';
 
@@ -1104,5 +1113,167 @@ describe('importJSON applies state to the node it just built', () => {
       expect(p.getIndent()).toBe(3);
       expect(p.getTextContent()).toBe('y');
     });
+  });
+});
+
+describe('set-valued state (setValue)', () => {
+  const tagsState = createState('tags', {parse: setValue(stringSchema())});
+
+  function $paragraphWithTags(tags: ReadonlySet<string>): ParagraphNode {
+    const p = $setState($createParagraphNode(), tagsState, tags);
+    $getRoot().clear().append(p);
+    return p;
+  }
+
+  function createSetEditor() {
+    return createEditor({
+      namespace: '',
+      onError: err => {
+        throw err;
+      },
+    });
+  }
+
+  test('the value is a ReadonlySet, and the schema says it is a set', () => {
+    expectTypeOf(tagsState).toEqualTypeOf<
+      StateConfig<'tags', ReadonlySet<string>>
+    >();
+    expect(tagsState.defaultValue).toEqual(new Set());
+    const {schema} = tagsState;
+    invariant(schema !== undefined, 'expected a schema');
+    // The signal a collaboration binding reads
+    expect(schema.meta.kind).toBe('set');
+    expect(schema.meta.kind === 'set' && schema.meta.item.meta.kind).toBe(
+      'string',
+    );
+  });
+
+  test('parsing drops duplicates and entries the item does not accept', () => {
+    const parsed = tagsState.parse(['b', 'a', 'b', 1, null, 'c']);
+    expect(parsed).toEqual(new Set(['a', 'b', 'c']));
+    // Iterates in the canonical order
+    expect(Array.from(parsed)).toEqual(['a', 'b', 'c']);
+    expect(tagsState.parse('a')).toEqual(new Set());
+    expect(tagsState.parse(undefined)).toEqual(new Set());
+    const sizeState = createState('size', {
+      parse: setValue(enumValue(['s', 'm', 'l'])),
+    });
+    expectTypeOf(sizeState).toEqualTypeOf<
+      StateConfig<'size', ReadonlySet<'s' | 'm' | 'l'>>
+    >();
+    expect(sizeState.parse(['xl', 'l', 's'])).toEqual(new Set(['l', 's']));
+  });
+
+  test('equality ignores order', () => {
+    expect(tagsState.isEqual(new Set(['a', 'b']), new Set(['b', 'a']))).toBe(
+      true,
+    );
+    expect(tagsState.isEqual(new Set(['a']), new Set(['a', 'b']))).toBe(false);
+    expect(tagsState.isEqual(new Set(['a']), new Set(['b']))).toBe(false);
+  });
+
+  test('the JSON is one sorted array, and the empty set is omitted', () => {
+    const editor = createSetEditor();
+    editor.update(
+      () => {
+        const p = $paragraphWithTags(new Set(['c', 'a', 'b']));
+        expect(p.exportJSON()[NODE_STATE_KEY]).toEqual({tags: ['a', 'b', 'c']});
+        $setState(p, tagsState, new Set());
+        expect(p.exportJSON()).not.toHaveProperty(NODE_STATE_KEY);
+      },
+      {discrete: true},
+    );
+  });
+
+  test('setting an equal set in another order does not mark the node dirty', () => {
+    const editor = createSetEditor();
+    let key = '';
+    editor.update(
+      () => {
+        key = $paragraphWithTags(new Set(['a', 'b'])).getKey();
+      },
+      {discrete: true},
+    );
+    const before = editor.getEditorState()._nodeMap.get(key);
+    editor.update(
+      () => {
+        const p = $getRoot().getFirstChildOrThrow();
+        $setState(p, tagsState, () => new Set(['b', 'a']));
+      },
+      {discrete: true},
+    );
+    expect(editor.getEditorState()._nodeMap.get(key)).toBe(before);
+  });
+
+  test('the JSON is canonical and stable across a round trip', () => {
+    // Declared for the node type, so JSON is parsed when it is loaded
+    class TagsParagraphNode extends ParagraphNode {
+      $config() {
+        return this.config('tags-paragraph', {
+          extends: ParagraphNode,
+          stateConfigs: [{stateConfig: tagsState}],
+        });
+      }
+    }
+    const createTagsEditor = () =>
+      createEditor({
+        namespace: '',
+        nodes: [TagsParagraphNode],
+        onError: err => {
+          throw err;
+        },
+      });
+    const editor = createTagsEditor();
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $setState(
+              $create(TagsParagraphNode),
+              tagsState,
+              new Set(['b', 'a']),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+    const json = JSON.stringify(editor.getEditorState().toJSON());
+    expect(json).toContain('"$":{"tags":["a","b"]}');
+    // Unordered, duplicated input with an entry out of the item's domain is
+    // the same set, and is written back canonical without being read
+    const unordered = json.replace('["a","b"]', '["b","a","b",7]');
+    for (const input of [json, unordered]) {
+      const loaded = createTagsEditor();
+      loaded.setEditorState(loaded.parseEditorState(input));
+      expect(JSON.stringify(loaded.getEditorState().toJSON())).toBe(json);
+      loaded.read(() => {
+        expect($getState($getRoot().getFirstChildOrThrow(), tagsState)).toEqual(
+          new Set(['a', 'b']),
+        );
+      });
+    }
+  });
+
+  test('an unparse of its own still wins', () => {
+    const csvState = createState('csv', {
+      parse: setValue(stringSchema()),
+      unparse: (v: ReadonlySet<string>) => Array.from(v).sort().join(','),
+    });
+    expect(csvState.unparse(new Set(['b', 'a']))).toBe('a,b');
+  });
+
+  test('a setValue can only be the whole value of a createState', () => {
+    const item = stringSchema();
+    for (const build of [
+      () => arrayValue(setValue(item)),
+      () => nullable(setValue(item)),
+      () => setValue(setValue(item) as never),
+      () => objectValue({tags: setValue(item)}),
+      () => withField(setValue(item), {field: '__tags'}),
+      () => nodeSchema<ParagraphNode>()({tags: setValue(item)} as never),
+    ]) {
+      expect(build).toThrow(/setValue can only be the whole value/);
+    }
   });
 });

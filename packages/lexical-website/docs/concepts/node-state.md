@@ -319,6 +319,35 @@ source, it is only parsed once the first time it is read.
 Values that do not come from external sources are not parsed, and
 values that are not used are never parsed.
 
+## Set-valued state
+
+For state that is a set of strings, such as the ids of the comments on a
+piece of text, use `setValue` (experimental) with an item schema:
+
+```ts
+import {createState, setValue, stringValue} from 'lexical';
+
+const tagsState = createState('tags', {parse: setValue(stringValue())});
+//    ^? StateConfig<'tags', ReadonlySet<string>>
+```
+
+The value is a `ReadonlySet`. Two sets with the same members are equal in
+any order, the empty set is the default (and so is left out of the JSON),
+and the JSON is one array sorted by UTF-16 code unit
+(`"$": {"tags": ["a", "b"]}`), so equal sets always serialize identically.
+Parsing drops
+duplicates and entries the item schema does not accept. Declare the state
+in the node's `$config` `stateConfigs` so that JSON is parsed, and so
+written back canonical, when it is loaded; like any NodeState, a value that
+is neither declared nor read is written back as it was read. `setValue` must
+be the whole value of a `createState`; it can not be nested in another
+schema or used for a node property.
+
+A collaboration binding recognizes a set-valued state by its schema:
+`stateConfig.schema?.meta.kind === 'set'`. The `@lexical/yjs` bindings (v1
+and v2) store a set as one value, so when two peers change the same set of
+the same node at once, the last writer wins.
+
 ## Capabilities
 
 Current:

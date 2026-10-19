@@ -75,6 +75,7 @@ export const PURE_FACTORY_FUNCTIONS = [
   'optional',
   'rawValue',
   'safeCast',
+  'setValue',
   'stringValue',
   'transformValue',
   'unionValue',

@@ -88,6 +88,7 @@ Framework-agnostic accessibility extensions. See [Keyboard Accessibility](/docs/
 [@lexical/mark](/docs/api/modules/lexical_mark)
 
 - [MarkExtension](/docs/api/modules/lexical_mark#markextension) - MarkNode
+- [MarkStateExtension](/docs/api/modules/lexical_mark#markstateextension) - Experimental: comment and annotation ids stored as NodeState on text, with overlap and collaboration-friendly merging (see [Comments and Annotations](/docs/collaboration/comments))
 
 [@lexical/mdast](/docs/api/modules/lexical_mdast)
 

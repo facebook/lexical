@@ -183,15 +183,20 @@ function lineBreakHtml(): Html {
 
 /**
  * Rewrites exported phrasing content for a GFM cell, which holds one line:
- * line breaks (`break` nodes and newlines in text or code) become `<br>`, which
- * gfm-table would otherwise write as spaces, and raw HTML is put on one
- * line with its pipes as references (`&#124;`), since a cell splits on
- * `|` even inside HTML.
+ * line breaks (`break` nodes and newlines in text or code) become `<br>`,
+ * which gfm-table would otherwise write as spaces, a rule becomes `<hr>`,
+ * and raw HTML is put on one line with its pipes as references (`&#124;`),
+ * since a cell splits on `|` even inside HTML.
  */
 function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
   return mapPhrasing(nodes, node => {
     if (node.type === 'break') {
       return [lineBreakHtml()];
+    }
+    if ((node as MdastNode).type === 'thematicBreak') {
+      // GFM has no rule in a cell but HTML's, which HTML import may read
+      // into a paragraph.
+      return [{type: 'html', value: '<hr>'}];
     }
     if (node.type === 'html') {
       return [
@@ -240,11 +245,8 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
         }
         return;
       case 'html':
-        lines.push(cellPhrasing([node]));
-        return;
       case 'thematicBreak':
-        // GFM has no rule in a cell but HTML's.
-        lines.push([{type: 'html', value: '<hr>'}]);
+        lines.push(cellPhrasing([node as PhrasingContent]));
         return;
       case 'definition':
         // Definitions are the document's, and no node exports one.

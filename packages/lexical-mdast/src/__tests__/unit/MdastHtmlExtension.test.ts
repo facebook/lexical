@@ -63,6 +63,7 @@ import {
   MdastHtmlExtension,
   MdastShadowRootQuoteExtension,
   MdastStrikethroughExtension,
+  MdastTableExtension,
   rawHtmlBlock,
   RenderContextMarkdownExport,
 } from '../../index';
@@ -894,5 +895,27 @@ describe('MdastHtmlExtension', () => {
         'a saw:from-emphasis b saw:default',
       );
     });
+  });
+
+  it('keeps a horizontal rule in a table cell across round trips', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          MdastCommonMarkExtension,
+          MdastExtension,
+          MdastTableExtension,
+          MdastHtmlExtension,
+        ],
+        name: '[table-rule]',
+      }),
+    );
+    let markdown = '| h |\n| - |\n| a<br><hr><br>b |';
+    for (let i = 0; i < 3; i++) {
+      editor.update(() => $convertFromMarkdownString(markdown), {
+        discrete: true,
+      });
+      markdown = editor.read(() => $convertToMarkdownString());
+      expect(markdown.split('\n')[2]).toBe('| a<br><hr><br>b |');
+    }
   });
 });

@@ -3286,19 +3286,19 @@ function $clampSelectionPointsToSlotFrame(
   if (host === null) {
     return false;
   }
-  const hostParent = host.getParent();
-  if (hostParent === null) {
+  if ($isRootNode(host)) {
     // A root slot (such as footnotes): the root has no parent to step past,
     // so pull the focus back to the edge of the root's own children.
-    if (!$isElementNode(host)) {
-      return false;
-    }
     focusPoint.set(
       host.getKey(),
       focusAfterAnchor ? host.getChildrenSize() : 0,
       'element',
     );
     return true;
+  }
+  const hostParent = host.getParent();
+  if (hostParent === null) {
+    return false;
   }
   const hostIndex = host.getIndexWithinParent();
   focusPoint.set(

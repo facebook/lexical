@@ -86,10 +86,11 @@ interface Fixture {
 }
 
 /**
- * Mounts the host's slots into its chrome, in model order or reversed, so
- * the slot DOM is out of document order.
+ * Mounts the host's slots into its chrome in model order, in reversed DOM
+ * order, or in model DOM order displayed reversed with CSS `order`.
  */
-function mountEditor(reversed = false): Fixture {
+type SlotOrder = 'model' | 'reversed' | 'css-reversed';
+function mountEditor(order: SlotOrder = 'model'): Fixture {
   const container = document.createElement('div');
   document.body.appendChild(container);
   const contentEditable = document.createElement('div');
@@ -162,10 +163,15 @@ function mountEditor(reversed = false): Fixture {
   // A native control in the host's own chrome, beside its slots.
   const input = document.createElement('input');
   input.value = 'abc';
-  if (reversed) {
+  if (order === 'reversed') {
     chrome.append(attributionTarget, quoteTarget, input);
   } else {
     chrome.append(quoteTarget, attributionTarget, input);
+  }
+  if (order === 'css-reversed') {
+    chrome.style.display = 'flex';
+    chrome.style.flexDirection = 'column';
+    attributionTarget.style.order = '-1';
   }
   hostDOM.append(chrome);
   mountSlotContainer(editor, hostKey, 'quote', quoteTarget);
@@ -239,31 +245,31 @@ function textOf({editor}: Fixture, key: string): string | null {
   });
 }
 
-describe.each([false, true])(
-  'deleteLine inside a decorator-host slot, reversed mount %s (#9363)',
-  reversed => {
+describe.each(['model', 'reversed', 'css-reversed'] as const)(
+  'deleteLine inside a decorator-host slot, %s slot order (#9363)',
+  order => {
     test('backward from the end of a wrapped line deletes that line', () => {
-      const fixture = mountEditor(reversed);
+      const fixture = mountEditor(order);
       deleteLineAt(fixture, fixture.quoteKey, QUOTE.length, true);
       expect(textOf(fixture, fixture.quoteKey)).toBe('aaaa bbbb ');
       expect(textOf(fixture, fixture.attributionKey)).toBe(ATTRIBUTION);
     });
 
     test('forward from inside a wrapped line deletes to its end', () => {
-      const fixture = mountEditor(reversed);
+      const fixture = mountEditor(order);
       deleteLineAt(fixture, fixture.quoteKey, 2, false);
       expect(textOf(fixture, fixture.quoteKey)).toBe('aacccc dddd');
     });
 
     test('backward from the end of a single-line slot empties it', () => {
-      const fixture = mountEditor(reversed);
+      const fixture = mountEditor(order);
       deleteLineAt(fixture, fixture.attributionKey, ATTRIBUTION.length, true);
       expect(textOf(fixture, fixture.attributionKey)).toBe(null);
       expect(textOf(fixture, fixture.quoteKey)).toBe(QUOTE);
     });
 
     test('at the edges of a slot nothing leaves the slot', () => {
-      const fixture = mountEditor(reversed);
+      const fixture = mountEditor(order);
       deleteLineAt(fixture, fixture.nestedKey, NESTED.length, false);
       deleteLineAt(fixture, fixture.nestedKey, 0, true);
       deleteLineAt(fixture, fixture.attributionKey, 0, true);
@@ -274,7 +280,7 @@ describe.each([false, true])(
     });
 
     test('a ranged selection deletes just that range', () => {
-      const fixture = mountEditor(reversed);
+      const fixture = mountEditor(order);
       selectText(fixture, fixture.quoteKey, 2, 7);
       deleteLine(fixture, true);
       expect(textOf(fixture, fixture.quoteKey)).toBe('aabb cccc dddd');
@@ -315,12 +321,15 @@ describe('Backspace and Delete inside a decorator-host slot (#9363)', () => {
   // browser's beforeinput target range reaches Lexical. At the end of a
   // slot Chromium's forward delete range covers the line before the caret.
   test.each([
-    [3, 'Artur'],
-    [ATTRIBUTION.length, ATTRIBUTION],
-  ])(
-    'an unprevented Delete at offset %i deletes one character',
-    async (offset, expected) => {
-      const fixture = mountEditor();
+    ['model', 3, 'Artur'],
+    ['model', ATTRIBUTION.length, ATTRIBUTION],
+    ['reversed', 3, 'Artur'],
+    ['reversed', ATTRIBUTION.length, ATTRIBUTION],
+    ['css-reversed', ATTRIBUTION.length, ATTRIBUTION],
+  ] as const)(
+    'an unprevented Delete in %s slot order at offset %i deletes one character',
+    async (order, offset, expected) => {
+      const fixture = mountEditor(order);
       onTestFinished(
         fixture.editor.registerCommand(
           KEY_DELETE_COMMAND,
@@ -363,6 +372,26 @@ describe('Backspace and Delete inside a decorator-host slot (#9363)', () => {
     const control = document.createElement('input');
     control.value = 'abc';
     setDOMUnmanaged(control, {captureSelection: true});
+    slotContainer.append(control);
+    placeCaretInSlot(fixture, fixture.attributionKey, 3);
+    await userEvent.keyboard('{Delete}');
+    expect(textOf(fixture, fixture.attributionKey)).toBe('Artur');
+    control.focus();
+    control.setSelectionRange(1, 1);
+    await userEvent.keyboard('{Backspace}{Delete}');
+    expect(control.value).toBe('c');
+    expect(textOf(fixture, fixture.attributionKey)).toBe('Artur');
+  });
+
+  test('Backspace and Delete in a native control inside a slot edit the control', async () => {
+    const fixture = mountEditor();
+    const slotContainer = fixture.editor
+      .getElementByKey(fixture.attributionKey)
+      ?.closest('[data-lexical-slot]');
+    assert(slotContainer instanceof HTMLElement, 'Expected a slot container');
+    const control = document.createElement('input');
+    control.value = 'abc';
+    setDOMUnmanaged(control);
     slotContainer.append(control);
     placeCaretInSlot(fixture, fixture.attributionKey, 3);
     await userEvent.keyboard('{Delete}');

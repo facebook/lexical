@@ -1426,22 +1426,22 @@ function $handleBeforeInput(event: InputEvent): boolean {
     !$isRootNode(selection.anchor.getNode()) &&
     targetRange !== null
   ) {
-    const {key, offset, type} = selection.anchor;
+    const caret = selection.clone().anchor;
     selection.applyDOMRange(targetRange);
     // A deletion's range must reach the caret from the side it deletes. At
     // the end of a decorator-host slot Chromium's forward delete covers the
     // line before the caret instead (#9363); measure that in the model.
-    const [start, end] = selection.isBackward()
-      ? [selection.focus, selection.anchor]
-      : [selection.anchor, selection.focus];
-    const caretEnd = inputType.endsWith('Forward')
-      ? start
-      : inputType.endsWith('Backward')
-        ? end
-        : null;
-    if (caretEnd && (caretEnd.key !== key || caretEnd.offset !== offset)) {
-      selection.anchor.set(key, offset, type);
-      selection.focus.set(key, offset, type);
+    const match = /^delete\w*(Forward|Backward)$/.exec(inputType);
+    if (match !== null) {
+      const [start, end] = selection.isBackward()
+        ? [selection.focus, selection.anchor]
+        : [selection.anchor, selection.focus];
+      if (
+        match[1] === 'Forward' ? start.isBefore(caret) : caret.isBefore(end)
+      ) {
+        selection.anchor.set(caret.key, caret.offset, caret.type);
+        selection.focus.set(caret.key, caret.offset, caret.type);
+      }
     }
   }
 

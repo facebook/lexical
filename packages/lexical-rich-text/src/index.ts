@@ -111,7 +111,6 @@ import {
   IS_APPLE_WEBKIT,
   IS_IOS,
   IS_SAFARI,
-  isDOMCapturingSelection,
   isDOMNode,
   isHTMLElement,
   KEY_ARROW_DOWN_COMMAND,
@@ -619,18 +618,12 @@ async function onCutForRichText(
 export {eventFiles} from '@lexical/utils';
 
 function $isTargetWithinDecorator(target: HTMLElement): boolean {
-  const node = $getNearestNodeFromDOMNode(target);
-  if (!$isDecoratorNode(node)) {
-    return false;
-  }
-  // A decorator's own slot is editor content, not the decorator's UI.
-  const slot = isHTMLElement(target)
-    ? target.closest('[data-lexical-slot]')
-    : null;
+  // A decorator's slot is an editing host of its own, so a key event that
+  // targets the slot itself is editing editor content, while any other
+  // target in the decorator (a native control, even inside the slot) is UI.
   return (
-    slot === null ||
-    $getNearestNodeFromDOMNode(slot) !== node ||
-    isDOMCapturingSelection(target, $getEditor())
+    $isDecoratorNode($getNearestNodeFromDOMNode(target)) &&
+    !(isHTMLElement(target) && target.hasAttribute('data-lexical-slot'))
   );
 }
 

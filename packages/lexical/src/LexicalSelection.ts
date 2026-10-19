@@ -3289,9 +3289,13 @@ function $clampSelectionPointsToSlotFrame(
     $setPointToFrameEdge(focusPoint, host, focusAfterAnchor);
     return true;
   }
+  const hostParent = host.getParent();
+  if (hostParent === null) {
+    return false;
+  }
   const hostIndex = host.getIndexWithinParent();
   focusPoint.set(
-    host.getParentOrThrow().getKey(),
+    hostParent.getKey(),
     focusAfterAnchor ? hostIndex + 1 : hostIndex,
     'element',
   );

@@ -736,8 +736,8 @@ const equalYTextLText = (
 // and a slot diff would never be written to yjs. An absent attribute and an
 // empty Y.Map are both equal to an empty lexical slot map ($updateSlotsYType
 // keeps the map once created). A name whose yjs shared type doesn't map to the
-// lexical slot node is reported unequal — a false negative costs a recursion,
-// not correctness.
+// lexical slot node, or whose subtree differs, is reported unequal — a false
+// negative costs a recursion, while a false positive would lose the edit.
 const $equalSlots = (
   ytype: XmlElement,
   lnode: LexicalNode,
@@ -754,10 +754,17 @@ const $equalSlots = (
   for (const name of names) {
     const slotNode = $getSlot(lnode, name);
     const slotY = slotsY.get(name) as unknown;
+    // Compare deeply, like the children channel. A slot root keeps its object
+    // identity while a descendant changes (typing in a slot paragraph clones
+    // only the text node), so an identity check alone would report a dirty
+    // slot equal whenever the host itself is compared structurally (e.g. its
+    // mapping went stale after a remote sibling insert), and $updateYFragment
+    // would repoint the host without writing the slot edit to yjs.
     if (
       slotNode === null ||
       !(slotY instanceof XmlElement) ||
-      binding.mapping.get(slotY) !== slotNode
+      binding.mapping.getSharedType(slotNode) !== slotY ||
+      !$equalYTypePNode(slotY, slotNode, binding)
     ) {
       return false;
     }

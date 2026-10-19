@@ -619,7 +619,12 @@ export {eventFiles} from '@lexical/utils';
 
 function $isTargetWithinDecorator(target: HTMLElement): boolean {
   const node = $getNearestNodeFromDOMNode(target);
-  return $isDecoratorNode(node);
+  // A decorator's own slot is editor content, not the decorator's UI.
+  const slot = target.closest('[data-lexical-slot]');
+  return (
+    $isDecoratorNode(node) &&
+    (slot === null || $getNearestNodeFromDOMNode(slot) !== node)
+  );
 }
 
 function $isSelectionAtEndOfRoot(selection: RangeSelection) {

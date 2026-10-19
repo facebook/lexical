@@ -1424,13 +1424,25 @@ function $handleBeforeInput(event: InputEvent): boolean {
     (!selection.dirty || inputState.unprocessedBeforeInputData !== null) &&
     selection.isCollapsed() &&
     !$isRootNode(selection.anchor.getNode()) &&
-    targetRange !== null &&
-    // Like deleteContentBackward above, a forward character deletion is
-    // measured in the model: at the end of a decorator-host slot Chromium's
-    // target range covers the whole line before the caret (#9363).
-    inputType !== 'deleteContentForward'
+    targetRange !== null
   ) {
+    const {key, offset, type} = selection.anchor;
     selection.applyDOMRange(targetRange);
+    // A deletion's range must reach the caret from the side it deletes. At
+    // the end of a decorator-host slot Chromium's forward delete covers the
+    // line before the caret instead (#9363); measure that in the model.
+    const [start, end] = selection.isBackward()
+      ? [selection.focus, selection.anchor]
+      : [selection.anchor, selection.focus];
+    const caretEnd = inputType.endsWith('Forward')
+      ? start
+      : inputType.endsWith('Backward')
+        ? end
+        : null;
+    if (caretEnd && (caretEnd.key !== key || caretEnd.offset !== offset)) {
+      selection.anchor.set(key, offset, type);
+      selection.focus.set(key, offset, type);
+    }
   }
 
   inputState.unprocessedBeforeInputData = null;
@@ -1557,7 +1569,8 @@ function $handleBeforeInput(event: InputEvent): boolean {
       break;
     }
 
-    case 'deleteContent': {
+    case 'deleteContent':
+    case 'deleteContentForward': {
       dispatchCommand(editor, DELETE_CHARACTER_COMMAND, false);
       break;
     }
@@ -1575,11 +1588,6 @@ function $handleBeforeInput(event: InputEvent): boolean {
     case 'deleteHardLineBackward':
     case 'deleteSoftLineBackward': {
       dispatchCommand(editor, DELETE_LINE_COMMAND, true);
-      break;
-    }
-
-    case 'deleteContentForward': {
-      dispatchCommand(editor, DELETE_CHARACTER_COMMAND, false);
       break;
     }
 

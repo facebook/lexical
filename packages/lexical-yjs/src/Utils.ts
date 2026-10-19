@@ -758,7 +758,8 @@ export function getPositionFromElementAndOffset(
     const exceedsBoundary = boundaryIsEdge ? index >= offset : index > offset;
 
     if (exceedsBoundary && child instanceof CollabTextNode) {
-      let textOffset = offset - childOffset - 1;
+      // A map-less (normalized) text node has no leading embed.
+      let textOffset = offset - childOffset - (child._normalized ? 0 : 1);
 
       if (textOffset < 0) {
         textOffset = 0;

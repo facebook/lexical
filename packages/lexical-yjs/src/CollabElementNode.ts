@@ -7,7 +7,7 @@
  */
 
 import type {Binding} from '.';
-import type {AbstractType, Map as YMap, XmlElement, XmlText} from 'yjs';
+import type {AbstractType, XmlElement, XmlText} from 'yjs';
 
 import invariant from '@lexical/internal/invariant';
 import {
@@ -22,10 +22,11 @@ import {
   type NodeKey,
   type NodeMap,
 } from 'lexical';
+import {Map as YMap} from 'yjs';
 
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabLineBreakNode} from './CollabLineBreakNode';
-import {CollabTextNode} from './CollabTextNode';
+import {$createCollabTextNode, CollabTextNode} from './CollabTextNode';
 import {
   $createCollabNodeFromLexicalNode,
   $destroySlotsShared,
@@ -218,6 +219,12 @@ export class CollabElementNode {
     const children = this._children;
     let currIndex = 0;
     let pendingSplitText = null;
+    // Characters that survive in the shared type with no text node (map embed)
+    // in front of them, e.g. a concurrent insert into a text node that a peer
+    // removed. They are held in map-less (`_normalized`) text nodes while the
+    // delta is applied, so later delta offsets still line up, and resolved by
+    // resolveOrphanedText once the whole delta has been applied.
+    const orphans: CollabTextNode[] = [];
 
     for (let i = 0; i < deltas.length; i++) {
       const delta = deltas[i];
@@ -246,7 +253,7 @@ export class CollabElementNode {
               nodeIndex !== 0 ? children[nodeIndex - 1] : null;
             const nodeSize = node.getSize();
 
-            if (offset === 0 && length === nodeSize) {
+            if (!node._normalized && offset === 0 && length === nodeSize) {
               // Text node has been deleted.
               children.splice(nodeIndex, 1);
               // If this was caused by an undo from YJS, there could be dangling text.
@@ -261,8 +268,14 @@ export class CollabElementNode {
                   // Merge the text node with previous.
                   prevCollabNode._text += danglingText;
                 } else {
-                  // No previous text node to merge into, just delete the text.
-                  this._xmlText.delete(offset, danglingText.length);
+                  // No previous text node to merge into. Keep the characters
+                  // as an orphan until the delta has been applied: later ops
+                  // in this delta may still delete them or insert a text node
+                  // in front of them.
+                  node._text = danglingText;
+                  node._normalized = true;
+                  children.splice(nodeIndex, 0, node);
+                  orphans.push(node);
                 }
               }
             } else {
@@ -271,30 +284,34 @@ export class CollabElementNode {
 
             deletionSize -= delCount;
           } else {
-            // Can occur due to the deletion from the dangling text heuristic below.
+            // Nothing left at this offset to delete.
             break;
           }
         }
       } else if (insertDelta != null) {
         if (typeof insertDelta === 'string') {
-          const {node, offset} = getPositionFromElementAndOffset(
-            this,
-            currIndex,
-            true,
-          );
+          const {node, nodeIndex, offset, length} =
+            getPositionFromElementAndOffset(this, currIndex, true);
 
-          if (node instanceof CollabTextNode) {
+          if (
+            node instanceof CollabTextNode &&
+            (node._normalized || length < node.getSize())
+          ) {
             node._text = spliceString(node._text, offset, 0, insertDelta);
           } else {
-            // TODO: maybe we can improve this by keeping around a redundant
-            // text node map, rather than removing all the text nodes, so there
-            // never can be dangling text.
-
-            // We have a conflict where there was likely a CollabTextNode and
-            // an Lexical TextNode too, but they were removed in a merge. So
-            // let's just ignore the text and trigger a removal for it from our
-            // shared type.
-            this._xmlText.delete(offset, insertDelta.length);
+            // The text landed where no text node owns it: in front of a text
+            // node's map embed, or next to a non-text sibling. This happens
+            // when the text node it was typed into was concurrently removed.
+            // Hold it as an orphan; see resolveOrphanedText.
+            const orphan = $createCollabTextNode(
+              new YMap(),
+              insertDelta,
+              this,
+              'text',
+            );
+            orphan._normalized = true;
+            children.splice(nodeIndex, 0, orphan);
+            orphans.push(orphan);
           }
 
           currIndex += insertDelta.length;
@@ -349,6 +366,9 @@ export class CollabElementNode {
       } else {
         throw new Error('Unexpected delta format');
       }
+    }
+    if (orphans.length > 0) {
+      resolveOrphanedText(binding, this, orphans);
     }
   }
 
@@ -860,4 +880,39 @@ export function $createCollabElementNode(
   const collabNode = new CollabElementNode(xmlText, parent, type);
   xmlText._collabNode = collabNode;
   return collabNode;
+}
+
+// Resolves the orphaned text collected by applyChildrenYjsDelta. Orphaned
+// characters that now directly follow a text node belong to it in the shared
+// type, so they are merged into it. Any others have no text node to live in
+// and are deleted from the shared type (the deletion wins, as it did before),
+// but only those characters, at their absolute offset, so that neighbouring
+// content is never touched.
+function resolveOrphanedText(
+  binding: Binding,
+  collabNode: CollabElementNode,
+  orphans: CollabTextNode[],
+): void {
+  const children = collabNode._children;
+  binding.doc.transact(() => {
+    for (let i = 0; i < orphans.length; i++) {
+      const orphan = orphans[i];
+      const index = children.indexOf(orphan);
+      if (index === -1) {
+        continue;
+      }
+      const prev = index > 0 ? children[index - 1] : null;
+      if (orphan._text.length > 0) {
+        if (prev instanceof CollabTextNode && !prev._normalized) {
+          prev._text += orphan._text;
+        } else {
+          collabNode._xmlText.delete(
+            collabNode.getChildOffset(orphan),
+            orphan._text.length,
+          );
+        }
+      }
+      children.splice(index, 1);
+    }
+  }, binding);
 }

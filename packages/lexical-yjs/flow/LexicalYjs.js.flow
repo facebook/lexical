@@ -136,6 +136,10 @@ export type BindingV2 = {
   ...BaseBinding,
   mapping: CollabV2Mapping,
   root: XmlElement,
+  /**
+   * @experimental
+   */
+  readonly inlineFormats?: boolean,
 };
 
 // AnyBinding is not part of the public TypeScript export surface; it is kept
@@ -395,6 +399,10 @@ declare export function createYjsBinding(
 
 export type CreateBindingV2Options__EXPERIMENTAL = {
   excludedProperties?: ExcludedProperties,
+  /**
+   * @experimental
+   */
+  inlineFormats?: boolean,
   rootName?: string,
   getXmlElement?: (doc: Doc) => XmlElement,
 };
@@ -406,6 +414,42 @@ declare export function createBindingV2__EXPERIMENTAL(
   docMap: Map<string, Doc>,
   options?: CreateBindingV2Options__EXPERIMENTAL,
 ): BindingV2;
+
+/**
+ * @experimental
+ */
+export type InlineFormatLayoutState__EXPERIMENTAL =
+  | 'default'
+  | 'inline'
+  | 'unsupported';
+
+/**
+ * @experimental
+ */
+declare export function getInlineFormatLayoutState__EXPERIMENTAL(
+  binding: BindingV2,
+): InlineFormatLayoutState__EXPERIMENTAL;
+
+/**
+ * @experimental
+ */
+declare export function initializeInlineFormatLayout__EXPERIMENTAL(
+  binding: BindingV2,
+): InlineFormatLayoutState__EXPERIMENTAL;
+
+/**
+ * @experimental
+ */
+declare export function isInlineFormatLayoutActive__EXPERIMENTAL(
+  binding: BindingV2,
+): boolean;
+
+/**
+ * @experimental
+ */
+declare export function disposeBindingV2__EXPERIMENTAL(
+  binding: BindingV2,
+): void;
 
 export type SyncCursorPositionsOptions = {
   getAwarenessStates?: (

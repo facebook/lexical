@@ -123,6 +123,11 @@ export class LinkNode extends ElementNode {
 
   $config() {
     return this.config('link', {
+      // @experimental A link only annotates the text it wraps, so a
+      // collaboration binding that supports it may store it as a format over
+      // those characters. AutoLinkNode inherits this; it is stored under its
+      // own type, `autolink`.
+      collab: {inline: 'format'},
       extends: ElementNode,
       generated: GENERATED_LINK,
       importDOM: {

@@ -333,6 +333,20 @@ type CollaborationPluginV2Props = {
    * write it into the new root.
    */
   getXmlElement?: (doc: Doc) => XmlElement;
+  /**
+   * @experimental Write new documents in the inline-format layout, where links
+   * (and other inline nodes declared `collab: {inline: 'format'}`) and text
+   * formats are stored as formatting over the characters, so concurrent
+   * typing, wrapping, formatting and undo merge instead of moving or losing
+   * text. Off by default. A document that is empty after the provider's
+   * first sync is put in this layout (and marked, so every client follows);
+   * existing documents keep their layout. Every client must be upgraded
+   * first; see `CreateBindingV2Options__EXPERIMENTAL.inlineFormats` in
+   * `@lexical/yjs`.
+   *
+   * Read when the binding is created.
+   */
+  inlineFormats?: boolean;
 };
 
 /**
@@ -357,6 +371,7 @@ export function CollaborationPluginV2__EXPERIMENTAL({
   selectionHighlight,
   rootName,
   getXmlElement,
+  inlineFormats,
 }: CollaborationPluginV2Props): JSX.Element {
   const collabContext = useCollaborationContext(username, cursorColor);
   const {yjsDocMap, name, color} = collabContext;
@@ -377,6 +392,7 @@ export function CollaborationPluginV2__EXPERIMENTAL({
       awarenessData,
       excludedProperties,
       getXmlElement,
+      inlineFormats,
       rootName,
       selectionHighlight,
     },

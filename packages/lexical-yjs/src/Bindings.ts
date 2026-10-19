@@ -21,6 +21,12 @@ import {
   type CollabElementNode,
 } from './CollabElementNode';
 import {CollabV2Mapping} from './CollabV2Mapping';
+import {
+  disposeInlineFormatLayout,
+  getLayoutState,
+  initializeInlineFormatLayout,
+  type InlineFormatLayoutState,
+} from './SyncV2';
 import {initializeNodeProperties, ROOT_NODE_NAME} from './Utils';
 
 export type ClientID = number;
@@ -67,6 +73,12 @@ export interface Binding extends BaseBinding {
 export interface BindingV2 extends BaseBinding {
   mapping: CollabV2Mapping;
   root: XmlElement;
+  /**
+   * @experimental The {@link CreateBindingV2Options__EXPERIMENTAL.inlineFormats}
+   * option this binding was created with. Which layout the document uses is
+   * {@link getInlineFormatLayoutState__EXPERIMENTAL}.
+   */
+  readonly inlineFormats?: boolean;
 }
 
 export type AnyBinding = Binding | BindingV2;
@@ -190,6 +202,67 @@ export function createBinding(
 /** Options for {@link createBindingV2__EXPERIMENTAL}. */
 export interface CreateBindingV2Options__EXPERIMENTAL {
   excludedProperties?: ExcludedProperties;
+  /**
+   * @experimental Write new documents in the inline-format layout. Defaults to
+   * `false`, which keeps the existing layout byte for byte.
+   *
+   * In this layout:
+   * - an inline ElementNode whose class declares
+   *   `$config({collab: {inline: 'format'}})` (LinkNode and AutoLinkNode do)
+   *   is stored as formatting over the characters it wraps rather than as its
+   *   own XmlElement, so wrapping, unwrapping or undoing a wrap never deletes
+   *   and re-inserts those characters, and typing inside the range
+   *   concurrently stays inside it. Its synchronized value is its JSON schema
+   *   fields beyond ElementNode's, one Yjs key per field, plus its NodeState;
+   * - a TextNode's format is stored as one key per format (`f_bold`, ...), so
+   *   concurrent bold and italic on overlapping text both apply;
+   * - a LineBreakNode is stored inside the text run, so a concurrent line
+   *   break does not split the run.
+   *
+   * Adoption is explicit and per document. A document is put in this layout
+   * by {@link initializeInlineFormatLayout__EXPERIMENTAL}, which marks it (in a
+   * dedicated top-level Y.Map, per root) only if this option is set and its
+   * shared root is still empty; call it once the provider has synced, right
+   * before writing the first content. The React collaboration plugin does so
+   * after the provider's first sync. Every binding that finds the mark uses
+   * the layout, with or without the option. An unmarked document keeps the
+   * default layout, whatever this option says: nothing is converted, and
+   * content written before the mark (e.g. typed before the first sync) is in
+   * the default layout and keeps the document there (a migration mode may be
+   * added later). A binding that finds a mark from a newer layout version
+   * reads the document as well as it can, makes the editor read-only and does
+   * not write to it (see {@link getInlineFormatLayoutState__EXPERIMENTAL}).
+   *
+   * Clients from before this option existed cannot read the layout, so every
+   * client of a document must be upgraded before a document is created with
+   * it. Such a client:
+   * - fails to load the document if any paragraph contains a line break
+   *   (its reader throws on the line break stored in the text run);
+   * - otherwise shows the text without links or formats, and on its first
+   *   edit of a paragraph removes the links and formats of that paragraph for
+   *   every client.
+   *
+   * Known limits:
+   * - Formatting with the same key applied concurrently over overlapping
+   *   ranges with different extents follows Yjs formatting semantics: the
+   *   text is never lost or duplicated, but one range can lose its part past
+   *   the other's end, and a property changed by one client while another
+   *   deletes or undoes the formatted range can briefly cover neighboring
+   *   text (see the tests). Presence and each property are separate keys to
+   *   keep this to the property that changed; as a consequence, concurrent
+   *   changes to different properties of overlapping wrappers merge per
+   *   property, which can combine properties from different clients (for
+   *   example one client's URL with another's target).
+   * - Each wrapper property is its own format key with its own boundary
+   *   markers, so link-heavy documents are larger than in the default layout
+   *   (about 1.5 times for a document of short linked phrases).
+   * - Inline DecoratorNodes and inline ElementNodes that do not opt in still
+   *   split the text run; inside a wrapper they carry its keys and are
+   *   reassembled under it.
+   * - An empty wrapper cannot be represented; properties a node does not
+   *   declare in its JSON schema are not synchronized.
+   */
+  inlineFormats?: boolean;
   /** The key used to look up the root `XmlElement` shared type on the Yjs `Doc`. Defaults to `'root-v2'`. */
   rootName?: string;
   /**
@@ -224,7 +297,12 @@ export function createBindingV2__EXPERIMENTAL(
     doc !== undefined && doc !== null,
     'createBinding: doc is null or undefined',
   );
-  const {excludedProperties, rootName = 'root-v2', getXmlElement} = options;
+  const {
+    excludedProperties,
+    rootName = 'root-v2',
+    getXmlElement,
+    inlineFormats = false,
+  } = options;
   const root = getXmlElement
     ? getXmlElement(doc)
     : (doc.get(rootName, XmlElement) as XmlElement);
@@ -240,9 +318,63 @@ export function createBindingV2__EXPERIMENTAL(
   );
   return {
     ...createBaseBinding(editor, id, doc, docMap, excludedProperties),
+    inlineFormats,
     mapping: new CollabV2Mapping(),
     root,
   };
+}
+
+/**
+ * @experimental Which layout `binding` uses for its document (see
+ * {@link CreateBindingV2Options__EXPERIMENTAL.inlineFormats}):
+ * - `'default'`: the default layout;
+ * - `'inline'`: the inline-format layout (the document is marked with it);
+ * - `'unsupported'`: the document is marked with a newer inline-format layout
+ *   version than this version of \@lexical/yjs supports. The binding reads it
+ *   as well as it can and does not write to it; it makes the editor
+ *   read-only and reports this once through the editor's `onWarn`.
+ */
+export function getInlineFormatLayoutState__EXPERIMENTAL(
+  binding: BindingV2,
+): InlineFormatLayoutState {
+  return getLayoutState(binding);
+}
+
+/**
+ * @experimental Puts a new document in the inline-format layout: marks it, if
+ * `binding` was created with
+ * {@link CreateBindingV2Options__EXPERIMENTAL.inlineFormats} and the
+ * document's shared root is empty and unmarked. Call it once the document is
+ * complete locally (after the provider's first sync), right before writing
+ * the first content; calling it before that can mark a document that has
+ * content elsewhere. Returns the binding's layout state afterwards.
+ */
+export function initializeInlineFormatLayout__EXPERIMENTAL(
+  binding: BindingV2,
+): InlineFormatLayoutState {
+  return initializeInlineFormatLayout(binding);
+}
+
+/**
+ * @experimental Whether `binding` reads and writes its document in the
+ * inline-format layout: {@link getInlineFormatLayoutState__EXPERIMENTAL} is
+ * `'inline'`. False for `'unsupported'`, where it does not write.
+ */
+export function isInlineFormatLayoutActive__EXPERIMENTAL(
+  binding: BindingV2,
+): boolean {
+  return getLayoutState(binding) === 'inline';
+}
+
+/**
+ * @experimental Releases what a V2 binding registered on its editor and
+ * document as it synced: currently the node transforms and the observer of
+ * the inline-format layout. Call it when the binding stops syncing (the React
+ * collaboration plugin does on unmount). A binding that is used again
+ * registers them again on its next sync.
+ */
+export function disposeBindingV2__EXPERIMENTAL(binding: BindingV2): void {
+  disposeInlineFormatLayout(binding);
 }
 
 export function isBindingV1(binding: BaseBinding): binding is Binding {

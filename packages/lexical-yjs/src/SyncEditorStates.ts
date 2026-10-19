@@ -49,7 +49,13 @@ import {
   type SyncCursorPositionsFn,
   syncLexicalSelectionToYjs,
 } from './SyncCursors';
-import {$createOrUpdateNodeFromYElement, $updateYFragment} from './SyncV2';
+import {
+  $createOrUpdateNodeFromYElement,
+  $updateYFragment,
+  prepareLayoutForWrite,
+  syncInlineFormatLayout,
+  WRAPPERS_ATTR_KEY,
+} from './SyncV2';
 import {
   $getOrInitCollabNodeFromSharedType,
   $moveSelectionToPreviousNode,
@@ -451,6 +457,15 @@ function $syncEventV2(
       // @ts-expect-error childListChanged is private
       event.childListChanged,
     );
+    // The wrappers around a non-text child changed (inline-format layout):
+    // the wrapper tree lives in the parent, so rebuild it there.
+    const parent = target.parent;
+    if (
+      event.attributesChanged.has(WRAPPERS_ATTR_KEY) &&
+      parent instanceof XmlElement
+    ) {
+      $createOrUpdateNodeFromYElement(parent, binding, new Set(), true);
+    }
   } else if (target instanceof XmlText && event instanceof YTextEvent) {
     const parent = target.parent;
     if (parent instanceof XmlElement) {
@@ -543,6 +558,7 @@ export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
       tag: isFromUndoManger ? HISTORIC_TAG : COLLABORATION_TAG,
     },
   );
+  syncInlineFormatLayout(binding);
 }
 
 export function syncYjsStateToLexicalV2__EXPERIMENTAL(
@@ -571,6 +587,7 @@ export function syncYjsStateToLexicalV2__EXPERIMENTAL(
       tag: COLLABORATION_TAG,
     },
   );
+  syncInlineFormatLayout(binding);
 }
 
 export function syncLexicalUpdateToYjsV2__EXPERIMENTAL(
@@ -596,7 +613,9 @@ export function syncLexicalUpdateToYjsV2__EXPERIMENTAL(
 
   syncWithTransaction(binding, () => {
     currEditorState.read(() => {
-      if (dirtyElements.has('root')) {
+      // Marks a new document with the inline-format layout when asked to, and
+      // refuses to write into a document using a newer layout version.
+      if (dirtyElements.has('root') && prepareLayoutForWrite(binding)) {
         const nextLexicalRoot = $getRoot();
         // A DecoratorNode slot value lands in dirtyLeaves (only ElementNodes
         // are routed to dirtyElements), so unioning the two ensures
@@ -628,4 +647,5 @@ export function syncLexicalUpdateToYjsV2__EXPERIMENTAL(
       syncLexicalSelectionToYjs(binding, provider, prevSelection, selection);
     });
   });
+  syncInlineFormatLayout(binding);
 }

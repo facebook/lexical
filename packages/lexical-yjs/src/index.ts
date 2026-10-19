@@ -90,7 +90,12 @@ export {
   createBinding,
   createBindingV2__EXPERIMENTAL,
   createYjsBinding,
+  disposeBindingV2__EXPERIMENTAL,
+  getInlineFormatLayoutState__EXPERIMENTAL,
+  initializeInlineFormatLayout__EXPERIMENTAL,
+  isInlineFormatLayoutActive__EXPERIMENTAL,
 } from './Bindings';
+export type {InlineFormatLayoutState as InlineFormatLayoutState__EXPERIMENTAL} from './SyncV2';
 
 export function createUndoManager(
   binding: BaseBinding,

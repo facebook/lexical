@@ -21,6 +21,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   type BaseSelection,
+  type ElementNode,
   getRootOwnerDocument,
   isDOMShadowRoot,
   type LexicalNode,
@@ -36,7 +37,7 @@ import {
   createRelativePositionFromTypeIndex,
   type RelativePosition,
   XmlElement,
-  type XmlText,
+  XmlText,
 } from 'yjs';
 
 import {
@@ -48,6 +49,7 @@ import {
 } from './Bindings';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabTextNode} from './CollabTextNode';
+import {$isInlineFormatWrapperV2, isInlineFormatLayout} from './SyncV2';
 import {getPositionFromElementAndOffset} from './Utils';
 
 export type CursorSelection = {
@@ -228,28 +230,42 @@ function createRelativePosition(
   return createRelativePositionFromTypeIndex(sharedType, offset, assoc);
 }
 
-function createRelativePositionV2(
+function $createRelativePositionV2(
   point: Point,
   binding: BindingV2,
   assoc: number = 0,
 ): null | RelativePosition {
   const {mapping} = binding;
-  const {offset} = point;
-  const node = point.getNode();
+  let {offset} = point;
+  let node: LexicalNode = point.getNode();
+  let pointType = point.type;
+  const inlineFormats = isInlineFormatLayout(binding);
+  if (inlineFormats && pointType === 'element' && $isElementNode(node)) {
+    // In the inline-format layout an element point may sit on an attribute
+    // wrapper (which has no shared type) or between two leaves of one text
+    // run; express those as an offset into the run.
+    const runPoint = $elementPointToRunPoint(node, offset, binding);
+    if (runPoint !== null) {
+      node = runPoint.node;
+      offset = runPoint.offset;
+      pointType = 'text';
+    }
+  }
   const yType = mapping.getSharedType(node);
   if (yType === undefined) {
     return null;
   }
-  if (point.type === 'text') {
-    invariant($isTextNode(node), 'Text point must be a text node');
-    let prevSibling = node.getPreviousSibling();
-    let adjustedOffset = offset;
-    while ($isTextNode(prevSibling)) {
-      adjustedOffset += prevSibling.getTextContentSize();
-      prevSibling = prevSibling.getPreviousSibling();
-    }
-    return createRelativePositionFromTypeIndex(yType, adjustedOffset, assoc);
-  } else if (point.type === 'element') {
+  if (pointType === 'text') {
+    invariant(
+      $isTextNode(node) || (inlineFormats && $isLineBreakNode(node)),
+      'Text point must be a text node',
+    );
+    return createRelativePositionFromTypeIndex(
+      yType,
+      $getRunOffset(node, offset, yType, mapping, inlineFormats),
+      assoc,
+    );
+  } else if (pointType === 'element') {
     invariant($isElementNode(node), 'Element point must be an element node');
     // `offset` counts lexical children, but the index handed to yjs counts
     // yjs children, and normalizeNodeContent collapses a run of adjacent
@@ -262,16 +278,21 @@ function createRelativePositionV2(
     // index for a position *inside* a collapsed run, so an element point in
     // the middle of one (children [Text, Text], offset 1) necessarily decodes
     // back to the end of that run. That is inherent to the serialization, not
-    // to this loop.
+    // to this loop. (The inline-format layout converts such points to text
+    // positions above.)
+    const isRunMember = (n: LexicalNode | null) =>
+      $isTextNode(n) ||
+      (inlineFormats &&
+        ($isLineBreakNode(n) || $isInlineFormatWrapperV2(n, binding)));
     let yIndex = 0;
     let lexicalIndex = 0;
     let child = node.getFirstChild();
     while (child !== null && lexicalIndex < offset) {
       let nextSibling = child.getNextSibling();
       lexicalIndex++;
-      if ($isTextNode(child)) {
-        while ($isTextNode(nextSibling)) {
-          nextSibling = nextSibling.getNextSibling();
+      if (isRunMember(child)) {
+        while (isRunMember(nextSibling)) {
+          nextSibling = nextSibling!.getNextSibling();
           lexicalIndex++;
         }
       }
@@ -279,6 +300,86 @@ function createRelativePositionV2(
       child = nextSibling;
     }
     return createRelativePositionFromTypeIndex(yType, yIndex, assoc);
+  }
+  return null;
+}
+
+/**
+ * The offset of `offset` within `node` in its XmlText run: the sizes of the
+ * run members before it plus `offset`. The run can span attribute wrappers in
+ * the inline-format layout, so the mapped run is used rather than only the
+ * node's own siblings.
+ */
+function $getRunOffset(
+  node: LexicalNode,
+  offset: number,
+  yType: XmlElement | XmlText,
+  mapping: CollabV2Mapping,
+  inlineFormats: boolean,
+): number {
+  let adjustedOffset = offset;
+  if (inlineFormats && yType instanceof XmlText) {
+    const runNodes = mapping.get(yType);
+    const key = node.getKey();
+    const index =
+      runNodes === undefined ? -1 : runNodes.findIndex(n => n.getKey() === key);
+    if (runNodes !== undefined && index !== -1) {
+      for (let i = 0; i < index; i++) {
+        adjustedOffset += runNodes[i].getLatest().getTextContentSize();
+      }
+      return adjustedOffset;
+    }
+  }
+  let prevSibling = node.getPreviousSibling();
+  while ($isTextNode(prevSibling)) {
+    adjustedOffset += prevSibling.getTextContentSize();
+    prevSibling = prevSibling.getPreviousSibling();
+  }
+  return adjustedOffset;
+}
+
+/** The first or last leaf of `node`, looking through attribute wrappers. */
+function $getEdgeLeaf(
+  node: LexicalNode | null,
+  binding: BindingV2,
+  last: boolean,
+): LexicalNode | null {
+  let current = node;
+  while ($isInlineFormatWrapperV2(current, binding)) {
+    current = last ? current.getLastChild() : current.getFirstChild();
+  }
+  return current;
+}
+
+function $elementPointToRunPoint(
+  element: ElementNode,
+  offset: number,
+  binding: BindingV2,
+): null | {node: LexicalNode; offset: number} {
+  const isRunLeaf = (n: LexicalNode | null): n is LexicalNode =>
+    ($isTextNode(n) || $isLineBreakNode(n)) &&
+    binding.mapping.getSharedType(n) instanceof XmlText;
+  const before =
+    offset > 0
+      ? $getEdgeLeaf(element.getChildAtIndex(offset - 1), binding, true)
+      : null;
+  const after = $getEdgeLeaf(element.getChildAtIndex(offset), binding, false);
+  if ($isInlineFormatWrapperV2(element, binding)) {
+    if (isRunLeaf(before)) {
+      return {node: before, offset: before.getTextContentSize()};
+    }
+    if (isRunLeaf(after)) {
+      return {node: after, offset: 0};
+    }
+    return null;
+  }
+  if (
+    isRunLeaf(before) &&
+    isRunLeaf(after) &&
+    binding.mapping.getSharedType(before) ===
+      binding.mapping.getSharedType(after)
+  ) {
+    return {node: before, offset: before.getTextContentSize()};
   }
   return null;
 }
@@ -779,10 +880,12 @@ export function $getAnchorAndFocusForUserState(
   let [anchorNode, anchorOffset] = $getNodeAndOffsetV2(
     binding.mapping,
     anchorAbsPos,
+    binding,
   );
   let [focusNode, focusOffset] = $getNodeAndOffsetV2(
     binding.mapping,
     focusAbsPos,
+    binding,
   );
   // For a non-collapsed selection, if the start of the selection is as the end of a text node,
   // move it to the beginning of the next text node (if one exists).
@@ -923,6 +1026,7 @@ function getCollabNodeAndOffset(
 function $getNodeAndOffsetV2(
   mapping: CollabV2Mapping,
   absolutePosition: AbsolutePosition,
+  binding?: BindingV2,
 ): [null | LexicalNode, number] {
   const yType = absolutePosition.type as XmlElement | XmlText;
   const yOffset = absolutePosition.index;
@@ -934,6 +1038,12 @@ function $getNodeAndOffsetV2(
     if (!$isElementNode(node)) {
       return [node, yOffset];
     }
+    const inlineFormats =
+      binding !== undefined && isInlineFormatLayout(binding);
+    const isRunMember = (n: LexicalNode | undefined) =>
+      $isTextNode(n) ||
+      (inlineFormats &&
+        ($isLineBreakNode(n) || $isInlineFormatWrapperV2(n, binding!)));
     let remainingYOffset = yOffset;
     let lexicalOffset = 0;
     const children = node.getChildren();
@@ -941,10 +1051,10 @@ function $getNodeAndOffsetV2(
       const child = children[lexicalOffset];
       remainingYOffset -= 1;
       lexicalOffset += 1;
-      if ($isTextNode(child)) {
+      if (isRunMember(child)) {
         while (
           lexicalOffset < children.length &&
-          $isTextNode(children[lexicalOffset])
+          isRunMember(children[lexicalOffset])
         ) {
           lexicalOffset += 1;
         }
@@ -966,6 +1076,18 @@ function $getNodeAndOffsetV2(
       i++;
     }
     const textNode = nodes[i];
+    if ($isLineBreakNode(textNode)) {
+      // A line break in the run (inline-format layout) cannot hold a text
+      // point: point at its parent, before or after it.
+      const parent = textNode.getParent();
+      if (parent === null) {
+        return [null, 0];
+      }
+      return [
+        parent,
+        textNode.getIndexWithinParent() + (adjustedOffset > 0 ? 1 : 0),
+      ];
+    }
     return [textNode, Math.min(adjustedOffset, textNode.getTextContentSize())];
   }
 }
@@ -1088,7 +1210,7 @@ export function syncCursorPositions(
   }
 }
 
-export function syncLexicalSelectionToYjs(
+export function $syncLexicalSelectionToYjs(
   binding: AnyBinding,
   provider: Provider,
   prevSelection: null | BaseSelection,
@@ -1146,12 +1268,12 @@ export function syncLexicalSelectionToYjs(
         focusAssoc,
       );
     } else {
-      anchorPos = createRelativePositionV2(
+      anchorPos = $createRelativePositionV2(
         nextSelection.anchor,
         binding,
         anchorAssoc,
       );
-      focusPos = createRelativePositionV2(
+      focusPos = $createRelativePositionV2(
         nextSelection.focus,
         binding,
         focusAssoc,
@@ -1174,3 +1296,5 @@ export function syncLexicalSelectionToYjs(
     });
   }
 }
+/** @deprecated renamed to {@link $syncLexicalSelectionToYjs} by @lexical/eslint-plugin rules-of-lexical */
+export const syncLexicalSelectionToYjs = $syncLexicalSelectionToYjs;

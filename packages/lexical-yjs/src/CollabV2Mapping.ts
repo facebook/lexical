@@ -10,12 +10,18 @@ import invariant from '@lexical/internal/invariant';
 import {
   $isTextNode,
   type LexicalNode,
+  type LineBreakNode,
   type NodeKey,
   type TextNode,
 } from 'lexical';
 import {type XmlElement, XmlText} from 'yjs';
 
 type SharedType = XmlElement | XmlText;
+/**
+ * The leaves an XmlText run maps to. A LineBreakNode only appears here in the
+ * inline-format layout.
+ */
+type RunNode = TextNode | LineBreakNode;
 
 // Stores mappings between Yjs shared types and the Lexical nodes they were last associated with.
 export class CollabV2Mapping {
@@ -24,7 +30,7 @@ export class CollabV2Mapping {
   private _sharedTypeToNodeKeys: Map<SharedType, NodeKey[]> = new Map();
   private _nodeKeyToSharedType: Map<NodeKey, SharedType> = new Map();
 
-  set(sharedType: SharedType, node: LexicalNode | TextNode[]): void {
+  set(sharedType: SharedType, node: LexicalNode | RunNode[]): void {
     const isArray = node instanceof Array;
 
     // Clear all existing associations for this key.
@@ -70,9 +76,9 @@ export class CollabV2Mapping {
   }
 
   get(sharedType: XmlElement): LexicalNode | undefined;
-  get(sharedType: XmlText): TextNode[] | undefined;
-  get(sharedType: SharedType): LexicalNode | TextNode[] | undefined;
-  get(sharedType: SharedType): LexicalNode | TextNode[] | undefined {
+  get(sharedType: XmlText): RunNode[] | undefined;
+  get(sharedType: SharedType): LexicalNode | RunNode[] | undefined;
+  get(sharedType: SharedType): LexicalNode | RunNode[] | undefined {
     const nodes = this._sharedTypeToNodeKeys.get(sharedType);
     if (nodes === undefined) {
       return undefined;
@@ -80,7 +86,7 @@ export class CollabV2Mapping {
     if (sharedType instanceof XmlText) {
       const arr = Array.from(
         nodes.map(nodeKey => this._nodeMap.get(nodeKey)!),
-      ) as TextNode[];
+      ) as RunNode[];
       return arr.length > 0 ? arr : undefined;
     }
     return this._nodeMap.get(nodes[0])!;

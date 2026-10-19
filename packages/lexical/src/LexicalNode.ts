@@ -127,6 +127,45 @@ export type SerializedLexicalNode = {
 };
 
 /**
+ * @experimental collab-node-config
+ *
+ * Collaboration hints a node class declares with `$config()`. They describe
+ * what the node is, not how a particular binding stores it: a binding that
+ * does not understand a hint ignores it, and a binding acts on them only in a
+ * document layout that supports them (for \@lexical/yjs, the opt-in
+ * `inlineFormats` layout of the V2 binding).
+ *
+ * Each key is inherited separately: a subclass that declares `collab` keeps
+ * the keys it leaves out from its superclasses. Changing a hint of a class
+ * changes how documents that use it are stored, so treat it like a change to
+ * the node's serialization.
+ */
+export interface CollabNodeConfig {
+  /**
+   * What an inline {@link ElementNode} (one whose `isInline()` returns true)
+   * is to its children.
+   *
+   * - `'element'` (the default): a node with children of its own. Bindings
+   *   store it as its own shared element containing its children.
+   * - `'format'`: a node that only annotates the text it wraps, the way a text
+   *   format such as bold does (a link, a highlight). A binding may store it as
+   *   a format over those characters, so that wrapping or unwrapping text keeps
+   *   the characters and merges with concurrent typing or formatting. Its
+   *   synchronized value is the node's serialization schema fields beyond
+   *   ElementNode's (`$config({json})`, which such a node must declare) plus
+   *   its NodeState; anything not in the schema is not synchronized. When the
+   *   tree is rebuilt from such a store, adjacent nodes with equal values
+   *   merge, an empty node cannot be represented, and overlapping nodes nest
+   *   with the longest range outermost. A binding may also rebuild locally
+   *   edited content in that shape; an application transform that keeps
+   *   reshaping such nodes differently (e.g. splitting a link the canonical
+   *   shape merges) keeps its own shape locally while other clients see the
+   *   canonical one.
+   */
+  readonly inline?: 'element' | 'format';
+}
+
+/**
  * EXPERIMENTAL
  * The configuration of a node returned by LexicalNode.$config()
  *
@@ -224,6 +263,14 @@ export interface StaticNodeConfigValue<
    * concurrency instead of racing on attribute creation.
    */
   readonly slots?: readonly string[];
+  /**
+   * @experimental collab-node-config
+   *
+   * Hints for collaboration bindings about what this node is. See
+   * {@link CollabNodeConfig}; read them with {@link getDeclaredCollabConfig}.
+   * Each key is inherited separately.
+   */
+  readonly collab?: CollabNodeConfig;
   /**
    * The exact superclass of the node. Always name it.
    *

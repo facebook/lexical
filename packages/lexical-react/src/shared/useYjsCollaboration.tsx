@@ -17,7 +17,9 @@ import {
   createBindingV2__EXPERIMENTAL,
   createUndoManager,
   DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
+  disposeBindingV2__EXPERIMENTAL,
   type ExcludedProperties,
+  initializeInlineFormatLayout__EXPERIMENTAL,
   initLocalState,
   type Provider,
   removeCursorHighlightRule,
@@ -212,6 +214,8 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     excludedProperties?: ExcludedProperties;
     rootName?: string;
     getXmlElement?: (ydoc: Doc) => XmlElement;
+    /** @experimental See `CreateBindingV2Options__EXPERIMENTAL.inlineFormats`. */
+    inlineFormats?: boolean;
     selectionHighlight?: boolean;
     __shouldBootstrapUnsafe?: boolean;
   } = {},
@@ -221,6 +225,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     excludedProperties,
     rootName,
     getXmlElement,
+    inlineFormats,
     selectionHighlight = false,
     __shouldBootstrapUnsafe: shouldBootstrap,
   } = options;
@@ -239,6 +244,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     createBindingV2__EXPERIMENTAL(editor, id, doc, docMap, {
       excludedProperties,
       getXmlElement,
+      inlineFormats,
       rootName,
     }),
   );
@@ -252,8 +258,13 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
 
   const onBootstrap = useCallback(() => {
     const {root} = binding;
-    if (shouldBootstrap && root._length === 0) {
-      bootstrapEditor(binding, editor);
+    if (root._length === 0) {
+      // The provider has synced and the document is empty: a new document,
+      // which is put in the inline-format layout if the binding was asked to.
+      initializeInlineFormatLayout__EXPERIMENTAL(binding);
+      if (shouldBootstrap) {
+        bootstrapEditor(binding, editor);
+      }
     }
   }, [binding, editor, shouldBootstrap]);
 
@@ -340,6 +351,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     return () => {
       root.unobserveDeep(onYjsTreeChanges);
       removeListener();
+      disposeBindingV2__EXPERIMENTAL(binding);
     };
   }, [binding, provider, editor, diffSnapshots]);
 

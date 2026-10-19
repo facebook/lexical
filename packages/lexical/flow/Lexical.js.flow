@@ -2290,6 +2290,26 @@ declare export function setterDefaultOf(
   key: string,
 ): unknown;
 
+/**
+ * @experimental collab-node-config
+ *
+ * Collaboration hints a node class declares with `$config()`; each key is
+ * inherited separately.
+ */
+export interface CollabNodeConfig {
+  readonly inline?: 'element' | 'format';
+}
+
+/**
+ * @experimental collab-node-config
+ *
+ * The collaboration hints of a node class, each key from the nearest class
+ * in its config chain that declares it.
+ */
+declare export function getDeclaredCollabConfig(
+  klass: Class<LexicalNode>,
+): CollabNodeConfig;
+
 export interface StaticNodeConfigValue<
   T extends LexicalNode,
   Type extends string,
@@ -2302,6 +2322,7 @@ export interface StaticNodeConfigValue<
   readonly generated?: GeneratedJSONFactory;
   readonly stateConfigs?: ReadonlyArray<RequiredNodeStateConfig>;
   readonly slots?: ReadonlyArray<string>;
+  readonly collab?: CollabNodeConfig;
   readonly extends?: Class<LexicalNode>;
 }
 

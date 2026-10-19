@@ -1141,7 +1141,7 @@ export class RangeSelection implements BaseSelection {
     if (!this.isCollapsed()) {
       this.removeText();
     }
-    // @experimental named-slots. Anchor on a slot value root (e.g. after a
+    // Anchor on a slot value root (e.g. after a
     // slot-scoped Cmd+A leaves the selection on the slot's element point)
     // has __parent === null, so the block-finding walk below would throw.
     // Redirect into the slot subtree by collapsing the selection at the
@@ -3167,7 +3167,7 @@ function $normalizeSelectionPointsForBoundaries(
   }
 }
 
-// @experimental named-slots. The innermost slot-root ancestor of a point
+// The innermost slot-root ancestor of a point
 // (a node whose up-pointer is __slotHost, not __parent), or null when the
 // point is not inside any slot. Walking via getParent() naturally stops at a
 // slot root because a slotted node's __parent is null. Non-slot trees have
@@ -3177,7 +3177,7 @@ function $getPointSlotFrame(point: PointType): LexicalNode | null {
   return node === null ? null : $getSlotFrame(node);
 }
 
-// @experimental named-slots. Content order (slots-first) of a slot-straddling
+// Content order (slots-first) of a slot-straddling
 // pair, computed from the model alone. The caret comparison ($comparePoint…)
 // throws across a slot boundary (a slotted node has no common ancestor through
 // __parent), so each side that sits in a slot is reduced to the host outside
@@ -3227,7 +3227,7 @@ function $slotStraddleFocusAfterAnchor(
     }
     return anchorHost.isBefore(focusNode);
   }
-  const focusHost = $getMainTreeSlotHost(focusFrame as LexicalNode);
+  const focusHost = focusFrame && $getMainTreeSlotHost(focusFrame);
   const anchorNode = $getNodeByKey(anchorPoint.key);
   if (focusHost === null || anchorNode === null) {
     return false;
@@ -3239,7 +3239,7 @@ function $slotStraddleFocusAfterAnchor(
   return anchorNode.isBefore(focusHost);
 }
 
-// @experimental named-slots. Slots are shadow-root-isolated: a RangeSelection
+// Slots are shadow-root-isolated: a RangeSelection
 // must not straddle a slot boundary. When the anchor and focus are in
 // different frames, clamp the focus into the anchor's frame (anchor-frame
 // rule), keeping keyboard/mouse/programmatic results consistent. The direction
@@ -3259,28 +3259,32 @@ function $clampSelectionPointsToSlotFrame(
 ): boolean {
   const anchorFrame = $getPointSlotFrame(anchorPoint);
   const focusFrame = $getPointSlotFrame(focusPoint);
-  if (
-    anchorFrame === focusFrame ||
-    (anchorFrame !== null && focusFrame !== null && anchorFrame.is(focusFrame))
-  ) {
-    return false;
-  }
-  const focusAfterAnchor = resolveFocusAfterAnchor(anchorFrame, focusFrame);
   if (anchorFrame !== null) {
+    if (focusFrame !== null && anchorFrame.is(focusFrame)) {
+      return false;
+    }
     // Anchor sits inside a slot: pull the focus to that slot's edge (the far
     // edge in the drag direction), leaving a contained partial selection.
     // Slot→slot drags hit this same branch — no host escalation.
-    $setPointToFrameEdge(focusPoint, anchorFrame, focusAfterAnchor);
+    $setPointToFrameEdge(
+      focusPoint,
+      anchorFrame,
+      resolveFocusAfterAnchor(anchorFrame, focusFrame),
+    );
     return true;
+  }
+  if (focusFrame === null) {
+    return false;
   }
   // Anchor sits in the main tree, focus inside a (possibly nested) slot: push
   // the focus past the main-tree host that owns it so the host is wholly
   // contained. A root slot (such as footnotes) has no parent to step past, so
   // the focus goes to the edge of the root's own children instead.
-  const host = $getMainTreeSlotHost(focusFrame as LexicalNode);
+  const host = $getMainTreeSlotHost(focusFrame);
   if (host === null) {
     return false;
   }
+  const focusAfterAnchor = resolveFocusAfterAnchor(anchorFrame, focusFrame);
   if ($isRootNode(host)) {
     $setPointToFrameEdge(focusPoint, host, focusAfterAnchor);
     return true;
@@ -3294,7 +3298,7 @@ function $clampSelectionPointsToSlotFrame(
   return true;
 }
 
-// @experimental named-slots. Sets point to the start or end of frame.
+// Sets point to the start or end of frame.
 function $setPointToFrameEdge(
   point: PointType,
   frame: LexicalNode,
@@ -3307,7 +3311,7 @@ function $setPointToFrameEdge(
   }
 }
 
-// @experimental named-slots. The host outside every slot that (through any
+// The host outside every slot that (through any
 // number of nested slots) owns frame, or null when the chain is detached.
 function $getMainTreeSlotHost(frame: LexicalNode): LexicalNode | null {
   let host = $getSlotHost(frame);
@@ -3409,7 +3413,7 @@ function $internalResolveSelectionPoints(
     }
   }
 
-  // @experimental named-slots. Clamp a slot-straddling drag into the
+  // Clamp a slot-straddling drag into the
   // anchor's frame before normalization cleans up the resulting edge points.
   // The DOM order of the resolved nodes gives the drag direction (slot DOM is
   // slots-first, so DOM order matches content order). Gated on `_slotsUsed`
@@ -4280,7 +4284,7 @@ export function $getTextContent(): string {
   return selection.getTextContent();
 }
 
-// @experimental named-slots. Inline projection of a pasted node list for a
+// Inline projection of a pasted node list for a
 // block-shaped slot value (insertNodes CASE 3b): inline nodes pass through,
 // non-inline elements contribute their inline content recursively, line
 // breaks are stripped (the <input> value-sanitization analogy for newlines),

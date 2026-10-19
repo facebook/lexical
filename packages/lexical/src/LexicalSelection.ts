@@ -109,6 +109,7 @@ import {
   getElementByKeyOrThrow,
   getNearestEditorFromDOMNode,
   getNodeKeyFromDOMNode,
+  getRootOwnerDocument,
   getWindow,
   INTERNAL_$isBlock,
   isDOMCapturingSelection,
@@ -3218,13 +3219,15 @@ function $slotStraddleFocusAfterAnchor(
       }
       return true;
     }
+    // Points are not normalized: that would move a point just before an
+    // element host into its children, past the host's slot content.
     const order = $comparePointCaretNext(
       anchorHost
         ? $getSlotHostCaret(anchorHost)
-        : $normalizeCaret($caretFromPoint(anchorPoint, 'next')),
+        : $caretFromPoint(anchorPoint, 'next'),
       focusHost
         ? $getSlotHostCaret(focusHost)
-        : $normalizeCaret($caretFromPoint(focusPoint, 'next')),
+        : $caretFromPoint(focusPoint, 'next'),
     );
     // On a tie the lifted side's slot content comes first.
     return order === 0 ? anchorHost !== null : order < 0;
@@ -3238,6 +3241,9 @@ function $getFrameChain(frame: LexicalNode | null): (LexicalNode | null)[] {
   const chain = [frame];
   for (let host = frame && $getSlotHost(frame); host !== null; ) {
     const hostFrame = $getSlotFrame(host);
+    if (hostFrame === null && !host.isAttached()) {
+      break;
+    }
     chain.push(hostFrame);
     host = hostFrame && $getSlotHost(hostFrame);
   }
@@ -3336,14 +3342,10 @@ function $getSlotHostInFrame(
   frame: LexicalNode,
   target: LexicalNode | null,
 ): LexicalNode | null {
-  for (let host = $getSlotHost(frame); host !== null; ) {
-    const hostFrame = $getSlotFrame(host);
-    if ($isSameFrame(hostFrame, target)) {
-      return host;
-    }
-    host = hostFrame && $getSlotHost(hostFrame);
-  }
-  return null;
+  const chain = $getFrameChain(frame);
+  const i = chain.findIndex(chainFrame => $isSameFrame(chainFrame, target));
+  const slot = i > 0 ? chain[i - 1] : null;
+  return slot && $getSlotHost(slot);
 }
 
 /**
@@ -3446,9 +3448,20 @@ function $internalResolveSelectionPoints(
       resolvedAnchorPoint,
       resolvedFocusPoint,
       () => {
-        const range = anchorDOM.ownerDocument!.createRange();
-        range.setStart(anchorDOM, anchorOffset);
-        return range.comparePoint(focusDOM, focusOffset) >= 0;
+        try {
+          const range = getRootOwnerDocument(
+            editor.getRootElement(),
+          ).createRange();
+          range.setStart(anchorDOM, anchorOffset);
+          return range.comparePoint(focusDOM, focusOffset) >= 0;
+        } catch {
+          // Stale offsets or points in different DOM trees: use node order.
+        }
+        return (
+          (anchorDOM.compareDocumentPosition(focusDOM) &
+            Node.DOCUMENT_POSITION_FOLLOWING) !==
+          0
+        );
       },
     );
 

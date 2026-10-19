@@ -270,6 +270,42 @@ describe('named-slots: selection containment (slot isolation)', () => {
     );
   });
 
+  test.each([
+    {
+      anchor: ['root', 0, 'element'],
+      expected: ['root', 1],
+      focus: ['titleText', 2, 'text'],
+      name: 'from just before a host into its slot pushes focus past the host',
+    },
+    {
+      anchor: ['titleText', 2, 'text'],
+      expected: ['title', 0],
+      focus: ['root', 0, 'element'],
+      name: 'from a slot to just before its host clamps focus to the slot start',
+    },
+  ] as const)('a programmatic selection $name', ({anchor, focus, expected}) => {
+    using editor = buildSlotEditor();
+    editor.update(
+      () => {
+        const keyOf = (name: string) =>
+          name === 'root' ? $getRoot().getKey() : keys[name];
+        const selection = $createRangeSelection();
+        selection.anchor.set(keyOf(anchor[0]), anchor[1], anchor[2]);
+        selection.focus.set(keyOf(focus[0]), focus[1], focus[2]);
+        $setSelection(selection);
+
+        const active = $getSelection();
+        assert($isRangeSelection(active));
+        expect(active.anchor.key).toBe(keyOf(anchor[0]));
+        expect([active.focus.key, active.focus.offset]).toEqual([
+          keyOf(expected[0]),
+          expected[1],
+        ]);
+      },
+      {discrete: true},
+    );
+  });
+
   test('a programmatic selection entirely within the body is left untouched', () => {
     using editor = buildSlotEditor();
 
@@ -564,7 +600,6 @@ describe('named-slots: selection across nested slots', () => {
           keys.introText = introText.getKey();
           keys.deep = deep.getKey();
           keys.deepText = deepText.getKey();
-          keys.captionText = captionText.getKey();
         },
         name: '[nested-slot-selection]',
         nodes: [TestShadowRootNode],

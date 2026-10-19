@@ -853,6 +853,70 @@ describe('playground TABLE markdown transformer', () => {
     expect(cellTexts(editor)).toEqual([[['h']], [['a<!---->b']]]);
   });
 
+  it('reads a list after an unopened ** before a <br>', () => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', '| x **<br>- y** |'].join('\n'),
+    );
+    expect(cellTexts(editor)).toEqual([[['h']], [['x **', 'y**']]]);
+  });
+
+  it('keeps a <br> in a link title and an image src as written', () => {
+    using editor = importMarkdown(
+      [
+        '| h |',
+        '| --- |',
+        '| [a](https://e.com "t<br>u") ![b](x<br>y.png) |',
+      ].join('\n'),
+    );
+    editor.read(() => {
+      const [link, , image] = $getRoot()
+        .getLastChildOrThrow<ElementNode>()
+        .getLastChildOrThrow<ElementNode>()
+        .getFirstChildOrThrow<ElementNode>()
+        .getFirstChildOrThrow<ElementNode>()
+        .getChildren();
+      assert($isLinkNode(link), 'The cell must hold a link');
+      assert($isImageNode(image), 'The cell must hold an image');
+      expect([link.getTitle(), image.getSrc()]).toEqual([
+        't<br>u',
+        'x<br>y.png',
+      ]);
+    });
+  });
+
+  it('keeps bold whole across a line that looks like a fence', () => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', '| **a<br>``` b<br>c** |'].join('\n'),
+    );
+    expect(cellTexts(editor)).toEqual([[['h']], [['a\n``` b\nc']]]);
+    editor.read(() => {
+      const texts = $getRoot()
+        .getLastChildOrThrow<ElementNode>()
+        .getAllTextNodes();
+      expect(texts.slice(1).every(node => node.hasFormat('bold'))).toBe(true);
+    });
+  });
+
+  it('keeps bold whole when the cell holds every private-use character', () => {
+    let taken = '           ';
+    for (let code = 0xe000; code <= 0xf8ff; code++) {
+      taken += String.fromCharCode(code);
+    }
+    using editor = importMarkdown(
+      ['| h |', '| --- |', `| ${taken} **a<br>b** |`].join('\n'),
+    );
+    editor.read(() => {
+      const texts = $getRoot()
+        .getLastChildOrThrow<ElementNode>()
+        .getAllTextNodes();
+      expect(texts.slice(-2).map(node => node.getTextContent())).toEqual([
+        'a',
+        'b',
+      ]);
+      expect(texts.slice(-2).every(node => node.hasFormat('bold'))).toBe(true);
+    });
+  });
+
   it('round-trips a code block with a pipe and a blank line in a cell', () => {
     const markdown = exportTable(() =>
       $cellOf($createCodeNode('js').append($createTextNode('a | b\n\nc'))),

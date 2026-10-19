@@ -396,6 +396,9 @@ describe('ContentEditableElement tests', () => {
         reactRoot.render(
           <ContentEditableElement
             editor={editor}
+            aria-activedescendant="choice"
+            aria-autocomplete="list"
+            aria-expanded={true}
             aria-multiline={true}
             aria-required={true}
             aria-placeholder="Type here"
@@ -407,6 +410,9 @@ describe('ContentEditableElement tests', () => {
       // These reach the element through the prop spread, which runs last, so
       // gating only the camelCase aliases would let every one of them past.
       expect(element.getAttribute('role')).toBe(null);
+      expect(element.getAttribute('aria-activedescendant')).toBe(null);
+      expect(element.getAttribute('aria-autocomplete')).toBe(null);
+      expect(element.getAttribute('aria-expanded')).toBe(null);
       expect(element.getAttribute('aria-multiline')).toBe(null);
       expect(element.getAttribute('aria-required')).toBe(null);
       expect(element.getAttribute('aria-placeholder')).toBe(null);
@@ -600,6 +606,124 @@ describe('ContentEditableElement tests', () => {
       });
       const element = container!.querySelector('[role="combobox"]')!;
       expect(element.getAttribute('aria-expanded')).toBe('true');
+    });
+  });
+
+  describe('standard ARIA overrides', () => {
+    it('keeps aria-expanded on a tree item', async () => {
+      expect.extend(toHaveNoViolations);
+      await act(async () => {
+        reactRoot.render(
+          <div role="tree" aria-label="Outline">
+            <ContentEditableElement
+              editor={editor}
+              role="treeitem"
+              aria-label="Section"
+              aria-expanded={false}
+            />
+          </div>,
+        );
+      });
+      const element = container!.querySelector('[role="treeitem"]')!;
+      expect(element.getAttribute('aria-expanded')).toBe('false');
+      expect(await axe(container!)).toHaveNoViolations();
+    });
+
+    it('keeps combobox attributes across editability changes', async () => {
+      expect.extend(toHaveNoViolations);
+      await act(async () => {
+        reactRoot.render(
+          <>
+            <ContentEditableElement
+              editor={editor}
+              role="combobox"
+              aria-label="Choices"
+              aria-expanded={true}
+              aria-controls="choices"
+              aria-activedescendant="choice"
+              aria-autocomplete="list"
+            />
+            <div role="listbox" id="choices" aria-label="Options">
+              <div role="option" id="choice" aria-selected={true}>
+                One
+              </div>
+            </div>
+          </>,
+        );
+      });
+      const element = container!.querySelector('[role="combobox"]')!;
+      for (const editable of [false, true]) {
+        await act(async () => {
+          editor.setEditable(editable);
+        });
+        expect(element.getAttribute('aria-expanded')).toBe('true');
+        expect(element.getAttribute('aria-activedescendant')).toBe('choice');
+        expect(element.getAttribute('aria-autocomplete')).toBe('list');
+        expect(await axe(container!)).toHaveNoViolations();
+      }
+    });
+
+    it('lets an undefined standard label clear a legacy label', async () => {
+      expect.extend(toHaveNoViolations);
+      editor.setEditable(false);
+      await act(async () => {
+        reactRoot.render(
+          <ContentEditableElement
+            editor={editor}
+            ariaLabel="Old label"
+            aria-label={undefined}
+            title="Current label"
+          />,
+        );
+      });
+      const element = container!.querySelector('div[contenteditable]')!;
+      expect(element.getAttribute('aria-label')).toBe(null);
+      expect(element.getAttribute('title')).toBe('Current label');
+      expect(element.getAttribute('role')).toBe('textbox');
+      expect(await axe(container!)).toHaveNoViolations();
+    });
+
+    it('uses the overridden name when resolving the default role', async () => {
+      expect.extend(toHaveNoViolations);
+      editor.setEditable(false);
+      await act(async () => {
+        reactRoot.render(
+          <ContentEditableElement
+            editor={editor}
+            ariaLabel="Old label"
+            aria-label={undefined}
+          />,
+        );
+      });
+      const element = container!.querySelector('div[contenteditable]')!;
+      expect(element.getAttribute('aria-label')).toBe(null);
+      expect(element.getAttribute('role')).toBe(null);
+      expect(await axe(container!)).toHaveNoViolations();
+    });
+
+    it('lets undefined standard props clear defaults and aliases', async () => {
+      expect.extend(toHaveNoViolations);
+      editor.setEditable(false);
+      await act(async () => {
+        reactRoot.render(
+          <ContentEditableElement
+            editor={editor}
+            aria-label="Notes"
+            ariaMultiline={true}
+            ariaRequired={true}
+            aria-autocomplete={undefined}
+            aria-multiline={undefined}
+            aria-readonly={undefined}
+            aria-required={undefined}
+          />,
+        );
+      });
+      const element = container!.querySelector('[role="textbox"]')!;
+      expect(element.getAttribute('aria-autocomplete')).toBe(null);
+      expect(element.getAttribute('aria-multiline')).toBe(null);
+      expect(element.getAttribute('aria-readonly')).toBe(null);
+      expect(element.getAttribute('aria-required')).toBe(null);
+      expect(await axe(container!)).toHaveNoViolations();
     });
   });
 });

@@ -30,20 +30,14 @@ import useLayoutEffect from './useLayoutEffect';
  * `ariaLabel`) are also accepted but are retained only for backwards
  * compatibility.
  *
- * `role` defaults to `textbox` while the editor is editable. While it is not
- * editable the default depends on whether the element can be named: a
- * non-editable editor with an `aria-label`/`aria-labelledby` is a read-only
- * form field and keeps `textbox`, while one with no accessible name renders
- * content rather than a widget and takes no role at all. The invariant is that
- * the element carries a widget role if and only if it can be named — an
- * unnamed widget role is an `aria-input-field-name` violation, and a name on a
- * roleless element is an `aria-prohibited-attr` one. Pass `role` explicitly to
- * override either default.
+ * `role` defaults to `textbox` for editable editors and read-only editors
+ * with a non-empty `aria-label`, `aria-labelledby`, or `title`. An unnamed
+ * read-only editor defaults to no role. Pass `role` explicitly to override
+ * either default.
  *
- * Widget-only ARIA (`aria-autocomplete`, `aria-readonly`, `aria-multiline`,
- * `aria-required`, `aria-placeholder`, ...) is emitted only alongside a role,
- * in either spelling, since those attributes are `aria-allowed-attr`
- * violations without one.
+ * Standard `aria-*` props override the legacy camelCase props, including
+ * explicit `undefined` values. Widget-only ARIA is removed when the resolved
+ * role is absent.
  */
 export type ContentEditableElementProps = {
   editor: LexicalEditor;
@@ -117,83 +111,52 @@ function ContentEditableElementImpl(
     });
   }, [editor]);
 
-  // The hyphenated `aria-*` attributes are the preferred spelling, so they win
-  // over the camelCase aliases kept for backwards compatibility. Pulling them
-  // out of `rest` is also what keeps them from bypassing the gating below —
-  // `rest` is spread last, so anything left in it reaches the DOM unfiltered.
-  const {
-    'aria-activedescendant': ariaActiveDescendantAttr = ariaActiveDescendant,
-    'aria-autocomplete': ariaAutoCompleteAttr = ariaAutoComplete,
-    'aria-expanded': ariaExpandedAttr = ariaExpanded,
-    'aria-label': ariaLabelAttr = ariaLabel,
-    'aria-labelledby': ariaLabelledByAttr = ariaLabelledBy,
-    'aria-multiline': ariaMultilineAttr = ariaMultiline,
-    'aria-placeholder': ariaPlaceholderAttr,
-    'aria-readonly': ariaReadOnlyAttr,
-    'aria-required': ariaRequiredAttr = ariaRequired,
-    title,
-    ...htmlProps
-  } = rest;
-
-  // An accessible name needs content: `aria-label=""` names nothing, so it
-  // cannot stand in for one. `title` can supply the name when no ARIA label
-  // does, so a read-only editor named only by its tooltip is still a field.
-  const hasAccessibleName = [ariaLabelAttr, ariaLabelledByAttr, title].some(
-    value => typeof value === 'string' && value.trim() !== '',
-  );
-  // `textbox` is the default while the editor is editable. While it is not,
-  // the default turns on whether the element can be named: a named read-only
-  // editor is a form field and keeps the role (and every attribute it had
-  // before), while an unnamed one is content and takes no role, since an
-  // unnamed widget role is an `aria-input-field-name` violation and a name on
-  // a roleless element is an `aria-prohibited-attr` one.
+  // Preserve the original spread precedence, including explicit undefined
+  // overrides, before deciding which attributes the resolved role can carry.
+  const elementProps: React.AllHTMLAttributes<HTMLDivElement> = {
+    'aria-activedescendant': isEditable ? ariaActiveDescendant : undefined,
+    'aria-autocomplete': isEditable ? ariaAutoComplete : 'none',
+    'aria-controls': isEditable ? ariaControls : undefined,
+    'aria-describedby': ariaDescribedBy,
+    ...(ariaErrorMessage != null
+      ? {'aria-errormessage': ariaErrorMessage}
+      : {}),
+    'aria-expanded': role === 'combobox' ? (ariaExpanded ?? false) : undefined,
+    ...(ariaInvalid != null ? {'aria-invalid': ariaInvalid} : {}),
+    'aria-label': ariaLabel,
+    'aria-labelledby': ariaLabelledBy,
+    'aria-multiline': ariaMultiline,
+    'aria-owns': isEditable ? ariaOwns : undefined,
+    'aria-readonly': isEditable ? undefined : true,
+    'aria-required': ariaRequired,
+    ...rest,
+  };
+  const hasAccessibleName = [
+    elementProps['aria-label'],
+    elementProps['aria-labelledby'],
+    elementProps.title,
+  ].some(value => typeof value === 'string' && value.trim() !== '');
   const resolvedRole =
     role === undefined
       ? isEditable || hasAccessibleName
         ? 'textbox'
         : undefined
       : role;
-  // Widget-only ARIA is an `aria-allowed-attr` violation without a widget
-  // role, so dropping the role has to drop these with it.
-  const hasWidgetRole = resolvedRole != null;
+
+  // Only roleless content needs filtering. Explicit widget attributes remain
+  // authoritative when a role is retained, including in read-only editors.
+  if (resolvedRole == null) {
+    elementProps['aria-activedescendant'] = undefined;
+    elementProps['aria-autocomplete'] = undefined;
+    elementProps['aria-expanded'] = undefined;
+    elementProps['aria-multiline'] = undefined;
+    elementProps['aria-placeholder'] = undefined;
+    elementProps['aria-readonly'] = undefined;
+    elementProps['aria-required'] = undefined;
+  }
 
   return (
     <div
-      aria-activedescendant={isEditable ? ariaActiveDescendantAttr : undefined}
-      aria-autocomplete={
-        isEditable ? ariaAutoCompleteAttr : hasWidgetRole ? 'none' : undefined
-      }
-      aria-controls={isEditable ? ariaControls : undefined}
-      aria-describedby={ariaDescribedBy}
-      // for compat, only override aria-errormessage if ariaErrorMessage is defined
-      {...(ariaErrorMessage != null
-        ? {'aria-errormessage': ariaErrorMessage}
-        : {})}
-      aria-expanded={
-        // A combobox requires `aria-expanded` whether or not it is editable;
-        // dropping it on a read-only one is an `aria-required-attr`
-        // violation. The authored value is preserved rather than coerced:
-        // `!!` turns the string "false" — which ARIA reads as false, and
-        // which React's own type for this attribute allows — into `true`.
-        resolvedRole === 'combobox'
-          ? ariaExpandedAttr === 'false'
-            ? false
-            : !!ariaExpandedAttr
-          : undefined
-      }
-      // for compat, only override aria-invalid if ariaInvalid is defined
-      {...(ariaInvalid != null ? {'aria-invalid': ariaInvalid} : {})}
-      aria-label={ariaLabelAttr}
-      aria-labelledby={ariaLabelledByAttr}
-      aria-multiline={hasWidgetRole ? ariaMultilineAttr : undefined}
-      aria-owns={isEditable ? ariaOwns : undefined}
-      aria-placeholder={hasWidgetRole ? ariaPlaceholderAttr : undefined}
-      aria-readonly={
-        hasWidgetRole
-          ? (ariaReadOnlyAttr ?? (isEditable ? undefined : true))
-          : undefined
-      }
-      aria-required={hasWidgetRole ? ariaRequiredAttr : undefined}
       autoCapitalize={autoCapitalize}
       className={className}
       contentEditable={isEditable}
@@ -204,10 +167,7 @@ function ContentEditableElementImpl(
       spellCheck={spellCheck}
       style={style}
       tabIndex={tabIndex ?? (isEditable ? undefined : -1)}
-      // Destructured above to read it as a possible accessible name, so it
-      // needs putting back; `htmlProps` no longer carries it.
-      title={title}
-      {...htmlProps}
+      {...elementProps}
     />
   );
 }

@@ -379,6 +379,98 @@ describe('named-slots: selection containment (slot isolation)', () => {
   });
 });
 
+describe('named-slots: selection across a root slot', () => {
+  const mountedRoots: HTMLElement[] = [];
+  afterEach(() => {
+    while (mountedRoots.length > 0) {
+      mountedRoots.pop()?.remove();
+    }
+  });
+
+  // root -> child paragraph ("Body") + slot 'footnotes' ("Footnote")
+  const keys: Record<string, string> = {};
+  function buildRootSlotEditor() {
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => {
+          const bodyText = $createTextNode('Body');
+          const footnotes = $createTestShadowRootNode();
+          const footnoteText = $createTextNode('Footnote');
+          footnotes.append($createParagraphNode().append(footnoteText));
+          const root = $getRoot()
+            .clear()
+            .append($createParagraphNode().append(bodyText));
+          $setSlot(root, 'footnotes', footnotes);
+          keys.bodyText = bodyText.getKey();
+          keys.footnotes = footnotes.getKey();
+          keys.footnoteText = footnoteText.getKey();
+        },
+        name: '[root-slot-selection]',
+        nodes: [TestShadowRootNode],
+      }),
+    );
+    const rootElement = document.createElement('div');
+    document.body.appendChild(rootElement);
+    mountedRoots.push(rootElement);
+    editor.setRootElement(rootElement);
+    return editor;
+  }
+
+  test('anchor in the body, focus dragged into a root slot, clamps focus to the root edge', () => {
+    using editor = buildRootSlotEditor();
+    const bodyTextDOM = editor.getElementByKey(keys.bodyText)?.firstChild;
+    const footnoteTextDOM = editor.getElementByKey(
+      keys.footnoteText,
+    )?.firstChild;
+    assert(bodyTextDOM && footnoteTextDOM);
+    const domSelection = getDOMSelection(editor._window ?? window);
+    assert(domSelection !== null);
+    // Slots mount slots-first, so the footnote precedes the body in the DOM.
+    domSelection.setBaseAndExtent(bodyTextDOM, 1, footnoteTextDOM, 3);
+
+    editor.update(
+      () => {
+        const selection = $internalCreateRangeSelection(
+          $getSelection(),
+          domSelection,
+          editor,
+          {type: 'selectionchange'} as Event,
+        );
+        assert($isRangeSelection(selection));
+        const root = $getRoot();
+        expect(selection.anchor.key).toBe(keys.bodyText);
+        expect($slotFrameKeyOf(selection.focus.getNode())).toBe(null);
+        expect(selection.focus.key).toBe(root.getKey());
+        expect(selection.focus.offset).toBe(0);
+        expect(selection.getTextContent()).toBe('B');
+      },
+      {discrete: true},
+    );
+  });
+
+  test('a programmatic selection with anchor in the body, focus in a root slot, clamps focus to the root edge', () => {
+    using editor = buildRootSlotEditor();
+
+    editor.update(
+      () => {
+        const selection = $createRangeSelection();
+        selection.anchor.set(keys.bodyText, 1, 'text');
+        selection.focus.set(keys.footnoteText, 3, 'text');
+        $setSelection(selection);
+
+        const active = $getSelection();
+        assert($isRangeSelection(active));
+        expect(active.anchor.key).toBe(keys.bodyText);
+        expect($slotFrameKeyOf(active.focus.getNode())).toBe(null);
+        expect(active.focus.key).toBe($getRoot().getKey());
+        expect(active.focus.offset).toBe(0);
+        expect(active.getTextContent()).toBe('B');
+      },
+      {discrete: true},
+    );
+  });
+});
+
 // Point.set's __DEV__ invariant rejects a Point keyed on a DecoratorNode for
 // both 'text' (requires TextNode) and 'element' (requires ElementNode). These
 // probes pin that the public API never lands an anchor on a slotted decorator

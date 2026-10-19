@@ -64,6 +64,7 @@ jobs:
     # scheduled trigger; manual dispatch is already gated to maintainers)
     if: ${{ !failure() && !cancelled() && github.repository_owner == 'facebook' }}
     uses: ./.github/workflows/call-release.yml
+    secrets: inherit
     with:
       # Schedule path == nightly behavior: bump + publish under nightly
       # dist-tag, ignoring previously-published collisions. Manual dispatch

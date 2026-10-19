@@ -1060,6 +1060,7 @@ i.page-setup,
   }
 }
 
+i.paragraph,
 .icon.paragraph {
   -webkit-mask-image: url(images/icons/text-paragraph.svg);
   mask-image: url(images/icons/text-paragraph.svg);

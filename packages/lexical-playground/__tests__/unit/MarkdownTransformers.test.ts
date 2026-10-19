@@ -917,20 +917,27 @@ describe('playground TABLE markdown transformer', () => {
     });
   });
 
-  it.each(['const x = `a\nb`;', '`a\nb`', '``a\nb``', 'x `a\n\nb` y'])(
-    'round-trips code block %j with backticks across lines',
-    code => {
-      const markdown = exportTable(() =>
-        $cellOf($createCodeNode('js').append($createTextNode(code))),
-      );
-      using imported = importMarkdown(markdown);
-      imported.read(() => {
-        const block = $getRoot().getLastDescendant()?.getParent();
-        assert($isCodeNode(block), 'The cell must hold a code block');
-        expect(block.getTextContent()).toBe(code);
-      });
-    },
-  );
+  it.each([
+    'const x = `a\nb`;',
+    '`a\nb`',
+    '``a\nb``',
+    'x `a\n\nb` y',
+    'const x = `a<br>b`;',
+    'x `a\\|b` y',
+    'a\\|b\\\\|c\\<br>d',
+    'if x:\n  print(x)\n\treturn',
+    '"""a  \nb"""',
+  ])('round-trips code block %j', code => {
+    const markdown = exportTable(() =>
+      $cellOf($createCodeNode('js').append($createTextNode(code))),
+    );
+    using imported = importMarkdown(markdown);
+    imported.read(() => {
+      const block = $getRoot().getLastDescendant()?.getParent();
+      assert($isCodeNode(block), 'The cell must hold a code block');
+      expect(block.getTextContent()).toBe(code);
+    });
+  });
 
   it.each(['**(b)**', '*(b)*'])(
     'keeps %j after a <br> whatever spaces the cell holds',

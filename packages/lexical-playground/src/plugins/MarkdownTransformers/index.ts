@@ -235,7 +235,9 @@ function getCellTransformers(): Transformer[] {
  * `<br>`, and a pipe or a `<br>` that is text is backslash-escaped, which
  * {@link $createTableCell} undoes. Code takes no escapes but a pipe's, so
  * code with an odd run of backslashes before a pipe (`a\|b`), which GFM
- * can't write in one span, is split there by an empty HTML comment.
+ * can't write in one span, is split there by an empty HTML comment. Fenced
+ * code takes none at all, so a pipe or a `<br>` there is written after
+ * twice its backslashes and one more.
  */
 function $exportTableCell(
   cell: TableCellNode,
@@ -246,20 +248,31 @@ function $exportTableCell(
       .replace(/^[ \t]+|[ \t]+$/g, '')
       // A code span keeps its `<br>` as text, which it reads as.
       .replace(
-        /(\\*)(\||<(?=br\s*\/?>))|\\[^]|(`{1,2})(?!`)[^]*?[^`]\3(?!`)|(`{3,})(?!`)[^\n]*?[^`\n]\4(?!`)|`+/gi,
-        (match, backslashes?: string, char?: string, ...spans: unknown[]) =>
-          char !== undefined
-            ? escapeInCell(backslashes!, char)
-            : spans[0] !== undefined || spans[1] !== undefined
-              ? match.replace(
-                  /(\\*)\|/g,
-                  (_, inCode: string) =>
-                    inCode +
-                    (inCode.length % 2
-                      ? `${spans[0] ?? spans[1]}<!---->${spans[0] ?? spans[1]}\\|`
-                      : '\\|'),
-                )
-              : match,
+        /^[ \t]*(`{3,})[^`\n]*$(?:\n[^]*?(?:\n[ \t]*\1`*[ \t]*$|(?![^])))?|(\\*)(\||<(?=br\s*\/?>))|\\[^]|(`{1,2})(?!`)[^]*?[^`]\4(?!`)|(`{3,})(?!`)[^\n]*?[^`\n]\5(?!`)|`+/gim,
+        (
+          match,
+          fence?: string,
+          backslashes?: string,
+          char?: string,
+          ...spans: unknown[]
+        ) =>
+          fence !== undefined
+            ? match.replace(
+                /(\\*)(\||<(?=br\s*\/?>))/gi,
+                (_, inCode: string, c: string) => inCode + inCode + '\\' + c,
+              )
+            : char !== undefined
+              ? escapeInCell(backslashes!, char)
+              : spans[0] !== undefined || spans[1] !== undefined
+                ? match.replace(
+                    /(\\*)\|/g,
+                    (_, inCode: string) =>
+                      inCode +
+                      (inCode.length % 2
+                        ? `${spans[0] ?? spans[1]}<!---->${spans[0] ?? spans[1]}\\|`
+                        : '\\|'),
+                  )
+                : match,
       )
       .replace(/\n/g, '<br>')
   );
@@ -502,18 +515,20 @@ const $createTableCell = (
         ? guard
         : '';
     const tokens =
-      /\\[^]|(`{1,2})(?!`)[^]*?[^`]\1(?!`)(?:<!---->\1(?!`)[^]*?[^`]\1(?!`))*|(`{3,})(?!`)(?:(?!<br)[^])*?[^`]\2(?!`)(?:<!---->\2(?!`)(?:(?!<br)[^])*?[^`]\2(?!`))*|`+|[ \t]*<br\s*\/?>[ \t]*/gi;
-    const readToken = (
-      match: string,
-      short: string | undefined,
-      long: string | undefined,
-      offset: number,
-    ): string => {
-      if (match[0] === '`' && fence !== '') {
-        // Fenced code has no code spans: only the backticks are read.
-        const ticks = /^`+/.exec(match)![0];
-        tokens.lastIndex = offset + ticks.length;
-        return ticks;
+      /\\[^]|(`{1,2})(?!`)[^]*?[^`]\1(?!`)(?:<!---->\1(?!`)[^]*?[^`]\1(?!`))*|(`{3,})(?!`)(?:(?!<br)[^])*?[^`]\2(?!`)(?:<!---->\2(?!`)(?:(?!<br)[^])*?[^`]\2(?!`))*|`+|([ \t]*)<br\s*\/?>([ \t]*)/gi;
+    const readToken = ([match, short, long, lead, trail]: string[]): string => {
+      const offset = tokens.lastIndex - match.length;
+      if (fence !== '' && (match[0] === '`' || match[0] === '\\')) {
+        // Fenced code has no code spans, and takes no escapes but those
+        // export writes before a pipe or a `<br>`, twice its backslashes
+        // and one more.
+        const fenced = /`+|(\\+)(\||<br\s*\/?>)?/iy;
+        fenced.lastIndex = offset;
+        const [run, backslashes, char] = fenced.exec(text)!;
+        tokens.lastIndex = fenced.lastIndex;
+        return char
+          ? backslashes.slice(0, backslashes.length >> 1) + char
+          : run;
       }
       if (match[0] === '`') {
         const ticks = short ?? long;
@@ -542,7 +557,7 @@ const $createTableCell = (
             ? '\n'
             : match;
       }
-      // The whitespace a `<br>` is written with is padding too.
+      // The whitespace a `<br>` is written with is padding, but in code.
       const line = text.slice(lineStart, offset);
       lineStart = offset + match.length;
       // A code block opens with a fence at the start of a line, and
@@ -569,7 +584,10 @@ const $createTableCell = (
         line === '' ||
         (block && blocks !== undefined && blocks.includes(offset));
       if (atLineStart) {
-        return '\n' + guardAt(lineStart);
+        // Code keeps the whitespace around its line breaks.
+        return fence === ''
+          ? '\n' + guardAt(lineStart)
+          : (fenceLine ? '' : lead) + '\n' + trail;
       }
       let char = mark;
       if (block && blocks === undefined) {
@@ -581,9 +599,7 @@ const $createTableCell = (
     let markdown = guardAt(0);
     let last = 0;
     for (let found; (found = tokens.exec(text)) !== null; ) {
-      markdown +=
-        text.slice(last, found.index) +
-        readToken(found[0], found[1], found[2], found.index);
+      markdown += text.slice(last, found.index) + readToken(found);
       last = tokens.lastIndex;
     }
     markdown += text.slice(last);

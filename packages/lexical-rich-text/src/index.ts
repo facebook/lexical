@@ -111,6 +111,7 @@ import {
   IS_APPLE_WEBKIT,
   IS_IOS,
   IS_SAFARI,
+  isDOMCapturingSelection,
   isDOMNode,
   isHTMLElement,
   KEY_ARROW_DOWN_COMMAND,
@@ -626,7 +627,11 @@ function $isTargetWithinDecorator(target: HTMLElement): boolean {
   const slot = isHTMLElement(target)
     ? target.closest('[data-lexical-slot]')
     : null;
-  return slot === null || $getNearestNodeFromDOMNode(slot) !== node;
+  return (
+    slot === null ||
+    $getNearestNodeFromDOMNode(slot) !== node ||
+    isDOMCapturingSelection(target, $getEditor())
+  );
 }
 
 function $isSelectionAtEndOfRoot(selection: RangeSelection) {

@@ -23,6 +23,7 @@ import {
   KEY_DELETE_COMMAND,
   type LexicalEditor,
   mountSlotContainer,
+  setDOMUnmanaged,
 } from 'lexical';
 import {assert, describe, expect, onTestFinished, test} from 'vitest';
 import {userEvent} from 'vitest/browser';
@@ -351,6 +352,26 @@ describe('Backspace and Delete inside a decorator-host slot (#9363)', () => {
         $getNodeByKey(fixture.quoteKey)?.getParentOrThrow().getIndent(),
       ).toBe(0);
     });
+  });
+
+  test('Backspace and Delete in a captured control inside a slot edit the control', async () => {
+    const fixture = mountEditor();
+    const slotContainer = fixture.editor
+      .getElementByKey(fixture.attributionKey)
+      ?.closest('[data-lexical-slot]');
+    assert(slotContainer instanceof HTMLElement, 'Expected a slot container');
+    const control = document.createElement('input');
+    control.value = 'abc';
+    setDOMUnmanaged(control, {captureSelection: true});
+    slotContainer.append(control);
+    placeCaretInSlot(fixture, fixture.attributionKey, 3);
+    await userEvent.keyboard('{Delete}');
+    expect(textOf(fixture, fixture.attributionKey)).toBe('Artur');
+    control.focus();
+    control.setSelectionRange(1, 1);
+    await userEvent.keyboard('{Backspace}{Delete}');
+    expect(control.value).toBe('c');
+    expect(textOf(fixture, fixture.attributionKey)).toBe('Artur');
   });
 
   test('Backspace and Delete in a native control of the host edit the control', async () => {

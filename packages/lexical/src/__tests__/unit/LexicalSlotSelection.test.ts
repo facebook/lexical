@@ -448,6 +448,46 @@ describe('named-slots: selection across a root slot', () => {
     );
   });
 
+  test('anchor in the body, focus dragged into a root slot placed after the body, clamps focus to the root end', () => {
+    using editor = buildRootSlotEditor();
+    const rootElement = editor.getRootElement();
+    const bodyTextDOM = editor.getElementByKey(keys.bodyText)?.firstChild;
+    const footnotesDOM = editor.getElementByKey(keys.footnotes);
+    const footnoteTextDOM = editor.getElementByKey(
+      keys.footnoteText,
+    )?.firstChild;
+    assert(rootElement && bodyTextDOM && footnotesDOM && footnoteTextDOM);
+    // Place the slot container after the body, as an app rendering footnotes
+    // at the bottom would.
+    let container: HTMLElement = footnotesDOM;
+    while (container.parentElement !== rootElement) {
+      assert(container.parentElement !== null);
+      container = container.parentElement;
+    }
+    rootElement.appendChild(container);
+    const domSelection = getDOMSelection(editor._window ?? window);
+    assert(domSelection !== null);
+    domSelection.setBaseAndExtent(bodyTextDOM, 1, footnoteTextDOM, 3);
+
+    editor.update(
+      () => {
+        const selection = $internalCreateRangeSelection(
+          $getSelection(),
+          domSelection,
+          editor,
+          {type: 'selectionchange'} as Event,
+        );
+        assert($isRangeSelection(selection));
+        const root = $getRoot();
+        expect(selection.anchor.key).toBe(keys.bodyText);
+        expect(selection.focus.key).toBe(root.getKey());
+        expect(selection.focus.offset).toBe(root.getChildrenSize());
+        expect(selection.getTextContent()).toBe('ody');
+      },
+      {discrete: true},
+    );
+  });
+
   test('a programmatic selection with anchor in the body, focus in a root slot, clamps focus to the root edge', () => {
     using editor = buildRootSlotEditor();
 
@@ -465,6 +505,88 @@ describe('named-slots: selection across a root slot', () => {
         expect(active.focus.key).toBe($getRoot().getKey());
         expect(active.focus.offset).toBe(0);
         expect(active.getTextContent()).toBe('B');
+      },
+      {discrete: true},
+    );
+  });
+});
+
+describe('named-slots: selection across nested slots', () => {
+  // root -> paragraph ("Body") + card paragraph; card slot 'title' (T) holds a
+  // heading paragraph whose slot 'inner' holds "Deep"; T itself hosts slot
+  // 'caption' holding "Caption".
+  const keys: Record<string, string> = {};
+  function buildNestedSlotEditor() {
+    return buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => {
+          const bodyText = $createTextNode('Body');
+          const card = $createParagraphNode();
+          const title = $createTestShadowRootNode();
+          const heading = $createParagraphNode().append(
+            $createTextNode('Heading'),
+          );
+          const deep = $createTestShadowRootNode();
+          const deepText = $createTextNode('Deep');
+          deep.append($createParagraphNode().append(deepText));
+          const caption = $createTestShadowRootNode();
+          const captionText = $createTextNode('Caption');
+          caption.append($createParagraphNode().append(captionText));
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append(bodyText), card);
+          title.append(heading);
+          $setSlot(card, 'title', title);
+          $setSlot(heading, 'inner', deep);
+          $setSlot(title, 'caption', caption);
+          keys.bodyText = bodyText.getKey();
+          keys.deep = deep.getKey();
+          keys.deepText = deepText.getKey();
+          keys.captionText = captionText.getKey();
+        },
+        name: '[nested-slot-selection]',
+        nodes: [TestShadowRootNode],
+      }),
+    );
+  }
+
+  test.each(['deepText', 'captionText'])(
+    'a programmatic selection from the body into nested slot %s pushes focus past the outer host',
+    focusKey => {
+      using editor = buildNestedSlotEditor();
+      editor.update(
+        () => {
+          const selection = $createRangeSelection();
+          selection.anchor.set(keys.bodyText, 1, 'text');
+          selection.focus.set(keys[focusKey], 2, 'text');
+          $setSelection(selection);
+
+          const active = $getSelection();
+          assert($isRangeSelection(active));
+          expect(active.anchor.key).toBe(keys.bodyText);
+          expect($slotFrameKeyOf(active.focus.getNode())).toBe(null);
+          expect(active.focus.key).toBe($getRoot().getKey());
+          expect(active.focus.offset).toBe(2);
+        },
+        {discrete: true},
+      );
+    },
+  );
+
+  test('a programmatic selection from a nested slot into the body clamps focus into the slot', () => {
+    using editor = buildNestedSlotEditor();
+    editor.update(
+      () => {
+        const selection = $createRangeSelection();
+        selection.anchor.set(keys.deepText, 1, 'text');
+        selection.focus.set(keys.bodyText, 1, 'text');
+        $setSelection(selection);
+
+        const active = $getSelection();
+        assert($isRangeSelection(active));
+        expect(active.anchor.key).toBe(keys.deepText);
+        expect(active.focus.key).toBe(keys.deep);
+        expect(active.focus.offset).toBe(0);
       },
       {discrete: true},
     );

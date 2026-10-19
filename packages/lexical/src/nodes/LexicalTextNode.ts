@@ -17,7 +17,7 @@ import type {ElementNode} from './LexicalElementNode';
 
 import invariant from '@lexical/internal/invariant';
 
-import {IS_APPLE_WEBKIT} from '../environment';
+import {IS_CHROME, IS_FIREFOX} from '../environment';
 import {
   COMPOSITION_SUFFIX,
   DETAIL_TYPE_TO_DETAIL,
@@ -313,19 +313,22 @@ function $setTextContent(
   if (nodeValue === text) {
     return;
   }
-  if (isComposing || !IS_APPLE_WEBKIT) {
+  if (isComposing || IS_FIREFOX || IS_CHROME) {
     // Write only the part of the text that changed. Chromium drops the
     // spellcheck markers an edit overlaps and keeps the rest, so assigning
     // nodeValue (an edit over the whole node) would clear every underline in
     // the node. Firefox takes this path to stop the underlines flickering.
-    // Apple WebKit keeps the full replacement: it doesn't drop a marker that
-    // an insertion lands inside, so a partial write could leave an underline
-    // on a word that is now spelled correctly.
+    // WebKit (Safari, every iOS browser, WebKitGTK) keeps the full
+    // replacement: it doesn't drop a marker that an insertion lands inside,
+    // so a partial write could leave an underline on a word that is now
+    // spelled correctly.
     const [index, remove, insert] = diffComposedText(nodeValue as string, text);
     if (remove !== 0) {
       textChild.deleteData(index, remove);
     }
-    textChild.insertData(index, insert);
+    if (insert !== '') {
+      textChild.insertData(index, insert);
+    }
   } else {
     textChild.nodeValue = text;
   }

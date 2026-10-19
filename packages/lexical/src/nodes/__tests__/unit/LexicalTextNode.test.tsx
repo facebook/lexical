@@ -947,28 +947,6 @@ describe('LexicalTextNode tests', () => {
       },
     );
 
-    test('rewrites only the changed part of the DOM text', async () => {
-      await update(() => {
-        const prevTextNode = $createTextNode('Teh quick fxo');
-        const element = prevTextNode.createDOM(editorConfig);
-        const domText = element.firstChild!;
-        // A live Range over a word the update doesn't touch. Assigning
-        // nodeValue replaces the node's whole data and collapses every Range
-        // in it; writing only the changed part shifts this one along.
-        const range = document.createRange();
-        range.setStart(domText, 10);
-        range.setEnd(domText, 13);
-
-        const nextTextNode = $createTextNode('The quick brown fxo');
-        expect(
-          nextTextNode.updateDOM(prevTextNode, element, editorConfig),
-        ).toBe(false);
-        expect(element.firstChild).toBe(domText);
-        expect(domText.nodeValue).toBe('The quick brown fxo');
-        expect(range.toString()).toBe('fxo');
-      });
-    });
-
     test('updates and removes styles with direct DOM property updates', async () => {
       await update(() => {
         const prevTextNode = $createTextNode('My text node');

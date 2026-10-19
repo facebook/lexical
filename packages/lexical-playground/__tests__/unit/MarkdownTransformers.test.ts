@@ -337,6 +337,7 @@ describe('playground TABLE markdown transformer', () => {
       CodeNode,
       CodeHighlightNode,
       EquationNode,
+      ImageNode,
       LinkNode,
       ListNode,
       ListItemNode,
@@ -765,6 +766,91 @@ describe('playground TABLE markdown transformer', () => {
         'a\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\nb',
       );
     });
+  });
+
+  it.each([
+    ['**c<br># d**', false],
+    ['[c<br># d](https://example.com)', true],
+  ])('keeps %j whole after an image with a <br> in its alt', (body, link) => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', `| ![a<br>b](image.png) ${body} |`].join('\n'),
+    );
+    editor.read(() => {
+      const paragraph = $getRoot().getLastDescendant()?.getParent();
+      assert($isElementNode(paragraph), 'The cell must hold the text');
+      const image = $getRoot()
+        .getLastChildOrThrow<ElementNode>()
+        .getAllTextNodes();
+      expect(image.slice(1).map(node => node.getTextContent())).toEqual([
+        ' ',
+        'c',
+        '# d',
+      ]);
+      if (link) {
+        assert($isLinkNode(paragraph), 'The text must be in a link');
+      } else {
+        expect(image.slice(2).every(node => node.hasFormat('bold'))).toBe(true);
+      }
+    });
+  });
+
+  it('keeps a <br> in an image alt as written', () => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', '| ![a<br>b](image.png) |'].join('\n'),
+    );
+    editor.read(() => {
+      const image = $getRoot().getLastDescendant();
+      assert($isImageNode(image), 'The cell must hold an image');
+      expect(image.getAltText()).toBe('a<br>b');
+    });
+  });
+
+  it('keeps a line break in an equation whatever spaces a cell holds', () => {
+    using editor = importMarkdown(
+      [
+        '| h |',
+        '| --- |',
+        '| $a<br>b$ %s |'.replace(
+          '%s',
+          '\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a',
+        ),
+      ].join('\n'),
+    );
+    editor.read(() => {
+      const equation = $getRoot()
+        .getLastChildOrThrow<ElementNode>()
+        .getLastDescendant()
+        ?.getPreviousSibling();
+      assert($isEquationNode(equation), 'The cell must hold an equation');
+      expect(equation.getEquation()).toBe('a\nb');
+    });
+  });
+
+  it.each([
+    ['````<br>a<br>````', 'a'],
+    ['````<br>a ``` b<br>````', 'a ``` b'],
+    ['````<br>```<br>x<br>````', '```\nx'],
+  ])('reads the code block %j with a long fence', (body, code) => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', `| ${body} |`].join('\n'),
+    );
+    editor.read(() => {
+      const cell = $getRoot()
+        .getLastChildOrThrow<ElementNode>()
+        .getLastChildOrThrow<ElementNode>()
+        .getFirstChildOrThrow<ElementNode>();
+      expect(cell.getChildren().map(block => block.getType())).toEqual([
+        'code',
+      ]);
+      expect(cell.getTextContent()).toBe(code);
+    });
+  });
+
+  it('keeps two code spans with a comment between them apart', () => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', '| `a`<!---->`b` |'].join('\n'),
+    );
+    expect(cellTexts(editor)).toEqual([[['h']], [['a<!---->b']]]);
   });
 
   it('round-trips a code block with a pipe and a blank line in a cell', () => {

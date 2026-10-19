@@ -438,15 +438,19 @@ function $getTableColumnsSize(table: TableNode) {
 
 // A line that starts a block, which a `<br>` before it ends a line for.
 const CELL_BLOCK_START_REG_EXP =
-  /^[ \t]*(?:<br|```|\$\$|#{1,6}\s|>|[-*+]\s|\d{1,9}[.)]\s)/i;
+  /[ \t]*(?:<br|```|\$\$|#{1,6}\s|>|[-*+]\s|\d{1,9}[.)]\s)/iy;
 
 // A line that opens with a code span of three or more backticks, which
 // would otherwise read as a code block.
-const CELL_CODE_SPAN_LINE_REG_EXP = /^[ \t]*`{3,}[^`]*`/;
+const CELL_CODE_SPAN_LINE_REG_EXP = /[ \t]*`{3,}(?!`)(?:(?!<br)[^`])*`/iy;
 
-// The spaces a cell's `<br>`s can be read as.
-const MARKS =
-  '\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a';
+// The spaces a cell's `<br>`s are read as where the cell has one free.
+const MARKS = '           ';
+
+function testAt(regExp: RegExp, text: string, index: number): boolean {
+  regExp.lastIndex = index;
+  return regExp.test(text);
+}
 
 const $createTableCell = (
   textContent: string,
@@ -454,66 +458,68 @@ const $createTableCell = (
 ): TableCellNode => {
   // GFM trims a cell's padding, which is only spaces and tabs.
   const text = textContent.replace(/^[ \t]+|[ \t]+$/g, '');
+  // The reader's marks are characters the cell doesn't have, written or as
+  // a reference, so they can't be mistaken for its text.
+  const refs = new Set(
+    Array.from(text.matchAll(/&#(\d+);/g), match => Number(match[1])),
+  );
+  const isFree = (char: string) =>
+    !text.includes(char) && !refs.has(char.charCodeAt(0));
+  let nextFree = 0xe000;
+  // The next free private-use character.
+  const free = (): string => {
+    for (; ; nextFree++) {
+      const char = String.fromCharCode(nextFree);
+      if (isFree(char)) {
+        nextFree++;
+        return char;
+      }
+    }
+  };
   // A `<br>` inside a paragraph is read as a space-like mark, so that
-  // formatting and links around it (`**a<br>b**`) stay whole, and the
-  // reader's marks become line breaks once the cell is read. It is a space
-  // the cell doesn't have, as a character or a reference, where there is
-  // one; marks of the cell's own are told apart by their order.
-  const mark =
-    [...MARKS].find(
-      c => !text.includes(c) && !RegExp(`&#0*${c.charCodeAt(0)};`).test(text),
-    ) ?? MARKS[0];
+  // formatting and links around it (`**a<br>b**`) stay whole, and the mark
+  // becomes a line break once the cell is read.
+  const mark = [...MARKS].find(isFree) ?? free();
+  // A guard keeps a line that opens with a code span from reading as a code
+  // block, and is dropped once the cell is read.
+  const guard = free();
   // The legacy `\n` separates a cell's lines where it has no `<br>`.
   const legacy = !/<br\s*\/?>/i.test(text);
   // Reads the cell with the `<br>`s at the offsets in `blocks` ending their
-  // paragraph. Returns the cell, each mark in it in source order as its
-  // offset and kind (0 for the cell's own, 1 for a line break, 2 for a
-  // guard to drop), and the offsets of the `<br>`s before text that starts
-  // a block.
+  // paragraph. Without `blocks`, each `<br>` before text that starts a block
+  // is read as a character of its own, returned with its offset.
   const $read = (
-    blocks: number[],
-  ): [TableCellNode, [number, number][], number[]] => {
-    const marks: [number, number][] = [];
-    for (let i = text.indexOf(mark); i !== -1; i = text.indexOf(mark, i + 1)) {
-      marks.push([i, 0]);
-    }
-    const candidates: number[] = [];
-    let fenced = false;
+    blocks?: number[],
+  ): [TableCellNode, [offset: number, char: string][]] => {
+    const candidates: [number, string][] = [];
+    let fence = '';
     let lineStart = 0;
-    // A guard mark keeps a line from reading as a code block.
-    const guard = (offset: number) =>
-      !fenced &&
-      CELL_CODE_SPAN_LINE_REG_EXP.test(text.slice(offset).split(/<br/i)[0])
-        ? (marks.push([offset - 0.5, 2]), mark)
+    const guardAt = (offset: number) =>
+      fence === '' && testAt(CELL_CODE_SPAN_LINE_REG_EXP, text, offset)
+        ? guard
         : '';
     const markdown =
-      guard(0) +
+      guardAt(0) +
       text.replace(
-        /\\[^]|(`{1,2})(?!`)[^]*?[^`]\1(?!`)(?:<!---->\1(?!`)[^]*?[^`]\1(?!`))*|(`{3,})(?!`)(?:(?!<br)[^])*?[^`]\2(?!`)(?:<!---->\2(?!`)(?:(?!<br)[^])*?[^`]\2(?!`))*|`+|&#(\d{1,7});|[ \t]*<br\s*\/?>[ \t]*/gi,
-        (
-          match: string,
-          short?: string,
-          long?: string,
-          digits?: string,
-          offset?: number,
-        ) => {
-          if (digits !== undefined) {
-            if (Number(digits) === mark.charCodeAt(0)) {
-              marks.push([offset!, 0]);
-            }
-            return match;
-          }
+        /\\[^]|(`{1,2})(?!`)[^]*?[^`]\1(?!`)(?:<!---->\1(?!`)[^]*?[^`]\1(?!`))*|(`{3,})(?!`)(?:(?!<br)[^])*?[^`]\2(?!`)(?:<!---->\2(?!`)(?:(?!<br)[^])*?[^`]\2(?!`))*|`+|[ \t]*<br\s*\/?>[ \t]*/gi,
+        (match: string, short?: string, long?: string, offset?: number) => {
           if (match[0] === '`') {
             const ticks = short ?? long;
-            // Code spans take no escapes but a pipe's, and a span split
-            // before an escaped pipe is joined again.
-            return ticks !== undefined
+            // Code spans take no escapes but a pipe's, and a span that
+            // export split before an escaped pipe is joined again.
+            return ticks === undefined
               ? match
-                  .replace(/`+<!---->`+/g, m =>
-                    m === `${ticks}<!---->${ticks}` ? '' : m,
+              : match
+                  .replace(
+                    /(\\*)(`+)<!---->(`+)\\\|/g,
+                    (split, backslashes: string, end: string, start: string) =>
+                      backslashes.length % 2 === 1 &&
+                      end === ticks &&
+                      start === ticks
+                        ? backslashes + '\\|'
+                        : split,
                   )
-                  .replace(/\\\|/g, '|')
-              : match;
+                  .replace(/\\\|/g, '|');
           }
           if (match[0] === '\\') {
             const char = match[1];
@@ -527,17 +533,33 @@ const $createTableCell = (
           // The whitespace a `<br>` is written with is padding too.
           const line = text.slice(lineStart, offset);
           lineStart = offset! + match.length;
-          const fenceLine = /^[ \t]*`{3,}[^`]*$/.test(line);
+          // A code block opens with a fence and closes with a line of at
+          // least as many backticks.
+          const fenceMatch = /^[ \t]*(`{3,})([^`]*)$/.exec(line);
+          const fenceLine =
+            fenceMatch !== null &&
+            (fence === '' ||
+              (fenceMatch[1].length >= fence.length &&
+                fenceMatch[2].trim() === ''));
           if (fenceLine) {
-            fenced = !fenced;
+            fence = fence === '' ? fenceMatch[1] : '';
           }
-          if (fenced || fenceLine || line === '' || blocks.includes(offset!)) {
-            return '\n' + guard(lineStart);
+          if (
+            fence !== '' ||
+            fenceLine ||
+            line === '' ||
+            (blocks !== undefined && blocks.includes(offset!))
+          ) {
+            return '\n' + guardAt(lineStart);
           }
-          if (CELL_BLOCK_START_REG_EXP.test(text.slice(lineStart))) {
-            candidates.push(offset!);
+          if (
+            blocks === undefined &&
+            testAt(CELL_BLOCK_START_REG_EXP, text, lineStart)
+          ) {
+            const char = free();
+            candidates.push([offset!, char]);
+            return char;
           }
-          marks.push([offset!, 1]);
           return mark;
         },
       );
@@ -547,74 +569,51 @@ const $createTableCell = (
       $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
         ...$generateNodesFromMarkdownString(markdown, transformers),
       ),
-      marks.sort((a, b) => a[0] - b[0]),
       candidates,
     ];
   };
-  // Calls `fn` with each mark's index, its node and its offset in the node,
-  // in document order.
-  const $eachMark = (
-    cell: TableCellNode,
-    fn: (index: number, node: LexicalNode, offset: number) => void,
-  ) => {
-    let index = 0;
-    for (const {node} of $dfsIterator(cell)) {
-      const nodeText = $isEquationNode(node)
-        ? node.getEquation()
-        : $isTextNode(node)
-          ? node.getTextContent()
-          : '';
-      for (
-        let i = nodeText.indexOf(mark);
-        i !== -1;
-        i = nodeText.indexOf(mark, i + 1)
-      ) {
-        fn(index++, node, i);
+  const [first, candidates] = $read();
+  let cell = first;
+  if (candidates.length > 0) {
+    // A `<br>` before text that starts a block ends the paragraph, unless
+    // formatting, a link, an equation or an image reads as spanning it.
+    const blocks = new Set<string>();
+    for (const node of cell.getAllTextNodes()) {
+      if (node.getFormat() === 0 && !node.getParentOrThrow().isInline()) {
+        for (const [, char] of candidates) {
+          if (node.getTextContent().includes(char)) {
+            blocks.add(char);
+          }
+        }
       }
     }
-  };
-  const read = $read([]);
-  const candidates = read[2];
-  let [cell, marks] = read;
-  // A `<br>` before text that starts a block ends the paragraph, unless
-  // formatting, a link or an equation reads as spanning it.
-  if (candidates.length > 0) {
-    const spanned: boolean[] = [];
-    $eachMark(cell, (index, node) => {
-      spanned[index] =
-        $isEquationNode(node) ||
-        ($isTextNode(node) &&
-          (node.getFormat() !== 0 || node.getParentOrThrow().isInline()));
-    });
-    const blocks = candidates.filter(
-      offset => !spanned[marks.findIndex(([o]) => o === offset)],
+    [cell] = $read(
+      candidates.flatMap(([offset, char]) =>
+        blocks.has(char) ? [offset] : [],
+      ),
     );
-    if (blocks.length > 0) {
-      [cell, marks] = $read(blocks);
-    }
   }
-  const pieces: [LexicalNode, number, number][] = [];
-  $eachMark(cell, (index, node, offset) => {
-    const kind = marks[index]?.[1];
-    if (kind) {
-      pieces.push([node, offset, kind]);
-    }
-  });
-  // Last first, so that each offset is still in its node.
-  for (const [node, offset, kind] of pieces.reverse()) {
+  for (const {node} of $dfsIterator(cell)) {
     if ($isEquationNode(node)) {
       // An inline equation holds its line breaks as newlines.
-      const equation = node.getEquation();
-      node.setEquation(
-        equation.slice(0, offset) +
-          (kind === 1 ? '\n' : '') +
-          equation.slice(offset + 1),
-      );
-    } else if ($isTextNode(node)) {
-      const piece = node.splitText(offset, offset + 1)[offset && 1];
-      if (kind === 1) {
+      node.setEquation(node.getEquation().split(mark).join('\n'));
+    } else if ($isImageNode(node)) {
+      node.setAltText(node.getAltText().split(mark).join('<br>'));
+    }
+  }
+  for (const node of cell.getAllTextNodes()) {
+    const nodeText = node.getTextContent();
+    const offsets: number[] = [];
+    for (let i = 0; i < nodeText.length; i++) {
+      if (nodeText[i] === mark || nodeText[i] === guard) {
+        offsets.push(i, i + 1);
+      }
+    }
+    for (const piece of offsets.length > 0 ? node.splitText(...offsets) : []) {
+      const pieceText = piece.getTextContent();
+      if (pieceText === mark) {
         piece.replace($createLineBreakNode());
-      } else {
+      } else if (pieceText === guard) {
         piece.remove();
       }
     }

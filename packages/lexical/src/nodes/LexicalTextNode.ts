@@ -318,10 +318,10 @@ function $setTextContent(
     // spellcheck markers an edit overlaps and keeps the rest, so assigning
     // nodeValue (an edit over the whole node) would clear every underline in
     // the node. Firefox takes this path to stop the underlines flickering.
-    // WebKit (Safari, every iOS browser, WebKitGTK) keeps the full
-    // replacement: it doesn't drop a marker that an insertion lands inside,
-    // so a partial write could leave an underline on a word that is now
-    // spelled correctly.
+    // Composition writes take this path in every engine. Otherwise WebKit
+    // (Safari, every iOS browser, WebKitGTK) keeps the full replacement: it
+    // doesn't drop a marker that an insertion lands inside, so a partial
+    // write could leave an underline on a word that is now spelled correctly.
     const [index, remove, insert] = diffComposedText(nodeValue as string, text);
     textChild.replaceData(index, remove, insert);
   } else {

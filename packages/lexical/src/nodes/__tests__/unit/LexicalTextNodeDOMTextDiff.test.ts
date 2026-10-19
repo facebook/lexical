@@ -26,6 +26,9 @@ import {
   vi,
 } from 'vitest';
 
+// Lexical's composition suffix outside Apple platforms.
+const COMPOSITION_SUFFIX = '\u200B';
+
 const env = vi.hoisted(() => ({IS_CHROME: false, IS_FIREFOX: false}));
 
 vi.mock('lexical/src/environment', async importOriginal => ({
@@ -85,7 +88,9 @@ function rangeAfterEdit(
   expect(editor.getRootElement()!.querySelector('span')!.firstChild).toBe(
     domText,
   );
-  expect(domText.nodeValue).toMatch(new RegExp(`^${nextText}`));
+  expect(domText.nodeValue).toBe(
+    composing ? nextText + COMPOSITION_SUFFIX : nextText,
+  );
   return range.toString();
 }
 

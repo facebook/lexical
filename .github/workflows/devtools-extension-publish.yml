@@ -22,15 +22,14 @@ on:
 
 permissions: {}
 
-concurrency:
-  # Manual and npm release calls must not publish to the stores concurrently.
-  group: devtools-extension-publish
-  cancel-in-progress: false
-
 jobs:
   release:
     if: github.repository_owner == 'facebook'
     runs-on: ubuntu-latest
+    concurrency:
+      # Manual and npm release calls must not publish to the stores concurrently.
+      group: devtools-extension-publish
+      cancel-in-progress: false
     permissions:
       contents: read
     steps:

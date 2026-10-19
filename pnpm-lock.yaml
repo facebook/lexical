@@ -20,7 +20,6 @@ overrides:
   tmp: '>=0.2.6'
   yjs: ^13.6.31
   qs: '>=6.15.2'
-  wxt>publish-browser-extension: 6.2.0
 
 importers:
 

@@ -67,7 +67,7 @@ Automation is pending, pls contact vladlen_fedosov@epam.com
 
 ### Chrome Web Store API v2 setup
 
-The publishing command explicitly selects API v2 and `DEFAULT_PUBLISH`: submit for review and publish after approval. WXT's submit CLI uses `publish-browser-extension@6.2.0`, selected by the scoped `wxt>publish-browser-extension` override in `pnpm-workspace.yaml`. The publisher requires Node 22 or newer; the workflow uses Node 24. Manual and automatic extension releases run only for the `facebook` repository owner and share one concurrency group without cancelling an in-progress run. Chrome and Firefox submissions are independent; one can succeed while the other fails.
+The publishing command explicitly selects API v2 and `DEFAULT_PUBLISH`: submit for review and publish after approval. WXT's submit CLI uses `publish-browser-extension@6.2.0`, resolved in `pnpm-lock.yaml` within WXT's supported dependency range. The publisher requires Node 22 or newer; the workflow uses Node 24. Manual and automatic extension releases run only for the `facebook` repository owner and share the `release` job's concurrency group without cancelling an in-progress run. Chrome and Firefox submissions are independent; one can succeed while the other fails.
 
 Before the first v2 release, a Chrome publisher administrator and the Google Cloud project owner must complete these steps manually. The marketplace contacts below are contact information, not confirmation of current ownership or access.
 

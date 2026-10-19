@@ -7,6 +7,7 @@
  */
 
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
+import {$convertSelectionToMarkdownString} from '@lexical/markdown';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   NodeContextMenuOption,
@@ -25,7 +26,13 @@ import {
 } from 'lexical';
 import {type JSX, useMemo} from 'react';
 
-export default function ContextMenuPlugin(): JSX.Element {
+import {PLAYGROUND_TRANSFORMERS} from '../MarkdownTransformers';
+
+export default function ContextMenuPlugin({
+  shouldPreserveNewLinesInMarkdown,
+}: {
+  shouldPreserveNewLinesInMarkdown: boolean;
+}): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
   const items = useMemo(() => {
@@ -56,6 +63,22 @@ export default function ContextMenuPlugin(): JSX.Element {
         },
         disabled: false,
         icon: <i className="PlaygroundEditorTheme__contextMenuItemIcon copy" />,
+      }),
+      new NodeContextMenuOption(`Copy as Markdown`, {
+        $onSelect: () => {
+          const markdown = $convertSelectionToMarkdownString(
+            PLAYGROUND_TRANSFORMERS,
+            $getSelection(),
+            shouldPreserveNewLinesInMarkdown,
+          );
+          if (markdown !== '') {
+            navigator.clipboard.writeText(markdown);
+          }
+        },
+        disabled: false,
+        icon: (
+          <i className="PlaygroundEditorTheme__contextMenuItemIcon markdown" />
+        ),
       }),
       new NodeContextMenuOption(`Paste`, {
         $onSelect: () => {
@@ -153,7 +176,7 @@ export default function ContextMenuPlugin(): JSX.Element {
         ),
       }),
     ];
-  }, [editor]);
+  }, [editor, shouldPreserveNewLinesInMarkdown]);
 
   return (
     <NodeContextMenuPlugin

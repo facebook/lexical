@@ -192,7 +192,11 @@ export default function Editor(): JSX.Element {
           />
         )}
         <div>{showTableOfContents && <TableOfContentsPlugin />}</div>
-        {shouldUseLexicalContextMenu && <ContextMenuPlugin />}
+        {shouldUseLexicalContextMenu && (
+          <ContextMenuPlugin
+            shouldPreserveNewLinesInMarkdown={shouldPreserveNewLinesInMarkdown}
+          />
+        )}
         <ActionsPlugin
           shouldPreserveNewLinesInMarkdown={shouldPreserveNewLinesInMarkdown}
           useCollabV2={useCollabV2}

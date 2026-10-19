@@ -21,6 +21,7 @@ import {
   DecoratorNode,
   ElementNode,
   KEY_DELETE_COMMAND,
+  KEY_DOWN_COMMAND,
   type LexicalEditor,
   mountSlotContainer,
   setDOMUnmanaged,
@@ -339,6 +340,32 @@ describe('Backspace and Delete inside a decorator-host slot (#9363)', () => {
       );
       placeCaretInSlot(fixture, fixture.attributionKey, offset);
       await userEvent.keyboard('{Delete}');
+      expect(textOf(fixture, fixture.attributionKey)).toBe(expected);
+      expect(textOf(fixture, fixture.quoteKey)).toBe(QUOTE);
+    },
+  );
+
+  // With Lexical's keydown handling skipped, word deletion is left to the
+  // browser and reaches Lexical as a beforeinput with a target range.
+  const WORD = /Mac|iPhone|iPad/.test(navigator.platform) ? 'Alt' : 'Control';
+  test.each([
+    ['Backspace', ATTRIBUTION.length, null],
+    ['Delete', 0, null],
+    ['Backspace', 0, ATTRIBUTION],
+    ['Delete', ATTRIBUTION.length, ATTRIBUTION],
+  ] as const)(
+    'an unprevented word %s at offset %i stays in the slot',
+    async (key, offset, expected) => {
+      const fixture = mountEditor();
+      onTestFinished(
+        fixture.editor.registerCommand(
+          KEY_DOWN_COMMAND,
+          () => true,
+          COMMAND_PRIORITY_HIGH,
+        ),
+      );
+      placeCaretInSlot(fixture, fixture.attributionKey, offset);
+      await userEvent.keyboard(`{${WORD}>}{${key}}{/${WORD}}`);
       expect(textOf(fixture, fixture.attributionKey)).toBe(expected);
       expect(textOf(fixture, fixture.quoteKey)).toBe(QUOTE);
     },

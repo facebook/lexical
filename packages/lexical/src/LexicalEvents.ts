@@ -110,6 +110,7 @@ import {
 } from './LexicalKeyboardShortcuts';
 import {createRefCountedRegistry} from './LexicalRefCountedRegistry';
 import {
+  $createPoint,
   $createRangeSelectionFromDom,
   $internalCreateRangeSelection,
   $internalRefreshSelectionFormatAndStyle,
@@ -1426,21 +1427,22 @@ function $handleBeforeInput(event: InputEvent): boolean {
     !$isRootNode(selection.anchor.getNode()) &&
     targetRange !== null
   ) {
-    const caret = selection.clone().anchor;
+    const {key, offset, type} = selection.anchor;
     selection.applyDOMRange(targetRange);
-    // A deletion's range must reach the caret from the side it deletes. At
-    // the end of a decorator-host slot Chromium's forward delete covers the
-    // line before the caret instead (#9363); measure that in the model.
-    const match = /^delete\w*(Forward|Backward)$/.exec(inputType);
-    if (match !== null) {
-      const [start, end] = selection.isBackward()
-        ? [selection.focus, selection.anchor]
-        : [selection.anchor, selection.focus];
+    // A deletion's range must not reach past the caret on the side it keeps.
+    // At the end of a decorator-host slot Chromium's forward delete covers
+    // the line before the caret instead (#9363); measure that in the model.
+    const isForward = inputType.endsWith('Forward');
+    if (isForward || inputType.endsWith('Backward')) {
+      const caret = $createPoint(key, offset, type);
+      const {anchor, focus} = selection;
       if (
-        match[1] === 'Forward' ? start.isBefore(caret) : caret.isBefore(end)
+        isForward
+          ? anchor.isBefore(caret) || focus.isBefore(caret)
+          : caret.isBefore(anchor) || caret.isBefore(focus)
       ) {
-        selection.anchor.set(caret.key, caret.offset, caret.type);
-        selection.focus.set(caret.key, caret.offset, caret.type);
+        anchor.set(key, offset, type);
+        focus.set(key, offset, type);
       }
     }
   }

@@ -446,10 +446,6 @@ const CELL_BLOCK_START_REG_EXP =
 // would otherwise read as a code block.
 const CELL_CODE_SPAN_LINE_REG_EXP = /[ \t]*`{3,}(?!`)(?:(?!<br)[^`])*`/iy;
 
-// The spaces a cell's `<br>`s are read as where the cell has one free.
-const MARKS =
-  '\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a';
-
 function testAt(regExp: RegExp, text: string, index: number): boolean {
   regExp.lastIndex = index;
   return regExp.test(text);
@@ -463,38 +459,30 @@ const $createTableCell = (
   const text = textContent.replace(/^[ \t]+|[ \t]+$/g, '');
   // The reader's marks are characters the cell doesn't have, written or as
   // a reference that reads as one, so they can't be mistaken for its text.
-  const refs = new Set<number>();
-  text.replace(/\\[^]|&#(\d{1,7});/g, (match, digits?: string) => {
-    if (digits !== undefined) {
-      refs.add(Number(digits));
-    }
-    return match;
-  });
-  const isFree = (char: string) =>
-    !text.includes(char) && !refs.has(char.codePointAt(0)!);
+  const refs = new Set(
+    Array.from(text.matchAll(/\\[^]|&#(\d{1,7});/g), ([, digits]) =>
+      Number(digits),
+    ),
+  );
   let nextFree = 0xe000;
-  // The next free private-use character, if one is left.
-  const free = (): string | undefined => {
-    for (; nextFree <= 0x10fffd; nextFree++) {
-      if (nextFree === 0xf900) {
-        nextFree = 0xf0000;
-      }
-      const char = String.fromCodePoint(nextFree);
-      if (isFree(char)) {
-        nextFree++;
-        return char;
-      }
+  // The next character the cell doesn't have, from the private-use ones.
+  const free = (): string => {
+    while (
+      text.includes(String.fromCodePoint(nextFree)) ||
+      refs.has(nextFree)
+    ) {
+      nextFree++;
     }
+    return String.fromCodePoint(nextFree++);
   };
-  // A `<br>` inside a paragraph is read as a space-like mark, so that
-  // formatting and links around it (`**a<br>b**`) stay whole, and the mark
-  // becomes a line break once the cell is read.
-  const mark = [...MARKS].find(isFree) ?? free();
-  // A private-use mark is read between spaces, as emphasis reads a space.
-  const spaced = mark !== undefined && !MARKS.includes(mark);
+  // A `<br>` inside a paragraph is read as a mark between spaces, which
+  // emphasis reads as a space, so that formatting and links around it
+  // (`**a<br>b**`) stay whole, and the mark becomes a line break once the
+  // cell is read.
+  const mark = free();
   // A guard keeps a line that opens with a code span from reading as a code
   // block, and is dropped once the cell is read.
-  const guard = free() ?? '';
+  const guard = free();
   // The legacy `\n` separates a cell's lines where it has no `<br>`.
   const legacy = !/<br\s*\/?>/i.test(text);
   // Reads the cell with the `<br>`s at the offsets in `blocks` ending their
@@ -570,24 +558,25 @@ const $createTableCell = (
       if (fenceLine) {
         fence = fence === '' ? fenceMatch[1] : '';
       }
-      let char: string | undefined;
+      const block =
+        line !== '' &&
+        fence === '' &&
+        !fenceLine &&
+        testAt(CELL_BLOCK_START_REG_EXP, text, lineStart);
       atLineStart =
-        mark === undefined ||
         fence !== '' ||
         fenceLine ||
         line === '' ||
-        (testAt(CELL_BLOCK_START_REG_EXP, text, lineStart) &&
-          (blocks === undefined
-            ? (char = free()) === undefined
-            : blocks.includes(offset)));
+        (block && blocks !== undefined && blocks.includes(offset));
       if (atLineStart) {
         return '\n' + guardAt(lineStart);
       }
-      if (char !== undefined) {
+      let char = mark;
+      if (block && blocks === undefined) {
+        char = free();
         candidates.push([offset, char]);
-        return ` ${char} `;
       }
-      return spaced ? ` ${mark} ` : mark!;
+      return ` ${char} `;
     };
     let markdown = guardAt(0);
     let last = 0;
@@ -635,18 +624,8 @@ const $createTableCell = (
       chars = '';
     }
   }
-  // The reader's marks, with the spaces a candidate was read between.
-  const marks = new RegExp(
-    [
-      guard,
-      spaced ? '' : mark,
-      (chars || spaced) && ` ?[${chars}${spaced ? mark : ''}] ?`,
-    ]
-      .filter(Boolean)
-      .join('|') || '$^',
-    'gu',
-  );
-  const isMark = new RegExp(`^(?:${marks.source})$`, 'u');
+  // The reader's marks, with the spaces they were read between.
+  const marks = new RegExp(`${guard}| ?[${mark}${chars}] ?`, 'gu');
   const restore = (value: string) => value.replace(marks, '<br>');
   const texts: TextNode[] = [];
   for (const {node} of $dfsIterator(cell)) {
@@ -671,10 +650,11 @@ const $createTableCell = (
       offsets.push(match.index!, match.index! + match[0].length);
     }
     for (const piece of offsets.length > 0 ? node.splitText(...offsets) : []) {
+      // Every mark in the text is a piece of its own.
       const pieceText = piece.getTextContent();
       if (pieceText === guard) {
         piece.remove();
-      } else if (isMark.test(pieceText)) {
+      } else if (pieceText.replace(marks, '') !== pieceText) {
         piece.replace($createLineBreakNode());
       }
     }

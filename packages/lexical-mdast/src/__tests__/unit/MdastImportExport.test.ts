@@ -1259,12 +1259,28 @@ describe('@lexical/mdast import/export', () => {
           ),
           '`l1`<br>`l2`',
         ],
+        [
+          exportCell(() =>
+            $createParagraphNode().append(
+              $createTextNode('c1\nc2').toggleFormat('code'),
+            ),
+          ),
+          '`c1`<br>`c2`',
+        ],
       ];
       for (const [out, expected] of cases) {
         expect(out.split('\n')).toHaveLength(3);
         expect(cellOf(out)).toBe(expected);
         expect(importExport(out, true)).toBe(out);
       }
+    });
+
+    it('writes a horizontal rule in a cell as <hr>', () => {
+      expect(
+        cellOf(
+          exportCell(text('a'), () => $createHorizontalRuleNode(), text('b')),
+        ),
+      ).toBe('a<br><hr><br>b');
     });
 
     it('reads <br> in a cell as a paragraph boundary', () => {

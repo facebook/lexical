@@ -917,6 +917,42 @@ describe('playground TABLE markdown transformer', () => {
     });
   });
 
+  it.each(['const x = `a\nb`;', '`a\nb`', '``a\nb``', 'x `a\n\nb` y'])(
+    'round-trips code block %j with backticks across lines',
+    code => {
+      const markdown = exportTable(() =>
+        $cellOf($createCodeNode('js').append($createTextNode(code))),
+      );
+      using imported = importMarkdown(markdown);
+      imported.read(() => {
+        const block = $getRoot().getLastDescendant()?.getParent();
+        assert($isCodeNode(block), 'The cell must hold a code block');
+        expect(block.getTextContent()).toBe(code);
+      });
+    },
+  );
+
+  it.each(['**(b)**', '*(b)*'])(
+    'keeps %j after a <br> whatever spaces the cell holds',
+    body => {
+      using editor = importMarkdown(
+        [
+          '| h |',
+          '| --- |',
+          `| a\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200ax<br>${body} |`,
+        ].join('\n'),
+      );
+      editor.read(() => {
+        const texts = $getRoot()
+          .getLastChildOrThrow<ElementNode>()
+          .getAllTextNodes();
+        const last = texts[texts.length - 1];
+        expect(last.getTextContent()).toBe('(b)');
+        expect(last.hasFormat(body[1] === '*' ? 'bold' : 'italic')).toBe(true);
+      });
+    },
+  );
+
   it('round-trips a code block with a pipe and a blank line in a cell', () => {
     const markdown = exportTable(() =>
       $cellOf($createCodeNode('js').append($createTextNode('a | b\n\nc'))),

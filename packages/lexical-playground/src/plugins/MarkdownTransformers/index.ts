@@ -490,6 +490,8 @@ const $createTableCell = (
   // formatting and links around it (`**a<br>b**`) stay whole, and the mark
   // becomes a line break once the cell is read.
   const mark = [...MARKS].find(isFree) ?? free();
+  // A private-use mark is read between spaces, as emphasis reads a space.
+  const spaced = mark !== undefined && !MARKS.includes(mark);
   // A guard keeps a line that opens with a code span from reading as a code
   // block, and is dropped once the cell is read.
   const guard = free() ?? '';
@@ -511,74 +513,91 @@ const $createTableCell = (
       fence === '' && testAt(CELL_CODE_SPAN_LINE_REG_EXP, text, offset)
         ? guard
         : '';
-    const markdown =
-      guardAt(0) +
-      text.replace(
-        /\\[^]|(`{1,2})(?!`)[^]*?[^`]\1(?!`)(?:<!---->\1(?!`)[^]*?[^`]\1(?!`))*|(`{3,})(?!`)(?:(?!<br)[^])*?[^`]\2(?!`)(?:<!---->\2(?!`)(?:(?!<br)[^])*?[^`]\2(?!`))*|`+|[ \t]*<br\s*\/?>[ \t]*/gi,
-        (match: string, short?: string, long?: string, offset?: number) => {
-          if (match[0] === '`') {
-            const ticks = short ?? long;
-            // Code spans take no escapes but a pipe's, and a span that
-            // export split before an escaped pipe is joined again.
-            return ticks === undefined
-              ? match
-              : match
-                  .replace(
-                    /(\\*)(`+)<!---->(`+)\\\|/g,
-                    (split, backslashes: string, end: string, start: string) =>
-                      backslashes.length % 2 === 1 &&
-                      end === ticks &&
-                      start === ticks
-                        ? backslashes + '\\|'
-                        : split,
-                  )
-                  .replace(/\\\|/g, '|');
-          }
-          if (match[0] === '\\') {
-            const char = match[1];
-            return char === '|' ||
-              (char === '<' && /^br\s*\/?>/i.test(text.slice(offset! + 2)))
-              ? char
-              : char === 'n' && legacy
-                ? '\n'
-                : match;
-          }
-          // The whitespace a `<br>` is written with is padding too.
-          const line = text.slice(lineStart, offset);
-          lineStart = offset! + match.length;
-          // A code block opens with a fence at the start of a line, and
-          // closes at a line of at least as many backticks.
-          const fenceMatch = atLineStart
-            ? /^[ \t]*(`{3,})([^`]*)$/.exec(line)
-            : null;
-          const fenceLine =
-            fenceMatch !== null &&
-            (fence === '' ||
-              (fenceMatch[1].length >= fence.length &&
-                fenceMatch[2].trim() === ''));
-          if (fenceLine) {
-            fence = fence === '' ? fenceMatch[1] : '';
-          }
-          let char: string | undefined;
-          atLineStart =
-            mark === undefined ||
-            fence !== '' ||
-            fenceLine ||
-            line === '' ||
-            (testAt(CELL_BLOCK_START_REG_EXP, text, lineStart) &&
-              (blocks === undefined
-                ? (char = free()) === undefined
-                : blocks.includes(offset!)));
-          if (atLineStart) {
-            return '\n' + guardAt(lineStart);
-          }
-          if (char !== undefined) {
-            candidates.push([offset!, char]);
-            return ` ${char} `;
-          }
-          return mark!;
-        },
-      );
+    const tokens =
+      /\\[^]|(`{1,2})(?!`)[^]*?[^`]\1(?!`)(?:<!---->\1(?!`)[^]*?[^`]\1(?!`))*|(`{3,})(?!`)(?:(?!<br)[^])*?[^`]\2(?!`)(?:<!---->\2(?!`)(?:(?!<br)[^])*?[^`]\2(?!`))*|`+|[ \t]*<br\s*\/?>[ \t]*/gi;
+    const readToken = (
+      match: string,
+      short: string | undefined,
+      long: string | undefined,
+      offset: number,
+    ): string => {
+      if (match[0] === '`' && fence !== '') {
+        // Fenced code has no code spans: only the backticks are read.
+        const ticks = /^`+/.exec(match)![0];
+        tokens.lastIndex = offset + ticks.length;
+        return ticks;
+      }
+      if (match[0] === '`') {
+        const ticks = short ?? long;
+        // Code spans take no escapes but a pipe's, and a span that
+        // export split before an escaped pipe is joined again.
+        return ticks === undefined
+          ? match
+          : match
+              .replace(
+                /(\\*)(`+)<!---->(`+)\\\|/g,
+                (split, backslashes: string, end: string, start: string) =>
+                  backslashes.length % 2 === 1 &&
+                  end === ticks &&
+                  start === ticks
+                    ? backslashes + '\\|'
+                    : split,
+              )
+              .replace(/\\\|/g, '|');
+      }
+      if (match[0] === '\\') {
+        const char = match[1];
+        return char === '|' ||
+          (char === '<' && /^br\s*\/?>/i.test(text.slice(offset + 2)))
+          ? char
+          : char === 'n' && legacy
+            ? '\n'
+            : match;
+      }
+      // The whitespace a `<br>` is written with is padding too.
+      const line = text.slice(lineStart, offset);
+      lineStart = offset + match.length;
+      // A code block opens with a fence at the start of a line, and
+      // closes at a line of at least as many backticks.
+      const fenceMatch = atLineStart
+        ? /^[ \t]*(`{3,})([^`]*)$/.exec(line)
+        : null;
+      const fenceLine =
+        fenceMatch !== null &&
+        (fence === '' ||
+          (fenceMatch[1].length >= fence.length &&
+            fenceMatch[2].trim() === ''));
+      if (fenceLine) {
+        fence = fence === '' ? fenceMatch[1] : '';
+      }
+      let char: string | undefined;
+      atLineStart =
+        mark === undefined ||
+        fence !== '' ||
+        fenceLine ||
+        line === '' ||
+        (testAt(CELL_BLOCK_START_REG_EXP, text, lineStart) &&
+          (blocks === undefined
+            ? (char = free()) === undefined
+            : blocks.includes(offset)));
+      if (atLineStart) {
+        return '\n' + guardAt(lineStart);
+      }
+      if (char !== undefined) {
+        candidates.push([offset, char]);
+        return ` ${char} `;
+      }
+      return spaced ? ` ${mark} ` : mark!;
+    };
+    let markdown = guardAt(0);
+    let last = 0;
+    for (let found; (found = tokens.exec(text)) !== null; ) {
+      markdown +=
+        text.slice(last, found.index) +
+        readToken(found[0], found[1], found[2], found.index);
+      last = tokens.lastIndex;
+    }
+    markdown += text.slice(last);
     // Generating the nodes, unlike converting into the cell, leaves the
     // selection alone.
     return [
@@ -618,7 +637,13 @@ const $createTableCell = (
   }
   // The reader's marks, with the spaces a candidate was read between.
   const marks = new RegExp(
-    [guard, mark, chars && ` ?[${chars}] ?`].filter(Boolean).join('|') || '$^',
+    [
+      guard,
+      spaced ? '' : mark,
+      (chars || spaced) && ` ?[${chars}${spaced ? mark : ''}] ?`,
+    ]
+      .filter(Boolean)
+      .join('|') || '$^',
     'gu',
   );
   const isMark = new RegExp(`^(?:${marks.source})$`, 'u');

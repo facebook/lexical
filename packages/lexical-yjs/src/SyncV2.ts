@@ -45,7 +45,6 @@ import {
   TextNode,
 } from 'lexical';
 import {
-  ContentFormat,
   ContentString,
   type Doc as YDoc,
   type ID,
@@ -857,26 +856,16 @@ const $computeChildEqualityFactor = (
   };
 };
 
-const ytextTrans = (
-  ytext: YText,
-): {nAttrs: Record<string, null>; str: string} => {
+const ytextTrans = (ytext: YText): {str: string} => {
   let str = '';
   let n = ytext._start;
-  const nAttrs: Record<string, null> = {};
   while (n !== null) {
-    if (!n.deleted) {
-      if (n.countable && n.content instanceof ContentString) {
-        str += n.content.str;
-      } else if (n.content instanceof ContentFormat) {
-        nAttrs[n.content.key] = null;
-      }
+    if (!n.deleted && n.countable && n.content instanceof ContentString) {
+      str += n.content.str;
     }
     n = n.right;
   }
-  return {
-    nAttrs,
-    str,
-  };
+  return {str};
 };
 
 const $updateYText = (
@@ -885,20 +874,17 @@ const $updateYText = (
   binding: BindingV2,
 ) => {
   binding.mapping.set(ytext, ltexts);
-  const {nAttrs, str} = ytextTrans(ytext);
+  const {str} = ytextTrans(ytext);
   const content = ltexts.map((node, i) => {
     const nodeType = node.getType();
-    let p: TextAttributes['p'] | null = propertiesToAttributes(node, binding);
-    if (Object.keys(p).length === 0) {
-      p = null;
-    }
+    const p = propertiesToAttributes(node, binding);
     return {
-      attributes: Object.assign({}, nAttrs, {
+      attributes: {
         ...(nodeType !== TextNode.getType() && {t: nodeType}),
-        p,
+        ...(Object.keys(p).length > 0 && {p}),
         ...stateToAttributes(node),
         ...(i > 0 && {i}), // Prevent Yjs from merging text nodes itself.
-      }),
+      },
       insert: node.getTextContent(),
       nodeKey: node.getKey(),
     };
@@ -927,9 +913,121 @@ const $updateYText = (
   );
   ytext.delete(index, remove);
   ytext.insert(index, insert);
-  ytext.applyDelta(
-    content.map(c => ({attributes: c.attributes, retain: c.insert.length})),
+  // A type that is not part of a document yet queues its edits, so it holds
+  // the plain text that was just inserted
+  const delta = diffTextAttributes(
+    ytext.doc === null ? [{insert: nextText}] : ytext.toDelta(),
+    content,
   );
+  if (delta.length > 0) {
+    ytext.applyDelta(delta);
+  }
+};
+
+/**
+ * The text attribute keys this binding writes (see TextAttributes). Any other
+ * key on a run belongs to someone else (e.g. a peer running a newer version)
+ * and is left alone rather than removed.
+ */
+const isBindingTextAttrKey = (key: string): boolean =>
+  key === 't' || key === 'p' || key === 'i' || key.startsWith(STATE_KEY_PREFIX);
+
+const equalAttrValues = (a: unknown, b: unknown): boolean => {
+  if (a === b) {
+    return true;
+  }
+  if (!isObject(a) || !isObject(b)) {
+    return false;
+  }
+  const keys = Object.keys(a);
+  return (
+    keys.length === Object.keys(b).length &&
+    keys.every(
+      key =>
+        Object.prototype.hasOwnProperty.call(b, key) &&
+        equalAttrValues(a[key], b[key]),
+    )
+  );
+};
+
+/**
+ * Computes the retain-only delta that turns the attributes `ytext` currently
+ * holds (`current`, from `ytext.toDelta()`) into the `desired` attributes of
+ * each run, where both describe the same text. Only the keys whose value
+ * differs are emitted, and only over the ranges where they differ. Keys the
+ * binding does not own are never removed.
+ *
+ * Re-asserting unchanged attributes is not a no-op in Yjs: formatting a range
+ * deletes the format markers inside it and inserts new ones at its edges. Done
+ * from a view that lacks a concurrent change (a peer's edit that has not
+ * arrived yet), the new markers survive the merge and resurrect attributes the
+ * peer removed, or extend them past the range the peer gave them.
+ */
+const diffTextAttributes = (
+  current: {insert: unknown; attributes?: Record<string, unknown>}[],
+  desired: {insert: string; attributes: Record<string, unknown>}[],
+): {retain: number; attributes?: Record<string, unknown>}[] => {
+  const delta: {retain: number; attributes?: Record<string, unknown>}[] = [];
+  let pendingRetain = 0;
+  let ci = 0;
+  let di = 0;
+  // Characters of current[ci] / desired[di] already consumed
+  let cOffset = 0;
+  let dOffset = 0;
+  while (ci < current.length && di < desired.length) {
+    const c = current[ci];
+    const d = desired[di];
+    const cLength = typeof c.insert === 'string' ? c.insert.length : 1;
+    const length = Math.min(cLength - cOffset, d.insert.length - dOffset);
+    const cAttrs = c.attributes ?? {};
+    const dAttrs = d.attributes;
+    const changed: Record<string, unknown> = {};
+    let hasChanges = false;
+    for (const key in cAttrs) {
+      if (
+        isBindingTextAttrKey(key) &&
+        !Object.prototype.hasOwnProperty.call(dAttrs, key)
+      ) {
+        changed[key] = null;
+        hasChanges = true;
+      }
+    }
+    for (const key in dAttrs) {
+      if (!equalAttrValues(cAttrs[key] ?? null, dAttrs[key] ?? null)) {
+        changed[key] = dAttrs[key] ?? null;
+        hasChanges = true;
+      }
+    }
+    if (length > 0) {
+      const last = delta[delta.length - 1];
+      if (!hasChanges) {
+        pendingRetain += length;
+      } else if (
+        pendingRetain === 0 &&
+        last !== undefined &&
+        equalAttrValues(last.attributes, changed)
+      ) {
+        last.retain += length;
+      } else {
+        if (pendingRetain > 0) {
+          delta.push({retain: pendingRetain});
+          pendingRetain = 0;
+        }
+        delta.push({attributes: changed, retain: length});
+      }
+    }
+    cOffset += length;
+    dOffset += length;
+    if (cOffset >= cLength) {
+      ci++;
+      cOffset = 0;
+    }
+    if (dOffset >= d.insert.length) {
+      di++;
+      dOffset = 0;
+    }
+  }
+  return delta;
 };
 
 const toDelta = (

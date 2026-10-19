@@ -461,8 +461,10 @@ export class ElementDOMSlot<
       // pair: remove the cached node wherever it is now, then whatever is
       // left of the line break in this element.
       lineBreak.remove();
+      // The spaces around `>` are needed by the selector engine of jsdom 26
+      // and older (nwsapi), which rejects `:scope>[attr]`.
       for (const node of element.querySelectorAll(
-        ':scope>[data-lexical-managed-linebreak]',
+        ':scope > [data-lexical-managed-linebreak]',
       )) {
         node.remove();
       }
@@ -482,7 +484,7 @@ export class ElementDOMSlot<
       if (
         lastNode &&
         lastNode ===
-          element.querySelector(':scope>br[data-lexical-managed-linebreak]')
+          element.querySelector(':scope > br[data-lexical-managed-linebreak]')
       ) {
         return;
       }

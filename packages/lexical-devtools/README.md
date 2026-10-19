@@ -49,70 +49,32 @@ BUILD_VERSION=0 pnpm run safari:archive
 PASSWORD="XXX" pnpm run safari:upload
 ```
 
-## Publishing flow
+## Publishing
 
-**Preconditions:**
+Production (`latest`) npm releases submit Chrome and Firefox extensions for review from the released commit, with build version `0`. Update store screenshots/videos before releases that change the UI.
 
-If new version of the extension contains big changes to it's UI or functionality, before proceeding, go to the web UI of every marketplace and update screenshots and preview videos.
+For extension-only releases or retries, run [Publish DevTools extension to stores](https://github.com/facebook/lexical/actions/workflows/devtools-extension-publish.yml) on the release tag. Increase "Build version" for repeated uploads of the same Lexical version (`<version>.<build_version>`), and wait for pending Chrome reviews to finish. Store submissions can fail independently; retry this workflow without republishing npm packages.
 
-**Chrome, Firefox:**
+Safari releases use the [manual archive/upload commands](#local-development).
 
-After a successful production npm release (`channel=latest`, with publishing enabled and dry-run disabled), the npm release workflow automatically calls the ["Publish DevTools extension to stores" workflow](https://github.com/facebook/lexical/actions/workflows/devtools-extension-publish.yml). It builds Chrome and Firefox from the exact commit used for npm, with "Build version" set to `0`. Nightly, `next`, and `dev` releases, version-only runs, dry runs, failed npm releases, and forks do not submit extensions.
+### Store credentials
 
-For an extension-only update or retry, start that workflow manually on the intended release tag or branch. Increase "Build version" if the same Lexical version has already been uploaded to either store. An extension submission failure fails the release workflow after npm has published; npm packages are not rolled back. Use the manual extension workflow to retry rather than republishing npm packages. Store review and approval still determine when an update becomes available.
+Enable the Chrome Web Store API in Google Cloud and [link a publishing service account](https://developer.chrome.com/docs/webstore/service-accounts) to the listing's publisher. Configure these repository settings:
 
-**Safari:**
+| Setting | Type | Value |
+| --- | --- | --- |
+| `EXTENSION_CHROME_EXTENSION_ID` | Secret | Listing's extension ID |
+| `EXTENSION_CHROME_PUBLISHER_ID` | Variable | **Publisher > Settings** in the [Developer Dashboard](https://chrome.google.com/webstore/devconsole) |
+| `EXTENSION_CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL` | Variable | Service account's `client_email` |
+| `EXTENSION_CHROME_SERVICE_ACCOUNT_PRIVATE_KEY` | Secret | Decoded `private_key` PEM with actual newlines, not the full JSON key |
 
-Automation is pending, pls contact vladlen_fedosov@epam.com
+Firefox requires repository secrets `EXTENSION_FIREFOX_EXTENSION_ID`, `EXTENSION_FIREFOX_JWT_ISSUER`, and `EXTENSION_FIREFOX_JWT_SECRET`.
 
-### Chrome Web Store API v2 setup
+Confirm Chrome visibility and rollout in the Developer Dashboard. Visibility changes require one manual publish before API publishing. `wxt submit --dry-run` contacts Google.
 
-The publishing command explicitly selects API v2 and `DEFAULT_PUBLISH`: submit for review and publish after approval. WXT's submit CLI uses `publish-browser-extension@6.2.0`, resolved in `pnpm-lock.yaml` within WXT's supported dependency range. The publisher requires Node 22 or newer; the workflow uses Node 24. Manual and automatic extension releases run only for the `facebook` repository owner and share the `release` job's concurrency group without cancelling an in-progress run. Chrome and Firefox submissions are independent; one can succeed while the other fails.
+### Marketplace access
 
-Before the first v2 release, a Chrome publisher administrator and the Google Cloud project owner must complete these steps manually. The marketplace contacts below are contact information, not confirmation of current ownership or access.
-
-1. Confirm the publisher that owns the existing Lexical DevTools listing and the existing `EXTENSION_CHROME_EXTENSION_ID`. Obtain its **publisher ID** from **Publisher > Settings** in the [Developer Dashboard](https://chrome.google.com/webstore/devconsole); the publisher ID is different from the extension ID.
-2. Enable the Chrome Web Store API in the intended Google Cloud project. Follow Google's [service account setup](https://developer.chrome.com/docs/webstore/service-accounts) to select or create a dedicated publishing service account. Google Cloud IAM access alone does not grant access to the store: a publisher administrator must link the service account email under **Account** in the Developer Dashboard. Google currently allows only one linked service account per publisher; confirm the existing configuration before changing it.
-3. Provision a service account JSON key through the owner's approved credential process. Set the repository variables and secrets below in the repository that will actually run the release. Store the decoded `private_key` field as the private-key secret, including the PEM header/footer and actual newlines (decode JSON's `\n` escapes before saving). Do not store the entire JSON file in that secret or commit it to the repository.
-4. Confirm the listing's existing visibility and rollout in the Developer Dashboard. API v2 preserves dashboard visibility and does not accept the old `default` / `trustedTesters` publish target. `DEFAULT_PUBLISH` controls when an approved revision is published, not its visibility. If visibility has changed, Google requires a manual publish with that visibility before API publishing can resume. This migration does not change visibility or rollout, cancel pending reviews, or skip review.
-5. Confirm that the four-part manifest version exceeds the current store version. "Build version" is an integer suffix, not a complete version (for example, use `1`, not `0.52.0`). Wait for any previous Chrome submission to finish review before uploading another version.
-
-| Repository setting | Kind | Publishing environment variable | Value |
-| --- | --- | --- | --- |
-| `EXTENSION_CHROME_EXTENSION_ID` | Existing secret | `CHROME_EXTENSION_ID` | Existing listing's extension ID |
-| `EXTENSION_CHROME_PUBLISHER_ID` | New variable | `CHROME_PUBLISHER_ID` | Publisher ID from the Developer Dashboard |
-| `EXTENSION_CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL` | New variable | `CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL` | Service account JSON's `client_email` |
-| `EXTENSION_CHROME_SERVICE_ACCOUNT_PRIVATE_KEY` | New secret | `CHROME_SERVICE_ACCOUNT_PRIVATE_KEY` | Service account JSON's `private_key` only |
-
-`EXTENSION_CHROME_CLIENT_ID`, `EXTENSION_CHROME_CLIENT_SECRET`, `EXTENSION_CHROME_REFRESH_TOKEN`, and `EXTENSION_CHROME_PUBLISH_TARGET` are no longer read by this workflow. No refresh-token regeneration is needed for this service-account path. Owners can assess retirement of the old secrets separately after the migration is verified. Firefox still uses the existing `EXTENSION_FIREFOX_EXTENSION_ID`, `EXTENSION_FIREFOX_JWT_ISSUER`, and `EXTENSION_FIREFOX_JWT_SECRET` secrets; Safari uses its existing flow.
-
-The npm release caller forwards repository/organization secrets through both reusable-workflow calls using `secrets: inherit`; the Chrome repository variables remain available to the called workflow. Configure these settings before the first production npm release that includes this automation. No additional token or credential is needed for the workflow calls.
-
-Offline validation and repository CI do not verify real credentials, publisher linkage, store review, or a live release. WXT's `submit --dry-run` **does contact Google to authenticate and fetch item status**; it is not an offline validation command. A permitted owner must perform that live access check separately before the first release. Do not dispatch the publishing workflow merely to check configuration: it uploads and submits to both stores.
-
-References: [v1.1 migration deadline (October 15, 2026)](https://developer.chrome.com/blog/cws-api-v2#migration-timeline), [official API setup and visibility rules](https://developer.chrome.com/docs/webstore/using-api), [v2 publishing semantics](https://developer.chrome.com/docs/webstore/api/reference/rest/v2/publishers.items/publish), and [locked publishing tool's configuration reference](https://github.com/aklinker1/publish-browser-extension/blob/v6.2.0/docs/config-reference.md).
-
-## Requesting maintainer access to extension marketplaces
-
-At this moment all marketplaces are governed by [EPAM Open Source Office](https://www.epam.com/open-source) (contact [Vladlen Fedosov](mailto:vladlen_fedosov@epam.com) or [Christopher Howard](mailto:christopher_howard@epam.com)) and the access request flow is the following:
-
-**Firefox:**
-
-1. Create Mozilla account: https://accounts.firefox.com/settings
-2. Enable two factor authentication for this account.
-3. Go to https://addons.mozilla.org/en-US/firefox/users/edit and set a "Display Name" for your account.
-4. Email to [Vladlen Fedosov](mailto:vladlen_fedosov@epam.com) and [Christopher Howard](mailto:christopher_howard@epam.com) with the request to add you as a maintainer to Firefox Add-Ons for Lexical Developer Tools extension. Pls include: Firefox account email; reasoning description.
-5. _[For Maintainer]_ Open [authors & license management page](https://addons.mozilla.org/en-US/developers/addon/lexical-developer-tools/ownership) and add new user email.
-
-**Chrome:**
-
-A publisher administrator can grant access using the [current publisher ownership controls](https://developer.chrome.com/docs/webstore/share-ownership). Please reach out to the marketplace contacts listed above to identify the current administrator if you need access to the listing. This publishing workflow also requires the service account linkage described above. Use the publishing flow described above to release new versions.
-
-**Safari:**
-
-Apple limits App Store Connect member accounts to have the same domain names. So at this moment please reach out to [Vladlen Fedosov](mailto:vladlen_fedosov@epam.com) and [Christopher Howard](mailto:christopher_howard@epam.com) if you need to do any changes to the extension listing. New version publishing flow is automation is coming soon.
-
-We consider creating new Apple Store Connect for `thelexical.onmicrosoft.com` AD, but it requires DUNS registered organization.
+Contact [Vladlen Fedosov](mailto:vladlen_fedosov@epam.com) or [Christopher Howard](mailto:christopher_howard@epam.com) at [EPAM Open Source Office](https://www.epam.com/open-source) for marketplace access. Chrome access requires a [publisher administrator](https://developer.chrome.com/docs/webstore/share-ownership). For Firefox, enable two-factor authentication, set a display name, and provide your Mozilla account email to an [existing maintainer](https://addons.mozilla.org/en-US/developers/addon/lexical-developer-tools/ownership).
 
 ## Design
 

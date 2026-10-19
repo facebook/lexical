@@ -103,12 +103,6 @@ export type MdastExtensionOutput = {
   readonly registry: CompiledMdast,
 };
 
-/** @deprecated Use MdastExtensionOutput instead. */
-export type MdastImportExtensionOutput = MdastExtensionOutput;
-
-/** @deprecated Use MdastExtensionOutput instead. */
-export type MdastExportExtensionOutput = MdastExtensionOutput;
-
 declare export function $convertFromMarkdownString(
   markdown: string,
   node?: ElementNode,
@@ -133,8 +127,6 @@ declare export function $convertSelectionToMarkdownString(
   selection?: BaseSelection | null,
 ): string;
 
-/** @deprecated Use MdastExtension instead. */
-declare export var MdastImportExtension: typeof MdastExtension;
 declare export var MdastExtension: LexicalExtension<
   MdastConfig,
   '@lexical/mdast/Mdast',
@@ -189,8 +181,6 @@ declare export var MdastAutolinkLiteralExtension: LexicalExtension<
   void,
   void,
 >;
-/** @deprecated Use MdastExtension instead. */
-declare export var MdastExportExtension: typeof MdastExtension;
 declare export var MdastStrikethroughExtension: LexicalExtension<
   ExtensionConfigBase,
   '@lexical/mdast/Strikethrough',

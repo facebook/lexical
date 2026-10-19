@@ -843,10 +843,14 @@ export function $setSelection(selection: null | BaseSelection): void {
   editorState._selection = selection;
 }
 
-export function $flushMutations(): void {
+/**
+ * @param rerenderText Render the text that the browser changed from the
+ * editor state, as the editor applied the input that changed it itself.
+ */
+export function $flushMutations(rerenderText?: boolean): void {
   errorOnReadOnly();
   const editor = getActiveEditor();
-  flushRootMutations(editor);
+  flushRootMutations(editor, rerenderText);
 }
 
 export function $getNodeFromDOM(dom: Node): null | LexicalNode {
@@ -896,7 +900,23 @@ export function getEditorsToPropagate(editor: LexicalEditor): LexicalEditor[] {
   return editorsToPropagate;
 }
 
+let serverUIDCounter = 0;
+
+/**
+ * Generates the identifiers `createEditor` uses for an editor's key and its
+ * default namespace.
+ *
+ * In a browser they are random, because both are compared across windows: a
+ * drag marker carries the source editor's key, and a clipboard payload carries
+ * its namespace. Without a DOM (server rendering) a counter is used instead,
+ * which is unique within the process: neither value is serialized into
+ * rendered markup, and frameworks such as Next.js fail a prerender that reads
+ * `Math.random()` (#9318).
+ */
 export function createUID(): string {
+  if (!CAN_USE_DOM) {
+    return `s${(++serverUIDCounter).toString(36)}`;
+  }
   return Math.random()
     .toString(36)
     .replace(/[^a-z]+/g, '')

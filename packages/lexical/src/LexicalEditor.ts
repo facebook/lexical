@@ -39,6 +39,7 @@ import {
   addRootElementEvents,
   registerDefaultCommandHandlers,
   removeRootElementEvents,
+  restoreInputModeIOS,
 } from './LexicalEvents';
 import {GenMap} from './LexicalGenMap';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
@@ -57,6 +58,7 @@ import {
   $commitPendingUpdates,
   $fullReconcile,
   internalGetActiveEditor,
+  isDispatchingCommitListeners,
   parseEditorState,
   triggerListeners,
   updateEditor,
@@ -162,7 +164,10 @@ export type EditorSetOptions = {
  *
  * - `'force-commit'` (the default) flushes any pending updates immediately
  *   before the read, so it always observes a fully committed and reconciled
- *   state.
+ *   state. The exception is a read while the editor is notifying listeners of
+ *   a commit: pending updates then commit after those listeners have run, so
+ *   that every listener observes commits in order, and the read observes the
+ *   state being committed.
  * - `'pending'` reads the pending state if it exists, otherwise the committed
  *   state, without flushing. This is safe to call when an update may already
  *   be in progress at the cost of possibly observing an uncommitted state
@@ -302,6 +307,22 @@ export interface InputState {
     focusOffset: number;
   };
   isSelectionChangeFromMouseDown: boolean;
+  /** A mouse press that may start a selection drag, then its latest move. */
+  mouseDrag: MouseEvent | null;
+  /**
+   * The pointerType of the latest pointerdown in the root element ('touch',
+   * 'pen' or 'mouse'; '' until the first), on every platform. The
+   * compatibility mousedown and click that follow a tap on iOS tell it from an
+   * iPadOS trackpad or mouse press by it, and a mousedown starts a mouseDrag
+   * only after a 'mouse' one.
+   */
+  lastPointerType: '' | PointerEvent['pointerType'];
+  /**
+   * iOS only. The root element's own `inputmode` attribute (null when it had
+   * none), saved while Lexical holds it at "none" after a tap on a decorator
+   * focused the editor; undefined otherwise.
+   */
+  savedInputMode: string | null | undefined;
   isInsertLineBreak: boolean;
   /** Explicit Shift state, excluding iOS automatic capitalization. */
   isShiftKeyDown: boolean;
@@ -333,7 +354,10 @@ export function createInputState(): InputState {
     lastBeforeInputInsertTextTimeStamp: 0,
     lastKeyCode: null,
     lastKeyDownTimeStamp: 0,
+    lastPointerType: '',
+    mouseDrag: null,
     postDeleteSelectionToRestore: null,
+    savedInputMode: undefined,
     selectionChangeFromDOMUpdatePoints: null,
     unprocessedBeforeInputData: null,
   };
@@ -833,6 +857,9 @@ export function resetEditor(
   if (editor._inputState.handledSelectionCommandTimeoutId !== null) {
     clearTimeout(editor._inputState.handledSelectionCommandTimeoutId);
   }
+  if (prevRootElement !== null) {
+    restoreInputModeIOS(editor, prevRootElement);
+  }
   editor._inputState = createInputState();
 
   const observer = editor._observer;
@@ -1145,6 +1172,11 @@ export class LexicalEditor {
 
   /** @internal */
   _headless: boolean;
+  /**
+   * @internal Enabled by the v1 Yjs binding to distinguish moved nodes from
+   * shifted siblings. Once enabled, persists for the lifetime of this editor.
+   */
+  _recordNodeMoves: boolean;
   /** @internal */
   _parentEditor: null | LexicalEditor;
   /** @internal */
@@ -1288,6 +1320,7 @@ export class LexicalEditor {
     this._htmlConversions = htmlConversions;
     this._editable = editable;
     this._headless = parentEditor !== null && parentEditor._headless;
+    this._recordNodeMoves = false;
     this._window = null;
     this._blockCursorElement = null;
     this._slotsUsed = false;
@@ -1899,7 +1932,19 @@ export class LexicalEditor {
     const [mode, callbackFn]: [EditorReadMode, () => T] =
       args.length === 1 ? ['force-commit', args[0]] : args;
     if (mode === 'force-commit') {
-      $commitPendingUpdates(this);
+      if (!isDispatchingCommitListeners(this)) {
+        $commitPendingUpdates(this);
+      } else if (__DEV__ && this._pendingEditorState !== null) {
+        console.warn(
+          `editor.read() was called while the editor was notifying listeners ` +
+            `of a commit, and a listener had started another update. That ` +
+            `update was not committed early, so that listeners observe ` +
+            `commits in order, and the read observed the state being ` +
+            `committed. Inside listeners, read with ` +
+            `editor.getEditorState().read(fn, {editor}) or ` +
+            `editor.read('latest', fn) instead.`,
+        );
+      }
     }
     // 'pending' observes an in-progress or queued update without flushing it;
     // 'force-commit' and 'latest' read the committed (reconciled) state.

@@ -6,12 +6,7 @@
  *
  */
 
-import {
-  $isCodeNode,
-  CodeExtension,
-  CodeImportExtension,
-  type CodeNode,
-} from '@lexical/code-core';
+import {$isCodeNode, CodeExtension, type CodeNode} from '@lexical/code-core';
 import {
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
@@ -201,21 +196,6 @@ describe('CodeImportExtension', () => {
         !$isCodeNode(root.getFirstChild()),
         'plain table should not become a CodeNode',
       );
-    });
-  });
-
-  test('deprecated CodeImportExtension alias still imports <pre>', () => {
-    using editor = buildEditorFromExtensions(
-      defineExtension({
-        dependencies: [CodeImportExtension],
-        name: 'code-alias-host',
-      }),
-    );
-    importInto(editor, '<pre data-language="ts">const x = 1;</pre>');
-    editor.read(() => {
-      const node = $getRoot().getFirstChild();
-      assert($isCodeNode(node), 'expected CodeNode');
-      expect(node.getLanguage()).toBe('ts');
     });
   });
 });

@@ -197,11 +197,6 @@ export interface MdastExtensionOutput {
   readonly registry: CompiledMdast;
 }
 
-/**
- * @deprecated Use {@link MdastExtensionOutput} instead.
- */
-export type MdastImportExtensionOutput = MdastExtensionOutput;
-
 // The baseline rules that need no node packages: paragraphs and inline text
 // formatting (CommonMark handles these without any micromark extension).
 const CORE_IMPORT_RULES: readonly MdastImportRule[] = [
@@ -321,11 +316,6 @@ export const MdastExtension = defineExtension<
   },
   name: '@lexical/mdast/Mdast',
 });
-
-/**
- * @deprecated Use {@link MdastExtension} instead.
- */
-export const MdastImportExtension = MdastExtension;
 
 /**
  * ATX (`# …`) and setext headings, shipping {@link HeadingNode}.

@@ -290,7 +290,10 @@ Which state you see depends on how you read it:
 - `editor.read('force-commit', fn)` first commits any pending updates, so it
   always sees a consistent, reconciled state. Do not call it inside an update.
   `editor.read(fn)` with no mode does the same thing, and is kept for
-  convenience and backwards compatibility.
+  convenience and backwards compatibility. Inside a mutation or update
+  listener it does not commit an update that another listener started (that
+  update commits after the listeners have run, so they observe commits in
+  order); use `editor.read('latest', fn)` there.
 - `editor.read('latest', fn)` reads the most recently reconciled state without
   committing anything, so pending changes are not visible.
 - `editorState.read(fn, {editor})` reads one particular snapshot, such as the

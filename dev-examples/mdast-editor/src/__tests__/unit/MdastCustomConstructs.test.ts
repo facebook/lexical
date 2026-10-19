@@ -21,7 +21,7 @@ import {
   $convertSelectionToMarkdownString,
   $convertToMarkdownString,
   MdastCommonMarkExtension,
-  MdastExportExtension,
+  MdastExtension,
   MdastGfmExtension,
 } from '@lexical/mdast';
 import {$isQuoteNode, RichTextExtension} from '@lexical/rich-text';
@@ -78,7 +78,7 @@ function createEditor(): LexicalEditorWithDispose {
       dependencies: [
         MdastCommonMarkExtension,
         MdastGfmExtension,
-        MdastExportExtension,
+        MdastExtension,
         MdastCollapsibleExtension,
         MdastKbdExtension,
         MdastAlertExtension,

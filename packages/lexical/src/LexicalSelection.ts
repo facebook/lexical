@@ -101,6 +101,7 @@ import {
   getActiveElement,
   getActiveElementDeep,
   getCaretRect,
+  getComposedEventTarget,
   getComposedStaticRange,
   getDOMSelection,
   getDOMSelectionPoints,
@@ -112,6 +113,7 @@ import {
   INTERNAL_$isBlock,
   isDOMCapturingSelection,
   isDOMDocumentNode,
+  isDOMNode,
   isDOMShadowRoot,
   isDOMTextNode,
   isHTMLElement,
@@ -2489,7 +2491,7 @@ function $shrinkSelectionToRoot(
  * boundary, and the `[original .. landed]` range is constructed in the
  * model only. `applyDOMRange` reads just the range's boundary points (it
  * never touches the DOM selection), giving the same point resolution,
- * decorator pre/post handling, shadow-root shrink validation and
+ * decorator endpoint normalization, shadow-root shrink validation and
  * anchor/focus orientation as a native selection extension would, while
  * the DOM selection is only ever collapsed.
  *
@@ -2680,15 +2682,6 @@ function $extendSelectionForDeletion(
     // applyDOMRange set anchor = range start (the landed point); the deletion
     // anchor must stay at the original caret, so restore that orientation.
     $swapPoints(selection);
-  }
-  if (granularity === 'lineboundary') {
-    $modifySelectionAroundDecoratorsAndBlocks(
-      selection,
-      'extend',
-      isBackward,
-      granularity,
-      'decorators',
-    );
   }
 }
 
@@ -2904,7 +2897,7 @@ function shouldResolveAncestor(
   );
 }
 
-function $internalResolveSelectionPoint(
+export function $internalResolveSelectionPoint(
   dom: Node,
   offset: number,
   lastPoint: null | PointType,
@@ -3495,15 +3488,21 @@ export function $createRangeSelectionFromDom(
   return $internalCreateRangeSelection(null, domSelection, editor, null);
 }
 
-// Keys whose keydown handlers move the caret or edit at it themselves.
+// Keys whose keydown handlers move the caret or edit at it themselves. Their
+// shortcuts with Control or Meta do too (Control+H deletes backward on Apple
+// platforms, Control or Meta+B formats), as can a paste, cut or copy that
+// follows the keydown, so a keydown with either modifier counts as well.
 const SELECTION_KEYS = /* @__PURE__ */ new Set([
+  ' ',
   'ArrowDown',
   'ArrowLeft',
   'ArrowRight',
   'ArrowUp',
   'Backspace',
   'Delete',
+  'End',
   'Enter',
+  'Home',
   'Tab',
 ]);
 
@@ -3537,10 +3536,18 @@ export function $internalCreateRangeSelection(
   // Chromium coalesces selectionchange events, so a caret move made natively
   // by one arrow key can still be unreported when the next keydown arrives
   // (key repeat, or a busy main thread). Reading the DOM here keeps that
-  // keydown from acting on the caret from before the native move.
+  // keydown from acting on the caret from before the native move. Only a
+  // keydown sent to this editor can follow such a move in it: a shortcut
+  // handled elsewhere (a toolbar, a dialog, a global hotkey) that updates
+  // this editor acts at the editor's own selection, not at a DOM selection
+  // left behind in its root.
+  const keyDown = eventType === 'keydown' && (windowEvent as KeyboardEvent);
+  const target = keyDown && getComposedEventTarget(keyDown);
   const isSelectionKeyDown =
-    eventType === 'keydown' &&
-    SELECTION_KEYS.has((windowEvent as KeyboardEvent).key);
+    keyDown &&
+    (keyDown.ctrlKey || keyDown.metaKey || SELECTION_KEYS.has(keyDown.key)) &&
+    isDOMNode(target) &&
+    getNearestEditorFromDOMNode(target) === editor;
   const useDOMSelection =
     !getIsProcessingMutations() &&
     (isSelectionChange ||
@@ -3626,7 +3633,7 @@ export function $internalCreateRangeSelection(
  * there discards a format armed with Cmd+B on the way through Enter,
  * Shift+Enter and paste.
  */
-function $internalRefreshSelectionFormatAndStyle(
+export function $internalRefreshSelectionFormatAndStyle(
   selection: RangeSelection,
   previousAnchorKey: NodeKey,
 ): void {
@@ -3859,7 +3866,14 @@ function setDOMSelectionBaseAndExtent(
   }
 }
 
-function $getElementAndOffsetForPoint(
+/**
+ * @internal
+ *
+ * The DOM element and offset for a point at `offset` in `node`: in an
+ * element's DOM slot, counting the DOM the editor renders ahead of its
+ * children, or in the keyed DOM of any other node.
+ */
+export function $getElementAndOffsetForPoint(
   editor: LexicalEditor,
   node: LexicalNode,
   offset: number,
@@ -4030,7 +4044,10 @@ export function $updateDOMSelection(
       editor,
       nextFormat,
       nextStyle,
-      nextAnchorOffset,
+      // The Lexical offset, which onSelectionChange compares, rather than
+      // the DOM one, which also counts the DOM the editor renders between
+      // an element's children.
+      anchor.offset,
       anchor.key,
       performance.now(),
     );

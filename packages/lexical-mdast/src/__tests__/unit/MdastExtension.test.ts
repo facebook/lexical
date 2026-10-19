@@ -30,20 +30,13 @@ import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
   MdastCommonMarkExtension,
-  MdastExportExtension,
   MdastExtension,
   MdastHeadingExtension,
-  MdastImportExtension,
   MdastListExtension,
   MdastShortcutsExtension,
 } from '../../index';
 
 describe('@lexical/mdast extensions', () => {
-  it('keeps both deprecated extensions as aliases of MdastExtension', () => {
-    expect(MdastImportExtension).toBe(MdastExtension);
-    expect(MdastExportExtension).toBe(MdastExtension);
-  });
-
   it('configures import and export through MdastExtension', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
@@ -56,7 +49,6 @@ describe('@lexical/mdast extensions', () => {
               },
             ],
           }),
-          MdastImportExtension,
         ],
         name: '[root]',
       }),
@@ -76,7 +68,7 @@ describe('@lexical/mdast extensions', () => {
   it('feature extensions ship the nodes their rules need', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
-        dependencies: [MdastCommonMarkExtension, MdastExportExtension],
+        dependencies: [MdastCommonMarkExtension, MdastExtension],
         name: '[root]',
       }),
     );
@@ -96,21 +88,19 @@ describe('@lexical/mdast extensions', () => {
   it('exposes the Markdown API through extension outputs', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
-        dependencies: [MdastCommonMarkExtension, MdastExportExtension],
+        dependencies: [MdastCommonMarkExtension, MdastExtension],
         name: '[root]',
       }),
     );
     editor.update(
       () => {
-        $getExtensionOutput(MdastImportExtension).$convertFromMarkdownString(
-          '## Hi',
-        );
+        $getExtensionOutput(MdastExtension).$convertFromMarkdownString('## Hi');
       },
       {discrete: true},
     );
     expect(
       editor.read(() =>
-        $getExtensionOutput(MdastExportExtension).$convertToMarkdownString(),
+        $getExtensionOutput(MdastExtension).$convertToMarkdownString(),
       ),
     ).toBe('## Hi');
   });

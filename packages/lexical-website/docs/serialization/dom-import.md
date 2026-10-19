@@ -98,11 +98,6 @@ editor actually routes HTML through the pipeline (the legacy paste
 path is unchanged), and an extension's rules merge above its
 dependencies' rules, so app-registered rules still win dispatch.
 
-The standalone `RichTextImportExtension` / `ListImportExtension` /
-`LinkImportExtension` / `TableImportExtension` / `CodeImportExtension`
-/ `HorizontalRuleImportExtension` bundles from earlier versions still
-exist as deprecated aliases for the corresponding runtime extensions.
-
 :::tip
 
 The legacy entry `$generateNodesFromDOM(editor, dom)` and the new
@@ -962,6 +957,15 @@ export interface ClipboardImportConfig {
   lower runs first). Composable: each extension contributes weights
   for its own MIME types without coordinating with others.
 
+`$next(data?, selection?)` can replace the data, selection, or both for the
+remaining handlers in the same MIME-type stack. Omitted arguments retain
+the values received by the current handler, so `$next()`
+is equivalent to `$next(data, selection)`. For example, `$next(cleanedData)`
+changes only the data, and `$next(data, otherSelection)` changes only
+the selection. An empty string is forwarded as-is; it does not automatically
+fall back to another MIME type. These replacements do not modify the original
+`DataTransfer` or the arguments used when trying another MIME type.
+
 ```ts
 configExtension(ClipboardImportExtension, {
   $importMimeType: {
@@ -1002,44 +1006,45 @@ defineExtension({
 });
 ```
 
-If you need to customize the per-MIME stack (e.g. inspect the HTML
-before walking, or pre-strip a known wrapper), stack your own handler
-manually via `configExtension(ClipboardImportExtension, …)` instead:
+Apps that don't configure `ClipboardImportExtension` keep the legacy
+behavior — `$insertDataTransferForRichText` falls back to the same
+defaults the legacy code path uses, including the legacy
+`$generateNodesFromDOM` for HTML.
+
+### Transforming pasted HTML
+
+:::tip
+
+Use HTML transforms when integrating libraries that accept and return HTML
+strings. For DOM-based normalization, prefer a [DOM import preprocessor](#preprocessors).
+It works directly on the parsed DOM, avoiding an extra serialization and parse.
+See [`WordListImportExtension`](#walk-wide-overlays-installed-by-a-preprocessor)
+and [`$inlineStylesFromStyleSheets`](#inlinestylesfromstylesheets) for examples.
+
+:::
+
+Use extension dependencies to enforce handler ordering. A transform's
+configuration is applied after its dependencies, so its handler runs first.
+
+**To use `ClipboardDOMImportExtension`**, declare it as a dependency of your
+transform extension:
 
 ```ts
-import {$getEditor, configExtension, defineExtension} from 'lexical';
 import {
+  ClipboardDOMImportExtension,
   ClipboardImportExtension,
-  $insertGeneratedNodes,
 } from '@lexical/clipboard';
-import {
-  $generateNodesFromDOMViaExtension,
-  contextValue,
-  CoreImportExtension,
-  DOMImportExtension,
-  ImportSource,
-  ImportSourceDataTransfer,
-} from '@lexical/html';
+import {configExtension, defineExtension} from 'lexical';
+import {normalizePastedHTML} from './normalizePastedHTML';
 
-defineExtension({
-  name: 'app',
+const TransformPastedHTMLExtension = defineExtension({
+  name: 'app/TransformPastedHTML',
   dependencies: [
-    CoreImportExtension,
+    ClipboardDOMImportExtension,
     configExtension(ClipboardImportExtension, {
       $importMimeType: {
         'text/html': [
-          (html, selection, _$next, dataTransfer) => {
-            const parser = new DOMParser();
-            const dom = parser.parseFromString(html, 'text/html');
-            const nodes = $generateNodesFromDOMViaExtension(dom, {
-              context: [
-                contextValue(ImportSource, 'paste'),
-                contextValue(ImportSourceDataTransfer, dataTransfer),
-              ],
-            });
-            $insertGeneratedNodes($getEditor(), nodes, selection);
-            return true;
-          },
+          (html, _selection, $next) => $next(normalizePastedHTML(html)),
         ],
       },
     }),
@@ -1047,16 +1052,51 @@ defineExtension({
 });
 ```
 
-Apps that don't configure `ClipboardImportExtension` keep the legacy
-behavior — `$insertDataTransferForRichText` falls back to the same
-defaults the legacy code path uses, including the legacy
-`$generateNodesFromDOM` for HTML.
+Add `TransformPastedHTMLExtension` to your root dependencies. This includes
+`ClipboardDOMImportExtension` and guarantees that the transform runs before
+its HTML importer, passing the transformed HTML to it through `$next`.
+
+**To support either importer**, declare `ClipboardDOMImportExtension` as an
+optional peer dependency:
+
+```ts
+import {
+  type ClipboardDOMImportExtension,
+  ClipboardImportExtension,
+} from '@lexical/clipboard';
+import {configExtension, declarePeerDependency, defineExtension} from 'lexical';
+import {normalizePastedHTML} from './normalizePastedHTML';
+
+const TransformPastedHTMLForEitherImporterExtension = defineExtension({
+  name: 'app/TransformPastedHTMLForEitherImporter',
+  dependencies: [
+    configExtension(ClipboardImportExtension, {
+      $importMimeType: {
+        'text/html': [
+          (html, _selection, $next) => $next(normalizePastedHTML(html)),
+        ],
+      },
+    }),
+  ],
+  peerDependencies: [
+    declarePeerDependency<typeof ClipboardDOMImportExtension>(
+      '@lexical/clipboard/DOMImport',
+    ),
+  ],
+});
+```
+
+Add `TransformPastedHTMLForEitherImporterExtension` to your root dependencies.
+When the editor includes `ClipboardDOMImportExtension`, the peer dependency
+makes this extension's clipboard configuration apply after the DOM importer's
+configuration, so the transform runs first. Otherwise, the transform runs
+before the legacy default HTML importer.
 
 ### `ImportSourceDataTransfer`
 
 A builtin `ImportStateConfig<DataTransfer | null>` slot for surfacing
 the original paste/drop `DataTransfer` to import rules and
-preprocessors. The clipboard handler shown above forwards it via
+preprocessors. `ClipboardDOMImportExtension` forwards it via
 `context`; rules can then read it during the walk:
 
 ```ts

@@ -15,7 +15,6 @@ import {
   $isHeadingNode,
   $isQuoteNode,
   RichTextExtension,
-  RichTextImportExtension,
   ShadowRootQuoteRule,
 } from '@lexical/rich-text';
 import {
@@ -155,21 +154,6 @@ describe('RichTextImportExtension', () => {
       assert($isHeadingNode(node), 'expected HeadingNode');
       expect(node.getTag()).toBe('h1');
       expect(node.getTextContent()).toBe('Title');
-    });
-  });
-
-  test('deprecated RichTextImportExtension alias still imports headings', () => {
-    using editor = buildEditorFromExtensions(
-      defineExtension({
-        dependencies: [RichTextImportExtension],
-        name: 'rich-text-alias-host',
-      }),
-    );
-    importInto(editor, '<h2>x</h2>');
-    editor.read(() => {
-      const node = $getRoot().getFirstChild();
-      assert($isHeadingNode(node), 'expected HeadingNode');
-      expect(node.getTag()).toBe('h2');
     });
   });
 });

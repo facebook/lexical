@@ -6,9 +6,14 @@
  *
  */
 
-import type {InputState, LexicalCommand, LexicalEditor} from './LexicalEditor';
+import type {
+  AnyLexicalCommand,
+  InputState,
+  LexicalCommand,
+  LexicalEditor,
+} from './LexicalEditor';
 import type {KeyboardShortcutMatch} from './LexicalKeyboardShortcuts';
-import type {NodeKey} from './LexicalNode';
+import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
@@ -16,10 +21,13 @@ import invariant from '@lexical/internal/invariant';
 import warnOnlyOnce from '@lexical/internal/warnOnlyOnce';
 
 import {
+  $createRangeSelection,
   $createTextNode,
+  $getChildCaret,
   $getPreviousSelection,
   $getRoot,
   $getSelection,
+  $getSiblingCaret,
   $isBlockElementNode,
   $isDecoratorNode,
   $isElementNode,
@@ -30,7 +38,9 @@ import {
   $isTabNode,
   $isTextNode,
   $setCompositionKey,
+  $setPointFromCaret,
   BLUR_COMMAND,
+  type CaretDirection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
   COMPOSITION_END_TAG,
@@ -65,6 +75,7 @@ import {
   PASTE_COMMAND,
   REDO_COMMAND,
   REMOVE_TEXT_COMMAND,
+  type SiblingCaret,
   SKIP_SELECTION_FOCUS_TAG,
   UNDO_COMMAND,
 } from '.';
@@ -88,6 +99,7 @@ import {
 } from './LexicalCommands';
 import {
   COMPOSITION_START_CHAR,
+  DOM_ELEMENT_TYPE,
   DOUBLE_LINE_BREAK,
   IS_ALL_FORMATTING,
 } from './LexicalConstants';
@@ -98,7 +110,10 @@ import {
 } from './LexicalKeyboardShortcuts';
 import {createRefCountedRegistry} from './LexicalRefCountedRegistry';
 import {
+  $createRangeSelectionFromDom,
   $internalCreateRangeSelection,
+  $internalRefreshSelectionFormatAndStyle,
+  $internalResolveSelectionPoint,
   type RangeSelection,
 } from './LexicalSelection';
 import {
@@ -112,6 +127,7 @@ import {
   $flushMutations,
   $getAdjacentNode,
   $getDOMTextNode,
+  $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $isTokenOrSegmented,
   $isTokenOrTab,
@@ -132,9 +148,11 @@ import {
   getEditorPropertyFromDOMNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
+  getParentElement,
   getWindow,
   isBackspace,
   isDOMCapturingSelection,
+  isDOMDocumentNode,
   isDOMNode,
   isDOMShadowRoot,
   isDOMTextNode,
@@ -145,53 +163,19 @@ import {
   isSelectionWithinEditor,
   type KeyboardEventModifierMask,
 } from './LexicalUtils';
+import {mergeRegister} from './utils/mergeRegister';
 import {registerEventListener} from './utils/registerEventListener';
+import {registerEventListeners} from './utils/registerEventListeners';
 
 type RootElementRemoveHandles = (() => void)[];
-type RootElementEvents = [
+// Each root element event is handled by a function or dispatched as a
+// command. A method type, so that a handler can take the event's own type.
+type RootElementEvents = Record<
   string,
-  Record<string, unknown> | ((event: Event, editor: LexicalEditor) => void),
-][];
-const PASS_THROUGH_COMMAND = /* @__PURE__ */ Object.freeze({});
+  | AnyLexicalCommand
+  | {handle(event: Event, editor: LexicalEditor): void}['handle']
+>;
 const ANDROID_COMPOSITION_LATENCY = 30;
-let rootElementEvents: RootElementEvents | undefined;
-
-function getRootElementEvents(): RootElementEvents {
-  if (rootElementEvents !== undefined) {
-    return rootElementEvents;
-  }
-  const events: RootElementEvents = [
-    ['keydown', onKeyDown],
-    ['pointerdown', onPointerDown],
-    ['compositionstart', onCompositionStart],
-    ['compositionend', onCompositionEnd],
-    ['input', onInput],
-    ['click', onClick],
-    ['cut', PASS_THROUGH_COMMAND],
-    ['copy', PASS_THROUGH_COMMAND],
-    ['dragstart', PASS_THROUGH_COMMAND],
-    ['dragover', PASS_THROUGH_COMMAND],
-    ['dragend', PASS_THROUGH_COMMAND],
-    ['paste', PASS_THROUGH_COMMAND],
-    ['focus', PASS_THROUGH_COMMAND],
-    ['blur', PASS_THROUGH_COMMAND],
-    ['drop', PASS_THROUGH_COMMAND],
-  ];
-  if (CAN_USE_BEFORE_INPUT) {
-    events.push([
-      'beforeinput',
-      (event, editor) => onBeforeInput(event as InputEvent, editor),
-    ]);
-  }
-  if (IS_IOS) {
-    events.push([
-      'keyup',
-      (event, editor) => onKeyUp(event as KeyboardEvent, editor),
-    ]);
-  }
-  rootElementEvents = events;
-  return events;
-}
 
 // Node can be moved between documents (for example using createPortal), so we
 // need to track the document each root element was originally registered on.
@@ -371,6 +355,15 @@ function onSelectionChange(
     if (!isSelectionWithinEditor(editor, anchorDOM, focusDOM)) {
       return;
     }
+    // Not for a press that a listener after the editor's cancelled, which
+    // the browser does not select from either.
+    const drag = inputState.mouseDrag;
+    if (drag && !(drag.type === 'mousedown' && drag.defaultPrevented)) {
+      $adjustMouseDrag(editor, drag, focusDOM);
+    }
+    // Whether the adjustment for the drag's latest mouse event moved the
+    // selection from the DOM's, which notified it.
+    const isAdjusted = adjustedMouseEvents.has(drag as MouseEvent);
 
     let selection = $getSelection();
 
@@ -400,62 +393,13 @@ function onSelectionChange(
     // Update the selection format
     if ($isRangeSelection(selection)) {
       const anchor = selection.anchor;
-      const anchorNode = anchor.getNode();
 
       if (selection.isCollapsed()) {
         // Badly interpreted range selection when collapsed - #1482
         if (domSelection.type === 'Range' && anchorDOM === focusDOM) {
           selection.dirty = true;
         }
-
-        // If we have marked a collapsed selection format, and we're
-        // within the given time range – then attempt to use that format
-        // instead of getting the format from the anchor node.
-        const windowEvent = getWindow(editor).event;
-        const currentTimeStamp = windowEvent
-          ? windowEvent.timeStamp
-          : performance.now();
-        const {
-          format: lastFormat,
-          style: lastStyle,
-          offset: lastOffset,
-          key: lastKey,
-          timeStamp,
-        } = inputState.collapsedSelectionFormat;
-
-        const root = $getRoot();
-        const isRootTextContentEmpty =
-          editor.isComposing() === false && root.getTextContent() === '';
-
-        if (
-          currentTimeStamp < timeStamp + 200 &&
-          anchor.offset === lastOffset &&
-          anchor.key === lastKey
-        ) {
-          $updateSelectionFormatStyle(selection, lastFormat, lastStyle);
-        } else {
-          if (anchor.type === 'text') {
-            invariant(
-              $isTextNode(anchorNode),
-              'Point.getNode() must return TextNode when type is text',
-            );
-            $updateSelectionFormatStyleFromTextNode(selection, anchorNode);
-          } else if (anchor.type === 'element' && !isRootTextContentEmpty) {
-            invariant(
-              $isElementNode(anchorNode),
-              'Point.getNode() must return ElementNode when type is element',
-            );
-            const lastNode = anchor.getNode();
-            if (
-              // This previously applied to all ParagraphNode
-              lastNode.isEmpty()
-            ) {
-              $updateSelectionFormatStyleFromElementNode(selection, lastNode);
-            } else {
-              $updateSelectionFormatStyle(selection, selection.format, '');
-            }
-          }
-        }
+        $updateCollapsedSelectionFormatStyle(editor, selection);
       } else {
         const anchorKey = anchor.key;
         const focus = selection.focus;
@@ -463,8 +407,12 @@ function onSelectionChange(
         const nodes = selection.getNodes();
         const nodesLength = nodes.length;
         const isBackward = selection.isBackward();
-        const startOffset = isBackward ? focusOffset : anchorOffset;
-        const endOffset = isBackward ? anchorOffset : focusOffset;
+        // Its own offsets, which go with its keys, where it is not the DOM's.
+        const [anchorAt, focusAt] = isAdjusted
+          ? [anchor.offset, focus.offset]
+          : [anchorOffset, focusOffset];
+        const startOffset = isBackward ? focusAt : anchorAt;
+        const endOffset = isBackward ? anchorAt : focusAt;
         const startKey = isBackward ? focusKey : anchorKey;
         const endKey = isBackward ? anchorKey : focusKey;
         let combinedFormat = IS_ALL_FORMATTING;
@@ -498,10 +446,12 @@ function onSelectionChange(
       }
     }
 
+    // Not again when the adjustment notified it.
     $dispatchSelectionChangeCommand(
       editor,
       selection,
-      selection !== null && (selection.dirty || !$isRangeSelection(selection)),
+      selection !== null &&
+        ((selection.dirty && !isAdjusted) || !$isRangeSelection(selection)),
     );
   });
 }
@@ -527,13 +477,61 @@ function $updateSelectionFormatStyleFromTextNode(
   $updateSelectionFormatStyle(selection, format, style);
 }
 
-function $updateSelectionFormatStyleFromElementNode(
+/**
+ * Gives a caret the format and style of where it is, as a selectionchange
+ * does, unless the editor has just put it there with its own.
+ */
+function $updateCollapsedSelectionFormatStyle(
+  editor: LexicalEditor,
   selection: RangeSelection,
-  node: ElementNode,
-) {
-  const format = node.getTextFormat();
-  const style = node.getTextStyle();
-  $updateSelectionFormatStyle(selection, format, style);
+): void {
+  const anchor = selection.anchor;
+  const anchorNode = anchor.getNode();
+  // If we have marked a collapsed selection format, and we're
+  // within the given time range – then attempt to use that format
+  // instead of getting the format from the anchor node.
+  const windowEvent = getWindow(editor).event;
+  const currentTimeStamp = windowEvent
+    ? windowEvent.timeStamp
+    : performance.now();
+  const {
+    format: lastFormat,
+    style: lastStyle,
+    offset: lastOffset,
+    key: lastKey,
+    timeStamp,
+  } = editor._inputState.collapsedSelectionFormat;
+
+  if (
+    currentTimeStamp < timeStamp + 200 &&
+    anchor.offset === lastOffset &&
+    anchor.key === lastKey
+  ) {
+    $updateSelectionFormatStyle(selection, lastFormat, lastStyle);
+  } else if (anchor.type === 'text') {
+    invariant(
+      $isTextNode(anchorNode),
+      'Point.getNode() must return TextNode when type is text',
+    );
+    $updateSelectionFormatStyleFromTextNode(selection, anchorNode);
+  } else if (
+    // An element point, unless nothing is composing and the root has no text
+    editor.isComposing() ||
+    $getRoot().getTextContent() !== ''
+  ) {
+    invariant(
+      $isElementNode(anchorNode),
+      'Point.getNode() must return ElementNode when type is element',
+    );
+    if (
+      // This previously applied to all ParagraphNode
+      anchorNode.isEmpty()
+    ) {
+      $internalRefreshSelectionFormatAndStyle(selection, '');
+    } else {
+      $updateSelectionFormatStyle(selection, selection.format, '');
+    }
+  }
 }
 
 // This is a work-around is mainly Chrome specific bug where if you select
@@ -565,7 +563,18 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
           domSelection.removeAllRanges();
           selection.dirty = true;
         }
-      } else if (event.pointerType === 'touch' || event.pointerType === 'pen') {
+      } else if (
+        event.pointerType === 'touch' ||
+        event.pointerType === 'pen' ||
+        // iOS reports the click that follows a tap with pointerType 'mouse',
+        // and fires it before the selectionchange for the caret the tap just
+        // placed. Without this, the NodeSelection survives into CLICK_COMMAND,
+        // where rich text clears it and the reconciler removes that caret, so
+        // the keyboard opens with no caret to reveal and the page jumps. The
+        // tap's pointerdown is still 'touch' (or 'pen'); an iPadOS trackpad
+        // click is handled by selectionchange like any other mouse click.
+        (IS_IOS && editor._inputState.lastPointerType !== 'mouse')
+      ) {
         // This is used to update the selection on touch devices (including Apple Pencil) when the user clicks on text after a
         // node selection. See isSelectionChangeFromMouseDown for the inverse
         const domSelectionPoints = getDOMSelectionPoints(
@@ -627,6 +636,173 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
   });
 }
 
+// How far a touch may move and still count as a tap rather than a scroll.
+const TAP_SLOP_PX = 10;
+
+// Elements that take a tap (focus, text input, or their own controls) instead
+// of letting it fall through to the editor. `[tabindex]` includes
+// tabindex="-1", which makes an element focusable by tap but not by Tab.
+const FOCUSABLE_SELECTOR =
+  'input:not(:disabled),textarea:not(:disabled),select:not(:disabled),' +
+  'button:not(:disabled),a[href],area[href],label,summary,iframe,object,' +
+  'embed,audio[controls],video[controls],[tabindex],' +
+  '[contenteditable]:not([contenteditable="false"])';
+
+// iOS only. A tap on a decorator (an image, say) would focus the editor, and
+// iOS answers that focus by opening the keyboard and scrolling to reveal the
+// caret. A decorator is selected with a NodeSelection, which leaves no DOM
+// caret, so iOS reveals the top of the editor instead and the page jumps
+// (facebook/lexical#9112). Cancelling the mousedown keeps the keyboard closed;
+// the click still follows, so CLICK_COMMAND handlers select the node as usual.
+//
+// When the editor did not have focus, it is focused from code instead, with
+// `inputmode="none"` so no keyboard opens and `preventScroll` so nothing
+// moves. Keys from an iPad hardware keyboard (Backspace to delete the image)
+// then reach the editor. The root's own `inputmode` comes back with the next
+// press that isn't cancelled, or when the editor loses focus. A tap on text
+// first blurs the editor (see onTouchEndIOS), so that the tap focuses it again
+// and iOS opens the keyboard with the caret in view. A trackpad or mouse press
+// is left alone.
+//
+// Only taps that would focus the editor through a decorator are cancelled.
+// Something that takes the tap itself (a button, an input, a nested editor, an
+// embed) keeps the default. So does an element outside any decorator, such as
+// a `setDOMUnmanaged({captureSelection: true})` widget in an element node; one
+// inside a decorator needs a tabindex to keep native focus. A closed shadow
+// root hides its controls and the tap is retargeted to its host, so a widget
+// like that needs a tabindex on its host too.
+function onMouseDownIOS(event: Event, editor: LexicalEditor): void {
+  const rootElement = editor.getRootElement();
+  if (rootElement === null) {
+    return;
+  }
+  if (!isDecoratorTapIOS(event, editor, rootElement)) {
+    restoreInputModeIOS(editor, rootElement);
+    return;
+  }
+  event.preventDefault();
+  if (getActiveElementDeep(rootElement.ownerDocument) !== rootElement) {
+    if (editor._inputState.savedInputMode === undefined) {
+      editor._inputState.savedInputMode = rootElement.getAttribute('inputmode');
+    }
+    rootElement.setAttribute('inputmode', 'none');
+    rootElement.focus({preventScroll: true});
+  }
+}
+
+function isDecoratorTapIOS(
+  event: Event,
+  editor: LexicalEditor,
+  rootElement: HTMLElement,
+): boolean {
+  if (editor._inputState.lastPointerType === 'mouse') {
+    return false;
+  }
+  const target = getComposedEventTarget(event);
+  if (!isDOMNode(target)) {
+    return false;
+  }
+  // Walk up to the editor root, crossing open shadow roots.
+  let inDecorator = false;
+  for (
+    let node: Node | null = target;
+    node !== null;
+    node = getParentElement(node)
+  ) {
+    if (node === rootElement) {
+      return inDecorator;
+    }
+    if (node.nodeType === DOM_ELEMENT_TYPE) {
+      const element = node as Element;
+      if (element.matches(FOCUSABLE_SELECTOR)) {
+        return false;
+      }
+      if (element.getAttribute('data-lexical-decorator') === 'true') {
+        inDecorator = true;
+      }
+    }
+  }
+  return false;
+}
+
+// iOS only. After onMouseDownIOS focused the editor with inputmode="none",
+// only removing the attribute would open the keyboard over the caret: iOS
+// reveals the caret when a tap focuses the editor, not when the keyboard opens
+// later. So a tap on anything but a decorator blurs the editor at touchend,
+// before iOS handles the tap, and the tap then focuses it afresh. The
+// compatibility mousedown comes too late for that.
+function onTouchEndIOS(
+  event: TouchEvent,
+  editor: LexicalEditor,
+  rootElement: HTMLElement,
+): void {
+  if (editor._inputState.savedInputMode === undefined) {
+    return;
+  }
+  if (!isDecoratorTapIOS(event, editor, rootElement)) {
+    if (getActiveElementDeep(rootElement.ownerDocument) === rootElement) {
+      rootElement.blur();
+    }
+    restoreInputModeIOS(editor, rootElement);
+  }
+}
+
+/** @internal Puts back the root's own `inputmode` (see onMouseDownIOS). */
+export function restoreInputModeIOS(
+  editor: LexicalEditor,
+  rootElement: HTMLElement,
+): void {
+  const savedInputMode = editor._inputState.savedInputMode;
+  if (savedInputMode !== undefined) {
+    editor._inputState.savedInputMode = undefined;
+    if (savedInputMode === null) {
+      rootElement.removeAttribute('inputmode');
+    } else {
+      rootElement.setAttribute('inputmode', savedInputMode);
+    }
+  }
+}
+
+// Calls onTap at the touchend of a single touch that didn't move, so a
+// scroll or a pinch is not a tap. Captured, so a decorator that stops its
+// touch events from propagating can't hide them.
+function registerTapListenerIOS(
+  rootElement: HTMLElement,
+  onTap: (event: TouchEvent) => void,
+): () => void {
+  let start: {x: number; y: number} | null = null;
+  const options = {capture: true, passive: true};
+  return mergeRegister(
+    registerEventListener(
+      rootElement,
+      'touchstart',
+      event => {
+        const touch = event.touches.length === 1 ? event.touches[0] : null;
+        start = touch ? {x: touch.clientX, y: touch.clientY} : null;
+      },
+      options,
+    ),
+    registerEventListener(
+      rootElement,
+      'touchend',
+      event => {
+        const touch = event.changedTouches[0];
+        if (
+          start !== null &&
+          touch &&
+          event.touches.length === 0 &&
+          Math.abs(touch.clientX - start.x) <= TAP_SLOP_PX &&
+          Math.abs(touch.clientY - start.y) <= TAP_SLOP_PX
+        ) {
+          onTap(event);
+        }
+        start = null;
+      },
+      options,
+    ),
+  );
+}
+
 function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
   // TODO implement text drag & drop
   // Resolve to the composed target so a pointerdown inside a decorator's
@@ -647,6 +823,201 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
         editor._inputState.isSelectionChangeFromMouseDown = true;
       }
     });
+  }
+}
+
+// The press and moves of mouse drags for which $adjustMouseDrag moved the
+// selection.
+const adjustedMouseEvents = new WeakSet<MouseEvent>();
+
+/**
+ * Puts the focus of a mouse press or drag beside the inline decorator that
+ * the pointer is over, or is beyond at the start or end of a line, where
+ * browsers often find no position, or one inside it or on another line
+ * (#7158). A drag keeps its anchor, and a press without Shift collapses.
+ */
+function $adjustMouseDrag(
+  editor: LexicalEditor,
+  event: MouseEvent,
+  focusDOM: Node | null = null,
+): void {
+  const selection = $getSelection();
+  const before = selection && selection.clone();
+  $moveMouseDragFocus(editor, event, focusDOM);
+  const after = $getSelection();
+  const drag = editor._inputState.mouseDrag;
+  if (drag && after && !after.is(before)) {
+    adjustedMouseEvents.add(drag);
+  }
+  // A caret that a press moves to another node takes its format and style,
+  // as from a selectionchange.
+  if (event.type === 'mousedown' && $isRangeSelection(after)) {
+    $internalRefreshSelectionFormatAndStyle(
+      after,
+      $isRangeSelection(before) ? before.anchor.key : '',
+    );
+  }
+}
+
+function $moveMouseDragFocus(
+  editor: LexicalEditor,
+  event: MouseEvent,
+  focusDOM: Node | null,
+): void {
+  const previous = $getPreviousSelection();
+  const isPress = event.type === 'mousedown';
+  const isCaret = isPress && !event.shiftKey;
+  const decorator = focusDOM && $getNearestNodeFromDOMNode(focusDOM);
+  // A focus that the browser put inside a decorator goes back for a drag
+  // (unless a table selected cells) and before it for a click, in the DOM
+  // too. A Shift press keeps what the platform chose.
+  if ($isDecoratorNode(decorator)) {
+    if (!isPress) {
+      if ($isRangeSelection(previous)) {
+        $setSelection(previous.clone());
+      }
+    } else if (isCaret && decorator.isInline()) {
+      decorator.selectPrevious();
+    }
+  }
+  const current = $getSelection();
+  // A point in DOM that no node renders (an extension's badge at the end of
+  // a line) leaves no selection. A decorator at the pointer still places one:
+  // from nothing for a click, else keeping the previous anchor.
+  const selection =
+    current ||
+    (isCaret
+      ? $createRangeSelection()
+      : $isRangeSelection(previous)
+        ? previous.clone()
+        : null);
+  const root = editor.getRootElement();
+  const doc = root && root.getRootNode();
+  if (
+    !$isRangeSelection(selection) ||
+    // A press on a selection can drag it. (macOS drags only after 150 ms, and
+    // a quicker drag from there selects text without this adjustment.)
+    (isCaret && !selection.isCollapsed()) ||
+    !(isDOMDocumentNode(doc) || isDOMShadowRoot(doc))
+  ) {
+    return;
+  }
+  const {anchor, focus} = selection;
+  // A Shift press keeps the anchor the platform chose (macOS: the far end).
+  if (!isPress && $isRangeSelection(previous)) {
+    const {key, offset, type} = previous.anchor;
+    anchor.set(key, offset, type, true);
+  }
+  const {clientX: x, clientY: y} = event;
+  // Not in a document without layout (jsdom).
+  const target = doc.elementFromPoint && doc.elementFromPoint(x, y);
+  const hit = target && $getNearestNodeFromDOMNode(target);
+  const $leaf = (node: LexicalNode | null, dir: CaretDirection) =>
+    $isElementNode(node)
+      ? dir === 'next'
+        ? node.getLastDescendant()
+        : node.getFirstDescendant()
+      : node;
+  // The node under the pointer (null in this list), then, when the pointer is
+  // over a block rather than its content, a caret at each end of each of its
+  // children, facing the node beside it there, for the decorator at that end,
+  // which the pointer must be beyond at the edge of a line.
+  const candidates: (SiblingCaret | null)[] = [null];
+  const block =
+    $isElementNode(hit) &&
+    !hit.isInline() &&
+    ($isRootNode(hit)
+      ? $findMatchingParent(focus.getNode(), $isBlockElementNode)
+      : hit);
+  for (const caret of block ? $getChildCaret(block, 'next') : []) {
+    candidates.push($getSiblingCaret(caret.origin, 'previous'), caret);
+  }
+  const win = getWindow(editor);
+  const range = win.document.createRange();
+  let offLine: LexicalNode | null = null;
+  for (const caret of candidates) {
+    const node = caret ? $leaf(caret.origin, caret.direction) : hit;
+    if (!$isDecoratorNode(node) || !node.isInline() || node === offLine) {
+      continue;
+    }
+    const dom = editor.getElementByKey(node.getKey());
+    if (!dom) {
+      continue;
+    }
+    // The box of what it draws, which can be larger than its element (an
+    // image in a span) or smaller (text in a box, or nothing).
+    range.selectNodeContents(dom);
+    const contents = range.getBoundingClientRect();
+    const rect = dom.getBoundingClientRect();
+    const {bottom, left, right, top} =
+      contents.height > rect.height ? contents : rect;
+    // Off the pointer's line, and so not measured again for its other edge.
+    if (caret && (y < top || y > bottom)) {
+      offLine = node;
+      continue;
+    }
+    // By its line's direction, as a chip of code can have its own.
+    const isRtl =
+      win.getComputedStyle(getParentElement(dom) || dom).direction === 'rtl';
+    const isAfter = x * 2 > left + right !== isRtl;
+    const dir = isAfter ? 'next' : 'previous';
+    // On its line, the nearest box of the node beside it there (none at a
+    // line break) is beyond it, and where the line wraps between them, past
+    // its middle. A node without a box tells neither.
+    const sib = caret && caret.getNodeAtCaret();
+    const sibDOM = sib && editor.getElementByKey(sib.getKey());
+    const sibRects = sibDOM ? sibDOM.getClientRects() : [];
+    const sibRect: DOMRect | undefined =
+      sibRects[isAfter ? 0 : sibRects.length - 1];
+    if (
+      !caret ||
+      // A float is at the edge of no line.
+      (caret.direction === dir &&
+        win.getComputedStyle(dom).cssFloat === 'none' &&
+        (!sib ||
+          $isLineBreakNode(sib) ||
+          (sibRect &&
+            (isAfter === isRtl
+              ? sibRect.right * 2 > left + right
+              : sibRect.left * 2 < left + right))))
+    ) {
+      // A focus already beside it stays, as WebKit reports no move to a
+      // point it takes for the same one.
+      if (!node.is($leaf($getAdjacentNode(focus, isAfter), dir))) {
+        const beside = $getSiblingCaret(node, dir);
+        $setPointFromCaret(focus, beside);
+        if (isCaret) {
+          $setPointFromCaret(anchor, beside);
+        }
+      }
+      if (!current) {
+        $setSelection(selection);
+      }
+      return;
+    }
+  }
+  // Chromium restarts a drag from its press when the editor has moved the
+  // selection, and a press beyond a decorator then puts both points inside
+  // it, so the focus goes to the position at the pointer instead.
+  if ($isDecoratorNode(decorator) && !isPress) {
+    const ownerDoc = win.document;
+    const caret =
+      ownerDoc.caretPositionFromPoint &&
+      ownerDoc.caretPositionFromPoint(x, y, {
+        shadowRoots: isDOMShadowRoot(doc) ? [doc] : [],
+      });
+    const resolved =
+      caret &&
+      $internalResolveSelectionPoint(
+        caret.offsetNode,
+        caret.offset,
+        null,
+        editor,
+      );
+    if (resolved) {
+      const [{key, offset, type}] = resolved;
+      focus.set(key, offset, type);
+    }
   }
 }
 
@@ -1283,6 +1654,7 @@ function $handleInput(event: InputEvent): boolean {
   const targetRange = getTargetRange(event);
 
   let handled = false;
+  let rerenderText = false;
   if (data != null && $isRangeSelection(selection)) {
     const domSelection = getDOMSelection(getWindow(editor));
     const domSelectionPoints =
@@ -1364,6 +1736,10 @@ function $handleInput(event: InputEvent): boolean {
           getAnchorTextFromDOM(domSelectionPoints.anchorNode)
       ) {
         dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
+        // The browser has inserted the text as well, and not necessarily
+        // where the editor did (Firefox, over a selection running into the
+        // next block), so its text changes are not read back.
+        rerenderText = event.inputType === 'insertText';
       }
 
       const textLength = data.length;
@@ -1406,7 +1782,7 @@ function $handleInput(event: InputEvent): boolean {
 
   // Also flush any other mutations that might have occurred
   // since the change.
-  $flushMutations();
+  $flushMutations(rerenderText);
 
   return true;
 }
@@ -1857,6 +2233,45 @@ function getRootElementRemoveHandles(
   return eventHandles;
 }
 
+/**
+ * Takes the selection of a mouse press from the DOM, at the press's
+ * selectionchange, or at its first move or release if that comes first.
+ */
+function $selectMouseDown(
+  editor: LexicalEditor,
+  domSelection: Selection,
+  event: Event,
+  registration: DocumentRegistration | undefined,
+): void {
+  // Clear the flag on all editors registered on this document — a
+  // pointerdown inside a nested editor bubbles to the parent, setting
+  // the flag on both. Only one selectionchange fires, so stale flags
+  // on sibling/parent editors must be cleared to match the previous
+  // single-global semantics.
+  if (registration !== undefined) {
+    for (const ed of registration.editors) {
+      ed._inputState.isSelectionChangeFromMouseDown = false;
+    }
+  }
+  const domAnchorNode = getDOMSelectionPoints(
+    domSelection,
+    editor._rootElement,
+  ).anchorNode;
+  if (isHTMLElement(domAnchorNode) || isDOMTextNode(domAnchorNode)) {
+    // If the user is attempting to click selection back onto text, then
+    // we should attempt create a range selection.
+    // When we click on an empty paragraph node or the end of a paragraph that ends
+    // with an image/poll, the nodeType will be ELEMENT_NODE
+    const newSelection = $internalCreateRangeSelection(
+      $getPreviousSelection(),
+      domSelection,
+      editor,
+      event,
+    );
+    $setSelection(newSelection);
+  }
+}
+
 // Mapping root editors to their active nested editors, contains nested editors
 // mapping only, so if root editor is selected map will have no reference to free up memory
 const activeNestedEditorsMap: Map<string, LexicalEditor> = new Map();
@@ -1885,7 +2300,6 @@ function onDocumentSelectionChange(event: Event): void {
 
   const ownerDocument = getDOMOwnerDocument(event.target);
   let nextActiveEditor: LexicalEditor | null = null;
-  let resolvedAnchorNode: Node | null = null;
   const registration =
     ownerDocument !== null
       ? documentRegistrations.get(ownerDocument)
@@ -1914,9 +2328,6 @@ function onDocumentSelectionChange(event: Event): void {
           !(isHTMLElement(anchorNode) && anchorNode.shadowRoot !== null)
         ) {
           nextActiveEditor = getNearestEditorFromDOMNode(anchorNode);
-          if (nextActiveEditor !== null) {
-            resolvedAnchorNode = anchorNode;
-          }
         }
       } else {
         // Try shadow-mounted candidates first: their getDOMSelectionPoints
@@ -1928,7 +2339,6 @@ function onDocumentSelectionChange(event: Event): void {
         // Single pass with deferred light-DOM fallback avoids Array.from +
         // sort and the redundant getRootNode calls the comparator needed.
         let deferredLightEditor: LexicalEditor | null = null;
-        let deferredLightAnchor: Node | null = null;
         for (const candidate of editorsForDoc) {
           const candidateRoot = candidate._rootElement;
           if (candidateRoot === null) {
@@ -1946,17 +2356,14 @@ function onDocumentSelectionChange(event: Event): void {
           }
           if (isDOMShadowRoot(candidateRoot.getRootNode())) {
             nextActiveEditor = candidate;
-            resolvedAnchorNode = anchorNode;
             break;
           }
           if (deferredLightEditor === null) {
             deferredLightEditor = candidate;
-            deferredLightAnchor = anchorNode;
           }
         }
         if (nextActiveEditor === null && deferredLightEditor !== null) {
           nextActiveEditor = deferredLightEditor;
-          resolvedAnchorNode = deferredLightAnchor;
         }
       }
     }
@@ -1977,36 +2384,9 @@ function onDocumentSelectionChange(event: Event): void {
   }
 
   if (nextActiveEditor._inputState.isSelectionChangeFromMouseDown) {
-    // Clear the flag on all editors registered on this document — a
-    // pointerdown inside a nested editor bubbles to the parent, setting
-    // the flag on both. Only one selectionchange fires, so stale flags
-    // on sibling/parent editors must be cleared to match the previous
-    // single-global semantics.
-    if (registration !== undefined) {
-      for (const ed of registration.editors) {
-        ed._inputState.isSelectionChangeFromMouseDown = false;
-      }
-    }
-    updateEditorSync(nextActiveEditor, () => {
-      const lastSelection = $getPreviousSelection();
-      const domAnchorNode =
-        resolvedAnchorNode ??
-        getDOMSelectionPoints(domSelection, nextActiveEditor._rootElement)
-          .anchorNode;
-      if (isHTMLElement(domAnchorNode) || isDOMTextNode(domAnchorNode)) {
-        // If the user is attempting to click selection back onto text, then
-        // we should attempt create a range selection.
-        // When we click on an empty paragraph node or the end of a paragraph that ends
-        // with an image/poll, the nodeType will be ELEMENT_NODE
-        const newSelection = $internalCreateRangeSelection(
-          lastSelection,
-          domSelection,
-          nextActiveEditor,
-          event,
-        );
-        $setSelection(newSelection);
-      }
-    });
+    updateEditorSync(nextActiveEditor, () =>
+      $selectMouseDown(nextActiveEditor, domSelection, event, registration),
+    );
   }
 
   // When editor receives selection change event, we're checking if
@@ -2074,92 +2454,207 @@ export function addRootElementEvents(
   // with this root element's other listeners in removeRootElementEvents.
   removeHandles.push(documentSelectionChange.register(doc));
 
-  const events = getRootElementEvents();
-  for (let i = 0; i < events.length; i++) {
-    const [eventName, onEvent] = events[i];
-    const eventHandler =
-      typeof onEvent === 'function'
-        ? (event: Event) => {
-            if (hasStoppedLexicalPropagation(event)) {
-              return;
-            }
-            stopLexicalPropagation(event);
-            if (editor.isEditable() || eventName === 'click') {
-              onEvent(event, editor);
-            }
-          }
-        : (event: Event) => {
-            if (hasStoppedLexicalPropagation(event)) {
-              return;
-            }
-            stopLexicalPropagation(event);
-            const isEditable = editor.isEditable();
-            switch (eventName) {
-              case 'cut':
-                return (
-                  isEditable &&
-                  dispatchCommand(editor, CUT_COMMAND, event as ClipboardEvent)
-                );
-
-              case 'copy':
-                return dispatchCommand(
-                  editor,
-                  COPY_COMMAND,
-                  event as ClipboardEvent,
-                );
-
-              case 'paste':
-                return (
-                  isEditable &&
-                  dispatchCommand(
-                    editor,
-                    PASTE_COMMAND,
-                    event as ClipboardEvent,
-                  )
-                );
-
-              case 'dragstart':
-                return (
-                  isEditable &&
-                  dispatchCommand(editor, DRAGSTART_COMMAND, event as DragEvent)
-                );
-
-              case 'dragover':
-                return (
-                  isEditable &&
-                  dispatchCommand(editor, DRAGOVER_COMMAND, event as DragEvent)
-                );
-
-              case 'dragend':
-                return (
-                  isEditable &&
-                  dispatchCommand(editor, DRAGEND_COMMAND, event as DragEvent)
-                );
-
-              case 'focus':
-                return (
-                  isEditable &&
-                  dispatchCommand(editor, FOCUS_COMMAND, event as FocusEvent)
-                );
-
-              case 'blur': {
-                editor._inputState.isShiftKeyDown = false;
-                editor._inputState.isInsertLineBreak = false;
-                return (
-                  isEditable &&
-                  dispatchCommand(editor, BLUR_COMMAND, event as FocusEvent)
-                );
-              }
-
-              case 'drop':
-                return (
-                  isEditable &&
-                  dispatchCommand(editor, DROP_COMMAND, event as DragEvent)
-                );
-            }
-          };
+  const events: RootElementEvents = {
+    blur: BLUR_COMMAND,
+    click: onClick,
+    compositionend: onCompositionEnd,
+    compositionstart: onCompositionStart,
+    copy: COPY_COMMAND,
+    cut: CUT_COMMAND,
+    dragend: DRAGEND_COMMAND,
+    dragover: DRAGOVER_COMMAND,
+    dragstart: DRAGSTART_COMMAND,
+    drop: DROP_COMMAND,
+    focus: FOCUS_COMMAND,
+    input: onInput,
+    keydown: onKeyDown,
+    paste: PASTE_COMMAND,
+    pointerdown: onPointerDown,
+    ...(CAN_USE_BEFORE_INPUT && {beforeinput: onBeforeInput}),
+    ...(IS_IOS && {keyup: onKeyUp, mousedown: onMouseDownIOS}),
+  };
+  for (const [eventName, onEvent] of Object.entries(events)) {
+    const eventHandler = (event: Event) => {
+      if (hasStoppedLexicalPropagation(event)) {
+        return;
+      }
+      stopLexicalPropagation(event);
+      if (eventName === 'blur') {
+        restoreInputModeIOS(editor, rootElement);
+        editor._inputState.isShiftKeyDown = false;
+        editor._inputState.isInsertLineBreak = false;
+      }
+      // A read-only editor still handles clicks and copies.
+      if (
+        editor.isEditable() ||
+        eventName === 'click' ||
+        eventName === 'copy'
+      ) {
+        if (typeof onEvent === 'function') {
+          onEvent(event, editor);
+        } else {
+          dispatchCommand(editor, onEvent, event);
+        }
+      }
+    };
     removeHandles.push(
       registerEventListener(rootElement, eventName, eventHandler),
+    );
+  }
+  // The latest pointerdown in the root element.
+  let press: PointerEvent | undefined;
+  // Follows a mouse press that can start a selection drag: not on a decorator,
+  // nor a double or triple click, which selects by words or paragraphs.
+  const endMouseDrag = () => {
+    editor._inputState.mouseDrag = null;
+  };
+  // Captured on the document, which also sees the part of a drag outside the
+  // root element, and its release, even where a listener stops them. A touch
+  // or a pen beside the drag leaves it alone.
+  const onMouseDragMove = (event: PointerEvent) => {
+    const inputState = editor._inputState;
+    const drag = inputState.mouseDrag;
+    // The browser selects nothing from a press that a listener cancelled.
+    // A selectionchange during it is still the press's, as it can report a
+    // selection that the listener made, but not one after its release: in
+    // Firefox, that of a Shift-click that a table took can come after the
+    // click, and report a caret put since.
+    if (press && press.defaultPrevented && !event.buttons) {
+      inputState.isSelectionChangeFromMouseDown = false;
+    }
+    if (!drag || event.pointerType !== 'mouse') {
+      return;
+    }
+    const isRelease = event.type === 'pointerup';
+    if (event.type === 'pointercancel' || (!isRelease && event.buttons !== 1)) {
+      return endMouseDrag();
+    }
+    inputState.mouseDrag = isRelease ? null : event;
+    updateEditorSync(editor, () => {
+      const domSelection = getDOMSelection(getWindow(editor));
+      if (drag.type !== 'mousedown') {
+        // The release can come before the selectionchange of the last move,
+        // so it handles that as the selectionchange does, but a table's
+        // selection of cells stays.
+        const selection =
+          isRelease &&
+          domSelection &&
+          $isRangeSelection($getSelection()) &&
+          $internalCreateRangeSelection(
+            $getPreviousSelection(),
+            domSelection,
+            editor,
+            new Event('selectionchange'),
+          );
+        if (selection) {
+          $setSelection(selection);
+        }
+        return $adjustMouseDrag(
+          editor,
+          event,
+          isRelease && domSelection
+            ? getDOMSelectionPoints(domSelection, rootElement).focusNode
+            : null,
+        );
+      }
+      // Not adjusted on the first move: Chromium and WebKit start a drag and
+      // drop of a selection that holds the press when they handle it.
+      const selection = $createRangeSelectionFromDom(domSelection, editor);
+      if (
+        drag.defaultPrevented ||
+        // A press on a selection drags it rather than selecting.
+        (!drag.shiftKey && selection && !selection.isCollapsed())
+      ) {
+        endMouseDrag();
+      } else if (domSelection && inputState.isSelectionChangeFromMouseDown) {
+        // The editor has not seen the press's selectionchange yet, which the
+        // drag extends from, so this handles it as that does. None may come
+        // for a press that leaves the caret where it was, which keeps a
+        // format armed there. That selectionchange, when it comes, must not
+        // replace what the editor made of the press, such as a table's
+        // selection of cells, after which macOS Chromium puts a caret at the
+        // start of the editor.
+        $selectMouseDown(
+          editor,
+          domSelection,
+          new Event('selectionchange'),
+          registration,
+        );
+        $adjustMouseDrag(
+          editor,
+          drag,
+          getDOMSelectionPoints(domSelection, rootElement).focusNode,
+        );
+        const pressed = $getSelection();
+        if (
+          $isRangeSelection(pressed) &&
+          pressed.isCollapsed() &&
+          !pressed.is($getPreviousSelection())
+        ) {
+          $updateCollapsedSelectionFormatStyle(editor, pressed);
+        }
+      }
+    });
+  };
+  removeHandles.push(
+    registerEventListeners(
+      doc,
+      {
+        pointercancel: onMouseDragMove,
+        pointermove: onMouseDragMove,
+        pointerup: onMouseDragMove,
+      },
+      true,
+    ),
+    // The window misses the release of a press that it loses focus during.
+    registerEventListener(getWindow(editor), 'blur', endMouseDrag),
+    // A read-only editor leaves a drag to the browser, as it does not write
+    // the DOM selection.
+    editor.registerEditableListener(endMouseDrag),
+    registerEventListeners(rootElement, {
+      contextmenu: endMouseDrag,
+      dragstart: endMouseDrag,
+      // As after a release that the window did not get, but not for the
+      // modifier keys, which Windows repeats while they are held. Chrome's
+      // keydown for an accepted autofill suggestion is not a KeyboardEvent.
+      keydown: event =>
+        (event.getModifierState && event.getModifierState(event.key)) ||
+        endMouseDrag(),
+      mousedown: event => {
+        const inputState = editor._inputState;
+        inputState.mouseDrag =
+          event.button === 0 &&
+          event.detail === 1 &&
+          !event.defaultPrevented &&
+          inputState.lastPointerType === 'mouse' &&
+          editor.isEditable() &&
+          !editor.isComposing() &&
+          !isDOMCapturingSelection(
+            getComposedEventTarget(event) as Node,
+            editor,
+          )
+            ? event
+            : null;
+      },
+    }),
+    // Captured, so a decorator that stops its pointerdown from propagating
+    // (resize handles often do) can't leave a stale pointer type behind for
+    // the mousedown that follows.
+    registerEventListener(
+      rootElement,
+      'pointerdown',
+      event => {
+        press = event;
+        editor._inputState.lastPointerType = event.pointerType;
+      },
+      true,
+    ),
+  );
+  if (IS_IOS) {
+    removeHandles.push(
+      registerTapListenerIOS(rootElement, event =>
+        onTouchEndIOS(event, editor, rootElement),
+      ),
     );
   }
 }

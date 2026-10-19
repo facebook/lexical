@@ -11,12 +11,7 @@ import {
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
 import {DOMImportExtension} from '@lexical/html';
-import {
-  $isLinkNode,
-  LinkExtension,
-  LinkImportExtension,
-  type LinkNode,
-} from '@lexical/link';
+import {$isLinkNode, LinkExtension, type LinkNode} from '@lexical/link';
 import {$isHeadingNode, RichTextExtension} from '@lexical/rich-text';
 import {
   $getEditor,
@@ -103,19 +98,6 @@ describe('LinkImportExtension', () => {
       const para = $getRoot().getFirstChild();
       assert($isParagraphNode(para), 'expected paragraph');
       expect(para.getTextContent()).toBe('beforeafter');
-    });
-  });
-
-  test('deprecated LinkImportExtension alias still imports <a>', () => {
-    using editor = buildEditorFromExtensions(
-      defineExtension({
-        dependencies: [LinkImportExtension],
-        name: 'link-alias-host',
-      }),
-    );
-    importInto(editor, '<p><a href="https://example.com">click</a></p>');
-    editor.read(() => {
-      expect($firstLink().getURL()).toBe('https://example.com');
     });
   });
 });

@@ -12,11 +12,7 @@ import {
   getExtensionDependencyFromEditor,
   HorizontalRuleExtension,
 } from '@lexical/extension';
-import {
-  CoreImportExtension,
-  DOMImportExtension,
-  HorizontalRuleImportExtension,
-} from '@lexical/html';
+import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
 import {
   $getEditor,
   $getRoot,
@@ -98,20 +94,6 @@ describe('HorizontalRuleImportExtension', () => {
       assert($isParagraphNode(children[1]), 'expected paragraph');
       expect(children[0].getTextContent()).toBe('before');
       expect(children[1].getTextContent()).toBe('after');
-    });
-  });
-
-  test('deprecated HorizontalRuleImportExtension alias still imports <hr>', () => {
-    using editor = buildEditorFromExtensions(
-      defineExtension({
-        dependencies: [HorizontalRuleImportExtension],
-        name: 'hr-alias-host',
-      }),
-    );
-    importInto(editor, '<hr>');
-    editor.read(() => {
-      const node = $getRoot().getFirstChild();
-      assert($isHorizontalRuleNode(node), 'expected HorizontalRuleNode');
     });
   });
 });

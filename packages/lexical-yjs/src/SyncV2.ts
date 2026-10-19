@@ -1118,6 +1118,15 @@ export const $updateYFragment = (
         $updateYText(leftY, leftL, binding);
       }
       left += 1;
+    } else if (rightY instanceof XmlText && rightL instanceof Array) {
+      // Same for the right edge. When the head of a run is replaced by an
+      // inline element (e.g. the first word wrapped in a mark), the run only
+      // pairs on the right; deleting and recreating it would drop concurrent
+      // inserts anchored to its items.
+      if (!equalYTextLText(rightY, rightL, binding)) {
+        $updateYText(rightY, rightL, binding);
+      }
+      right += 1;
     } else {
       let updateLeft =
         leftY instanceof XmlElement && matchNodeName(leftY, leftL);

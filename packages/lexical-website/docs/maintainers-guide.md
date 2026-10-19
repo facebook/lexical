@@ -537,6 +537,32 @@ The `increment-version=true + channel=latest` combination is refused
 by the workflow's guard job — real `latest` releases must go through
 `version.yml` first.
 
+## Continuous releases (pkg.pr.new)
+
+Every commit to a pull request and every commit to `main` publishes all public
+packages to [pkg.pr.new](https://github.com/stackblitz-labs/pkg.pr.new) through
+the `pkg-pr-new.yml` workflow. Nothing goes to npm: the nightly, next and latest
+channels above are unchanged and still publish through `call-release.yml`.
+
+```sh
+npm i https://pkg.pr.new/lexical@9372      # latest commit of PR #9372
+npm i https://pkg.pr.new/lexical@4282a68   # a specific commit
+npm i https://pkg.pr.new/lexical@main      # tip of main
+```
+
+The bot comments install commands on each pull request. Previews are built
+with `pnpm run prepare-release`, the same build as the npm channels, after
+`scripts/npm/preview-version.mjs` stamps a version in the nightly line:
+`0.52.1-pr.9372.g4282a68` for a PR and `0.52.1-main.g4282a68` for `main`, next
+to `0.52.1-nightly.20261019.0` on npm. That version is also what
+`LexicalEditor.version` reports. Dependencies between Lexical packages are
+rewritten to the same commit's pkg.pr.new URLs, so `@lexical/react` from a
+preview depends on `lexical` from that preview, not on an npm release. Install
+every Lexical package from the same commit URL to end up with one copy.
+
+The workflow requires the [pkg.pr.new GitHub App](https://github.com/apps/pkg-pr-new)
+to be installed on the repository.
+
 ## Release Procedure
 
 This is the current release procedure for public releases, at least as of

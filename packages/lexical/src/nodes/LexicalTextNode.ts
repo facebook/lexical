@@ -323,12 +323,7 @@ function $setTextContent(
     // so a partial write could leave an underline on a word that is now
     // spelled correctly.
     const [index, remove, insert] = diffComposedText(nodeValue as string, text);
-    if (remove !== 0) {
-      textChild.deleteData(index, remove);
-    }
-    if (insert !== '') {
-      textChild.insertData(index, insert);
-    }
+    textChild.replaceData(index, remove, insert);
   } else {
     textChild.nodeValue = text;
   }

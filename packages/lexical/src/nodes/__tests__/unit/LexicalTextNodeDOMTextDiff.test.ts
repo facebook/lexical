@@ -13,6 +13,7 @@ import {
   $createTextNode,
   $getRoot,
   $isTextNode,
+  $setCompositionKey,
   type LexicalEditor,
 } from 'lexical';
 import {
@@ -61,7 +62,11 @@ function setUpEditor(): LexicalEditor {
 // A live Range over a word the update doesn't touch stands in for a
 // spellcheck marker: assigning nodeValue replaces the node's whole data and
 // collapses it, writing only the changed part shifts it along.
-function rangeAfterEdit(editor: LexicalEditor): string {
+function rangeAfterEdit(
+  editor: LexicalEditor,
+  nextText: string,
+  composing = false,
+): string {
   const domText = editor.getRootElement()!.querySelector('span')!.firstChild!;
   const range = document.createRange();
   range.setStart(domText, 10);
@@ -70,14 +75,17 @@ function rangeAfterEdit(editor: LexicalEditor): string {
     () => {
       const textNode = $getRoot().getFirstDescendant();
       assert($isTextNode(textNode));
-      textNode.setTextContent('The quick brown fxo');
+      if (composing) {
+        $setCompositionKey(textNode.getKey());
+      }
+      textNode.setTextContent(nextText);
     },
     {discrete: true},
   );
   expect(editor.getRootElement()!.querySelector('span')!.firstChild).toBe(
     domText,
   );
-  expect(domText.nodeValue).toBe('The quick brown fxo');
+  expect(domText.nodeValue).toMatch(new RegExp(`^${nextText}`));
   return range.toString();
 }
 
@@ -91,11 +99,24 @@ describe('TextNode DOM text writes', () => {
     'rewrites only the changed part of the DOM text when %s',
     flag => {
       env[flag] = true;
-      expect(rangeAfterEdit(setUpEditor())).toBe('fxo');
+      expect(rangeAfterEdit(setUpEditor(), 'The quick brown fxo')).toBe('fxo');
     },
   );
 
+  test('a pure deletion keeps a range after it', () => {
+    env.IS_CHROME = true;
+    expect(rangeAfterEdit(setUpEditor(), 'Teh fxo')).toBe('fxo');
+  });
+
+  test('rewrites only the changed part during composition in any engine', () => {
+    // The composition suffix is written after the text, so append to keep
+    // the diff clear of the range.
+    expect(rangeAfterEdit(setUpEditor(), 'Teh quick fxo jumsp', true)).toBe(
+      'fxo',
+    );
+  });
+
   test('replaces the whole DOM text in other engines, such as WebKit', () => {
-    expect(rangeAfterEdit(setUpEditor())).toBe('');
+    expect(rangeAfterEdit(setUpEditor(), 'The quick brown fxo')).toBe('');
   });
 });

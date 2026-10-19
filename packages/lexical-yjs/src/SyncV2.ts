@@ -811,6 +811,83 @@ const mappedIdentity = (
     mapped.length === lcontent.length &&
     mapped.every((a, i) => lcontent[i] === a));
 
+// A shared type may only be paired structurally (by $equalYTypePNode) with a
+// lexical child when neither of them is still mapped to a different sibling
+// that is present on the other side. mappedIdentity compares objects (as in
+// y-prosemirror, where nodes are immutable values), but Lexical clones a node
+// whenever its __prev/__next pointers change, so inserting a row makes its
+// neighbours miss the identity check and fall through to the structural one.
+// Without this guard a look-alike sibling (a newly inserted empty table row
+// next to existing empty rows) takes over the shared type of an existing
+// node: the Yjs insert lands at the wrong index, so a concurrent edit in that
+// row shows up in the new row, and the descendants stay mapped to the old
+// node's subtree, so a later remote edit lands in a different row.
+const $canPairStructurally = (
+  ychild: XmlElement | XmlText,
+  lchild: LexicalNode | TextNode[],
+  binding: BindingV2,
+  lKeys: Set<NodeKey>,
+  yTypes: Set<unknown>,
+): boolean => {
+  if (lchild instanceof Array) {
+    return true;
+  }
+  const mapped = binding.mapping.get(ychild);
+  if (
+    mapped !== undefined &&
+    !(mapped instanceof Array) &&
+    mapped.getKey() !== lchild.getKey() &&
+    lKeys.has(mapped.getKey())
+  ) {
+    return false;
+  }
+  const lchildType = binding.mapping.getSharedType(lchild);
+  return (
+    lchildType === undefined || lchildType === ychild || !yTypes.has(lchildType)
+  );
+};
+
+// After a structural match ($equalYTypePNode) the two subtrees are equal, so
+// their descendants are paired positionally too. Remapping only the top-level
+// type would leave its descendants mapped to whatever lexical nodes they were
+// last associated with, and a later remote edit inside them would be applied
+// to that (possibly different) node. If the child lists do not line up one to
+// one (different lengths or kinds), the descendants are left alone rather than
+// paired by position, which could map them to the wrong nodes.
+const $remapEqualSubtree = (
+  ytype: XmlElement | XmlText,
+  lcontent: LexicalNode | TextNode[],
+  binding: BindingV2,
+): void => {
+  binding.mapping.set(ytype, lcontent);
+  if (!(ytype instanceof XmlElement) || lcontent instanceof Array) {
+    return;
+  }
+  const ychildren = ytype.toArray();
+  const lchildren = normalizeNodeContent(lcontent);
+  if (ychildren.length !== lchildren.length) {
+    return;
+  }
+  for (let i = 0; i < ychildren.length; i++) {
+    const ychild = ychildren[i];
+    const lchild = lchildren[i];
+    const aligned =
+      ychild instanceof XmlText
+        ? lchild instanceof Array
+        : ychild instanceof XmlElement && matchNodeName(ychild, lchild);
+    if (!aligned) {
+      return;
+    }
+  }
+  for (let i = 0; i < ychildren.length; i++) {
+    $remapEqualSubtree(
+      ychildren[i] as XmlElement | XmlText,
+      lchildren[i],
+      binding,
+    );
+  }
+};
+
 type EqualityFactor = {
   foundMappedChild: boolean;
   equalityFactor: number;
@@ -1048,6 +1125,13 @@ export const $updateYFragment = (
   const yChildren = yDomFragment.toArray();
   const yChildCnt = yChildren.length;
   const minCnt = Math.min(lChildCnt, yChildCnt);
+  const lKeys = new Set<NodeKey>();
+  for (const lchild of lChildren) {
+    if (!(lchild instanceof Array)) {
+      lKeys.add(lchild.getKey());
+    }
+  }
+  const yTypes = new Set<unknown>(yChildren);
   let left = 0;
   let right = 0;
   // find number of matching elements from left
@@ -1073,9 +1157,12 @@ export const $updateYFragment = (
           dirtyElements,
         );
       }
-    } else if ($equalYTypePNode(leftY, leftL, binding)) {
-      // update mapping
-      binding.mapping.set(leftY, leftL);
+    } else if (
+      $canPairStructurally(leftY, leftL, binding, lKeys, yTypes) &&
+      $equalYTypePNode(leftY, leftL, binding)
+    ) {
+      // update the mapping of the subtree
+      $remapEqualSubtree(leftY, leftL, binding);
     } else {
       break;
     }
@@ -1100,9 +1187,12 @@ export const $updateYFragment = (
           dirtyElements,
         );
       }
-    } else if ($equalYTypePNode(rightY, rightL, binding)) {
-      // update mapping
-      binding.mapping.set(rightY, rightL);
+    } else if (
+      $canPairStructurally(rightY, rightL, binding, lKeys, yTypes) &&
+      $equalYTypePNode(rightY, rightL, binding)
+    ) {
+      // update the mapping of the subtree
+      $remapEqualSubtree(rightY, rightL, binding);
     } else {
       break;
     }

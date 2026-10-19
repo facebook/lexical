@@ -26,7 +26,14 @@ import {
   getDOMSelection,
   type LexicalNode,
 } from 'lexical';
-import {afterEach, assert, describe, expect, test} from 'vitest';
+import {
+  afterEach,
+  assert,
+  describe,
+  expect,
+  onTestFinished,
+  test,
+} from 'vitest';
 
 import {$internalCreateRangeSelection} from '../../LexicalSelection';
 import {
@@ -514,7 +521,8 @@ describe('named-slots: selection across a root slot', () => {
 describe('named-slots: selection across nested slots', () => {
   // root -> paragraph ("Body") + card paragraph; card slot 'title' (T) holds
   // "Intro", a heading paragraph whose slot 'inner' holds "Deep", and
-  // "Outro"; T itself hosts slot 'caption' holding "Caption".
+  // "Outro"; T itself hosts slot 'caption' holding "Caption". The card's
+  // slot 'aside' holds "Aside" and comes first in the card's slot order.
   const keys: Record<string, string> = {};
   function buildNestedSlotEditor() {
     return buildEditorFromExtensions(
@@ -544,6 +552,13 @@ describe('named-slots: selection across nested slots', () => {
           $setSlot(card, 'title', title);
           $setSlot(heading, 'inner', deep);
           $setSlot(title, 'caption', caption);
+          const aside = $createTestShadowRootNode();
+          const asideText = $createTextNode('Aside');
+          aside.append($createParagraphNode().append(asideText));
+          $setSlot(card, 'aside', aside);
+          keys.aside = aside.getKey();
+          keys.asideText = asideText.getKey();
+          keys.captionText = captionText.getKey();
           keys.bodyText = bodyText.getKey();
           keys.title = title.getKey();
           keys.introText = introText.getKey();
@@ -613,6 +628,88 @@ describe('named-slots: selection across nested slots', () => {
         expect(active.anchor.key).toBe(keys.introText);
         expect(active.focus.key).toBe(keys.title);
         expect(active.focus.offset).toBe(0);
+      },
+      {discrete: true},
+    );
+  });
+
+  // Each case clamps the focus to an edge only content order decides.
+  test.each([
+    {
+      anchor: ['deepText', 1, 'text'],
+      expected: ['deep', 0],
+      focus: ['asideText', 2, 'text'],
+      name: 'from a nested slot into an earlier sibling of its outer slot',
+    },
+    {
+      anchor: ['root', 2, 'element'],
+      expected: ['root', 1],
+      focus: ['deepText', 2, 'text'],
+      name: 'from the end of the root into a nested slot',
+    },
+    {
+      anchor: ['deepText', 1, 'text'],
+      expected: ['deep', 1],
+      focus: ['root', 2, 'element'],
+      name: 'from a nested slot to the end of the root',
+    },
+  ] as const)('a programmatic selection $name', ({anchor, focus, expected}) => {
+    using editor = buildNestedSlotEditor();
+    editor.update(
+      () => {
+        const keyOf = (name: string) =>
+          name === 'root' ? $getRoot().getKey() : keys[name];
+        const selection = $createRangeSelection();
+        selection.anchor.set(keyOf(anchor[0]), anchor[1], anchor[2]);
+        selection.focus.set(keyOf(focus[0]), focus[1], focus[2]);
+        $setSelection(selection);
+
+        const active = $getSelection();
+        assert($isRangeSelection(active));
+        expect(active.anchor.key).toBe(keyOf(anchor[0]));
+        expect([active.focus.key, active.focus.offset]).toEqual([
+          keyOf(expected[0]),
+          expected[1],
+        ]);
+      },
+      {discrete: true},
+    );
+  });
+
+  test("dragging from a slot value's own element point into its slot clamps by DOM order", () => {
+    using editor = buildNestedSlotEditor();
+    const rootElement = document.createElement('div');
+    document.body.appendChild(rootElement);
+    onTestFinished(() => rootElement.remove());
+    editor.setRootElement(rootElement);
+    const titleDOM = editor.getElementByKey(keys.title);
+    const captionTextDOM = editor.getElementByKey(keys.captionText)?.firstChild;
+    assert(titleDOM && captionTextDOM);
+    // The caption renders inside the title's DOM ahead of its children, so a
+    // drag from the title's end into it runs backward.
+    const domSelection = getDOMSelection(editor._window ?? window);
+    assert(domSelection !== null);
+    domSelection.setBaseAndExtent(
+      titleDOM,
+      titleDOM.childNodes.length,
+      captionTextDOM,
+      2,
+    );
+
+    editor.update(
+      () => {
+        const selection = $internalCreateRangeSelection(
+          $getSelection(),
+          domSelection,
+          editor,
+          {type: 'selectionchange'} as Event,
+        );
+        assert($isRangeSelection(selection));
+        expect($slotFrameKeyOf(selection.anchor.getNode())).toBe(keys.title);
+        expect([selection.focus.key, selection.focus.offset]).toEqual([
+          keys.title,
+          0,
+        ]);
       },
       {discrete: true},
     );

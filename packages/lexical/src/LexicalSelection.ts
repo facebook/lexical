@@ -3179,66 +3179,77 @@ function $getPointSlotFrame(point: PointType): LexicalNode | null {
 
 // Content order (slots-first) of a slot-straddling pair, computed from the
 // model alone. The caret comparison ($comparePoint…) throws across a slot
-// boundary (a slotted node has no common ancestor through __parent), so the
-// side in the inner slot is reduced to the host, in the other side's frame,
-// that owns it, and the two are compared with the linked-list isBefore. A
-// slotted point sorts at its host's leading edge (slots-first). Only called
-// for a confirmed straddle (the frames differ).
+// boundary (a slotted node has no common ancestor through __parent), so each
+// point is lifted to the lowest frame both share: a point in a slot below it
+// becomes the host in that frame which owns the slot, at the host's leading
+// edge (slots-first: inside an element host before its children, or at a
+// decorator host). Two slots of the same host compare by slot order. Only
+// called for a confirmed straddle (the frames differ).
 function $slotStraddleFocusAfterAnchor(
   anchorPoint: PointType,
   focusPoint: PointType,
   anchorFrame: LexicalNode | null,
   focusFrame: LexicalNode | null,
 ): boolean {
-  const focusHost = focusFrame && $getSlotHostInFrame(focusFrame, anchorFrame);
-  if (focusHost !== null) {
-    const anchorNode = $getNodeByKey(anchorPoint.key);
-    if (anchorNode === null) {
-      return false;
+  const anchorChain = $getFrameChain(anchorFrame);
+  const focusChain = $getFrameChain(focusFrame);
+  for (let fi = 0; fi < focusChain.length; fi++) {
+    const ai = anchorChain.findIndex(frame =>
+      $isSameFrame(frame, focusChain[fi]),
+    );
+    if (ai === -1) {
+      continue;
     }
-    // Anchor within the host's regular children sits after the slot (focus).
-    if (focusHost.is(anchorNode) || focusHost.isParentOf(anchorNode)) {
-      return false;
-    }
-    return anchorNode.isBefore(focusHost);
-  }
-  const anchorHost =
-    anchorFrame && $getSlotHostInFrame(anchorFrame, focusFrame);
-  if (anchorHost !== null) {
-    const focusNode = $getNodeByKey(focusPoint.key);
-    if (focusNode === null) {
+    // The slot just below the common frame on each side, if any.
+    const anchorSlot = ai > 0 ? anchorChain[ai - 1] : null;
+    const focusSlot = fi > 0 ? focusChain[fi - 1] : null;
+    const anchorHost = anchorSlot && $getSlotHost(anchorSlot);
+    const focusHost = focusSlot && $getSlotHost(focusSlot);
+    if (anchorSlot && focusSlot && anchorHost && anchorHost.is(focusHost)) {
+      // Two slots of the same host: slot-map iteration is insertion order,
+      // which is the order the reconciler renders them (content order).
+      for (const slotKey of $getSlotMap(anchorHost).values()) {
+        if (slotKey === anchorSlot.getKey()) {
+          return true;
+        }
+        if (slotKey === focusSlot.getKey()) {
+          return false;
+        }
+      }
       return true;
     }
-    // Focus within the host's regular children sits after the slot content.
-    if (anchorHost.is(focusNode) || anchorHost.isParentOf(focusNode)) {
-      return true;
-    }
-    return anchorHost.isBefore(focusNode);
+    const order = $comparePointCaretNext(
+      anchorHost
+        ? $getSlotHostCaret(anchorHost)
+        : $normalizeCaret($caretFromPoint(anchorPoint, 'next')),
+      focusHost
+        ? $getSlotHostCaret(focusHost)
+        : $normalizeCaret($caretFromPoint(focusPoint, 'next')),
+    );
+    // On a tie the lifted side's slot content comes first.
+    return order === 0 ? anchorHost !== null : order < 0;
   }
-  if (anchorFrame === null || focusFrame === null) {
-    return true;
+  return true;
+}
+
+// The frames enclosing a point in frame, innermost first, ending with null
+// (the main tree) unless the chain is detached.
+function $getFrameChain(frame: LexicalNode | null): (LexicalNode | null)[] {
+  const chain = [frame];
+  for (let host = frame && $getSlotHost(frame); host !== null; ) {
+    const hostFrame = $getSlotFrame(host);
+    chain.push(hostFrame);
+    host = hostFrame && $getSlotHost(hostFrame);
   }
-  const sameHost = $getSlotHost(anchorFrame);
-  if (sameHost !== null && sameHost.is($getSlotHost(focusFrame))) {
-    // Two slots of the same host: slot-map iteration is insertion order,
-    // which is the order the reconciler renders them (content order).
-    for (const slotKey of $getSlotMap(sameHost).values()) {
-      if (slotKey === anchorFrame.getKey()) {
-        return true;
-      }
-      if (slotKey === focusFrame.getKey()) {
-        return false;
-      }
-    }
-    return true;
-  }
-  const anchorOuter = $getSlotHostInFrame(anchorFrame, null);
-  const focusOuter = $getSlotHostInFrame(focusFrame, null);
-  return anchorOuter !== null &&
-    focusOuter !== null &&
-    !anchorOuter.is(focusOuter)
-    ? anchorOuter.isBefore(focusOuter)
-    : true;
+  return chain;
+}
+
+// Where a slot's content sits among the host's own frame: inside an element
+// host before its children, or at a decorator host.
+function $getSlotHostCaret(host: LexicalNode): PointCaret<'next'> {
+  return $isElementNode(host)
+    ? $getChildCaret(host, 'next')
+    : $getSiblingCaret(host, 'next');
 }
 
 // Slots are shadow-root-isolated: a RangeSelection must not straddle a slot
@@ -3267,28 +3278,37 @@ function $clampSelectionPointsToSlotFrame(
   // The host in the anchor's frame that owns the focus's (possibly nested)
   // slot, or null when the focus is outside the anchor's slot.
   const host = focusFrame && $getSlotHostInFrame(focusFrame, anchorFrame);
-  const focusAfterAnchor = resolveFocusAfterAnchor(anchorFrame, focusFrame);
-  // A focus outside the anchor's slot goes to that slot's edge. A host that is
-  // the frame's own root (the RootNode, or the anchor's slot value) has no
-  // parent to step past, so the focus goes to the edge of its children.
-  const edgeFrame =
-    host === null || $isRootNode(host) || host.is(anchorFrame)
-      ? host || anchorFrame
-      : null;
-  if (edgeFrame !== null) {
-    $setPointToFrameEdge(focusPoint, edgeFrame, focusAfterAnchor);
+  let edgeFrame: LexicalNode;
+  if (host === null) {
+    // The focus is outside the anchor's slot: go to that slot's edge.
+    if (anchorFrame === null) {
+      return false;
+    }
+    edgeFrame = anchorFrame;
+  } else if ($isRootNode(host) || host.is(anchorFrame)) {
+    // The host is the frame's own root (the RootNode, or the anchor's slot
+    // value), with no parent to step past: go to the edge of its children.
+    edgeFrame = host;
+  } else {
+    // Push the focus past the host so it is wholly contained.
+    const hostParent = host.getParent();
+    if (hostParent === null) {
+      return false;
+    }
+    const hostIndex = host.getIndexWithinParent();
+    focusPoint.set(
+      hostParent.getKey(),
+      resolveFocusAfterAnchor(anchorFrame, focusFrame)
+        ? hostIndex + 1
+        : hostIndex,
+      'element',
+    );
     return true;
   }
-  // Otherwise push the focus past the host so it is wholly contained.
-  const hostParent = host && host.getParent();
-  if (host === null || hostParent === null) {
-    return false;
-  }
-  const hostIndex = host.getIndexWithinParent();
-  focusPoint.set(
-    hostParent.getKey(),
-    focusAfterAnchor ? hostIndex + 1 : hostIndex,
-    'element',
+  $setPointToFrameEdge(
+    focusPoint,
+    edgeFrame,
+    resolveFocusAfterAnchor(anchorFrame, focusFrame),
   );
   return true;
 }
@@ -3416,8 +3436,8 @@ function $internalResolveSelectionPoints(
 
   // Clamp a slot-straddling drag into the
   // anchor's frame before normalization cleans up the resulting edge points.
-  // The DOM order of the resolved nodes gives the drag direction (slot DOM is
-  // slots-first, so DOM order matches content order). Gated on `_slotsUsed`
+  // The DOM order of the selection's points gives the drag direction (slot
+  // DOM is slots-first, so DOM order matches content order). Gated on `_slotsUsed`
   // so editors that never slot anything skip the walk, mirroring the
   // commit-time and `$setSelection` clamps.
   const slotClamped =
@@ -3425,10 +3445,11 @@ function $internalResolveSelectionPoints(
     $clampSelectionPointsToSlotFrame(
       resolvedAnchorPoint,
       resolvedFocusPoint,
-      () =>
-        (anchorDOM.compareDocumentPosition(focusDOM) &
-          Node.DOCUMENT_POSITION_FOLLOWING) !==
-        0,
+      () => {
+        const range = anchorDOM.ownerDocument!.createRange();
+        range.setStart(anchorDOM, anchorOffset);
+        return range.comparePoint(focusDOM, focusOffset) >= 0;
+      },
     );
 
   // Handle normalization of selection when it is at the boundaries.

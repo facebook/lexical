@@ -12,13 +12,7 @@ import {RichTextExtension} from '@lexical/rich-text';
 import {$getRoot} from 'lexical';
 import {expect, test} from 'vitest';
 
-import {
-  assertHTML,
-  assertSelection,
-  html,
-  setupEditor,
-  typeText,
-} from './utils';
+import {assertHTML, assertSelection, html, setupEditor} from './utils';
 
 const expected = html`
   <p class="PlaygroundEditorTheme__paragraph" dir="auto">
@@ -125,7 +119,12 @@ test.each([true, false])(
       isRichText ? RichTextExtension : PlainTextExtension,
       HashtagExtension,
     ]);
-    await typeText(text);
+    // Insert the text as typing would rather than type it: fifty keys sent
+    // one at a time take most of this test's time on a busy runner, and
+    // without text input, text mutations are never ignored as typing.
+    editor.update(() => $getRoot().selectEnd().insertText(text), {
+      discrete: true,
+    });
     const selection = {
       anchorOffset: 1,
       anchorPath: [0, 6, 0],
@@ -134,9 +133,6 @@ test.each([true, false])(
     };
     await assertHTML(root, expected);
     await assertSelection(root, selection);
-    // Text mutations are intentionally ignored for TEXT_MUTATION_VARIANCE
-    // (100 ms) after input. Exercise observer recovery outside that window.
-    await new Promise(resolve => setTimeout(resolve, 100));
     for (const [name, mutate] of mutations) {
       mutate(root);
       await assertHTML(root, expected);

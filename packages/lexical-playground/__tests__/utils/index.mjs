@@ -605,7 +605,9 @@ async function assertSelectionOnPageOrFrame(page, expected) {
 
       // The zero-size anchors the reconciler parks outside a leading / trailing
       // block decorator (#8922) occupy a DOM child slot but no lexical one, so
-      // discount them from both paths and offsets.
+      // discount them from both paths and offsets. Keep these helpers in step
+      // with the playground's TestRecorderPlugin, which records the paths and
+      // offsets that this asserts.
       const boundaryAnchorsBefore = (parent, index) => {
         const children = parent.childNodes;
         let count = 0;
@@ -639,24 +641,24 @@ async function assertSelectionOnPageOrFrame(page, expected) {
       };
 
       const fixOffset = (node, offset) => {
-        if (node && node.nodeType === Node.ELEMENT_NODE) {
-          offset -= boundaryAnchorsBefore(node, offset);
+        if (!node || node.nodeType !== Node.ELEMENT_NODE) {
+          return offset;
         }
         // If the selection offset is at the br of a webkit img+br linebreak
         // then move the offset to the img so the tests are consistent across
-        // browsers
-        if (node && node.nodeType === Node.ELEMENT_NODE && offset > 0) {
-          const child = node.children[offset - 1];
-          if (
-            child &&
-            child.nodeType === Node.ELEMENT_NODE &&
-            child.nodeName === 'IMG' &&
-            child.getAttribute('data-lexical-managed-linebreak') === 'true'
-          ) {
-            return offset - 1;
-          }
+        // browsers. Look the child up by the DOM offset: a leading anchor can
+        // precede it in the same element.
+        const child = offset > 0 ? node.childNodes[offset - 1] : null;
+        const lexicalOffset = offset - boundaryAnchorsBefore(node, offset);
+        if (
+          child &&
+          child.nodeType === Node.ELEMENT_NODE &&
+          child.nodeName === 'IMG' &&
+          child.getAttribute('data-lexical-managed-linebreak') === 'true'
+        ) {
+          return lexicalOffset - 1;
         }
-        return offset;
+        return lexicalOffset;
       };
 
       const {anchorNode, anchorOffset, focusNode, focusOffset} =
@@ -1303,7 +1305,6 @@ export async function dragMouse(
     offsetEnd = {x: 0, y: 0},
     mouseDown = true,
     mouseUp = true,
-    slow = false,
   } = opts;
   let fromX = fromBoundingBox.x;
   let fromY = fromBoundingBox.y;
@@ -1328,7 +1329,7 @@ export async function dragMouse(
   if (mouseDown) {
     await page.mouse.down();
   }
-  await page.mouse.move(toX, toY, slow ? 10 : 1);
+  await page.mouse.move(toX, toY);
   if (mouseUp) {
     await page.mouse.up();
   }
@@ -1517,7 +1518,7 @@ export async function selectCellsFromTableCords(
 
   // const firstBox = await firstRowFirstColumnCell.boundingBox();
   // const secondBox = await secondRowSecondCell.boundingBox();
-  // await dragMouse(page, firstBox, secondBox, {slow: true});
+  // await dragMouse(page, firstBox, secondBox);
 }
 
 export async function clickTableCellActiveButton(page) {

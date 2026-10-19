@@ -26,6 +26,7 @@ import {
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
   type CommandListenerPriority,
+  type LexicalNode,
   mergeRegister,
   type MutationListener,
   type NodeKey,
@@ -89,6 +90,15 @@ type LexicalAutoEmbedPluginProps<TEmbedConfig extends EmbedConfig> = {
    * Priority for key handling in the menu. The default is `COMMAND_PRIORITY_LOW`
    */
   menuCommandPriority?: CommandListenerPriority;
+  /**
+   * Optional predicate to suppress the menu for specific locations, e.g.
+   * inside nodes that only accept inline content. It receives the matched
+   * AutoLinkNode; if it returns true, the menu is not shown and the pasted
+   * link is left as-is (the Tab/Enter/Esc handling is part of the menu,
+   * so it is skipped too). The predicate can inspect the node's ancestors,
+   * e.g. with `$getNearestNodeOfType` from `@lexical/utils`.
+   */
+  $disableMenuFor?: (node: LexicalNode) => boolean;
 };
 
 type EmbedMatch<TEmbedConfig extends EmbedConfig> = {
@@ -105,6 +115,13 @@ function $getCurrentLink(key: NodeKey, url: string): LinkNode | null {
     linkNode.getURL() === url
     ? linkNode
     : null;
+}
+
+function $isMenuDisabledForNode(
+  linkNode: LexicalNode,
+  $disableMenuFor?: (node: LexicalNode) => boolean,
+): boolean {
+  return $disableMenuFor != null && $disableMenuFor(linkNode);
 }
 
 /**
@@ -141,6 +158,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
   getMenuOptions,
   menuRenderFn,
   menuCommandPriority = COMMAND_PRIORITY_LOW,
+  $disableMenuFor,
 }: LexicalAutoEmbedPluginProps<TEmbedConfig>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
@@ -163,6 +181,9 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
       const url = editor.read('latest', function () {
         const linkNode = $getNodeByKey(key);
         if ($isLinkNode(linkNode)) {
+          if ($isMenuDisabledForNode(linkNode, $disableMenuFor)) {
+            return undefined;
+          }
           return linkNode.getURL();
         }
       });
@@ -179,9 +200,16 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
           return;
         }
         if (result != null) {
-          // Edits made while parseUrl was pending may not be committed yet
+          // Edits made while parseUrl was pending may not be committed yet,
+          // and the link may have moved into a disabled location since
           if (
-            editor.read('pending', () => $getCurrentLink(key, url) !== null)
+            editor.read('pending', () => {
+              const linkNode = $getCurrentLink(key, url);
+              return (
+                linkNode !== null &&
+                !$isMenuDisabledForNode(linkNode, $disableMenuFor)
+              );
+            })
           ) {
             setEmbedMatch({embedConfig, key, result, url});
           }
@@ -189,7 +217,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
         }
       }
     },
-    [editor, embedConfigs],
+    [$disableMenuFor, editor, embedConfigs],
   );
 
   useEffect(() => {

@@ -15,7 +15,7 @@ import {
   defineExtension,
   IS_APPLE,
 } from 'lexical';
-import {describe, expect, onTestFinished, test} from 'vitest';
+import {describe, expect, onTestFinished, test, vi} from 'vitest';
 import {userEvent} from 'vitest/browser';
 
 import {MarkdownTestExtension} from '../utils';
@@ -209,5 +209,52 @@ describe('native Markdown block shortcuts', () => {
       IS_APPLE ? '{Meta>}{Shift>}z{/Shift}{/Meta}' : '{Control>}y{/Control}',
     );
     await expect.poll(() => root.innerHTML).toBe(expected);
+  });
+});
+
+// An input listener that runs before the editor's (React registers a
+// capture-phase one on its root container) lets the mutation observer report
+// the text the browser inserted before the editor's input listener reads it.
+// On a busy machine the text entry is more than 100ms old by then, which the
+// observer took for text that something else changed: it read the text back,
+// the shortcut ran, and the input listener inserted the last character again,
+// into the new block.
+describe('native Markdown shortcuts on a busy machine', () => {
+  test.each([
+    {
+      html: '<h1 dir="auto"><br data-lexical-managed-linebreak="true" /></h1>',
+      text: '# ',
+    },
+    {
+      html: '<code spellcheck="false" dir="auto"><br data-lexical-managed-linebreak="true" /></code>',
+      text: '``` ',
+    },
+    {
+      html: '<p dir="auto"><em data-lexical-text="true">hi</em></p>',
+      text: '*hi*',
+    },
+  ])('types $text', async ({text, html}) => {
+    const root = setup();
+    // As on a busy machine, the input event comes 150ms after the text entry:
+    // the clock runs 150ms ahead from a capture-phase input listener above
+    // the root until a listener after the editor's.
+    let lag = 0;
+    const now = performance.now.bind(performance);
+    const clock = vi
+      .spyOn(performance, 'now')
+      .mockImplementation(() => now() + lag);
+    const controller = new AbortController();
+    onTestFinished(() => {
+      controller.abort();
+      clock.mockRestore();
+    });
+    const {signal} = controller;
+    document.body.addEventListener('input', () => (lag = 150), {
+      capture: true,
+      signal,
+    });
+    root.addEventListener('input', () => (lag = 0), {signal});
+    await userEvent.keyboard(text);
+    await expect.poll(() => root.innerHTML).toBe(normalizeHTML(html));
   });
 });

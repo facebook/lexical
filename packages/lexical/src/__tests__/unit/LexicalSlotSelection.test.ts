@@ -512,9 +512,9 @@ describe('named-slots: selection across a root slot', () => {
 });
 
 describe('named-slots: selection across nested slots', () => {
-  // root -> paragraph ("Body") + card paragraph; card slot 'title' (T) holds a
-  // heading paragraph whose slot 'inner' holds "Deep"; T itself hosts slot
-  // 'caption' holding "Caption".
+  // root -> paragraph ("Body") + card paragraph; card slot 'title' (T) holds
+  // "Intro", a heading paragraph whose slot 'inner' holds "Deep", and
+  // "Outro"; T itself hosts slot 'caption' holding "Caption".
   const keys: Record<string, string> = {};
   function buildNestedSlotEditor() {
     return buildEditorFromExtensions(
@@ -535,11 +535,18 @@ describe('named-slots: selection across nested slots', () => {
           $getRoot()
             .clear()
             .append($createParagraphNode().append(bodyText), card);
-          title.append(heading);
+          const introText = $createTextNode('Intro');
+          title.append(
+            $createParagraphNode().append(introText),
+            heading,
+            $createParagraphNode().append($createTextNode('Outro')),
+          );
           $setSlot(card, 'title', title);
           $setSlot(heading, 'inner', deep);
           $setSlot(title, 'caption', caption);
           keys.bodyText = bodyText.getKey();
+          keys.title = title.getKey();
+          keys.introText = introText.getKey();
           keys.deep = deep.getKey();
           keys.deepText = deepText.getKey();
           keys.captionText = captionText.getKey();
@@ -572,6 +579,44 @@ describe('named-slots: selection across nested slots', () => {
       );
     },
   );
+
+  test('a programmatic selection from a slot into a slot nested in it pushes focus past the host in the anchor slot', () => {
+    using editor = buildNestedSlotEditor();
+    editor.update(
+      () => {
+        const selection = $createRangeSelection();
+        selection.anchor.set(keys.introText, 1, 'text');
+        selection.focus.set(keys.deepText, 2, 'text');
+        $setSelection(selection);
+
+        const active = $getSelection();
+        assert($isRangeSelection(active));
+        expect(active.anchor.key).toBe(keys.introText);
+        expect(active.focus.key).toBe(keys.title);
+        expect(active.focus.offset).toBe(2);
+      },
+      {discrete: true},
+    );
+  });
+
+  test("a programmatic selection from a slot into its own slot value's slot clamps focus to the slot edge", () => {
+    using editor = buildNestedSlotEditor();
+    editor.update(
+      () => {
+        const selection = $createRangeSelection();
+        selection.anchor.set(keys.introText, 1, 'text');
+        selection.focus.set(keys.captionText, 2, 'text');
+        $setSelection(selection);
+
+        const active = $getSelection();
+        assert($isRangeSelection(active));
+        expect(active.anchor.key).toBe(keys.introText);
+        expect(active.focus.key).toBe(keys.title);
+        expect(active.focus.offset).toBe(0);
+      },
+      {discrete: true},
+    );
+  });
 
   test('a programmatic selection from a nested slot into the body clamps focus into the slot', () => {
     using editor = buildNestedSlotEditor();

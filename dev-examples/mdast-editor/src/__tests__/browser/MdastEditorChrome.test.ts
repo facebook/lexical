@@ -16,6 +16,7 @@ import {
 } from '@lexical/mdast';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
+  $createNodeSelection,
   $createParagraphNode,
   $createRangeSelection,
   $getRoot,
@@ -271,27 +272,46 @@ describe('footnotes', () => {
     expect(markdownOf(editor)).toBe('');
   });
 
-  test.each([false, true])(
-    'the footnotes stay while a definition is being edited (caret on the section: %s)',
-    onSection => {
-      const {editor} = mountEditor('body[^a] text\n\n[^a]: the note');
-      editor.update(
-        () => {
-          const footnotes = $getSlot($getRoot(), FOOTNOTES_SLOT);
-          assert($isElementNode(footnotes));
-          if (onSection) {
-            footnotes.select(0, 0);
-          } else {
-            footnotes.selectEnd();
-          }
-          $getRoot().clear().append($createParagraphNode());
-        },
-        {discrete: true},
-      );
-      // The empty body paragraph serializes as leading blank lines.
-      expect(markdownOf(editor).trim()).toBe('[^a]: the note');
-    },
-  );
+  test.each([
+    'a caret in a definition',
+    'a caret on the section',
+    'a node in a definition',
+  ])('the footnotes stay while being edited, with %s', selected => {
+    const {editor} = mountEditor('body[^a] text\n\n[^a]: the note');
+    let sectionKey = '';
+    editor.update(
+      () => {
+        const footnotes = $getSlot($getRoot(), FOOTNOTES_SLOT);
+        assert($isElementNode(footnotes));
+        sectionKey = footnotes.getKey();
+        $getRoot().clear().append($createParagraphNode());
+        const note = footnotes.getLastDescendant();
+        assert($isTextNode(note));
+        if (selected === 'a caret in a definition') {
+          note.selectEnd();
+        } else if (selected === 'a caret on the section') {
+          footnotes.select(0, 0);
+        } else {
+          const selection = $createNodeSelection();
+          selection.add(note.getParentOrThrow().getKey());
+          $setSelection(selection);
+        }
+      },
+      {discrete: true},
+    );
+    // The empty body paragraph serializes as leading blank lines.
+    expect(markdownOf(editor).trim()).toBe('[^a]: the note');
+    if (selected === 'a caret on the section') {
+      editor.read(() => {
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        expect([selection.anchor.type, selection.anchor.key]).toEqual([
+          'element',
+          sectionKey,
+        ]);
+      });
+    }
+  });
 
   test('a Markdown pane sync keeps definitions with no body', () => {
     const {editor} = mountEditor('');

@@ -33,11 +33,12 @@ import {
   RenderContextMarkdownSelection,
   type RootContent,
 } from '@lexical/mdast';
-import {$dfsIterator, $findMatchingParent, mergeRegister} from '@lexical/utils';
+import {$dfsIterator, mergeRegister} from '@lexical/utils';
 import {
   $addUpdateTag,
   $create,
   $createParagraphNode,
+  $findMatchingParent,
   $getDocument,
   $getEditor,
   $getNodeByKey,
@@ -752,8 +753,9 @@ function $bodyHasRef(): boolean {
  * Only a deletion that took references with it clears, so a note written
  * before any reference to it (in the Markdown pane, or in an empty body that
  * was then typed in and erased) stays. Also left alone: the Markdown pane's
- * sync (tagged history-merge), and an editor whose caret is in a definition,
- * which is being edited.
+ * sync (tagged history-merge), and an editor whose selection is in the
+ * footnotes section (a caret in a definition or on the section itself, or
+ * a selected node in a definition), which is being edited.
  */
 function $clearFootnotesOfEmptyDocument(root: RootNode): void {
   if (
@@ -765,13 +767,16 @@ function $clearFootnotesOfEmptyDocument(root: RootNode): void {
     return;
   }
   const selection = $getSelection();
-  if (
-    $isRangeSelection(selection) &&
-    $findMatchingParent(selection.anchor.getNode(), $isFootnotesNode)
-  ) {
-    return;
+  // A range never straddles the section, whose slot it is clamped to the
+  // frame of, so its anchor tells where it is.
+  const selected = $isRangeSelection(selection)
+    ? [selection.anchor.getNode()]
+    : selection
+      ? selection.getNodes()
+      : [];
+  if (!selected.some(node => $findMatchingParent(node, $isFootnotesNode))) {
+    $clearFootnotes();
   }
-  $clearFootnotes();
 }
 
 /* -------------------------------------------------------------------------- *

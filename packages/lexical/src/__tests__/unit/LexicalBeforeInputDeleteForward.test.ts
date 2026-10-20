@@ -14,16 +14,18 @@ afterEach(() => {
 });
 
 // A forward deletion's beforeinput dispatches DELETE_LINE_COMMAND with its
-// target range. Without slots even a range that reaches before the caret is
-// kept; in a slot such a range is ignored and the caret is kept instead.
+// target range, even one that reaches before the caret, as long as the caret
+// is outside every slot. In a slot such a range is the shape of a plain Delete
+// (#9363): it is ignored and one character after the caret is deleted.
 test.each([
-  {end: 3, expected: [2, 3], slot: false, start: 2},
-  {end: 2, expected: [0, 2], slot: false, start: 0},
-  {end: 3, expected: [2, 3], slot: true, start: 2},
-  {end: 2, expected: [2, 2], slot: true, start: 0},
-])(
-  'deleteContentForward from $start to $end (slot: $slot) deletes $expected',
-  async ({end, expected, slot, start}) => {
+  {caret: 'no slots', end: 3, expected: ['line', 2, 3], start: 2},
+  {caret: 'no slots', end: 2, expected: ['line', 0, 2], start: 0},
+  {caret: 'beside a slot', end: 2, expected: ['line', 0, 2], start: 0},
+  {caret: 'in a slot', end: 3, expected: ['line', 2, 3], start: 2},
+  {caret: 'in a slot', end: 2, expected: ['character', 2, 2], start: 0},
+] as const)(
+  'deleteContentForward from $start to $end with the caret $caret deletes $expected',
+  async ({caret, end, expected, start}) => {
     vi.doMock('lexical/src/environment', async importOriginal => ({
       ...(await importOriginal<object>()),
       CAN_USE_BEFORE_INPUT: true,
@@ -36,6 +38,7 @@ test.each([
       $isRangeSelection,
       $setSlot,
       COMMAND_PRIORITY_CRITICAL,
+      DELETE_CHARACTER_COMMAND,
       DELETE_LINE_COMMAND,
     } = await import('lexical');
     const {buildEditorFromExtensions} = await import('@lexical/extension');
@@ -44,12 +47,20 @@ test.each([
       $initialEditorState: () => {
         const text = $createTextNode('draft');
         const paragraph = $createParagraphNode().append(text);
-        if (slot) {
-          const host = $createParagraphNode();
+        const host = $createParagraphNode();
+        if (caret === 'in a slot') {
           $getRoot().append(host);
           $setSlot(host, 'note', paragraph);
         } else {
           $getRoot().append(paragraph);
+        }
+        if (caret === 'beside a slot') {
+          $getRoot().append(host);
+          $setSlot(
+            host,
+            'note',
+            $createParagraphNode().append($createTextNode('note')),
+          );
         }
         text.select(2, 2);
       },
@@ -66,22 +77,27 @@ test.each([
       dependencies: [RichTextExtension],
       name: '[test]',
     });
-    const calls: [boolean, number, number][] = [];
-    editor.registerCommand(
-      DELETE_LINE_COMMAND,
-      isBackward => {
-        const selection = $getSelection();
-        assert($isRangeSelection(selection));
-        const [first, last] = selection.getStartEndPoints();
-        calls.push([
-          isBackward,
-          Math.min(first.offset, last.offset),
-          Math.max(first.offset, last.offset),
-        ]);
-        return true;
-      },
-      COMMAND_PRIORITY_CRITICAL,
-    );
+    const calls: [string, number, number][] = [];
+    for (const [name, command] of [
+      ['line', DELETE_LINE_COMMAND],
+      ['character', DELETE_CHARACTER_COMMAND],
+    ] as const) {
+      editor.registerCommand(
+        command,
+        isBackward => {
+          const selection = $getSelection();
+          assert($isRangeSelection(selection) && !isBackward);
+          const [first, last] = selection.getStartEndPoints();
+          calls.push([
+            name,
+            Math.min(first.offset, last.offset),
+            Math.max(first.offset, last.offset),
+          ]);
+          return true;
+        },
+        COMMAND_PRIORITY_CRITICAL,
+      );
+    }
     const rootElement = editor.getRootElement();
     const textDOM =
       rootElement && rootElement.querySelector('span')?.firstChild;
@@ -102,6 +118,6 @@ test.each([
       ],
     });
     rootElement.dispatchEvent(event);
-    expect(calls).toEqual([[false, ...expected]]);
+    expect(calls).toEqual([expected]);
   },
 );

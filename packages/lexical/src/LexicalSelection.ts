@@ -2655,11 +2655,12 @@ function $extendSelectionForDeletion(
   // Deletion never does: stop the focus at the boundary instead. Resolving
   // the range would clamp it into the landed point's frame and move the caret
   // out of its slot.
-  const landedNode = $getNearestNodeFromDOMNode(landedContainer);
-  const anchorFrame = $getSlotFrame(anchorNode);
-  const landedFrame = landedNode && $getSlotFrame(landedNode);
+  const landedNode =
+    editor._slotsUsed && $getNearestNodeFromDOMNode(landedContainer);
+  const anchorFrame = landedNode ? $getSlotFrame(anchorNode) : null;
+  const landedFrame = landedNode ? $getSlotFrame(landedNode) : null;
   if (
-    landedNode !== null &&
+    landedNode &&
     !$isSameFrame(landedFrame, anchorFrame) &&
     $setPointAtSlotBoundary(
       selection.focus,

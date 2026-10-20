@@ -195,10 +195,10 @@ async function pressAt(
   } else {
     keys(editor);
   }
-  return {original, result: snapshot(editor, mounted.keys)};
+  return {editor, original, result: snapshot(editor, mounted.keys)};
 }
 
-describe('word deletion at a slot boundary', () => {
+describe('deletion at a slot boundary', () => {
   test.each([
     ['root slot', 'sibling'],
     ['element host', 'note'],
@@ -228,10 +228,40 @@ describe('word deletion at a slot boundary', () => {
     expect(result).toEqual({note: 'f', sibling: 'bar'});
   });
 
+  test.each(['element host', 'slot-only host'] as const)(
+    '%s: word Delete at the end of the paragraph before the host deletes nothing',
+    async layout => {
+      const {editor, original, result} = await pressAt(
+        layout,
+        'before',
+        'Before words'.length,
+        WORD_DELETE,
+      );
+      expect(result).toEqual(original);
+      // Text that moved into another block would keep its content.
+      expect(editor.read(() => $getRoot().getChildrenSize())).toBe(
+        layout === 'element host' ? 2 : 3,
+      );
+    },
+  );
+
+  test('word Delete in a body word that runs into an inline root slot deletes to the slot', async () => {
+    const {result} = await pressAt(
+      'inline root slot',
+      'sibling',
+      1,
+      WORD_DELETE,
+    );
+    expect(result).toEqual({note: 'foo', sibling: 'b'});
+  });
+
+  // There is no line-deletion key off Apple platforms, so these dispatch the
+  // command that the Apple shortcuts and beforeinput dispatch.
   test.each([
     // The emptied text node is removed.
     [0, null],
     [1, 'b'],
+    [3, 'bar'],
   ])(
     'forward line deletion from offset %i in a body line that ends in an inline root slot deletes to the slot',
     async (offset, sibling) => {
@@ -246,4 +276,11 @@ describe('word deletion at a slot boundary', () => {
       expect(result).toEqual({note: 'foo', sibling});
     },
   );
+
+  test('backward line deletion in an inline root slot after the body deletes to the slot start', async () => {
+    const {result} = await pressAt('inline root slot', 'note', 2, editor => {
+      editor.dispatchCommand(DELETE_LINE_COMMAND, true);
+    });
+    expect(result).toEqual({note: 'o', sibling: 'bar'});
+  });
 });

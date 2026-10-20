@@ -2077,6 +2077,8 @@ function $deleteTextByGranularity(
 ): void {
   const wasCollapsed = selection.isCollapsed();
   const {anchor, focus} = selection;
+  // Set when the deletion stops at a slot boundary, which it never crosses.
+  let stoppedAtSlot = false;
   if (wasCollapsed) {
     if (
       granularity === 'word' &&
@@ -2084,7 +2086,11 @@ function $deleteTextByGranularity(
     ) {
       return;
     }
-    $extendSelectionForDeletion(selection, isBackward, granularity);
+    stoppedAtSlot = $extendSelectionForDeletion(
+      selection,
+      isBackward,
+      granularity,
+    );
     if (granularity === 'lineboundary') {
       $stopLineDeletionAtLineBreak(selection);
     }
@@ -2099,7 +2105,9 @@ function $deleteTextByGranularity(
     focus.set(anchor.key, anchor.offset, anchor.type);
   }
   if (selection.isCollapsed()) {
-    selection.deleteCharacter(isBackward);
+    if (!stoppedAtSlot) {
+      selection.deleteCharacter(isBackward);
+    }
   } else {
     // An existing whole-document selection deletes its blocks (#5835).
     // Extending a collapsed caret over a word or line keeps that block.
@@ -2500,12 +2508,14 @@ function $shrinkSelectionToRoot(
  * `Selection.modify` (headless environments can polyfill it), or an
  * unresolvable anchor — the selection is left collapsed, so the deletion
  * becomes a no-op for that keystroke.
+ *
+ * Returns true when the focus was stopped at a slot boundary.
  */
 function $extendSelectionForDeletion(
   selection: RangeSelection,
   isBackward: boolean,
   granularity: 'character' | 'word' | 'lineboundary',
-): void {
+): boolean {
   // Decorator/block handling, resolved in the model exactly as modify() does.
   if (
     $modifySelectionAroundDecoratorsAndBlocks(
@@ -2515,12 +2525,12 @@ function $extendSelectionForDeletion(
       granularity,
     )
   ) {
-    return;
+    return false;
   }
   const editor = getActiveEditor();
   const domSelection = getDOMSelection(getWindow(editor));
   if (!domSelection || typeof domSelection.modify !== 'function') {
-    return;
+    return false;
   }
   const blockCursorElement = editor._blockCursorElement;
   const rootElement = editor._rootElement;
@@ -2547,7 +2557,7 @@ function $extendSelectionForDeletion(
   const anchorNode = anchor.getNode();
   const anchorDOM = $resolvePointDOM(anchor);
   if (anchorDOM === null) {
-    return;
+    return false;
   }
   const anchorOffset = anchor.offset;
   // Measure from the FOCUS: the decorator/block pre-pass above may have
@@ -2560,7 +2570,7 @@ function $extendSelectionForDeletion(
   const focus = selection.focus;
   const focusDOM = wasCollapsed ? anchorDOM : $resolvePointDOM(focus);
   if (focusDOM === null) {
-    return;
+    return false;
   }
   const focusOffset = focus.offset;
   // Sync a COLLAPSED DOM caret at the measurement origin (base === extent),
@@ -2581,7 +2591,7 @@ function $extendSelectionForDeletion(
     rootElement,
   );
   if (domSelection.rangeCount === 0) {
-    return;
+    return false;
   }
   // Inside a DOM shadow root getRangeAt(0) is retargeted to the host; read the
   // composed StaticRange (real nodes) where available. After a 'move' the DOM
@@ -2632,7 +2642,7 @@ function $extendSelectionForDeletion(
         const sibOffset = isBackward ? sibling.getTextContentSize() - 1 : 1;
         selection.focus.set(sibling.__key, sibOffset, 'text');
         selection.dirty = true;
-        return;
+        return false;
       }
     }
   }
@@ -2658,13 +2668,13 @@ function $extendSelectionForDeletion(
         selection.focus.set(anchor.key, clampedOffset, 'text');
         selection.dirty = true;
       }
-      return;
+      return false;
     }
   }
   // A slot boundary lives only in the model, so the native move can cross it.
-  // Deletion never does: stop the focus at the boundary instead, normalized
-  // into text as applyDOMRange would. Resolving the range would clamp it into
-  // the landed point's frame and move the caret out of its slot.
+  // Deletion never does: stop the focus at the boundary instead. Resolving
+  // the range would clamp it into the landed point's frame and move the caret
+  // out of its slot.
   const landedNode = $getNearestNodeFromDOMNode(landedContainer);
   const anchorFrame = $getSlotFrame(anchorNode);
   const landedFrame = landedNode && $getSlotFrame(landedNode);
@@ -2676,8 +2686,7 @@ function $extendSelectionForDeletion(
       landedFrame,
       isBackward,
     );
-    $normalizeSelection(selection);
-    return;
+    return true;
   }
   // General path: reconstruct, in document order, the [original .. landed]
   // range a native extend would have produced. applyDOMRange only reads these
@@ -2702,12 +2711,15 @@ function $extendSelectionForDeletion(
     // anchor must stay at the original caret, so restore that orientation.
     $swapPoints(selection);
   }
+  return false;
 }
 
 // Sets a deletion's focus, which a native move carried from the anchor's
 // slot frame into landedFrame, to the slot boundary on the anchor's side:
 // beside the host that owns landedFrame, at the edge of its children when it
-// contains the anchor, or at the edge of the anchor's own slot.
+// contains the anchor, or at the edge of the anchor's own slot. The focus
+// descends toward the anchor, as applyDOMRange would resolve it, so line
+// deletion finds it in the anchor's block; it never enters a shadow root.
 function $stopDeletionAtSlotBoundary(
   focus: PointType,
   anchorNode: LexicalNode,
@@ -2724,16 +2736,52 @@ function $stopDeletionAtSlotBoundary(
     host.isParentOf(anchorNode)
   ) {
     const edgeFrame = host || anchorFrame;
-    if (edgeFrame !== null) {
+    if ($isElementNode(edgeFrame)) {
+      $setDeletionFocus(
+        focus,
+        edgeFrame,
+        isBackward ? 0 : edgeFrame.getChildrenSize(),
+        isBackward,
+      );
+    } else if (edgeFrame !== null) {
       $setPointToFrameEdge(focus, edgeFrame, !isBackward);
     }
   } else {
-    focus.set(
-      hostParent.getKey(),
+    $setDeletionFocus(
+      focus,
+      hostParent,
       host.getIndexWithinParent() + (isBackward ? 1 : 0),
-      'element',
+      isBackward,
     );
   }
+}
+
+// Sets focus to offset in parent, descending into the child on the anchor's
+// side (before it for a forward deletion) down to text, but not into a
+// shadow root or a non-element.
+function $setDeletionFocus(
+  focus: PointType,
+  parent: ElementNode,
+  offset: number,
+  isBackward: boolean,
+): void {
+  for (;;) {
+    const child = parent.getChildAtIndex(isBackward ? offset : offset - 1);
+    if ($isTextNode(child)) {
+      focus.set(
+        child.getKey(),
+        isBackward ? 0 : child.getTextContentSize(),
+        'text',
+      );
+      return;
+    }
+    if (!$isElementNode(child) || $isRootOrShadowRoot(child)) {
+      break;
+    }
+    parent = child;
+    offset = isBackward ? 0 : child.getChildrenSize();
+  }
+  focus.set(parent.getKey(), offset, 'element');
 }
 
 /**

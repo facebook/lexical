@@ -274,8 +274,7 @@ export interface CollapsedSelectionFormat {
 
 /** @internal */
 export interface InputState {
-  compositionPhase: 'idle' | 'composing' | 'ending-firefox' | 'ending-safari';
-  compositionEndData: string;
+  compositionPhase: 'idle' | 'composing' | 'ending-firefox';
   /**
    * The segmented node that insertText switched to normal mode to compose
    * into, which becomes a plain TextNode when the composition ends. No other
@@ -342,7 +341,6 @@ export function createInputState(): InputState {
       timeStamp: 0,
     },
     composedSegmentedKey: null,
-    compositionEndData: '',
     compositionPhase: 'idle',
     hadOrphanedCompositionEvents: false,
     handledSelectionCommandTimeoutId: null,

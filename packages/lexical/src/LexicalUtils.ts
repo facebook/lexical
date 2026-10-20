@@ -629,6 +629,17 @@ export function $getCompositionKey(): null | NodeKey {
   return editor._compositionKey;
 }
 
+/** Desktop WebKit renders a suffix so an empty composing node can host the IME. */
+export function $isEmptyCompositionTarget(node: TextNode): boolean {
+  return (
+    !IS_IOS &&
+    (IS_SAFARI || IS_APPLE_WEBKIT) &&
+    node.__text === '' &&
+    // DOM selection reconciliation runs after the state becomes read-only.
+    node.__key === getActiveEditor()._compositionKey
+  );
+}
+
 /**
  * Returns the node with the given key from the active EditorState
  * (or the given EditorState), or null if it does not exist.
@@ -980,6 +991,7 @@ export function $updateTextNodeFromDOMContent(
 
   if (node.isAttached() && (compositionEnd || !node.isDirty())) {
     const isComposing = node.isComposing();
+    const isSafariComposition = !IS_IOS && (IS_SAFARI || IS_APPLE_WEBKIT);
 
     if (node.isToken() && isComposing) {
       return;
@@ -988,13 +1000,16 @@ export function $updateTextNodeFromDOMContent(
     let normalizedTextContent = textContent;
 
     if (isComposing || compositionEnd) {
-      if (textContent.endsWith(COMPOSITION_SUFFIX)) {
+      if (
+        textContent.endsWith(COMPOSITION_SUFFIX) &&
+        (!isSafariComposition || textContent !== node.getTextContent())
+      ) {
         normalizedTextContent = textContent.slice(
           0,
           -COMPOSITION_SUFFIX.length,
         );
       }
-      if (compositionEnd) {
+      if (compositionEnd && !isSafariComposition) {
         const char = COMPOSITION_START_CHAR;
         let index;
         while ((index = normalizedTextContent.indexOf(char)) !== -1) {
@@ -1017,6 +1032,11 @@ export function $updateTextNodeFromDOMContent(
       const selection = $getSelection();
 
       if (normalizedTextContent === '') {
+        if (isComposing && !compositionEnd && isSafariComposition) {
+          // The composition key owns this target until composition ends.
+          $setTextContentWithSelection(node, '', selection);
+          return;
+        }
         $setCompositionKey(null);
         if (!IS_SAFARI && !IS_IOS && !IS_APPLE_WEBKIT) {
           // For composition (mainly Android), we have to remove the node on a later update

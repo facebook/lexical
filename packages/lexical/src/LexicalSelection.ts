@@ -58,7 +58,11 @@ import {
 } from '.';
 import {$comparePointCaretNextAcrossSlots} from './caret/LexicalCaret';
 import {IS_FIREFOX} from './environment';
-import {DOM_TEXT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
+import {
+  COMPOSITION_SUFFIX,
+  DOM_TEXT_TYPE,
+  TEXT_TYPE_TO_FORMAT,
+} from './LexicalConstants';
 import {
   markCollapsedSelectionFormat,
   markSelectionChangeFromDOMUpdate,
@@ -91,6 +95,7 @@ import {
   $getNodeFromDOM,
   $getRoot,
   $hasAncestor,
+  $isEmptyCompositionTarget,
   $isInlineElementOrDecoratorNode,
   $isRootOrShadowRoot,
   $isSelectionCapturedInDecoratorInput,
@@ -358,6 +363,183 @@ function $transferStartingElementPointToTextPoint(
     end.set(textNode.__key, 0, 'text');
   }
   start.set(textNode.__key, 0, 'text');
+}
+
+/** Prepare the native IME target without routing a document character through commands. */
+export function $prepareCompositionTarget(selection: RangeSelection): void {
+  $insertText(selection, '', true);
+}
+
+function $insertText(
+  selection: RangeSelection,
+  text: string,
+  preparingComposition: boolean,
+): void {
+  // For non-collapsed selections, inherit format/style from the first
+  // selected text node so the replacement preserves the original styling.
+  let format = selection.format;
+  let style = selection.style;
+  if (!selection.isCollapsed()) {
+    const firstPoint = selection.focus.isBefore(selection.anchor)
+      ? selection.focus
+      : selection.anchor;
+    const firstNode = firstPoint.getNode();
+    if ($isTextNode(firstNode)) {
+      format = firstNode.getFormat();
+      style = firstNode.getStyle();
+    }
+    selection.removeText();
+    selection.format = format;
+    selection.style = style;
+    if (text === '' && !preparingComposition) {
+      return;
+    }
+    if ($getCompositionKey() === null) {
+      if (selection.anchor.type === 'element') {
+        $transferStartingElementPointToTextPoint(
+          selection.anchor,
+          selection.focus,
+          format,
+          style,
+        );
+      }
+      $insertTextAtPoint(selection, text, format, style);
+      return;
+    }
+    // Composing: fall through to the collapsed code below.
+    // spliceText preserves DOM node identity so the browser's
+    // IME tracker stays attached.
+  }
+
+  if (selection.anchor.type === 'element') {
+    $transferStartingElementPointToTextPoint(
+      selection.anchor,
+      selection.focus,
+      format,
+      style,
+    );
+  }
+
+  const anchorNode = selection.anchor.getNode();
+  invariant($isTextNode(anchorNode), 'insertText: anchor is not a text node');
+  const offset = selection.anchor.offset;
+
+  const anchorParent = anchorNode.getParentOrThrow();
+  const anchorSize = anchorNode.getTextContentSize();
+  const needsRedirect =
+    $isTokenOrSegmented(anchorNode) ||
+    (offset === 0 &&
+      (!anchorNode.canInsertTextBefore() ||
+        (!anchorParent.canInsertTextBefore() && !anchorNode.__prev))) ||
+    (offset === anchorSize &&
+      (!anchorNode.canInsertTextAfter() ||
+        (!anchorParent.canInsertTextAfter() && !anchorNode.__next)));
+
+  if (needsRedirect) {
+    // Token/segmented nodes and nodes whose parent forbids text insertion
+    // at the boundary: reposition the cursor to an adjacent insertable
+    // node, then recurse.
+
+    // Segmented node with cursor in the middle: convert to normal
+    // text node so that the recursive insertText can proceed.
+    if (anchorNode.isSegmented() && offset !== 0 && offset !== anchorSize) {
+      if ($getCompositionKey() !== null) {
+        anchorNode.setMode('normal').setFormat(format).setStyle(style);
+        getActiveEditor()._inputState.composedSegmentedKey =
+          anchorNode.getKey();
+      } else {
+        const replacement = $createTextNode(anchorNode.getTextContent());
+        replacement.setFormat(format);
+        replacement.setStyle(style);
+        const isCurrentSelection = $getSelection() === selection;
+        anchorNode.replace(replacement);
+        // replace() installs a clone of the active selection, so this
+        // selection is still anchored to the segmented node that was just
+        // detached. Move it onto the replacement and make it current
+        // again, otherwise the recursive insertText below resolves an
+        // anchor that is no longer in the tree.
+        selection.setTextNodeRange(replacement, offset, replacement, offset);
+        if (isCurrentSelection && $getSelection() !== selection) {
+          $setSelection(selection);
+        }
+      }
+      if (text !== '' || preparingComposition) {
+        $insertText(selection, text, preparingComposition);
+      }
+      return;
+    }
+    if (text === '' && !preparingComposition) {
+      return;
+    }
+    if (offset === 0 || offset === anchorSize) {
+      const before = offset === 0;
+      const direction = before ? 'previous' : 'next';
+      const sibling = $getSiblingCaret(anchorNode, direction).getNodeAtCaret();
+      let target: TextNode;
+      if (
+        $isTextNode(sibling) &&
+        (before
+          ? sibling.canInsertTextAfter()
+          : sibling.canInsertTextBefore()) &&
+        !$isTokenOrSegmented(sibling)
+      ) {
+        target = sibling;
+      } else {
+        target = $createTextNode().setFormat(format).setStyle(style);
+        const canInsert = before
+          ? anchorParent.canInsertTextBefore()
+          : anchorParent.canInsertTextAfter();
+        $getSiblingCaret(
+          canInsert ? anchorNode : anchorParent,
+          direction,
+        ).insert(target);
+      }
+      const targetOffset = before ? undefined : 0;
+      target.select(targetOffset, targetOffset);
+      $insertText(selection, text, preparingComposition);
+      return;
+    }
+    const newNode = $createTextNode(text);
+    newNode.setFormat(format);
+    newNode.setStyle(style);
+    anchorNode.replace(newNode);
+    newNode.select();
+    return;
+  }
+
+  if (text === '' && !preparingComposition) {
+    return;
+  }
+
+  const atStartOfInline =
+    anchorParent.isInline() && offset === 0 && !anchorNode.__prev;
+  const atEndOfInline =
+    anchorParent.isInline() && offset === anchorSize && !anchorNode.__next;
+  const formatDiffers =
+    anchorNode.getFormat() !== format || anchorNode.getStyle() !== style;
+
+  if (atStartOfInline || atEndOfInline || formatDiffers) {
+    if (
+      anchorNode.getTextContent() === '' &&
+      !atStartOfInline &&
+      !atEndOfInline
+    ) {
+      anchorNode.setFormat(format);
+      anchorNode.setStyle(style);
+    } else {
+      $insertTextAtPoint(selection, text, format, style);
+      return;
+    }
+  }
+
+  anchorNode.spliceText(offset, 0, text, true);
+  if (anchorNode.isComposing() && selection.anchor.type === 'text') {
+    selection.anchor.set(
+      selection.anchor.key,
+      selection.anchor.offset - text.length,
+      selection.anchor.type,
+    );
+  }
 }
 
 function $insertTextAtPoint(
@@ -924,174 +1106,7 @@ export class RangeSelection implements BaseSelection {
    * @param text the text to insert into the Selection
    */
   insertText(text: string): void {
-    // For non-collapsed selections, inherit format/style from the first
-    // selected text node so the replacement preserves the original styling.
-    let format = this.format;
-    let style = this.style;
-    if (!this.isCollapsed()) {
-      const firstPoint = this.focus.isBefore(this.anchor)
-        ? this.focus
-        : this.anchor;
-      const firstNode = firstPoint.getNode();
-      if ($isTextNode(firstNode)) {
-        format = firstNode.getFormat();
-        style = firstNode.getStyle();
-      }
-      this.removeText();
-      this.format = format;
-      this.style = style;
-      if (text === '') {
-        return;
-      }
-      if ($getCompositionKey() === null) {
-        if (this.anchor.type === 'element') {
-          $transferStartingElementPointToTextPoint(
-            this.anchor,
-            this.focus,
-            format,
-            style,
-          );
-        }
-        $insertTextAtPoint(this, text, format, style);
-        return;
-      }
-      // Composing: fall through to the collapsed code below.
-      // spliceText preserves DOM node identity so the browser's
-      // IME tracker stays attached.
-    }
-
-    if (this.anchor.type === 'element') {
-      $transferStartingElementPointToTextPoint(
-        this.anchor,
-        this.focus,
-        format,
-        style,
-      );
-    }
-
-    const anchorNode = this.anchor.getNode();
-    invariant($isTextNode(anchorNode), 'insertText: anchor is not a text node');
-    const offset = this.anchor.offset;
-
-    const anchorParent = anchorNode.getParentOrThrow();
-    const anchorSize = anchorNode.getTextContentSize();
-    const needsRedirect =
-      $isTokenOrSegmented(anchorNode) ||
-      (offset === 0 &&
-        (!anchorNode.canInsertTextBefore() ||
-          (!anchorParent.canInsertTextBefore() && !anchorNode.__prev))) ||
-      (offset === anchorSize &&
-        (!anchorNode.canInsertTextAfter() ||
-          (!anchorParent.canInsertTextAfter() && !anchorNode.__next)));
-
-    if (needsRedirect) {
-      // Token/segmented nodes and nodes whose parent forbids text insertion
-      // at the boundary: reposition the cursor to an adjacent insertable
-      // node, then recurse.
-
-      // Segmented node with cursor in the middle: convert to normal
-      // text node so that the recursive insertText can proceed.
-      if (anchorNode.isSegmented() && offset !== 0 && offset !== anchorSize) {
-        if ($getCompositionKey() !== null) {
-          anchorNode.setMode('normal').setFormat(format).setStyle(style);
-          getActiveEditor()._inputState.composedSegmentedKey =
-            anchorNode.getKey();
-        } else {
-          const replacement = $createTextNode(anchorNode.getTextContent());
-          replacement.setFormat(format);
-          replacement.setStyle(style);
-          const isCurrentSelection = $getSelection() === this;
-          anchorNode.replace(replacement);
-          // replace() installs a clone of the active selection, so this
-          // selection is still anchored to the segmented node that was just
-          // detached. Move it onto the replacement and make it current
-          // again, otherwise the recursive insertText below resolves an
-          // anchor that is no longer in the tree.
-          this.setTextNodeRange(replacement, offset, replacement, offset);
-          if (isCurrentSelection && $getSelection() !== this) {
-            $setSelection(this);
-          }
-        }
-        if (text !== '') {
-          this.insertText(text);
-        }
-        return;
-      }
-      if (text === '') {
-        return;
-      }
-      if (offset === 0 || offset === anchorSize) {
-        const before = offset === 0;
-        const direction = before ? 'previous' : 'next';
-        const sibling = $getSiblingCaret(
-          anchorNode,
-          direction,
-        ).getNodeAtCaret();
-        let target: TextNode;
-        if (
-          $isTextNode(sibling) &&
-          (before
-            ? sibling.canInsertTextAfter()
-            : sibling.canInsertTextBefore()) &&
-          !$isTokenOrSegmented(sibling)
-        ) {
-          target = sibling;
-        } else {
-          target = $createTextNode().setFormat(format).setStyle(style);
-          const canInsert = before
-            ? anchorParent.canInsertTextBefore()
-            : anchorParent.canInsertTextAfter();
-          $getSiblingCaret(
-            canInsert ? anchorNode : anchorParent,
-            direction,
-          ).insert(target);
-        }
-        const targetOffset = before ? undefined : 0;
-        target.select(targetOffset, targetOffset);
-        this.insertText(text);
-        return;
-      }
-      const newNode = $createTextNode(text);
-      newNode.setFormat(format);
-      newNode.setStyle(style);
-      anchorNode.replace(newNode);
-      newNode.select();
-      return;
-    }
-
-    if (text === '') {
-      return;
-    }
-
-    const atStartOfInline =
-      anchorParent.isInline() && offset === 0 && !anchorNode.__prev;
-    const atEndOfInline =
-      anchorParent.isInline() && offset === anchorSize && !anchorNode.__next;
-    const formatDiffers =
-      anchorNode.getFormat() !== format || anchorNode.getStyle() !== style;
-
-    if (atStartOfInline || atEndOfInline || formatDiffers) {
-      if (
-        anchorNode.getTextContent() === '' &&
-        !atStartOfInline &&
-        !atEndOfInline
-      ) {
-        anchorNode.setFormat(format);
-        anchorNode.setStyle(style);
-      } else {
-        $insertTextAtPoint(this, text, format, style);
-        return;
-      }
-    }
-
-    anchorNode.spliceText(offset, 0, text, true);
-    if (anchorNode.isComposing() && this.anchor.type === 'text') {
-      this.anchor.set(
-        this.anchor.key,
-        this.anchor.offset - text.length,
-        this.anchor.type,
-      );
-    }
+    $insertText(this, text, false);
   }
 
   /**
@@ -3204,6 +3219,10 @@ function $resolveSelectionPointOnBoundary(
   isCollapsed: boolean,
 ): void {
   const node = point.getNode();
+  if ($isEmptyCompositionTarget(node)) {
+    // Keep the native IME's empty target rather than moving into the body.
+    return;
+  }
   const before = point.offset === 0;
   if (!before && point.offset !== node.getTextContent().length) {
     return;
@@ -4067,7 +4086,7 @@ export function $updateDOMSelection(
     anchorNode,
     anchor.offset,
   );
-  const [focusDOM, nextFocusOffset] = $getElementAndOffsetForPoint(
+  const [focusDOM, modelFocusOffset] = $getElementAndOffsetForPoint(
     editor,
     focusNode,
     focus.offset,
@@ -4104,6 +4123,17 @@ export function $updateDOMSelection(
   if (nextAnchorNode === null || nextFocusNode === null) {
     return;
   }
+
+  // Select the rendered suffix so WebKit replaces it in the empty target.
+  // A collapsed caret at its start can insert into the previous text node.
+  const nextFocusOffset =
+    isCollapsed &&
+    $isTextNode(focusNode) &&
+    $isEmptyCompositionTarget(focusNode) &&
+    isDOMTextNode(nextFocusNode) &&
+    nextFocusNode.nodeValue === COMPOSITION_SUFFIX
+      ? COMPOSITION_SUFFIX.length
+      : modelFocusOffset;
 
   if (
     isCollapsed &&

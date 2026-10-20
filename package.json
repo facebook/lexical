@@ -202,7 +202,7 @@
     "typedoc": "^0.28.20",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.70.1",
-    "vite": "^8.3.1",
+    "vite": "^8.3.3",
     "vitest": "^5.0.1",
     "y-websocket": "^2.1.0"
   },

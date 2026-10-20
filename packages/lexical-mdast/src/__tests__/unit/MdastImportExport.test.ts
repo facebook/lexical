@@ -1275,12 +1275,28 @@ describe('@lexical/mdast import/export', () => {
       }
     });
 
-    it('writes a horizontal rule in a cell as <hr>', () => {
-      expect(
-        cellOf(
-          exportCell(text('a'), () => $createHorizontalRuleNode(), text('b')),
-        ),
-      ).toBe('a<br><hr><br>b');
+    it('writes a horizontal rule in a cell as <hr> and reads it back', () => {
+      const out = exportCell(
+        text('a'),
+        () => $createHorizontalRuleNode(),
+        text('b'),
+      );
+      expect(cellOf(out)).toBe('a<br><hr><br>b');
+      using editor = createEditor(true);
+      editor.update(() => $convertFromMarkdownString(out), {discrete: true});
+      editor.read(() => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        const cell = $assertNodeType(
+          table.getLastChildOrThrow<ElementNode>().getFirstChild(),
+          $isElementNode,
+        );
+        expect(cell.getChildren().map(child => child.getType())).toEqual([
+          'paragraph',
+          'horizontalrule',
+          'paragraph',
+        ]);
+      });
+      expect(importExport(out, true)).toBe(out);
     });
 
     it('reads <br> in a cell as a paragraph boundary', () => {

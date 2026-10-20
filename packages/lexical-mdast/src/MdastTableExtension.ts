@@ -81,6 +81,13 @@ function brCount(node: MdastNode): number {
     : 0;
 }
 
+function isRuleHtml(node: MdastNode): boolean {
+  return (
+    (node.type === 'html' || node.type === 'htmlInline') &&
+    /^\s*<hr\s*\/?>\s*$/i.test(node.value)
+  );
+}
+
 /**
  * A deep copy of `nodes` with each node that `replace` returns an array for
  * swapped for that array; the children of the others are mapped in turn.
@@ -164,12 +171,21 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
                 ? TableCellHeaderStates.ROW
                 : TableCellHeaderStates.NO_STATUS,
             ).setFormat(align[columnIndex] || ''),
-            cellLines(cell).map(line =>
-              $append(
-                $createParagraphNode(),
-                ctx.importChildren({children: line, type: 'tableCell'}),
-              ),
-            ),
+            cellLines(cell).flatMap(line => {
+              // A line of only `<hr>` is a rule, as export writes one.
+              const rule =
+                line.length === 1 && isRuleHtml(line[0])
+                  ? ctx.importNode({type: 'thematicBreak'})
+                  : [];
+              return rule.length > 0
+                ? rule
+                : [
+                    $append(
+                      $createParagraphNode(),
+                      ctx.importChildren({children: line, type: 'tableCell'}),
+                    ),
+                  ];
+            }),
           ),
         ),
       ),
@@ -184,19 +200,14 @@ function lineBreakHtml(): Html {
 /**
  * Rewrites exported phrasing content for a GFM cell, which holds one line:
  * line breaks (`break` nodes and newlines in text or code) become `<br>`,
- * which gfm-table would otherwise write as spaces, a rule becomes `<hr>`,
- * and raw HTML is put on one line with its pipes as references (`&#124;`),
- * since a cell splits on `|` even inside HTML.
+ * which gfm-table would otherwise write as spaces, and raw HTML is put on
+ * one line with its pipes as references (`&#124;`), since a cell splits on
+ * `|` even inside HTML.
  */
 function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
   return mapPhrasing(nodes, node => {
     if (node.type === 'break') {
       return [lineBreakHtml()];
-    }
-    if ((node as MdastNode).type === 'thematicBreak') {
-      // GFM has no rule in a cell but HTML's, which HTML import may read
-      // into a paragraph.
-      return [{type: 'html', value: '<hr>'}];
     }
     if (node.type === 'html') {
       return [
@@ -245,8 +256,11 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
         }
         return;
       case 'html':
+        lines.push(cellPhrasing([node]));
+        return;
       case 'thematicBreak':
-        lines.push(cellPhrasing([node as PhrasingContent]));
+        // GFM has no rule in a cell but HTML's, which import reads back.
+        lines.push([{type: 'html', value: '<hr>'}]);
         return;
       case 'definition':
         // Definitions are the document's, and no node exports one.

@@ -236,8 +236,7 @@ function getCellTransformers(): Transformer[] {
  * {@link $createTableCell} undoes. Code takes no escapes but a pipe's, so
  * code with an odd run of backslashes before a pipe (`a\|b`), which GFM
  * can't write in one span, is split there by an empty HTML comment. Fenced
- * code takes none at all, so a pipe or a `<br>` there is written after
- * twice its backslashes and one more.
+ * code takes none at all, which {@link escapeInCell} accounts for.
  */
 function $exportTableCell(
   cell: TableCellNode,
@@ -248,38 +247,49 @@ function $exportTableCell(
       .replace(/^[ \t]+|[ \t]+$/g, '')
       // A code span keeps its `<br>` as text, which it reads as.
       .replace(
-        /^[ \t]*(`{3,})[^`\n]*$(?:\n[^]*?(?:\n[ \t]*\1`*[ \t]*$|(?![^])))?|(\\*)(\||<(?=br\s*\/?>))|\\[^]|(`{1,2})(?!`)[^]*?[^`]\4(?!`)|(`{3,})(?!`)[^\n]*?[^`\n]\5(?!`)|`+/gim,
-        (
-          match,
-          fence?: string,
-          backslashes?: string,
-          char?: string,
-          ...spans: unknown[]
-        ) =>
-          fence !== undefined
+        /^[ \t]*(?<fence>`{3,})[^`\n]*$(?:\n[^]*?(?:\n[ \t]*\k<fence>`*[ \t]*$|(?![^])))?|(?<backslashes>\\*)(?<char>\||<(?=br\s*\/?>))|\\[^]|(?<short>`{1,2})(?!`)[^]*?[^`]\k<short>(?!`)|(?<long>`{3,})(?!`)[^\n]*?[^`\n]\k<long>(?!`)|`+/gim,
+        (match: string, ...args: unknown[]) => {
+          const {fence, backslashes, char, short, long} = args[
+            args.length - 1
+          ] as Partial<Record<string, string>>;
+          const ticks = short ?? long;
+          return fence !== undefined
             ? match.replace(
-                /(\\*)(\||<(?=br\s*\/?>))/gi,
-                (_, inCode: string, c: string) => inCode + inCode + '\\' + c,
+                /(\\*)(\||<(?=br\s*\/?>)|\n)/gi,
+                (_, inCode: string, c: string) => escapeInCell(inCode, c, true),
               )
             : char !== undefined
               ? escapeInCell(backslashes!, char)
-              : spans[0] !== undefined || spans[1] !== undefined
+              : ticks !== undefined
                 ? match.replace(
                     /(\\*)\|/g,
                     (_, inCode: string) =>
                       inCode +
                       (inCode.length % 2
-                        ? `${spans[0] ?? spans[1]}<!---->${spans[0] ?? spans[1]}\\|`
+                        ? `${ticks}<!---->${ticks}\\|`
                         : '\\|'),
                   )
-                : match,
+                : match;
+        },
       )
       .replace(/\n/g, '<br>')
   );
 }
 
-function escapeInCell(backslashes: string, char: string): string {
-  return backslashes + (backslashes.length % 2 ? '\\\\' : '\\') + char;
+/**
+ * `char` after `backslashes` as a cell writes it. In text, whose own
+ * backslashes come in pairs, an escape is added. Fenced code takes none of
+ * its own, so its backslashes are doubled, and a pipe or a `<br>` that is
+ * text takes one more, while a line end keeps an even run.
+ */
+function escapeInCell(
+  backslashes: string,
+  char: string,
+  fenced = false,
+): string {
+  return fenced
+    ? backslashes + backslashes + (char === '\n' ? '' : '\\') + char
+    : backslashes + (backslashes.length % 2 ? '\\\\' : '\\') + char;
 }
 export const TABLE: ElementTransformer = {
   dependencies: [TableNode, TableRowNode, TableCellNode],
@@ -459,6 +469,13 @@ const CELL_BLOCK_START_REG_EXP =
 // would otherwise read as a code block.
 const CELL_CODE_SPAN_LINE_REG_EXP = /[ \t]*`{3,}(?!`)(?:(?!<br)[^`])*`/iy;
 
+// A line that opens a code block.
+const CELL_FENCE_LINE_REG_EXP = /[ \t]*`{3,}(?:(?!<br)[^`])*(?:<br|$)/iy;
+
+// A token of fenced code: backticks, or a run of backslashes and what
+// export wrote it before.
+const CELL_FENCED_TOKEN_REG_EXP = /`+|(\\+)(\||<br\s*\/?>)?/iy;
+
 function testAt(regExp: RegExp, text: string, index: number): boolean {
   regExp.lastIndex = index;
   return regExp.test(text);
@@ -510,25 +527,36 @@ const $createTableCell = (
     let lineStart = 0;
     // Whether the line at `lineStart` starts a line of the Markdown.
     let atLineStart = true;
+    // Whether that line opens a code block.
+    let opening = testAt(CELL_FENCE_LINE_REG_EXP, text, 0);
     const guardAt = (offset: number) =>
       fence === '' && testAt(CELL_CODE_SPAN_LINE_REG_EXP, text, offset)
         ? guard
         : '';
     const tokens =
-      /\\[^]|(`{1,2})(?!`)[^]*?[^`]\1(?!`)(?:<!---->\1(?!`)[^]*?[^`]\1(?!`))*|(`{3,})(?!`)(?:(?!<br)[^])*?[^`]\2(?!`)(?:<!---->\2(?!`)(?:(?!<br)[^])*?[^`]\2(?!`))*|`+|([ \t]*)<br\s*\/?>([ \t]*)/gi;
-    const readToken = ([match, short, long, lead, trail]: string[]): string => {
+      /\\[^]|(?<short>`{1,2})(?!`)[^]*?[^`]\k<short>(?!`)(?:<!---->\k<short>(?!`)[^]*?[^`]\k<short>(?!`))*|(?<long>`{3,})(?!`)(?:(?!<br)[^])*?[^`]\k<long>(?!`)(?:<!---->\k<long>(?!`)(?:(?!<br)[^])*?[^`]\k<long>(?!`))*|`+|(?<lead>[ \t]*)<br\s*\/?>(?<trail>[ \t]*)/gi;
+    const readToken = (
+      match: string,
+      {short, long, lead = '', trail = ''}: Partial<Record<string, string>>,
+    ): string => {
       const offset = tokens.lastIndex - match.length;
-      if (fence !== '' && (match[0] === '`' || match[0] === '\\')) {
+      if (
+        (fence !== '' || opening) &&
+        (match[0] === '`' || match[0] === '\\')
+      ) {
         // Fenced code has no code spans, and takes no escapes but those
-        // export writes before a pipe or a `<br>`, twice its backslashes
-        // and one more.
-        const fenced = /`+|(\\+)(\||<br\s*\/?>)?/iy;
-        fenced.lastIndex = offset;
-        const [run, backslashes, char] = fenced.exec(text)!;
-        tokens.lastIndex = fenced.lastIndex;
-        return char
-          ? backslashes.slice(0, backslashes.length >> 1) + char
-          : run;
+        // export writes, which halve a run of backslashes; an odd run ends
+        // in an escape.
+        CELL_FENCED_TOKEN_REG_EXP.lastIndex = offset;
+        const [run, backslashes, char] = CELL_FENCED_TOKEN_REG_EXP.exec(text)!;
+        const escaped = char !== undefined && backslashes.length % 2 === 1;
+        tokens.lastIndex =
+          CELL_FENCED_TOKEN_REG_EXP.lastIndex -
+          (char === undefined || escaped ? 0 : char.length);
+        return char === undefined
+          ? run
+          : backslashes.slice(0, backslashes.length >> 1) +
+              (escaped ? char : '');
       }
       if (match[0] === '`') {
         const ticks = short ?? long;
@@ -583,6 +611,10 @@ const $createTableCell = (
         fenceLine ||
         line === '' ||
         (block && blocks !== undefined && blocks.includes(offset));
+      opening =
+        atLineStart &&
+        fence === '' &&
+        testAt(CELL_FENCE_LINE_REG_EXP, text, lineStart);
       if (atLineStart) {
         // Code keeps the whitespace around its line breaks.
         return fence === ''
@@ -599,7 +631,8 @@ const $createTableCell = (
     let markdown = guardAt(0);
     let last = 0;
     for (let found; (found = tokens.exec(text)) !== null; ) {
-      markdown += text.slice(last, found.index) + readToken(found);
+      markdown +=
+        text.slice(last, found.index) + readToken(found[0], found.groups!);
       last = tokens.lastIndex;
     }
     markdown += text.slice(last);

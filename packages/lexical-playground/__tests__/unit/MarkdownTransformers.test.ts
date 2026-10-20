@@ -927,6 +927,8 @@ describe('playground TABLE markdown transformer', () => {
     'a\\|b\\\\|c\\<br>d',
     'if x:\n  print(x)\n\treturn',
     '"""a  \nb"""',
+    'x\\',
+    'a \\\nb\\\\\nc',
   ])('round-trips code block %j', code => {
     const markdown = exportTable(() =>
       $cellOf($createCodeNode('js').append($createTextNode(code))),
@@ -959,6 +961,16 @@ describe('playground TABLE markdown transformer', () => {
       });
     },
   );
+
+  it('reads the line that opens a code block in a cell as code', () => {
+    const markdown = [
+      '| h |',
+      '| --- |',
+      '| ```js a\\\\\\|b<br>x<br>``` |',
+    ].join('\n');
+    using editor = importMarkdown(markdown);
+    expect(editor.read(() => $convertToMarkdownString([TABLE]))).toBe(markdown);
+  });
 
   it('round-trips a code block with a pipe and a blank line in a cell', () => {
     const markdown = exportTable(() =>

@@ -19,6 +19,7 @@ import {
   $isTableSelection,
   TableExtension,
   type TableNode,
+  type TableRowNode,
 } from '@lexical/table';
 import {
   $createParagraphNode,
@@ -94,6 +95,23 @@ function $alignSelectedColumns(table: TableNode, format: ElementFormatType) {
 }
 
 /**
+ * Gives the cells of an inserted row the alignment of their column, which
+ * the row beside it has.
+ */
+function $alignInsertedRow(row: TableRowNode | null) {
+  const beside = row && (row.getPreviousSibling() ?? row.getNextSibling());
+  if ($isTableRowNode(beside)) {
+    const besideCells = beside.getChildren();
+    row!.getChildren().forEach((cell, i) => {
+      const from = besideCells[i];
+      if ($isTableCellNode(cell) && $isTableCellNode(from)) {
+        cell.setFormat(from.getFormatType());
+      }
+    });
+  }
+}
+
+/**
  * Edits the structure of the table the selection is in. The toolbar
  * dispatches this rather than calling the `@lexical/table` helpers itself,
  * so this extension owns table editing behavior.
@@ -143,7 +161,7 @@ export const TableEditExtension = defineExtension({
         switch (edit) {
           case 'row-above':
           case 'row-below':
-            $insertTableRowAtSelection(edit === 'row-below');
+            $alignInsertedRow($insertTableRowAtSelection(edit === 'row-below'));
             break;
           case 'column-left':
           case 'column-right':

@@ -128,6 +128,18 @@ test('an aligned column renders and clears its alignment', () => {
   expect(exportMarkdown(editor)).toBe('| a | b |\n| - | - |\n| 1 | 2 |');
 });
 
+test('an inserted row takes the alignment of its columns', () => {
+  const {editor, root} = mountEditor('| a | b |\n| - | -: |\n| 1 | 2 |');
+  selectLastCell(editor);
+  editor.dispatchCommand(TABLE_EDIT_COMMAND, 'row-below');
+  editor.read(() => {});
+  expect(
+    [...root.querySelectorAll('tr:last-child td')].map(
+      cell => (cell as HTMLElement).style.textAlign,
+    ),
+  ).toEqual(['', 'right']);
+});
+
 // https://github.com/facebook/lexical/issues/9323
 test('Enter in a cell exports as <br>, not a newline', async () => {
   const {editor, root} = mountEditor(TABLE);

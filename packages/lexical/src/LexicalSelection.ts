@@ -85,6 +85,7 @@ import {
   $getCompositionKey,
   $getDOMSlot,
   $getDOMTextNode,
+  $getNearestNodeFromDOMNode,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
   $getNodeFromDOM,
@@ -2660,6 +2661,17 @@ function $extendSelectionForDeletion(
       }
       return;
     }
+  }
+  // A slot boundary lives only in the model, so the native move can cross it.
+  // Deletion never does: leave the caret collapsed for deleteCharacter, which
+  // stops at the slot edge. Resolving the range would instead clamp it into
+  // the landed point's frame and move the caret out of its slot.
+  const landedNode = $getNearestNodeFromDOMNode(landedContainer);
+  if (
+    landedNode !== null &&
+    !$isSameFrame($getSlotFrame(landedNode), $getSlotFrame(anchorNode))
+  ) {
+    return;
   }
   // General path: reconstruct, in document order, the [original .. landed]
   // range a native extend would have produced. applyDOMRange only reads these

@@ -10,6 +10,8 @@ import type {MdastExportHandler, MdastImportHandler, MdastNode} from './types';
 import type {
   AlignType,
   Html,
+  HtmlBlock,
+  HtmlInline,
   PhrasingContent,
   Table,
   TableCell,
@@ -209,12 +211,31 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
     if (node.type === 'break') {
       return [lineBreakHtml()];
     }
-    if (node.type === 'html') {
+    const raw = node as Html | HtmlBlock | HtmlInline;
+    if (/^html(?:Block|Inline)?$/.test(raw.type)) {
       return [
         {
-          type: 'html',
-          value: node.value.replace(/\r?\n|\r/g, ' ').replace(/\|/g, '&#124;'),
-        },
+          ...raw,
+          // A line end next to a tag goes, and one elsewhere is a space.
+          value: raw.value
+            .replace(
+              /(>?)[ \t]*(?:\r?\n|\r)[ \t]*(<?)/g,
+              (_, end: string, start: string) =>
+                end || start ? end + start : ' ',
+            )
+            .replace(/\|/g, '&#124;'),
+          // `MdastHtmlExtension`'s raw HTML with Markdown embedded in it:
+          // each embedded block is one line too.
+          ...('children' in raw && {
+            children:
+              raw.type === 'htmlBlock'
+                ? raw.children.map(child => ({
+                    children: cellContent([child]),
+                    type: 'paragraph',
+                  }))
+                : cellPhrasing(raw.children),
+          }),
+        } as PhrasingContent,
       ];
     }
     if (
@@ -232,10 +253,10 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
   });
 }
 
-// The phrasing content that holds phrasing content, with that of the
-// directive and MDX extensions to mdast.
+// The phrasing content that holds phrasing content, with that of
+// `MdastHtmlExtension` and of the directive and MDX extensions to mdast.
 const PHRASING_PARENT_RE =
-  /^(?:delete|emphasis|link|linkReference|strong|textDirective|mdxJsxTextElement)$/;
+  /^(?:delete|emphasis|link|linkReference|strong|htmlInline|textDirective|mdxJsxTextElement)$/;
 
 /**
  * The phrasing content of a cell's exported blocks as one line: a GFM cell
@@ -258,7 +279,8 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
         }
         return;
       case 'html':
-        lines.push(cellPhrasing([node]));
+      case 'htmlBlock':
+        lines.push(cellPhrasing([node as PhrasingContent]));
         return;
       case 'thematicBreak':
         // GFM has no rule in a cell but HTML's, which import reads back.

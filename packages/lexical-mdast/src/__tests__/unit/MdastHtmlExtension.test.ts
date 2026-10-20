@@ -918,4 +918,83 @@ describe('MdastHtmlExtension', () => {
       expect(markdown.split('\n')[2]).toBe('| a<br><hr><br>b |');
     }
   });
+
+  describe('raw HTML a node exports to in a table cell', () => {
+    function tableCellEditor(): LexicalEditorWithDispose {
+      return buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            MdastCommonMarkExtension,
+            MdastExtension,
+            MdastTableExtension,
+            MdastHtmlExtension,
+            RichTextExtension,
+            configExtension(DOMImportExtension, {
+              rules: [CalloutRule, KeyRule],
+            }),
+            configExtension(MdastExtension, {
+              exportRules: [
+                {$export: $exportViaDOM, type: 'x-callout'},
+                {$export: $exportViaDOM, type: 'x-key'},
+              ],
+            }),
+          ],
+          name: '[table-raw-html]',
+          nodes: [CalloutNode, KeyNode],
+        }),
+      );
+    }
+
+    function exportWithCell(
+      editor: LexicalEditorWithDispose,
+      $children: () => LexicalNode[],
+    ): string {
+      editor.update(
+        () => {
+          $convertFromMarkdownString('| h |\n| - |\n| x |');
+          const cell = $getRoot()
+            .getFirstChildOrThrow<ElementNode>()
+            .getLastChildOrThrow<ElementNode>()
+            .getFirstChildOrThrow<ElementNode>();
+          cell.clear().append(...$children());
+        },
+        {discrete: true},
+      );
+      return editor.read(() => $convertToMarkdownString());
+    }
+
+    it('keeps an inline element on the row', () => {
+      using editor = tableCellEditor();
+      const markdown = exportWithCell(editor, () => [
+        $createParagraphNode().append(
+          $createTextNode('a '),
+          $create(KeyNode).append($createTextNode('K|x')),
+          $createTextNode(' b'),
+        ),
+      ]);
+      expect(markdown.split('\n')).toHaveLength(3);
+      expect(markdown.split('\n')[2]).toContain('<kbd>');
+      editor.update(() => $convertFromMarkdownString(markdown), {
+        discrete: true,
+      });
+      expect(editor.read(() => $convertToMarkdownString())).toBe(markdown);
+    });
+
+    it('keeps a block element and its attributes', () => {
+      using editor = tableCellEditor();
+      const markdown = exportWithCell(editor, () => {
+        const callout = $create(CalloutNode).append(
+          $createParagraphNode().append($createTextNode('body')),
+        );
+        $setSlot(
+          callout,
+          'title',
+          $createParagraphNode().append($createTextNode('T')),
+        );
+        return [callout];
+      });
+      expect(markdown.split('\n')).toHaveLength(3);
+      expect(markdown.split('\n')[2]).toContain('<x-callout open>');
+    });
+  });
 });

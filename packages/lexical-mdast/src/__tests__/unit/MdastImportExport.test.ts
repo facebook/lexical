@@ -53,7 +53,11 @@ import {
   type TextNode,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
-import {defaultHandlers} from 'mdast-util-to-markdown';
+import {
+  defaultHandlers,
+  type Handle,
+  type Handlers,
+} from 'mdast-util-to-markdown';
 import {assert, describe, expect, it} from 'vitest';
 
 import {
@@ -69,6 +73,7 @@ import {
   MdastCommonMarkExtension,
   MdastExtension,
   MdastHeadingExtension,
+  type MdastNode,
   MdastShadowRootQuoteExtension,
   MdastStrikethroughExtension,
   MdastTableExtension,
@@ -1362,6 +1367,57 @@ describe('@lexical/mdast import/export', () => {
       );
       expect(editor.read(() => $convertToMarkdownString())).toContain(
         '| ![a](u) |',
+      );
+    });
+
+    it('keeps an inline directive a block exports to in a cell', () => {
+      using editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            MdastCommonMarkExtension,
+            MdastTableExtension,
+            configExtension(MdastExtension, {
+              exportRules: [
+                {
+                  $export: () =>
+                    ({
+                      children: [{type: 'text', value: 'x'}],
+                      name: 'abbr',
+                      type: 'textDirective',
+                    }) as unknown as MdastNode,
+                  type: HorizontalRuleNode,
+                },
+              ],
+              toMarkdownExtensions: [
+                {
+                  handlers: {
+                    textDirective: ((node, _, state, info) =>
+                      `:${node.name}[${state.containerPhrasing(node, info)}]`) as Handle,
+                  } as Partial<Handlers>,
+                },
+              ],
+            }),
+          ],
+          name: '[root]',
+        }),
+      );
+      editor.update(
+        () => {
+          $convertFromMarkdownString('| a |\n| - |\n| b |');
+          const table = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isTableNode,
+          );
+          const cell = $assertNodeType(
+            table.getLastChildOrThrow<ElementNode>().getFirstChild(),
+            $isElementNode,
+          );
+          cell.clear().append($createHorizontalRuleNode());
+        },
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertToMarkdownString())).toContain(
+        '| :abbr[x] |',
       );
     });
 

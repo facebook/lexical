@@ -232,8 +232,10 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
   });
 }
 
-// The phrasing content that holds phrasing content.
-const PHRASING_PARENT_RE = /^(?:delete|emphasis|link|linkReference|strong)$/;
+// The phrasing content that holds phrasing content, with that of the
+// directive and MDX extensions to mdast.
+const PHRASING_PARENT_RE =
+  /^(?:delete|emphasis|link|linkReference|strong|textDirective|mdxJsxTextElement)$/;
 
 /**
  * The phrasing content of a cell's exported blocks as one line: a GFM cell

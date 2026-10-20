@@ -347,6 +347,17 @@ type CollaborationPluginV2Props = {
    * Read when the binding is created.
    */
   inlineFormats?: boolean;
+  /**
+   * @experimental PROTOTYPE. Write new documents in the block-marker layout
+   * (which includes `inlineFormats`): paragraphs, headings, quotes and list
+   * items are stored as lines in one shared sequence per container, so
+   * splitting, joining, retyping and re-indenting them merge with concurrent
+   * typing. Off by default; same adoption rules as `inlineFormats`. See
+   * `CreateBindingV2Options__EXPERIMENTAL.blockMarkers` in `@lexical/yjs`.
+   *
+   * Read when the binding is created.
+   */
+  blockMarkers?: boolean;
 };
 
 /**
@@ -372,6 +383,7 @@ export function CollaborationPluginV2__EXPERIMENTAL({
   rootName,
   getXmlElement,
   inlineFormats,
+  blockMarkers,
 }: CollaborationPluginV2Props): JSX.Element {
   const collabContext = useCollaborationContext(username, cursorColor);
   const {yjsDocMap, name, color} = collabContext;
@@ -390,6 +402,7 @@ export function CollaborationPluginV2__EXPERIMENTAL({
     {
       __shouldBootstrapUnsafe,
       awarenessData,
+      blockMarkers,
       excludedProperties,
       getXmlElement,
       inlineFormats,

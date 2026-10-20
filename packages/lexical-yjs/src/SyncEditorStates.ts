@@ -52,10 +52,17 @@ import {
 import {
   $createOrUpdateNodeFromYElement,
   $updateYFragment,
+  isBlockLayout,
   prepareLayoutForWrite,
   syncInlineFormatLayout,
   WRAPPERS_ATTR_KEY,
 } from './SyncV2';
+import {
+  $syncEmbedWrappers,
+  $syncFlowEvent,
+  resetBlockLayoutState,
+  setBlockLayoutWriteContext,
+} from './SyncV2Blocks';
 import {
   $getOrInitCollabNodeFromSharedType,
   $moveSelectionToPreviousNode,
@@ -465,7 +472,20 @@ function $syncEventV2(
       parent instanceof XmlElement
     ) {
       $createOrUpdateNodeFromYElement(parent, binding, new Set(), true);
+    } else if (
+      event.attributesChanged.has(WRAPPERS_ATTR_KEY) &&
+      parent instanceof XmlText
+    ) {
+      // Block-marker layout: the element is embedded in a flow.
+      $syncEmbedWrappers(binding, target);
     }
+  } else if (
+    target instanceof XmlText &&
+    event instanceof YTextEvent &&
+    isBlockLayout(binding)
+  ) {
+    // Block-marker layout: every XmlText is a container's flow.
+    $syncFlowEvent(binding, target, event);
   } else if (target instanceof XmlText && event instanceof YTextEvent) {
     const parent = target.parent;
     if (parent instanceof XmlElement) {
@@ -527,7 +547,13 @@ export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
   // safely computed during the event call. If it is accessed after event
   // call it might result in unexpected behavior.
   // https://github.com/yjs/yjs/blob/00ef472d68545cb260abd35c2de4b3b78719c9e4/src/utils/YEvent.js#L132
-  events.forEach(event => event.delta);
+  // (The block-marker layout locates changes to a flow from the transaction
+  // instead, so that a keystroke does not compute the delta of the whole
+  // flow.)
+  const blocks = isBlockLayout(binding);
+  events.forEach(event =>
+    blocks && event.target instanceof XmlText ? undefined : event.delta,
+  );
 
   editor.update(
     () => {
@@ -566,6 +592,7 @@ export function syncYjsStateToLexicalV2__EXPERIMENTAL(
   provider: Provider,
 ) {
   binding.mapping.clear();
+  resetBlockLayoutState(binding);
   const editor = binding.editor;
   editor.update(
     () => {
@@ -621,13 +648,23 @@ export function syncLexicalUpdateToYjsV2__EXPERIMENTAL(
         // are routed to dirtyElements), so unioning the two ensures
         // $updateSlotsYType's same-identity recursion gate sees a dirty
         // decorator slot value and propagates its own-attribute changes.
-        $updateYFragment(
-          binding.doc,
-          binding.root,
-          nextLexicalRoot,
-          binding,
-          new Set([...dirtyElements.keys(), ...dirtyLeaves]),
-        );
+        const blocks = isBlockLayout(binding);
+        if (blocks) {
+          setBlockLayoutWriteContext(prevEditorState._nodeMap);
+        }
+        try {
+          $updateYFragment(
+            binding.doc,
+            binding.root,
+            nextLexicalRoot,
+            binding,
+            new Set([...dirtyElements.keys(), ...dirtyLeaves]),
+          );
+        } finally {
+          if (blocks) {
+            setBlockLayoutWriteContext(null);
+          }
+        }
         // If a local edit emptied the root, schedule recovery outside the
         // collaboration/historic tag so the paragraph syncs back to Yjs.
         // Mirrors the $ensureEditorNotEmpty call in syncYjsChangesToLexicalV2's onUpdate.

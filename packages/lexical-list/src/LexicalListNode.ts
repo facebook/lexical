@@ -36,12 +36,13 @@ import {
   withField,
 } from 'lexical';
 
-import {$createListItemNode, $isListItemNode, type ListItemNode} from '.';
+import {$createListItemNode, $isListItemNode} from '.';
 import {
   mergeNextSiblingListIfSameType,
   updateChildrenListItemValue,
 } from './formatList';
 import {GENERATED_LIST} from './LexicalListGeneratedJSON';
+import {ListItemNode} from './LexicalListItemNode';
 import {$getListDepth} from './utils';
 
 export type SerializedListNode = Spread<
@@ -110,6 +111,19 @@ export class ListNode extends ElementNode {
       $transform: (node: ListNode): void => {
         mergeNextSiblingListIfSameType(node);
         updateChildrenListItemValue(node);
+      },
+      // @experimental A list only groups consecutive items (see
+      // CollabNodeConfig.block): a binding may rebuild it from its items,
+      // which carry its listType and start and their nesting level. `value`
+      // and `indent` of an item follow from that structure.
+      collab: {
+        block: {
+          derived: ['value', 'indent'],
+          items: () => [ListItemNode],
+          key: ['listType', 'start'],
+          mode: 'group',
+          nested: true,
+        },
       },
       extends: ElementNode,
       generated: GENERATED_LIST,

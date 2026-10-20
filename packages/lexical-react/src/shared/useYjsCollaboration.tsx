@@ -216,6 +216,8 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     getXmlElement?: (ydoc: Doc) => XmlElement;
     /** @experimental See `CreateBindingV2Options__EXPERIMENTAL.inlineFormats`. */
     inlineFormats?: boolean;
+    /** @experimental See `CreateBindingV2Options__EXPERIMENTAL.blockMarkers`. */
+    blockMarkers?: boolean;
     selectionHighlight?: boolean;
     __shouldBootstrapUnsafe?: boolean;
   } = {},
@@ -226,6 +228,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     rootName,
     getXmlElement,
     inlineFormats,
+    blockMarkers,
     selectionHighlight = false,
     __shouldBootstrapUnsafe: shouldBootstrap,
   } = options;
@@ -242,6 +245,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
   // editor's current content. Remount to edit a different document.
   const [binding] = useState(() =>
     createBindingV2__EXPERIMENTAL(editor, id, doc, docMap, {
+      blockMarkers,
       excludedProperties,
       getXmlElement,
       inlineFormats,
@@ -260,7 +264,8 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     const {root} = binding;
     if (root._length === 0) {
       // The provider has synced and the document is empty: a new document,
-      // which is put in the inline-format layout if the binding was asked to.
+      // which is put in the inline-format (or block-marker) layout if the
+      // binding was asked to.
       initializeInlineFormatLayout__EXPERIMENTAL(binding);
       if (shouldBootstrap) {
         bootstrapEditor(binding, editor);

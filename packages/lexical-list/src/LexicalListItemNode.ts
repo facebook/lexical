@@ -182,6 +182,9 @@ export class ListItemNode extends ElementNode {
           }
         }
       },
+      // @experimental A block of inline content (see CollabNodeConfig.block);
+      // an item that only holds a nested list is a level of its ListNode group.
+      collab: {block: 'line'},
       extends: ElementNode,
       generated: GENERATED_LISTITEM,
       importDOM: buildImportMap({

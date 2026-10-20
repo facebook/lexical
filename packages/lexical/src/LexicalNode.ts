@@ -163,6 +163,55 @@ export interface CollabNodeConfig {
    *   canonical one.
    */
   readonly inline?: 'element' | 'format';
+  /**
+   * What a block (non-inline) {@link ElementNode} is to the container it sits
+   * in. A binding may store a container's declared blocks in one shared
+   * sequence instead of one shared element per block, so that splitting,
+   * joining, retyping or re-indenting a block keeps its characters and merges
+   * with concurrent typing.
+   *
+   * - `'node'` (the default): a node with children of its own. Bindings store
+   *   it as its own shared element, and its children by these same rules.
+   * - `'line'`: a block of inline content (a paragraph, a heading, a list
+   *   item). A binding may store its content in its container's sequence,
+   *   followed by a marker carrying its type, its serialization schema fields
+   *   and its NodeState. Its children must all be inline and it must not host
+   *   slots; an instance that breaks this is stored as a `'node'`. Because
+   *   only the schema and NodeState are stored, the hint is inherited only by
+   *   subclasses that declare their own `$config()` and do not hand-write
+   *   `exportJSON` or `updateFromJSON`; a binding stores any other subclass,
+   *   and a class that declares slots, as a `'node'`.
+   * - `{mode: 'group', ...}`: a node that only groups consecutive `'line'`
+   *   items (a list). A binding may not store it at all and rebuild it from
+   *   its items' markers, which carry the group's `key` fields: consecutive
+   *   items with equal key fields form one group. With `nested`, an item that
+   *   only holds a nested group of the same class is a nesting level, stored
+   *   as a level on the items rather than as a node. Fields of the group that
+   *   are not in `key`, its NodeState, and the item fields listed in
+   *   `derived` (recomputed from the structure) are not synchronized.
+   *
+   * Bindings validate these hints when they use them (a group needs key
+   * fields, its items must be lines); a hint a binding cannot honor falls
+   * back to `'node'`. Reading the hints never throws.
+   */
+  readonly block?: 'node' | 'line' | CollabBlockGroupConfig;
+}
+
+/**
+ * @experimental collab-node-config
+ *
+ * See {@link CollabNodeConfig.block}.
+ */
+export interface CollabBlockGroupConfig {
+  readonly mode: 'group';
+  /** The `'line'` classes this group holds (lazy, like `$config` nodes). */
+  readonly items: () => readonly Klass<LexicalNode>[];
+  /** Schema fields of the group whose equality decides group membership. */
+  readonly key: readonly string[];
+  /** An item may hold only a nested group of the same class (a level). */
+  readonly nested?: boolean;
+  /** Schema fields of the items that the group recomputes from its structure. */
+  readonly derived?: readonly string[];
 }
 
 /**

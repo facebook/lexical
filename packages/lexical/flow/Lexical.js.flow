@@ -2298,6 +2298,18 @@ declare export function setterDefaultOf(
  */
 export interface CollabNodeConfig {
   readonly inline?: 'element' | 'format';
+  readonly block?: 'node' | 'line' | CollabBlockGroupConfig;
+}
+
+/**
+ * @experimental collab-node-config
+ */
+export interface CollabBlockGroupConfig {
+  readonly mode: 'group';
+  readonly items: () => ReadonlyArray<Class<LexicalNode>>;
+  readonly key: ReadonlyArray<string>;
+  readonly nested?: boolean;
+  readonly derived?: ReadonlyArray<string>;
 }
 
 /**

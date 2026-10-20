@@ -79,6 +79,11 @@ export interface BindingV2 extends BaseBinding {
    * {@link getInlineFormatLayoutState__EXPERIMENTAL}.
    */
   readonly inlineFormats?: boolean;
+  /**
+   * @experimental The {@link CreateBindingV2Options__EXPERIMENTAL.blockMarkers}
+   * option this binding was created with.
+   */
+  readonly blockMarkers?: boolean;
 }
 
 export type AnyBinding = Binding | BindingV2;
@@ -263,6 +268,45 @@ export interface CreateBindingV2Options__EXPERIMENTAL {
    *   declare in its JSON schema are not synchronized.
    */
   inlineFormats?: boolean;
+  /**
+   * @experimental PROTOTYPE. Write new documents in the block-marker layout,
+   * which includes the inline-format layout ({@link inlineFormats}). Defaults
+   * to `false`, which keeps the existing layouts byte for byte.
+   *
+   * In this layout the blocks of a container (the root, a table cell, any
+   * block that is not declared) that declare `$config({collab: {block:
+   * 'line'}})` (ParagraphNode, HeadingNode, QuoteNode, ListItemNode) are not
+   * shared elements of their own. Each container stores its children in one
+   * Y.XmlText, its flow: a line's inline content followed by a marker
+   * character (U+2029) whose formatting attributes carry the line's type,
+   * schema fields and NodeState. A block declared as a group (ListNode) is not
+   * stored: its items carry its key fields and their nesting level, and it is
+   * rebuilt from consecutive items. Any other block (tables, code blocks,
+   * block decorators, a line that breaks its declaration) is a shared element
+   * embedded in the flow, whose own children follow the same rules.
+   * Splitting a line is then inserting a marker, joining two lines deleting
+   * one, and changing a line's type, a list's type or an item's level is a
+   * formatting change of markers, so all of them merge with concurrent
+   * typing.
+   *
+   * Adoption follows the rules of {@link inlineFormats}: a document is put
+   * in this layout (marked with layout version 2) by
+   * {@link initializeInlineFormatLayout__EXPERIMENTAL} only while it is
+   * empty. A client that only knows the inline-format layout opens such a
+   * document read-only, shows it empty and reports it; clients from before
+   * the inline-format layout also show it empty, and stay editable.
+   *
+   * Known limits: marker attributes merge per key, so a split racing a type
+   * change can leave one half with the old type (and a list type change
+   * racing Enter can split the list); text typed into a line that a peer
+   * removes concurrently joins the next line; moving a block is a delete and
+   * reinsert of its content; a group's fields other than its key fields and
+   * its NodeState are not synchronized; structural changes to a group (Enter,
+   * Backspace, indent in a list) cost time proportional to the group's size,
+   * as Lexical's own list numbering does. See the prototype notes in
+   * SyncV2Blocks.ts.
+   */
+  blockMarkers?: boolean;
   /** The key used to look up the root `XmlElement` shared type on the Yjs `Doc`. Defaults to `'root-v2'`. */
   rootName?: string;
   /**
@@ -302,6 +346,7 @@ export function createBindingV2__EXPERIMENTAL(
     rootName = 'root-v2',
     getXmlElement,
     inlineFormats = false,
+    blockMarkers = false,
   } = options;
   const root = getXmlElement
     ? getXmlElement(doc)
@@ -318,7 +363,8 @@ export function createBindingV2__EXPERIMENTAL(
   );
   return {
     ...createBaseBinding(editor, id, doc, docMap, excludedProperties),
-    inlineFormats,
+    blockMarkers,
+    inlineFormats: inlineFormats || blockMarkers,
     mapping: new CollabV2Mapping(),
     root,
   };
@@ -329,6 +375,9 @@ export function createBindingV2__EXPERIMENTAL(
  * {@link CreateBindingV2Options__EXPERIMENTAL.inlineFormats}):
  * - `'default'`: the default layout;
  * - `'inline'`: the inline-format layout (the document is marked with it);
+ * - `'blocks'`: the block-marker layout (see
+ *   {@link CreateBindingV2Options__EXPERIMENTAL.blockMarkers}), which includes
+ *   the inline-format layout;
  * - `'unsupported'`: the document is marked with a newer inline-format layout
  *   version than this version of \@lexical/yjs supports. The binding reads it
  *   as well as it can and does not write to it; it makes the editor
@@ -363,7 +412,8 @@ export function initializeInlineFormatLayout__EXPERIMENTAL(
 export function isInlineFormatLayoutActive__EXPERIMENTAL(
   binding: BindingV2,
 ): boolean {
-  return getLayoutState(binding) === 'inline';
+  const state = getLayoutState(binding);
+  return state === 'inline' || state === 'blocks';
 }
 
 /**

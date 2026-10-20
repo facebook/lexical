@@ -206,6 +206,8 @@ export interface QuoteNode {
 export class QuoteNode extends ElementNode {
   $config() {
     return this.config('quote', {
+      // @experimental A block of inline content (see CollabNodeConfig.block).
+      collab: {block: 'line'},
       extends: ElementNode,
       generated: GENERATED_QUOTE,
       importDOM: {
@@ -364,6 +366,8 @@ export class HeadingNode extends ElementNode {
 
   $config() {
     return this.config('heading', {
+      // @experimental A block of inline content (see CollabNodeConfig.block).
+      collab: {block: 'line'},
       extends: ElementNode,
       generated: GENERATED_HEADING,
       importDOM: {

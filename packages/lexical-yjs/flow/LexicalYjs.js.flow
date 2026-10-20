@@ -140,6 +140,10 @@ export type BindingV2 = {
    * @experimental
    */
   readonly inlineFormats?: boolean,
+  /**
+   * @experimental PROTOTYPE
+   */
+  readonly blockMarkers?: boolean,
 };
 
 // AnyBinding is not part of the public TypeScript export surface; it is kept
@@ -403,6 +407,10 @@ export type CreateBindingV2Options__EXPERIMENTAL = {
    * @experimental
    */
   inlineFormats?: boolean,
+  /**
+   * @experimental PROTOTYPE
+   */
+  blockMarkers?: boolean,
   rootName?: string,
   getXmlElement?: (doc: Doc) => XmlElement,
 };
@@ -421,6 +429,7 @@ declare export function createBindingV2__EXPERIMENTAL(
 export type InlineFormatLayoutState__EXPERIMENTAL =
   | 'default'
   | 'inline'
+  | 'blocks'
   | 'unsupported';
 
 /**

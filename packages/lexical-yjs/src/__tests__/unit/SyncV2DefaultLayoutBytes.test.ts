@@ -10,8 +10,10 @@
 
 import {$toggleLink, LinkNode} from '@lexical/link';
 import {
+  type BindingV2,
   createBindingV2__EXPERIMENTAL,
   createUndoManager,
+  initializeInlineFormatLayout__EXPERIMENTAL,
   type Provider,
   syncLexicalUpdateToYjsV2__EXPERIMENTAL,
   syncYjsChangesToLexicalV2__EXPERIMENTAL,
@@ -36,6 +38,9 @@ import {createHash} from 'node:crypto';
 import {expect, test} from 'vitest';
 import * as Y from 'yjs';
 
+const EXPECTED_DIGEST = 'cf52f1634a85a726';
+const EXPECTED_INLINE_DIGEST = '349f7f4948556b91';
+
 // Pins the bytes the V2 binding writes in its default layout for a scripted
 // two-peer session (links, typing inside them, bold, NodeState, a line break,
 // an inline decorator, an offline unlink and an undo), so that changes to the
@@ -48,6 +53,7 @@ const commentState = createState('comment', {
 });
 
 type TestPeer = {
+  binding: BindingV2;
   doc: Y.Doc;
   update: (fn: () => void) => void;
   undoManager: Y.UndoManager;
@@ -58,7 +64,7 @@ type TestPeer = {
 function createPeer(
   clientID: number,
   peers: TestPeer[],
-  options: {inlineFormats?: boolean},
+  options: {inlineFormats?: boolean; blockMarkers?: boolean},
 ): TestPeer {
   const doc = new Y.Doc({gc: false});
   doc.clientID = clientID;
@@ -122,6 +128,7 @@ function createPeer(
       ),
   );
   const peer: TestPeer = {
+    binding,
     doc,
     online: true,
     pending: [],
@@ -175,14 +182,25 @@ function $select(start: number, end: number = start) {
 }
 
 test.each([
-  ['no options', {}],
-  ['inlineFormats: false', {inlineFormats: false}],
+  ['no options', {}, EXPECTED_DIGEST],
+  ['inlineFormats: false', {inlineFormats: false}, EXPECTED_DIGEST],
+  ['blockMarkers: false', {blockMarkers: false}, EXPECTED_DIGEST],
+  // The inline-format layout, recorded on the commit that added it.
+  ['inlineFormats: true', {inlineFormats: true}, EXPECTED_INLINE_DIGEST],
+  [
+    'inlineFormats: true, blockMarkers: false',
+    {blockMarkers: false, inlineFormats: true},
+    EXPECTED_INLINE_DIGEST,
+  ],
 ])(
-  'the default layout writes the same Yjs updates as before (%s)',
-  (_, options) => {
+  'the default and inline-format layouts write the same Yjs updates as before (%s)',
+  (_, options, expected) => {
     const peers: TestPeer[] = [];
     const a = createPeer(1, peers, options);
     const b = createPeer(2, peers, options);
+    // As the collaboration plugin does after the first sync; a no-op without
+    // a layout option.
+    initializeInlineFormatLayout__EXPERIMENTAL(a.binding);
     a.update(() => {
       $getRoot()
         .clear()
@@ -229,15 +247,14 @@ test.each([
         .update(Y.encodeStateAsUpdate(peer.doc))
         .digest('hex')
         .slice(0, 16);
-    expect([digest(a), digest(b)]).toEqual([EXPECTED_DIGEST, EXPECTED_DIGEST]);
+    expect([digest(a), digest(b)]).toEqual([expected, expected]);
   },
 );
-
-const EXPECTED_DIGEST = 'cf52f1634a85a726';
 
 test.each([
   ['no options', {}],
   ['inlineFormats: false', {inlineFormats: false}],
+  ['blockMarkers: true', {blockMarkers: true}],
 ])(
   'creating a binding on a non-empty editor writes nothing (%s)',
   async (_, options) => {

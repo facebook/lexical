@@ -66,4 +66,5 @@ declare export function CollaborationPluginV2__EXPERIMENTAL(arg0: {
   rootName?: string,
   getXmlElement?: (doc: Doc) => XmlElement,
   inlineFormats?: boolean,
+  blockMarkers?: boolean,
 }): React.Node;

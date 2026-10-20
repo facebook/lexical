@@ -5495,6 +5495,9 @@ export function getDeclaredCollabConfig(
       if (declared && merged.inline === undefined) {
         merged.inline = declared.inline;
       }
+      if (declared && merged.block === undefined) {
+        merged.block = declared.block;
+      }
     }
     config = merged;
     collabConfigCache.set(klass, config);

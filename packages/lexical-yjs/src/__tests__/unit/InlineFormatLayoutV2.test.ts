@@ -1240,7 +1240,9 @@ describe('collab-v2 inline-format layout', () => {
           .clear()
           .append($createParagraphNode().append($createTextNode(P)));
       });
-      writer.doc.getMap(LAYOUT_MAP_NAME).set('root:root-v2', 2);
+      // Version 2 is the block-marker layout; 3 is newer than any this
+      // version knows.
+      writer.doc.getMap(LAYOUT_MAP_NAME).set('root:root-v2', 3);
       const reader = new Peer(2, net, true);
       Y.applyUpdate(reader.doc, Y.encodeStateAsUpdate(writer.doc), net);
       expect(reader.describe()).toBe(`paragraph(${JSON.stringify(P)})`);

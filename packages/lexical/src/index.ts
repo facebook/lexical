@@ -209,6 +209,7 @@ export {
 export type {
   AbstractStaticNodeConfigRecord,
   BaseStaticNodeConfig,
+  CollabBlockGroupConfig,
   CollabNodeConfig,
   DOMChildConversion,
   DOMConversion,

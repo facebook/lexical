@@ -8,7 +8,12 @@
 
 // @vitest-environment node
 
-import {ElementNode, getDeclaredCollabConfig, TextNode} from 'lexical';
+import {
+  ElementNode,
+  getDeclaredCollabConfig,
+  ParagraphNode,
+  TextNode,
+} from 'lexical';
 import {describe, expect, test} from 'vitest';
 
 class FormatNode extends ElementNode {
@@ -74,4 +79,49 @@ describe('getDeclaredCollabConfig', () => {
       inline: 'element',
     });
   });
+
+  test('block declarations are inherited per key', () => {
+    expect(getDeclaredCollabConfig(ParagraphNode)).toEqual({block: 'line'});
+    expect(getDeclaredCollabConfig(InlineAndBlockNode)).toEqual({
+      block: 'line',
+      inline: 'format',
+    });
+  });
+
+  test('reading hints never throws; bindings validate what they use', () => {
+    expect(getDeclaredCollabConfig(SlottedLineNode)).toEqual({block: 'line'});
+    expect(getDeclaredCollabConfig(KeylessGroupNode).block).toMatchObject({
+      key: [],
+      mode: 'group',
+    });
+  });
 });
+
+// Inherits `inline` from FormatNode and declares `block` itself.
+class InlineAndBlockNode extends FormatNode {
+  $config() {
+    return this.config('test_collab_inline_and_block', {
+      collab: {block: 'line'},
+      extends: FormatNode,
+    });
+  }
+}
+
+class SlottedLineNode extends ElementNode {
+  $config() {
+    return this.config('test_collab_slotted_line', {
+      collab: {block: 'line'},
+      extends: ElementNode,
+      slots: ['caption'],
+    });
+  }
+}
+
+class KeylessGroupNode extends ElementNode {
+  $config() {
+    return this.config('test_collab_keyless_group', {
+      collab: {block: {items: () => [ParagraphNode], key: [], mode: 'group'}},
+      extends: ElementNode,
+    });
+  }
+}

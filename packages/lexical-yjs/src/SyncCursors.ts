@@ -49,7 +49,12 @@ import {
 } from './Bindings';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabTextNode} from './CollabTextNode';
-import {$isInlineFormatWrapperV2, isInlineFormatLayout} from './SyncV2';
+import {
+  $isInlineFormatWrapperV2,
+  isBlockLayout,
+  isInlineFormatLayout,
+} from './SyncV2';
+import {$flowPositionOfPoint, $pointOfFlowPosition} from './SyncV2Blocks';
 import {getPositionFromElementAndOffset} from './Utils';
 
 export type CursorSelection = {
@@ -236,6 +241,22 @@ function $createRelativePositionV2(
   assoc: number = 0,
 ): null | RelativePosition {
   const {mapping} = binding;
+  if (isBlockLayout(binding)) {
+    // Block-marker layout: every point is a position in a container's flow.
+    const position = $flowPositionOfPoint(
+      point.key,
+      point.offset,
+      point.type,
+      binding,
+    );
+    return position === null
+      ? null
+      : createRelativePositionFromTypeIndex(
+          position.text,
+          position.index,
+          assoc,
+        );
+  }
   let {offset} = point;
   let node: LexicalNode = point.getNode();
   let pointType = point.type;
@@ -1030,6 +1051,16 @@ function $getNodeAndOffsetV2(
 ): [null | LexicalNode, number] {
   const yType = absolutePosition.type as XmlElement | XmlText;
   const yOffset = absolutePosition.index;
+  if (
+    yType instanceof XmlText &&
+    binding !== undefined &&
+    isBlockLayout(binding)
+  ) {
+    const point = $pointOfFlowPosition(yType, yOffset, binding);
+    if (point !== null) {
+      return point;
+    }
+  }
   if (yType instanceof XmlElement) {
     const node = mapping.get(yType);
     if (node === undefined) {

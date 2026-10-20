@@ -89,6 +89,13 @@ import {
 
 import simpleDiffWithCursor from './simpleDiffWithCursor';
 import {
+  $createFlowElementType,
+  $readFlowContainer,
+  $updateFlowContainer,
+  registerBlockLayoutTransforms,
+  resetBlockLayoutState,
+} from './SyncV2Blocks';
+import {
   $isSlotValueNode,
   $syncPropertiesFromYjs,
   getDefaultNodeProperties,
@@ -103,7 +110,7 @@ type ComputeYChange = (
   id: ID,
 ) => Record<string, unknown>;
 
-type TextAttributes = {
+export type TextAttributes = {
   t?: string; // type if not TextNode
   p?: Record<string, unknown>; // properties
   [key: `s_${string}`]: unknown; // state
@@ -114,7 +121,7 @@ type TextAttributes = {
 };
 
 /** A leaf written into an XmlText run. */
-type RunNode = TextNode | LineBreakNode;
+export type RunNode = TextNode | LineBreakNode;
 
 const isRootElement = (el: XmlElement): boolean =>
   el.nodeName === ROOT_NODE_NAME;
@@ -148,7 +155,21 @@ export const $createOrUpdateNodeFromYElement = (
     childListChanged = true;
   }
 
-  if (childListChanged && node instanceof ElementNode) {
+  if (
+    childListChanged &&
+    node instanceof ElementNode &&
+    isBlockLayout(binding)
+  ) {
+    // Block-marker layout: the children are stored in the element's flow.
+    $readFlowContainer(
+      el,
+      node,
+      binding,
+      snapshot,
+      prevSnapshot,
+      computeYChange,
+    );
+  } else if (childListChanged && node instanceof ElementNode) {
     const items: InlineItem[] = [];
     let hasWrappers = false;
     const $createChildren = (childType: XmlElement | XmlText | XmlHook) => {
@@ -358,7 +379,10 @@ export const $createOrUpdateNodeFromYElement = (
   return latestNode;
 };
 
-const $spliceChildren = (node: ElementNode, nextChildren: LexicalNode[]) => {
+export const $spliceChildren = (
+  node: ElementNode,
+  nextChildren: LexicalNode[],
+) => {
   const prevChildren = node.getChildren();
   const prevChildrenKeySet = new Set(prevChildren.map(child => child.getKey()));
   const nextChildrenKeySet = new Set(nextChildren.map(child => child.getKey()));
@@ -420,7 +444,7 @@ const $spliceChildren = (node: ElementNode, nextChildren: LexicalNode[]) => {
   }
 };
 
-const isItemVisible = (item: Item, snapshot?: Snapshot): boolean =>
+export const isItemVisible = (item: Item, snapshot?: Snapshot): boolean =>
   snapshot === undefined
     ? !item.deleted
     : snapshot.sv.has(item.id.client) &&
@@ -441,10 +465,27 @@ const $createOrUpdateTextNodesFromYText = (
     ),
     binding,
   );
+  const latestNodes = $syncRunNodesFromDeltas(
+    deltas,
+    binding.mapping.get(text) ?? [],
+    binding,
+  );
+  binding.mapping.set(text, latestNodes);
+  return {attributes: deltas.map(d => d.attributes), nodes: latestNodes};
+};
 
+/**
+ * @internal The run members described by `deltas` (already split at line
+ * breaks), reusing `prevNodes` when their count and types align.
+ */
+export const $syncRunNodesFromDeltas = (
+  deltas: {insert: string; attributes: TextAttributes}[],
+  prevNodes: RunNode[],
+  binding: BindingV2,
+): RunNode[] => {
   // Use existing text nodes if the count and types all align, otherwise throw out the existing
   // nodes and create new ones.
-  let nodes: RunNode[] = binding.mapping.get(text) ?? [];
+  let nodes: RunNode[] = prevNodes;
 
   const nodeTypes: string[] = deltas.map(
     delta => delta.attributes.t ?? TextNode.getType(),
@@ -504,9 +545,7 @@ const $createOrUpdateTextNodesFromYText = (
     $getWritableNodeState(node).updateFromJSON(state);
   }
 
-  const latestNodes = nodes.map(node => node.getLatest());
-  binding.mapping.set(text, latestNodes);
-  return {attributes: deltas.map(d => d.attributes), nodes: latestNodes};
+  return nodes.map(node => node.getLatest());
 };
 
 // Inline-format layout: adjacent text deltas that differ only in `i` (the
@@ -515,7 +554,7 @@ const $createOrUpdateTextNodesFromYText = (
 // reader write the merge (an `i` re-index) back right away: two peers whose
 // views briefly disagree would then keep re-indexing each other's runs. The
 // stale `i` is fixed by the next local edit of the run.
-const $mergeIndexOnlyDeltas = (
+export const $mergeIndexOnlyDeltas = (
   deltas: {insert: string; attributes: TextAttributes}[],
   binding: BindingV2,
 ): {insert: string; attributes: TextAttributes}[] => {
@@ -562,7 +601,7 @@ const isLineBreakClass = (klass: Klass<LexicalNode>): boolean =>
 // LineBreakNode (Lexical keeps line breaks out of TextNodes) and any other
 // character in a line-break delta becomes plain text, rather than failing to
 // read it or showing a TextNode holding "\n".
-const $splitLineBreakDeltas = (
+export const $splitLineBreakDeltas = (
   deltas: {insert: string; attributes: TextAttributes}[],
   binding: BindingV2,
 ): {insert: string; attributes: TextAttributes}[] => {
@@ -635,7 +674,7 @@ const $createTypeFromTextNodes = (
 // merges with host creation itself, so each name's FIRST set is an
 // entry-level Y.Map operation instead of an attribute-level LWW race between
 // clients that both create the map.
-const $createSlotsYType = (
+export const $createSlotsYType = (
   node: LexicalNode,
   binding: BindingV2,
 ): YMap<XmlElement> | undefined => {
@@ -660,7 +699,7 @@ const $createSlotsYType = (
 // elements, nested slots) stayed registered and leaked because the slot's
 // Y.Doc parent was already gone, so the yjs delete event never re-fired
 // observers down the subtree.
-const $deleteMappingForSubtree = (
+export const $deleteMappingForSubtree = (
   type: XmlElement | XmlText | XmlHook,
   binding: BindingV2,
 ): void => {
@@ -759,10 +798,13 @@ const $updateSlotsYType = (
   }
 };
 
-const $createTypeFromElementNode = (
+export const $createTypeFromElementNode = (
   node: LexicalNode,
   binding: BindingV2,
 ): XmlElement => {
+  if (isBlockLayout(binding)) {
+    return $createFlowElementType(node, binding);
+  }
   const type = new XmlElement(node.getType());
   const attrs = $elementAttributes(node, binding);
   for (const key in attrs) {
@@ -826,7 +868,7 @@ const $createTypeFromTextOrElementNode = (
     ? $createTypeFromTextNodes(node, meta)
     : $createTypeFromElementNode(node, meta);
 
-const isObject = (
+export const isObject = (
   val: unknown,
 ): val is Record<string | number | symbol, unknown> =>
   typeof val === 'object' && val != null;
@@ -1141,7 +1183,7 @@ const $updateYText = (
 const isBindingTextAttrKey = (key: string): boolean =>
   key === 't' || key === 'p' || key === 'i' || key.startsWith(STATE_KEY_PREFIX);
 
-const equalAttrValues = (a: unknown, b: unknown): boolean => {
+export const equalAttrValues = (a: unknown, b: unknown): boolean => {
   if (a === b) {
     return true;
   }
@@ -1245,7 +1287,7 @@ const diffTextAttributes = (
   return delta;
 };
 
-const toDelta = (
+export const toDelta = (
   ytext: YText,
   snapshot?: Snapshot,
   prevSnapshot?: Snapshot,
@@ -1276,16 +1318,16 @@ const propertiesToAttributes = (node: LexicalNode, meta: BindingV2) => {
   return attrs;
 };
 
-const STATE_KEY_PREFIX = 's_';
+export const STATE_KEY_PREFIX = 's_';
 const stateKeyToAttrKey = (key: string): `s_${string}` => `s_${key}`;
-const attrKeyToStateKey = (key: string) => {
+export const attrKeyToStateKey = (key: string) => {
   if (!key.startsWith(STATE_KEY_PREFIX)) {
     throw new Error(`Invalid state key: ${key}`);
   }
   return key.slice(STATE_KEY_PREFIX.length);
 };
 
-const stateToAttributes = (node: LexicalNode) => {
+export const stateToAttributes = (node: LexicalNode) => {
   const state = node.__state;
   if (!state) {
     return {};
@@ -1354,6 +1396,13 @@ export const $updateYFragment = (
     if (node instanceof ElementNode || $isDecoratorNode(node)) {
       $updateSlotsYType(yDomFragment, node, binding, dirtyElements, y);
     }
+  }
+  if (isBlockLayout(binding)) {
+    // Block-marker layout: the children are stored in the element's flow.
+    if (node instanceof ElementNode) {
+      $updateFlowContainer(y, yDomFragment, node, binding, dirtyElements);
+    }
+    return;
   }
   // update children
   const lChildren = normalizeNodeContent(node, binding);
@@ -1528,6 +1577,11 @@ export const LAYOUT_MAP_NAME = 'lexical-collab-layout';
 /** @internal The inline-format layout version this binding reads and writes. */
 export const INLINE_FORMATS_LAYOUT_VERSION = 1;
 /**
+ * @internal The block-marker layout version (inline formats plus block
+ * markers, see SyncV2Blocks) this binding reads and writes.
+ */
+export const BLOCK_MARKERS_LAYOUT_VERSION = 2;
+/**
  * @internal Attribute of a non-text XmlElement (inline decorator, inline
  * element that is not a format wrapper) holding the wrapper keys of the
  * wrappers around it, in the same form a text run uses.
@@ -1538,7 +1592,7 @@ const WRAPPER_ATTR_PREFIX = 'w_';
 const WRAPPER_FIELD_SEPARATOR = '|';
 // Prefix of a wrapper property whose value is not a primitive and is stored as
 // a JSON string: `w_link|~meta`.
-const JSON_VALUE_PREFIX = '~';
+export const JSON_VALUE_PREFIX = '~';
 const FORMAT_ATTR_PREFIX = 'f_';
 let namedFormatBits: number | undefined;
 const getNamedFormatBits = (): number => {
@@ -1555,15 +1609,22 @@ const getNamedFormatBits = (): number => {
  * Which layout a binding uses for its document:
  * - `'default'`: the default layout (unmarked document);
  * - `'inline'`: the inline-format layout;
+ * - `'blocks'`: the block-marker layout (which includes inline formats);
  * - `'unsupported'`: the document is marked with a newer inline-format layout
  *   version than this binding supports. It is read as well as possible and
  *   never written: local edits are not synced.
  */
-export type InlineFormatLayoutState = 'default' | 'inline' | 'unsupported';
+export type InlineFormatLayoutState =
+  | 'default'
+  | 'inline'
+  | 'blocks'
+  | 'unsupported';
 
 type LayoutRecord = {
   /** Cached state; absent while it can still change without a mark. */
   state?: InlineFormatLayoutState;
+  /** Cached: the document is marked with the block-marker layout or newer. */
+  blocks?: boolean;
   unobserve?: () => void;
   unregisterTransforms?: () => void;
   reportedUnsupported?: boolean;
@@ -1616,6 +1677,7 @@ function getLayoutMap(binding: BindingV2): YMap<unknown> {
     const observer = (event: YMapEvent<unknown>) => {
       if (event.keysChanged.has(key)) {
         delete getLayoutRecord(binding).state;
+        delete getLayoutRecord(binding).blocks;
       }
     };
     map.observe(observer);
@@ -1643,9 +1705,29 @@ export function getLayoutState(binding: BindingV2): InlineFormatLayoutState {
         ? 'default'
         : version <= INLINE_FORMATS_LAYOUT_VERSION
           ? 'inline'
-          : 'unsupported';
+          : version === BLOCK_MARKERS_LAYOUT_VERSION
+            ? 'blocks'
+            : 'unsupported';
+    // A newer version is read as well as possible: with the block reader if
+    // the root holds a flow.
+    record.blocks =
+      version === BLOCK_MARKERS_LAYOUT_VERSION ||
+      (version !== undefined &&
+        version > BLOCK_MARKERS_LAYOUT_VERSION &&
+        binding.root.length > 0 &&
+        binding.root.get(0) instanceof XmlText);
   }
   return record.state;
+}
+
+/**
+ * @internal Whether `binding` reads its document in the block-marker layout:
+ * marked with it or with a newer version (read as well as possible, never
+ * written).
+ */
+export function isBlockLayout(binding: BindingV2): boolean {
+  getLayoutState(binding);
+  return getLayoutRecord(binding).blocks === true;
 }
 
 /** @internal Whether `binding` reads (and, unless unsupported, writes) the inline-format layout. */
@@ -1671,16 +1753,27 @@ export function prepareLayoutForWrite(binding: BindingV2): boolean {
 export function initializeInlineFormatLayout(
   binding: BindingV2,
 ): InlineFormatLayoutState {
+  const blocks = binding.blockMarkers === true;
   if (
-    binding.inlineFormats === true &&
+    (binding.inlineFormats === true || blocks) &&
     getLayoutState(binding) === 'default' &&
     binding.root._length === 0
   ) {
     const map = getLayoutMap(binding);
     binding.doc.transact(() => {
-      map.set(getRootLayoutKey(binding), INLINE_FORMATS_LAYOUT_VERSION);
+      map.set(
+        getRootLayoutKey(binding),
+        blocks ? BLOCK_MARKERS_LAYOUT_VERSION : INLINE_FORMATS_LAYOUT_VERSION,
+      );
+      if (blocks) {
+        // The root's flow is created with the mark, so that the first
+        // contents of two clients land in one sequence.
+        binding.root.insert(0, [new XmlText()]);
+      }
     }, binding);
-    getLayoutRecord(binding).state = 'inline';
+    const record = getLayoutRecord(binding);
+    record.state = blocks ? 'blocks' : 'inline';
+    record.blocks = blocks;
     syncInlineFormatLayout(binding);
   }
   return getLayoutState(binding);
@@ -1696,12 +1789,23 @@ export function initializeInlineFormatLayout(
 export function syncInlineFormatLayout(binding: BindingV2): void {
   const state = getLayoutState(binding);
   const record = getLayoutRecord(binding);
-  if (state === 'inline' && record.unregisterTransforms === undefined) {
-    record.unregisterTransforms = registerInlineFormatTransforms(binding);
+  if (
+    (state === 'inline' || state === 'blocks') &&
+    record.unregisterTransforms === undefined
+  ) {
+    const unregisterInline = registerInlineFormatTransforms(binding);
+    const unregisterBlocks =
+      state === 'blocks' ? registerBlockLayoutTransforms(binding) : null;
+    record.unregisterTransforms = () => {
+      unregisterInline();
+      if (unregisterBlocks !== null) {
+        unregisterBlocks();
+      }
+    };
   } else if (state === 'unsupported' && record.reportedUnsupported !== true) {
     record.reportedUnsupported = true;
     const error = new Error(
-      `@lexical/yjs: this document is written in inline-format layout version ${readLayoutVersion(binding)}, newer than the supported version ${INLINE_FORMATS_LAYOUT_VERSION}. The editor is made read-only because local changes could not be synced; upgrade @lexical/yjs.`,
+      `@lexical/yjs: this document is written in inline-format layout version ${readLayoutVersion(binding)}, newer than the supported version ${BLOCK_MARKERS_LAYOUT_VERSION}. The editor is made read-only because local changes could not be synced; upgrade @lexical/yjs.`,
     );
     const {editor} = binding;
     // Outside the Yjs observer or update listener this runs in, so an onWarn
@@ -1728,6 +1832,7 @@ export function disposeInlineFormatLayout(binding: BindingV2): void {
       record.unobserve();
     }
     layoutRecords.delete(binding);
+    resetBlockLayoutState(binding);
   }
 }
 
@@ -1785,7 +1890,7 @@ function getWrapperSpec(klass: Klass<LexicalNode>): WrapperSpec | null {
  * other) properties does not change what is synchronized, without the
  * NodeState it appends (synchronized separately).
  */
-function $exportSchemaJSON(node: LexicalNode): Record<string, unknown> {
+export function $exportSchemaJSON(node: LexicalNode): Record<string, unknown> {
   // ElementNode does not override exportJSON; this is LexicalNode's.
   const json = ElementNode.prototype.exportJSON.call(node, true) as Record<
     string,
@@ -1813,7 +1918,9 @@ function $getWrapperSpecForType(
  * An inline ElementNode whose class declares `collab: {inline: 'format'}`.
  * Whether it is written that way also depends on the layout.
  */
-function $isFormatWrapper(node: LexicalNode | null): node is ElementNode {
+export function $isFormatWrapper(
+  node: LexicalNode | null,
+): node is ElementNode {
   return (
     node instanceof ElementNode &&
     getWrapperSpec(node.constructor as Klass<LexicalNode>) !== null &&
@@ -1865,7 +1972,7 @@ const isDeclaredWrapperField = (field: string, spec: WrapperSpec): boolean => {
  * types and wrapper fields that only a newer or differently configured peer
  * knows, so that peer keeps them.
  */
-function $isInlineFormatOwnedKey(
+export function $isInlineFormatOwnedKey(
   key: string,
   desired: Record<string, unknown>,
   binding: BindingV2,
@@ -1889,7 +1996,7 @@ function $isInlineFormatOwnedKey(
 }
 
 /** Recursively key-sorted JSON, so equal values give equal strings. */
-const stableStringify = (value: unknown): string =>
+export const stableStringify = (value: unknown): string =>
   JSON.stringify(value, (_k, v) =>
     isObject(v) && !Array.isArray(v)
       ? Object.fromEntries(
@@ -1900,13 +2007,15 @@ const stableStringify = (value: unknown): string =>
       : v,
   );
 
-const isPrimitive = (v: unknown): v is string | number | boolean | null =>
+export const isPrimitive = (
+  v: unknown,
+): v is string | number | boolean | null =>
   v === null ||
   typeof v === 'string' ||
   typeof v === 'number' ||
   typeof v === 'boolean';
 
-const isUnsafeKey = (key: string) =>
+export const isUnsafeKey = (key: string) =>
   key === '__proto__' || key === 'constructor' || key === 'prototype';
 
 /**
@@ -2047,7 +2156,7 @@ function $updateRunIfWrappersChanged(
 }
 
 /** Attributes of a non-run XmlElement (properties, state, wrappers). */
-function $elementAttributes(
+export function $elementAttributes(
   node: LexicalNode,
   binding: BindingV2,
 ): Record<string, unknown> {
@@ -2065,7 +2174,7 @@ function $elementAttributes(
 }
 
 /** The format bits named by `f_<format>` keys (`f_bold`, `f_italic`, ...). */
-function readFormatBits(attributes: Record<string, unknown>): number {
+export function readFormatBits(attributes: Record<string, unknown>): number {
   let bits = 0;
   for (const k in attributes) {
     if (k.startsWith(FORMAT_ATTR_PREFIX) && attributes[k] === true) {
@@ -2084,7 +2193,7 @@ function readFormatBits(attributes: Record<string, unknown>): number {
  * one `f_<format>` key per format, its state and its wrappers. Format bits
  * without a name, if any, stay in `p.__format`.
  */
-function $runNodeAttributes(
+export function $runNodeAttributes(
   node: RunNode,
   binding: BindingV2,
 ): Record<string, unknown> {
@@ -2149,7 +2258,7 @@ function $equalRunInlineFormatLayout(
  * Keys the binding does not own are carried over from the text before the
  * insertion point, as Yjs would have done.
  */
-function insertAttributes(
+export function insertAttributes(
   desired: Record<string, unknown>,
   inherited: Record<string, unknown>,
   binding: BindingV2,
@@ -2233,7 +2342,7 @@ type WrapperDescriptor = {
   readonly attrs: Record<string, unknown>;
 };
 
-type InlineItem = {
+export type InlineItem = {
   readonly node: LexicalNode;
   readonly wrappers: readonly WrapperDescriptor[];
 };
@@ -2251,7 +2360,7 @@ const describeAttrs = (type: string, attrs: Record<string, unknown>) => {
  * map): one per `w_<type>: true` whose type this editor can rebuild. Other
  * types are ignored here (and preserved on write).
  */
-function $parseWrapperDescriptors(
+export function $parseWrapperDescriptors(
   attrs: unknown,
   binding: BindingV2,
 ): WrapperDescriptor[] {
@@ -2370,7 +2479,7 @@ function buildInlineTree(items: readonly InlineItem[]): InlineTreeChild[] {
 }
 
 /** Decodes a stored wrapper field value. */
-function decodeWrapperField(
+export function decodeWrapperField(
   field: string,
   value: unknown,
 ): {name: string; value: unknown} | null {
@@ -2437,7 +2546,10 @@ function $applyWrapperDescriptor(
  * that currently sit deeper in the tree (inside a wrapper being replaced),
  * which a single splice detaches and moves.
  */
-function $setChildren(parent: ElementNode, desired: LexicalNode[]): void {
+export function $setChildren(
+  parent: ElementNode,
+  desired: LexicalNode[],
+): void {
   const current = parent.getChildren();
   let start = 0;
   while (
@@ -2670,7 +2782,7 @@ function $canonicalizeInlineBlock(
  * splice would then move a selection point on such a leaf to a sibling, so
  * text points that still exist afterwards are put back where they were.
  */
-function $rebuildInlineChildren(
+export function $rebuildInlineChildren(
   block: ElementNode,
   items: readonly InlineItem[],
   binding: BindingV2,
@@ -2730,7 +2842,8 @@ function registerInlineFormatTransforms(binding: BindingV2): () => void {
     }
     unregister.push(
       editor.registerNodeTransform(klass, node => {
-        if (getLayoutState(binding) !== 'inline') {
+        const layoutState = getLayoutState(binding);
+        if (layoutState !== 'inline' && layoutState !== 'blocks') {
           return;
         }
         let block: LexicalNode | null = node.getParent();

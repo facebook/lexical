@@ -150,8 +150,12 @@ export function importTextTransformers(
     }
   }
 
-  // Handle escape characters
-  const textContent = textNode.getTextContent();
-  const unescapedText = unescapeText(textContent);
-  textNode.setTextContent(unescapedText);
+  // Handle escape characters. Only a node that no transformer matched is
+  // unescaped here: every non-code result above has already been unescaped by
+  // its own recursive call, and code spans must keep their backslashes.
+  if (!foundTextFormat && !foundTextMatch) {
+    const textContent = textNode.getTextContent();
+    const unescapedText = unescapeText(textContent);
+    textNode.setTextContent(unescapedText);
+  }
 }

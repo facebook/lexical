@@ -110,12 +110,15 @@ import {
 } from './LexicalKeyboardShortcuts';
 import {createRefCountedRegistry} from './LexicalRefCountedRegistry';
 import {
+  $createPoint,
   $createRangeSelectionFromDom,
   $internalCreateRangeSelection,
   $internalRefreshSelectionFormatAndStyle,
   $internalResolveSelectionPoint,
+  type PointType,
   type RangeSelection,
 } from './LexicalSelection';
+import {$getSlotFrame} from './LexicalSlot';
 import {
   $dispatchSelectionChangeCommand,
   getActiveEditor,
@@ -1244,6 +1247,11 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
   );
 }
 
+function $getSlotFrameKey(point: PointType): NodeKey | null {
+  const frame = $getSlotFrame(point.getNode());
+  return frame && frame.getKey();
+}
+
 function $handleBeforeInput(event: InputEvent): boolean {
   const inputType = event.inputType;
   const targetRange = getTargetRange(event);
@@ -1426,7 +1434,28 @@ function $handleBeforeInput(event: InputEvent): boolean {
     !$isRootNode(selection.anchor.getNode()) &&
     targetRange !== null
   ) {
+    const {key, offset, type} = selection.anchor;
+    const frame = $getSlotFrameKey(selection.anchor);
     selection.applyDOMRange(targetRange);
+    // A deletion's range must stay in the caret's slot and not reach past the
+    // caret on the side it keeps. At the end of a decorator-host slot
+    // Chromium's forward delete covers the line before the caret instead
+    // (#9363); measure that in the model.
+    const isForward = inputType.endsWith('Forward');
+    if (isForward || inputType.endsWith('Backward')) {
+      const caret = $createPoint(key, offset, type);
+      const {anchor, focus} = selection;
+      if (
+        $getSlotFrameKey(anchor) !== frame ||
+        $getSlotFrameKey(focus) !== frame ||
+        (isForward
+          ? anchor.isBefore(caret) || focus.isBefore(caret)
+          : caret.isBefore(anchor) || caret.isBefore(focus))
+      ) {
+        anchor.set(key, offset, type);
+        focus.set(key, offset, type);
+      }
+    }
   }
 
   inputState.unprocessedBeforeInputData = null;
@@ -1553,7 +1582,8 @@ function $handleBeforeInput(event: InputEvent): boolean {
       break;
     }
 
-    case 'deleteContent': {
+    case 'deleteContent':
+    case 'deleteContentForward': {
       dispatchCommand(editor, DELETE_CHARACTER_COMMAND, false);
       break;
     }
@@ -1574,7 +1604,6 @@ function $handleBeforeInput(event: InputEvent): boolean {
       break;
     }
 
-    case 'deleteContentForward':
     case 'deleteHardLineForward':
     case 'deleteSoftLineForward': {
       dispatchCommand(editor, DELETE_LINE_COMMAND, false);

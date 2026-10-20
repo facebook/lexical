@@ -56,6 +56,7 @@ import {
   SKIP_SCROLL_INTO_VIEW_TAG,
   type TextNode,
 } from '.';
+import {$comparePointCaretNextAcrossSlots} from './caret/LexicalCaret';
 import {IS_FIREFOX} from './environment';
 import {DOM_TEXT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
 import {
@@ -71,7 +72,6 @@ import {
   $getSlotFrame,
   $getSlotHost,
   $getSlotHostKey,
-  $getSlotMap,
   $getSlotNames,
 } from './LexicalSlot';
 import {
@@ -3190,103 +3190,19 @@ function $getPointSlotFrame(point: PointType): LexicalNode | null {
   return node === null ? null : $getSlotFrame(node);
 }
 
-// Content order (slots-first) of a slot-straddling pair, computed from the
-// model alone. The caret comparison ($comparePoint…) throws across a slot
-// boundary (a slotted node has no common ancestor through __parent), so each
-// point is lifted to the lowest frame both share: a point in a slot below it
-// becomes the host in that frame which owns the slot, at the host's leading
-// edge (slots-first: inside an element host before its children, or at a
-// decorator host). Two slots of the same host compare by slot order. Only
-// called for a confirmed straddle (the frames differ).
-function $slotStraddleFocusAfterAnchor(
-  anchorPoint: PointType,
-  focusPoint: PointType,
-  anchorFrame: LexicalNode | null,
-  focusFrame: LexicalNode | null,
-): boolean {
-  const anchorChain = $getFrameChain(anchorFrame);
-  const focusChain = $getFrameChain(focusFrame);
-  for (let fi = 0; fi < focusChain.length; fi++) {
-    const ai = anchorChain.findIndex(frame =>
-      $isSameFrame(frame, focusChain[fi]),
-    );
-    if (ai === -1) {
-      continue;
-    }
-    // The slot just below the common frame on each side, if any.
-    const anchorSlot = ai > 0 ? anchorChain[ai - 1] : null;
-    const focusSlot = fi > 0 ? focusChain[fi - 1] : null;
-    const anchorHost = anchorSlot && $getSlotHost(anchorSlot);
-    const focusHost = focusSlot && $getSlotHost(focusSlot);
-    if (anchorSlot && focusSlot && anchorHost && anchorHost.is(focusHost)) {
-      // Two slots of the same host: slot-map iteration is insertion order,
-      // which is the order the reconciler renders them (content order).
-      for (const slotKey of $getSlotMap(anchorHost).values()) {
-        if (slotKey === anchorSlot.getKey()) {
-          return true;
-        }
-        if (slotKey === focusSlot.getKey()) {
-          return false;
-        }
-      }
-      return true;
-    }
-    // Points are not normalized: that would move a point just before an
-    // element host into its children, past the host's slot content.
-    const order = $comparePointCaretNext(
-      anchorHost
-        ? $getSlotHostCaret(anchorHost)
-        : $caretFromPoint(anchorPoint, 'next'),
-      focusHost
-        ? $getSlotHostCaret(focusHost)
-        : $caretFromPoint(focusPoint, 'next'),
-    );
-    // On a tie the lifted side's slot content comes first.
-    return order === 0 ? anchorHost !== null : order < 0;
-  }
-  return true;
-}
-
-// The frames enclosing a point in frame, innermost first, ending with null
-// (the main tree) unless the chain is detached.
-function $getFrameChain(frame: LexicalNode | null): (LexicalNode | null)[] {
-  const chain = [frame];
-  for (let host = frame && $getSlotHost(frame); host !== null; ) {
-    const hostFrame = $getSlotFrame(host);
-    if (hostFrame === null && !host.isAttached()) {
-      break;
-    }
-    chain.push(hostFrame);
-    host = hostFrame && $getSlotHost(hostFrame);
-  }
-  return chain;
-}
-
-// Where a slot's content sits among the host's own frame: inside an element
-// host before its children, or at a decorator host.
-function $getSlotHostCaret(host: LexicalNode): PointCaret<'next'> {
-  return $isElementNode(host)
-    ? $getChildCaret(host, 'next')
-    : $getSiblingCaret(host, 'next');
-}
-
 // Slots are shadow-root-isolated: a RangeSelection must not straddle a slot
 // boundary. When the anchor and focus are in different frames, clamp the
 // focus into the anchor's frame (anchor-frame rule), keeping
 // keyboard/mouse/programmatic results consistent. The direction is resolved
-// lazily (resolveFocusAfterAnchor) only on an actual straddle, because the
+// lazily (resolveFocusAfterAnchor), only on an actual straddle, because the
 // DOM-read and programmatic callers determine it differently (DOM order vs
-// the model comparator) and the model comparator is invalid until a straddle
-// is confirmed. Returns true when it mutated the focus point. No-op (returns
-// false) when both points share a frame — including the all-null case in
-// non-slot trees, so behavior there is unchanged.
+// content order). Returns true when it mutated the focus point. No-op
+// (returns false) when both points share a frame — including the all-null
+// case in non-slot trees, so behavior there is unchanged.
 function $clampSelectionPointsToSlotFrame(
   anchorPoint: PointType,
   focusPoint: PointType,
-  resolveFocusAfterAnchor: (
-    anchorFrame: LexicalNode | null,
-    focusFrame: LexicalNode | null,
-  ) => boolean,
+  resolveFocusAfterAnchor: () => boolean,
 ): boolean {
   const anchorFrame = $getPointSlotFrame(anchorPoint);
   const focusFrame = $getPointSlotFrame(focusPoint);
@@ -3316,18 +3232,12 @@ function $clampSelectionPointsToSlotFrame(
     const hostIndex = host.getIndexWithinParent();
     focusPoint.set(
       hostParent.getKey(),
-      resolveFocusAfterAnchor(anchorFrame, focusFrame)
-        ? hostIndex + 1
-        : hostIndex,
+      resolveFocusAfterAnchor() ? hostIndex + 1 : hostIndex,
       'element',
     );
     return true;
   }
-  $setPointToFrameEdge(
-    focusPoint,
-    edgeFrame,
-    resolveFocusAfterAnchor(anchorFrame, focusFrame),
-  );
+  $setPointToFrameEdge(focusPoint, edgeFrame, resolveFocusAfterAnchor());
   return true;
 }
 
@@ -3354,23 +3264,26 @@ function $getSlotHostInFrame(
   frame: LexicalNode,
   target: LexicalNode | null,
 ): LexicalNode | null {
-  const chain = $getFrameChain(frame);
-  const i = chain.findIndex(chainFrame => $isSameFrame(chainFrame, target));
-  const slot = i > 0 ? chain[i - 1] : null;
-  return slot && $getSlotHost(slot);
+  for (let host = $getSlotHost(frame); host !== null; ) {
+    const hostFrame = $getSlotFrame(host);
+    if ($isSameFrame(hostFrame, target)) {
+      // A host outside every slot is in the main tree only when attached.
+      return hostFrame !== null || host.isAttached() ? host : null;
+    }
+    host = hostFrame && $getSlotHost(hostFrame);
+  }
+  return null;
 }
 
 /**
  * Programmatic counterpart of the DOM-read clamp: applied when a
  * RangeSelection is committed via $setSelection so an API-built selection
- * cannot straddle a slot boundary either. Direction comes from the model
- * comparator (slots-first content order), not the caret system — a
- * straddling pair has no common ancestor through __parent, so the caret
- * comparison would throw (that integration is the deferred caret-slot work),
- * and not from the DOM either, since $setSelection also runs in headless
- * mode where there is no DOM. Marks the selection dirty when it mutates a
- * point. No-op for non-slot trees (both frames null), evaluated before any
- * direction work, so non-slot and headless callers are unaffected.
+ * cannot straddle a slot boundary either. Direction comes from content order
+ * across slots ({@link $comparePointCaretNextAcrossSlots}), not from the DOM,
+ * since $setSelection also runs in headless mode where there is no DOM.
+ * Marks the selection dirty when it mutates a point. No-op for non-slot trees
+ * (both frames null), evaluated before any direction work, so non-slot and
+ * headless callers are unaffected.
  *
  * @experimental named-slots
  * @internal
@@ -3381,13 +3294,13 @@ export function $clampRangeSelectionToSlotFrame(
   const clamped = $clampSelectionPointsToSlotFrame(
     selection.anchor,
     selection.focus,
-    (anchorFrame, focusFrame) =>
-      $slotStraddleFocusAfterAnchor(
-        selection.anchor,
-        selection.focus,
-        anchorFrame,
-        focusFrame,
-      ),
+    () =>
+      // Points are not normalized: that would move a point just before an
+      // element host into its children, past the host's slot content.
+      $comparePointCaretNextAcrossSlots(
+        $caretFromPoint(selection.anchor, 'next'),
+        $caretFromPoint(selection.focus, 'next'),
+      ) !== 1,
   );
   if (clamped) {
     selection.dirty = true;

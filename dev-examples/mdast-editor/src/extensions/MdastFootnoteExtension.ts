@@ -767,8 +767,8 @@ function $clearFootnotesOfEmptyDocument(root: RootNode): void {
     return;
   }
   const selection = $getSelection();
-  // A range never straddles the section, whose slot it is clamped to the
-  // frame of, so its anchor tells where it is.
+  // Lexical clamps a range to its anchor's slot frame, so the anchor tells
+  // whether the range is in the section.
   const selected = $isRangeSelection(selection)
     ? [selection.anchor.getNode()]
     : selection

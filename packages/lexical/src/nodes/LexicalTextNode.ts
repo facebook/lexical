@@ -17,7 +17,7 @@ import type {ElementNode} from './LexicalElementNode';
 
 import invariant from '@lexical/internal/invariant';
 
-import {IS_FIREFOX} from '../environment';
+import {IS_CHROME, IS_FIREFOX} from '../environment';
 import {
   COMPOSITION_SUFFIX,
   DETAIL_TYPE_TO_DETAIL,
@@ -313,14 +313,17 @@ function $setTextContent(
   if (nodeValue === text) {
     return;
   }
-  if (isComposing || IS_FIREFOX) {
-    // We also use the diff composed text for general text in FF to avoid
-    // the spellcheck red line from flickering.
+  if (isComposing || IS_FIREFOX || IS_CHROME) {
+    // Write only the part of the text that changed. Chromium drops the
+    // spellcheck markers an edit overlaps and keeps the rest, so assigning
+    // nodeValue (an edit over the whole node) would clear every underline in
+    // the node. Firefox takes this path to stop the underlines flickering.
+    // Composition writes take this path in every engine. Otherwise WebKit
+    // (Safari, every iOS browser, WebKitGTK) keeps the full replacement: it
+    // doesn't drop a marker that an insertion lands inside, so a partial
+    // write could leave an underline on a word that is now spelled correctly.
     const [index, remove, insert] = diffComposedText(nodeValue as string, text);
-    if (remove !== 0) {
-      textChild.deleteData(index, remove);
-    }
-    textChild.insertData(index, insert);
+    textChild.replaceData(index, remove, insert);
   } else {
     textChild.nodeValue = text;
   }

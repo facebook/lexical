@@ -1593,7 +1593,9 @@ export class LexicalNode {
     if (latest === null) {
       invariant(
         false,
-        'Lexical node does not exist in active editor state. Avoid using the same node references between nested closures from editorState.read/editor.update.',
+        'Lexical node does not exist in active editor state (key %s, type %s). The reference was probably kept from another read or update, for example in a closure, event handler or component state, and the node has since been removed or is not part of this editor state. Before using a node reference that may be stale, check node.isAttached() or look the node up again with $getNodeByKey(node.getKey()), inside the read or update where it is used.',
+        this.__key,
+        this.__type,
       );
     }
     return latest;
@@ -1630,7 +1632,9 @@ export class LexicalNode {
     const latestNode = nodeMap.get(key) as this | undefined;
     invariant(
       latestNode !== undefined,
-      'Lexical node does not exist in active editor state. Avoid using the same node references between nested closures from editorState.read/editor.update.',
+      'Lexical node does not exist in active editor state (key %s, type %s). The reference was probably kept from another read or update, for example in a closure, event handler or component state, and the node has since been removed or is not part of this editor state. Before using a node reference that may be stale, check node.isAttached() or look the node up again with $getNodeByKey(node.getKey()), inside the read or update where it is used.',
+      key,
+      this.__type,
     );
     const mutableNode = $cloneWithProperties(latestNode);
     cloneNotNeeded.set(key, mutableNode);

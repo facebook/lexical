@@ -20,9 +20,13 @@ import {
   contextValue,
   createImportState,
 } from '@lexical/html';
-import {$isLinkNode} from '@lexical/link';
-import {$isListNode} from '@lexical/list';
-import {$isHeadingNode, $isQuoteNode} from '@lexical/rich-text';
+import {$createLinkNode, $isLinkNode} from '@lexical/link';
+import {$createListItemNode, $createListNode, $isListNode} from '@lexical/list';
+import {
+  $createQuoteNode,
+  $isHeadingNode,
+  $isQuoteNode,
+} from '@lexical/rich-text';
 import {$isTableNode} from '@lexical/table';
 import {
   $createLineBreakNode,
@@ -33,10 +37,12 @@ import {
   $getSelection,
   $getTextPointCaret,
   $isElementNode,
+  $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
   $setSelectionFromCaretRange,
   defineExtension,
+  type ElementNode,
   type LexicalNode,
   TEXT_TYPE_TO_FORMAT,
   type TextNode,
@@ -309,17 +315,16 @@ describe('@lexical/mdast import/export', () => {
   });
 
   describe('editor-created line breaks', () => {
-    function exportParagraph($children: () => LexicalNode[]): string {
+    function exportBlock($block: () => LexicalNode): string {
       using editor = createEditor();
-      editor.update(
-        () => {
-          $getRoot()
-            .clear()
-            .append($createParagraphNode().append(...$children()));
-        },
-        {discrete: true},
-      );
+      editor.update(() => $getRoot().clear().append($block()), {
+        discrete: true,
+      });
       return editor.read(() => $convertToMarkdownString());
+    }
+
+    function exportParagraph($children: () => LexicalNode[]): string {
+      return exportBlock(() => $createParagraphNode().append(...$children()));
     }
 
     function importText(markdown: string): string[] {
@@ -394,6 +399,102 @@ describe('@lexical/mdast import/export', () => {
         ]),
       ).not.toContain('\\');
     });
+
+    const blockCases: [string, () => LexicalNode, string, string][] = [
+      [
+        'a break at the start of a link after text stays soft',
+        () =>
+          $createParagraphNode().append(
+            $createTextNode('x'),
+            $createLinkNode('https://e.com').append(
+              $createLineBreakNode(),
+              $createTextNode('y'),
+            ),
+          ),
+        'x[\ny](https://e.com)',
+        'x\ny',
+      ],
+      [
+        'breaks at the end of a link with text after it are hard',
+        () =>
+          $createParagraphNode().append(
+            $createLinkNode('https://e.com').append(
+              $createTextNode('y'),
+              $createLineBreakNode(),
+              $createLineBreakNode(),
+            ),
+            $createTextNode('z'),
+          ),
+        '[y\\\n\\\n](https://e.com)z',
+        'y\n\nz',
+      ],
+      [
+        'leading and consecutive breaks in a quote are hard',
+        () =>
+          $createQuoteNode().append(
+            $createLineBreakNode(),
+            $createTextNode('a'),
+            $createLineBreakNode(),
+            $createLineBreakNode(),
+            $createTextNode('b'),
+          ),
+        '> \\\n> a\\\n> \\\n> b',
+        '\na\n\nb',
+      ],
+      [
+        'consecutive breaks in a list item are hard',
+        () =>
+          $createListNode('bullet').append(
+            $createListItemNode().append(
+              $createTextNode('a'),
+              $createLineBreakNode(),
+              $createLineBreakNode(),
+              $createTextNode('b'),
+            ),
+          ),
+        '- a\\\n  \\\n  b',
+        'a\n\nb',
+      ],
+    ];
+    for (const [name, $block, markdown, text] of blockCases) {
+      it(name, () => {
+        expect(exportBlock($block)).toBe(markdown);
+        expect(importText(markdown)).toEqual([text]);
+      });
+    }
+  });
+
+  describe('imported line breaks that end up first or next to another break', () => {
+    const cases: [string, string, string][] = [
+      ['two-space breaks around a deleted line', 'a  \nb  \nc', 'a\\\n\\\nc'],
+      ['a two-space break whose line is deleted', 'a  \nb', '\\\nb'],
+      ['soft breaks around a deleted line', 'a\nb\nc', 'a\\\n\\\nc'],
+    ];
+    for (const [name, source, markdown] of cases) {
+      it(name, () => {
+        using editor = createEditor();
+        editor.update(() => $convertFromMarkdownString(source), {
+          discrete: true,
+        });
+        editor.update(
+          () => {
+            const paragraph = $getRoot().getFirstChildOrThrow<ElementNode>();
+            const lines = paragraph
+              .getChildren()
+              .filter(node => !$isLineBreakNode(node));
+            lines[lines.length === 3 ? 1 : 0].remove();
+          },
+          {discrete: true},
+        );
+        const text = editor.read(() => $getRoot().getTextContent());
+        const exported = editor.read(() => $convertToMarkdownString());
+        expect(exported).toBe(markdown);
+        editor.update(() => $convertFromMarkdownString(exported), {
+          discrete: true,
+        });
+        expect(editor.read(() => $getRoot().getTextContent())).toBe(text);
+      });
+    }
   });
 
   describe('preserves the original Markdown syntax', () => {

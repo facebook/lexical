@@ -1,0 +1,63 @@
+name: Continuous Releases
+
+# Publishes every public package to pkg.pr.new for each pull request commit
+# and each commit to main, e.g.
+#
+#   npm i https://pkg.pr.new/lexical@9372      # latest commit of PR #9372
+#   npm i https://pkg.pr.new/lexical@4282a68   # a specific commit
+#   npm i https://pkg.pr.new/lexical@main      # tip of main
+#
+# This runs alongside the npm channels, not instead of them: nightly, next and
+# latest still publish to npm through pre-release.yml / version.yml and
+# call-release.yml, which own the npm trusted-publisher (OIDC) config. Nothing
+# here touches npm, pushes refs, or needs secrets. Previews are built with the
+# same `prepare-release` build as the npm channels and versioned in the same
+# line as the nightlies (see scripts/npm/preview-version.mjs). Sibling
+# `workspace:*` dependencies are rewritten to the matching pkg.pr.new URLs, so
+# a preview of @lexical/react always resolves the same preview of lexical.
+#
+# Requires the pkg.pr.new GitHub App (https://github.com/apps/pkg-pr-new) to
+# be installed on the repository.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions: {}
+
+concurrency:
+  # A newer commit on a PR supersedes the older preview; every commit on main
+  # gets its own release, so main runs never cancel each other.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  publish:
+    # Skip pushes to forks; PRs from forks still run against facebook/lexical.
+    if: github.repository == 'facebook/lexical'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Build the PR head rather than GitHub's merge commit, so the
+          # preview contains exactly the commit pkg.pr.new labels it with.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-pnpm
+        with:
+          node-version: 24.x
+      - name: Stamp preview version
+        run: node ./scripts/npm/preview-version.mjs --sha="$SHA" --pr="$PR"
+        env:
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR: ${{ github.event.pull_request.number }}
+      - run: pnpm run prepare-release
+      # --pnpm packs with pnpm, which resolves `workspace:` and `catalog:`
+      # specifiers the way `pnpm publish` does for npm. Private packages
+      # (playground, website, devtools, ...) are skipped by pkg-pr-new.
+      - run: pnpm exec pkg-pr-new publish --pnpm --no-template --packageManager=npm,pnpm,yarn './packages/*'

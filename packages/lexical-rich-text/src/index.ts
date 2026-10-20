@@ -618,8 +618,13 @@ async function onCutForRichText(
 export {eventFiles} from '@lexical/utils';
 
 function $isTargetWithinDecorator(target: HTMLElement): boolean {
-  const node = $getNearestNodeFromDOMNode(target);
-  return $isDecoratorNode(node);
+  // A decorator's slot is an editing host of its own, so a key event that
+  // targets the slot itself is editing editor content, while any other
+  // target in the decorator (a native control, even inside the slot) is UI.
+  return (
+    $isDecoratorNode($getNearestNodeFromDOMNode(target)) &&
+    !(isHTMLElement(target) && target.hasAttribute('data-lexical-slot'))
+  );
 }
 
 function $isSelectionAtEndOfRoot(selection: RangeSelection) {

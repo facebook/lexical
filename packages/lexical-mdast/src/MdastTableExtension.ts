@@ -47,27 +47,24 @@ import {MdastExtension} from './MdastExtension';
 const alignValue = enumValue<AlignType>([null, 'left', 'center', 'right']);
 
 /**
- * The GFM alignment a cell renders with: its own element format (what
- * import sets, and what `FORMAT_ELEMENT_COMMAND` sets on a cell selection),
- * else the format its block children share (what that command sets with
- * the caret in a single cell).
+ * The GFM alignment a cell renders with: the one its block children share,
+ * each with its own element format (what `FORMAT_ELEMENT_COMMAND` sets with
+ * the caret in a single cell) or else the cell's (what import sets, and
+ * what that command sets on a cell selection).
  */
 function $getCellAlign(cell: TableCellNode): AlignType {
   const own = alignValue(cell.getFormatType());
-  if (own !== null) {
-    return own;
-  }
   let shared: AlignType | undefined;
   for (const child of cell.getChildren()) {
     if ($isElementNode(child) && !child.isInline()) {
-      const align = alignValue(child.getFormatType());
+      const align = alignValue(child.getFormatType()) ?? own;
       if (shared !== undefined && shared !== align) {
         return null;
       }
       shared = align;
     }
   }
-  return shared || null;
+  return shared === undefined ? own : shared;
 }
 
 /**

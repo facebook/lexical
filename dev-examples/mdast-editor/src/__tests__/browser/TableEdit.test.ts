@@ -19,6 +19,7 @@ import {$isTableCellNode, INSERT_TABLE_COMMAND} from '@lexical/table';
 import {
   $getRoot,
   $isElementNode,
+  type ElementNode,
   type LexicalEditor,
   type LexicalNode,
 } from 'lexical';
@@ -138,6 +139,30 @@ test('an inserted row takes the alignment of its columns', () => {
       cell => (cell as HTMLElement).style.textAlign,
     ),
   ).toEqual(['', 'right']);
+});
+
+test('an inserted row takes the alignment set on paragraphs', () => {
+  const {editor, root} = mountEditor(TABLE);
+  editor.update(
+    () => {
+      for (const node of $getRoot().getAllTextNodes()) {
+        if (node.getTextContent() === 'b' || node.getTextContent() === '2') {
+          node.getParentOrThrow<ElementNode>().setFormat('center');
+        }
+      }
+    },
+    {discrete: true},
+  );
+  selectLastCell(editor);
+  editor.dispatchCommand(TABLE_EDIT_COMMAND, 'row-below');
+  editor.dispatchCommand(TABLE_EDIT_COMMAND, 'row-below');
+  editor.read(() => {});
+  expect(
+    [...root.querySelectorAll('tr:last-child td')].map(
+      cell => (cell as HTMLElement).style.textAlign,
+    ),
+  ).toEqual(['', 'center']);
+  expect(exportMarkdown(editor).split('\n')[1]).toBe('| - | :-: |');
 });
 
 // https://github.com/facebook/lexical/issues/9323

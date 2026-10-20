@@ -96,7 +96,7 @@ function $alignSelectedColumns(table: TableNode, format: ElementFormatType) {
 
 /**
  * Gives the cells of an inserted row the alignment of their column, which
- * the row beside it has.
+ * the row beside it has, on its cells or on their paragraphs.
  */
 function $alignInsertedRow(row: TableRowNode | null) {
   const beside = row && (row.getPreviousSibling() ?? row.getNextSibling());
@@ -105,7 +105,12 @@ function $alignInsertedRow(row: TableRowNode | null) {
     row!.getChildren().forEach((cell, i) => {
       const from = besideCells[i];
       if ($isTableCellNode(cell) && $isTableCellNode(from)) {
-        cell.setFormat(from.getFormatType());
+        // An alignment set with the caret in the cell is its paragraph's.
+        const block = from.getFirstChild();
+        cell.setFormat(
+          ($isElementNode(block) && block.getFormatType()) ||
+            from.getFormatType(),
+        );
       }
     });
   }

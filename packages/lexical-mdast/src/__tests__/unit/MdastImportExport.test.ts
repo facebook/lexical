@@ -1001,6 +1001,19 @@ describe('@lexical/mdast import/export', () => {
       ).toBe('|  a |  b  |\n| -: | :-: |\n|  1 |  2  |');
     });
 
+    it("exports the alignment of a cell's blocks over its own", () => {
+      expect(
+        editColumns('| a |\n| :-: |\n| 1 |', row => {
+          for (const child of $assertNodeType(
+            row.getFirstChild(),
+            $isElementNode,
+          ).getChildren()) {
+            $assertNodeType(child, $isElementNode).setFormat('right');
+          }
+        }),
+      ).toBe('|  a |\n| -: |\n|  1 |');
+    });
+
     it.each([
       ['| a |\n| - |\n| 1 |\n| 2 |', [1], '| a |\n| - |\n| 1 |\n| 2 |'],
       ['| a |\n| - |\n| 1 |', [1], '| a |\n| - |\n| 1 |'],

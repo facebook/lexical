@@ -333,7 +333,9 @@ re-applying it from `updateDOM` so an editable toggle reaches the island.
   anchor's slot frame at every entry point (DOM resolution,
   [`$setSelection`](/docs/api/modules/lexical#setselection),
   and point mutation), so a mouse drag and a `shift+arrow` across the
-  boundary land on the same clamped result.
+  boundary land on the same clamped result. A focus in a slot of a host is
+  moved past the whole host, or to the edge of the host's own children when
+  the selection starts inside the host.
 - **Deletion stops at the boundary.** Backspace at the start of a slot and
   forward-Delete at its end are no-ops instead of merging across the virtual
   shadow root.

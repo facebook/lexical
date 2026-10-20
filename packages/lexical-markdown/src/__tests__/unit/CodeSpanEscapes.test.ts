@@ -153,25 +153,25 @@ describe('text a text match leaves in place', () => {
     },
   );
 
-  it('leaves the text a transformer writes as it wrote it', () => {
-    const LITERAL: TextMatchTransformer = {
-      dependencies: [],
-      importRegExp: /@\S+/,
-      regExp: /@\S+$/,
-      replace: node => {
-        node.setTextContent('&#65;\\*').setFormat('bold');
-      },
-      type: 'text-match',
-    };
-    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
-    editor.update(() => $convertFromMarkdownString('x @a', [LITERAL]), {
-      discrete: true,
-    });
-    expect(editor.read(() => textOf($getRoot().getAllTextNodes()))).toEqual([
-      ['x ', false],
-      ['&#65;\\*', true],
-    ]);
-  });
+  it.each(['@a\\*b', 'x @a\\*b'])(
+    'reads the escapes of the text a transformer writes from its match: %j',
+    markdown => {
+      const UNPREFIXED: TextMatchTransformer = {
+        ...MENTION,
+        replace: (node, match) => {
+          node.setTextContent(match[0].slice(1)).setFormat('bold');
+        },
+      };
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      editor.update(() => $convertFromMarkdownString(markdown, [UNPREFIXED]), {
+        discrete: true,
+      });
+      expect(editor.read(() => textOf($getRoot().getAllTextNodes()))).toEqual([
+        ...(markdown.startsWith('x') ? [['x ', false]] : []),
+        ['a*b', true],
+      ]);
+    },
+  );
 
   it('reads its escapes in nodes generated outside the root', () => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);

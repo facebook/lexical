@@ -15,7 +15,7 @@ import type {
   Heading,
   Link,
   List,
-  Parents,
+  Nodes,
   PhrasingContent,
   Root,
   RootContent,
@@ -88,30 +88,36 @@ function withOptions<T>(
 }
 
 /**
- * Whether a soft `break` can be written as a plain newline. It can when it
- * sits between inline content that is not another break. At the start of the
- * content, or before another break, a plain newline would leave an empty line
- * that ends the paragraph or is trimmed away, so a hard break is needed. Breaks
- * with only breaks after them stay soft: neither form survives at the end of a
- * paragraph, and a hard break there would read back as a literal backslash.
+ * Gives the hard-break marker to each unmarked (editor-created) `break` that a
+ * plain newline cannot represent. At the start of the content, or before or
+ * after another break, a newline would leave an empty line, which ends the
+ * paragraph or is trimmed away. Breaks with only breaks after them stay soft:
+ * neither form survives at the end of a paragraph, and a hard break there
+ * would read back as a literal backslash. One pass over the tree keeps the
+ * cost linear in the number of breaks.
  */
-function isSoftBreakSafe(node: Break, parent: Parents | undefined): boolean {
-  if (!parent) {
-    return true;
+function markHardBreaks(node: Nodes): void {
+  if (!('children' in node)) {
+    return;
   }
-  const siblings: readonly RootContent[] = parent.children;
-  const index = siblings.indexOf(node);
-  if (!siblings.slice(index + 1).some(sibling => sibling.type !== 'break')) {
-    return true;
+  const children = node.children as Nodes[];
+  let end = children.length;
+  while (end > 0 && children[end - 1].type === 'break') {
+    end--;
   }
-  const before = siblings[index - 1];
-  const after = siblings[index + 1];
-  return (
-    before !== undefined &&
-    before.type !== 'break' &&
-    after !== undefined &&
-    after.type !== 'break'
-  );
+  children.forEach((child, i) => {
+    if (child.type !== 'break') {
+      markHardBreaks(child);
+    } else if (
+      i < end &&
+      !(child.data && child.data.mdastBreak) &&
+      (i === 0 ||
+        children[i - 1].type === 'break' ||
+        children[i + 1].type === 'break')
+    ) {
+      children[i] = {...child, data: {...child.data, mdastBreak: '\\'}};
+    }
+  });
 }
 
 /**
@@ -138,11 +144,7 @@ const SYNTAX_TO_MARKDOWN: ToMarkdownExtension = {
       }
       const marker = node.data && node.data.mdastBreak;
       if (!marker) {
-        // A plain newline only reads back as a line break when it sits
-        // between two pieces of inline content. At the start of the content
-        // or next to another break it would leave an empty line, which ends
-        // the paragraph (or is trimmed away), so keep the hard break there.
-        return isSoftBreakSafe(node, parent) ? '\n' : result;
+        return '\n';
       }
       return /^ {2,}$/.test(marker) ? `${marker}\n` : result;
     },
@@ -648,6 +650,7 @@ export function createMdastExport(compiled: CompiledMdast): {
     if (strong) {
       defaults.strong = strong;
     }
+    markHardBreaks(tree);
     const out = toMarkdown(tree, {
       extensions: [
         defaults,

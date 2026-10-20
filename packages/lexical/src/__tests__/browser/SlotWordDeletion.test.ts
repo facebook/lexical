@@ -20,6 +20,7 @@ import {
   $getRoot,
   $isTextNode,
   $setSlot,
+  DELETE_LINE_COMMAND,
   ElementNode,
   IS_APPLE,
   type LexicalEditor,
@@ -47,7 +48,12 @@ class TestShadowRootNode extends ElementNode {
   }
 }
 
-type Layout = 'root slot' | 'element host' | 'slot-only host' | 'inline slot';
+type Layout =
+  | 'root slot'
+  | 'element host'
+  | 'slot-only host'
+  | 'inline slot'
+  | 'inline root slot';
 
 // Each layout records the text node of every region by name. The slot is
 // 'note'; 'sibling' is the content next to it in the DOM: after it for the
@@ -59,7 +65,7 @@ function mountEditor(layout: Layout) {
   rootElement.contentEditable = 'true';
   const style = document.createElement('style');
   style.textContent =
-    '[data-lexical-slot="inline"], [data-lexical-slot="inline"] > * { display: inline }';
+    '[data-lexical-slot="inline"], [data-lexical-slot="inline"] > *, .inline-root > p { display: inline }';
   document.body.append(style, rootElement);
   const editor = buildEditorFromExtensions(
     defineExtension({
@@ -110,6 +116,13 @@ function mountEditor(layout: Layout) {
           $createParagraphNode().append(text('sibling', 'After words')),
         );
         $setSlot(host, 'note', note);
+      } else if (layout === 'inline root slot') {
+        root.append($createParagraphNode().append(text('sibling', 'bar')));
+        $setSlot(
+          root,
+          'inline',
+          $createParagraphNode().append(text('note', 'foo')),
+        );
       } else if (layout === 'inline slot') {
         const host = $createParagraphNode().append(text('sibling', 'bar'));
         root.append(host);
@@ -131,6 +144,14 @@ function mountEditor(layout: Layout) {
     },
     {discrete: true},
   );
+  if (layout === 'inline root slot') {
+    // Mount the slot after the body, on the same line, as an app rendering
+    // its root slot at the end would.
+    rootElement.classList.add('inline-root');
+    const slotDOM = rootElement.querySelector('[data-lexical-slot="inline"]');
+    assert(slotDOM);
+    rootElement.append(slotDOM);
+  }
   return {editor, keys, rootElement};
 }
 
@@ -149,7 +170,7 @@ async function pressAt(
   layout: Layout,
   region: string,
   offset: number,
-  keys: string,
+  keys: string | ((editor: LexicalEditor) => void),
 ) {
   const mounted = mountEditor(layout);
   const {editor, rootElement} = mounted;
@@ -169,7 +190,11 @@ async function pressAt(
     .poll(() => [native.anchorNode, native.anchorOffset])
     .toEqual([textDOM, offset]);
   const original = snapshot(editor, mounted.keys);
-  await userEvent.keyboard(keys);
+  if (typeof keys === 'string') {
+    await userEvent.keyboard(keys);
+  } else {
+    keys(editor);
+  }
   return {original, result: snapshot(editor, mounted.keys)};
 }
 
@@ -202,4 +227,23 @@ describe('word deletion at a slot boundary', () => {
     const {result} = await pressAt('inline slot', 'note', 1, WORD_DELETE);
     expect(result).toEqual({note: 'f', sibling: 'bar'});
   });
+
+  test.each([
+    // The emptied text node is removed.
+    [0, null],
+    [1, 'b'],
+  ])(
+    'forward line deletion from offset %i in a body line that ends in an inline root slot deletes to the slot',
+    async (offset, sibling) => {
+      const {result} = await pressAt(
+        'inline root slot',
+        'sibling',
+        offset,
+        editor => {
+          editor.dispatchCommand(DELETE_LINE_COMMAND, false);
+        },
+      );
+      expect(result).toEqual({note: 'foo', sibling});
+    },
+  );
 });

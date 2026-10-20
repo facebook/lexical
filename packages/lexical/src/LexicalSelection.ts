@@ -2662,9 +2662,9 @@ function $extendSelectionForDeletion(
     }
   }
   // A slot boundary lives only in the model, so the native move can cross it.
-  // Deletion never does: stop the focus at the boundary instead. Resolving
-  // the range would clamp it into the landed point's frame and move the caret
-  // out of its slot.
+  // Deletion never does: stop the focus at the boundary instead, normalized
+  // into text as applyDOMRange would. Resolving the range would clamp it into
+  // the landed point's frame and move the caret out of its slot.
   const landedNode = $getNearestNodeFromDOMNode(landedContainer);
   const anchorFrame = $getSlotFrame(anchorNode);
   const landedFrame = landedNode && $getSlotFrame(landedNode);
@@ -2676,6 +2676,7 @@ function $extendSelectionForDeletion(
       landedFrame,
       isBackward,
     );
+    $normalizeSelection(selection);
     return;
   }
   // General path: reconstruct, in document order, the [original .. landed]

@@ -263,6 +263,9 @@ const PHRASING_PARENT_RE =
  */
 function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
   const lines: PhrasingContent[][] = [];
+  // The line of the last top-level phrasing, which phrasing right after it
+  // runs on.
+  let phrasing: PhrasingContent[] = [];
   const visit = (node: MdastNode) => {
     switch (node.type) {
       case 'paragraph':
@@ -291,12 +294,12 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
       node.children.forEach(visit);
     } else {
       // Phrasing content exported at the cell's top level (an image, a
-      // footnote reference, an inline decorator's fallback) stays on the
-      // current line.
-      if (lines.length === 0) {
-        lines.push([]);
+      // footnote reference, an inline decorator's fallback) is a line of its
+      // own after a block's, and runs on with the phrasing before it.
+      if (lines[lines.length - 1] !== phrasing) {
+        lines.push((phrasing = []));
       }
-      lines[lines.length - 1].push(...cellPhrasing([node as PhrasingContent]));
+      phrasing.push(...cellPhrasing([node as PhrasingContent]));
     }
   };
   nodes.forEach(visit);

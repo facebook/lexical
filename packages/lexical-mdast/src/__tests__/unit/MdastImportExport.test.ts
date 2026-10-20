@@ -1562,12 +1562,20 @@ describe('@lexical/mdast import/export', () => {
             table.getLastChildOrThrow<ElementNode>().getFirstChild(),
             $isElementNode,
           );
-          cell.clear().append($createHorizontalRuleNode());
+          cell
+            .clear()
+            .append(
+              $createHorizontalRuleNode(),
+              $createHorizontalRuleNode(),
+              $createParagraphNode().append($createTextNode('b')),
+              $createHorizontalRuleNode(),
+            );
         },
         {discrete: true},
       );
+      // Phrasing after a block's line starts a line of its own.
       expect(editor.read(() => $convertToMarkdownString())).toContain(
-        '| ![a](u) |',
+        '| ![a](u)![a](u)<br>b<br>![a](u) |',
       );
     });
 

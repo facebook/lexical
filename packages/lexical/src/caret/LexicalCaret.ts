@@ -1282,19 +1282,7 @@ export function $comparePointCaretNext(
   );
   switch (compare.type) {
     case 'same': {
-      const aIsText = a.type === 'text';
-      const bIsText = b.type === 'text';
-      return aIsText && bIsText
-        ? compareNumber(a.offset, b.offset)
-        : a.type === b.type
-          ? 0
-          : aIsText
-            ? -1
-            : bIsText
-              ? 1
-              : a.type === 'child'
-                ? -1
-                : 1;
+      return $compareSameOriginCarets(a, b);
     }
     case 'ancestor': {
       return a.type === 'child' ? -1 : 1;
@@ -1382,9 +1370,10 @@ function $getParentAcrossSlots(node: LexicalNode): LexicalNode | null {
 
 /**
  * Like {@link $comparePointCaretNext}, but orders points on either side of a
- * slot boundary in content order: a host's slot values come after a caret
- * entering the host and before its children, in slot order. Returns null
- * when a and b have no common ancestor.
+ * slot boundary in content order (slots-first): a host's slot values, in slot
+ * order, come after any point before the host and before its children. A
+ * ChildCaret on the host, the point before its first child, therefore comes
+ * after them. Returns null when a and b have no common ancestor.
  *
  * @internal @experimental named-slots
  */
@@ -1398,7 +1387,7 @@ export function $comparePointCaretNextAcrossSlots(
   }
   switch (compare.type) {
     case 'same':
-      return $comparePointCaretNext(a, b);
+      return $compareSameOriginCarets(a, b);
     case 'ancestor':
       return a.type === 'child' && $getSlotHostKey(compare.b) === null ? -1 : 1;
     case 'descendant':
@@ -1407,21 +1396,43 @@ export function $comparePointCaretNextAcrossSlots(
       const aSlotKey = $getSlotHostKey(compare.a) && compare.a.getKey();
       const bSlotKey = $getSlotHostKey(compare.b) && compare.b.getKey();
       if (aSlotKey && bSlotKey) {
+        // Two slot values of one host: slot order.
         for (const key of $getSlotMap(compare.commonAncestor).values()) {
           if (key === aSlotKey || key === bSlotKey) {
             return key === aSlotKey ? -1 : 1;
           }
         }
       }
-      return aSlotKey || bSlotKey
-        ? aSlotKey
-          ? -1
-          : 1
-        : compare.a.isBefore(compare.b)
-          ? -1
-          : 1;
+      // A slot value comes before the host's children.
+      if (aSlotKey) {
+        return -1;
+      }
+      if (bSlotKey) {
+        return 1;
+      }
+      return compare.a.isBefore(compare.b) ? -1 : 1;
     }
   }
+}
+
+// The order of two carets with the same origin.
+function $compareSameOriginCarets(
+  a: PointCaret<'next'>,
+  b: PointCaret<'next'>,
+): -1 | 0 | 1 {
+  const aIsText = a.type === 'text';
+  const bIsText = b.type === 'text';
+  return aIsText && bIsText
+    ? compareNumber(a.offset, b.offset)
+    : a.type === b.type
+      ? 0
+      : aIsText
+        ? -1
+        : bIsText
+          ? 1
+          : a.type === 'child'
+            ? -1
+            : 1;
 }
 
 /**

@@ -110,7 +110,6 @@ import {
   getElementByKeyOrThrow,
   getNearestEditorFromDOMNode,
   getNodeKeyFromDOMNode,
-  getRootOwnerDocument,
   getWindow,
   INTERNAL_$isBlock,
   isDOMCapturingSelection,
@@ -2663,14 +2662,21 @@ function $extendSelectionForDeletion(
     }
   }
   // A slot boundary lives only in the model, so the native move can cross it.
-  // Deletion never does: leave the caret collapsed for deleteCharacter, which
-  // stops at the slot edge. Resolving the range would instead clamp it into
-  // the landed point's frame and move the caret out of its slot.
+  // Deletion never does: stop the focus at the boundary instead. Resolving
+  // the range would clamp it into the landed point's frame and move the caret
+  // out of its slot.
   const landedNode = $getNearestNodeFromDOMNode(landedContainer);
-  if (
-    landedNode !== null &&
-    !$isSameFrame($getSlotFrame(landedNode), $getSlotFrame(anchorNode))
-  ) {
+  const anchorFrame = $getSlotFrame(anchorNode);
+  const landedFrame = landedNode && $getSlotFrame(landedNode);
+  if (landedNode !== null && !$isSameFrame(landedFrame, anchorFrame)) {
+    $stopDeletionAtSlotBoundary(
+      selection.focus,
+      anchorNode,
+      anchorFrame,
+      landedFrame,
+      isBackward,
+    );
+    selection.dirty = true;
     return;
   }
   // General path: reconstruct, in document order, the [original .. landed]
@@ -2695,6 +2701,38 @@ function $extendSelectionForDeletion(
     // applyDOMRange set anchor = range start (the landed point); the deletion
     // anchor must stay at the original caret, so restore that orientation.
     $swapPoints(selection);
+  }
+}
+
+// Sets a deletion's focus, which a native move carried from the anchor's
+// slot frame into landedFrame, to the slot boundary on the anchor's side:
+// beside the host that owns landedFrame, at the edge of its children when it
+// contains the anchor, or at the edge of the anchor's own slot.
+function $stopDeletionAtSlotBoundary(
+  focus: PointType,
+  anchorNode: LexicalNode,
+  anchorFrame: LexicalNode | null,
+  landedFrame: LexicalNode | null,
+  isBackward: boolean,
+): void {
+  const host = landedFrame && $getSlotHostInFrame(landedFrame, anchorFrame);
+  const hostParent = host && host.getParent();
+  if (
+    host === null ||
+    hostParent === null ||
+    host.is(anchorNode) ||
+    host.isParentOf(anchorNode)
+  ) {
+    const edgeFrame = host || anchorFrame;
+    if (edgeFrame !== null) {
+      $setPointToFrameEdge(focus, edgeFrame, !isBackward);
+    }
+  } else {
+    focus.set(
+      hostParent.getKey(),
+      host.getIndexWithinParent() + (isBackward ? 1 : 0),
+      'element',
+    );
   }
 }
 
@@ -3308,6 +3346,40 @@ export function $clampRangeSelectionToSlotFrame(
   return clamped;
 }
 
+// Whether DOM point (b, bOffset) is at or after (a, aOffset), without the
+// exceptions Range.comparePoint throws for stale offsets or separate trees.
+function isDOMPointAtOrAfter(
+  a: Node,
+  aOffset: number,
+  b: Node,
+  bOffset: number,
+): boolean {
+  if (a === b) {
+    return bOffset >= aOffset;
+  }
+  const position = a.compareDocumentPosition(b);
+  if (position & Node.DOCUMENT_POSITION_CONTAINED_BY) {
+    return getIndexOfChildContaining(a, b) >= aOffset;
+  }
+  if (position & Node.DOCUMENT_POSITION_CONTAINS) {
+    return bOffset > getIndexOfChildContaining(b, a);
+  }
+  return (position & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+}
+
+// The index within parent of its child that is or contains node.
+function getIndexOfChildContaining(parent: Node, node: Node): number {
+  let child: Node | null = node;
+  while (child !== null && child.parentNode !== parent) {
+    child = child.parentNode;
+  }
+  let index = 0;
+  for (let n = child && child.previousSibling; n; n = n.previousSibling) {
+    index++;
+  }
+  return index;
+}
+
 function $internalResolveSelectionPoints(
   anchorDOM: null | Node,
   anchorOffset: number,
@@ -3372,22 +3444,7 @@ function $internalResolveSelectionPoints(
     $clampSelectionPointsToSlotFrame(
       resolvedAnchorPoint,
       resolvedFocusPoint,
-      () => {
-        try {
-          const range = getRootOwnerDocument(
-            editor.getRootElement(),
-          ).createRange();
-          range.setStart(anchorDOM, anchorOffset);
-          return range.comparePoint(focusDOM, focusOffset) >= 0;
-        } catch {
-          // Stale offsets or points in different DOM trees: use node order.
-        }
-        return (
-          (anchorDOM.compareDocumentPosition(focusDOM) &
-            Node.DOCUMENT_POSITION_FOLLOWING) !==
-          0
-        );
-      },
+      () => isDOMPointAtOrAfter(anchorDOM, anchorOffset, focusDOM, focusOffset),
     );
 
   // Handle normalization of selection when it is at the boundaries.

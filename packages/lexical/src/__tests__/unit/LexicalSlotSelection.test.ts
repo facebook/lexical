@@ -306,6 +306,26 @@ describe('named-slots: selection containment (slot isolation)', () => {
     );
   });
 
+  test('a programmatic selection from a slot to a removed node clamps focus to the slot edge', () => {
+    using editor = buildSlotEditor();
+
+    editor.update(
+      () => {
+        const selection = $createRangeSelection();
+        selection.anchor.set(keys.titleText, 1, 'text');
+        selection.focus.set(keys.bodyText, 1, 'text');
+        $assertNodeType($getNodeByKey(keys.bodyText), $isTextNode).remove();
+        $setSelection(selection);
+
+        const active = $getSelection();
+        assert($isRangeSelection(active));
+        expect(active.anchor.key).toBe(keys.titleText);
+        expect($slotFrameKeyOf(active.focus.getNode())).toBe(keys.title);
+      },
+      {discrete: true},
+    );
+  });
+
   test('a programmatic selection entirely within the body is left untouched', () => {
     using editor = buildSlotEditor();
 

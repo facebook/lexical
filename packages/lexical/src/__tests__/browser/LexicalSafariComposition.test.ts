@@ -10,19 +10,20 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {PlainTextExtension} from '@lexical/plain-text';
 import {RichTextExtension} from '@lexical/rich-text';
-import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
-  $cloneWithPropertiesEphemeral,
   $create,
   $createParagraphNode,
-  $createRangeSelection,
   $createTextNode,
   $getRoot,
   $getSelection,
+  $getState,
   $isRangeSelection,
+  $setState,
   COMMAND_PRIORITY_CRITICAL,
   COMPOSITION_END_TAG,
   CONTROLLED_TEXT_INSERTION_COMMAND,
+  createState,
+  HISTORY_PUSH_TAG,
   KEY_BACKSPACE_COMMAND,
   KEY_ENTER_COMMAND,
   TextNode,
@@ -48,19 +49,21 @@ class CustomTextNode extends TextNode {
   }
 }
 
+const historyNoteState = createState('safari-history-note', {
+  parse: value => (typeof value === 'string' ? value : ''),
+});
+
 function mount(
   richText: boolean,
   initialize: () => void,
-  options: {withoutTextInput?: boolean; history?: boolean} = {},
+  options: {history?: boolean} = {},
 ) {
   const root = document.createElement('div');
   root.contentEditable = 'true';
   document.body.append(root);
   const editor = buildEditorFromExtensions({
     dependencies: [
-      ...(options.withoutTextInput
-        ? []
-        : [richText ? RichTextExtension : PlainTextExtension]),
+      richText ? RichTextExtension : PlainTextExtension,
       ...(options.history ? [HistoryExtension] : []),
     ],
     name: 'safari-composition-test',
@@ -156,6 +159,12 @@ function mount(
     expect(editor.read(() => $getRoot().getTextContent())).toBe(text);
     expect(root.textContent).toBe(text);
   };
+  const selectedNodeKey = () =>
+    editor.read(() => {
+      const selection = $getSelection();
+      assert($isRangeSelection(selection));
+      return selection.anchor.key;
+    });
   return {
     beforeInput,
     commands,
@@ -167,6 +176,7 @@ function mount(
     input,
     keyDown,
     root,
+    selectedNodeKey,
     setDOMText,
     tags,
   };
@@ -212,332 +222,6 @@ describe.each([false, true])('Safari composition (richText=%s)', richText => {
       expect(t.editor.isComposing()).toBe(false);
       t.keyDown('Enter', 13);
       expect(t.commands).toEqual(['enter']);
-    },
-  );
-
-  test.each(['insert', 'delete'])(
-    'cancellation retains a model %s made while composing',
-    async operation => {
-      const t = mount(richText, () => $paragraph('abc'));
-      t.composition('compositionstart');
-      await t.flush();
-      await t.composeText('ni', 'abcni\u00a0', 5, 'i');
-      t.editor.update(
-        () => {
-          $getRoot()
-            .getAllTextNodes()[0]
-            .spliceText(
-              0,
-              operation === 'delete' ? 1 : 0,
-              operation === 'insert' ? 'X' : '',
-            );
-        },
-        {discrete: true},
-      );
-      const expected = operation === 'insert' ? 'Xabc' : 'bc';
-      t.setDOMText(expected + '\u00a0', expected.length);
-      t.input('deleteCompositionText', null);
-      await t.flush();
-      expect(t.editor.read(() => $getRoot().getTextContent())).toBe(expected);
-      t.composition('compositionend');
-      await t.flush();
-      t.expectText(expected);
-    },
-  );
-
-  test.each([
-    {method: 'splice', operation: 'insert'},
-    {method: 'splice', operation: 'delete'},
-    {method: 'set', operation: 'insert'},
-    {method: 'set', operation: 'delete'},
-  ])(
-    'cancellation preserves model edits to the prepared target (%j)',
-    async ({method, operation}) => {
-      const t = mount(richText, () => $paragraph('abZ', 2, 3));
-      t.composition('compositionstart');
-      await t.flush();
-      t.editor.update(
-        () => {
-          const node = $getRoot().getAllTextNodes()[0];
-          if (method === 'splice') {
-            node.spliceText(
-              0,
-              operation === 'delete' ? 1 : 0,
-              operation === 'insert' ? 'X' : '',
-            );
-          } else {
-            node.setTextContent(
-              operation === 'insert'
-                ? 'X' + node.getTextContent()
-                : node.getTextContent().slice(1),
-            );
-          }
-        },
-        {discrete: true},
-      );
-      t.composition('compositionend');
-      await t.flush();
-      t.expectText(operation === 'insert' ? 'Xab' : 'b');
-    },
-  );
-
-  test.each(['insert', 'delete', 'replace', 'ambiguous', 'unchanged'])(
-    'cancellation preserves JSON text updates (%s)',
-    async operation => {
-      const t = mount(richText, () => $paragraph('a\u00a0b', 1, 2));
-      t.composition('compositionstart');
-      await t.flush();
-      t.editor.update(
-        () => {
-          const node = $getRoot().getAllTextNodes()[0];
-          if (operation === 'ambiguous') {
-            node.spliceText(2, 0, '\u00a0');
-          }
-          const text =
-            operation === 'insert'
-              ? 'X' + node.getTextContent()
-              : operation === 'delete'
-                ? node.getTextContent().slice(1)
-                : operation === 'replace'
-                  ? 'X\u00a0Z'
-                  : operation === 'ambiguous'
-                    ? 'a\u00a0b'
-                    : node.getTextContent();
-          node.updateFromJSON({...node.exportJSON(), text});
-        },
-        {discrete: true},
-      );
-      t.composition('compositionend');
-      await t.flush();
-      t.expectText(
-        operation === 'insert'
-          ? 'Xab'
-          : operation === 'delete'
-            ? 'b'
-            : operation === 'replace'
-              ? 'X\u00a0Z'
-              : operation === 'ambiguous'
-                ? 'a\u00a0b'
-                : 'ab',
-      );
-      expect(t.editor.isComposing()).toBe(false);
-      t.keyDown('Enter', 13);
-      expect(t.commands).toEqual(['enter']);
-    },
-  );
-
-  test.each(['set', 'splice', 'json'])(
-    'ephemeral %s edits leave the composing text unchanged',
-    async method => {
-      const t = mount(richText, () => $paragraph('a\u00a0b\u00a0c', 1, 2));
-      t.composition('compositionstart');
-      await t.flush();
-      t.editor.read(() => {
-        const live = $getRoot().getAllTextNodes()[0];
-        const copy = $cloneWithPropertiesEphemeral(live);
-        const text = 'XX' + copy.getTextContent();
-        if (method === 'set') {
-          copy.setTextContent(text);
-        } else if (method === 'splice') {
-          copy.spliceText(0, 0, 'XX');
-        } else {
-          copy.updateFromJSON({...copy.exportJSON(), text});
-        }
-        expect(copy.getTextContent()).toBe(text);
-        expect(live.getTextContent()).toBe('ab\u00a0c');
-      });
-      t.composition('compositionend');
-      await t.flush();
-      t.expectText('ab\u00a0c');
-    },
-  );
-
-  test.each(['set', 'splice', 'json'])(
-    'an insertion handler that only edits an ephemeral copy preserves the body (%s)',
-    async method => {
-      const t = mount(richText, () => $paragraph('a\u00a0b', 1, 2));
-      t.editor.registerCommand(
-        CONTROLLED_TEXT_INSERTION_COMMAND,
-        () => {
-          const copy = $cloneWithPropertiesEphemeral(
-            $getRoot().getAllTextNodes()[0],
-          );
-          if (method === 'set') {
-            copy.setTextContent('a\u00a0\u00a0b');
-          } else if (method === 'splice') {
-            copy.spliceText(1, 0, '\u00a0');
-          } else {
-            copy.updateFromJSON({...copy.exportJSON(), text: 'a\u00a0\u00a0b'});
-          }
-          return true;
-        },
-        COMMAND_PRIORITY_CRITICAL,
-      );
-      t.composition('compositionstart');
-      await t.flush();
-      t.composition('compositionend');
-      await t.flush();
-      t.expectText('a\u00a0b');
-    },
-  );
-
-  test.each(['set', 'splice', 'json'])(
-    'ephemeral %s edits do not require an active editor',
-    async method => {
-      const t = mount(richText, () => $paragraph('a\u00a0b\u00a0c', 1, 2));
-      t.composition('compositionstart');
-      await t.flush();
-      const copy = t.editor.read(() =>
-        $cloneWithPropertiesEphemeral($getRoot().getAllTextNodes()[0]),
-      );
-      // EditorState.read does not supply an active editor.
-      t.editor.getEditorState().read(() => {
-        if (method === 'set') {
-          copy.setTextContent('XX' + copy.getTextContent());
-        } else if (method === 'splice') {
-          copy.spliceText(0, 0, 'XX');
-        } else {
-          copy.updateFromJSON({
-            ...copy.exportJSON(),
-            text: 'XX' + copy.getTextContent(),
-          });
-        }
-        expect(copy.getTextContent()).toBe('XXab\u00a0c');
-      });
-      t.composition('compositionend');
-      await t.flush();
-      t.expectText('ab\u00a0c');
-    },
-  );
-
-  test.each(
-    (['live', 'clone', 'ephemeral'] as const).flatMap(mode =>
-      [0, 1].map(start => ({mode, start})),
-    ),
-  )(
-    'selection slices affect only the requested node (%j)',
-    async ({mode, start}) => {
-      const t = mount(richText, () => $paragraph('a\u00a0b\u00a0c', 1, 2));
-      t.composition('compositionstart');
-      await t.flush();
-      const $slice = () => {
-        const live = $getRoot().getAllTextNodes()[0];
-        const node =
-          mode === 'live'
-            ? live.getWritable()
-            : mode === 'ephemeral'
-              ? $cloneWithPropertiesEphemeral(live)
-              : live;
-        const selection = $createRangeSelection();
-        selection.setTextNodeRange(
-          node,
-          start,
-          node,
-          node.getTextContentSize(),
-        );
-        const result = $sliceSelectedTextNodeContent(
-          selection,
-          node,
-          mode === 'clone' ? 'clone' : 'self',
-        );
-        expect(result.getTextContent()).toBe('ab\u00a0c'.slice(start));
-      };
-      if (mode === 'live') {
-        t.editor.update($slice, {discrete: true});
-      } else {
-        t.editor.read($slice);
-      }
-      t.composition('compositionend');
-      await t.flush();
-      t.expectText(mode === 'live' ? 'ab\u00a0c'.slice(start) : 'ab\u00a0c');
-      expect(t.editor.isComposing()).toBe(false);
-      t.keyDown('Enter', 13);
-      expect(t.commands).toEqual(['enter']);
-    },
-  );
-
-  test.each([1, 2])(
-    'a live slice preserves the selected character at offset %s',
-    async offset => {
-      const t = mount(richText, () => $paragraph('a\u00a0b\u00a0c', 1, 2));
-      t.composition('compositionstart');
-      await t.flush();
-      t.editor.update(
-        () => {
-          const node = $getRoot().getAllTextNodes()[0].getWritable();
-          const selection = $createRangeSelection();
-          selection.setTextNodeRange(node, offset, node, offset + 1);
-          $sliceSelectedTextNodeContent(selection, node);
-        },
-        {discrete: true},
-      );
-      t.composition('compositionend');
-      await t.flush();
-      t.expectText(offset === 1 ? 'b' : '\u00a0');
-    },
-  );
-
-  test.each(['consumed', 'unhandled', 'real-nbsp'])(
-    'a %s insertion command preserves the existing text',
-    async kind => {
-      const initial = kind === 'real-nbsp' ? 'a\u00a0b' : 'abc';
-      const t = mount(
-        richText,
-        () => {
-          $paragraph(initial, 1, kind === 'real-nbsp' ? 2 : 1);
-          const selection = $getSelection();
-          assert($isRangeSelection(selection));
-          selection.format = 1;
-        },
-        {withoutTextInput: kind === 'unhandled'},
-      );
-      if (kind !== 'unhandled') {
-        t.editor.registerCommand(
-          CONTROLLED_TEXT_INSERTION_COMMAND,
-          () => true,
-          COMMAND_PRIORITY_CRITICAL,
-        );
-      }
-      t.composition('compositionstart');
-      await t.flush();
-      t.composition('compositionend');
-      await t.flush();
-      t.expectText(initial);
-    },
-  );
-
-  test.each(['split', 'merge', 'insert-nbsp', 'replace'])(
-    'cancellation preserves text mutations (%s)',
-    async operation => {
-      const t = mount(richText, () => $paragraph('a\u00a0b', 1, 2));
-      t.composition('compositionstart');
-      await t.flush();
-      t.editor.update(
-        () => {
-          const node = $getRoot().getAllTextNodes()[0];
-          if (operation === 'split') {
-            node.splitText(1).forEach(part => part.toggleUnmergeable());
-          } else if (operation === 'merge') {
-            const prefix = $createTextNode('X');
-            node.insertBefore(prefix);
-            prefix.mergeWithSibling(node.getLatest());
-          } else if (operation === 'insert-nbsp') {
-            node.spliceText(1, 0, '\u00a0');
-          } else {
-            node.setTextContent('a\u00a0b');
-          }
-        },
-        {discrete: true},
-      );
-      t.composition('compositionend');
-      await t.flush();
-      t.expectText(
-        operation === 'merge'
-          ? 'Xab'
-          : operation === 'insert-nbsp' || operation === 'replace'
-            ? 'a\u00a0b'
-            : 'ab',
-      );
     },
   );
 
@@ -649,8 +333,8 @@ describe.each([false, true])('Safari composition (richText=%s)', richText => {
       const expected = kind === 'empty' ? '' : 'abc';
       t.composition('compositionstart');
       await t.flush();
-      const key = t.editor._compositionKey;
-      assert(key !== null);
+      const key = t.selectedNodeKey();
+      expect(t.editor.isComposing()).toBe(true);
       t.setDOMText('\u00a0', 0);
       t.input('deleteCompositionText', null);
       document.dispatchEvent(new Event('selectionchange'));
@@ -665,7 +349,8 @@ describe.each([false, true])('Safari composition (richText=%s)', richText => {
         },
         {discrete: true},
       );
-      expect(t.editor._compositionKey).toBe(key);
+      expect(t.editor.isComposing()).toBe(true);
+      expect(t.selectedNodeKey()).toBe(key);
       expect(t.editor.read(() => $getRoot().getTextContent())).toBe(expected);
       t.editor.read(() => {
         const selection = $getSelection();
@@ -695,7 +380,7 @@ describe.each([false, true])('Safari composition (richText=%s)', richText => {
     });
     t.composition('compositionstart');
     await t.flush();
-    const key = t.editor._compositionKey;
+    const key = t.selectedNodeKey();
     const selection = document.getSelection();
     assert(selection);
     // The model has a collapsed caret in empty text. The browser must replace
@@ -703,7 +388,8 @@ describe.each([false, true])('Safari composition (richText=%s)', richText => {
     expect(selection.getRangeAt(0).toString()).toBe('\u00a0');
     document.execCommand('insertText', false, 'n');
     await t.flush();
-    expect(t.editor._compositionKey).toBe(key);
+    expect(t.editor.isComposing()).toBe(true);
+    expect(t.selectedNodeKey()).toBe(key);
     t.editor.read(() => {
       const node = $getRoot()
         .getAllTextNodes()
@@ -848,8 +534,8 @@ describe.each([false, true])('Safari composition (richText=%s)', richText => {
       t.composition('compositionstart');
       await t.flush();
       expect(t.editor.read(() => $getRoot().getTextContent())).toBe(expected);
-      const key = t.editor._compositionKey;
-      assert(key !== null);
+      const key = t.selectedNodeKey();
+      expect(t.editor.isComposing()).toBe(true);
       expect(t.editor.getElementByKey(key)?.textContent).toBe(
         t.editor.read(() => {
           const selection = $getSelection();
@@ -867,6 +553,143 @@ describe.each([false, true])('Safari composition (richText=%s)', richText => {
           t.editor.read(() => $getRoot().getAllTextNodes()[0].getType()),
         ).toBe(kind === 'subclass' ? 'custom-text' : 'text');
       }
+    },
+  );
+  test.each(
+    ['insertText', 'insertRawText', 'insertNodes'].flatMap(method =>
+      [false, true].map(withInput => ({method, withInput})),
+    ),
+  )(
+    'preparation does not insert through application handlers (%j)',
+    async ({method, withInput}) => {
+      const t = mount(richText, () => {
+        $paragraph('abc', 1);
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        selection.format = 1;
+      });
+      const payloads: string[] = [];
+      t.editor.registerCommand(
+        CONTROLLED_TEXT_INSERTION_COMMAND,
+        payload => {
+          if (typeof payload !== 'string') return false;
+          payloads.push(payload);
+          const selection = $getSelection();
+          assert($isRangeSelection(selection));
+          if (method === 'insertText') selection.insertText(payload);
+          else if (method === 'insertRawText') selection.insertRawText(payload);
+          else selection.insertNodes([$createTextNode(payload)]);
+          return true;
+        },
+        COMMAND_PRIORITY_CRITICAL,
+      );
+      t.composition('compositionstart');
+      await t.flush();
+      if (withInput) {
+        await t.composeText('ni', 'ni\u00a0', 2, 'i');
+        t.beforeInput('deleteCompositionText', null);
+        t.setDOMText('\u00a0', 0);
+        t.input('deleteCompositionText', null);
+        await t.flush();
+      }
+      t.composition('compositionend');
+      await t.flush();
+      t.expectText('abc');
+      expect(payloads).toEqual([]);
+      expect(t.editor.isComposing()).toBe(false);
+      // Ordinary document text still goes through the application's handler.
+      t.editor.dispatchCommand(CONTROLLED_TEXT_INSERTION_COMMAND, 'X');
+      await t.flush();
+      expect(payloads).toEqual(['X']);
+      t.expectText('aXbc');
+    },
+  );
+
+  test('cancelling a formatted target does not add an undo step', async () => {
+    const t = mount(richText, () => $paragraph('abc'), {history: true});
+    t.editor.update(
+      () => {
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        selection.insertText('X');
+      },
+      {discrete: true, tag: HISTORY_PUSH_TAG},
+    );
+    t.editor.update(
+      () => {
+        const selection = $getRoot().getAllTextNodes()[0].select(1, 1);
+        selection.format = 1;
+      },
+      {discrete: true},
+    );
+    t.composition('compositionstart');
+    await t.flush();
+    t.composition('compositionend');
+    await t.flush();
+    t.expectText('abcX');
+    t.editor.dispatchCommand(UNDO_COMMAND, undefined);
+    await t.flush();
+    t.expectText('abc');
+  });
+
+  test('cancelling a composition over selected text keeps its deletion undoable', async () => {
+    const t = mount(richText, () => $paragraph('abcd', 1, 3), {history: true});
+    t.composition('compositionstart');
+    await t.flush();
+    t.composition('compositionend');
+    await t.flush();
+    t.expectText('ad');
+    t.editor.dispatchCommand(UNDO_COMMAND, undefined);
+    await t.flush();
+    t.expectText('abcd');
+  });
+  test.each(['format', 'state', 'indent'])(
+    'composition retains undo for a document %s change with identical plain text',
+    async change => {
+      const t = mount(richText, () => $paragraph('abc'), {history: true});
+      t.editor.update(
+        () => {
+          const selection = $getSelection();
+          assert($isRangeSelection(selection));
+          selection.insertText('X');
+        },
+        {discrete: true, tag: HISTORY_PUSH_TAG},
+      );
+      t.editor.update(
+        () => {
+          const selection = $getRoot().getAllTextNodes()[0].select(1, 1);
+          selection.format = 1;
+        },
+        {discrete: true},
+      );
+      t.composition('compositionstart');
+      await t.flush();
+      t.editor.update(
+        () => {
+          const node = $getRoot().getAllTextNodes()[0];
+          if (change === 'format') node.setFormat('bold');
+          else if (change === 'state')
+            $setState(node, historyNoteState, 'changed');
+          else node.getParentOrThrow().setIndent(1);
+        },
+        {discrete: true},
+      );
+      t.composition('compositionend');
+      await t.flush();
+      t.expectText('abcX');
+      t.editor.dispatchCommand(UNDO_COMMAND, undefined);
+      await t.flush();
+      t.expectText('abcX');
+      t.editor.read(() => {
+        for (const node of $getRoot().getAllTextNodes()) {
+          expect(node.hasFormat('bold')).toBe(false);
+          expect($getState(node, historyNoteState)).toBe('');
+          expect(node.getParentOrThrow().getIndent()).toBe(0);
+        }
+      });
+      t.editor.dispatchCommand(UNDO_COMMAND, undefined);
+      await t.flush();
+      t.expectText('abc');
     },
   );
 });

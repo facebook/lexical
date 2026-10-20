@@ -114,6 +114,7 @@ import {
   $internalCreateRangeSelection,
   $internalRefreshSelectionFormatAndStyle,
   $internalResolveSelectionPoint,
+  $prepareCompositionTarget,
   type RangeSelection,
 } from './LexicalSelection';
 import {
@@ -150,7 +151,6 @@ import {
   getNearestEditorFromDOMNode,
   getParentElement,
   getWindow,
-  isBackspace,
   isDOMCapturingSelection,
   isDOMDocumentNode,
   isDOMNode,
@@ -1488,6 +1488,7 @@ function $handleBeforeInput(event: InputEvent): boolean {
     }
 
     case 'insertFromComposition': {
+      inputState.compositionPhase = 'idle';
       const skipRedundantInsert = inputState.hadOrphanedCompositionEvents;
       inputState.hadOrphanedCompositionEvents = false;
       const prevCompositionKey = editor._compositionKey;
@@ -1829,17 +1830,15 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
       // Prepare a text node for the native composition. Desktop WebKit uses
       // the rendered composition suffix instead of adding a placeholder to
       // the document text.
-      const wasPreparingComposition = inputState.isPreparingComposition;
-      inputState.isPreparingComposition =
-        !IS_IOS && (IS_SAFARI || IS_APPLE_WEBKIT);
-      try {
+      // IS_SAFARI also recognizes WebKit ports on non-Apple platforms.
+      if (!IS_IOS && (IS_SAFARI || IS_APPLE_WEBKIT)) {
+        $prepareCompositionTarget(selection);
+      } else {
         dispatchCommand(
           editor,
           CONTROLLED_TEXT_INSERTION_COMMAND,
           COMPOSITION_START_CHAR,
         );
-      } finally {
-        inputState.isPreparingComposition = wasPreparingComposition;
       }
       const updatedSelection = $getSelection();
       if ($isRangeSelection(updatedSelection)) {
@@ -1978,17 +1977,12 @@ function onCompositionEnd(
   event: CompositionEvent,
   editor: LexicalEditor,
 ): void {
-  // Firefox fires compositionEnd before input; Safari fires it before
-  // keydown. The 'ending-*' phases defer handling for those browsers.
-  // Chrome/Webkit fires input first, so it dispatches immediately.
+  // Firefox finishes in the following input event. Desktop WebKit commits
+  // through insertFromComposition; an empty cancellation finishes here.
   const inputState = editor._inputState;
   if (IS_FIREFOX) {
     inputState.compositionPhase = 'ending-firefox';
-  } else if (event.data !== '' && !IS_IOS && (IS_SAFARI || IS_APPLE_WEBKIT)) {
-    // https://github.com/facebook/lexical/pull/7061
-    inputState.compositionPhase = 'ending-safari';
-    inputState.compositionEndData = event.data;
-  } else {
+  } else if (event.data === '' || IS_IOS || !(IS_SAFARI || IS_APPLE_WEBKIT)) {
     // Cancellation has no insertFromComposition event to finish the Safari
     // composition. Release it now so the next ordinary key can dispatch.
     dispatchCommand(editor, COMPOSITION_END_COMMAND, event);
@@ -2194,24 +2188,9 @@ function buildKeyDownShortcuts(): KeyDownShortcut[] {
 
 function $handleKeyDown(event: KeyboardEvent): boolean {
   const editor = getActiveEditor();
-  const inputState = editor._inputState;
   if (event.key == null) {
     return true;
   }
-  if (inputState.compositionPhase === 'ending-safari') {
-    const isBack = isBackspace(event) && event.keyCode === 229;
-    if (isBack) {
-      updateEditorSync(editor, () => {
-        $onCompositionEndImpl(editor, inputState.compositionEndData);
-      });
-    }
-    inputState.compositionPhase = 'idle';
-    inputState.compositionEndData = '';
-    if (isBack) {
-      return true;
-    }
-  }
-
   let keyDownShortcuts = editor._keyDownShortcuts;
   if (keyDownShortcuts === null) {
     keyDownShortcuts = compileKeyboardShortcuts(buildKeyDownShortcuts());

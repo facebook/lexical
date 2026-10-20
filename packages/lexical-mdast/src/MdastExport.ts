@@ -157,10 +157,7 @@ const syntaxToMarkdown = (
       // as a plain newline rather than being upgraded to a hard break. A
       // break in `hardBreaks` keeps the hard form whatever its marker.
       const result = defaultHandlers.break(node, parent, state, info);
-      if (result !== '\\\n') {
-        return result;
-      }
-      if (hardBreaks.has(node)) {
+      if (result !== '\\\n' || hardBreaks.has(node)) {
         return result;
       }
       const marker = node.data && node.data.mdastBreak;

@@ -1370,10 +1370,12 @@ function $getParentAcrossSlots(node: LexicalNode): LexicalNode | null {
 
 /**
  * Like {@link $comparePointCaretNext}, but orders points on either side of a
- * slot boundary in content order (slots-first): a host's slot values, in slot
- * order, come after any point before the host and before its children. A
- * ChildCaret on the host, the point before its first child, therefore comes
- * after them. Returns null when a and b have no common ancestor.
+ * slot boundary in the default slots-before-children rendering order: a
+ * host's slot values, in slot order, come after any point before the host and
+ * before its children. A ChildCaret on the host, the point before its first
+ * child, therefore comes after them. An app can mount slot DOM elsewhere, so
+ * this need not match the DOM order. Returns null when a and b have no common
+ * ancestor.
  *
  * @internal @experimental named-slots
  */
@@ -1403,7 +1405,7 @@ export function $comparePointCaretNextAcrossSlots(
           }
         }
       }
-      // A slot value comes before the host's children.
+      // By default a slot value renders before the host's children.
       return aSlotKey
         ? -1
         : bSlotKey

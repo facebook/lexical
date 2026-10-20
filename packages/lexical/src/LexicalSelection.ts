@@ -3234,7 +3234,7 @@ function $getPointSlotFrame(point: PointType): LexicalNode | null {
 // keyboard/mouse/programmatic results consistent. The direction is resolved
 // lazily (resolveFocusAfterAnchor), only on an actual straddle, because the
 // DOM-read and programmatic callers determine it differently (DOM order vs
-// content order). Returns true when it mutated the focus point. No-op
+// the default slots-before-children rendering order). Returns true when it mutated the focus point. No-op
 // (returns false) when both points share a frame — including the all-null
 // case in non-slot trees, so behavior there is unchanged.
 function $clampSelectionPointsToSlotFrame(
@@ -3316,9 +3316,12 @@ function $getSlotHostInFrame(
 /**
  * Programmatic counterpart of the DOM-read clamp: applied when a
  * RangeSelection is committed via $setSelection so an API-built selection
- * cannot straddle a slot boundary either. Direction comes from content order
- * across slots ({@link $comparePointCaretNextAcrossSlots}), not from the DOM,
- * since $setSelection also runs in headless mode where there is no DOM.
+ * cannot straddle a slot boundary either. Direction comes from the default
+ * slots-before-children rendering order
+ * ({@link $comparePointCaretNextAcrossSlots}), not from the DOM, since
+ * $setSelection also runs in headless mode where there is no DOM. An app that
+ * mounts slot DOM elsewhere can see the focus clamped to the opposite edge
+ * from where its DOM order would put it.
  * Marks the selection dirty when it mutates a point. No-op for non-slot trees
  * (both frames null), evaluated before any direction work, so non-slot and
  * headless callers are unaffected.
@@ -3435,8 +3438,8 @@ function $internalResolveSelectionPoints(
 
   // Clamp a slot-straddling drag into the
   // anchor's frame before normalization cleans up the resulting edge points.
-  // The DOM order of the selection's points gives the drag direction (slot
-  // DOM is slots-first, so DOM order matches content order). Gated on `_slotsUsed`
+  // The DOM order of the selection's points gives the drag direction, which
+  // follows wherever the app mounted the slot DOM. Gated on `_slotsUsed`
   // so editors that never slot anything skip the walk, mirroring the
   // commit-time and `$setSelection` clamps.
   const slotClamped =

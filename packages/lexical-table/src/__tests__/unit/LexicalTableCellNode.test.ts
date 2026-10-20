@@ -15,6 +15,8 @@ import {
   type SerializedTableCellNode,
   TableCellHeaderStates,
   TableCellNode,
+  type TableNode,
+  type TableRowNode,
 } from '@lexical/table';
 import {
   $createParagraphNode,
@@ -162,7 +164,7 @@ describe('LexicalTableCellNode tests', () => {
       });
     });
 
-    test('TableCellNode.exportDOM writes its format as text-align', async () => {
+    test('TableCellNode.exportDOM writes its format as text-align, which importDOM reads', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         $getRoot()
@@ -170,15 +172,32 @@ describe('LexicalTableCellNode tests', () => {
           .append(
             $createTableNode().append(
               $createTableRowNode().append(
-                $createTableCellNode()
+                $createTableCellNode(TableCellHeaderStates.ROW)
                   .setFormat('center')
                   .append($createParagraphNode()),
+                $createTableCellNode(TableCellHeaderStates.ROW).append(
+                  $createParagraphNode(),
+                ),
               ),
             ),
           );
       });
+      const exported = editor.read(() => $generateHtmlFromNodes(editor));
+      expect(exported).toContain('text-align: center');
+      await editor.update(() => {
+        const dom = new DOMParser().parseFromString(exported, 'text/html');
+        $getRoot()
+          .clear()
+          .append(...$generateNodesFromDOM(editor, dom));
+      });
       editor.read(() => {
-        expect($generateHtmlFromNodes(editor)).toContain('text-align: center');
+        const table = $getRoot().getFirstChildOrThrow<TableNode>();
+        expect(
+          table
+            .getFirstChildOrThrow<TableRowNode>()
+            .getChildren<TableCellNode>()
+            .map(cell => cell.getFormatType()),
+        ).toEqual(['center', '']);
       });
     });
 

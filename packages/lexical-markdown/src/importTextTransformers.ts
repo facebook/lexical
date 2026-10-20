@@ -147,11 +147,26 @@ export function importTextTransformers(
         textFormatTransformersIndex,
         textMatchTransformers,
       );
+    } else if (
+      result.transformedNode === undefined &&
+      canContainTransformableMarkdown(result.matchedNode) &&
+      result.matchedNode.getParent() !== null
+    ) {
+      // A void return may leave the matched node in place or move it into a
+      // new parent. Read its escapes once without trying the same match again.
+      // A parent also exists when importing into a detached tree.
+      result.matchedNode.setTextContent(
+        unescapeText(result.matchedNode.getTextContent()),
+      );
     }
   }
 
-  // Handle escape characters
-  const textContent = textNode.getTextContent();
-  const unescapedText = unescapeText(textContent);
-  textNode.setTextContent(unescapedText);
+  // Handle escape characters. Only a node that no transformer matched is
+  // unescaped here: retained non-code results above have already had their
+  // escapes read, and code spans must keep their backslashes.
+  if (!foundTextFormat && !foundTextMatch) {
+    const textContent = textNode.getTextContent();
+    const unescapedText = unescapeText(textContent);
+    textNode.setTextContent(unescapedText);
+  }
 }

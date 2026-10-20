@@ -165,6 +165,41 @@ test('an inserted row takes the alignment set on paragraphs', () => {
   expect(exportMarkdown(editor).split('\n')[1]).toBe('| - | :-: |');
 });
 
+function $justifyText(text: string) {
+  for (const node of $getRoot().getAllTextNodes()) {
+    if (node.getTextContent() === text) {
+      node.getParentOrThrow<ElementNode>().setFormat('justify');
+    }
+  }
+}
+
+test('an inserted row takes the alignment a justified cell exports', () => {
+  const {editor, root} = mountEditor('| a | b |\n| - | -: |\n| 1 | 2 |');
+  editor.update(() => $justifyText('2'), {discrete: true});
+  selectLastCell(editor);
+  editor.dispatchCommand(TABLE_EDIT_COMMAND, 'row-below');
+  editor.read(() => {});
+  expect(
+    [...root.querySelectorAll('tr:last-child td')].map(
+      cell => (cell as HTMLElement).style.textAlign,
+    ),
+  ).toEqual(['', 'right']);
+});
+
+test('aligning a column keeps a justified paragraph', () => {
+  const {editor, root} = mountEditor(TABLE);
+  editor.update(() => $justifyText('2'), {discrete: true});
+  selectLastCell(editor);
+  editor.dispatchCommand(TABLE_EDIT_COMMAND, 'align-right');
+  editor.read(() => {});
+  expect(
+    [...root.querySelectorAll('td p, th p')].map(
+      p => (p as HTMLElement).style.textAlign,
+    ),
+  ).toEqual(['', '', '', 'justify']);
+  expect(exportMarkdown(editor).split('\n')[1]).toBe('| - | -: |');
+});
+
 // https://github.com/facebook/lexical/issues/9323
 test('Enter in a cell exports as <br>, not a newline', async () => {
   const {editor, root} = mountEditor(TABLE);

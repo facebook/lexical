@@ -17,6 +17,7 @@ import {
   $isTableCellNode,
   $isTableRowNode,
   $isTableSelection,
+  type TableCellNode,
   TableExtension,
   type TableNode,
   type TableRowNode,
@@ -54,11 +55,15 @@ const COLUMN_ALIGN = {
   'align-right': 'right',
 } as const;
 
+// The alignments GFM writes for a column.
+const GFM_ALIGN = /^(?:left|center|right)$/;
+
 /**
  * Aligns every column the selection touches. GFM alignment belongs to a
  * column (the delimiter row's `:-:`), so it is set as the element format of
  * each cell in the column, which `@lexical/mdast` renders as `text-align`
- * and exports. The cells' paragraphs are reset so they follow the cell.
+ * and exports. The cells' paragraphs aligned in a way GFM writes are reset
+ * so they follow the cell; others (justified) keep their format.
  */
 function $alignSelectedColumns(table: TableNode, format: ElementFormatType) {
   const selection = $getSelection();
@@ -85,13 +90,38 @@ function $alignSelectedColumns(table: TableNode, format: ElementFormatType) {
       if ($isTableCellNode(cell)) {
         cell.setFormat(format);
         for (const child of cell.getChildren()) {
-          if ($isElementNode(child) && !child.isInline()) {
+          if (
+            $isElementNode(child) &&
+            !child.isInline() &&
+            GFM_ALIGN.test(child.getFormatType())
+          ) {
             child.setFormat('');
           }
         }
       }
     }
   }
+}
+
+/**
+ * The GFM alignment a cell renders with, as `@lexical/mdast` exports it:
+ * the one its blocks share, each with its own or else the cell's.
+ */
+function $getCellAlign(cell: TableCellNode): ElementFormatType {
+  const own = cell.getFormatType();
+  let shared: ElementFormatType | undefined;
+  for (const child of cell.getChildren()) {
+    if ($isElementNode(child) && !child.isInline()) {
+      const format = child.getFormatType();
+      const align = GFM_ALIGN.test(format) ? format : own;
+      if (shared !== undefined && shared !== align) {
+        return '';
+      }
+      shared = align;
+    }
+  }
+  const align = shared ?? own;
+  return GFM_ALIGN.test(align) ? align : '';
 }
 
 /**
@@ -105,12 +135,7 @@ function $alignInsertedRow(row: TableRowNode | null) {
     row!.getChildren().forEach((cell, i) => {
       const from = besideCells[i];
       if ($isTableCellNode(cell) && $isTableCellNode(from)) {
-        // An alignment set with the caret in the cell is its paragraph's.
-        const block = from.getFirstChild();
-        cell.setFormat(
-          ($isElementNode(block) && block.getFormatType()) ||
-            from.getFormatType(),
-        );
+        cell.setFormat($getCellAlign(from));
       }
     });
   }

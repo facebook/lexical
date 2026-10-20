@@ -195,6 +195,41 @@ describe('named-slots: selection containment (slot isolation)', () => {
     );
   });
 
+  test('anchor in the body, focus dragged into a slot of the host containing it mounted after its children, clamps focus to the end of the host', () => {
+    using editor = buildSlotEditor();
+
+    const titleTextDOM = domTextNodeOf(editor, keys.titleText);
+    const bodyTextDOM = domTextNodeOf(editor, keys.bodyText);
+    const hostDOM = editor.getElementByKey(keys.host);
+    const titleContainer =
+      titleTextDOM.parentElement &&
+      titleTextDOM.parentElement.closest('[data-lexical-slot]');
+    assert(hostDOM !== null && titleContainer);
+    // Mount the slot after the host's children, as an app may.
+    hostDOM.appendChild(titleContainer);
+
+    const domSelection = getDOMSelection(editor._window ?? window);
+    assert(domSelection !== null);
+    domSelection.setBaseAndExtent(bodyTextDOM, 1, titleTextDOM, 1);
+
+    editor.update(
+      () => {
+        const selection = $internalCreateRangeSelection(
+          $getSelection(),
+          domSelection,
+          editor,
+          {type: 'selectionchange'} as Event,
+        );
+        assert($isRangeSelection(selection));
+        expect(selection.anchor.key).toBe(keys.bodyText);
+        expect(selection.focus.key).toBe(keys.host);
+        expect(selection.focus.offset).toBe(1);
+        expect(selection.getTextContent()).toBe('ody');
+      },
+      {discrete: true},
+    );
+  });
+
   test('a selection entirely within the body is left untouched', () => {
     using editor = buildSlotEditor();
 

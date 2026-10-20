@@ -13,15 +13,17 @@ afterEach(() => {
   vi.resetModules();
 });
 
-// In an editor without slots, a forward deletion's beforeinput keeps its
-// command and its target range, even one that reaches before the caret.
+// A forward deletion's beforeinput dispatches DELETE_LINE_COMMAND with its
+// target range. Without slots even a range that reaches before the caret is
+// kept; in a slot such a range is ignored and the caret is kept instead.
 test.each([
-  [2, 3],
-  [0, 2],
+  {end: 3, expected: [2, 3], slot: false, start: 2},
+  {end: 2, expected: [0, 2], slot: false, start: 0},
+  {end: 3, expected: [2, 3], slot: true, start: 2},
+  {end: 2, expected: [2, 2], slot: true, start: 0},
 ])(
-  'deleteContentForward with a target range from %i to %i dispatches DELETE_LINE_COMMAND with that range',
-  async (start, end) => {
-    vi.resetModules();
+  'deleteContentForward from $start to $end (slot: $slot) deletes $expected',
+  async ({end, expected, slot, start}) => {
     vi.doMock('lexical/src/environment', async importOriginal => ({
       ...(await importOriginal<object>()),
       CAN_USE_BEFORE_INPUT: true,
@@ -32,6 +34,7 @@ test.each([
       $getRoot,
       $getSelection,
       $isRangeSelection,
+      $setSlot,
       COMMAND_PRIORITY_CRITICAL,
       DELETE_LINE_COMMAND,
     } = await import('lexical');
@@ -40,7 +43,14 @@ test.each([
     using editor = buildEditorFromExtensions({
       $initialEditorState: () => {
         const text = $createTextNode('draft');
-        $getRoot().append($createParagraphNode().append(text));
+        const paragraph = $createParagraphNode().append(text);
+        if (slot) {
+          const host = $createParagraphNode();
+          $getRoot().append(host);
+          $setSlot(host, 'note', paragraph);
+        } else {
+          $getRoot().append(paragraph);
+        }
         text.select(2, 2);
       },
       afterRegistration: ed => {
@@ -92,6 +102,6 @@ test.each([
       ],
     });
     rootElement.dispatchEvent(event);
-    expect(calls).toEqual([[false, start, end]]);
+    expect(calls).toEqual([[false, ...expected]]);
   },
 );

@@ -2056,6 +2056,8 @@ function $deleteTextByGranularity(
 ): void {
   const wasCollapsed = selection.isCollapsed();
   const {anchor, focus} = selection;
+  // Set when the deletion stops at a slot boundary, which it never crosses.
+  let stoppedAtSlot = false;
   if (wasCollapsed) {
     if (
       granularity === 'word' &&
@@ -2063,7 +2065,11 @@ function $deleteTextByGranularity(
     ) {
       return;
     }
-    $extendSelectionForDeletion(selection, isBackward, granularity);
+    stoppedAtSlot = $extendSelectionForDeletion(
+      selection,
+      isBackward,
+      granularity,
+    );
     if (granularity === 'lineboundary') {
       $stopLineDeletionAtLineBreak(selection);
     }
@@ -2078,7 +2084,10 @@ function $deleteTextByGranularity(
     focus.set(anchor.key, anchor.offset, anchor.type);
   }
   if (selection.isCollapsed()) {
-    selection.deleteCharacter(isBackward);
+    // Stopped at a slot boundary with nothing before it: a no-op.
+    if (!stoppedAtSlot) {
+      selection.deleteCharacter(isBackward);
+    }
   } else {
     // An existing whole-document selection deletes its blocks (#5835).
     // Extending a collapsed caret over a word or line keeps that block.
@@ -2479,12 +2488,14 @@ function $shrinkSelectionToRoot(
  * `Selection.modify` (headless environments can polyfill it), or an
  * unresolvable anchor — the selection is left collapsed, so the deletion
  * becomes a no-op for that keystroke.
+ *
+ * Returns true when the focus was stopped at a slot boundary.
  */
 function $extendSelectionForDeletion(
   selection: RangeSelection,
   isBackward: boolean,
   granularity: 'character' | 'word' | 'lineboundary',
-): void {
+): boolean {
   // Decorator/block handling, resolved in the model exactly as modify() does.
   if (
     $modifySelectionAroundDecoratorsAndBlocks(
@@ -2494,12 +2505,12 @@ function $extendSelectionForDeletion(
       granularity,
     )
   ) {
-    return;
+    return false;
   }
   const editor = getActiveEditor();
   const domSelection = getDOMSelection(getWindow(editor));
   if (!domSelection || typeof domSelection.modify !== 'function') {
-    return;
+    return false;
   }
   const blockCursorElement = editor._blockCursorElement;
   const rootElement = editor._rootElement;
@@ -2526,7 +2537,7 @@ function $extendSelectionForDeletion(
   const anchorNode = anchor.getNode();
   const anchorDOM = $resolvePointDOM(anchor);
   if (anchorDOM === null) {
-    return;
+    return false;
   }
   const anchorOffset = anchor.offset;
   // Measure from the FOCUS: the decorator/block pre-pass above may have
@@ -2539,7 +2550,7 @@ function $extendSelectionForDeletion(
   const focus = selection.focus;
   const focusDOM = wasCollapsed ? anchorDOM : $resolvePointDOM(focus);
   if (focusDOM === null) {
-    return;
+    return false;
   }
   const focusOffset = focus.offset;
   // Sync a COLLAPSED DOM caret at the measurement origin (base === extent),
@@ -2560,7 +2571,7 @@ function $extendSelectionForDeletion(
     rootElement,
   );
   if (domSelection.rangeCount === 0) {
-    return;
+    return false;
   }
   // Inside a DOM shadow root getRangeAt(0) is retargeted to the host; read the
   // composed StaticRange (real nodes) where available. After a 'move' the DOM
@@ -2611,7 +2622,7 @@ function $extendSelectionForDeletion(
         const sibOffset = isBackward ? sibling.getTextContentSize() - 1 : 1;
         selection.focus.set(sibling.__key, sibOffset, 'text');
         selection.dirty = true;
-        return;
+        return false;
       }
     }
   }
@@ -2637,7 +2648,7 @@ function $extendSelectionForDeletion(
         selection.focus.set(anchor.key, clampedOffset, 'text');
         selection.dirty = true;
       }
-      return;
+      return false;
     }
   }
   // A slot boundary lives only in the model, so the native move can cross it.
@@ -2647,16 +2658,19 @@ function $extendSelectionForDeletion(
   const landedNode = $getNearestNodeFromDOMNode(landedContainer);
   const anchorFrame = $getSlotFrame(anchorNode);
   const landedFrame = landedNode && $getSlotFrame(landedNode);
-  if (landedNode !== null && !$isSameFrame(landedFrame, anchorFrame)) {
+  if (
+    landedNode !== null &&
+    !$isSameFrame(landedFrame, anchorFrame) &&
     $setPointAtSlotBoundary(
       selection.focus,
       anchorNode,
       anchorFrame,
       landedFrame,
-      !isBackward,
-      true,
-    );
-    return;
+      'deletion',
+      () => !isBackward,
+    )
+  ) {
+    return true;
   }
   // General path: reconstruct, in document order, the [original .. landed]
   // range a native extend would have produced. applyDOMRange only reads these
@@ -2681,6 +2695,7 @@ function $extendSelectionForDeletion(
     // anchor must stay at the original caret, so restore that orientation.
     $swapPoints(selection);
   }
+  return false;
 }
 
 // Sets point, the focus of a selection or deletion whose anchor is in
@@ -2691,16 +2706,21 @@ function $extendSelectionForDeletion(
 // past it for a selection (which keeps the host whole) and before it for a
 // deletion (which stops at it). A deletion's focus then descends toward the
 // anchor, as applyDOMRange would resolve it, so line deletion finds it in the
-// anchor's block. Returns false when there is no boundary to clamp to.
+// anchor's block. The direction is resolved only when there is a boundary.
+// Returns false when there is none.
 function $setPointAtSlotBoundary(
   point: PointType,
   anchorNode: LexicalNode | null,
   anchorFrame: LexicalNode | null,
   focusFrame: LexicalNode | null,
-  focusAfterAnchor: boolean,
-  isDeletion: boolean,
+  mode: 'selection' | 'deletion',
+  resolveFocusAfterAnchor: () => boolean,
 ): boolean {
   const host = focusFrame && $getSlotHostInFrame(focusFrame, anchorFrame);
+  if (host === null && anchorFrame === null) {
+    return false;
+  }
+  const focusAfterAnchor = resolveFocusAfterAnchor();
   const hostParent = host && host.getParent();
   let parent: ElementNode;
   let offset: number;
@@ -2715,16 +2735,17 @@ function $setPointAtSlotBoundary(
       if (edge !== null) {
         $setPointToFrameEdge(point, edge, focusAfterAnchor);
       }
-      return edge !== null;
+      return true;
     }
     parent = edge;
     offset = focusAfterAnchor ? edge.getChildrenSize() : 0;
   } else {
     parent = hostParent;
     offset =
-      host.getIndexWithinParent() + (focusAfterAnchor !== isDeletion ? 1 : 0);
+      host.getIndexWithinParent() +
+      (focusAfterAnchor === (mode === 'selection') ? 1 : 0);
   }
-  if (isDeletion) {
+  if (mode === 'deletion') {
     $setDeletionFocus(point, parent, offset, !focusAfterAnchor);
   } else {
     point.set(parent.getKey(), offset, 'element');
@@ -3275,8 +3296,8 @@ function $clampSelectionPointsToSlotFrame(
       $getNodeByKey(anchorPoint.key),
       anchorFrame,
       focusFrame,
-      resolveFocusAfterAnchor(),
-      false,
+      'selection',
+      resolveFocusAfterAnchor,
     )
   );
 }

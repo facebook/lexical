@@ -1423,8 +1423,6 @@ function $handleBeforeInput(event: InputEvent): boolean {
     );
   }
 
-  // Set when a deletion's target range is ignored and measured in the model.
-  let targetRangeIgnored = false;
   if (
     (!selection.dirty || inputState.unprocessedBeforeInputData !== null) &&
     selection.isCollapsed() &&
@@ -1432,14 +1430,14 @@ function $handleBeforeInput(event: InputEvent): boolean {
     targetRange !== null
   ) {
     const {key, offset, type} = selection.anchor;
-    const frame = $getPointSlotFrame(selection.anchor);
+    const frame = editor._slotsUsed && $getPointSlotFrame(selection.anchor);
     selection.applyDOMRange(targetRange);
     // A deletion's range must stay in the caret's slot and not reach past the
     // caret on the side it keeps. At the end of a decorator-host slot
     // Chromium's forward delete covers the line before the caret instead
     // (#9363); measure that in the model.
     const isForward = inputType.endsWith('Forward');
-    if (editor._slotsUsed && (isForward || inputType.endsWith('Backward'))) {
+    if (frame !== false && (isForward || inputType.endsWith('Backward'))) {
       const caret = $createPoint(key, offset, type);
       const {anchor, focus} = selection;
       if (
@@ -1451,7 +1449,6 @@ function $handleBeforeInput(event: InputEvent): boolean {
       ) {
         anchor.set(key, offset, type);
         focus.set(key, offset, type);
-        targetRangeIgnored = true;
       }
     }
   }
@@ -1604,15 +1601,7 @@ function $handleBeforeInput(event: InputEvent): boolean {
     case 'deleteContentForward':
     case 'deleteHardLineForward':
     case 'deleteSoftLineForward': {
-      // A forward character deletion whose range was ignored is measured as
-      // a character, not as the rest of the line.
-      dispatchCommand(
-        editor,
-        targetRangeIgnored && inputType === 'deleteContentForward'
-          ? DELETE_CHARACTER_COMMAND
-          : DELETE_LINE_COMMAND,
-        false,
-      );
+      dispatchCommand(editor, DELETE_LINE_COMMAND, false);
       break;
     }
 

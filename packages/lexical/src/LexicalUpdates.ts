@@ -741,14 +741,6 @@ function $commitPendingUpdatesImpl(
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
 
-  const inputState = editor._inputState;
-  if (inputState.compositionPreparationState === currentEditorState) {
-    // Selection-only commits do not invalidate an untouched composition target.
-    inputState.compositionPreparationState = needsUpdate
-      ? null
-      : pendingEditorState;
-  }
-
   if (needsUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
     editor._cloneNotNeeded.clear();

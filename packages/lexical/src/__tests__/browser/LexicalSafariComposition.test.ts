@@ -605,9 +605,13 @@ describe.each([false, true])('Safari composition (richText=%s)', richText => {
     },
   );
 
-  test.each(['', '語'])(
-    'cancelling a formatted target with native text %j has the right undo boundary',
-    async nativeText => {
+  test.each([
+    {composed: '', nativeText: ''},
+    {composed: '', nativeText: '語'},
+    {composed: 'ni', nativeText: ''},
+  ])(
+    'cancelling a formatted target has the right undo boundary (%j)',
+    async ({composed, nativeText}) => {
       const t = mount(richText, () => $paragraph('abc'), {history: true});
       const serialize = vi.spyOn(
         Object.getPrototypeOf(t.editor.getEditorState()),
@@ -631,6 +635,19 @@ describe.each([false, true])('Safari composition (richText=%s)', richText => {
       );
       t.composition('compositionstart');
       await t.flush();
+      if (composed) {
+        t.composition('compositionupdate', composed);
+        t.beforeInput('insertCompositionText', composed);
+        t.setDOMText(composed + '\u00a0', composed.length);
+        t.input('insertCompositionText', composed);
+        await t.flush();
+        expect(t.editor.read(() => $getRoot().getTextContent())).toBe('anibcX');
+        t.beforeInput('deleteCompositionText', null);
+        t.setDOMText('\u00a0', 0);
+        t.input('deleteCompositionText', null);
+        await t.flush();
+        expect(t.editor.read(() => $getRoot().getTextContent())).toBe('abcX');
+      }
       if (nativeText) t.setDOMText(nativeText, nativeText.length);
       t.composition('compositionend');
       await t.flush();

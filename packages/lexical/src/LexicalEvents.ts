@@ -57,7 +57,6 @@ import {
   DROP_COMMAND,
   FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
-  HISTORY_MERGE_TAG,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
@@ -1839,7 +1838,6 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
 
   if ($isRangeSelection(selection) && !editor.isComposing()) {
     inputState.compositionPhase = 'composing';
-    inputState.compositionPreparationState = null;
     inputState.hadOrphanedCompositionEvents = false;
     const anchor = selection.anchor;
     const node = selection.anchor.getNode();
@@ -1870,17 +1868,7 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
       // the document text.
       // IS_SAFARI also recognizes WebKit ports on non-Apple platforms.
       if (!IS_IOS && (IS_SAFARI || IS_APPLE_WEBKIT)) {
-        const wasCollapsed = selection.isCollapsed();
         $prepareCompositionTarget(selection);
-        const target = selection.anchor.getNode();
-        if (
-          wasCollapsed &&
-          target.getKey() !== node.getKey() &&
-          $isTextNode(target) &&
-          target.getTextContentSize() === 0
-        ) {
-          inputState.compositionPreparationState = editor._pendingEditorState;
-        }
       } else {
         dispatchCommand(
           editor,
@@ -1939,19 +1927,6 @@ function $cleanupComposedSubclass(compositionKey: NodeKey | null): void {
 
 function $onCompositionEndImpl(editor: LexicalEditor, data?: string): boolean {
   const compositionKey = editor._compositionKey;
-  const preparationState = editor._inputState.compositionPreparationState;
-  editor._inputState.compositionPreparationState = null;
-  const preparedNode =
-    compositionKey === null ? null : $getNodeByKey(compositionKey);
-  // Only an untouched empty target can cancel without a document edit.
-  const canMergeCancellation =
-    data === '' &&
-    preparationState !== null &&
-    preparationState === editor.getEditorState() &&
-    editor._dirtyLeaves.size === 0 &&
-    editor._dirtyElements.size === 0 &&
-    $isTextNode(preparedNode) &&
-    preparedNode.getTextContentSize() === 0;
   $setCompositionKey(null);
 
   // Handle termination of composition.
@@ -1993,15 +1968,6 @@ function $onCompositionEndImpl(editor: LexicalEditor, data?: string): boolean {
           focusOffset,
           true,
         );
-      }
-      // Check after reading the DOM: an empty compositionend payload can
-      // still leave committed text in the native target.
-      if (
-        canMergeCancellation &&
-        $isTextNode(node) &&
-        node.getTextContentSize() === 0
-      ) {
-        $addUpdateTag(HISTORY_MERGE_TAG);
       }
       $cleanupComposedSubclass(compositionKey);
       return false;

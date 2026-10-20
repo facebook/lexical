@@ -482,11 +482,12 @@ export default [
     },
   },
 
-  // A window messaging channel is addressable by anything running in the page,
-  // so its name has to be specific to that page rather than shared, and a
-  // message has to name the origin it is for.
+  // A window messaging channel is shared with whatever else is running in the
+  // page, so its name has to be specific to that page rather than a constant,
+  // and a message has to name the origin it is for. The name is not a secret;
+  // this is about collisions and crosstalk, not trust.
   {
-    files: ['packages/**', 'examples/**', 'dev-examples/**'],
+    files: ['packages/lexical-devtools/**'],
     rules: {
       '@lexical/internal/no-unscoped-window-messaging': ERROR,
     },

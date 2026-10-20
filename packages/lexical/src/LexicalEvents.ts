@@ -110,10 +110,13 @@ import {
 } from './LexicalKeyboardShortcuts';
 import {createRefCountedRegistry} from './LexicalRefCountedRegistry';
 import {
+  $createPoint,
   $createRangeSelectionFromDom,
+  $getPointSlotFrame,
   $internalCreateRangeSelection,
   $internalRefreshSelectionFormatAndStyle,
   $internalResolveSelectionPoint,
+  $isSameFrame,
   type RangeSelection,
 } from './LexicalSelection';
 import {
@@ -1420,13 +1423,42 @@ function $handleBeforeInput(event: InputEvent): boolean {
     );
   }
 
+  // Set when a forward deletion's range lay before a caret in a slot, the
+  // shape of a plain Delete (#9363), which then deletes one character.
+  let deleteForwardCharacter = false;
   if (
     (!selection.dirty || inputState.unprocessedBeforeInputData !== null) &&
     selection.isCollapsed() &&
     !$isRootNode(selection.anchor.getNode()) &&
     targetRange !== null
   ) {
+    const {key, offset, type} = selection.anchor;
+    const frame = editor._slotsUsed && $getPointSlotFrame(selection.anchor);
     selection.applyDOMRange(targetRange);
+    // A deletion's range must stay in the caret's frame and, in a slot, not
+    // reach past the caret on the side it keeps: at the end of a
+    // decorator-host slot Chromium's forward delete covers the line before
+    // the caret instead (#9363). Such a deletion is measured from the caret.
+    const isForward = inputType.endsWith('Forward');
+    if (frame !== false && (isForward || inputType.endsWith('Backward'))) {
+      const caret = $createPoint(key, offset, type);
+      const {anchor, focus} = selection;
+      const leftFrame =
+        !$isSameFrame($getPointSlotFrame(anchor), frame) ||
+        !$isSameFrame($getPointSlotFrame(focus), frame);
+      const wrongSide =
+        !leftFrame &&
+        frame !== null &&
+        (isForward
+          ? anchor.isBefore(caret) || focus.isBefore(caret)
+          : caret.isBefore(anchor) || caret.isBefore(focus));
+      if (leftFrame || wrongSide) {
+        anchor.set(key, offset, type);
+        focus.set(key, offset, type);
+        deleteForwardCharacter =
+          wrongSide && inputType === 'deleteContentForward';
+      }
+    }
   }
 
   inputState.unprocessedBeforeInputData = null;
@@ -1577,7 +1609,11 @@ function $handleBeforeInput(event: InputEvent): boolean {
     case 'deleteContentForward':
     case 'deleteHardLineForward':
     case 'deleteSoftLineForward': {
-      dispatchCommand(editor, DELETE_LINE_COMMAND, false);
+      dispatchCommand(
+        editor,
+        deleteForwardCharacter ? DELETE_CHARACTER_COMMAND : DELETE_LINE_COMMAND,
+        false,
+      );
       break;
     }
 

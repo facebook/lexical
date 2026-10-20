@@ -4170,3 +4170,38 @@ describe('link title round trip', () => {
     });
   }
 });
+
+describe('decimal character references that name no character', () => {
+  // `String.fromCodePoint` throws on a number past U+10FFFF, so one of these
+  // in the text or a link used to abort the whole import. CommonMark reads at
+  // most seven digits, and replaces U+0000 and an invalid code point with
+  // U+FFFD.
+  // https://spec.commonmark.org/0.31.2/#decimal-numeric-character
+  const TEXT_CASES: [md: string, text: string][] = [
+    ['a&#1114112;b', 'a\uFFFDb'],
+    ['a&#9999999;b', 'a\uFFFDb'],
+    ['a&#0;b', 'a\uFFFDb'],
+    ['a&#55296;b', 'a\uFFFDb'],
+    ['a&#12345678;b', 'a&#12345678;b'],
+    ['a&#1114111;b', 'a\u{10FFFF}b'],
+    ['a&#35;b', 'a#b'],
+  ];
+
+  for (const [md, text] of TEXT_CASES) {
+    it(`reads ${JSON.stringify(md)}`, () => {
+      const editor = createTestEditor();
+      editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+        discrete: true,
+      });
+      expect(editor.read('latest', () => $getRoot().getTextContent())).toBe(
+        text,
+      );
+    });
+  }
+
+  it('reads one in a link destination and title', () => {
+    expect(
+      importLinks('[x](https://example.com/&#9999999; "t&#1114112;")'),
+    ).toEqual([{title: 't\uFFFD', url: 'https://example.com/\uFFFD'}]);
+  });
+});

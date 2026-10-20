@@ -15,6 +15,7 @@ import type {
   Heading,
   Link,
   List,
+  Parents,
   PhrasingContent,
   Root,
   RootContent,
@@ -87,6 +88,33 @@ function withOptions<T>(
 }
 
 /**
+ * Whether a soft `break` can be written as a plain newline. It can when it
+ * sits between inline content that is not another break. At the start of the
+ * content, or before another break, a plain newline would leave an empty line
+ * that ends the paragraph or is trimmed away, so a hard break is needed. Breaks
+ * with only breaks after them stay soft: neither form survives at the end of a
+ * paragraph, and a hard break there would read back as a literal backslash.
+ */
+function isSoftBreakSafe(node: Break, parent: Parents | undefined): boolean {
+  if (!parent) {
+    return true;
+  }
+  const siblings: readonly RootContent[] = parent.children;
+  const index = siblings.indexOf(node);
+  if (!siblings.slice(index + 1).some(sibling => sibling.type !== 'break')) {
+    return true;
+  }
+  const before = siblings[index - 1];
+  const after = siblings[index + 1];
+  return (
+    before !== undefined &&
+    before.type !== 'break' &&
+    after !== undefined &&
+    after.type !== 'break'
+  );
+}
+
+/**
  * A to-markdown extension whose handlers reproduce the literal Markdown syntax
  * captured on import (and stored on the Lexical nodes), by temporarily
  * steering the default handlers with per-node options. Delegating to the
@@ -110,7 +138,11 @@ const SYNTAX_TO_MARKDOWN: ToMarkdownExtension = {
       }
       const marker = node.data && node.data.mdastBreak;
       if (!marker) {
-        return '\n';
+        // A plain newline only reads back as a line break when it sits
+        // between two pieces of inline content. At the start of the content
+        // or next to another break it would leave an empty line, which ends
+        // the paragraph (or is trimmed away), so keep the hard break there.
+        return isSoftBreakSafe(node, parent) ? '\n' : result;
       }
       return /^ {2,}$/.test(marker) ? `${marker}\n` : result;
     },

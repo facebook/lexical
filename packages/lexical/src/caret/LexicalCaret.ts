@@ -1404,13 +1404,13 @@ export function $comparePointCaretNextAcrossSlots(
         }
       }
       // A slot value comes before the host's children.
-      if (aSlotKey) {
-        return -1;
-      }
-      if (bSlotKey) {
-        return 1;
-      }
-      return compare.a.isBefore(compare.b) ? -1 : 1;
+      return aSlotKey
+        ? -1
+        : bSlotKey
+          ? 1
+          : compare.a.isBefore(compare.b)
+            ? -1
+            : 1;
     }
   }
 }

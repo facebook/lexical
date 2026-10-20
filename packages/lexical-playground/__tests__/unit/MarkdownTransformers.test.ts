@@ -598,6 +598,29 @@ describe('playground TABLE markdown transformer', () => {
     expect(cellTexts(editor)).toEqual([[['h']], cell]);
   });
 
+  it.each([
+    ['$\\nabla f$', '\\nabla f'],
+    ['[x](http://a.com/\\n)', 'http://a.com/\\n'],
+    ['![x](a\\n.png)', 'a\\n.png'],
+  ])('reads the \\n in %j as itself', (body, value) => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', `| ${body} |`].join('\n'),
+    );
+    editor.read(() => {
+      const node = $getRoot().getLastDescendant()?.getParent();
+      const inline = $isLinkNode(node) ? node : $getRoot().getLastDescendant();
+      expect(
+        $isEquationNode(inline)
+          ? inline.getEquation()
+          : $isLinkNode(inline)
+            ? inline.getURL()
+            : $isImageNode(inline)
+              ? inline.getSrc()
+              : null,
+      ).toBe(value);
+    });
+  });
+
   it('writes a hard line break marked with a backslash as a bare <br>', () => {
     using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
     editor.update(

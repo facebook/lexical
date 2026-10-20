@@ -33,7 +33,7 @@ import {
   RenderContextMarkdownSelection,
   type RootContent,
 } from '@lexical/mdast';
-import {$dfsIterator, mergeRegister} from '@lexical/utils';
+import {$dfsIterator, $findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
   $addUpdateTag,
   $create,
@@ -767,7 +767,7 @@ function $clearFootnotesOfEmptyDocument(root: RootNode): void {
   const selection = $getSelection();
   if (
     $isRangeSelection(selection) &&
-    selection.anchor.getNode().getParents().some($isFootnotesNode)
+    $findMatchingParent(selection.anchor.getNode(), $isFootnotesNode)
   ) {
     return;
   }

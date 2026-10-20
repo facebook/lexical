@@ -271,20 +271,27 @@ describe('footnotes', () => {
     expect(markdownOf(editor)).toBe('');
   });
 
-  test('the footnotes stay while a definition is being edited', () => {
-    const {editor} = mountEditor('body[^a] text\n\n[^a]: the note');
-    editor.update(
-      () => {
-        const footnotes = $getSlot($getRoot(), FOOTNOTES_SLOT);
-        assert($isElementNode(footnotes));
-        footnotes.selectEnd();
-        $getRoot().clear().append($createParagraphNode());
-      },
-      {discrete: true},
-    );
-    // The empty body paragraph serializes as leading blank lines.
-    expect(markdownOf(editor).trim()).toBe('[^a]: the note');
-  });
+  test.each([false, true])(
+    'the footnotes stay while a definition is being edited (caret on the section: %s)',
+    onSection => {
+      const {editor} = mountEditor('body[^a] text\n\n[^a]: the note');
+      editor.update(
+        () => {
+          const footnotes = $getSlot($getRoot(), FOOTNOTES_SLOT);
+          assert($isElementNode(footnotes));
+          if (onSection) {
+            footnotes.select(0, 0);
+          } else {
+            footnotes.selectEnd();
+          }
+          $getRoot().clear().append($createParagraphNode());
+        },
+        {discrete: true},
+      );
+      // The empty body paragraph serializes as leading blank lines.
+      expect(markdownOf(editor).trim()).toBe('[^a]: the note');
+    },
+  );
 
   test('a Markdown pane sync keeps definitions with no body', () => {
     const {editor} = mountEditor('');

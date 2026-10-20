@@ -15,6 +15,7 @@ import type {
   Heading,
   Link,
   List,
+  Nodes,
   PhrasingContent,
   Root,
   RootContent,
@@ -87,6 +88,54 @@ function withOptions<T>(
 }
 
 /**
+ * Collects the breaks that must be written as a backslash hard break, whatever
+ * syntax they were imported with. A plain newline, or a trailing-space marker,
+ * leaves an empty line (which ends the paragraph) when the break comes first in
+ * its paragraph or next to another break, and the leading spaces are trimmed
+ * away. Links and other inline parents are read through, so a paragraph is
+ * judged as a whole. Breaks with only breaks after them are left alone:
+ * neither form survives at the end of a paragraph, and a hard break there
+ * would read back as a literal backslash. Each node is visited once.
+ */
+function collectHardBreaks(tree: Root): Set<Nodes> {
+  const hard = new Set<Nodes>();
+  const visit = (node: Nodes): void => {
+    const leaves: Nodes[] = [];
+    const flatten = (parent: Nodes): void => {
+      if ('children' in parent) {
+        for (const child of parent.children as Nodes[]) {
+          if (
+            /^(?:delete|emphasis|link|linkReference|strong)$/.test(child.type)
+          ) {
+            flatten(child);
+          } else {
+            leaves.push(child);
+            visit(child);
+          }
+        }
+      }
+    };
+    flatten(node);
+    let end = leaves.length;
+    while (end > 0 && leaves[end - 1].type === 'break') {
+      end--;
+    }
+    for (let i = 0; i < end; i++) {
+      if (
+        leaves[i].type === 'break' &&
+        (i === 0 ||
+          leaves[i - 1].type === 'break' ||
+          leaves[i + 1].type === 'break')
+      ) {
+        hard.add(leaves[i]);
+      }
+    }
+  };
+  visit(tree);
+  return hard;
+}
+
+/**
  * A to-markdown extension whose handlers reproduce the literal Markdown syntax
  * captured on import (and stored on the Lexical nodes), by temporarily
  * steering the default handlers with per-node options. Delegating to the
@@ -95,7 +144,9 @@ function withOptions<T>(
  * captured syntax fall straight through to the defaults, so document-level
  * options (and contributed `toMarkdownExtensions`) still apply to them.
  */
-const SYNTAX_TO_MARKDOWN: ToMarkdownExtension = {
+const syntaxToMarkdown = (
+  hardBreaks: ReadonlySet<Nodes>,
+): ToMarkdownExtension => ({
   handlers: {
     break(node: Break, parent, state, info) {
       // Delegate first: the default handler substitutes a space when a real
@@ -103,9 +154,10 @@ const SYNTAX_TO_MARKDOWN: ToMarkdownExtension = {
       // when it chose the hard-break form does the preserved marker apply:
       // trailing-space markers are reproduced, and the empty marker means the
       // break is SOFT (a source newline or editor line break) and serializes
-      // as a plain newline rather than being upgraded to a hard break.
+      // as a plain newline rather than being upgraded to a hard break. A
+      // break in `hardBreaks` keeps the hard form whatever its marker.
       const result = defaultHandlers.break(node, parent, state, info);
-      if (result !== '\\\n') {
+      if (result !== '\\\n' || hardBreaks.has(node)) {
         return result;
       }
       const marker = node.data && node.data.mdastBreak;
@@ -185,7 +237,7 @@ const SYNTAX_TO_MARKDOWN: ToMarkdownExtension = {
       );
     },
   },
-};
+});
 
 /**
  * Collects plain formatted text from middleware output, leaving custom
@@ -606,7 +658,7 @@ export function createMdastExport(compiled: CompiledMdast): {
     // Emphasis/strong delimiters are document-level; the delimiter recorded on
     // import wins, otherwise contributed toMarkdownExtensions (and the '-'
     // bullet baseline) decide. Defaults ride as the FIRST extension so that
-    // contributed extensions can override them; SYNTAX_TO_MARKDOWN runs last
+    // contributed extensions can override them; the syntax extension runs last
     // so its handlers reproduce the per-node syntax captured on import.
     const {emphasis, strong} = $dominantInlineMarkers(root);
     const defaults: ToMarkdownExtension = {bullet: '-'};
@@ -620,7 +672,7 @@ export function createMdastExport(compiled: CompiledMdast): {
       extensions: [
         defaults,
         ...compiled.toMarkdownExtensions,
-        SYNTAX_TO_MARKDOWN,
+        syntaxToMarkdown(collectHardBreaks(tree)),
       ],
     });
     // toMarkdown always appends a trailing newline; drop it so callers get the

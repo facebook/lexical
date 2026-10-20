@@ -886,6 +886,24 @@ describe('Markdown', () => {
       md: 'This is a backslash: \\\\',
     },
     {
+      // Backslash escapes don't apply inside a code span, even at the start of a node (#9395)
+      html: '<p><code spellcheck="false" style="white-space: pre-wrap;"><span>C:\\$MFT</span></code></p>',
+      md: '`C:\\$MFT`',
+    },
+    {
+      html: '<p><code spellcheck="false" style="white-space: pre-wrap;"><span>C:\\$MFT</span></code><span style="white-space: pre-wrap;"> and more</span></p>',
+      md: '`C:\\$MFT` and more',
+    },
+    {
+      // Escapes at the start of a node are only unescaped once (#9395)
+      html: '<p><b><strong style="white-space: pre-wrap;">a\\*b</strong></b></p>',
+      md: '**a\\\\\\*b**',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">a\\* </span><b><strong style="white-space: pre-wrap;">b</strong></b></p>',
+      md: 'a\\\\\\* **b**',
+    },
+    {
       html: '<p><span style="white-space: pre-wrap;">This is an asterisk: *</span></p>',
       md: 'This is an asterisk: \\*',
     },

@@ -81,11 +81,11 @@ export function $importFoundTextMatchTransformer(
   transformer: TextMatchTransformer,
   match: RegExpMatchArray,
 ): {
+  // The text the transformer was given, which it may have left in place.
+  matchedNode: TextNode;
   transformedNode?: TextNode;
   nodeBefore: TextNode | undefined; // If split
   nodeAfter: TextNode | undefined; // If split
-  // The text the transformer was given, which it may have left in place.
-  matchedNode?: TextNode;
 } | null {
   let transformedNode, nodeAfter, nodeBefore;
 

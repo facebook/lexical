@@ -161,7 +161,7 @@ describe('named-slots: selection containment (slot isolation)', () => {
     );
   });
 
-  test('anchor in the body, focus dragged into a slot, pushes focus past the host', () => {
+  test('anchor in the body, focus dragged into a slot of the host containing it, clamps focus to the start of the host', () => {
     using editor = buildSlotEditor();
 
     const titleTextDOM = domTextNodeOf(editor, keys.titleText);
@@ -185,10 +185,11 @@ describe('named-slots: selection containment (slot isolation)', () => {
         // anchor stays in the body (outside any slot)
         const anchorNode = selection.anchor.getNode();
         expect($slotFrameKeyOf(anchorNode)).toBe(null);
-        // focus was pushed out of the slot; it is no longer inside the slot
-        const focusNode = selection.focus.getNode();
-        expect($slotFrameKeyOf(focusNode)).toBe(null);
-        expect(selection.focus.key).not.toBe(keys.titleText);
+        // focus left the slot for the start of the host's own children, so
+        // the selection does not reach outside the host
+        expect(selection.focus.key).toBe(keys.host);
+        expect(selection.focus.offset).toBe(0);
+        expect(selection.getTextContent()).toBe('B');
       },
       {discrete: true},
     );
@@ -248,7 +249,7 @@ describe('named-slots: selection containment (slot isolation)', () => {
     );
   });
 
-  test('a programmatic selection with anchor in the body, focus in a slot, pushes focus past the host', () => {
+  test('a programmatic selection with anchor in the body, focus in a slot of the host containing it, clamps focus to the start of the host', () => {
     using editor = buildSlotEditor();
 
     editor.update(
@@ -262,9 +263,9 @@ describe('named-slots: selection containment (slot isolation)', () => {
         const active = $getSelection();
         assert($isRangeSelection(active));
         expect($slotFrameKeyOf(active.anchor.getNode())).toBe(null);
-        // focus pushed out of the slot
-        expect($slotFrameKeyOf(active.focus.getNode())).toBe(null);
-        expect(active.focus.key).not.toBe(keys.titleText);
+        expect(active.focus.key).toBe(keys.host);
+        expect(active.focus.offset).toBe(0);
+        expect(active.getTextContent()).toBe('B');
       },
       {discrete: true},
     );

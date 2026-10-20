@@ -112,13 +112,13 @@ import {createRefCountedRegistry} from './LexicalRefCountedRegistry';
 import {
   $createPoint,
   $createRangeSelectionFromDom,
+  $getPointSlotFrame,
   $internalCreateRangeSelection,
   $internalRefreshSelectionFormatAndStyle,
   $internalResolveSelectionPoint,
-  type PointType,
+  $isSameFrame,
   type RangeSelection,
 } from './LexicalSelection';
-import {$getSlotFrame} from './LexicalSlot';
 import {
   $dispatchSelectionChangeCommand,
   getActiveEditor,
@@ -1247,11 +1247,6 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
   );
 }
 
-function $getSlotFrameKey(point: PointType): NodeKey | null {
-  const frame = $getSlotFrame(point.getNode());
-  return frame && frame.getKey();
-}
-
 function $handleBeforeInput(event: InputEvent): boolean {
   const inputType = event.inputType;
   const targetRange = getTargetRange(event);
@@ -1428,6 +1423,8 @@ function $handleBeforeInput(event: InputEvent): boolean {
     );
   }
 
+  // Set when a deletion's target range is ignored and measured in the model.
+  let targetRangeIgnored = false;
   if (
     (!selection.dirty || inputState.unprocessedBeforeInputData !== null) &&
     selection.isCollapsed() &&
@@ -1435,25 +1432,26 @@ function $handleBeforeInput(event: InputEvent): boolean {
     targetRange !== null
   ) {
     const {key, offset, type} = selection.anchor;
-    const frame = $getSlotFrameKey(selection.anchor);
+    const frame = $getPointSlotFrame(selection.anchor);
     selection.applyDOMRange(targetRange);
     // A deletion's range must stay in the caret's slot and not reach past the
     // caret on the side it keeps. At the end of a decorator-host slot
     // Chromium's forward delete covers the line before the caret instead
     // (#9363); measure that in the model.
     const isForward = inputType.endsWith('Forward');
-    if (isForward || inputType.endsWith('Backward')) {
+    if (editor._slotsUsed && (isForward || inputType.endsWith('Backward'))) {
       const caret = $createPoint(key, offset, type);
       const {anchor, focus} = selection;
       if (
-        $getSlotFrameKey(anchor) !== frame ||
-        $getSlotFrameKey(focus) !== frame ||
+        !$isSameFrame($getPointSlotFrame(anchor), frame) ||
+        !$isSameFrame($getPointSlotFrame(focus), frame) ||
         (isForward
           ? anchor.isBefore(caret) || focus.isBefore(caret)
           : caret.isBefore(anchor) || caret.isBefore(focus))
       ) {
         anchor.set(key, offset, type);
         focus.set(key, offset, type);
+        targetRangeIgnored = true;
       }
     }
   }
@@ -1582,8 +1580,7 @@ function $handleBeforeInput(event: InputEvent): boolean {
       break;
     }
 
-    case 'deleteContent':
-    case 'deleteContentForward': {
+    case 'deleteContent': {
       dispatchCommand(editor, DELETE_CHARACTER_COMMAND, false);
       break;
     }
@@ -1604,9 +1601,18 @@ function $handleBeforeInput(event: InputEvent): boolean {
       break;
     }
 
+    case 'deleteContentForward':
     case 'deleteHardLineForward':
     case 'deleteSoftLineForward': {
-      dispatchCommand(editor, DELETE_LINE_COMMAND, false);
+      // A forward character deletion whose range was ignored is measured as
+      // a character, not as the rest of the line.
+      dispatchCommand(
+        editor,
+        targetRangeIgnored && inputType === 'deleteContentForward'
+          ? DELETE_CHARACTER_COMMAND
+          : DELETE_LINE_COMMAND,
+        false,
+      );
       break;
     }
 

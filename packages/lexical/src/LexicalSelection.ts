@@ -2056,8 +2056,6 @@ function $deleteTextByGranularity(
 ): void {
   const wasCollapsed = selection.isCollapsed();
   const {anchor, focus} = selection;
-  // Set when the deletion stops at a slot boundary, which it never crosses.
-  let stoppedAtSlot = false;
   if (wasCollapsed) {
     if (
       granularity === 'word' &&
@@ -2065,11 +2063,7 @@ function $deleteTextByGranularity(
     ) {
       return;
     }
-    stoppedAtSlot = $extendSelectionForDeletion(
-      selection,
-      isBackward,
-      granularity,
-    );
+    $extendSelectionForDeletion(selection, isBackward, granularity);
     if (granularity === 'lineboundary') {
       $stopLineDeletionAtLineBreak(selection);
     }
@@ -2084,9 +2078,7 @@ function $deleteTextByGranularity(
     focus.set(anchor.key, anchor.offset, anchor.type);
   }
   if (selection.isCollapsed()) {
-    if (!stoppedAtSlot) {
-      selection.deleteCharacter(isBackward);
-    }
+    selection.deleteCharacter(isBackward);
   } else {
     // An existing whole-document selection deletes its blocks (#5835).
     // Extending a collapsed caret over a word or line keeps that block.
@@ -2487,14 +2479,12 @@ function $shrinkSelectionToRoot(
  * `Selection.modify` (headless environments can polyfill it), or an
  * unresolvable anchor — the selection is left collapsed, so the deletion
  * becomes a no-op for that keystroke.
- *
- * Returns true when the focus was stopped at a slot boundary.
  */
 function $extendSelectionForDeletion(
   selection: RangeSelection,
   isBackward: boolean,
   granularity: 'character' | 'word' | 'lineboundary',
-): boolean {
+): void {
   // Decorator/block handling, resolved in the model exactly as modify() does.
   if (
     $modifySelectionAroundDecoratorsAndBlocks(
@@ -2504,12 +2494,12 @@ function $extendSelectionForDeletion(
       granularity,
     )
   ) {
-    return false;
+    return;
   }
   const editor = getActiveEditor();
   const domSelection = getDOMSelection(getWindow(editor));
   if (!domSelection || typeof domSelection.modify !== 'function') {
-    return false;
+    return;
   }
   const blockCursorElement = editor._blockCursorElement;
   const rootElement = editor._rootElement;
@@ -2536,7 +2526,7 @@ function $extendSelectionForDeletion(
   const anchorNode = anchor.getNode();
   const anchorDOM = $resolvePointDOM(anchor);
   if (anchorDOM === null) {
-    return false;
+    return;
   }
   const anchorOffset = anchor.offset;
   // Measure from the FOCUS: the decorator/block pre-pass above may have
@@ -2549,7 +2539,7 @@ function $extendSelectionForDeletion(
   const focus = selection.focus;
   const focusDOM = wasCollapsed ? anchorDOM : $resolvePointDOM(focus);
   if (focusDOM === null) {
-    return false;
+    return;
   }
   const focusOffset = focus.offset;
   // Sync a COLLAPSED DOM caret at the measurement origin (base === extent),
@@ -2570,7 +2560,7 @@ function $extendSelectionForDeletion(
     rootElement,
   );
   if (domSelection.rangeCount === 0) {
-    return false;
+    return;
   }
   // Inside a DOM shadow root getRangeAt(0) is retargeted to the host; read the
   // composed StaticRange (real nodes) where available. After a 'move' the DOM
@@ -2621,7 +2611,7 @@ function $extendSelectionForDeletion(
         const sibOffset = isBackward ? sibling.getTextContentSize() - 1 : 1;
         selection.focus.set(sibling.__key, sibOffset, 'text');
         selection.dirty = true;
-        return false;
+        return;
       }
     }
   }
@@ -2647,7 +2637,7 @@ function $extendSelectionForDeletion(
         selection.focus.set(anchor.key, clampedOffset, 'text');
         selection.dirty = true;
       }
-      return false;
+      return;
     }
   }
   // A slot boundary lives only in the model, so the native move can cross it.
@@ -2658,14 +2648,15 @@ function $extendSelectionForDeletion(
   const anchorFrame = $getSlotFrame(anchorNode);
   const landedFrame = landedNode && $getSlotFrame(landedNode);
   if (landedNode !== null && !$isSameFrame(landedFrame, anchorFrame)) {
-    $stopDeletionAtSlotBoundary(
+    $setPointAtSlotBoundary(
       selection.focus,
       anchorNode,
       anchorFrame,
       landedFrame,
-      isBackward,
+      !isBackward,
+      true,
     );
-    return true;
+    return;
   }
   // General path: reconstruct, in document order, the [original .. landed]
   // range a native extend would have produced. applyDOMRange only reads these
@@ -2690,49 +2681,55 @@ function $extendSelectionForDeletion(
     // anchor must stay at the original caret, so restore that orientation.
     $swapPoints(selection);
   }
-  return false;
 }
 
-// Sets a deletion's focus, which a native move carried from the anchor's
-// slot frame into landedFrame, to the slot boundary on the anchor's side:
-// beside the host that owns landedFrame, at the edge of its children when it
-// contains the anchor, or at the edge of the anchor's own slot. The focus
-// descends toward the anchor, as applyDOMRange would resolve it, so line
-// deletion finds it in the anchor's block; it never enters a shadow root.
-function $stopDeletionAtSlotBoundary(
-  focus: PointType,
-  anchorNode: LexicalNode,
+// Sets point, the focus of a selection or deletion whose anchor is in
+// anchorFrame and whose focus is in focusFrame, to the slot boundary in the
+// anchor's frame: the edge of the anchor's slot when the focus is outside it,
+// the edge of the children of the host that owns focusFrame when that host is
+// the frame's root or contains the anchor, and otherwise beside the host,
+// past it for a selection (which keeps the host whole) and before it for a
+// deletion (which stops at it). A deletion's focus then descends toward the
+// anchor, as applyDOMRange would resolve it, so line deletion finds it in the
+// anchor's block. Returns false when there is no boundary to clamp to.
+function $setPointAtSlotBoundary(
+  point: PointType,
+  anchorNode: LexicalNode | null,
   anchorFrame: LexicalNode | null,
-  landedFrame: LexicalNode | null,
-  isBackward: boolean,
-): void {
-  const host = landedFrame && $getSlotHostInFrame(landedFrame, anchorFrame);
+  focusFrame: LexicalNode | null,
+  focusAfterAnchor: boolean,
+  isDeletion: boolean,
+): boolean {
+  const host = focusFrame && $getSlotHostInFrame(focusFrame, anchorFrame);
   const hostParent = host && host.getParent();
+  let parent: ElementNode;
+  let offset: number;
   if (
     host === null ||
     hostParent === null ||
-    host.is(anchorNode) ||
-    host.isParentOf(anchorNode)
+    (anchorNode !== null &&
+      (host.is(anchorNode) || host.isParentOf(anchorNode)))
   ) {
-    const edgeFrame = host || anchorFrame;
-    if ($isElementNode(edgeFrame)) {
-      $setDeletionFocus(
-        focus,
-        edgeFrame,
-        isBackward ? 0 : edgeFrame.getChildrenSize(),
-        isBackward,
-      );
-    } else if (edgeFrame !== null) {
-      $setPointToFrameEdge(focus, edgeFrame, !isBackward);
+    const edge = host || anchorFrame;
+    if (!$isElementNode(edge)) {
+      if (edge !== null) {
+        $setPointToFrameEdge(point, edge, focusAfterAnchor);
+      }
+      return edge !== null;
     }
+    parent = edge;
+    offset = focusAfterAnchor ? edge.getChildrenSize() : 0;
   } else {
-    $setDeletionFocus(
-      focus,
-      hostParent,
-      host.getIndexWithinParent() + (isBackward ? 1 : 0),
-      isBackward,
-    );
+    parent = hostParent;
+    offset =
+      host.getIndexWithinParent() + (focusAfterAnchor !== isDeletion ? 1 : 0);
   }
+  if (isDeletion) {
+    $setDeletionFocus(point, parent, offset, !focusAfterAnchor);
+  } else {
+    point.set(parent.getKey(), offset, 'element');
+  }
+  return true;
 }
 
 // Sets focus to offset in parent, descending into the child on the anchor's
@@ -3250,7 +3247,7 @@ function $normalizeSelectionPointsForBoundaries(
 // point is not inside any slot. Walking via getParent() naturally stops at a
 // slot root because a slotted node's __parent is null. Non-slot trees have
 // __slotHost === null everywhere, so this always returns null there.
-function $getPointSlotFrame(point: PointType): LexicalNode | null {
+export function $getPointSlotFrame(point: PointType): LexicalNode | null {
   const node = $getNodeByKey(point.key);
   return node === null ? null : $getSlotFrame(node);
 }
@@ -3259,7 +3256,7 @@ function $getPointSlotFrame(point: PointType): LexicalNode | null {
 // boundary. When the anchor and focus are in different frames, clamp the
 // focus into the anchor's frame (anchor-frame rule), keeping
 // keyboard/mouse/programmatic results consistent. The direction is resolved
-// lazily (resolveFocusAfterAnchor), only on an actual straddle, because the
+// (resolveFocusAfterAnchor) only on an actual straddle, because the
 // DOM-read and programmatic callers determine it differently (DOM order vs
 // the default slots-before-children rendering order). Returns true when it mutated the focus point. No-op
 // (returns false) when both points share a frame — including the all-null
@@ -3271,42 +3268,23 @@ function $clampSelectionPointsToSlotFrame(
 ): boolean {
   const anchorFrame = $getPointSlotFrame(anchorPoint);
   const focusFrame = $getPointSlotFrame(focusPoint);
-  if ($isSameFrame(anchorFrame, focusFrame)) {
-    return false;
-  }
-  // The host in the anchor's frame that owns the focus's (possibly nested)
-  // slot, or null when the focus is outside the anchor's slot.
-  const host = focusFrame && $getSlotHostInFrame(focusFrame, anchorFrame);
-  let edgeFrame: LexicalNode;
-  if (host === null) {
-    // The focus is outside the anchor's slot: go to that slot's edge.
-    if (anchorFrame === null) {
-      return false;
-    }
-    edgeFrame = anchorFrame;
-  } else if ($isRootNode(host) || host.is(anchorFrame)) {
-    // The host is the frame's own root (the RootNode, or the anchor's slot
-    // value), with no parent to step past: go to the edge of its children.
-    edgeFrame = host;
-  } else {
-    // Push the focus past the host so it is wholly contained.
-    const hostParent = host.getParent();
-    if (hostParent === null) {
-      return false;
-    }
-    const hostIndex = host.getIndexWithinParent();
-    focusPoint.set(
-      hostParent.getKey(),
-      resolveFocusAfterAnchor() ? hostIndex + 1 : hostIndex,
-      'element',
-    );
-    return true;
-  }
-  $setPointToFrameEdge(focusPoint, edgeFrame, resolveFocusAfterAnchor());
-  return true;
+  return (
+    !$isSameFrame(anchorFrame, focusFrame) &&
+    $setPointAtSlotBoundary(
+      focusPoint,
+      $getNodeByKey(anchorPoint.key),
+      anchorFrame,
+      focusFrame,
+      resolveFocusAfterAnchor(),
+      false,
+    )
+  );
 }
 
-function $isSameFrame(a: LexicalNode | null, b: LexicalNode | null): boolean {
+export function $isSameFrame(
+  a: LexicalNode | null,
+  b: LexicalNode | null,
+): boolean {
   return a === null ? b === null : a.is(b);
 }
 

@@ -605,32 +605,42 @@ describe.each([false, true])('Safari composition (richText=%s)', richText => {
     },
   );
 
-  test('cancelling a formatted target does not add an undo step', async () => {
-    const t = mount(richText, () => $paragraph('abc'), {history: true});
-    t.editor.update(
-      () => {
-        const selection = $getSelection();
-        assert($isRangeSelection(selection));
-        selection.insertText('X');
-      },
-      {discrete: true, tag: HISTORY_PUSH_TAG},
-    );
-    t.editor.update(
-      () => {
-        const selection = $getRoot().getAllTextNodes()[0].select(1, 1);
-        selection.format = 1;
-      },
-      {discrete: true},
-    );
-    t.composition('compositionstart');
-    await t.flush();
-    t.composition('compositionend');
-    await t.flush();
-    t.expectText('abcX');
-    t.editor.dispatchCommand(UNDO_COMMAND, undefined);
-    await t.flush();
-    t.expectText('abc');
-  });
+  test.each(['', '語'])(
+    'cancelling a formatted target with native text %j has the right undo boundary',
+    async nativeText => {
+      const t = mount(richText, () => $paragraph('abc'), {history: true});
+      const serialize = vi.spyOn(
+        Object.getPrototypeOf(t.editor.getEditorState()),
+        'toJSON',
+      );
+      onTestFinished(() => serialize.mockRestore());
+      t.editor.update(
+        () => {
+          const selection = $getSelection();
+          assert($isRangeSelection(selection));
+          selection.insertText('X');
+        },
+        {discrete: true, tag: HISTORY_PUSH_TAG},
+      );
+      t.editor.update(
+        () => {
+          const selection = $getRoot().getAllTextNodes()[0].select(1, 1);
+          selection.format = 1;
+        },
+        {discrete: true},
+      );
+      t.composition('compositionstart');
+      await t.flush();
+      if (nativeText) t.setDOMText(nativeText, nativeText.length);
+      t.composition('compositionend');
+      await t.flush();
+      t.expectText(nativeText ? 'a語bcX' : 'abcX');
+      expect(serialize).not.toHaveBeenCalled();
+      t.editor.dispatchCommand(UNDO_COMMAND, undefined);
+      await t.flush();
+      t.expectText(nativeText ? 'abcX' : 'abc');
+    },
+  );
 
   test('cancelling a composition over selected text keeps its deletion undoable', async () => {
     const t = mount(richText, () => $paragraph('abcd', 1, 3), {history: true});

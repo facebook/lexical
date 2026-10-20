@@ -315,27 +315,12 @@ function createMergeActionGetter(
             editor.isComposing(),
           );
 
-    let isUnchangedComposition = false;
     const mergeAction = (() => {
       const isSameEditor =
         currentHistoryEntry === null || currentHistoryEntry.editor === editor;
       const shouldPushHistory = tags.has(HISTORY_PUSH_TAG);
       const shouldMergeHistory =
         !shouldPushHistory && isSameEditor && tags.has(HISTORY_MERGE_TAG);
-
-      if (
-        isCompositionEnd &&
-        compositionStartState !== null &&
-        isSameEditor &&
-        !shouldPushHistory &&
-        // Ignore selection-only changes, but preserve document formatting,
-        // structure, custom-node properties and NodeState in the comparison.
-        JSON.stringify(compositionStartState.toJSON()) ===
-          JSON.stringify(nextEditorState.toJSON())
-      ) {
-        isUnchangedComposition = true;
-        return HISTORY_MERGE;
-      }
 
       if (shouldMergeHistory) {
         return HISTORY_MERGE;
@@ -389,10 +374,8 @@ function createMergeActionGetter(
     if (isCompositionEnd) {
       compositionStartState = null;
     }
-    if (!isUnchangedComposition) {
-      prevChangeTime = changeTime;
-      prevChangeType = changeType;
-    }
+    prevChangeTime = changeTime;
+    prevChangeType = changeType;
 
     return mergeAction;
   };

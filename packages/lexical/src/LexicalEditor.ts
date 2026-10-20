@@ -275,6 +275,8 @@ export interface CollapsedSelectionFormat {
 /** @internal */
 export interface InputState {
   compositionPhase: 'idle' | 'composing' | 'ending-firefox';
+  /** Empty-target preparation state; document updates invalidate it. */
+  compositionPreparationState: EditorState | null;
   /**
    * The segmented node that insertText switched to normal mode to compose
    * into, which becomes a plain TextNode when the composition ends. No other
@@ -342,6 +344,7 @@ export function createInputState(): InputState {
     },
     composedSegmentedKey: null,
     compositionPhase: 'idle',
+    compositionPreparationState: null,
     hadOrphanedCompositionEvents: false,
     handledSelectionCommandTimeoutId: null,
     isInsertLineBreak: false,

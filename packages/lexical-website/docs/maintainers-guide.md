@@ -559,18 +559,24 @@ to `0.52.1-nightly.20261019.0` on npm. That version is also what
 rewritten to the same commit's pkg.pr.new URLs, so `@lexical/react` from a
 preview depends on `lexical` from that preview, not on an npm release.
 
-The bot's comment lists npm and yarn commands, which dedupe those dependencies
-by name and version, so `@9372` or `@main` URLs are fine. pnpm keys packages by
-URL instead: install with the long commit URLs that the packages use for each
-other, or pnpm adds a second copy of `lexical`. pnpm 11+ also refuses URL
-dependencies of URL dependencies unless `blockExoticSubdeps` is off. Each run's
-job summary lists these commands:
+The bot's comment lists npm commands, and npm dedupes those dependencies by
+name and version, so `@9372` or `@main` URLs are fine. pnpm and yarn key URL
+dependencies by URL instead: install with the long commit URLs that the
+packages use for each other, or you get more than one copy of `lexical`. pnpm
+11+ also refuses URL dependencies of URL dependencies unless
+`blockExoticSubdeps` is off. Each run's job summary lists these commands:
 
 ```sh
 pnpm add --config.block-exotic-subdeps=false \
-  https://pkg.pr.new/facebook/lexical/lexical@4282a68 \
-  https://pkg.pr.new/facebook/lexical/@lexical/react@4282a68
+  lexical@https://pkg.pr.new/facebook/lexical/lexical@4282a68 \
+  @lexical/react@https://pkg.pr.new/facebook/lexical/@lexical/react@4282a68
+yarn add \
+  lexical@https://pkg.pr.new/facebook/lexical/lexical@4282a68 \
+  @lexical/react@https://pkg.pr.new/facebook/lexical/@lexical/react@4282a68
 ```
+
+On a cold cache, yarn 1 can fail with "the file appears to be corrupt" while
+it downloads the same URL for several packages at once. Run it again.
 
 The workflow requires the [pkg.pr.new GitHub App](https://github.com/apps/pkg-pr-new)
 to be installed on the repository.

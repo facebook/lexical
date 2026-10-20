@@ -2676,7 +2676,6 @@ function $extendSelectionForDeletion(
       landedFrame,
       isBackward,
     );
-    selection.dirty = true;
     return;
   }
   // General path: reconstruct, in document order, the [original .. landed]

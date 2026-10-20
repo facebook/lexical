@@ -21,10 +21,16 @@ import {
   $isTextNode,
   $setSlot,
   ElementNode,
+  IS_APPLE,
   type LexicalEditor,
 } from 'lexical';
 import {assert, describe, expect, onTestFinished, test} from 'vitest';
 import {userEvent} from 'vitest/browser';
+
+// Word deletion is Alt+key on Apple platforms and Ctrl+key elsewhere.
+const WORD = IS_APPLE ? 'Alt' : 'Control';
+const WORD_BACKSPACE = `{${WORD}>}{Backspace}{/${WORD}}`;
+const WORD_DELETE = `{${WORD}>}{Delete}{/${WORD}}`;
 
 class TestShadowRootNode extends ElementNode {
   $config() {
@@ -175,35 +181,25 @@ describe('word deletion at a slot boundary', () => {
     ['slot-only host', 'note'],
     ['slot-only host', 'sibling'],
   ] as const)(
-    '%s: Ctrl+Backspace at the start of the %s deletes nothing across the slot',
+    '%s: word Backspace at the start of the %s deletes nothing across the slot',
     async (layout, region) => {
       const {original, result} = await pressAt(
         layout,
         region,
         0,
-        '{Control>}{Backspace}{/Control}',
+        WORD_BACKSPACE,
       );
       expect(result).toEqual(original);
     },
   );
 
-  test('Ctrl+Backspace in a word that starts in an inline slot deletes up to the slot', async () => {
-    const {result} = await pressAt(
-      'inline slot',
-      'sibling',
-      2,
-      '{Control>}{Backspace}{/Control}',
-    );
+  test('word Backspace in a word that starts in an inline slot deletes up to the slot', async () => {
+    const {result} = await pressAt('inline slot', 'sibling', 2, WORD_BACKSPACE);
     expect(result).toEqual({note: 'foo', sibling: 'r'});
   });
 
-  test('Ctrl+Delete in an inline slot word that continues past the slot deletes to the slot end', async () => {
-    const {result} = await pressAt(
-      'inline slot',
-      'note',
-      1,
-      '{Control>}{Delete}{/Control}',
-    );
+  test('word Delete in an inline slot word that continues past the slot deletes to the slot end', async () => {
+    const {result} = await pressAt('inline slot', 'note', 1, WORD_DELETE);
     expect(result).toEqual({note: 'f', sibling: 'bar'});
   });
 });

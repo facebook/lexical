@@ -60,4 +60,36 @@ jobs:
       # --pnpm packs with pnpm, which resolves `workspace:` and `catalog:`
       # specifiers the way `pnpm publish` does for npm. Private packages
       # (playground, website, devtools, ...) are skipped by pkg-pr-new.
-      - run: pnpm exec pkg-pr-new publish --pnpm --no-template --packageManager=npm,pnpm,yarn './packages/*'
+      #
+      # The PR comment lists npm and yarn commands only. Dependencies between
+      # Lexical packages are rewritten to the long commit URL
+      # (pkg.pr.new/facebook/lexical/<pkg>@<sha>), and npm and yarn dedupe a
+      # directly installed `lexical@<pr>` against it by name and version. pnpm
+      # keys packages by URL instead, so the comment's pnpm commands install a
+      # second copy of `lexical` (pnpm 10) or are refused because of
+      # blockExoticSubdeps (pnpm 11+). The job summary lists pnpm commands
+      # that use the same long URLs.
+      - id: publish
+        run: pnpm exec pkg-pr-new publish --pnpm --no-template --packageManager=npm,yarn --json pkg-pr-new.json './packages/*'
+      - name: Write pnpm install commands to the job summary
+        run: |
+          {
+            echo '### Install with pnpm'
+            echo
+            echo 'pnpm needs the long commit URLs below, the same ones Lexical packages use for each other, so that it installs one copy of `lexical`. pnpm 11+ also needs `blockExoticSubdeps: false` in `pnpm-workspace.yaml` (or `--config.block-exotic-subdeps=false`).'
+            echo
+            echo '```sh'
+            echo "pnpm add --config.block-exotic-subdeps=false $BASE/lexical@$SHA $BASE/@lexical/react@$SHA"
+            echo '```'
+            echo
+            echo '<details><summary>All packages</summary>'
+            echo
+            echo '```'
+            jq -r --arg base "$BASE" --arg sha "$SHA" '.packages[].name | "\($base)/\(.)@\($sha)"' pkg-pr-new.json
+            echo '```'
+            echo
+            echo '</details>'
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          BASE: https://pkg.pr.new/${{ github.repository }}
+          SHA: ${{ steps.publish.outputs.sha }}

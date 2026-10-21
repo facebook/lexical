@@ -1678,6 +1678,63 @@ describe('Markdown', () => {
     });
   });
 
+  describe('formatted whitespace before a link (#9403)', () => {
+    type Char = [char: string, format: number, url: string | null];
+
+    function importMarkdown(markdown: string): LexicalEditor {
+      const editor = createTestEditor();
+      editor.update(
+        () => {
+          $convertFromMarkdownString(markdown, TRANSFORMERS);
+        },
+        {discrete: true},
+      );
+      return editor;
+    }
+
+    /**
+     * The format and link URL of every non-whitespace character. Whitespace
+     * is left out because an exported tag cannot wrap it (CommonMark flanking
+     * rules), so a formatted space legitimately comes back unformatted.
+     */
+    function $chars(): Char[] {
+      const chars: Char[] = [];
+      for (const node of $getRoot().getAllTextNodes()) {
+        const parent = node.getParent();
+        const url = $isLinkNode(parent) ? parent.getURL() : null;
+        for (const char of node.getTextContent()) {
+          if (char.trim() !== '') {
+            chars.push([char, node.getFormat(), url]);
+          }
+        }
+      }
+      return chars;
+    }
+
+    const $text = () => $getRoot().getTextContent();
+    const $exportMarkdown = () => $convertToMarkdownString(TRANSFORMERS);
+
+    it.each([
+      '**_a_ [b](u)**',
+      '**_a_ [b](u) c**',
+      '*a **b** [c](u)*',
+      '**a [b](u)**',
+    ])('round-trips "%s" with a stable export', original => {
+      const first = importMarkdown(original);
+      const chars = first.read($chars);
+      // Guard against a vacuous comparison: every delimiter was consumed and
+      // the link was parsed.
+      expect(chars.some(([char]) => char === '*' || char === '_')).toBe(false);
+      expect(chars.some(([, , url]) => url !== null)).toBe(true);
+
+      const exported = first.read($exportMarkdown);
+      const second = importMarkdown(exported);
+      expect(second.read($chars)).toEqual(chars);
+      expect(second.read($text)).toBe(first.read($text));
+      expect(second.read($exportMarkdown)).toBe(exported);
+    });
+  });
+
   describe('list marker', () => {
     it('should remember marker used on import', () => {
       const editor = createTestEditor({

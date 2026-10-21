@@ -614,9 +614,11 @@ function exportTextFormat(
     break;
   }
   // If the node is entirely whitespace, we don't apply opening/closing tags around it.
-  // However, it must still output closing tags from previous nodes.
+  // However, it must still output the closing tags: those left open by
+  // previous nodes, and those that close here because the next sibling is not
+  // formatted (e.g. a link), which would otherwise be dropped from the output.
   if (isWhitespaceOnly && !node.hasFormat('code')) {
-    return closingTagsBefore + output;
+    return closingTagsBefore + closingTagsAfter + output;
   }
 
   // Flanking Compliance: Notice how openingTags and closingTagsAfter are placed INSIDE the whitespace boundaries!

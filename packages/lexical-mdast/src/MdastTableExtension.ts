@@ -265,13 +265,15 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
       return [
         {
           ...raw,
-          // A line end next to a tag goes, and one elsewhere is a space.
+          // A line end is whitespace HTML collapses with the spaces around
+          // it, but one beside embedded Markdown (a `<template>` holding its
+          // place) only sets that apart.
           value: raw.value
             .replace(
-              /(>?)[ \t]*(?:\r?\n|\r)[ \t]*(<?)/g,
-              (_, end: string, start: string) =>
-                end || start ? end + start : ' ',
+              /[ \t]*(?:\r?\n|\r)[ \t]*(?=<template data-mdast-child=)|(<\/template>)[ \t]*(?:\r?\n|\r)[ \t]*/g,
+              '$1',
             )
+            .replace(/[ \t]*(?:\r?\n|\r)[ \t]*/g, ' ')
             .replace(/\|/g, '&#124;'),
           // `MdastHtmlExtension`'s raw HTML with Markdown embedded in it:
           // each embedded block is one line too.

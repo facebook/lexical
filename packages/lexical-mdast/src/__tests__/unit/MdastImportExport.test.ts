@@ -1601,6 +1601,46 @@ describe('@lexical/mdast import/export', () => {
       );
     });
 
+    it('writes a line end in raw HTML in a cell as a space', () => {
+      using editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            MdastCommonMarkExtension,
+            MdastTableExtension,
+            configExtension(MdastExtension, {
+              exportRules: [
+                {
+                  $export: () => ({
+                    type: 'html',
+                    value: 'a\n<b>b</b>  \n  <i>c</i>',
+                  }),
+                  type: HorizontalRuleNode,
+                },
+              ],
+            }),
+          ],
+          name: '[root]',
+        }),
+      );
+      editor.update(
+        () => {
+          $convertFromMarkdownString('| a |\n| - |\n| b |');
+          $assertNodeType(
+            $assertNodeType($getRoot().getFirstChild(), $isTableNode)
+              .getLastChildOrThrow<ElementNode>()
+              .getFirstChild(),
+            $isElementNode,
+          )
+            .clear()
+            .append($createHorizontalRuleNode());
+        },
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertToMarkdownString())).toContain(
+        '| a <b>b</b> <i>c</i> |',
+      );
+    });
+
     it('keeps an inline directive a block exports to in a cell', () => {
       using editor = buildEditorFromExtensions(
         defineExtension({

@@ -380,13 +380,16 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
           value: math.value
             .replace(/(^|[^\\])((?:\\\\)*)%.*/gm, '$1$2')
             .replace(/\s*[\r\n]\s*/g, ' ')
-            .replace(/\\(?:text\w*|mbox)\{[^{}]*\}|\\[^]|\|/g, found =>
-              found === '|'
-                ? '\\vert '
-                : found === '\\|'
-                  ? '\\Vert '
-                  : // In text, a pipe is `\textbar`.
-                    found.replace(/\|/g, '\\textbar{}'),
+            .replace(
+              // Text groups, with two levels of groups in them.
+              /\\(?:text\w*|mbox)\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}|\\[^]|\|/g,
+              found =>
+                found === '|'
+                  ? '\\vert '
+                  : found === '\\|'
+                    ? '\\Vert '
+                    : // In text, a pipe is `\textbar`.
+                      found.replace(/\|/g, '\\textbar{}'),
             ),
         } as unknown as PhrasingContent,
       ];
@@ -404,6 +407,74 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
     }
     return undefined;
   });
+}
+
+// The tokens of a JavaScript expression, in its code and in a template's
+// text, and a regular expression literal, which can start where a division
+// can't.
+const SCRIPT_TOKEN =
+  /\\(?:\r\n|[^])|(["'])(?:\\(?:\r\n|[^])|(?!\1)[^\\])*\1|\/\*[^]*?\*\/|\/\/.*|\s+|[\w$]+|[^]/y;
+const TEMPLATE_TOKEN = /\\(?:\r\n|[^])|\$\{|\r\n?|\n|[^\\$`\r\n]+|[^]/y;
+const REGEX_TOKEN =
+  /\/(?![*/])(?:\\.|\[(?:\\.|[^\]\\\r\n])*\]|[^/\\\r\n[])+\/\w*/y;
+
+/**
+ * A JavaScript expression on one line, as a cell needs: line ends between
+ * tokens become spaces, line comments are dropped, a line continuation is
+ * dropped, and a template's line ends become `${'\n'}`, which keeps its
+ * value, raw or not. Literals are otherwise kept as they are.
+ */
+function scriptLine(code: string): string {
+  // The brace depth of each open template substitution, the innermost
+  // last, or -1 for the text of a template.
+  const depths = [0];
+  let line = '';
+  let regex = true;
+  for (let i = 0, found: string; i < code.length; i += found.length) {
+    const depth = depths[depths.length - 1];
+    REGEX_TOKEN.lastIndex = i;
+    const token =
+      depth < 0
+        ? TEMPLATE_TOKEN
+        : regex && REGEX_TOKEN.test(code)
+          ? REGEX_TOKEN
+          : SCRIPT_TOKEN;
+    token.lastIndex = i;
+    found = token.exec(code)![0];
+    let write = found;
+    if (depth < 0) {
+      if (found === '`') {
+        depths.pop();
+        regex = false;
+      } else if (found === '${') {
+        depths.push(0);
+        regex = true;
+      } else if (/^\\?[\r\n]/.test(found)) {
+        write = found[0] === '\\' ? '' : "${'\\n'}";
+      }
+    } else if (/^\s|^\/[*/]/.test(found)) {
+      // Whitespace and comments don't change what can follow.
+      write = found[1] === '/' ? '' : found.replace(/\s*[\r\n]\s*/g, ' ');
+    } else {
+      if (found === '`') {
+        depths.push(-1);
+      } else if (found === '}' && !depth && depths.length > 1) {
+        depths.pop();
+      } else if (found === '{' || found === '}') {
+        depths[depths.length - 1] += found === '{' ? 1 : -1;
+      } else {
+        // A string's line continuation.
+        write = found.replace(/\\(?:\r\n?|\n)/g, '');
+      }
+      regex = /^[\w$]/.test(found)
+        ? /^(?:return|typeof|case|do|else|in|of|new|delete|void|throw|instanceof|yield|await)$/.test(
+            found,
+          )
+        : !/^(?:[)\]}`'"]|\/.)/.test(found);
+    }
+    line += write;
+  }
+  return line;
 }
 
 // The phrasing content that holds phrasing content, with that of
@@ -448,31 +519,7 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
             }
           : 'value' in node && {
               value:
-                twin === 'inlineMath'
-                  ? node.value
-                  : // A cell is one line: a JavaScript expression keeps its
-                    // literals, a template's line ends as `\n`, and drops its
-                    // line comments.
-                    node.value.replace(
-                      /\\[^]|(["'])(?:\\[^]|(?!\1)[^\\])*\1|`(?:\\[^]|[^`\\])*`|\/\*[^]*?\*\/|\/\/.*|\s*[\r\n]\s*/g,
-                      found =>
-                        found[0] === '`'
-                          ? found.replace(
-                              /\$\{[^}]*\}|\r?\n|\r/g,
-                              // A substitution is code, not text.
-                              text =>
-                                text[0] === '$'
-                                  ? text.replace(/\s*[\r\n]\s*/g, ' ')
-                                  : '\\n',
-                            )
-                          : found[0] === '/'
-                            ? found[1] === '*'
-                              ? found.replace(/\s*[\r\n]\s*/g, ' ')
-                              : ''
-                            : /^\s/.test(found)
-                              ? ' '
-                              : found,
-                    ),
+                twin === 'inlineMath' ? node.value : scriptLine(node.value),
             }),
       } as MdastNode);
     }

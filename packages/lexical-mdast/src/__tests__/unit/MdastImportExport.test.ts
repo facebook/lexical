@@ -1085,6 +1085,25 @@ describe('@lexical/mdast import/export', () => {
     expect(twice).toBe(once);
   });
 
+  // JavaScript expressions and how a cell writes them, which keeps their
+  // value.
+  const SCRIPTS: [string, string][] = [
+    ['/[//]/.test("/")', '/[//]/.test("/")'],
+    ['`a ${({x: 1}).x\n} b`', '`a ${({x: 1}).x } b`'],
+    [
+      '`a ${(() => {\n  return 1;\n})()\n} b`',
+      '`a ${(() => { return 1; })() } b`',
+    ],
+    ['String.raw`a\\n\nb`', "String.raw`a\\n${'\\n'}b`"],
+    ['"a\\\nb" + 1 / 2 // c\n+ 3', '"ab" + 1 / 2  + 3'],
+  ];
+
+  it.each(SCRIPTS)('writes %j in a cell with its value', (value, written) => {
+    // eslint-disable-next-line no-new-func
+    const evaluate = (code: string) => new Function(`return (${code});`)();
+    expect(evaluate(written)).toEqual(evaluate(value));
+  });
+
   describe('with MdastTableExtension', () => {
     it('writes no alignment for a column whose paragraphs are justified', () => {
       using editor = createEditor(true);
@@ -1728,7 +1747,7 @@ describe('@lexical/mdast import/export', () => {
       );
     });
 
-    it.each([
+    it.each<[object, string]>([
       [
         {children: [{type: 'text', value: 'x'}], type: 'textDirective'},
         ':abbr[x]',
@@ -1764,13 +1783,13 @@ describe('@lexical/mdast import/export', () => {
       ],
       [
         {type: 'mdxFlowExpression', value: '`a ${\n  b\n}\nc`'},
-        '{`a ${ b }\\nc`}',
+        "{`a ${ b }${'\\n'}c`}",
       ],
       [{type: 'mdxFlowExpression', value: ''}, '{}'],
       // A JavaScript expression keeps its literals.
       [
         {type: 'mdxFlowExpression', value: '"first  last" +\t`a\nb` // c\n+ d'},
-        '{"first  last" +\t`a\\nb`  + d}',
+        '{"first  last" +\t`a${\'\\n\'}b`  + d}',
       ],
       [
         {
@@ -1780,6 +1799,14 @@ describe('@lexical/mdast import/export', () => {
         "{x.replace(/https?:\\/\\//, '') /* it's a */ + 'b'}",
       ],
       [{type: 'inlineMath', value: 'a % c\n+ |b|'}, '$a + \\vert b\\vert $'],
+      ...SCRIPTS.map(([value, written]): [object, string] => [
+        {type: 'mdxFlowExpression', value},
+        `{${written}}`,
+      ]),
+      [
+        {type: 'math', value: '\\text{a {b}|c} \\text{a \\textbf{b|c}}'},
+        '$\\text{a {b}\\textbar{}c} \\text{a \\textbf{b\\textbar{}c}}$',
+      ],
       // A `<` that starts no tag is text, whose line end is kept.
       [
         {type: 'html', value: '<pre>a < b\nc > d</pre>'},

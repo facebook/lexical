@@ -699,6 +699,14 @@ function $splitLinkAtSelection(
 
   const extractedChildren = allChildren.filter(isExtractedChild);
 
+  if (extractedChildren.length === 0 && allChildren.length > 0) {
+    // The selection only touches the link at a boundary (e.g. it ends at
+    // offset 0 of the link's first text node, or starts at the end of its
+    // last one), so extract() returned the LinkNode itself but none of its
+    // content. There is nothing to unlink.
+    return;
+  }
+
   if (extractedChildren.length === allChildren.length) {
     allChildren.forEach(child => parentLink.insertBefore(child));
     parentLink.remove();

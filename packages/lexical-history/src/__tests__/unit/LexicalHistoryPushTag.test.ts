@@ -29,7 +29,7 @@ import {
   UNDO_COMMAND,
   type UpdateListener,
 } from 'lexical';
-import {assert, describe, expect, onTestFinished, test, vi} from 'vitest';
+import {assert, describe, expect, test, vi} from 'vitest';
 
 // Empty inline elements change the adjacent TextNode's sibling pointer,
 // without adding another dirty leaf or changing the text's serialized value.
@@ -77,11 +77,7 @@ function createEditorWithHistory() {
     ],
     name: 'test',
     nodes: [InlineEmptyElementNode],
-    onError: error => {
-      throw error;
-    },
   });
-  onTestFinished(() => editor.dispose());
   const historyState = getExtensionDependencyFromEditor(
     editor,
     HistoryExtension,
@@ -98,7 +94,7 @@ function createEditorWithHistory() {
     {discrete: true},
   );
   expect(historyState.undoStack).toHaveLength(1);
-  return {editor, historyState};
+  return editor;
 }
 
 const textChildren = [['text', 'ab']];
@@ -110,7 +106,7 @@ describe('HISTORY_PUSH_TAG with an unchanged dirty TextNode (#9217)', () => {
     {tag: [HISTORY_PUSH_TAG, HISTORY_MERGE_TAG]},
     {tag: [HISTORY_MERGE_TAG, HISTORY_PUSH_TAG]},
   ])('isolates an element insertion with tags $tag', ({tag}) => {
-    const {editor} = createEditorWithHistory();
+    using editor = createEditorWithHistory();
     const listener = vi.fn<UpdateListener>();
     const unregister = editor.registerUpdateListener(listener);
     editor.update(
@@ -151,7 +147,11 @@ describe('HISTORY_PUSH_TAG with an unchanged dirty TextNode (#9217)', () => {
   });
 
   test('still merges an untagged TextNode marked dirty without a change', () => {
-    const {editor, historyState} = createEditorWithHistory();
+    using editor = createEditorWithHistory();
+    const historyState = getExtensionDependencyFromEditor(
+      editor,
+      HistoryExtension,
+    ).output.historyState.peek();
     editor.update(() => $getRoot().getAllTextNodes()[0].markDirty(), {
       discrete: true,
     });

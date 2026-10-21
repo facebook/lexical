@@ -1528,7 +1528,7 @@ describe('@lexical/mdast import/export', () => {
       return markdown.split('\n')[2].replace(/^\| (.*?) *\|$/, '$1');
     }
 
-    function exportCell(...children: (() => LexicalNode)[]): string {
+    function exportCell(...$children: (() => LexicalNode)[]): string {
       using editor = createEditor(true);
       editor.update(
         () => {
@@ -1539,7 +1539,7 @@ describe('@lexical/mdast import/export', () => {
           );
           const lastRow = $assertNodeType(table.getLastChild(), $isElementNode);
           const cell = $assertNodeType(lastRow.getFirstChild(), $isElementNode);
-          cell.clear().append(...children.map(f => f()));
+          cell.clear().append(...$children.map($child => $child()));
         },
         {discrete: true},
       );
@@ -1970,6 +1970,16 @@ describe('@lexical/mdast import/export', () => {
         {type: 'html', value: '<pre>a < b\nc > d</pre>'},
         '<pre>a < b&#10;c > d</pre>',
       ],
+      // A custom element named like a raw text one, and a comment closed
+      // at once, are not raw text.
+      [
+        {
+          type: 'html',
+          value:
+            '<style-box><pre>a\nb</pre></style-box><!--><pre>c\nd</pre><!---->',
+        },
+        '<style-box><pre>a&#10;b</pre></style-box><!--><pre>c&#10;d</pre><!---->',
+      ],
       // An unclosed tag with quotes is read in linear time.
       [{type: 'html', value: `a <${'"'.repeat(60)}`}, `a <${'"'.repeat(60)}`],
       [
@@ -2062,6 +2072,8 @@ describe('@lexical/mdast import/export', () => {
       expect(exportCellOf({type: 'math', value: `a${spaces}b`})).toContain(
         `$a${spaces}b$`,
       );
+      const tags = '<b'.repeat(5e4);
+      expect(exportCellOf({type: 'html', value: tags})).toContain(tags);
       for (const value of [`a${spaces}b`, `<a>${spaces}</a>`]) {
         expect(exportCellOf({type: 'mdxFlowExpression', value})).toContain(
           `{${value}}`,
@@ -2208,6 +2220,39 @@ describe('@lexical/mdast import/export', () => {
           type: 'leafDirective',
         });
         expect(node.attributes).toEqual({title: 'a|b\nc&#124;'});
+      });
+
+      it.each([
+        ['leafDirective', 'textDirective'],
+        ['containerDirective', 'textDirective'],
+        ['mdxJsxFlowElement', 'mdxJsxTextElement'],
+      ])('keeps the attributes of what a %s holds', (type, inner) => {
+        const jsx = /^mdx/.test(type);
+        const nested = {
+          attributes: jsx
+            ? [{name: 'title', type: 'mdxJsxAttribute', value: 'a&b\nc'}]
+            : {title: 'a&b\nc'},
+          children: [{type: 'text', value: 'x'}],
+          name: 'abbr',
+          type: inner,
+        };
+        const node = readBack({
+          attributes: jsx ? [] : {},
+          children:
+            type === 'leafDirective'
+              ? [nested]
+              : [{children: [nested], type: 'paragraph'}],
+          name: 'outer',
+          type,
+        });
+        const [child] = (node.children as Record<string, unknown>[]).filter(
+          ({type: childType}) => childType === inner,
+        );
+        expect(child.attributes).toEqual(
+          jsx
+            ? [expect.objectContaining({name: 'title', value: 'a&b\nc'})]
+            : {title: 'a&b\nc'},
+        );
       });
 
       it('writes a directive with neither label nor string attributes', () => {

@@ -1008,5 +1008,24 @@ describe('MdastHtmlExtension', () => {
       expect(markdown.split('\n')).toHaveLength(3);
       expect(markdown.split('\n')[2]).toContain('<x-callout open>');
     });
+
+    it('keeps the blocks of a block element apart', () => {
+      using editor = tableCellEditor();
+      const markdown = exportWithCell(editor, () => [
+        $create(CalloutNode).append(
+          $createParagraphNode().append($createTextNode('one')),
+          $createParagraphNode().append($createTextNode('two')),
+        ),
+      ]);
+      expect(markdown.split('\n')[2]).toBe(
+        '| <x-callout open>&#10;<header data-lexical-slot="title"></header>one<br>two</x-callout> |',
+      );
+      editor.update(() => $convertFromMarkdownString(markdown), {
+        discrete: true,
+      });
+      expect(editor.read(() => $convertToMarkdownString())).toContain(
+        'one<br>two',
+      );
+    });
   });
 });

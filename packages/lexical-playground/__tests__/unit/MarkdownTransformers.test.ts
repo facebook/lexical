@@ -385,9 +385,9 @@ describe('playground TABLE markdown transformer', () => {
     );
   }
 
-  function exportTable(build: () => TableNode): string {
+  function exportTable($build: () => TableNode): string {
     using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
-    editor.update(() => $getRoot().clear().append(build()), {discrete: true});
+    editor.update(() => $getRoot().clear().append($build()), {discrete: true});
     return editor.read(() => $convertToMarkdownString([TABLE]));
   }
 

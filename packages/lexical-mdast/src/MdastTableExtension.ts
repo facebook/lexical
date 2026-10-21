@@ -333,17 +333,19 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
       return [
         {
           ...raw,
-          // A line end beside embedded Markdown (a `<template>` holding its
-          // place) only sets it apart. Any other is a reference (`&#10;`),
-          // which reads as the line end it was in text, `<pre>` and
-          // attribute values, but a space between a tag's attributes.
+          // Line ends beside embedded Markdown (a `<template>` holding its
+          // place) only set it apart, as a `<br>` sets the blocks of a cell
+          // apart. Any other is a reference (`&#10;`), which reads as the
+          // line end it was in text, `<pre>` and attribute values, but a
+          // space between a tag's attributes.
           value: raw.value
             .replace(
-              /[ \t]*(?:\r?\n|\r)[ \t]*(?=<template data-mdast-child=)|(<\/template>)[ \t]*(?:\r?\n|\r)[ \t]*/g,
-              '$1',
+              /(<\/template>)?\s*?(?:\r?\n|\r)\s*(?=(<template data-mdast-child=)|)/g,
+              (found: string, end?: string, start?: string) =>
+                end && start ? end + '<br>' : end || start ? end || '' : found,
             )
             .replace(
-              /<!--[^]*?-->|<(script|style)\b[^]*?(?:<\/\1\s*>|$)|<(?=[!/?a-z])(?:[^>"']|"[^"]*"|'[^']*'|"(?![^"]*")|'(?![^']*'))*>|\r?\n|\r/gi,
+              /<!--(?:-?>|[^]*?-->)|<(script|style)(?=[\s/>]|$)[^]*?(?:<\/\1\s*>|$)|<(?=[!/?a-z])(?:[^<>"']|"[^"]*"|'[^']*'|"(?![^"]*")|'(?![^']*'))*>|\r?\n|\r/gi,
               (found: string, rawText?: string) =>
                 found[0] !== '<'
                   ? '&#10;'
@@ -720,7 +722,10 @@ const PHRASING_TWIN: Record<string, string> = {
  * list item's paragraph, a line of code) is a line of its own, and lines
  * are separated by `<br>`, empty ones included.
  */
-function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
+function cellContent(
+  nodes: readonly MdastNode[],
+  phrase: (phrasing: PhrasingContent[]) => PhrasingContent[] = cellPhrasing,
+): PhrasingContent[] {
   const lines: PhrasingContent[][] = [];
   // The line of the last top-level phrasing, which phrasing right after it
   // runs on.
@@ -731,20 +736,19 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
       return visit({
         ...node,
         type: twin,
-        ...('children' in node && {
-          // A leaf directive's label is phrasing already.
-          children:
-            (node.type as string) === 'leafDirective'
-              ? cellPhrasing(node.children as PhrasingContent[])
-              : cellContent(node.children),
-        }),
+        // A leaf directive's label is phrasing already. Phrasing is
+        // rewritten once, with the twin's.
+        ...('children' in node &&
+          (node.type as string) !== 'leafDirective' && {
+            children: cellContent(node.children, same => same),
+          }),
       } as MdastNode);
     }
     switch (node.type) {
       case 'paragraph':
       case 'heading':
       case 'tableCell':
-        lines.push(cellPhrasing(node.children));
+        lines.push(phrase(node.children));
         return;
       case 'code':
         for (const value of node.value.split(/\r?\n|\r/)) {
@@ -753,7 +757,7 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
         return;
       case 'html':
       case 'htmlBlock':
-        lines.push(cellPhrasing([node as PhrasingContent]));
+        lines.push(phrase([node as PhrasingContent]));
         return;
       case 'thematicBreak':
         lines.push([rawHtml('<hr>')]);
@@ -771,7 +775,7 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
       if (lines[lines.length - 1] !== phrasing) {
         lines.push((phrasing = []));
       }
-      phrasing.push(...cellPhrasing([node as PhrasingContent]));
+      phrasing.push(...phrase([node as PhrasingContent]));
     }
   };
   nodes.forEach(visit);

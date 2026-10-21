@@ -315,12 +315,32 @@ const PHRASING_PARENT_RE =
  * list item's paragraph, a line of code) is a line of its own, and lines
  * are separated by `<br>`, empty ones included.
  */
+// Flow content of mdast extensions that has a phrasing twin, which a cell
+// can hold.
+const PHRASING_TWIN: Record<string, string> = {
+  containerDirective: 'textDirective',
+  leafDirective: 'textDirective',
+  math: 'inlineMath',
+  mdxFlowExpression: 'mdxTextExpression',
+  mdxJsxFlowElement: 'mdxJsxTextElement',
+};
+
 function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
   const lines: PhrasingContent[][] = [];
   // The line of the last top-level phrasing, which phrasing right after it
   // runs on.
   let phrasing: PhrasingContent[] = [];
   const visit = (node: MdastNode) => {
+    const twin = PHRASING_TWIN[node.type];
+    if (twin) {
+      return visit({
+        ...node,
+        type: twin,
+        ...('children' in node
+          ? {children: cellContent(node.children)}
+          : 'value' in node && {value: node.value.replace(/\s+/g, ' ')}),
+      } as MdastNode);
+    }
     switch (node.type) {
       case 'paragraph':
       case 'heading':

@@ -1641,56 +1641,73 @@ describe('@lexical/mdast import/export', () => {
       );
     });
 
-    it('keeps an inline directive a block exports to in a cell', () => {
-      using editor = buildEditorFromExtensions(
-        defineExtension({
-          dependencies: [
-            MdastCommonMarkExtension,
-            MdastTableExtension,
-            configExtension(MdastExtension, {
-              exportRules: [
-                {
-                  $export: () =>
-                    ({
-                      children: [{type: 'text', value: 'x'}],
-                      name: 'abbr',
-                      type: 'textDirective',
-                    }) as unknown as MdastNode,
-                  type: HorizontalRuleNode,
-                },
-              ],
-              toMarkdownExtensions: [
-                {
-                  handlers: {
-                    textDirective: ((node, _, state, info) =>
-                      `:${node.name}[${state.containerPhrasing(node, info)}]`) as Handle,
-                  } as Partial<Handlers>,
-                },
-              ],
-            }),
+    it.each([
+      [
+        {children: [{type: 'text', value: 'x'}], type: 'textDirective'},
+        ':abbr[x]',
+      ],
+      [
+        {
+          children: [
+            {children: [{type: 'text', value: 'x'}], type: 'paragraph'},
+            {children: [{type: 'text', value: 'y'}], type: 'paragraph'},
           ],
-          name: '[root]',
-        }),
-      );
-      editor.update(
-        () => {
-          $convertFromMarkdownString('| a |\n| - |\n| b |');
-          const table = $assertNodeType(
-            $getRoot().getFirstChild(),
-            $isTableNode,
-          );
-          const cell = $assertNodeType(
-            table.getLastChildOrThrow<ElementNode>().getFirstChild(),
-            $isElementNode,
-          );
-          cell.clear().append($createHorizontalRuleNode());
+          type: 'containerDirective',
         },
-        {discrete: true},
-      );
-      expect(editor.read(() => $convertToMarkdownString())).toContain(
-        '| :abbr[x] |',
-      );
-    });
+        ':abbr[x<br>y]',
+      ],
+      [{type: 'math', value: 'a\n  b'}, '$a b$'],
+    ])(
+      'keeps %j a block exports to in a cell on its row',
+      (exported, written) => {
+        using editor = buildEditorFromExtensions(
+          defineExtension({
+            dependencies: [
+              MdastCommonMarkExtension,
+              MdastTableExtension,
+              configExtension(MdastExtension, {
+                exportRules: [
+                  {
+                    $export: () =>
+                      ({...exported, name: 'abbr'}) as unknown as MdastNode,
+                    type: HorizontalRuleNode,
+                  },
+                ],
+                toMarkdownExtensions: [
+                  {
+                    handlers: {
+                      inlineMath: ((node: {value: string}) =>
+                        `$${node.value}$`) as Handle,
+                      textDirective: ((node, _, state, info) =>
+                        `:${node.name}[${state.containerPhrasing(node, info)}]`) as Handle,
+                    } as Partial<Handlers>,
+                  },
+                ],
+              }),
+            ],
+            name: '[root]',
+          }),
+        );
+        editor.update(
+          () => {
+            $convertFromMarkdownString('| a |\n| - |\n| b |');
+            const table = $assertNodeType(
+              $getRoot().getFirstChild(),
+              $isTableNode,
+            );
+            const cell = $assertNodeType(
+              table.getLastChildOrThrow<ElementNode>().getFirstChild(),
+              $isElementNode,
+            );
+            cell.clear().append($createHorizontalRuleNode());
+          },
+          {discrete: true},
+        );
+        expect(editor.read(() => $convertToMarkdownString())).toContain(
+          `| ${written} |`,
+        );
+      },
+    );
 
     it('keeps spaces written as references at the edges of a cell', () => {
       using editor = createEditor(true);

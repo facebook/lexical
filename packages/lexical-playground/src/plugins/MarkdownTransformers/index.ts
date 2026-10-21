@@ -611,11 +611,8 @@ const $createTableCell = (
       if (fenceLine) {
         fence = fence === '' ? fenceMatch[1] : '';
       }
-      const block =
-        line !== '' &&
-        fence === '' &&
-        !fenceLine &&
-        testAt(CELL_BLOCK_START_REG_EXP, text, lineStart);
+      const startsBlock = testAt(CELL_BLOCK_START_REG_EXP, text, lineStart);
+      const block = line !== '' && fence === '' && !fenceLine && startsBlock;
       atLineStart =
         fence !== '' ||
         fenceLine ||
@@ -629,9 +626,7 @@ const $createTableCell = (
         // Code keeps the whitespace around its line breaks, and a block its
         // indentation (a nested list item's).
         return fence === ''
-          ? '\n' +
-              (testAt(CELL_BLOCK_START_REG_EXP, text, lineStart) ? trail : '') +
-              guardAt(lineStart)
+          ? '\n' + (startsBlock ? trail : '') + guardAt(lineStart)
           : (fenceLine ? '' : lead) + '\n' + trail;
       }
       let char = mark;
@@ -738,14 +733,12 @@ const $mapToTableCells = (textContent: string): TableCellNode[] | null => {
 /** Splits a row on its pipes; escaped pipes (`\|`) are cell content. */
 function splitTableRow(text: string): string[] {
   const cells = [''];
-  for (let i = 0; i < text.length; i++) {
-    if (text[i] === '|') {
+  // A backslash escapes the next character, pipe or not (`\\|`).
+  for (const [token] of text.matchAll(/\\?[^]/g)) {
+    if (token === '|') {
       cells.push('');
     } else {
-      // A backslash escapes the next character, pipe or not (`\\|`).
-      const end = text[i] === '\\' ? i + 2 : i + 1;
-      cells[cells.length - 1] += text.slice(i, end);
-      i = end - 1;
+      cells[cells.length - 1] += token;
     }
   }
   return cells;

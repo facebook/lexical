@@ -102,23 +102,16 @@ function $getCellAlign(cell: TableCellNode): AlignType {
 }
 
 /**
- * The number of line breaks a `<br>` run stands for (`<br>`, `<br/>`,
- * `<br />`, any case), or 0 when `node` is anything else. With
- * `MdastHtmlExtension` the tags arrive as one `htmlInline` node.
+ * The number of `tag` void elements (`<br>`, `<br/>`, `<br />`, any case)
+ * that `node` is a run of, or 0 when it is anything else. With
+ * `MdastHtmlExtension` a run arrives as one `htmlInline` node.
  */
-function brCount(node: MdastNode): number {
+function voidTags(node: MdastNode, tag: 'br' | 'hr'): number {
   return (node.type === 'html' || node.type === 'htmlInline') &&
     !('children' in node && node.children.length > 0) &&
-    /^\s*(?:<br\s*\/?>\s*)+$/i.test(node.value)
-    ? node.value.split(/<br/i).length - 1
+    new RegExp(`^\\s*(?:<${tag}\\s*\\/?>\\s*)+$`, 'i').test(node.value)
+    ? node.value.split('<').length - 1
     : 0;
-}
-
-function isRuleHtml(node: MdastNode): boolean {
-  return (
-    (node.type === 'html' || node.type === 'htmlInline') &&
-    /^\s*<hr\s*\/?>\s*$/i.test(node.value)
-  );
 }
 
 /**
@@ -151,14 +144,14 @@ function mapPhrasing(
 function cellLines(cell: TableCell): PhrasingContent[][] {
   const lines: PhrasingContent[][] = [[]];
   for (const child of cell.children) {
-    const count = brCount(child);
+    const count = voidTags(child, 'br');
     for (let i = 0; i < count; i++) {
       lines.push([]);
     }
     if (count === 0) {
       lines[lines.length - 1].push(
         ...mapPhrasing([child], node => {
-          const breaks = brCount(node);
+          const breaks = voidTags(node, 'br');
           if (breaks > 0) {
             return Array.from({length: breaks}, () => ({type: 'break'}));
           }
@@ -207,7 +200,7 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
             cellLines(cell).flatMap(line => {
               // A line of only `<hr>` is a rule, as export writes one.
               const rule =
-                line.length === 1 && isRuleHtml(line[0])
+                line.length === 1 && voidTags(line[0], 'hr') === 1
                   ? ctx.importNode({type: 'thematicBreak'})
                   : [];
               return rule.length > 0
@@ -226,9 +219,7 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
   );
 };
 
-function lineBreakHtml(): Html {
-  return {type: 'html', value: '<br>'};
-}
+const BR: Html = {type: 'html', value: '<br>'};
 
 /**
  * Rejoins formatting that export split around a line break (`**a**`, break,
@@ -265,14 +256,7 @@ function joinAtBreaks(nodes: readonly PhrasingContent[]): PhrasingContent[] {
       joined.push(nodes[i]);
     }
   }
-  return joined.map(node =>
-    /^(?:emphasis|strong|delete)$/.test(node.type)
-      ? ({
-          ...node,
-          children: joinAtBreaks((node as Emphasis).children),
-        } as PhrasingContent)
-      : node,
-  );
+  return joined;
 }
 
 /**
@@ -285,7 +269,15 @@ function joinAtBreaks(nodes: readonly PhrasingContent[]): PhrasingContent[] {
 function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
   return mapPhrasing(joinAtBreaks(nodes), node => {
     if (node.type === 'break') {
-      return [lineBreakHtml()];
+      return [BR];
+    }
+    if (/^(?:emphasis|strong|delete)$/.test(node.type)) {
+      return [
+        {
+          ...node,
+          children: cellPhrasing((node as Emphasis).children),
+        } as PhrasingContent,
+      ];
     }
     const raw = node as Html | HtmlBlock | HtmlInline;
     if (/^html(?:Block|Inline)?$/.test(raw.type)) {
@@ -354,7 +346,7 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
       return node.value
         .split(/\r?\n|\r/)
         .flatMap((value, i): PhrasingContent[] => [
-          ...(i > 0 ? [lineBreakHtml()] : []),
+          ...(i > 0 ? [BR] : []),
           ...(value ? [{...node, value}] : []),
         ]);
     }
@@ -446,9 +438,7 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
     }
   };
   nodes.forEach(visit);
-  return lines.flatMap((line, i) =>
-    i > 0 ? [lineBreakHtml(), ...line] : line,
-  );
+  return lines.flatMap((line, i) => (i > 0 ? [BR, ...line] : line));
 }
 
 /**
@@ -462,23 +452,13 @@ function $alignColumns(
   table: TableNode,
   rows: readonly TableRowNode[],
 ): AlignType[] {
-  // The cells in each column, and how many of them have each alignment.
-  const columns: {aligned: Map<AlignType, number>; cells: number}[] = [];
+  // The alignment of each cell in each column.
+  const columns: AlignType[][] = [];
   for (const row of rows) {
     row
       .getChildren()
       .filter($isTableCellNode)
-      .forEach((cell, i) => {
-        const cellAlign = $getCellAlign(cell);
-        const column = (columns[i] ??= {aligned: new Map(), cells: 0});
-        column.cells++;
-        if (cellAlign !== null) {
-          column.aligned.set(
-            cellAlign,
-            (column.aligned.get(cellAlign) ?? 0) + 1,
-          );
-        }
-      });
+      .forEach((cell, i) => (columns[i] ??= []).push($getCellAlign(cell)));
   }
   // The header is the table's first row of cells, which a selection's
   // export may leave out.
@@ -491,17 +471,17 @@ function $alignColumns(
   const headerCells = $isTableRowNode(headerRow)
     ? headerRow.getChildren().filter($isTableCellNode)
     : [];
-  return Array.from(columns, (column, i): AlignType => {
-    for (const [cellAlign, count] of column.aligned) {
-      if (count * 2 > column.cells) {
-        return cellAlign;
-      }
-    }
-    // A v0.52 table not yet updated still has its alignment on the table.
-    return (
-      (headerCells[i] && $getCellAlign(headerCells[i])) || legacy[i] || null
-    );
-  });
+  return Array.from(
+    columns,
+    (aligns, i): AlignType =>
+      (['left', 'center', 'right'] as const).find(
+        align => aligns.filter(a => a === align).length * 2 > aligns.length,
+      ) ||
+      (headerCells[i] && $getCellAlign(headerCells[i])) ||
+      // A v0.52 table not yet updated still has its alignment on the table.
+      legacy[i] ||
+      null,
+  );
 }
 
 /**

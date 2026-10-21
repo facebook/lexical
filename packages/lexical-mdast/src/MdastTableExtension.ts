@@ -392,11 +392,29 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
                     ? value && {...value, value: scriptLine(value.value || '')}
                     : attribute.type !== 'mdxJsxAttribute'
                       ? scriptLine(value)
-                      : jsxReferences(value),
+                      : references(value),
               };
             }),
           }),
           ...(element.children && {children: cellPhrasing(element.children)}),
+        } as unknown as PhrasingContent,
+      ];
+    }
+    const {attributes} = node as {
+      attributes?: Record<string, string | null | undefined>;
+    };
+    if ((node.type as string) === 'textDirective' && attributes) {
+      // Attribute strings read references, like JSX's.
+      return [
+        {
+          ...node,
+          attributes: Object.fromEntries(
+            Object.entries(attributes).map(([name, value]) => [
+              name,
+              value && references(value),
+            ]),
+          ),
+          children: cellPhrasing((node as Emphasis).children),
         } as unknown as PhrasingContent,
       ];
     }
@@ -409,19 +427,34 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
       // (A column rule in an array's spec has no other form.)
       let depth = 0;
       let text = 0;
+      let wordEnd = -1;
       return [
         {
           ...math,
           value: math.value
             .replace(
-              /(^|[^\\])((?:\\\\)*(\\[a-z]+)?)%.*(?:(?:\r\n?|\n)[ \t]*%.*)*(?:\r\n?|\n)?[ \t]*/gim,
-              (_, before, commands, word) =>
-                before + commands + (word ? ' ' : ''),
+              /\\(?:[a-z]+|[^])|%.*(?:(?:\r\n?|\n)[ \t]*%.*)*(?:\r\n?|\n)?[ \t]*/gi,
+              (found: string, at: number) => {
+                if (found[0] === '%') {
+                  return at === wordEnd ? ' ' : '';
+                }
+                if (/^\\[a-z]/i.test(found)) {
+                  wordEnd = at + found.length;
+                }
+                return found;
+              },
             )
             .replace(/\s*[\r\n]\s*/g, ' ')
             .replace(
-              /\\(?:text(?!style)[a-z]*|mbox)\s*\{|\\[^]|[{}|]/gi,
-              found => {
+              /\\verb\*?([^a-z*\s])[^]*?\1|\\(?:text(?!style)[a-z]*|mbox)\s*\{|\\[^]|[{}|]/gi,
+              (found: string, delimiter?: string) => {
+                if (delimiter) {
+                  // `\verb` takes any other delimiter its text lacks.
+                  const other = [...'!"+=/'].find(c => !found.includes(c));
+                  return delimiter === '|' && other
+                    ? found.replace(/\|/g, other)
+                    : found;
+                }
                 if (found.endsWith('{') && found !== '\\{') {
                   depth++;
                   if (!text && found[0] === '\\') {
@@ -467,10 +500,18 @@ const SCRIPT_TOKENS = [
 const OPERAND_TOKEN =
   /\/(?![*/])(?:\\.|\[(?:\\.|[^\]\\\r\n])*\]|[^/\\\r\n[])+\/\w*|\\(?:\r\n|[^])|(["'])(?:\\(?:\r\n|[^])|(?!\1)[^\\])*\1|\/\*[^]*?\*\/|\/\/.*|\+\+|--|\s+|[\w$\u0080-\uffff]+|[^]/y;
 
-/** JSX text or an attribute's string on one line, with its pipes. */
-function jsxReferences(text: string): string {
-  return text.replace(/\r\n?|\n|\|/g, found =>
-    found === '|' ? '&#124;' : '&#10;',
+/**
+ * Text that reads character references (JSX, an attribute's string) on one
+ * line and without pipes.
+ */
+function references(text: string): string {
+  return text.replace(/[\r\n|]/g, found => `&#${found.charCodeAt(0)};`);
+}
+
+/** A literal's text without line continuations, and its pipes as escapes. */
+function literalPipes(text: string): string {
+  return text.replace(/\\(?:\r\n?|[^])|\|/g, found =>
+    /^\\?\|$/.test(found) ? '\\x7c' : /^\\[\r\n]/.test(found) ? '' : found,
   );
 }
 
@@ -516,7 +557,7 @@ function scriptLine(code: string): string {
           ? found[0] === '\\'
             ? ''
             : '\\n'
-          : found.replace(/\|/g, '\\x7c');
+          : literalPipes(found);
       }
     } else if (context < 0) {
       if (found === '{') {
@@ -527,11 +568,11 @@ function scriptLine(code: string): string {
       } else if (found === '>' && context === -2) {
         contexts[contexts.length - 1] = -3;
       } else if (context === -2 && /^["']/.test(found)) {
-        write = jsxReferences(found);
+        write = references(found);
       } else if (context === -3 && found[0] !== '<') {
         // JSX text drops the spaces of a line end at its edges.
-        write = jsxReferences(
-          found.replace(/[ \t]*(?:\r\n?|\n)[ \t]*/g, (end, at) =>
+        write = references(
+          found.replace(/[ \t]*(?:(?:\r\n?|\n)[ \t]*)+/g, (end, at) =>
             at && at + end.length < found.length ? ' ' : '',
           ),
         );
@@ -544,7 +585,7 @@ function scriptLine(code: string): string {
       }
     } else if (blank) {
       // Whitespace and comments don't change what can follow.
-      write = found.replace(/\s*[\r\n]\s*/g, '\u2028').replace(/\|/g, '\\x7c');
+      write = literalPipes(found.replace(/\s*[\r\n]\s*/g, '\u2028'));
     } else {
       if (found === '`') {
         contexts.push(-1);
@@ -556,7 +597,7 @@ function scriptLine(code: string): string {
         contexts[contexts.length - 1] += found === '{' ? 1 : -1;
       } else if (/^["']/.test(found)) {
         // A string's line continuations, and its pipes as escapes.
-        write = found.replace(/\\(?:\r\n?|\n)/g, '').replace(/\|/g, '\\x7c');
+        write = literalPipes(found);
       }
       operand = /^[\w$\u0080-\uffff]/.test(found)
         ? previous !== '.' &&

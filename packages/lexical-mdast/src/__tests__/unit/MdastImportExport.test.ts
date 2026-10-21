@@ -8,6 +8,8 @@
 
 // @vitest-environment node
 
+import type {Table} from 'mdast';
+
 import {$createCodeNode} from '@lexical/code-core';
 import {
   $createHorizontalRuleNode,
@@ -58,11 +60,19 @@ import {
   type TextNode,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
+import {directiveFromMarkdown, directiveToMarkdown} from 'mdast-util-directive';
+import {fromMarkdown} from 'mdast-util-from-markdown';
+import {gfmTableFromMarkdown} from 'mdast-util-gfm-table';
+import {mdxFromMarkdown, mdxToMarkdown} from 'mdast-util-mdx';
 import {
   defaultHandlers,
   type Handle,
   type Handlers,
 } from 'mdast-util-to-markdown';
+import {toString} from 'mdast-util-to-string';
+import {directive} from 'micromark-extension-directive';
+import {gfmTable} from 'micromark-extension-gfm-table';
+import {mdxjs} from 'micromark-extension-mdxjs';
 import {assert, describe, expect, it} from 'vitest';
 
 import {
@@ -1086,12 +1096,11 @@ describe('@lexical/mdast import/export', () => {
   });
 
   // JavaScript expressions and how a cell writes them, which keeps their
-  // value.
-  // JavaScript expressions and how a cell writes them, which keeps their
   // value: U+2028 ends a line in JavaScript but not in Markdown.
   const SCRIPTS: [string, string][] = [
     ['/[//]/.test("/")', '/[//]/.test("/")'],
     ['"a|b" + `c|d`', '"a\\x7cb" + `c\\x7cd`'],
+    ['"a\\|b\\\\" + `c\\|d`', '"a\\x7cb\\\\" + `c\\x7cd`'],
     ['`a ${({x: 1}).x\n} b`', '`a ${({x: 1}).x\u2028} b`'],
     [
       '`a ${(() => {\n  return 1;\n})()\n} b`',
@@ -1893,6 +1902,14 @@ describe('@lexical/mdast import/export', () => {
       ],
       [{type: 'math', value: 'a % one\n% two\n\\alpha%\n  b'}, '$a \\alpha b$'],
       [{type: 'math', value: 'a % one\n  % two\nb'}, '$a b$'],
+      [
+        {
+          type: 'math',
+          value: 'x%c\n  \\\\%d\ny\\beta%\n  \\alpha%\nb \\verb|x|',
+        },
+        '$x\\\\y\\beta \\alpha b \\verb!x!$',
+      ],
+      [{type: 'mdxFlowExpression', value: '<p>a\n\n  b</p>'}, '{<p>a b</p>}'],
       // A `<` that starts no tag is text, whose line end is kept.
       [
         {type: 'html', value: '<pre>a < b\nc > d</pre>'},
@@ -1974,6 +1991,102 @@ describe('@lexical/mdast import/export', () => {
         );
       },
     );
+
+    describe('writes MDX in a cell that MDX reads back', () => {
+      /** The cell a node exports to, as MDX reads it back. */
+      function $readBack(exported: object): Record<string, unknown> {
+        using editor = buildEditorFromExtensions(
+          defineExtension({
+            dependencies: [
+              MdastCommonMarkExtension,
+              MdastTableExtension,
+              configExtension(MdastExtension, {
+                exportRules: [
+                  {
+                    $export: () => exported as MdastNode,
+                    type: HorizontalRuleNode,
+                  },
+                ],
+                toMarkdownExtensions: [mdxToMarkdown(), directiveToMarkdown()],
+              }),
+            ],
+            name: '[root]',
+          }),
+        );
+        editor.update(
+          () => {
+            $convertFromMarkdownString('| a |\n| - |\n| b |');
+            const table = $assertNodeType(
+              $getRoot().getFirstChild(),
+              $isTableNode,
+            );
+            $assertNodeType(
+              table.getLastChildOrThrow<ElementNode>().getFirstChild(),
+              $isElementNode,
+            )
+              .clear()
+              .append($createHorizontalRuleNode());
+          },
+          {discrete: true},
+        );
+        const tree = fromMarkdown(
+          editor.read(() => $convertToMarkdownString()),
+          {
+            extensions: [mdxjs(), gfmTable(), directive()],
+            mdastExtensions: [
+              mdxFromMarkdown(),
+              gfmTableFromMarkdown(),
+              directiveFromMarkdown(),
+            ],
+          },
+        );
+        const [table] = tree.children as Table[];
+        expect(table.children[1].children).toHaveLength(1);
+        const [node] = table.children[1].children[0].children;
+        return node as unknown as Record<string, unknown>;
+      }
+      // eslint-disable-next-line no-new-func
+      const evaluate = (code: string) => new Function(`return (${code}\n);`)();
+
+      it.each(SCRIPTS)('%j keeps its value', value => {
+        const node = $readBack({type: 'mdxFlowExpression', value});
+        expect(evaluate(node.value as string)).toEqual(evaluate(value));
+      });
+
+      it('keeps the attributes and text of JSX', () => {
+        const node = $readBack({
+          attributes: [
+            {name: 'title', type: 'mdxJsxAttribute', value: 'a\r\nb|c'},
+            {
+              name: 'data',
+              type: 'mdxJsxAttribute',
+              value: {type: 'mdxJsxAttributeValueExpression', value: '[\n1]'},
+            },
+          ],
+          children: [
+            {children: [{type: 'text', value: 'x|y'}], type: 'paragraph'},
+          ],
+          name: 'abbr',
+          type: 'mdxJsxFlowElement',
+        });
+        const [title, data] = node.attributes as {
+          value: string | {value: string};
+        }[];
+        expect(title.value).toBe('a\r\nb|c');
+        expect(evaluate((data.value as {value: string}).value)).toEqual([1]);
+        expect(toString(node)).toBe('x|y');
+      });
+
+      it('keeps the attributes of a directive', () => {
+        const node = $readBack({
+          attributes: {title: 'a|b\nc'},
+          children: [{type: 'text', value: 'x'}],
+          name: 'abbr',
+          type: 'leafDirective',
+        });
+        expect(node.attributes).toEqual({title: 'a|b\nc'});
+      });
+    });
 
     it('keeps spaces written as references at the edges of a cell', () => {
       using editor = createEditor(true);

@@ -39,6 +39,12 @@
     "micromark-extension-gfm-task-list-item": "^2.1.0",
     "micromark-util-types": "^2.0.2"
   },
+  "devDependencies": {
+    "mdast-util-directive": "^3.1.0",
+    "mdast-util-mdx": "^3.0.0",
+    "micromark-extension-directive": "^3.0.2",
+    "micromark-extension-mdxjs": "^3.0.0"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/facebook/lexical.git",

@@ -513,9 +513,14 @@ const $createTableCell = (
   // A guard keeps a line that opens with a code span from reading as a code
   // block, and is dropped once the cell is read.
   const guard = free();
-  // The legacy `\n` separates a cell's lines where it has no `<br>`, nor an
-  // equation or a link, which can hold a `\n` of their own (`$\nabla$`).
-  const legacy = !/<br\s*\/?>|\$|\]\(/i.test(text);
+  // The legacy `\n` separates a cell's lines where it has no `<br>`, but in
+  // an equation or a link's destination, which can hold one of their own
+  // (`$\nabla$`).
+  const legacy = !/<br\s*\/?>/i.test(text);
+  const ownLines = Array.from(
+    text.matchAll(/\$[^$]*\$|\]\([^)]*\)/g),
+    found => [found.index!, found.index! + found[0].length],
+  );
   // Reads the cell with the `<br>`s at the offsets in `blocks` ending their
   // paragraph. Without `blocks`, each `<br>` before text that starts a block
   // is read as a character of its own between spaces, returned with its
@@ -582,7 +587,9 @@ const $createTableCell = (
         return char === '|' ||
           (char === '<' && /^br\s*\/?>/i.test(text.slice(offset + 2)))
           ? char
-          : char === 'n' && legacy
+          : char === 'n' &&
+              legacy &&
+              !ownLines.some(([start, end]) => offset > start && offset < end)
             ? '\n'
             : match;
       }

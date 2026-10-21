@@ -378,9 +378,10 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
           ? {children: cellContent(node.children)}
           : 'value' in node && {
               // A line end ends a TeX comment, which a space would not.
-              value: node.value
-                .replace(twin === 'inlineMath' ? /(^|[^\\])%.*/gm : /$^/, '$1')
-                .replace(/\s+/g, ' '),
+              value: (twin === 'inlineMath'
+                ? node.value.replace(/(^|[^\\])%.*/gm, '$1')
+                : node.value
+              ).replace(/\s+/g, ' '),
             }),
       } as MdastNode);
     }

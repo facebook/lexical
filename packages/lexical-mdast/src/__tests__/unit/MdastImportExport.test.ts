@@ -1684,6 +1684,7 @@ describe('@lexical/mdast import/export', () => {
       ],
       [{type: 'math', value: 'a\n  b'}, '$a b$'],
       [{type: 'math', value: 'a % c\n+ b\\%'}, '$a + b\\%$'],
+      [{type: 'mdxFlowExpression', value: ''}, '{}'],
     ])(
       'keeps %j a block exports to in a cell on its row',
       (exported, written) => {
@@ -1705,6 +1706,8 @@ describe('@lexical/mdast import/export', () => {
                     handlers: {
                       inlineMath: ((node: {value: string}) =>
                         `$${node.value}$`) as Handle,
+                      mdxTextExpression: ((node: {value: string}) =>
+                        `{${node.value}}`) as Handle,
                       textDirective: ((node, _, state, info) =>
                         `:${node.name}[${state.containerPhrasing(node, info)}]`) as Handle,
                     } as Partial<Handlers>,

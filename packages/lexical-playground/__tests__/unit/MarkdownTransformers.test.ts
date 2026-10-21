@@ -591,6 +591,8 @@ describe('playground TABLE markdown transformer', () => {
   it.each([
     ['one\\ntwo', [['one\ntwo']]],
     ['one\\n\\ntwo', [['one', 'two']]],
+    ['[a](http://x)\\nb', [['a\nb']]],
+    ['costs $5\\nb', [['costs $5\nb']]],
   ])('reads the legacy \\n in %j as a line break', (body, cell) => {
     using editor = importMarkdown(
       ['| h |', '| --- |', `| ${body} |`].join('\n'),

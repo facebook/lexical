@@ -343,35 +343,26 @@ export const TABLE: ElementTransformer = {
         return false;
       }
 
-      // Only the second line is the delimiter row; one after it is a body
-      // row of dashes.
-      const firstRow = table.getFirstChild();
-      const firstCell = $isTableRowNode(firstRow)
-        ? firstRow.getFirstChild()
-        : null;
-      if (
-        $isTableRowNode(firstRow) &&
-        table.getChildrenSize() === 1 &&
-        !(
-          $isTableCellNode(firstCell) &&
-          firstCell.hasHeaderState(TableCellHeaderStates.ROW)
-        )
-      ) {
-        // Add header state to row cells
-        firstRow.getChildren().forEach(cell => {
-          if (!$isTableCellNode(cell)) {
-            return;
-          }
-          cell.setHeaderStyles(
-            TableCellHeaderStates.ROW,
-            TableCellHeaderStates.ROW,
-          );
-        });
-
-        // Remove line
-        parentNode.remove();
-        return;
+      const rows = table.getChildren();
+      const lastRow = rows[rows.length - 1];
+      if (!lastRow || !$isTableRowNode(lastRow)) {
+        return false;
       }
+
+      // Add header state to row cells
+      lastRow.getChildren().forEach(cell => {
+        if (!$isTableCellNode(cell)) {
+          return;
+        }
+        cell.setHeaderStyles(
+          TableCellHeaderStates.ROW,
+          TableCellHeaderStates.ROW,
+        );
+      });
+
+      // Remove line
+      parentNode.remove();
+      return;
     }
 
     const matchCells = $mapToTableCells(match[0]);

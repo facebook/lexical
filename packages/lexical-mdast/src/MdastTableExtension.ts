@@ -390,7 +390,13 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
         ...node,
         type: twin,
         ...('children' in node
-          ? {children: cellContent(node.children)}
+          ? {
+              // A leaf directive's label is phrasing already.
+              children:
+                (node.type as string) === 'leafDirective'
+                  ? cellPhrasing(node.children as PhrasingContent[])
+                  : cellContent(node.children),
+            }
           : 'value' in node && {
               // A line end ends a TeX comment, which a space would not.
               value: (twin === 'inlineMath'

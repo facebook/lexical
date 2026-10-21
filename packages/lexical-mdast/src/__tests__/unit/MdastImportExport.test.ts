@@ -1698,6 +1698,18 @@ describe('@lexical/mdast import/export', () => {
         },
         ':abbr[x<br>y]',
       ],
+      [
+        {
+          children: [
+            {type: 'text', value: 'a '},
+            {type: 'html', value: '<b>'},
+            {type: 'text', value: 'x'},
+            {type: 'html', value: '</b>'},
+          ],
+          type: 'leafDirective',
+        },
+        ':abbr[a <b>x</b>]',
+      ],
       [{type: 'math', value: 'a\n  b'}, '$a b$'],
       [{type: 'math', value: 'a % c\n+ b\\%'}, '$a + b\\%$'],
       [{type: 'math', value: 'a\\\\%b\nc'}, '$a\\\\ c$'],

@@ -1037,6 +1037,15 @@ describe('playground TABLE markdown transformer', () => {
     });
   });
 
+  it('round-trips a header row below the first', () => {
+    const markdown = ['| a |', '| --- |', '| b |', '| --- |', '| c |'].join(
+      '\n',
+    );
+    using editor = importMarkdown(markdown);
+    expect(cellTexts(editor)).toEqual([[['a']], [['b']], [['c']]]);
+    expect(editor.read(() => $convertToMarkdownString([TABLE]))).toBe(markdown);
+  });
+
   it('keeps an empty body row that reads like a delimiter row', () => {
     using editor = importMarkdown(
       ['| a | b |', '| --- | --- |', '|  |  |'].join('\n'),
@@ -1044,17 +1053,6 @@ describe('playground TABLE markdown transformer', () => {
     expect(cellTexts(editor)).toEqual([
       [['a'], ['b']],
       [[''], ['']],
-    ]);
-  });
-
-  it('reads delimiter-like lines after the delimiter row as body rows', () => {
-    using editor = importMarkdown(
-      ['| a | b |', '| --- | --- |', '| ---- | :-: |', '| - | - |'].join('\n'),
-    );
-    expect(cellTexts(editor)).toEqual([
-      [['a'], ['b']],
-      [['----'], [':-:']],
-      [['-'], ['-']],
     ]);
   });
 

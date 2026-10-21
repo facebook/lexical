@@ -370,12 +370,43 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
       ];
     }
     if ((node.type as string) === 'mdxTextExpression') {
-      return [{...node, value: scriptLine((node as {value: string}).value)}];
+      return [{...node, value: scriptLine((node as Html).value || '')}];
+    }
+    if ((node.type as string) === 'mdxJsxTextElement') {
+      const element = node as unknown as {
+        attributes: {type: string; value?: string | Html | null}[];
+        children: PhrasingContent[];
+      };
+      return [
+        {
+          ...node,
+          // An attribute's expression on one line, and a string with a line
+          // end as an expression, since its references are written escaped.
+          attributes: element.attributes.map(attribute => {
+            const {value} = attribute;
+            return {
+              ...attribute,
+              value:
+                typeof value !== 'string'
+                  ? value && {...value, value: scriptLine(value.value || '')}
+                  : attribute.type !== 'mdxJsxAttribute'
+                    ? scriptLine(value)
+                    : /[\r\n]/.test(value)
+                      ? {
+                          type: 'mdxJsxAttributeValueExpression',
+                          value: JSON.stringify(value),
+                        }
+                      : value,
+            };
+          }),
+          children: cellPhrasing(element.children),
+        } as unknown as PhrasingContent,
+      ];
     }
     if ((node.type as string) === 'inlineMath') {
       const math = node as unknown as {type: 'inlineMath'; value: string};
       // A cell is one line, and a TeX comment ends with its line end and
-      // the spaces after it. GFM ends a cell at `|` even in math, so TeX's
+      // the spaces after it, which a control word before it ends at too. GFM ends a cell at `|` even in math, so TeX's
       // `|` and `\|` are written as their command forms, or as `\textbar`
       // in text.
       let depth = 0;
@@ -384,7 +415,11 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
         {
           ...math,
           value: math.value
-            .replace(/(^|[^\\])((?:\\\\)*)%.*(?:\r\n?|\n)?[ \t]*/g, '$1$2')
+            .replace(
+              /(^|[^\\])((?:\\\\)*(\\[a-z]+)?)%.*(?:\r\n?|\n)?[ \t]*/gim,
+              (_, before, commands, word) =>
+                before + commands + (word ? ' ' : ''),
+            )
             .replace(/\s*[\r\n]\s*/g, ' ')
             .replace(
               /\\(?:text(?!style)[a-z]*|mbox)\s*\{|\\[^]|[{}|]/gi,
@@ -424,22 +459,23 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
 // `/` divides, and in the text of a template, a JSX tag, and the children of
 // a JSX element.
 const SCRIPT_TOKENS = [
-  /\\(?:\r\n|[^])|(["'])(?:\\(?:\r\n|[^])|(?!\1)[^\\])*\1|\/\*[^]*?\*\/|\/\/.*|\+\+|--|\s+|[\w$\u0080-\uffff]+|[^]/y,
+  /\\(?:\r\n|[^])|(["'])(?:\\(?:\r\n|[^])|(?!\1)[^\\])*\1|\/\*[^]*?\*\/|\/\/.*|\+\+|--|\s+|[\w$\u0080-￿]+|[^]/y,
   /\\(?:\r\n|[^])|\$\{|\r\n?|\n|[^\\$`\r\n]+|[^]/y,
-  /(["'])[^]*?\1|\/>|\s+|[^]/y,
+  /(["'])[^]*?\1|\/>|\/\*[^]*?\*\/|\/\/.*|\s+|[^]/y,
   /<\/[^>]*>|[^<{]+|[^]/y,
 ];
 // The tokens of code where a value can start, which can be a regular
 // expression literal.
 const OPERAND_TOKEN =
-  /\/(?![*/])(?:\\.|\[(?:\\.|[^\]\\\r\n])*\]|[^/\\\r\n[])+\/\w*|\\(?:\r\n|[^])|(["'])(?:\\(?:\r\n|[^])|(?!\1)[^\\])*\1|\/\*[^]*?\*\/|\/\/.*|\+\+|--|\s+|[\w$\u0080-\uffff]+|[^]/y;
+  /\/(?![*/])(?:\\.|\[(?:\\.|[^\]\\\r\n])*\]|[^/\\\r\n[])+\/\w*|\\(?:\r\n|[^])|(["'])(?:\\(?:\r\n|[^])|(?!\1)[^\\])*\1|\/\*[^]*?\*\/|\/\/.*|\+\+|--|\s+|[\w$\u0080-￿]+|[^]/y;
 
 /**
  * A JavaScript expression on one line, as a cell needs, with its value: line
- * ends between tokens become spaces, comments lose theirs, line comments and
- * line continuations are dropped, a template writes its line ends as `\n`
- * (which only its raw strings tell apart), and JSX keeps the text its line
- * ends make.
+ * ends between tokens become U+2028, which JavaScript reads as a line end
+ * (for comments and semicolon insertion) but Markdown doesn't, a template
+ * writes its line ends as `\n` (which only its raw strings tell apart), a
+ * string drops its line continuations, and JSX keeps the text its line ends
+ * make. Nothing else is changed, so code read wrongly is written as it was.
  */
 function scriptLine(code: string): string {
   // The open contexts, the innermost last: the brace depth of code, or -1
@@ -459,37 +495,44 @@ function scriptLine(code: string): string {
     token.lastIndex = i;
     found = token.exec(code)![0];
     let write = found;
-    if (context < 0) {
-      if (
-        (found === '`' && context === -1) ||
-        found === '/>' ||
-        found.startsWith('</')
-      ) {
+    if (context === -1) {
+      if (found === '`') {
         contexts.pop();
         operand = false;
-      } else if (found === '${' || found === '{') {
+      } else if (found === '${') {
         contexts.push(0);
         operand = true;
-      } else if (found === '<') {
+      } else if (/^\\?[\r\n]/.test(found)) {
+        write = found[0] === '\\' ? '' : '\\n';
+      }
+    } else if (context < 0) {
+      if (found === '{') {
+        contexts.push(0);
+        operand = true;
+      } else if (found === '<' && context === -3) {
         contexts.push(-2);
       } else if (found === '>' && context === -2) {
         contexts[contexts.length - 1] = -3;
-      } else if (context === -1) {
-        if (/^\\?[\r\n]/.test(found)) {
-          write = found[0] === '\\' ? '' : '\\n';
-        }
-      } else if (/^["']/.test(found)) {
+      } else if (context === -2 && /^["']/.test(found)) {
         // An attribute's line ends, as references.
         write = found.replace(/\r\n?|\n/g, '&#10;');
       } else {
         // JSX text drops the whitespace of a line end at its edges.
         write = found.replace(/\s*[\r\n]\s*/g, (end, at) =>
-          context === -2 || (at && at + end.length < found.length) ? ' ' : '',
+          context === -2 || found.startsWith('</')
+            ? '\u2028'
+            : at && at + end.length < found.length
+              ? ' '
+              : '',
         );
+        if (found === '/>' || found.startsWith('</')) {
+          contexts.pop();
+          operand = false;
+        }
       }
     } else if (/^\s|^\/[*/]/.test(found)) {
       // Whitespace and comments don't change what can follow.
-      write = found[1] === '/' ? '' : found.replace(/\s*[\r\n]\s*/g, ' ');
+      write = found.replace(/\s*[\r\n]\s*/g, '\u2028');
     } else {
       if (found === '`') {
         contexts.push(-1);
@@ -503,12 +546,14 @@ function scriptLine(code: string): string {
         // A string's line continuations.
         write = found.replace(/\\(?:\r\n?|\n)/g, '');
       }
-      operand = /^[\w$\u0080-\uffff]/.test(found)
+      operand = /^[\w$\u0080-￿]/.test(found)
         ? previous !== '.' &&
           /^(?:return|typeof|case|do|else|in|of|new|delete|void|throw|instanceof|yield|await)$/.test(
             found,
           )
-        : !/^(?:[)\]}`'"]|\/.|\+\+|--)/.test(found);
+        : !/^(?:[)\]`'"]|\/.|\+\+|--)/.test(found);
+    }
+    if (!/^\s|^\/[*/]/.test(found)) {
       previous = found;
     }
     line += write;
@@ -548,17 +593,13 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
       return visit({
         ...node,
         type: twin,
-        ...('children' in node
-          ? {
-              // A leaf directive's label is phrasing already.
-              children:
-                (node.type as string) === 'leafDirective'
-                  ? cellPhrasing(node.children as PhrasingContent[])
-                  : cellContent(node.children),
-            }
-          : 'value' in node && {
-              value: node.value,
-            }),
+        ...('children' in node && {
+          // A leaf directive's label is phrasing already.
+          children:
+            (node.type as string) === 'leafDirective'
+              ? cellPhrasing(node.children as PhrasingContent[])
+              : cellContent(node.children),
+        }),
       } as MdastNode);
     }
     switch (node.type) {

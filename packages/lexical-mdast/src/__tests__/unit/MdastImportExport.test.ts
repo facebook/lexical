@@ -1087,26 +1087,34 @@ describe('@lexical/mdast import/export', () => {
 
   // JavaScript expressions and how a cell writes them, which keeps their
   // value.
+  // JavaScript expressions and how a cell writes them, which keeps their
+  // value: U+2028 ends a line in JavaScript but not in Markdown.
   const SCRIPTS: [string, string][] = [
     ['/[//]/.test("/")', '/[//]/.test("/")'],
-    ['`a ${({x: 1}).x\n} b`', '`a ${({x: 1}).x } b`'],
+    ['`a ${({x: 1}).x\n} b`', '`a ${({x: 1}).x\u2028} b`'],
     [
       '`a ${(() => {\n  return 1;\n})()\n} b`',
-      '`a ${(() => { return 1; })() } b`',
+      '`a ${(() => {\u2028return 1;\u2028})()\u2028} b`',
     ],
     // A tag gets the same strings and values.
     [
-      '((s, ...v) => JSON.stringify([s, v]))`a\n${1}\nb`',
-      '((s, ...v) => JSON.stringify([s, v]))`a\\n${1}\\nb`',
+      '((s, ...v) => JSON.stringify([s, v]))`<b>\n</b>${1}\nb`',
+      '((s, ...v) => JSON.stringify([s, v]))`<b>\\n</b>${1}\\nb`',
     ],
-    ['"a\\\nb" + 1 / 2 // c\n+ 3', '"ab" + 1 / 2  + 3'],
+    ['JSON.parse(`{\n  "a": 1\n}`)', 'JSON.parse(`{\\n  "a": 1\\n}`)'],
+    ['"a\\\nb" + 1 / 2 // c\n+ 3', '"ab" + 1 / 2 // c\u2028+ 3'],
     // Where a `/` divides.
     [
       '[1].map(i => i++ / 2 + "x/y"\n+ "z")',
-      '[1].map(i => i++ / 2 + "x/y" + "z")',
+      '[1].map(i => i++ / 2 + "x/y"\u2028+ "z")',
     ],
-    ['({in: 4}).in / 2 + "x/y"\n+ "z"', '({in: 4}).in / 2 + "x/y" + "z"'],
-    ['(é => é / 2 + "a/b"\n+ "c")(4)', '(é => é / 2 + "a/b" + "c")(4)'],
+    ['({in: 4}).in / 2 + "x/y"\n+ "z"', '({in: 4}).in / 2 + "x/y"\u2028+ "z"'],
+    ['(é => é / 2 + "a/b"\n+ "c")(4)', '(é => é / 2 + "a/b"\u2028+ "c")(4)'],
+    // A line end ends a statement.
+    [
+      '(() => { if (1) {} /[//]/.test("/")\n  return 1 })()',
+      '(() => { if (1) {} /[//]/.test("/")\u2028return 1 })()',
+    ],
   ];
 
   it.each(SCRIPTS)('writes %j in a cell with its value', (value, written) => {
@@ -1794,20 +1802,20 @@ describe('@lexical/mdast import/export', () => {
       ],
       [
         {type: 'mdxFlowExpression', value: '`a ${\n  b\n}\nc`'},
-        '{`a ${ b }\\nc`}',
+        '{`a ${\u2028b\u2028}\\nc`}',
       ],
       [{type: 'mdxFlowExpression', value: ''}, '{}'],
       // A JavaScript expression keeps its literals.
       [
         {type: 'mdxFlowExpression', value: '"first  last" +\t`a\nb` // c\n+ d'},
-        '{"first  last" +\t`a\\nb`  + d}',
+        '{"first  last" +\t`a\\nb` // c\u2028+ d}',
       ],
       [
         {
           type: 'mdxFlowExpression',
           value: "x.replace(/https?:\\/\\//, '') /* it's\n a */ + 'b'",
         },
-        "{x.replace(/https?:\\/\\//, '') /* it's a */ + 'b'}",
+        "{x.replace(/https?:\\/\\//, '') /* it's\u2028a */ + 'b'}",
       ],
       [{type: 'inlineMath', value: 'a % c\n+ |b|'}, '$a + \\vert b\\vert $'],
       ...SCRIPTS.map(([value, written]): [object, string] => [
@@ -1825,14 +1833,46 @@ describe('@lexical/mdast import/export', () => {
           value:
             '<>\n  <a href={u} title="x\ny">see http://a.dev\n  b {c\n} d</a>\n</>',
         },
-        '{<><a href={u} title="x&#10;y">see http://a.dev b {c } d</a></>}',
+        '{<><a href={u} title="x&#10;y">see http://a.dev b {c\u2028} d</a></>}',
+      ],
+      [
+        {
+          type: 'mdxFlowExpression',
+          value: "<p>{name}'s\n  page</p>",
+        },
+        "{<p>{name}'s page</p>}",
+      ],
+      [
+        {
+          type: 'mdxFlowExpression',
+          value: '<a // b\n  c="1"></a\n>',
+        },
+        '{<a // b\u2028c="1"></a\u2028>}',
+      ],
+      [
+        {
+          attributes: [
+            {name: 'title', type: 'mdxJsxAttribute', value: 'a\nb'},
+            {
+              name: 'data',
+              type: 'mdxJsxAttribute',
+              value: {type: 'mdxJsxAttributeValueExpression', value: '[\n1]'},
+            },
+            {type: 'mdxJsxExpressionAttribute', value: '...x\n'},
+          ],
+          children: [
+            {children: [{type: 'text', value: 'x'}], type: 'paragraph'},
+          ],
+          type: 'mdxJsxFlowElement',
+        },
+        '<abbr title={"a\\nb"} data={[\u20281]} {...x\u2028}>x</abbr>',
       ],
       [
         {
           children: [{type: 'mdxTextExpression', value: 'a +\n b'}],
           type: 'paragraph',
         },
-        '{a + b}',
+        '{a +\u2028b}',
       ],
       [
         {
@@ -1842,6 +1882,7 @@ describe('@lexical/mdast import/export', () => {
         },
         '$\\text{a {b {c {d\\textbar{}e}}}} \\text {a \\{ b\\textbar{}c} \\textstyle{\\vert x\\vert } \\text{abcd}$',
       ],
+      [{type: 'math', value: 'a % one\n% two\n\\alpha%\n  b'}, '$a \\alpha b$'],
       // A `<` that starts no tag is text, whose line end is kept.
       [
         {type: 'html', value: '<pre>a < b\nc > d</pre>'},
@@ -1874,6 +1915,23 @@ describe('@lexical/mdast import/export', () => {
                     handlers: {
                       inlineMath: ((node: {value: string}) =>
                         `$${node.value}$`) as Handle,
+                      mdxJsxTextElement: ((node, _, state, info) =>
+                        `<${node.name}${node.attributes
+                          .map(
+                            ({
+                              name,
+                              value,
+                            }: {
+                              name?: string;
+                              value: string | {value: string};
+                            }) =>
+                              name
+                                ? ` ${name}=${typeof value === 'string' ? `"${value}"` : `{${value.value}}`}`
+                                : ` {${value}}`,
+                          )
+                          .join(
+                            '',
+                          )}>${state.containerPhrasing(node, info)}</${node.name}>`) as Handle,
                       mdxTextExpression: ((node: {value: string}) =>
                         `{${node.value}}`) as Handle,
                       textDirective: ((node, _, state, info) =>

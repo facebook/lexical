@@ -1103,6 +1103,15 @@ describe('@lexical/mdast import/export', () => {
     ['"a|b" + `c|d`', '"a\\x7cb" + `c\\x7cd`'],
     ['"a\\|b\\\\" + `c\\|d`', '"a\\x7cb\\\\" + `c\\x7cd`'],
     ['(1 << 2) + "a|b"', '(1 << 2) + "a\\x7cb"'],
+    // A regular expression after a condition.
+    [
+      '(() => { if (1) /"/.test("a")\nreturn 2 // "\n})()',
+      '(() => { if (1) /"/.test("a")\u2028return 2 // "\u2028})()',
+    ],
+    [
+      '(() => { const s = "a"; if (1) /`/.test(s)\nreturn 2 })()',
+      '(() => { const s = "a"; if (1) /`/.test(s)\u2028return 2 })()',
+    ],
     ['`a ${({x: 1}).x\n} b`', '`a ${({x: 1}).x\u2028} b`'],
     [
       '`a ${(() => {\n  return 1;\n})()\n} b`',
@@ -1810,7 +1819,7 @@ describe('@lexical/mdast import/export', () => {
       [{type: 'math', value: 'a\\\\%b\nc'}, '$a\\\\c$'],
       [
         {type: 'math', value: '\\text{a|b} | \\mbox{c}'},
-        '$\\text{a\\textbar b} \\vert  \\mbox{c}$',
+        '$\\text{a\\textbar b} \\vert \\mbox{c}$',
       ],
       [
         {type: 'mdxFlowExpression', value: '`a ${\n  b\n}\nc`'},
@@ -1829,7 +1838,7 @@ describe('@lexical/mdast import/export', () => {
         },
         "{x.replace(/https?:\\/\\//, '') /* it's\u2028a */ + 'b'}",
       ],
-      [{type: 'inlineMath', value: 'a % c\n+ |b|'}, '$a + \\vert b\\vert $'],
+      [{type: 'inlineMath', value: 'a % c\n+ |b|'}, '$a + \\vert b\\vert$'],
       ...SCRIPTS.map(([value, written]): [object, string] => [
         {type: 'mdxFlowExpression', value},
         `{${written}}`,
@@ -1900,32 +1909,43 @@ describe('@lexical/mdast import/export', () => {
           value:
             '\\text{a {b {c {d|e}}}} \\text {a \\{ b|c} \\textstyle{|x|} \\text{ab%\n  cd}',
         },
-        '$\\text{a {b {c {d\\textbar e}}}} \\text {a \\{ b\\textbar c} \\textstyle{\\vert x\\vert } \\text{ab  cd}$',
+        '$\\text{a {b {c {d\\textbar e}}}} \\text {a \\{ b\\textbar c} \\textstyle{\\vert x\\vert} \\text{ab  cd}$',
       ],
       [
         {type: 'math', value: 'a % one\n% two\n\\alpha%\n  b'},
-        '$a \\alpha   b$',
+        '$a \\alpha  b$',
       ],
       [{type: 'math', value: 'a % one\n  % two\nb'}, '$a   b$'],
       [
         {
           type: 'math',
+          value:
+            '\\text{a|%\nb} \\text{a|%\n b} \\text{a|@b} \\text{\\LaTeX %\n b} \\text{\\LaTeX\n%\n b} \\text a{|} \\verb a!  b a \\text{a| b} \\mbox{x|y}',
+        },
+        '$\\text{a\\textbar b} \\text{a\\textbar\\ b} \\text{a\\textbar @b} \\text{\\LaTeX \\ b} \\text{\\LaTeX \\ b} \\text a{\\vert} \\verb a!  b a \\text{a\\textbar\\ b} \\mbox{x\\vert y}$',
+      ],
+      [{type: 'math', value: 'a%x\rb|c'}, '$a%x b c$'],
+      [
+        {
+          type: 'math',
           value: '\\text{\\LaTeX%\n b} \\text%\n{a|b} \\verb|a!"+=/|',
         },
-        '$\\text{\\LaTeX\\ b} \\text {a\\textbar b} \\verb#a!"+=/#$',
+        '$\\text{\\LaTeX\\ b} \\text{a\\textbar b} \\verb#a!"+=/#$',
       ],
       [
         {
           type: 'math',
           value: 'x%c\n  \\\\%d\ny\\beta%\n  \\alpha%\nb \\verb|x|',
         },
-        '$x  \\\\y\\beta   \\alpha b \\verb!x!$',
+        '$x  \\\\y\\beta  \\alpha b \\verb!x!$',
       ],
       [{type: 'mdxFlowExpression', value: '<p>a\n\n  b</p>'}, '{<p>a b</p>}'],
       [
         {type: 'mdxFlowExpression', value: '<a /* | */ b="1" />'},
         '{<a /* \\x7c */ b="1" />}',
       ],
+      // Code that isn't valid gets no line end either.
+      [{type: 'mdxFlowExpression', value: '1 \\\n+ 2'}, '{1 \\\u2028+ 2}'],
       // A `}` that closes nothing.
       [{type: 'mdxFlowExpression', value: 'x}y\nz'}, '{x}y\u2028z}'],
       [
@@ -1933,7 +1953,7 @@ describe('@lexical/mdast import/export', () => {
           type: 'math',
           value: '\\href{https://x.y/a%20b|c}{t} \\verb|100%| \\alpha % x|y',
         },
-        '$\\href{https://x.y/a%20b%7Cc}{t} \\verb!100%! \\alpha % x\\vert y$',
+        '$\\href{https://x.y/a%20b%7Cc}{t} \\verb!100%! \\alpha % x y$',
       ],
       // A `<` that starts no tag is text, whose line end is kept.
       [
@@ -1944,7 +1964,7 @@ describe('@lexical/mdast import/export', () => {
       [{type: 'html', value: `a <${'"'.repeat(60)}`}, `a <${'"'.repeat(60)}`],
       [
         {type: 'math', value: '|x| + \\|y\\| \\\\|z'},
-        '$\\vert x\\vert  + \\Vert y\\Vert  \\\\\\vert z$',
+        '$\\vert x\\vert + \\Vert y\\Vert \\\\\\vert z$',
       ],
     ])(
       'keeps %j a block exports to in a cell on its row',
@@ -1952,17 +1972,10 @@ describe('@lexical/mdast import/export', () => {
         expect($exportCell(exported)).toContain(`| ${written} |`);
         const {type, value} = exported as {type: string; value?: string};
         if (/math/i.test(type) && value) {
-          // KaTeX renders it the same.
+          // KaTeX renders it the same, with the playground's options.
           const render = (tex: string) =>
-            katex.renderToString(tex, {
-              output: 'html',
-              throwOnError: false,
-              trust: true,
-            });
-          // (A URL's `%7C` is its `|`.)
-          expect(render(written.slice(1, -1)).replace(/%7C/g, '|')).toBe(
-            render(value),
-          );
+            katex.renderToString(tex, {output: 'html', throwOnError: false});
+          expect(render(written.slice(1, -1))).toBe(render(value));
         }
       },
     );
@@ -2156,7 +2169,7 @@ describe('@lexical/mdast import/export', () => {
       it('keeps the attributes and text of JSX', () => {
         const node = $readBack({
           attributes: [
-            {name: 'title', type: 'mdxJsxAttribute', value: 'a\r\nb|c'},
+            {name: 'title', type: 'mdxJsxAttribute', value: 'a\r\nb|c&#124;'},
             {
               name: 'data',
               type: 'mdxJsxAttribute',
@@ -2172,19 +2185,19 @@ describe('@lexical/mdast import/export', () => {
         const [title, data] = node.attributes as {
           value: string | {value: string};
         }[];
-        expect(title.value).toBe('a\r\nb|c');
+        expect(title.value).toBe('a\r\nb|c&#124;');
         expect(evaluate((data.value as {value: string}).value)).toEqual([1]);
         expect(toString(node)).toBe('x|y');
       });
 
       it('keeps the attributes of a directive', () => {
         const node = $readBack({
-          attributes: {title: 'a|b\nc'},
+          attributes: {title: 'a|b\nc&#124;'},
           children: [{type: 'text', value: 'x'}],
           name: 'abbr',
           type: 'leafDirective',
         });
-        expect(node.attributes).toEqual({title: 'a|b\nc'});
+        expect(node.attributes).toEqual({title: 'a|b\nc&#124;'});
       });
 
       it('writes a directive with neither label nor string attributes', () => {

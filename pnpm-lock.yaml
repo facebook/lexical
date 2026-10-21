@@ -1108,7 +1108,7 @@ importers:
         version: 6.0.3
     devDependencies:
       katex:
-        specifier: ^0.16.10
+        specifier: ^0.16.47
         version: 0.16.47
       mdast-util-directive:
         specifier: ^3.1.0
@@ -1270,8 +1270,8 @@ importers:
         specifier: ^4.4.0
         version: 4.4.0
       katex:
-        specifier: ^0.16.10
-        version: 0.16.27
+        specifier: ^0.16.47
+        version: 0.16.47
       lexical:
         specifier: workspace:*
         version: link:../lexical
@@ -9471,10 +9471,6 @@ packages:
   jsx-ast-utils@3.3.5:
     resolution: {integrity: sha512-ZZow9HBI5O6EPgSJLUb8n2NKgmVWTwCvHGwFuJlMjvLFqlGG6pjirPhtdsseaLZjSibD8eegzmYpUZwoIlj2cQ==}
     engines: {node: '>=4.0'}
-
-  katex@0.16.27:
-    resolution: {integrity: sha512-aeQoDkuRWSqQN6nSvVCEFvfXdqo1OQiCmmW1kc9xSdjutPv7BGO7pqY9sQRJpMOGrEdfDgF2TfRXe5eUAD2Waw==}
-    hasBin: true
 
   katex@0.16.47:
     resolution: {integrity: sha512-Eeo8Ys1doU1z+x8AZsPpQu+p/QcZBI5PeOo7QGQdy2x2m0MU/hYagBbGOmXwr5KVbEfVuWv9LpnQWeehogurjg==}
@@ -23554,10 +23550,6 @@ snapshots:
       array.prototype.flat: 1.3.2
       object.assign: 4.1.7
       object.values: 1.2.1
-
-  katex@0.16.27:
-    dependencies:
-      commander: 8.3.0
 
   katex@0.16.47:
     dependencies:

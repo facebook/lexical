@@ -392,7 +392,7 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
                     ? value && {...value, value: scriptLine(value.value || '')}
                     : attribute.type !== 'mdxJsxAttribute'
                       ? scriptLine(value)
-                      : references(value),
+                      : references(value, true),
               };
             }),
           }),
@@ -400,11 +400,11 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
         } as unknown as PhrasingContent,
       ];
     }
-    const {attributes} = node as {
-      attributes?: Record<string, string | null | undefined>;
-    };
     if ((node.type as string) === 'textDirective') {
-      const {children} = node as {children?: PhrasingContent[]};
+      const {attributes, children} = node as {
+        attributes?: Record<string, unknown>;
+        children?: PhrasingContent[];
+      };
       return [
         {
           ...node,
@@ -413,7 +413,7 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
             attributes: Object.fromEntries(
               Object.entries(attributes).map(([name, value]) => [
                 name,
-                value == null ? value : references(String(value)),
+                value == null ? value : references(String(value), true),
               ]),
             ),
           }),
@@ -423,88 +423,8 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
     }
     if ((node.type as string) === 'inlineMath') {
       const math = node as unknown as {type: 'inlineMath'; value: string};
-      // A cell is one line, written as KaTeX reads it: a comment ends with
-      // its line end, so a control word right before one gets a space to
-      // end at. GFM ends a cell at `|` even in math, so TeX's `|`
-      // and `\|` are written as their command forms, `\textbar` in text, and
-      // `%7C` in a URL; `\verb` takes another delimiter. (A column rule in
-      // an array's spec has no other form.)
-      let depth = 0;
-      let text = 0;
-      let wordEnd = -1;
-      // Whether a text command waits for its group.
-      let textCommand = false;
       return [
-        {
-          ...math,
-          value: math.value.replace(
-            /\\verb\*?([^a-zA-Z*\s])[^\r\n]*?\1|\\(?:url|href)\s*\{[^{}]*\}|\\(?:[a-zA-Z]+|\r\n?|[^])|%.*(?:\r\n?|\n)?|\s+|[{}|]/g,
-            (
-              found: string,
-              delimiter: string | undefined,
-              at: number,
-              tex: string,
-            ) => {
-              if (delimiter) {
-                const other = [...'!"+=/#&()-.:;<>?@[]^_~'].find(
-                  c => !found.includes(c),
-                );
-                return delimiter === '|' && other
-                  ? found.replace(/\|/g, other)
-                  : found;
-              }
-              if (found[0] === '%') {
-                return !/[\r\n]/.test(found)
-                  ? found.replace(/\|/g, '\\vert ')
-                  : at !== wordEnd
-                    ? ''
-                    : // A space after it would be the word's, but in text
-                      // `\ ` is one.
-                      text && /\s/.test(tex.charAt(at + found.length))
-                      ? '\\'
-                      : ' ';
-              }
-              if (/^\s/.test(found)) {
-                return oneLine(found, ' ');
-              }
-              const group = textCommand;
-              textCommand = false;
-              if (/^\\(?:url|href)\s*\{/.test(found)) {
-                return oneLine(found.replace(/\|/g, '%7C'), ' ');
-              }
-              if (found === '{') {
-                depth++;
-                if (group && !text) {
-                  text = depth;
-                }
-              } else if (found === '}') {
-                text = text === depth-- ? 0 : text;
-              } else if (/^\\[\r\n]/.test(found)) {
-                return '\\ ';
-              } else if (/^\\[a-zA-Z]/.test(found)) {
-                // Spaces after a control word are its own.
-                wordEnd = at + found.length;
-                textCommand = /^\\(?:text(?!style)[a-zA-Z]*|mbox)$/.test(found);
-              } else if (/^\\?\|$/.test(found)) {
-                // `\textbar` ends at what follows, or a group before a
-                // space it would take.
-                return text
-                  ? found === '|'
-                    ? '\\textbar' +
-                      (/[a-zA-Z]/.test(tex.charAt(at + 1))
-                        ? ' '
-                        : /\s/.test(tex.charAt(at + 1))
-                          ? '{}'
-                          : '')
-                    : found
-                  : found === '|'
-                    ? '\\vert '
-                    : '\\Vert ';
-              }
-              return found;
-            },
-          ),
-        } as unknown as PhrasingContent,
+        {...math, value: texLine(math.value)} as unknown as PhrasingContent,
       ];
     }
     if (
@@ -526,7 +446,7 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
 // `/` divides, and in the text of a template, a JSX tag, and the children of
 // a JSX element.
 const SCRIPT_TOKENS = [
-  /\\(?:\r\n|[^])|(["'])(?:\\(?:\r\n|[^])|(?!\1)[^\\])*\1|\/\*[^]*?\*\/|\/\/.*|\+\+|--|<<|\s+|(?:[\w$]|(?!\s)[\u0080-\uffff])+|[^]/y,
+  /\\(?:\r\n|[^])|(["'])(?:\\(?:\r\n|[^])|(?!\1)[^\\\r\n])*\1|\/\*[^]*?\*\/|\/\/.*|\+\+|--|<<|\s+|(?:[\w$]|(?!\s)[\u0080-\uffff])+|[^]/y,
   /\\(?:\r\n|[^])|\$\{|\r\n?|\n|[^\\$`\r\n]+|[^]/y,
   /(["'])[^]*?\1|\/\s*>|\/\*[^]*?\*\/|\/\/.*|\s+|[^]/y,
   /<\/[^>]*>|[^<{]+|[^]/y,
@@ -544,10 +464,102 @@ function oneLine(text: string, separator: string): string {
 
 /**
  * Text that reads character references (JSX, an attribute's string) on one
- * line and without pipes.
+ * line and without pipes, and, for text that was read already, with its
+ * `&` as one too.
  */
-function references(text: string): string {
-  return text.replace(/[\r\n|]/g, found => `&#${found.charCodeAt(0)};`);
+function references(text: string, read?: boolean): string {
+  return text.replace(
+    read ? /[\r\n|&]/g : /[\r\n|]/g,
+    found => `&#${found.charCodeAt(0)};`,
+  );
+}
+
+// KaTeX's tokens: `\verb` and a URL argument, read verbatim; a control
+// word or symbol; a comment, which a line feed ends; whitespace; a group's
+// braces; a pipe; and other text.
+const TEX_TOKEN =
+  /\\verb\*?([^a-zA-Z\n])[^\n]*?\1|\\(?:url|href)[ \t\r\n]*\{(?:[^{}]|\{[^{}]*\})*\}|\\(?:[a-zA-Z@]+|[^])|%[^\n]*\n?|[ \t\r\n]+|[^\\%{}| \t\r\n]+|[^]/g;
+
+// What a line of TeX ends with: a control word, or one and the whitespace it
+// takes, or whitespace.
+type TexEnd = '' | 'word' | 'wordSpace' | 'space';
+
+/**
+ * TeX on one line, as a cell needs, that KaTeX reads as it did. Comments a
+ * line end ends are dropped. GFM ends a cell at `|` even in math, so `|`
+ * and `\|` are written as `\vert` and `\Vert`, `\textbar` in text, `%7C`
+ * in a URL, and `\verb` takes another delimiter. (A column rule in an
+ * array's spec has no other form.) A control word written before a letter
+ * it didn't end at gets a space to end at, and one before a space it didn't
+ * take, in text, gets `\ ` for it.
+ */
+function texLine(tex: string): string {
+  let line = '';
+  // The group depth, and that of the innermost text group, or 0.
+  let depth = 0;
+  let text = 0;
+  // Whether a text command waits for its group, and whether the last token
+  // read was a control word, which takes the whitespace after it.
+  let textCommand = false;
+  let afterWord = false;
+  let end = '' as TexEnd;
+  for (const [found, delimiter] of tex.matchAll(TEX_TOKEN)) {
+    const word = afterWord;
+    afterWord = false;
+    let write = found;
+    let next = '' as TexEnd;
+    if (delimiter) {
+      // Any delimiter its text lacks.
+      const other =
+        delimiter === '|' &&
+        [...'!"+=/#&()-.:;<>?@[]^_~'].find(c => !found.includes(c));
+      write = other ? found.replace(/\|/g, other) : found;
+    } else if (found[0] === '%') {
+      write = found.endsWith('\n') ? '' : found.replace(/[\r|]/g, ' ');
+      next = end;
+    } else if (/^[ \t\r\n]/.test(found)) {
+      write = oneLine(found, ' ');
+      next = end === 'word' || end === 'wordSpace' ? 'wordSpace' : 'space';
+      if (!word && text && end) {
+        // A space the line's end would take or join.
+        write = '\\ ';
+        next = '';
+      }
+    } else {
+      const group = textCommand;
+      textCommand = false;
+      if (/^\\(?:url|href)\W/.test(found)) {
+        write = oneLine(found.replace(/\|/g, '%7C'), ' ');
+      } else if (/^\\[a-zA-Z@]/.test(found)) {
+        afterWord = true;
+        next = 'word';
+        textCommand = /^\\text(?!style)[a-zA-Z]*$/.test(found);
+      } else if (found === '{') {
+        depth++;
+        if (group && !text) {
+          text = depth;
+        }
+      } else if (found === '}') {
+        text = text === depth-- ? 0 : text;
+      } else if (/^\\?\|$/.test(found)) {
+        write = text
+          ? found === '|'
+            ? '\\textbar'
+            : found
+          : found === '|'
+            ? '\\vert'
+            : '\\Vert';
+        next = write === found ? '' : 'word';
+      } else if (/^\\[\r\n]/.test(found)) {
+        write = '\\ ';
+      } else if (end === 'word' && /^[a-zA-Z@]/.test(found)) {
+        write = ' ' + found;
+      }
+    }
+    end = next;
+    line += write;
+  }
+  return line;
 }
 
 /** A literal's text without line continuations, and its pipes as escapes. */
@@ -575,6 +587,9 @@ function scriptLine(code: string): string {
   let line = '';
   let operand = true;
   let previous = '';
+  // For each open parenthesis, whether it holds a statement's condition,
+  // after which a value can start.
+  const conditions: boolean[] = [];
   for (let i = 0, found: string; i < code.length; i += found.length) {
     const context = contexts[contexts.length - 1];
     const token = SCRIPT_TOKENS[context < 0 ? -context : 0];
@@ -643,19 +658,27 @@ function scriptLine(code: string): string {
         // A string's line continuations, and its pipes as escapes.
         write = literalPipes(found);
       }
-      operand = /^[\w$\u0080-\uffff]/.test(found)
-        ? previous !== '.' &&
-          /^(?:return|typeof|case|do|else|in|of|new|delete|void|throw|instanceof|yield|await)$/.test(
-            found,
-          )
-        : !/^(?:[)\]`'"]|\/.|\+\+|--)/.test(found);
+      if (found === '(') {
+        conditions.push(/^(?:if|while|for|with)$/.test(previous));
+      }
+      operand =
+        found === ')'
+          ? !!conditions.pop()
+          : /^[\w$\u0080-\uffff]/.test(found)
+            ? previous !== '.' &&
+              /^(?:return|typeof|case|do|else|in|of|new|delete|void|throw|instanceof|yield|await)$/.test(
+                found,
+              )
+            : !/^(?:[\]`'"]|\/.|\+\+|--)/.test(found);
     }
     if (!blank) {
       previous = found;
     }
     line += write;
   }
-  return line;
+  // A line end read wrongly, or in code that isn't valid, is still not
+  // written as one.
+  return line.replace(/\r\n?|\n/g, '\u2028');
 }
 
 // The phrasing content that holds phrasing content, with that of

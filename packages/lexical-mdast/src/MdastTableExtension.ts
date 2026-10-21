@@ -404,6 +404,7 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
       attributes?: Record<string, string | null | undefined>;
     };
     if ((node.type as string) === 'textDirective') {
+      const {children} = node as {children?: PhrasingContent[]};
       return [
         {
           ...node,
@@ -412,72 +413,95 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
             attributes: Object.fromEntries(
               Object.entries(attributes).map(([name, value]) => [
                 name,
-                value && references(value),
+                value == null ? value : references(String(value)),
               ]),
             ),
           }),
-          children: cellPhrasing((node as Emphasis).children),
+          ...(children && {children: cellPhrasing(children)}),
         } as unknown as PhrasingContent,
       ];
     }
     if ((node.type as string) === 'inlineMath') {
       const math = node as unknown as {type: 'inlineMath'; value: string};
-      // A cell is one line. A TeX comment ends with its line end and the
-      // next line's indentation, so a control word before it gets a space
-      // to end at. GFM ends a cell at `|` even in math, so TeX's `|` and
-      // `\|` are written as their command forms, `\textbar` in text, and
+      // A cell is one line, written as KaTeX reads it: a comment ends with
+      // its line end, so a control word right before one gets a space to
+      // end at. GFM ends a cell at `|` even in math, so TeX's `|`
+      // and `\|` are written as their command forms, `\textbar` in text, and
       // `%7C` in a URL; `\verb` takes another delimiter. (A column rule in
       // an array's spec has no other form.)
       let depth = 0;
       let text = 0;
       let wordEnd = -1;
+      // Whether a text command waits for its group.
+      let textCommand = false;
       return [
         {
           ...math,
           value: math.value.replace(
-            /\\verb\*?([^a-zA-Z*\s])[^\r\n]*?\1|\\(?:url|href)\s*\{[^{}]*\}|\\(?:[a-zA-Z]+\s*\{?|\r\n?|[^])|%.*(?:(?:\r\n?|\n)[ \t]*%.*)*(?:(?:\r\n?|\n)[ \t]*)?|\s*[\r\n]\s*|[{}|]/g,
-            (found: string, delimiter: string | undefined, at: number) => {
+            /\\verb\*?([^a-zA-Z*\s])[^\r\n]*?\1|\\(?:url|href)\s*\{[^{}]*\}|\\(?:[a-zA-Z]+|\r\n?|[^])|%.*(?:\r\n?|\n)?|\s+|[{}|]/g,
+            (
+              found: string,
+              delimiter: string | undefined,
+              at: number,
+              tex: string,
+            ) => {
               if (delimiter) {
-                const other = [...'!"+=/'].find(c => !found.includes(c));
+                const other = [...'!"+=/#&()-.:;<>?@[]^_~'].find(
+                  c => !found.includes(c),
+                );
                 return delimiter === '|' && other
                   ? found.replace(/\|/g, other)
                   : found;
               }
-              if (/^\\(?:url|href)\s*\{/.test(found)) {
-                return found
-                  .replace(/\|/g, '%7C')
-                  .replace(/\s*[\r\n]\s*/g, ' ');
-              }
               if (found[0] === '%') {
                 return !/[\r\n]/.test(found)
                   ? found.replace(/\|/g, '\\vert ')
-                  : at === wordEnd
-                    ? ' '
-                    : '';
+                  : at !== wordEnd
+                    ? ''
+                    : // A space after it would be the word's, but in text
+                      // `\ ` is one.
+                      text && /\s/.test(tex.charAt(at + found.length))
+                      ? '\\'
+                      : ' ';
               }
-              if (/^\s/.test(found) || /^\\[\r\n]/.test(found)) {
-                return found[0] === '\\' ? '\\ ' : ' ';
+              if (/^\s/.test(found)) {
+                return oneLine(found, ' ');
               }
-              if (found.endsWith('{') && found !== '\\{') {
+              const group = textCommand;
+              textCommand = false;
+              if (/^\\(?:url|href)\s*\{/.test(found)) {
+                return oneLine(found.replace(/\|/g, '%7C'), ' ');
+              }
+              if (found === '{') {
                 depth++;
-                if (!text && /^\\(?:text(?!style)|mbox)/.test(found)) {
+                if (group && !text) {
                   text = depth;
                 }
               } else if (found === '}') {
                 text = text === depth-- ? 0 : text;
+              } else if (/^\\[\r\n]/.test(found)) {
+                return '\\ ';
               } else if (/^\\[a-zA-Z]/.test(found)) {
                 // Spaces after a control word are its own.
                 wordEnd = at + found.length;
+                textCommand = /^\\(?:text(?!style)[a-zA-Z]*|mbox)$/.test(found);
               } else if (/^\\?\|$/.test(found)) {
+                // `\textbar` ends at what follows, or a group before a
+                // space it would take.
                 return text
                   ? found === '|'
-                    ? '\\textbar{}'
+                    ? '\\textbar' +
+                      (/[a-zA-Z]/.test(tex.charAt(at + 1))
+                        ? ' '
+                        : /\s/.test(tex.charAt(at + 1))
+                          ? '{}'
+                          : '')
                     : found
                   : found === '|'
                     ? '\\vert '
                     : '\\Vert ';
               }
-              return found.replace(/\s*[\r\n]\s*/g, ' ');
+              return found;
             },
           ),
         } as unknown as PhrasingContent,
@@ -507,10 +531,16 @@ const SCRIPT_TOKENS = [
   /(["'])[^]*?\1|\/\s*>|\/\*[^]*?\*\/|\/\/.*|\s+|[^]/y,
   /<\/[^>]*>|[^<{]+|[^]/y,
 ];
-// The tokens of code where a value can start, which can be a regular
-// expression literal.
-const OPERAND_TOKEN =
-  /\/(?![*/])(?:\\.|\[(?:\\.|[^\]\\\r\n])*\]|[^/\\\r\n[])+\/\w*|\\(?:\r\n|[^])|(["'])(?:\\(?:\r\n|[^])|(?!\1)[^\\])*\1|\/\*[^]*?\*\/|\/\/.*|\+\+|--|<<|\s+|(?:[\w$]|(?!\s)[\u0080-\uffff])+|[^]/y;
+// A regular expression literal, which can start where a value can.
+const REGEX_TOKEN =
+  /\/(?![*/])(?:\\.|\[(?:\\.|[^\]\\\r\n])*\]|[^/\\\r\n[])+\/\w*/y;
+
+/** Text whose whitespace runs with a line end are one separator each. */
+function oneLine(text: string, separator: string): string {
+  return text.replace(/\s+/g, space =>
+    /[\r\n]/.test(space) ? separator : space,
+  );
+}
 
 /**
  * Text that reads character references (JSX, an attribute's string) on one
@@ -547,14 +577,10 @@ function scriptLine(code: string): string {
   let previous = '';
   for (let i = 0, found: string; i < code.length; i += found.length) {
     const context = contexts[contexts.length - 1];
-    const token =
-      context < 0
-        ? SCRIPT_TOKENS[-context]
-        : operand
-          ? OPERAND_TOKEN
-          : SCRIPT_TOKENS[0];
-    token.lastIndex = i;
-    found = token.exec(code)![0];
+    const token = SCRIPT_TOKENS[context < 0 ? -context : 0];
+    REGEX_TOKEN.lastIndex = token.lastIndex = i;
+    found = ((context >= 0 && operand && REGEX_TOKEN.exec(code)) ||
+      token.exec(code))![0];
     const blank = context >= 0 && /^\s|^\/[*/]/.test(found);
     let write = found;
     if (context === -1) {
@@ -575,7 +601,8 @@ function scriptLine(code: string): string {
       if (found === '{') {
         contexts.push(0);
         operand = true;
-      } else if (found === '<' && context === -3) {
+      } else if (found === '<') {
+        // An element in children, or as an attribute's value.
         contexts.push(-2);
       } else if (found === '>' && context === -2) {
         contexts[contexts.length - 1] = -3;
@@ -584,12 +611,16 @@ function scriptLine(code: string): string {
       } else if (context === -3 && found[0] !== '<') {
         // JSX text drops the spaces of a line end at its edges.
         write = references(
-          found.replace(/[ \t]*(?:(?:\r\n?|\n)[ \t]*)+/g, (end, at) =>
-            at && at + end.length < found.length ? ' ' : '',
+          found.replace(/[ \t\r\n]+/g, (space, at) =>
+            !/[\r\n]/.test(space)
+              ? space
+              : at && at + space.length < found.length
+                ? ' '
+                : '',
           ),
         );
       } else {
-        write = literalPipes(found.replace(/\s*[\r\n]\s*/g, '\u2028'));
+        write = literalPipes(oneLine(found, '\u2028'));
         if (/^\/\s*>|^<\//.test(found)) {
           contexts.pop();
           operand = false;
@@ -597,7 +628,7 @@ function scriptLine(code: string): string {
       }
     } else if (blank) {
       // Whitespace and comments don't change what can follow.
-      write = literalPipes(found.replace(/\s*[\r\n]\s*/g, '\u2028'));
+      write = literalPipes(oneLine(found, '\u2028'));
     } else {
       if (found === '`') {
         contexts.push(-1);

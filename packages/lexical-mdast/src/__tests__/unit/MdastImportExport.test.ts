@@ -39,6 +39,7 @@ import {
   $isTableCellNode,
   $isTableNode,
 } from '@lexical/table';
+import katex from 'katex';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -1809,7 +1810,7 @@ describe('@lexical/mdast import/export', () => {
       [{type: 'math', value: 'a\\\\%b\nc'}, '$a\\\\c$'],
       [
         {type: 'math', value: '\\text{a|b} | \\mbox{c}'},
-        '$\\text{a\\textbar{}b} \\vert  \\mbox{c}$',
+        '$\\text{a\\textbar b} \\vert  \\mbox{c}$',
       ],
       [
         {type: 'mdxFlowExpression', value: '`a ${\n  b\n}\nc`'},
@@ -1835,7 +1836,7 @@ describe('@lexical/mdast import/export', () => {
       ]),
       [
         {type: 'math', value: '\\text{a {b}|c} \\text{a \\textbf{b|c}}'},
-        '$\\text{a {b}\\textbar{}c} \\text{a \\textbf{b\\textbar{}c}}$',
+        '$\\text{a {b}\\textbar c} \\text{a \\textbf{b\\textbar c}}$',
       ],
       // JSX keeps its text.
       [
@@ -1899,16 +1900,26 @@ describe('@lexical/mdast import/export', () => {
           value:
             '\\text{a {b {c {d|e}}}} \\text {a \\{ b|c} \\textstyle{|x|} \\text{ab%\n  cd}',
         },
-        '$\\text{a {b {c {d\\textbar{}e}}}} \\text {a \\{ b\\textbar{}c} \\textstyle{\\vert x\\vert } \\text{abcd}$',
+        '$\\text{a {b {c {d\\textbar e}}}} \\text {a \\{ b\\textbar c} \\textstyle{\\vert x\\vert } \\text{ab  cd}$',
       ],
-      [{type: 'math', value: 'a % one\n% two\n\\alpha%\n  b'}, '$a \\alpha b$'],
-      [{type: 'math', value: 'a % one\n  % two\nb'}, '$a b$'],
+      [
+        {type: 'math', value: 'a % one\n% two\n\\alpha%\n  b'},
+        '$a \\alpha   b$',
+      ],
+      [{type: 'math', value: 'a % one\n  % two\nb'}, '$a   b$'],
+      [
+        {
+          type: 'math',
+          value: '\\text{\\LaTeX%\n b} \\text%\n{a|b} \\verb|a!"+=/|',
+        },
+        '$\\text{\\LaTeX\\ b} \\text {a\\textbar b} \\verb#a!"+=/#$',
+      ],
       [
         {
           type: 'math',
           value: 'x%c\n  \\\\%d\ny\\beta%\n  \\alpha%\nb \\verb|x|',
         },
-        '$x\\\\y\\beta \\alpha b \\verb!x!$',
+        '$x  \\\\y\\beta   \\alpha b \\verb!x!$',
       ],
       [{type: 'mdxFlowExpression', value: '<p>a\n\n  b</p>'}, '{<p>a b</p>}'],
       [
@@ -1920,10 +1931,9 @@ describe('@lexical/mdast import/export', () => {
       [
         {
           type: 'math',
-          value:
-            '\\href{https://x.y/a%20b|c}{t} \\verb|100%| \\VERB|x| \\alpha % x|y',
+          value: '\\href{https://x.y/a%20b|c}{t} \\verb|100%| \\alpha % x|y',
         },
-        '$\\href{https://x.y/a%20b%7Cc}{t} \\verb!100%! \\VERB\\vert x\\vert  \\alpha % x\\vert y$',
+        '$\\href{https://x.y/a%20b%7Cc}{t} \\verb!100%! \\alpha % x\\vert y$',
       ],
       // A `<` that starts no tag is text, whose line end is kept.
       [
@@ -1939,73 +1949,102 @@ describe('@lexical/mdast import/export', () => {
     ])(
       'keeps %j a block exports to in a cell on its row',
       (exported, written) => {
-        using editor = buildEditorFromExtensions(
-          defineExtension({
-            dependencies: [
-              MdastCommonMarkExtension,
-              MdastTableExtension,
-              configExtension(MdastExtension, {
-                exportRules: [
-                  {
-                    $export: () =>
-                      ({...exported, name: 'abbr'}) as unknown as MdastNode,
-                    type: HorizontalRuleNode,
-                  },
-                ],
-                toMarkdownExtensions: [
-                  {
-                    handlers: {
-                      inlineMath: ((node: {value: string}) =>
-                        `$${node.value}$`) as Handle,
-                      mdxJsxTextElement: ((node, _, state, info) =>
-                        `<${node.name}${(node.attributes || [])
-                          .map(
-                            ({
-                              name,
-                              value,
-                            }: {
-                              name?: string;
-                              value: string | {value: string};
-                            }) =>
-                              name
-                                ? ` ${name}=${typeof value === 'string' ? `"${value}"` : `{${value.value}}`}`
-                                : ` {${value}}`,
-                          )
-                          .join(
-                            '',
-                          )}>${node.children ? state.containerPhrasing(node, info) : ''}</${node.name}>`) as Handle,
-                      mdxTextExpression: ((node: {value: string}) =>
-                        `{${node.value}}`) as Handle,
-                      textDirective: ((node, _, state, info) =>
-                        `:${node.name}[${state.containerPhrasing(node, info)}]`) as Handle,
-                    } as Partial<Handlers>,
-                  },
-                ],
-              }),
-            ],
-            name: '[root]',
-          }),
-        );
-        editor.update(
-          () => {
-            $convertFromMarkdownString('| a |\n| - |\n| b |');
-            const table = $assertNodeType(
-              $getRoot().getFirstChild(),
-              $isTableNode,
-            );
-            const cell = $assertNodeType(
-              table.getLastChildOrThrow<ElementNode>().getFirstChild(),
-              $isElementNode,
-            );
-            cell.clear().append($createHorizontalRuleNode());
-          },
-          {discrete: true},
-        );
-        expect(editor.read(() => $convertToMarkdownString())).toContain(
-          `| ${written} |`,
-        );
+        expect($exportCell(exported)).toContain(`| ${written} |`);
+        const {type, value} = exported as {type: string; value?: string};
+        if (/math/i.test(type) && value) {
+          // KaTeX renders it the same.
+          const render = (tex: string) =>
+            katex.renderToString(tex, {
+              output: 'html',
+              throwOnError: false,
+              trust: true,
+            });
+          // (A URL's `%7C` is its `|`.)
+          expect(render(written.slice(1, -1)).replace(/%7C/g, '|')).toBe(
+            render(value),
+          );
+        }
       },
     );
+
+    /** The Markdown of a table whose cell holds what a node exports. */
+    function $exportCell(exported: object): string {
+      using editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            MdastCommonMarkExtension,
+            MdastTableExtension,
+            configExtension(MdastExtension, {
+              exportRules: [
+                {
+                  $export: () =>
+                    ({...exported, name: 'abbr'}) as unknown as MdastNode,
+                  type: HorizontalRuleNode,
+                },
+              ],
+              toMarkdownExtensions: [
+                {
+                  handlers: {
+                    inlineMath: ((node: {value: string}) =>
+                      `$${node.value}$`) as Handle,
+                    mdxJsxTextElement: ((node, _, state, info) =>
+                      `<${node.name}${(node.attributes || [])
+                        .map(
+                          ({
+                            name,
+                            value,
+                          }: {
+                            name?: string;
+                            value: string | {value: string};
+                          }) =>
+                            name
+                              ? ` ${name}=${typeof value === 'string' ? `"${value}"` : `{${value.value}}`}`
+                              : ` {${value}}`,
+                        )
+                        .join(
+                          '',
+                        )}>${node.children ? state.containerPhrasing(node, info) : ''}</${node.name}>`) as Handle,
+                    mdxTextExpression: ((node: {value: string}) =>
+                      `{${node.value}}`) as Handle,
+                    textDirective: ((node, _, state, info) =>
+                      `:${node.name}[${state.containerPhrasing(node, info)}]`) as Handle,
+                  } as Partial<Handlers>,
+                },
+              ],
+            }),
+          ],
+          name: '[root]',
+        }),
+      );
+      editor.update(
+        () => {
+          $convertFromMarkdownString('| a |\n| - |\n| b |');
+          const table = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isTableNode,
+          );
+          const cell = $assertNodeType(
+            table.getLastChildOrThrow<ElementNode>().getFirstChild(),
+            $isElementNode,
+          );
+          cell.clear().append($createHorizontalRuleNode());
+        },
+        {discrete: true},
+      );
+      return editor.read(() => $convertToMarkdownString());
+    }
+
+    it('reads long runs of spaces in a cell in linear time', () => {
+      const spaces = ' '.repeat(1e5);
+      expect($exportCell({type: 'math', value: `a${spaces}b`})).toContain(
+        `$a${spaces}b$`,
+      );
+      for (const value of [`a${spaces}b`, `<a>${spaces}</a>`]) {
+        expect($exportCell({type: 'mdxFlowExpression', value})).toContain(
+          `{${value}}`,
+        );
+      }
+    });
 
     describe('writes MDX in a cell that MDX reads back', () => {
       /** The cell a node exports to, as MDX reads it back. */
@@ -2105,6 +2144,7 @@ describe('@lexical/mdast import/export', () => {
       it.each([
         '<a t="a|b\nc" /* | */ />',
         '[(1 << 2) + "a|b", <b>x|y\n\n  z</b>]',
+        '<a b=<c /> d="x|y">t|u</a>',
         // A keyword before JSX, and space it doesn't hold.
         '() => { return\u00a0<a>x\n  y</a> }',
         '<>\n  <a href={u} title="x\ny">see http://a.dev\n  b {c\n} d</a>\n</>',
@@ -2145,6 +2185,15 @@ describe('@lexical/mdast import/export', () => {
           type: 'leafDirective',
         });
         expect(node.attributes).toEqual({title: 'a|b\nc'});
+      });
+
+      it('writes a directive with neither label nor string attributes', () => {
+        const node = $readBack({
+          attributes: {width: 3},
+          name: 'abbr',
+          type: 'leafDirective',
+        });
+        expect(node.attributes).toEqual({width: '3'});
       });
     });
 

@@ -1107,6 +1107,9 @@ importers:
         specifier: '>=5.2'
         version: 6.0.3
     devDependencies:
+      katex:
+        specifier: ^0.16.10
+        version: 0.16.47
       mdast-util-directive:
         specifier: ^3.1.0
         version: 3.1.0(supports-color@10.2.2)

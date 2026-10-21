@@ -1079,7 +1079,7 @@ describe('@lexical/mdast import/export', () => {
   });
 
   describe('with MdastTableExtension', () => {
-    it('exports the column alignment a v0.52 state kept on the table', () => {
+    it('moves the column alignment a v0.52 state kept on the table to its cells', () => {
       using editor = createEditor(true);
       editor.update(
         () => $convertFromMarkdownString('| a | b |\n| - | - |\n| 1 | 2 |'),
@@ -1088,6 +1088,21 @@ describe('@lexical/mdast import/export', () => {
       const json = editor.getEditorState().toJSON();
       json.root.children[0].$ = {mdastTableAlign: [null, 'right']};
       editor.setEditorState(editor.parseEditorState(json));
+      // The alignment moves onto the cells, where editing changes it.
+      const table = editor.getEditorState().toJSON().root.children[0];
+      expect(table.$).toBeUndefined();
+      expect(
+        editor.read(() =>
+          $assertNodeType($getRoot().getFirstChild(), $isTableNode)
+            .getAllTextNodes()
+            .map(node =>
+              node
+                .getParentOrThrow()
+                .getParentOrThrow<ElementNode>()
+                .getFormatType(),
+            ),
+        ),
+      ).toEqual(['', 'right', '', 'right']);
       expect(editor.read(() => $convertToMarkdownString())).toBe(
         '| a |  b |\n| - | -: |\n| 1 |  2 |',
       );

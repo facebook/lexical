@@ -184,6 +184,24 @@ test('inserting rows keeps the alignment a column exports', () => {
   expect(exportMarkdown(editor).split('\n')[1]).toBe('| - | :-: |');
 });
 
+test('an inserted row keeps the alignment most of its column has', () => {
+  const {editor} = mountEditor('| a | b |\n| - | - |\n| 1 | 2 |\n| 3 | 4 |');
+  editor.update(
+    () => {
+      for (const node of $getRoot().getAllTextNodes()) {
+        if (node.getTextContent() === '2' || node.getTextContent() === '4') {
+          node.getParentOrThrow<ElementNode>().setFormat('center');
+        }
+      }
+    },
+    {discrete: true},
+  );
+  expect(exportMarkdown(editor).split('\n')[1]).toBe('| - | :-: |');
+  selectLastCell(editor);
+  editor.dispatchCommand(TABLE_EDIT_COMMAND, 'row-below');
+  expect(exportMarkdown(editor).split('\n')[1]).toBe('| - | :-: |');
+});
+
 function $justifyText(text: string) {
   for (const node of $getRoot().getAllTextNodes()) {
     if (node.getTextContent() === text) {

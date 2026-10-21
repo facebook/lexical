@@ -170,12 +170,14 @@ export const TableEditExtension = defineExtension({
         }
         switch (edit) {
           case 'row-above':
-          case 'row-below':
+          case 'row-below': {
+            const align = $getTableColumnAlign(table);
             $alignInsertedRow(
               $insertTableRowAtSelection(edit === 'row-below'),
-              $getTableColumnAlign(table),
+              align,
             );
             break;
+          }
           case 'column-left':
           case 'column-right':
             $insertTableColumnAtSelection(edit === 'column-right');

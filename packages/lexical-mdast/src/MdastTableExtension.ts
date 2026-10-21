@@ -36,6 +36,7 @@ import {
   $createParagraphNode,
   $getState,
   $isElementNode,
+  $setState,
   arrayValue,
   createState,
   defineExtension,
@@ -56,7 +57,25 @@ const alignValue = enumValue<AlignType>([null, 'left', 'center', 'right']);
  */
 const legacyAlignState = createState('mdastTableAlign', {
   parse: arrayValue(alignValue),
+  resetOnCopyNode: true,
 });
+
+/** Moves the alignment a v0.52 state kept on a table onto its cells. */
+function $moveLegacyAlign(table: TableNode) {
+  const align = $getState(table, legacyAlignState);
+  if (align.length > 0) {
+    $setState(table, legacyAlignState, []);
+    for (const row of table.getChildren()) {
+      if ($isTableRowNode(row)) {
+        row.getChildren().forEach((cell, i) => {
+          if ($isTableCellNode(cell) && cell.getFormatType() === '') {
+            cell.setFormat(align[i] || '');
+          }
+        });
+      }
+    }
+  }
+}
 
 /**
  * The GFM alignment a cell renders with: the one its block children share,
@@ -421,16 +440,13 @@ function $alignColumns(
   const headerCells = $isTableRowNode(headerRow)
     ? headerRow.getChildren().filter($isTableCellNode)
     : [];
-  const legacy = $getState(table, legacyAlignState);
   return Array.from(columns, (column, i): AlignType => {
     for (const [cellAlign, count] of column.aligned) {
       if (count * 2 > column.cells) {
         return cellAlign;
       }
     }
-    return (
-      (headerCells[i] && $getCellAlign(headerCells[i])) || legacy[i] || null
-    );
+    return (headerCells[i] && $getCellAlign(headerCells[i])) || null;
   });
 }
 
@@ -513,4 +529,5 @@ export const MdastTableExtension = defineExtension({
   ],
   name: '@lexical/mdast/Table',
   nodes: [TableNode, TableRowNode, TableCellNode],
+  register: editor => editor.registerNodeTransform(TableNode, $moveLegacyAlign),
 });

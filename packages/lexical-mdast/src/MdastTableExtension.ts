@@ -343,23 +343,27 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
               '$1',
             )
             .replace(
-              /<!--[^]*?-->|<(script|style)\b[^]*?<\/\1\s*>|<(?=[!/?a-z])(?:[^>"']|"[^"]*"|'[^']*'|"(?![^"]*")|'(?![^']*'))*>|\r?\n|\r/gi,
+              /<!--[^]*?-->|<(script|style)\b[^]*?(?:<\/\1\s*>|$)|<(?=[!/?a-z])(?:[^>"']|"[^"]*"|'[^']*'|"(?![^"]*")|'(?![^']*'))*>|\r?\n|\r/gi,
               (found: string, rawText?: string) =>
                 found[0] !== '<'
                   ? '&#10;'
                   : // Comments and script or style text read no references:
-                    // a script is written as an MDX expression is.
+                    // JavaScript is written as an MDX expression is, but
+                    // for JSX.
                     found.startsWith('<!--')
                     ? found.replace(/\r?\n|\r/g, ' ')
                     : rawText
                       ? found.replace(
-                          /^([^>]*>)([^]*)(<[^<]*)$/,
-                          (_, open: string, text: string, close: string) =>
+                          /^([^>]*>?)([^]*?)(<\/[^<]*)?$/,
+                          (_, open: string, text: string, close = '') =>
                             oneLine(open, ' ') +
-                            (/^script$/i.test(rawText)
-                              ? scriptLine(text)
+                            (/^script$/i.test(rawText) &&
+                            !/\stype\s*=\s*["']?(?!["'\s>]|(?:text|application)\/(?:java|ecma)script|module)/i.test(
+                              open,
+                            )
+                              ? scriptLine(text, true)
                               : oneLine(text, ' ')) +
-                            close,
+                            oneLine(close, ' '),
                         )
                       : found.replace(
                           /("[^"]*"|'[^']*')|\r?\n|\r/g,
@@ -593,7 +597,7 @@ function literalPipes(text: string): string {
  * expression) GFM has no way to hold it. Nothing else is changed, so code
  * read wrongly is written as it was.
  */
-function scriptLine(code: string): string {
+function scriptLine(code: string, noJsx?: boolean): string {
   // The open contexts, the innermost last: the brace depth of code, or -1
   // in a template's text, -2 in a JSX tag, -3 in a JSX element's children.
   const contexts = [0];
@@ -660,7 +664,7 @@ function scriptLine(code: string): string {
     } else {
       if (found === '`') {
         contexts.push(-1);
-      } else if (operand && found === '<') {
+      } else if (operand && found === '<' && !noJsx) {
         contexts.push(-2);
       } else if (found === '}' && !context && contexts.length > 1) {
         contexts.pop();

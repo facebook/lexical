@@ -1760,7 +1760,10 @@ describe('@lexical/mdast import/export', () => {
                     value:
                       'a\n<b\ntitle="p\nq">b</b>\n<pre>c\n d</pre>' +
                       "<!-- don't\nship --><style>a\nb</style>" +
-                      '<script>// c|\nx("|")</script>',
+                      '<script>// c|\nx("|")</script>' +
+                      '<script type="application/json">{"a":\n1}</script>' +
+                      '<script>\n<!--\nalert("a|b")\n//--></script>' +
+                      '<script>a\n+ "|"',
                   }),
                   type: HorizontalRuleNode,
                 },
@@ -1787,7 +1790,10 @@ describe('@lexical/mdast import/export', () => {
       expect(editor.read(() => $convertToMarkdownString())).toContain(
         '| a&#10;<b title="p&#10;q">b</b>&#10;<pre>c&#10; d</pre>' +
           "<!-- don't ship --><style>a b</style>" +
-          '<script>// c\\x7c\u2028x("\\x7c")</script> |',
+          '<script>// c\\x7c\u2028x("\\x7c")</script>' +
+          '<script type="application/json">{"a": 1}</script>' +
+          '<script>\u2028<!--\u2028alert("a\\x7cb")\u2028//--></script>' +
+          '<script>a\u2028+ "\\x7c" |',
       );
     });
 

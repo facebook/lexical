@@ -225,6 +225,23 @@ test('a row inserted above the header is the header', () => {
   expect(exportMarkdown(editor).split('\n')[2]).toBe('| a | b |');
 });
 
+test('deleting the header row makes the next row the header', () => {
+  const {editor, root} = mountEditor(TABLE);
+  editor.update(
+    () => {
+      $getRoot().getAllTextNodes()[0].select(0, 0);
+    },
+    {discrete: true},
+  );
+  editor.dispatchCommand(TABLE_EDIT_COMMAND, 'delete-row');
+  editor.read(() => {});
+  expect(
+    [...root.querySelectorAll('tr')].map(row =>
+      [...row.children].map(cell => cell.tagName),
+    ),
+  ).toEqual([['TH', 'TH']]);
+});
+
 function $justifyText(text: string) {
   for (const node of $getRoot().getAllTextNodes()) {
     if (node.getTextContent() === text) {

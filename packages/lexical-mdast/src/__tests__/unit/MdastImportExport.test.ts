@@ -1169,7 +1169,7 @@ describe('@lexical/mdast import/export', () => {
 
     function editColumns(
       markdown: string,
-      edit: (row: ElementNode) => void,
+      $edit: (row: ElementNode) => void,
     ): string {
       using editor = createEditor(true);
       editor.update(
@@ -1180,7 +1180,7 @@ describe('@lexical/mdast import/export', () => {
             $isTableNode,
           );
           for (const row of table.getChildren()) {
-            edit($assertNodeType(row, $isElementNode));
+            $edit($assertNodeType(row, $isElementNode));
           }
         },
         {discrete: true},
@@ -1362,14 +1362,14 @@ describe('@lexical/mdast import/export', () => {
             $isTableNode,
           );
           const [, first, , last] = table.getChildren();
-          const cell = (row: LexicalNode) =>
+          const $cell = (row: LexicalNode) =>
             $assertNodeType(
               $assertNodeType(row, $isElementNode).getFirstChild(),
               $isTableCellNode,
             );
-          cell(first).setFormat('right');
+          $cell(first).setFormat('right');
           $setSelection(
-            $createTableSelectionFrom(table, cell(first), cell(last)),
+            $createTableSelectionFrom(table, $cell(first), $cell(last)),
           );
         },
         {discrete: true},
@@ -1389,7 +1389,7 @@ describe('@lexical/mdast import/export', () => {
             $isTableNode,
           );
           const [header, row] = table.getChildren();
-          const cell = (node: LexicalNode) =>
+          const $cell = (node: LexicalNode) =>
             $assertNodeType(
               $assertNodeType(node, $isElementNode).getFirstChild(),
               $isTableCellNode,
@@ -1403,15 +1403,15 @@ describe('@lexical/mdast import/export', () => {
               ),
             );
           }
-          cell(row).setFormat('');
+          $cell(row).setFormat('');
           $setSelection(
             $createTableSelectionFrom(
               table,
-              cell(row),
-              cell(table.getLastChildOrThrow()),
+              $cell(row),
+              $cell(table.getLastChildOrThrow()),
             ),
           );
-          expect(cell(header).getFormatType()).toBe('center');
+          expect($cell(header).getFormatType()).toBe('center');
         },
         {discrete: true},
       );
@@ -1702,6 +1702,10 @@ describe('@lexical/mdast import/export', () => {
       [{type: 'math', value: 'a % c\n+ b\\%'}, '$a + b\\%$'],
       [{type: 'math', value: 'a\\\\%b\nc'}, '$a\\\\ c$'],
       [{type: 'mdxFlowExpression', value: ''}, '{}'],
+      [
+        {type: 'math', value: '|x| + \\|y\\| \\\\|z'},
+        '$\\vert x\\vert  + \\Vert y\\Vert  \\\\\\vert z$',
+      ],
     ])(
       'keeps %j a block exports to in a cell on its row',
       (exported, written) => {

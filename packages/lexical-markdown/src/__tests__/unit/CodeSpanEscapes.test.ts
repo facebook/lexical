@@ -134,7 +134,7 @@ describe('text a text match leaves in place', () => {
     },
     type: 'text-match',
   };
-  const textOf = (nodes: LexicalNode[]) =>
+  const $textOf = (nodes: LexicalNode[]) =>
     nodes
       .flatMap(node => ($isTextNode(node) ? [node] : []))
       .map(node => [node.getTextContent(), node.hasFormat('bold')]);
@@ -146,7 +146,7 @@ describe('text a text match leaves in place', () => {
       editor.update(() => $convertFromMarkdownString(markdown, [MENTION]), {
         discrete: true,
       });
-      expect(editor.read(() => textOf($getRoot().getAllTextNodes()))).toEqual([
+      expect(editor.read(() => $textOf($getRoot().getAllTextNodes()))).toEqual([
         ...(markdown.startsWith('x') ? [['x ', false]] : []),
         ['@a*b', true],
       ]);
@@ -166,7 +166,7 @@ describe('text a text match leaves in place', () => {
       editor.update(() => $convertFromMarkdownString(markdown, [UNPREFIXED]), {
         discrete: true,
       });
-      expect(editor.read(() => textOf($getRoot().getAllTextNodes()))).toEqual([
+      expect(editor.read(() => $textOf($getRoot().getAllTextNodes()))).toEqual([
         ...(markdown.startsWith('x') ? [['x ', false]] : []),
         ['a*b', true],
       ]);
@@ -181,7 +181,7 @@ describe('text a text match leaves in place', () => {
         const [paragraph] = $generateNodesFromMarkdownString('@a\\*b', [
           MENTION,
         ]);
-        text = textOf(
+        text = $textOf(
           $assertNodeType(paragraph, $isParagraphNode).getChildren(),
         );
       },

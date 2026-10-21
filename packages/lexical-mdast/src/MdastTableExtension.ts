@@ -329,6 +329,19 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
         } as PhrasingContent,
       ];
     }
+    if ((node.type as string) === 'inlineMath') {
+      const math = node as unknown as {type: 'inlineMath'; value: string};
+      // GFM ends a cell at `|` even in math, so TeX's `|` and `\|` are
+      // written as their command forms.
+      return [
+        {
+          ...math,
+          value: math.value.replace(/\\[^]|\|/g, found =>
+            found === '|' ? '\\vert ' : found === '\\|' ? '\\Vert ' : found,
+          ),
+        } as unknown as PhrasingContent,
+      ];
+    }
     if (
       (node.type === 'text' || node.type === 'inlineCode') &&
       /[\r\n]/.test(node.value)

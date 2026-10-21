@@ -107,34 +107,46 @@ function $alignSelectedColumns(table: TableNode, format: ElementFormatType) {
 /**
  * Gives the cells of an inserted row the alignment of their columns, as
  * export wrote it before the row was there, so inserting rows doesn't
- * change it. A row inserted above the header is the header, which GFM's
- * first row is.
+ * change it.
  */
 function $alignInsertedRow(
   row: TableRowNode | null,
   align: ReturnType<typeof $getTableColumnAlign>,
 ) {
-  if (row === null) {
+  if (row !== null) {
+    row.getChildren().forEach((cell, i) => {
+      if ($isTableCellNode(cell)) {
+        cell.setFormat(align[i] || '');
+      }
+    });
+  }
+}
+
+/**
+ * Makes the first row the header, which GFM's first row is, after a row is
+ * inserted above it or it is deleted.
+ */
+function $headFirstRow(table: TableNode) {
+  if (!table.isAttached()) {
     return;
   }
-  row.getChildren().forEach((cell, i) => {
-    if ($isTableCellNode(cell)) {
-      cell.setFormat(align[i] || '');
-    }
-  });
-  const next = row.getNextSibling();
-  if (row.getPreviousSibling() === null && $isTableRowNode(next)) {
-    for (const [headerRow, state] of [
-      [row, TableCellHeaderStates.ROW],
-      [next, TableCellHeaderStates.NO_STATUS],
-    ] as const) {
-      for (const cell of headerRow.getChildren()) {
-        if ($isTableCellNode(cell)) {
-          cell.setHeaderStyles(state, TableCellHeaderStates.ROW);
+  table
+    .getChildren()
+    .slice(0, 2)
+    .forEach((row, i) => {
+      if ($isTableRowNode(row)) {
+        for (const cell of row.getChildren()) {
+          if ($isTableCellNode(cell)) {
+            cell.setHeaderStyles(
+              i === 0
+                ? TableCellHeaderStates.ROW
+                : TableCellHeaderStates.NO_STATUS,
+              TableCellHeaderStates.ROW,
+            );
+          }
         }
       }
-    }
-  }
+    });
 }
 
 /**
@@ -192,6 +204,7 @@ export const TableEditExtension = defineExtension({
               $insertTableRowAtSelection(edit === 'row-below'),
               align,
             );
+            $headFirstRow(table);
             break;
           }
           case 'column-left':
@@ -200,6 +213,7 @@ export const TableEditExtension = defineExtension({
             break;
           case 'delete-row':
             $deleteTableRowAtSelection();
+            $headFirstRow(table);
             break;
           case 'delete-column':
             $deleteTableColumnAtSelection();

@@ -202,6 +202,29 @@ test('an inserted row keeps the alignment most of its column has', () => {
   expect(exportMarkdown(editor).split('\n')[1]).toBe('| - | :-: |');
 });
 
+test('a row inserted above the header is the header', () => {
+  const {editor, root} = mountEditor(TABLE);
+  editor.update(
+    () => {
+      const first = $getRoot().getAllTextNodes()[0];
+      first.select(0, 0);
+    },
+    {discrete: true},
+  );
+  editor.dispatchCommand(TABLE_EDIT_COMMAND, 'row-above');
+  editor.read(() => {});
+  expect(
+    [...root.querySelectorAll('tr')].map(row =>
+      [...row.children].map(cell => cell.tagName),
+    ),
+  ).toEqual([
+    ['TH', 'TH'],
+    ['TD', 'TD'],
+    ['TD', 'TD'],
+  ]);
+  expect(exportMarkdown(editor).split('\n')[2]).toBe('| a | b |');
+});
+
 function $justifyText(text: string) {
   for (const node of $getRoot().getAllTextNodes()) {
     if (node.getTextContent() === text) {

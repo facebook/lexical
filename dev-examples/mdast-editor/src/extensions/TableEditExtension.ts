@@ -18,6 +18,7 @@ import {
   $isTableCellNode,
   $isTableRowNode,
   $isTableSelection,
+  TableCellHeaderStates,
   TableExtension,
   type TableNode,
   type TableRowNode,
@@ -106,18 +107,33 @@ function $alignSelectedColumns(table: TableNode, format: ElementFormatType) {
 /**
  * Gives the cells of an inserted row the alignment of their columns, as
  * export wrote it before the row was there, so inserting rows doesn't
- * change it.
+ * change it. A row inserted above the header is the header, which GFM's
+ * first row is.
  */
 function $alignInsertedRow(
   row: TableRowNode | null,
   align: ReturnType<typeof $getTableColumnAlign>,
 ) {
-  if (row) {
-    row.getChildren().forEach((cell, i) => {
-      if ($isTableCellNode(cell)) {
-        cell.setFormat(align[i] || '');
+  if (row === null) {
+    return;
+  }
+  row.getChildren().forEach((cell, i) => {
+    if ($isTableCellNode(cell)) {
+      cell.setFormat(align[i] || '');
+    }
+  });
+  const next = row.getNextSibling();
+  if (row.getPreviousSibling() === null && $isTableRowNode(next)) {
+    for (const [headerRow, state] of [
+      [row, TableCellHeaderStates.ROW],
+      [next, TableCellHeaderStates.NO_STATUS],
+    ] as const) {
+      for (const cell of headerRow.getChildren()) {
+        if ($isTableCellNode(cell)) {
+          cell.setHeaderStyles(state, TableCellHeaderStates.ROW);
+        }
       }
-    });
+    }
   }
 }
 

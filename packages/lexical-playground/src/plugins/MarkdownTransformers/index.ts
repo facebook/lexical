@@ -515,10 +515,11 @@ const $createTableCell = (
   const guard = free();
   // The legacy `\n` separates a cell's lines where it has no `<br>`, but in
   // an equation or a link's destination, which can hold one of their own
-  // (`$\nabla$`).
+  // (`$\nabla$`). An equation, as TeX writers do, has no space inside its
+  // dollar signs and no digit after them, unlike amounts (`$5\nb $3`).
   const legacy = !/<br\s*\/?>/i.test(text);
   const ownLines = Array.from(
-    text.matchAll(/\$[^$]*\$|\]\([^)]*\)/g),
+    text.matchAll(/\$(?! )[^$]*[^ $]\$(?!\d)|\]\([^)]*\)/g),
     found => [found.index!, found.index! + found[0].length],
   );
   // Reads the cell with the `<br>`s at the offsets in `blocks` ending their

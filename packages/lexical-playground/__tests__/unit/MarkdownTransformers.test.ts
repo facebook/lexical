@@ -593,6 +593,7 @@ describe('playground TABLE markdown transformer', () => {
     ['one\\n\\ntwo', [['one', 'two']]],
     ['[a](http://x)\\nb', [['a\nb']]],
     ['costs $5\\nb', [['costs $5\nb']]],
+    ['costs $5\\nb $3', [['costs $5\nb $3']]],
   ])('reads the legacy \\n in %j as a line break', (body, cell) => {
     using editor = importMarkdown(
       ['| h |', '| --- |', `| ${body} |`].join('\n'),

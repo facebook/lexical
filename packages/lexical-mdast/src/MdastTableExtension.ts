@@ -88,7 +88,9 @@ function $getCellAlign(cell: TableCellNode): AlignType {
   let shared: AlignType | undefined;
   for (const child of cell.getChildren()) {
     if ($isElementNode(child) && !child.isInline()) {
-      const align = alignValue(child.getFormatType()) ?? own;
+      // A block aligned in a way GFM can't write (justified) has none.
+      const format = child.getFormatType();
+      const align = format === '' ? own : alignValue(format);
       if (shared !== undefined && shared !== align) {
         return null;
       }
@@ -379,7 +381,7 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
           : 'value' in node && {
               // A line end ends a TeX comment, which a space would not.
               value: (twin === 'inlineMath'
-                ? node.value.replace(/(^|[^\\])%.*/gm, '$1')
+                ? node.value.replace(/(^|[^\\])((?:\\\\)*)%.*/gm, '$1$2')
                 : node.value
               ).replace(/\s+/g, ' '),
             }),

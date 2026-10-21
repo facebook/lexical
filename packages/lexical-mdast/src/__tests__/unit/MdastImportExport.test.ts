@@ -1079,6 +1079,22 @@ describe('@lexical/mdast import/export', () => {
   });
 
   describe('with MdastTableExtension', () => {
+    it('writes no alignment for a column whose paragraphs are justified', () => {
+      using editor = createEditor(true);
+      editor.update(
+        () => {
+          $convertFromMarkdownString('| a |\n| :-: |\n| b |');
+          for (const node of $getRoot().getAllTextNodes()) {
+            node.getParentOrThrow<ElementNode>().setFormat('justify');
+          }
+        },
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertToMarkdownString())).toBe(
+        '| a |\n| - |\n| b |',
+      );
+    });
+
     it('moves the column alignment a v0.52 state kept on the table to its cells', () => {
       using editor = createEditor(true);
       editor.update(
@@ -1684,6 +1700,7 @@ describe('@lexical/mdast import/export', () => {
       ],
       [{type: 'math', value: 'a\n  b'}, '$a b$'],
       [{type: 'math', value: 'a % c\n+ b\\%'}, '$a + b\\%$'],
+      [{type: 'math', value: 'a\\\\%b\nc'}, '$a\\\\ c$'],
       [{type: 'mdxFlowExpression', value: ''}, '{}'],
     ])(
       'keeps %j a block exports to in a cell on its row',

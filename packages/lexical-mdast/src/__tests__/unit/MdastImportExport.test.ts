@@ -1714,6 +1714,11 @@ describe('@lexical/mdast import/export', () => {
       [{type: 'math', value: 'a % c\n+ b\\%'}, '$a + b\\%$'],
       [{type: 'math', value: 'a\\\\%b\nc'}, '$a\\\\ c$'],
       [{type: 'mdxFlowExpression', value: ''}, '{}'],
+      // A `<` that starts no tag is text, whose line end is kept.
+      [
+        {type: 'html', value: '<pre>a < b\nc > d</pre>'},
+        '<pre>a < b&#10;c > d</pre>',
+      ],
       // An unclosed tag with quotes is read in linear time.
       [{type: 'html', value: `a <${'"'.repeat(60)}`}, `a <${'"'.repeat(60)}`],
       [

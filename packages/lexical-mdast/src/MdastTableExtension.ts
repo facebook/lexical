@@ -68,8 +68,9 @@ function $moveLegacyAlign(table: TableNode) {
     for (const row of table.getChildren()) {
       if ($isTableRowNode(row)) {
         row.getChildren().forEach((cell, i) => {
-          if ($isTableCellNode(cell) && cell.getFormatType() === '') {
-            cell.setFormat(align[i] || '');
+          const format = align[i];
+          if (format && $isTableCellNode(cell) && cell.getFormatType() === '') {
+            cell.setFormat(format);
           }
         });
       }
@@ -301,7 +302,7 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
               '$1',
             )
             .replace(
-              /<!--[^]*?-->|<(script|style)\b[^]*?<\/\1\s*>|<(?:[^>"']|"[^"]*"|'[^']*'|"(?![^"]*")|'(?![^']*'))*>|\r?\n|\r/gi,
+              /<!--[^]*?-->|<(script|style)\b[^]*?<\/\1\s*>|<(?=[!/?a-z])(?:[^>"']|"[^"]*"|'[^']*'|"(?![^"]*")|'(?![^']*'))*>|\r?\n|\r/gi,
               (found: string, rawText?: string) =>
                 found[0] !== '<'
                   ? '&#10;'

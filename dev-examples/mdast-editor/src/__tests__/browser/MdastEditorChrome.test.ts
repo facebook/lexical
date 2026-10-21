@@ -27,11 +27,13 @@ import {
   $isTextNode,
   $setSelection,
   defineExtension,
+  type ElementNode,
   HISTORY_MERGE_TAG,
   INSERT_PARAGRAPH_COMMAND,
   type LexicalEditor,
 } from 'lexical';
 import {assert, describe, expect, onTestFinished, test, vi} from 'vitest';
+import {userEvent} from 'vitest/browser';
 
 import {
   INSERT_ALERT_COMMAND,
@@ -268,6 +270,21 @@ describe('footnotes', () => {
       },
       {discrete: true},
     );
+    expect(root.querySelector('.footnote-def')).toBeNull();
+    expect(markdownOf(editor)).toBe('');
+  });
+
+  test('selecting the body text and pressing Backspace clears the footnotes', async () => {
+    const {editor, root} = mountEditor('body[^a] text\n\n[^a]: the note');
+    root.focus();
+    editor.update(
+      () => {
+        const body = $getRoot().getFirstChildOrThrow<ElementNode>();
+        body.select(0, body.getChildrenSize());
+      },
+      {discrete: true},
+    );
+    await userEvent.keyboard('{Backspace}');
     expect(root.querySelector('.footnote-def')).toBeNull();
     expect(markdownOf(editor)).toBe('');
   });

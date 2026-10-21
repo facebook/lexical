@@ -140,7 +140,6 @@ describe('@lexical/mdast import/export', () => {
       ['heading h3', '### Heading three'],
       ['bold', '**bold**'],
       ['italic', '*italic*'],
-      ['bold italic', '***both***'],
       ['inline code', '`code()`'],
       ['strikethrough (gfm)', '~~gone~~'],
       ['mixed inline', 'a **b** c *d* e `f`'],
@@ -525,7 +524,6 @@ describe('@lexical/mdast import/export', () => {
       ['two-space hard break', 'line one  \nline two'],
       ['underscore italic', '_em_'],
       ['underscore bold', '__strong__'],
-      ['underscore bold italic', '___both___'],
       ['underscore emphasis throughout', '_a_ and __b__ and _c_'],
       ['inline link whose text is its URL', '[https://a.dev](https://a.dev)'],
       ['setext h1', 'Title\n====='],
@@ -560,6 +558,15 @@ describe('@lexical/mdast import/export', () => {
       const out = importExport('_a_ and *b*');
       expect(importExport(out)).toBe(out); // and is stable
     });
+  });
+
+  it.each([
+    ['***both***', '**_both_**'],
+    ['___both___', '__*both*__'],
+  ])('writes bold italic %s as strong around emphasis', (markdown, out) => {
+    // mdast-util-to-markdown alternates the markers of nested attention.
+    expect(importExport(markdown)).toBe(out);
+    expect(importExport(out)).toBe(out);
   });
 
   it('round-trips autolink literals without normalizing to <...>', () => {

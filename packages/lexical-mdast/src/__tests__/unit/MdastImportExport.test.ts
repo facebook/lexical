@@ -1101,6 +1101,7 @@ describe('@lexical/mdast import/export', () => {
     ['/[//]/.test("/")', '/[//]/.test("/")'],
     ['"a|b" + `c|d`', '"a\\x7cb" + `c\\x7cd`'],
     ['"a\\|b\\\\" + `c\\|d`', '"a\\x7cb\\\\" + `c\\x7cd`'],
+    ['(1 << 2) + "a|b"', '(1 << 2) + "a\\x7cb"'],
     ['`a ${({x: 1}).x\n} b`', '`a ${({x: 1}).x\u2028} b`'],
     [
       '`a ${(() => {\n  return 1;\n})()\n} b`',
@@ -1910,6 +1911,20 @@ describe('@lexical/mdast import/export', () => {
         '$x\\\\y\\beta \\alpha b \\verb!x!$',
       ],
       [{type: 'mdxFlowExpression', value: '<p>a\n\n  b</p>'}, '{<p>a b</p>}'],
+      [
+        {type: 'mdxFlowExpression', value: '<a /* | */ b="1" />'},
+        '{<a /* \\x7c */ b="1" />}',
+      ],
+      // A `}` that closes nothing.
+      [{type: 'mdxFlowExpression', value: 'x}y\nz'}, '{x}y\u2028z}'],
+      [
+        {
+          type: 'math',
+          value:
+            '\\href{https://x.y/a%20b|c}{t} \\verb|100%| \\VERB|x| \\alpha % x|y',
+        },
+        '$\\href{https://x.y/a%20b%7Cc}{t} \\verb!100%! \\VERB\\vert x\\vert  \\alpha % x\\vert y$',
+      ],
       // A `<` that starts no tag is text, whose line end is kept.
       [
         {type: 'html', value: '<pre>a < b\nc > d</pre>'},
@@ -2051,6 +2066,51 @@ describe('@lexical/mdast import/export', () => {
       it.each(SCRIPTS)('%j keeps its value', value => {
         const node = $readBack({type: 'mdxFlowExpression', value});
         expect(evaluate(node.value as string)).toEqual(evaluate(value));
+      });
+
+      /** The literal values and JSX text an MDX expression holds. */
+      function values(value: string): unknown[] {
+        const [paragraph] = fromMarkdown(`{${value}}`, {
+          extensions: [mdxjs()],
+          mdastExtensions: [mdxFromMarkdown()],
+        }).children;
+        return estreeValues(paragraph);
+      }
+      function estreeValues(node: unknown): unknown[] {
+        if (!node || typeof node !== 'object') {
+          return [];
+        }
+        const {type, value} = node as {type?: string; value?: unknown};
+        return type === 'Literal'
+          ? [value]
+          : type === 'JSXText'
+            ? // The text JSX makes of it: lines without the spaces at their
+              // inner edges, and blank ones dropped.
+              [
+                String(value)
+                  .split(/\r\n?|\n/)
+                  .map((line, i, lines) =>
+                    line
+                      .replace(i ? /^[ \t]+/ : /^$/, '')
+                      .replace(i < lines.length - 1 ? /[ \t]+$/ : /^$/, ''),
+                  )
+                  .filter(Boolean)
+                  .join(' '),
+              ].filter(Boolean)
+            : Object.entries(node).flatMap(([key, child]) =>
+                key === 'position' || key === 'loc' ? [] : estreeValues(child),
+              );
+      }
+
+      it.each([
+        '<a t="a|b\nc" /* | */ />',
+        '[(1 << 2) + "a|b", <b>x|y\n\n  z</b>]',
+        // A keyword before JSX, and space it doesn't hold.
+        '() => { return\u00a0<a>x\n  y</a> }',
+        '<>\n  <a href={u} title="x\ny">see http://a.dev\n  b {c\n} d</a>\n</>',
+      ])('%j keeps its values', value => {
+        const node = $readBack({type: 'mdxFlowExpression', value});
+        expect(values(node.value as string)).toEqual(values(value));
       });
 
       it('keeps the attributes and text of JSX', () => {

@@ -264,6 +264,8 @@ function rawHtml(value: '<br>' | '<hr>'): Html {
   return {type: 'html', value};
 }
 
+const FORMATTING_RE = /^(?:emphasis|strong|delete)$/;
+
 /**
  * Rejoins formatting that export split around a line break (`**a**`, break,
  * `**b**`), so the break is written inside it, where import reads a `<br>`
@@ -284,7 +286,7 @@ function joinAtBreaks(nodes: readonly PhrasingContent[]): PhrasingContent[] {
       prev &&
       next &&
       prev.type === next.type &&
-      /^(?:emphasis|strong|delete)$/.test(prev.type)
+      FORMATTING_RE.test(prev.type)
     ) {
       joined[joined.length - 1] = {
         ...prev,
@@ -318,7 +320,7 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
       // GFM has no rule in a cell but HTML's, which import reads back.
       return [rawHtml('<hr>')];
     }
-    if (/^(?:emphasis|strong|delete)$/.test(node.type)) {
+    if (FORMATTING_RE.test(node.type)) {
       return [
         {
           ...node,
@@ -345,14 +347,25 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
               (found: string, rawText?: string) =>
                 found[0] !== '<'
                   ? '&#10;'
-                  : // Comments and script or style text read no references.
-                    found.startsWith('<!--') || rawText
+                  : // Comments and script or style text read no references:
+                    // a script is written as an MDX expression is.
+                    found.startsWith('<!--')
                     ? found.replace(/\r?\n|\r/g, ' ')
-                    : found.replace(
-                        /("[^"]*"|'[^']*')|\r?\n|\r/g,
-                        (_, quoted?: string) =>
-                          quoted ? quoted.replace(/\r?\n|\r/g, '&#10;') : ' ',
-                      ),
+                    : rawText
+                      ? found.replace(
+                          /^([^>]*>)([^]*)(<[^<]*)$/,
+                          (_, open: string, text: string, close: string) =>
+                            oneLine(open, ' ') +
+                            (/^script$/i.test(rawText)
+                              ? scriptLine(text)
+                              : oneLine(text, ' ')) +
+                            close,
+                        )
+                      : found.replace(
+                          /("[^"]*"|'[^']*')|\r?\n|\r/g,
+                          (_, quoted?: string) =>
+                            quoted ? quoted.replace(/\r?\n|\r/g, '&#10;') : ' ',
+                        ),
             )
             .replace(/\|/g, '&#124;'),
           // `MdastHtmlExtension`'s raw HTML with Markdown embedded in it:
@@ -672,7 +685,8 @@ function scriptLine(code: string): string {
             : !/^(?:[\]`'"]|\/.|\+\+|--)/.test(found);
     }
     if (!blank) {
-      previous = found;
+      // A property (`a.with`) keeps its dot, as it is no keyword.
+      previous = previous === '.' ? '.' + found : found;
     }
     line += write;
   }

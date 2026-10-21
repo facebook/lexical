@@ -505,10 +505,10 @@ const $createTableCell = (
     }
     return String.fromCodePoint(nextFree++);
   };
-  // A `<br>` inside a paragraph is read as a mark between spaces, which
-  // emphasis reads as a space, so that formatting and links around it
-  // (`**a<br>b**`) stay whole, and the mark becomes a line break once the
-  // cell is read.
+  // A `<br>` inside a paragraph is read as a mark between `<` and `>`, so
+  // that formatting and links around it (`**a<br>b**`, `*a<br>*`) read as
+  // they do around the tag, and the mark becomes a line break once the cell
+  // is read.
   const mark = free();
   // A guard keeps a line that opens with a code span from reading as a code
   // block, and is dropped once the cell is read.
@@ -629,12 +629,12 @@ const $createTableCell = (
           ? '\n' + (startsBlock ? trail : '') + guardAt(lineStart)
           : (fenceLine ? '' : lead) + '\n' + trail;
       }
-      let char = mark;
       if (block && blocks === undefined) {
-        char = free();
+        const char = free();
         candidates.push([offset, char]);
+        return ` ${char} `;
       }
-      return ` ${char} `;
+      return `<${mark}>`;
     };
     let markdown = guardAt(0);
     let last = 0;
@@ -681,8 +681,8 @@ const $createTableCell = (
       chars = '';
     }
   }
-  // The reader's marks, with the spaces they were read between.
-  const marks = new RegExp(`${guard}| ?[${mark}${chars}] ?`, 'gu');
+  // The reader's marks, with what they were read between.
+  const marks = new RegExp(`${guard}|<${mark}>| ?[${chars}] ?`, 'gu');
   const restore = (value: string) => value.replace(marks, '<br>');
   const texts: TextNode[] = [];
   for (const {node} of $dfsIterator(cell)) {

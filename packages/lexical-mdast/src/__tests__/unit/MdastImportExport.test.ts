@@ -1103,6 +1103,8 @@ describe('@lexical/mdast import/export', () => {
     ['"a|b" + `c|d`', '"a\\x7cb" + `c\\x7cd`'],
     ['"a\\|b\\\\" + `c\\|d`', '"a\\x7cb\\\\" + `c\\x7cd`'],
     ['(1 << 2) + "a|b"', '(1 << 2) + "a\\x7cb"'],
+    // A method named as a keyword.
+    ['[2].with(0, 4) / "|".length / 1', '[2].with(0, 4) / "\\x7c".length / 1'],
     // A regular expression after a condition.
     [
       '(() => { if (1) /"/.test("a")\nreturn 2 // "\n})()',
@@ -1757,7 +1759,8 @@ describe('@lexical/mdast import/export', () => {
                     type: 'html',
                     value:
                       'a\n<b\ntitle="p\nq">b</b>\n<pre>c\n d</pre>' +
-                      "<!-- don't\nship --><style>a\nb</style>",
+                      "<!-- don't\nship --><style>a\nb</style>" +
+                      '<script>// c|\nx("|")</script>',
                   }),
                   type: HorizontalRuleNode,
                 },
@@ -1783,7 +1786,8 @@ describe('@lexical/mdast import/export', () => {
       );
       expect(editor.read(() => $convertToMarkdownString())).toContain(
         '| a&#10;<b title="p&#10;q">b</b>&#10;<pre>c&#10; d</pre>' +
-          "<!-- don't ship --><style>a b</style> |",
+          "<!-- don't ship --><style>a b</style>" +
+          '<script>// c\\x7c\u2028x("\\x7c")</script> |',
       );
     });
 
@@ -1969,7 +1973,7 @@ describe('@lexical/mdast import/export', () => {
     ])(
       'keeps %j a block exports to in a cell on its row',
       (exported, written) => {
-        expect($exportCell(exported)).toContain(`| ${written} |`);
+        expect(exportCellOf(exported)).toContain(`| ${written} |`);
         const {type, value} = exported as {type: string; value?: string};
         if (/math/i.test(type) && value) {
           // KaTeX renders it the same, with the playground's options.
@@ -1981,7 +1985,7 @@ describe('@lexical/mdast import/export', () => {
     );
 
     /** The Markdown of a table whose cell holds what a node exports. */
-    function $exportCell(exported: object): string {
+    function exportCellOf(exported: object): string {
       using editor = buildEditorFromExtensions(
         defineExtension({
           dependencies: [
@@ -2049,11 +2053,11 @@ describe('@lexical/mdast import/export', () => {
 
     it('reads long runs of spaces in a cell in linear time', () => {
       const spaces = ' '.repeat(1e5);
-      expect($exportCell({type: 'math', value: `a${spaces}b`})).toContain(
+      expect(exportCellOf({type: 'math', value: `a${spaces}b`})).toContain(
         `$a${spaces}b$`,
       );
       for (const value of [`a${spaces}b`, `<a>${spaces}</a>`]) {
-        expect($exportCell({type: 'mdxFlowExpression', value})).toContain(
+        expect(exportCellOf({type: 'mdxFlowExpression', value})).toContain(
           `{${value}}`,
         );
       }
@@ -2061,7 +2065,7 @@ describe('@lexical/mdast import/export', () => {
 
     describe('writes MDX in a cell that MDX reads back', () => {
       /** The cell a node exports to, as MDX reads it back. */
-      function $readBack(exported: object): Record<string, unknown> {
+      function readBack(exported: object): Record<string, unknown> {
         using editor = buildEditorFromExtensions(
           defineExtension({
             dependencies: [
@@ -2116,7 +2120,7 @@ describe('@lexical/mdast import/export', () => {
       const evaluate = (code: string) => new Function(`return (${code}\n);`)();
 
       it.each(SCRIPTS)('%j keeps its value', value => {
-        const node = $readBack({type: 'mdxFlowExpression', value});
+        const node = readBack({type: 'mdxFlowExpression', value});
         expect(evaluate(node.value as string)).toEqual(evaluate(value));
       });
 
@@ -2162,12 +2166,12 @@ describe('@lexical/mdast import/export', () => {
         '() => { return\u00a0<a>x\n  y</a> }',
         '<>\n  <a href={u} title="x\ny">see http://a.dev\n  b {c\n} d</a>\n</>',
       ])('%j keeps its values', value => {
-        const node = $readBack({type: 'mdxFlowExpression', value});
+        const node = readBack({type: 'mdxFlowExpression', value});
         expect(values(node.value as string)).toEqual(values(value));
       });
 
       it('keeps the attributes and text of JSX', () => {
-        const node = $readBack({
+        const node = readBack({
           attributes: [
             {name: 'title', type: 'mdxJsxAttribute', value: 'a\r\nb|c&#124;'},
             {
@@ -2191,7 +2195,7 @@ describe('@lexical/mdast import/export', () => {
       });
 
       it('keeps the attributes of a directive', () => {
-        const node = $readBack({
+        const node = readBack({
           attributes: {title: 'a|b\nc&#124;'},
           children: [{type: 'text', value: 'x'}],
           name: 'abbr',
@@ -2201,7 +2205,7 @@ describe('@lexical/mdast import/export', () => {
       });
 
       it('writes a directive with neither label nor string attributes', () => {
-        const node = $readBack({
+        const node = readBack({
           attributes: {width: 3},
           name: 'abbr',
           type: 'leafDirective',

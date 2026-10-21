@@ -450,6 +450,23 @@ describe('playground TABLE markdown transformer', () => {
   });
 
   it.each([
+    ['*a<br>*', 'italic', 'a\n'],
+    ['**<br>a**', 'bold', '\na'],
+  ] as const)('reads %j as GFM does', (body, format, text) => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', `| ${body} |`].join('\n'),
+    );
+    expect(cellTexts(editor)).toEqual([[['h']], [[text]]]);
+    editor.read(() => {
+      const [a] = $getRoot()
+        .getLastChildOrThrow<ElementNode>()
+        .getAllTextNodes()
+        .filter(node => node.getTextContent() === 'a');
+      expect(a.hasFormat(format)).toBe(true);
+    });
+  });
+
+  it.each([
     ['**a<br># b**', 'bold', '# b'],
     ['*a<br>- b*', 'italic', '- b'],
     ['_a<br>1. b_', 'italic', '1. b'],

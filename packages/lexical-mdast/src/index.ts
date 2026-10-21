@@ -50,7 +50,7 @@ export {
   RenderContextMarkdownExport,
 } from './MdastHtmlExtension';
 export {ImportContextMarkdown} from './MdastImport';
-export {MdastTableExtension} from './MdastTableExtension';
+export {$getTableColumnAlign, MdastTableExtension} from './MdastTableExtension';
 export type {
   CompiledMdast,
   MdastExportContext,

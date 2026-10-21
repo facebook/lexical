@@ -165,6 +165,25 @@ test('an inserted row takes the alignment set on paragraphs', () => {
   expect(exportMarkdown(editor).split('\n')[1]).toBe('| - | :-: |');
 });
 
+test('inserting rows keeps the alignment a column exports', () => {
+  const {editor} = mountEditor('| a | b |\n| - | :-: |\n| 1 | 2 |');
+  editor.update(
+    () => {
+      for (const node of $getRoot().getAllTextNodes()) {
+        if (node.getTextContent() === '2') {
+          node.getParentOrThrow<ElementNode>().setFormat('right');
+        }
+      }
+    },
+    {discrete: true},
+  );
+  // One cell each way: the header's alignment is the column's.
+  expect(exportMarkdown(editor).split('\n')[1]).toBe('| - | :-: |');
+  selectLastCell(editor);
+  editor.dispatchCommand(TABLE_EDIT_COMMAND, 'row-below');
+  expect(exportMarkdown(editor).split('\n')[1]).toBe('| - | :-: |');
+});
+
 function $justifyText(text: string) {
   for (const node of $getRoot().getAllTextNodes()) {
     if (node.getTextContent() === text) {

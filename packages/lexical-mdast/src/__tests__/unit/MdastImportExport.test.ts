@@ -1079,6 +1079,20 @@ describe('@lexical/mdast import/export', () => {
   });
 
   describe('with MdastTableExtension', () => {
+    it('exports the column alignment a v0.52 state kept on the table', () => {
+      using editor = createEditor(true);
+      editor.update(
+        () => $convertFromMarkdownString('| a | b |\n| - | - |\n| 1 | 2 |'),
+        {discrete: true},
+      );
+      const json = editor.getEditorState().toJSON();
+      json.root.children[0].$ = {mdastTableAlign: [null, 'right']};
+      editor.setEditorState(editor.parseEditorState(json));
+      expect(editor.read(() => $convertToMarkdownString())).toBe(
+        '| a |  b |\n| - | -: |\n| 1 |  2 |',
+      );
+    });
+
     it('round-trips a GFM table', () => {
       const markdown = [
         '| a | b |',

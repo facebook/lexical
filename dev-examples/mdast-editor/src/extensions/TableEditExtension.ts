@@ -6,6 +6,7 @@
  *
  */
 
+import {$getTableColumnAlign} from '@lexical/mdast';
 import {
   $deleteTableColumnAtSelection,
   $deleteTableRowAtSelection,
@@ -17,7 +18,6 @@ import {
   $isTableCellNode,
   $isTableRowNode,
   $isTableSelection,
-  type TableCellNode,
   TableExtension,
   type TableNode,
   type TableRowNode,
@@ -104,38 +104,18 @@ function $alignSelectedColumns(table: TableNode, format: ElementFormatType) {
 }
 
 /**
- * The GFM alignment a cell renders with, as `@lexical/mdast` exports it:
- * the one its blocks share, each with its own or else the cell's.
+ * Gives the cells of an inserted row the alignment of their columns, as
+ * export wrote it before the row was there, so inserting rows doesn't
+ * change it.
  */
-function $getCellAlign(cell: TableCellNode): ElementFormatType {
-  const own = cell.getFormatType();
-  let shared: ElementFormatType | undefined;
-  for (const child of cell.getChildren()) {
-    if ($isElementNode(child) && !child.isInline()) {
-      const format = child.getFormatType();
-      const align = GFM_ALIGN.test(format) ? format : own;
-      if (shared !== undefined && shared !== align) {
-        return '';
-      }
-      shared = align;
-    }
-  }
-  const align = shared ?? own;
-  return GFM_ALIGN.test(align) ? align : '';
-}
-
-/**
- * Gives the cells of an inserted row the alignment of their column, which
- * the row beside it has, on its cells or on their paragraphs.
- */
-function $alignInsertedRow(row: TableRowNode | null) {
-  const beside = row && (row.getPreviousSibling() ?? row.getNextSibling());
-  if ($isTableRowNode(beside)) {
-    const besideCells = beside.getChildren();
-    row!.getChildren().forEach((cell, i) => {
-      const from = besideCells[i];
-      if ($isTableCellNode(cell) && $isTableCellNode(from)) {
-        cell.setFormat($getCellAlign(from));
+function $alignInsertedRow(
+  row: TableRowNode | null,
+  align: ReturnType<typeof $getTableColumnAlign>,
+) {
+  if (row) {
+    row.getChildren().forEach((cell, i) => {
+      if ($isTableCellNode(cell)) {
+        cell.setFormat(align[i] || '');
       }
     });
   }
@@ -191,7 +171,10 @@ export const TableEditExtension = defineExtension({
         switch (edit) {
           case 'row-above':
           case 'row-below':
-            $alignInsertedRow($insertTableRowAtSelection(edit === 'row-below'));
+            $alignInsertedRow(
+              $insertTableRowAtSelection(edit === 'row-below'),
+              $getTableColumnAlign(table),
+            );
             break;
           case 'column-left':
           case 'column-right':

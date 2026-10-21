@@ -33,7 +33,10 @@ import {
 } from '@lexical/table';
 import {
   $createParagraphNode,
+  $getState,
   $isElementNode,
+  arrayValue,
+  createState,
   defineExtension,
   enumValue,
 } from 'lexical';
@@ -45,6 +48,14 @@ import {MdastExtension} from './MdastExtension';
 
 /** A GFM column alignment as mdast spells it; anything else reads as `null`. */
 const alignValue = enumValue<AlignType>([null, 'left', 'center', 'right']);
+
+/**
+ * The column alignment v0.52 kept on the table rather than on its cells,
+ * read where a saved state's cells have none.
+ */
+const legacyAlignState = createState('mdastTableAlign', {
+  parse: arrayValue(alignValue),
+});
 
 /**
  * The GFM alignment a cell renders with: the one its block children share,
@@ -308,72 +319,95 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
   );
 }
 
-const $exportTable: MdastExportHandler = (node, ctx) => {
-  if (!$isTableNode(node)) {
-    return null;
-  }
-  const rows: TableRow[] = [];
+/**
+ * The GFM alignment of each column of `table`'s `rows`. GFM aligns columns,
+ * not cells: a column takes the alignment that most of its cells have, so
+ * aligning one body cell doesn't align its column, or else that of its
+ * header cell, the cell the delimiter row is under, so rows inserted into an
+ * aligned column don't clear it.
+ */
+function $alignColumns(
+  table: TableNode,
+  rows: readonly TableRowNode[],
+): AlignType[] {
   // The cells in each column, and how many of them have each alignment.
   const columns: {aligned: Map<AlignType, number>; cells: number}[] = [];
+  for (const row of rows) {
+    row
+      .getChildren()
+      .filter($isTableCellNode)
+      .forEach((cell, i) => {
+        const cellAlign = $getCellAlign(cell);
+        const column = (columns[i] ??= {aligned: new Map(), cells: 0});
+        column.cells++;
+        if (cellAlign !== null) {
+          column.aligned.set(
+            cellAlign,
+            (column.aligned.get(cellAlign) ?? 0) + 1,
+          );
+        }
+      });
+  }
   // The header is the table's first row of cells, which a selection's
   // export may leave out.
-  const headerRow = node
+  const headerRow = table
     .getChildren()
     .find(
       row => $isTableRowNode(row) && row.getChildren().some($isTableCellNode),
     );
-  // Read even when a selection's export leaves the header row out.
-  const headerAlign: AlignType[] = [];
-  if ($isTableRowNode(headerRow)) {
-    headerRow
-      .getChildren()
-      .filter($isTableCellNode)
-      .forEach((cell, index) => {
-        headerAlign[index] = $getCellAlign(cell);
-      });
-  }
-  for (const row of node.getChildren()) {
-    // Structural iteration bypasses the walk's selection filter, so rows a
-    // selection export does not reach are skipped here. Cells stay: dropping
-    // one would shift the remaining cells into other columns.
-    if (!$isTableRowNode(row) || !ctx.isIncluded(row)) {
-      continue;
-    }
-    const cells: TableCell[] = [];
-    for (const cell of row.getChildren()) {
-      if (!$isTableCellNode(cell)) {
-        continue;
-      }
-      const cellAlign = $getCellAlign(cell);
-      const column = (columns[cells.length] ??= {aligned: new Map(), cells: 0});
-      column.cells++;
-      if (cellAlign !== null) {
-        column.aligned.set(cellAlign, (column.aligned.get(cellAlign) ?? 0) + 1);
-      }
-      cells.push({
-        children: cellContent(ctx.exportChildren(cell)),
-        type: 'tableCell',
-      });
-    }
-    rows.push({children: cells, type: 'tableRow'});
-  }
-  // GFM aligns columns, not cells: a column takes the alignment that most
-  // of its cells have, so aligning one body cell doesn't align its column,
-  // or else that of its header cell, the cell the delimiter row is under,
-  // so rows inserted into an aligned column don't clear it.
-  const align = Array.from(columns, (column, i): AlignType => {
-    if (column) {
-      for (const [cellAlign, count] of column.aligned) {
-        if (count * 2 > column.cells) {
-          return cellAlign;
-        }
+  const headerCells = $isTableRowNode(headerRow)
+    ? headerRow.getChildren().filter($isTableCellNode)
+    : [];
+  const legacy = $getState(table, legacyAlignState);
+  return Array.from(columns, (column, i): AlignType => {
+    for (const [cellAlign, count] of column.aligned) {
+      if (count * 2 > column.cells) {
+        return cellAlign;
       }
     }
-    return headerAlign[i] || null;
+    return (
+      (headerCells[i] && $getCellAlign(headerCells[i])) || legacy[i] || null
+    );
   });
+}
+
+/**
+ * The GFM alignment of each column of `table`, which export writes in its
+ * delimiter row: the alignment most of the column's cells render with
+ * (their element format, or their paragraphs'), or else its header cell's.
+ */
+export function $getTableColumnAlign(table: TableNode): AlignType[] {
+  return $alignColumns(table, table.getChildren().filter($isTableRowNode));
+}
+
+const $exportTable: MdastExportHandler = (node, ctx) => {
+  if (!$isTableNode(node)) {
+    return null;
+  }
+  // Structural iteration bypasses the walk's selection filter, so rows a
+  // selection export does not reach are skipped here. Cells stay: dropping
+  // one would shift the remaining cells into other columns.
+  const rows = node
+    .getChildren()
+    .filter(
+      (row): row is TableRowNode => $isTableRowNode(row) && ctx.isIncluded(row),
+    );
   return {
-    align,
-    children: rows,
+    align: $alignColumns(node, rows),
+    children: rows.map(
+      (row): TableRow => ({
+        children: row
+          .getChildren()
+          .filter($isTableCellNode)
+          .map(
+            (cell): TableCell => ({
+              children: cellContent(ctx.exportChildren(cell)),
+              type: 'tableCell',
+            }),
+          ),
+        type: 'tableRow',
+      }),
+    ),
     type: 'table',
   };
 };

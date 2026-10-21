@@ -65,7 +65,7 @@ function readChildren(editor: LexicalEditor) {
   );
 }
 
-function createEditorWithHistory() {
+function createEditor() {
   const editor = buildEditorFromExtensions({
     dependencies: [
       // Keep every update within the merge window without relying on wall time.
@@ -78,10 +78,6 @@ function createEditorWithHistory() {
     name: 'test',
     nodes: [InlineEmptyElementNode],
   });
-  const historyState = getExtensionDependencyFromEditor(
-    editor,
-    HistoryExtension,
-  ).output.historyState.peek();
   editor.update(() => $getRoot().append($createParagraphNode()), {
     discrete: true,
   });
@@ -93,8 +89,14 @@ function createEditorWithHistory() {
     },
     {discrete: true},
   );
-  expect(historyState.undoStack).toHaveLength(1);
   return editor;
+}
+
+function getHistoryState(editor: LexicalEditor) {
+  return getExtensionDependencyFromEditor(
+    editor,
+    HistoryExtension,
+  ).output.historyState.peek();
 }
 
 const textChildren = [['text', 'ab']];
@@ -106,7 +108,7 @@ describe('HISTORY_PUSH_TAG with an unchanged dirty TextNode (#9217)', () => {
     {tag: [HISTORY_PUSH_TAG, HISTORY_MERGE_TAG]},
     {tag: [HISTORY_MERGE_TAG, HISTORY_PUSH_TAG]},
   ])('isolates an element insertion with tags $tag', ({tag}) => {
-    using editor = createEditorWithHistory();
+    using editor = createEditor();
     const listener = vi.fn<UpdateListener>();
     const unregister = editor.registerUpdateListener(listener);
     editor.update(
@@ -147,15 +149,11 @@ describe('HISTORY_PUSH_TAG with an unchanged dirty TextNode (#9217)', () => {
   });
 
   test('still merges an untagged TextNode marked dirty without a change', () => {
-    using editor = createEditorWithHistory();
-    const historyState = getExtensionDependencyFromEditor(
-      editor,
-      HistoryExtension,
-    ).output.historyState.peek();
+    using editor = createEditor();
     editor.update(() => $getRoot().getAllTextNodes()[0].markDirty(), {
       discrete: true,
     });
-    expect(historyState.undoStack).toHaveLength(1);
+    expect(getHistoryState(editor).undoStack).toHaveLength(1);
     editor.update(() => editor.dispatchCommand(UNDO_COMMAND), {discrete: true});
     expect(readChildren(editor)).toEqual([]);
   });

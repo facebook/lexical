@@ -301,7 +301,7 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
               '$1',
             )
             .replace(
-              /<!--[^]*?-->|<(script|style)\b[^]*?<\/\1\s*>|<(?:[^>"']|"[^"]*"|'[^']*'|["'])*>|\r?\n|\r/gi,
+              /<!--[^]*?-->|<(script|style)\b[^]*?<\/\1\s*>|<(?:[^>"']|"[^"]*"|'[^']*'|"(?![^"]*")|'(?![^']*'))*>|\r?\n|\r/gi,
               (found: string, rawText?: string) =>
                 found[0] !== '<'
                   ? '&#10;'

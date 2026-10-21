@@ -1047,6 +1047,17 @@ describe('playground TABLE markdown transformer', () => {
     ]);
   });
 
+  it('reads delimiter-like lines after the delimiter row as body rows', () => {
+    using editor = importMarkdown(
+      ['| a | b |', '| --- | --- |', '| ---- | :-: |', '| - | - |'].join('\n'),
+    );
+    expect(cellTexts(editor)).toEqual([
+      [['a'], ['b']],
+      [['----'], [':-:']],
+      [['-'], ['-']],
+    ]);
+  });
+
   it.each(['-', ':-:', '---'])(
     'keeps a body row whose cells are only %j',
     text => {

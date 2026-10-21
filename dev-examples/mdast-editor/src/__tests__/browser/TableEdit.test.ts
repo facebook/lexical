@@ -19,6 +19,7 @@ import {$isTableCellNode, INSERT_TABLE_COMMAND} from '@lexical/table';
 import {
   $getRoot,
   $isElementNode,
+  type ElementFormatType,
   type ElementNode,
   type LexicalEditor,
   type LexicalNode,
@@ -242,17 +243,17 @@ test('deleting the header row makes the next row the header', () => {
   ).toEqual([['TH', 'TH']]);
 });
 
-function $justifyText(text: string) {
+function $formatText(text: string, format: ElementFormatType = 'justify') {
   for (const node of $getRoot().getAllTextNodes()) {
     if (node.getTextContent() === text) {
-      node.getParentOrThrow<ElementNode>().setFormat('justify');
+      node.getParentOrThrow<ElementNode>().setFormat(format);
     }
   }
 }
 
 test('an inserted row takes the alignment a justified cell exports', () => {
   const {editor, root} = mountEditor('| a | b |\n| - | -: |\n| 1 | 2 |');
-  editor.update(() => $justifyText('2'), {discrete: true});
+  editor.update(() => $formatText('2'), {discrete: true});
   selectLastCell(editor);
   editor.dispatchCommand(TABLE_EDIT_COMMAND, 'row-below');
   editor.read(() => {});
@@ -265,7 +266,7 @@ test('an inserted row takes the alignment a justified cell exports', () => {
 
 test('aligning a column keeps a justified paragraph', () => {
   const {editor, root} = mountEditor(TABLE);
-  editor.update(() => $justifyText('2'), {discrete: true});
+  editor.update(() => $formatText('2'), {discrete: true});
   selectLastCell(editor);
   editor.dispatchCommand(TABLE_EDIT_COMMAND, 'align-right');
   editor.read(() => {});
@@ -275,6 +276,20 @@ test('aligning a column keeps a justified paragraph', () => {
     ),
   ).toEqual(['', '', '', 'justify']);
   expect(exportMarkdown(editor).split('\n')[1]).toBe('| - | -: |');
+});
+
+test('aligning a column resets a start-aligned paragraph', () => {
+  const {editor, root} = mountEditor(TABLE);
+  editor.update(() => $formatText('2', 'start'), {discrete: true});
+  selectLastCell(editor);
+  editor.dispatchCommand(TABLE_EDIT_COMMAND, 'align-center');
+  editor.read(() => {});
+  expect(
+    [...root.querySelectorAll('td p, th p')].map(
+      p => (p as HTMLElement).style.textAlign,
+    ),
+  ).toEqual(['', '', '', '']);
+  expect(exportMarkdown(editor).split('\n')[1]).toBe('| - | :-: |');
 });
 
 // https://github.com/facebook/lexical/issues/9323

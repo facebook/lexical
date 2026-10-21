@@ -1702,6 +1702,8 @@ describe('@lexical/mdast import/export', () => {
       [{type: 'math', value: 'a % c\n+ b\\%'}, '$a + b\\%$'],
       [{type: 'math', value: 'a\\\\%b\nc'}, '$a\\\\ c$'],
       [{type: 'mdxFlowExpression', value: ''}, '{}'],
+      // An unclosed tag with quotes is read in linear time.
+      [{type: 'html', value: `a <${'"'.repeat(60)}`}, `a <${'"'.repeat(60)}`],
       [
         {type: 'math', value: '|x| + \\|y\\| \\\\|z'},
         '$\\vert x\\vert  + \\Vert y\\Vert  \\\\\\vert z$',

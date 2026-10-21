@@ -56,15 +56,12 @@ const COLUMN_ALIGN = {
   'align-right': 'right',
 } as const;
 
-// The alignments GFM writes for a column.
-const GFM_ALIGN = /^(?:left|center|right)$/;
-
 /**
  * Aligns every column the selection touches. GFM alignment belongs to a
  * column (the delimiter row's `:-:`), so it is set as the element format of
  * each cell in the column, which `@lexical/mdast` renders as `text-align`
- * and exports. The cells' paragraphs aligned in a way GFM writes are reset
- * so they follow the cell; others (justified) keep their format.
+ * and exports. The cells' paragraphs are reset so they follow the cell,
+ * except justified ones, which GFM can't write.
  */
 function $alignSelectedColumns(table: TableNode, format: ElementFormatType) {
   const selection = $getSelection();
@@ -94,7 +91,7 @@ function $alignSelectedColumns(table: TableNode, format: ElementFormatType) {
           if (
             $isElementNode(child) &&
             !child.isInline() &&
-            GFM_ALIGN.test(child.getFormatType())
+            child.getFormatType() !== 'justify'
           ) {
             child.setFormat('');
           }

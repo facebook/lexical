@@ -133,7 +133,10 @@ function $headFirstRow(table: TableNode) {
     .forEach((row, i) => {
       if ($isTableRowNode(row)) {
         for (const cell of row.getChildren()) {
-          if ($isTableCellNode(cell)) {
+          if (
+            $isTableCellNode(cell) &&
+            cell.hasHeaderState(TableCellHeaderStates.ROW) !== (i === 0)
+          ) {
             cell.setHeaderStyles(
               i === 0
                 ? TableCellHeaderStates.ROW

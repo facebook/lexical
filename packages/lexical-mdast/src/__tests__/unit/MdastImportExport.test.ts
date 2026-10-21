@@ -1746,6 +1746,13 @@ describe('@lexical/mdast import/export', () => {
         {type: 'mdxFlowExpression', value: '"first  last" +\t`a\nb` // c\n+ d'},
         '{"first  last" +\t`a\\nb`  + d}',
       ],
+      [
+        {
+          type: 'mdxFlowExpression',
+          value: "x.replace(/https?:\\/\\//, '') /* it's\n a */ + 'b'",
+        },
+        "{x.replace(/https?:\\/\\//, '') /* it's a */ + 'b'}",
+      ],
       [{type: 'inlineMath', value: 'a % c\n+ |b|'}, '$a + \\vert b\\vert $'],
       // A `<` that starts no tag is text, whose line end is kept.
       [

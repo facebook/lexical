@@ -424,12 +424,14 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
                     // literals, a template's line ends as `\n`, and drops its
                     // line comments.
                     node.value.replace(
-                      /(["'])(?:\\[^]|(?!\1)[^\\])*\1|`(?:\\[^]|[^`\\])*`|\/\/.*|\s*[\r\n]\s*/g,
+                      /\\[^]|(["'])(?:\\[^]|(?!\1)[^\\])*\1|`(?:\\[^]|[^`\\])*`|\/\*[^]*?\*\/|\/\/.*|\s*[\r\n]\s*/g,
                       found =>
                         found[0] === '`'
                           ? found.replace(/\r?\n|\r/g, '\\n')
                           : found[0] === '/'
-                            ? ''
+                            ? found[1] === '*'
+                              ? found.replace(/\s*[\r\n]\s*/g, ' ')
+                              : ''
                             : /^\s/.test(found)
                               ? ' '
                               : found,

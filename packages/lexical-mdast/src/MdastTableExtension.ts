@@ -9,6 +9,7 @@
 import type {MdastExportHandler, MdastImportHandler, MdastNode} from './types';
 import type {
   AlignType,
+  Emphasis,
   Html,
   HtmlBlock,
   HtmlInline,
@@ -208,6 +209,46 @@ function lineBreakHtml(): Html {
 }
 
 /**
+ * Rejoins formatting that export split around a line break (`**a**`, break,
+ * `**b**`), so the break is written inside it, where import reads a `<br>`
+ * as a line break rather than a paragraph boundary.
+ */
+function joinAtBreaks(nodes: readonly PhrasingContent[]): PhrasingContent[] {
+  const joined: PhrasingContent[] = [];
+  for (let i = 0; i < nodes.length; i++) {
+    const prev = joined[joined.length - 1];
+    const next = nodes[i + 1];
+    if (
+      nodes[i].type === 'break' &&
+      prev &&
+      next &&
+      prev.type === next.type &&
+      /^(?:emphasis|strong|delete)$/.test(prev.type)
+    ) {
+      joined[joined.length - 1] = {
+        ...prev,
+        children: [
+          ...(prev as Emphasis).children,
+          nodes[i],
+          ...(next as Emphasis).children,
+        ],
+      } as PhrasingContent;
+      i++;
+    } else {
+      joined.push(nodes[i]);
+    }
+  }
+  return joined.map(node =>
+    /^(?:emphasis|strong|delete)$/.test(node.type)
+      ? ({
+          ...node,
+          children: joinAtBreaks((node as Emphasis).children),
+        } as PhrasingContent)
+      : node,
+  );
+}
+
+/**
  * Rewrites exported phrasing content for a GFM cell, which holds one line:
  * line breaks (`break` nodes and newlines in text or code) become `<br>`,
  * which gfm-table would otherwise write as spaces, and raw HTML is put on
@@ -215,7 +256,7 @@ function lineBreakHtml(): Html {
  * `|` even inside HTML.
  */
 function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
-  return mapPhrasing(nodes, node => {
+  return mapPhrasing(joinAtBreaks(nodes), node => {
     if (node.type === 'break') {
       return [lineBreakHtml()];
     }

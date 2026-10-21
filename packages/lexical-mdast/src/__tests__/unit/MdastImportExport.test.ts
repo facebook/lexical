@@ -1544,8 +1544,16 @@ describe('@lexical/mdast import/export', () => {
         cellOf(
           importExport('| a |\n| - |\n| x <br/> y<BR /><br>**z<br>w** |', true),
         ),
-      ).toBe('x<br>y<br><br>**z**<br>**w**');
+      ).toBe('x<br>y<br><br>**z<br>w**');
     });
+
+    it.each(['**a<br>b**', '*x <br> y*', '~~a<br>*b<br>c*~~'])(
+      'keeps a <br> in formatting a line break in %j',
+      cell => {
+        const markdown = `| a |\n| - |\n| ${cell} |`;
+        expect(cellOf(importExport(markdown, true))).toBe(cell);
+      },
+    );
 
     it('keeps phrasing a block exports to at the top level of a cell', () => {
       using editor = buildEditorFromExtensions(

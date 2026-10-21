@@ -761,8 +761,7 @@ function $clearFootnotesOfEmptyDocument(root: RootNode): void {
   if (
     $hasUpdateTag(HISTORY_MERGE_TAG) ||
     !$isFootnotesNode($getSlot(root, FOOTNOTES_SLOT)) ||
-    !$isBodyEmpty(root) ||
-    !$getEditor().read('latest', $bodyHasRef)
+    !$isBodyEmpty(root)
   ) {
     return;
   }
@@ -774,7 +773,12 @@ function $clearFootnotesOfEmptyDocument(root: RootNode): void {
     : selection
       ? selection.getNodes()
       : [];
-  if (!selected.some(node => $findMatchingParent(node, $isFootnotesNode))) {
+  // The previous state is walked last, and only for an edit outside the
+  // section.
+  if (
+    !selected.some(node => $findMatchingParent(node, $isFootnotesNode)) &&
+    $getEditor().read('latest', $bodyHasRef)
+  ) {
     $clearFootnotes();
   }
 }

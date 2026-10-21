@@ -236,9 +236,14 @@ function joinAtBreaks(nodes: readonly PhrasingContent[]): PhrasingContent[] {
   const joined: PhrasingContent[] = [];
   for (let i = 0; i < nodes.length; i++) {
     const prev = joined[joined.length - 1];
-    const next = nodes[i + 1];
+    // The breaks from here, and the node after them.
+    let end = i;
+    while (nodes[end] && nodes[end].type === 'break') {
+      end++;
+    }
+    const next = nodes[end];
     if (
-      nodes[i].type === 'break' &&
+      end > i &&
       prev &&
       next &&
       prev.type === next.type &&
@@ -248,11 +253,11 @@ function joinAtBreaks(nodes: readonly PhrasingContent[]): PhrasingContent[] {
         ...prev,
         children: [
           ...(prev as Emphasis).children,
-          nodes[i],
+          ...nodes.slice(i, end),
           ...(next as Emphasis).children,
         ],
       } as PhrasingContent;
-      i++;
+      i = end;
     } else {
       joined.push(nodes[i]);
     }
@@ -294,15 +299,18 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
               '$1',
             )
             .replace(
-              /(<(?:[^>"']|"[^"]*"|'[^']*')*>)|\r?\n|\r/g,
-              (_, tag?: string) =>
-                tag
-                  ? tag.replace(
-                      /("[^"]*"|'[^']*')|\r?\n|\r/g,
-                      (__, quoted?: string) =>
-                        quoted ? quoted.replace(/\r?\n|\r/g, '&#10;') : ' ',
-                    )
-                  : '&#10;',
+              /<!--[^]*?-->|<(script|style)\b[^]*?<\/\1\s*>|<(?:[^>"']|"[^"]*"|'[^']*'|["'])*>|\r?\n|\r/gi,
+              (found: string, rawText?: string) =>
+                found[0] !== '<'
+                  ? '&#10;'
+                  : // Comments and script or style text read no references.
+                    found.startsWith('<!--') || rawText
+                    ? found.replace(/\r?\n|\r/g, ' ')
+                    : found.replace(
+                        /("[^"]*"|'[^']*')|\r?\n|\r/g,
+                        (_, quoted?: string) =>
+                          quoted ? quoted.replace(/\r?\n|\r/g, '&#10;') : ' ',
+                      ),
             )
             .replace(/\|/g, '&#124;'),
           // `MdastHtmlExtension`'s raw HTML with Markdown embedded in it:
@@ -368,7 +376,12 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
         type: twin,
         ...('children' in node
           ? {children: cellContent(node.children)}
-          : 'value' in node && {value: node.value.replace(/\s+/g, ' ')}),
+          : 'value' in node && {
+              // A line end ends a TeX comment, which a space would not.
+              value: node.value
+                .replace(twin === 'inlineMath' ? /(^|[^\\])%.*/gm : /$^/, '$1')
+                .replace(/\s+/g, ' '),
+            }),
       } as MdastNode);
     }
     switch (node.type) {
@@ -448,6 +461,7 @@ function $alignColumns(
     .find(
       row => $isTableRowNode(row) && row.getChildren().some($isTableCellNode),
     );
+  const legacy = $getState(table, legacyAlignState);
   const headerCells = $isTableRowNode(headerRow)
     ? headerRow.getChildren().filter($isTableCellNode)
     : [];
@@ -457,7 +471,10 @@ function $alignColumns(
         return cellAlign;
       }
     }
-    return (headerCells[i] && $getCellAlign(headerCells[i])) || null;
+    // A v0.52 table not yet updated still has its alignment on the table.
+    return (
+      (headerCells[i] && $getCellAlign(headerCells[i])) || legacy[i] || null
+    );
   });
 }
 

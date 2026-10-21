@@ -1091,6 +1091,12 @@ describe('@lexical/mdast import/export', () => {
       // The alignment moves onto the cells, where editing changes it.
       const table = editor.getEditorState().toJSON().root.children[0];
       expect(table.$).toBeUndefined();
+      // A parsed state no update has run on reads it from the table.
+      expect(
+        editor
+          .parseEditorState(json)
+          .read(() => $convertToMarkdownString(), {editor}),
+      ).toBe('| a |  b |\n| - | -: |\n| 1 |  2 |');
       expect(
         editor.read(() =>
           $assertNodeType($getRoot().getFirstChild(), $isTableNode)
@@ -1562,13 +1568,15 @@ describe('@lexical/mdast import/export', () => {
       ).toBe('x<br>y<br><br>**z<br>w**');
     });
 
-    it.each(['**a<br>b**', '*x <br> y*', '~~a<br>*b<br>c*~~'])(
-      'keeps a <br> in formatting a line break in %j',
-      cell => {
-        const markdown = `| a |\n| - |\n| ${cell} |`;
-        expect(cellOf(importExport(markdown, true))).toBe(cell);
-      },
-    );
+    it.each([
+      '**a<br>b**',
+      '*x <br> y*',
+      '~~a<br>*b<br>c*~~',
+      '**a<br><br>b**',
+    ])('keeps a <br> in formatting a line break in %j', cell => {
+      const markdown = `| a |\n| - |\n| ${cell} |`;
+      expect(cellOf(importExport(markdown, true))).toBe(cell);
+    });
 
     it('keeps phrasing a block exports to at the top level of a cell', () => {
       using editor = buildEditorFromExtensions(
@@ -1627,7 +1635,9 @@ describe('@lexical/mdast import/export', () => {
                 {
                   $export: () => ({
                     type: 'html',
-                    value: 'a\n<b\ntitle="p\nq">b</b>\n<pre>c\n d</pre>',
+                    value:
+                      'a\n<b\ntitle="p\nq">b</b>\n<pre>c\n d</pre>' +
+                      "<!-- don't\nship --><style>a\nb</style>",
                   }),
                   type: HorizontalRuleNode,
                 },
@@ -1652,7 +1662,8 @@ describe('@lexical/mdast import/export', () => {
         {discrete: true},
       );
       expect(editor.read(() => $convertToMarkdownString())).toContain(
-        '| a&#10;<b title="p&#10;q">b</b>&#10;<pre>c&#10; d</pre> |',
+        '| a&#10;<b title="p&#10;q">b</b>&#10;<pre>c&#10; d</pre>' +
+          "<!-- don't ship --><style>a b</style> |",
       );
     });
 
@@ -1672,6 +1683,7 @@ describe('@lexical/mdast import/export', () => {
         ':abbr[x<br>y]',
       ],
       [{type: 'math', value: 'a\n  b'}, '$a b$'],
+      [{type: 'math', value: 'a % c\n+ b\\%'}, '$a + b\\%$'],
     ])(
       'keeps %j a block exports to in a cell on its row',
       (exported, written) => {

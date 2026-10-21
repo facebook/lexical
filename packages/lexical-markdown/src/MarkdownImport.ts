@@ -248,7 +248,7 @@ function $importBlocks(
       // before this restore, so the next transform that matches still
       // starts from its own cut of the line.
       if (
-        textNode.getParent() === elementNode &&
+        elementNode.is(textNode.getParent()) &&
         textNode.getTextContent() === rest
       ) {
         textNode.setTextContent(lineText);

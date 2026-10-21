@@ -1616,7 +1616,7 @@ describe('@lexical/mdast import/export', () => {
       );
     });
 
-    it('writes a line end in raw HTML in a cell as a space', () => {
+    it('writes a line end in raw HTML in a cell as a reference', () => {
       using editor = buildEditorFromExtensions(
         defineExtension({
           dependencies: [
@@ -1627,7 +1627,7 @@ describe('@lexical/mdast import/export', () => {
                 {
                   $export: () => ({
                     type: 'html',
-                    value: 'a\n<b>b</b>  \n  <i>c</i>',
+                    value: 'a\n<b\ntitle="p\nq">b</b>\n<pre>c\n d</pre>',
                   }),
                   type: HorizontalRuleNode,
                 },
@@ -1652,7 +1652,7 @@ describe('@lexical/mdast import/export', () => {
         {discrete: true},
       );
       expect(editor.read(() => $convertToMarkdownString())).toContain(
-        '| a <b>b</b> <i>c</i> |',
+        '| a&#10;<b title="p&#10;q">b</b>&#10;<pre>c&#10; d</pre> |',
       );
     });
 

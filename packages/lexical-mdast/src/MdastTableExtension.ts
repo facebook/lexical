@@ -284,15 +284,26 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
       return [
         {
           ...raw,
-          // A line end is whitespace HTML collapses with the spaces around
-          // it, but one beside embedded Markdown (a `<template>` holding its
-          // place) only sets that apart.
+          // A line end beside embedded Markdown (a `<template>` holding its
+          // place) only sets it apart. Any other is a reference (`&#10;`),
+          // which reads as the line end it was in text, `<pre>` and
+          // attribute values, but a space between a tag's attributes.
           value: raw.value
             .replace(
               /[ \t]*(?:\r?\n|\r)[ \t]*(?=<template data-mdast-child=)|(<\/template>)[ \t]*(?:\r?\n|\r)[ \t]*/g,
               '$1',
             )
-            .replace(/[ \t]*(?:\r?\n|\r)[ \t]*/g, ' ')
+            .replace(
+              /(<(?:[^>"']|"[^"]*"|'[^']*')*>)|\r?\n|\r/g,
+              (_, tag?: string) =>
+                tag
+                  ? tag.replace(
+                      /("[^"]*"|'[^']*')|\r?\n|\r/g,
+                      (__, quoted?: string) =>
+                        quoted ? quoted.replace(/\r?\n|\r/g, '&#10;') : ' ',
+                    )
+                  : '&#10;',
+            )
             .replace(/\|/g, '&#124;'),
           // `MdastHtmlExtension`'s raw HTML with Markdown embedded in it:
           // each embedded block is one line too.
@@ -328,12 +339,6 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
 const PHRASING_PARENT_RE =
   /^(?:delete|emphasis|link|linkReference|strong|htmlInline|textDirective|mdxJsxTextElement)$/;
 
-/**
- * The phrasing content of a cell's exported blocks as one line: a GFM cell
- * can't hold blocks, so each one with phrasing (a paragraph, a heading, a
- * list item's paragraph, a line of code) is a line of its own, and lines
- * are separated by `<br>`, empty ones included.
- */
 // Flow content of mdast extensions that has a phrasing twin, which a cell
 // can hold.
 const PHRASING_TWIN: Record<string, string> = {
@@ -344,6 +349,12 @@ const PHRASING_TWIN: Record<string, string> = {
   mdxJsxFlowElement: 'mdxJsxTextElement',
 };
 
+/**
+ * The phrasing content of a cell's exported blocks as one line: a GFM cell
+ * can't hold blocks, so each one with phrasing (a paragraph, a heading, a
+ * list item's paragraph, a line of code) is a line of its own, and lines
+ * are separated by `<br>`, empty ones included.
+ */
 function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
   const lines: PhrasingContent[][] = [];
   // The line of the last top-level phrasing, which phrasing right after it

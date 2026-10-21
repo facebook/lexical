@@ -23,6 +23,7 @@ import {
   $createTextNode,
   $getRoot,
   type DOMConversionOutput,
+  type ParagraphNode,
 } from 'lexical';
 import {
   $runDOMConversion,
@@ -179,6 +180,11 @@ describe('LexicalTableCellNode tests', () => {
                   $createParagraphNode(),
                 ),
               ),
+              $createTableRowNode().append(
+                $createTableCellNode()
+                  .setFormat('right')
+                  .append($createParagraphNode().append($createTextNode('b'))),
+              ),
             ),
           );
       });
@@ -198,6 +204,14 @@ describe('LexicalTableCellNode tests', () => {
             .getChildren<TableCellNode>()
             .map(cell => cell.getFormatType()),
         ).toEqual(['center', '']);
+        // A body cell's alignment comes back on its paragraphs.
+        expect(
+          table
+            .getLastChildOrThrow<TableRowNode>()
+            .getFirstChildOrThrow<TableCellNode>()
+            .getFirstChildOrThrow<ParagraphNode>()
+            .getFormatType(),
+        ).toBe('right');
       });
     });
 

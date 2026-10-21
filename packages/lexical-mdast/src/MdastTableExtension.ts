@@ -369,27 +369,38 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
         } as PhrasingContent,
       ];
     }
+    if ((node.type as string) === 'mdxTextExpression') {
+      return [{...node, value: scriptLine((node as {value: string}).value)}];
+    }
     if ((node.type as string) === 'inlineMath') {
       const math = node as unknown as {type: 'inlineMath'; value: string};
-      // A cell is one line, and a line end ends a TeX comment, which a
-      // space would not. GFM ends a cell at `|` even in math, so TeX's `|`
-      // and `\|` are written as their command forms.
+      // A cell is one line, and a TeX comment ends with its line end and
+      // the spaces after it. GFM ends a cell at `|` even in math, so TeX's
+      // `|` and `\|` are written as their command forms, or as `\textbar`
+      // in text.
+      let depth = 0;
+      let text = 0;
       return [
         {
           ...math,
           value: math.value
-            .replace(/(^|[^\\])((?:\\\\)*)%.*/gm, '$1$2')
+            .replace(/(^|[^\\])((?:\\\\)*)%.*(?:\r\n?|\n)?[ \t]*/g, '$1$2')
             .replace(/\s*[\r\n]\s*/g, ' ')
             .replace(
-              // Text groups, with two levels of groups in them.
-              /\\(?:text\w*|mbox)\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}|\\[^]|\|/g,
-              found =>
-                found === '|'
-                  ? '\\vert '
-                  : found === '\\|'
-                    ? '\\Vert '
-                    : // In text, a pipe is `\textbar`.
-                      found.replace(/\|/g, '\\textbar{}'),
+              /\\(?:text(?!style)[a-z]*|mbox)\s*\{|\\[^]|[{}|]/gi,
+              found => {
+                if (found.endsWith('{') && found !== '\\{') {
+                  depth++;
+                  if (!text && found[0] === '\\') {
+                    text = depth;
+                  }
+                } else if (found === '}') {
+                  text = text === depth-- ? 0 : text;
+                } else if (!text && /^\\?\|/.test(found)) {
+                  return found === '|' ? '\\vert ' : '\\Vert ';
+                }
+                return found === '|' ? '\\textbar{}' : found;
+              },
             ),
         } as unknown as PhrasingContent,
       ];
@@ -409,68 +420,96 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
   });
 }
 
-// The tokens of a JavaScript expression, in its code and in a template's
-// text, and a regular expression literal, which can start where a division
-// can't.
-const SCRIPT_TOKEN =
-  /\\(?:\r\n|[^])|(["'])(?:\\(?:\r\n|[^])|(?!\1)[^\\])*\1|\/\*[^]*?\*\/|\/\/.*|\s+|[\w$]+|[^]/y;
-const TEMPLATE_TOKEN = /\\(?:\r\n|[^])|\$\{|\r\n?|\n|[^\\$`\r\n]+|[^]/y;
-const REGEX_TOKEN =
-  /\/(?![*/])(?:\\.|\[(?:\\.|[^\]\\\r\n])*\]|[^/\\\r\n[])+\/\w*/y;
+// The tokens of a JavaScript expression in code, after a value, where a
+// `/` divides, and in the text of a template, a JSX tag, and the children of
+// a JSX element.
+const SCRIPT_TOKENS = [
+  /\\(?:\r\n|[^])|(["'])(?:\\(?:\r\n|[^])|(?!\1)[^\\])*\1|\/\*[^]*?\*\/|\/\/.*|\+\+|--|\s+|[\w$\u0080-\uffff]+|[^]/y,
+  /\\(?:\r\n|[^])|\$\{|\r\n?|\n|[^\\$`\r\n]+|[^]/y,
+  /(["'])[^]*?\1|\/>|\s+|[^]/y,
+  /<\/[^>]*>|[^<{]+|[^]/y,
+];
+// The tokens of code where a value can start, which can be a regular
+// expression literal.
+const OPERAND_TOKEN =
+  /\/(?![*/])(?:\\.|\[(?:\\.|[^\]\\\r\n])*\]|[^/\\\r\n[])+\/\w*|\\(?:\r\n|[^])|(["'])(?:\\(?:\r\n|[^])|(?!\1)[^\\])*\1|\/\*[^]*?\*\/|\/\/.*|\+\+|--|\s+|[\w$\u0080-\uffff]+|[^]/y;
 
 /**
- * A JavaScript expression on one line, as a cell needs: line ends between
- * tokens become spaces, line comments are dropped, a line continuation is
- * dropped, and a template's line ends become `${'\n'}`, which keeps its
- * value, raw or not. Literals are otherwise kept as they are.
+ * A JavaScript expression on one line, as a cell needs, with its value: line
+ * ends between tokens become spaces, comments lose theirs, line comments and
+ * line continuations are dropped, a template writes its line ends as `\n`
+ * (which only its raw strings tell apart), and JSX keeps the text its line
+ * ends make.
  */
 function scriptLine(code: string): string {
-  // The brace depth of each open template substitution, the innermost
-  // last, or -1 for the text of a template.
-  const depths = [0];
+  // The open contexts, the innermost last: the brace depth of code, or -1
+  // in a template's text, -2 in a JSX tag, -3 in a JSX element's children.
+  const contexts = [0];
   let line = '';
-  let regex = true;
+  let operand = true;
+  let previous = '';
   for (let i = 0, found: string; i < code.length; i += found.length) {
-    const depth = depths[depths.length - 1];
-    REGEX_TOKEN.lastIndex = i;
+    const context = contexts[contexts.length - 1];
     const token =
-      depth < 0
-        ? TEMPLATE_TOKEN
-        : regex && REGEX_TOKEN.test(code)
-          ? REGEX_TOKEN
-          : SCRIPT_TOKEN;
+      context < 0
+        ? SCRIPT_TOKENS[-context]
+        : operand
+          ? OPERAND_TOKEN
+          : SCRIPT_TOKENS[0];
     token.lastIndex = i;
     found = token.exec(code)![0];
     let write = found;
-    if (depth < 0) {
-      if (found === '`') {
-        depths.pop();
-        regex = false;
-      } else if (found === '${') {
-        depths.push(0);
-        regex = true;
-      } else if (/^\\?[\r\n]/.test(found)) {
-        write = found[0] === '\\' ? '' : "${'\\n'}";
+    if (context < 0) {
+      if (
+        (found === '`' && context === -1) ||
+        found === '/>' ||
+        found.startsWith('</')
+      ) {
+        contexts.pop();
+        operand = false;
+      } else if (found === '${' || found === '{') {
+        contexts.push(0);
+        operand = true;
+      } else if (found === '<') {
+        contexts.push(-2);
+      } else if (found === '>' && context === -2) {
+        contexts[contexts.length - 1] = -3;
+      } else if (context === -1) {
+        if (/^\\?[\r\n]/.test(found)) {
+          write = found[0] === '\\' ? '' : '\\n';
+        }
+      } else if (/^["']/.test(found)) {
+        // An attribute's line ends, as references.
+        write = found.replace(/\r\n?|\n/g, '&#10;');
+      } else {
+        // JSX text drops the whitespace of a line end at its edges.
+        write = found.replace(/\s*[\r\n]\s*/g, (end, at) =>
+          context === -2 || (at && at + end.length < found.length) ? ' ' : '',
+        );
       }
     } else if (/^\s|^\/[*/]/.test(found)) {
       // Whitespace and comments don't change what can follow.
       write = found[1] === '/' ? '' : found.replace(/\s*[\r\n]\s*/g, ' ');
     } else {
       if (found === '`') {
-        depths.push(-1);
-      } else if (found === '}' && !depth && depths.length > 1) {
-        depths.pop();
+        contexts.push(-1);
+      } else if (operand && found === '<') {
+        contexts.push(-2);
+      } else if (found === '}' && !context && contexts.length > 1) {
+        contexts.pop();
       } else if (found === '{' || found === '}') {
-        depths[depths.length - 1] += found === '{' ? 1 : -1;
-      } else {
-        // A string's line continuation.
+        contexts[contexts.length - 1] += found === '{' ? 1 : -1;
+      } else if (/^["']/.test(found)) {
+        // A string's line continuations.
         write = found.replace(/\\(?:\r\n?|\n)/g, '');
       }
-      regex = /^[\w$]/.test(found)
-        ? /^(?:return|typeof|case|do|else|in|of|new|delete|void|throw|instanceof|yield|await)$/.test(
+      operand = /^[\w$\u0080-\uffff]/.test(found)
+        ? previous !== '.' &&
+          /^(?:return|typeof|case|do|else|in|of|new|delete|void|throw|instanceof|yield|await)$/.test(
             found,
           )
-        : !/^(?:[)\]}`'"]|\/.)/.test(found);
+        : !/^(?:[)\]}`'"]|\/.|\+\+|--)/.test(found);
+      previous = found;
     }
     line += write;
   }
@@ -518,8 +557,7 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
                   : cellContent(node.children),
             }
           : 'value' in node && {
-              value:
-                twin === 'inlineMath' ? node.value : scriptLine(node.value),
+              value: node.value,
             }),
       } as MdastNode);
     }

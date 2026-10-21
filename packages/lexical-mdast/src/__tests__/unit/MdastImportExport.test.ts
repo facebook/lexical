@@ -1094,13 +1094,24 @@ describe('@lexical/mdast import/export', () => {
       '`a ${(() => {\n  return 1;\n})()\n} b`',
       '`a ${(() => { return 1; })() } b`',
     ],
-    ['String.raw`a\\n\nb`', "String.raw`a\\n${'\\n'}b`"],
+    // A tag gets the same strings and values.
+    [
+      '((s, ...v) => JSON.stringify([s, v]))`a\n${1}\nb`',
+      '((s, ...v) => JSON.stringify([s, v]))`a\\n${1}\\nb`',
+    ],
     ['"a\\\nb" + 1 / 2 // c\n+ 3', '"ab" + 1 / 2  + 3'],
+    // Where a `/` divides.
+    [
+      '[1].map(i => i++ / 2 + "x/y"\n+ "z")',
+      '[1].map(i => i++ / 2 + "x/y" + "z")',
+    ],
+    ['({in: 4}).in / 2 + "x/y"\n+ "z"', '({in: 4}).in / 2 + "x/y" + "z"'],
+    ['(é => é / 2 + "a/b"\n+ "c")(4)', '(é => é / 2 + "a/b" + "c")(4)'],
   ];
 
   it.each(SCRIPTS)('writes %j in a cell with its value', (value, written) => {
     // eslint-disable-next-line no-new-func
-    const evaluate = (code: string) => new Function(`return (${code});`)();
+    const evaluate = (code: string) => new Function(`return (${code}\n);`)();
     expect(evaluate(written)).toEqual(evaluate(value));
   });
 
@@ -1776,20 +1787,20 @@ describe('@lexical/mdast import/export', () => {
       ],
       [{type: 'math', value: 'a\n  b'}, '$a b$'],
       [{type: 'math', value: 'a % c\n+ b\\%'}, '$a + b\\%$'],
-      [{type: 'math', value: 'a\\\\%b\nc'}, '$a\\\\ c$'],
+      [{type: 'math', value: 'a\\\\%b\nc'}, '$a\\\\c$'],
       [
         {type: 'math', value: '\\text{a|b} | \\mbox{c}'},
         '$\\text{a\\textbar{}b} \\vert  \\mbox{c}$',
       ],
       [
         {type: 'mdxFlowExpression', value: '`a ${\n  b\n}\nc`'},
-        "{`a ${ b }${'\\n'}c`}",
+        '{`a ${ b }\\nc`}',
       ],
       [{type: 'mdxFlowExpression', value: ''}, '{}'],
       // A JavaScript expression keeps its literals.
       [
         {type: 'mdxFlowExpression', value: '"first  last" +\t`a\nb` // c\n+ d'},
-        '{"first  last" +\t`a${\'\\n\'}b`  + d}',
+        '{"first  last" +\t`a\\nb`  + d}',
       ],
       [
         {
@@ -1806,6 +1817,30 @@ describe('@lexical/mdast import/export', () => {
       [
         {type: 'math', value: '\\text{a {b}|c} \\text{a \\textbf{b|c}}'},
         '$\\text{a {b}\\textbar{}c} \\text{a \\textbf{b\\textbar{}c}}$',
+      ],
+      // JSX keeps its text.
+      [
+        {
+          type: 'mdxFlowExpression',
+          value:
+            '<>\n  <a href={u} title="x\ny">see http://a.dev\n  b {c\n} d</a>\n</>',
+        },
+        '{<><a href={u} title="x&#10;y">see http://a.dev b {c } d</a></>}',
+      ],
+      [
+        {
+          children: [{type: 'mdxTextExpression', value: 'a +\n b'}],
+          type: 'paragraph',
+        },
+        '{a + b}',
+      ],
+      [
+        {
+          type: 'math',
+          value:
+            '\\text{a {b {c {d|e}}}} \\text {a \\{ b|c} \\textstyle{|x|} \\text{ab%\n  cd}',
+        },
+        '$\\text{a {b {c {d\\textbar{}e}}}} \\text {a \\{ b\\textbar{}c} \\textstyle{\\vert x\\vert } \\text{abcd}$',
       ],
       // A `<` that starts no tag is text, whose line end is kept.
       [

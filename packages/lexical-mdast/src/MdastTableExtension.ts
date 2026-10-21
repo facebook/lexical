@@ -210,21 +210,42 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
                     ctx.importChildren({children: run, type: 'tableCell'}),
                   ),
                 );
+              // The whitespace an `<hr>` was written with is trimmed, as a
+              // `<br>`'s is.
+              let afterRule = false;
               for (const child of line) {
                 const rules = Array.from({length: voidTags(child, 'hr')}, () =>
                   ctx.importNode({type: 'thematicBreak'}),
                 ).flat();
                 if (rules.length > 0) {
-                  if (run.length > 0) {
-                    $flush();
-                    run = [];
+                  const last = run[run.length - 1];
+                  if (last && last.type === 'text') {
+                    last.value = last.value.replace(/[ \t]+$/, '');
                   }
+                  if (
+                    run.some(
+                      phrasing => phrasing.type !== 'text' || phrasing.value,
+                    )
+                  ) {
+                    $flush();
+                  }
+                  run = [];
                   blocks.push(...rules);
+                  afterRule = true;
                 } else {
+                  if (afterRule && child.type === 'text') {
+                    child.value = child.value.replace(/^[ \t]+/, '');
+                  }
+                  afterRule = false;
                   run.push(child);
                 }
               }
-              if (run.length > 0 || blocks.length === 0) {
+              if (
+                run.some(
+                  phrasing => phrasing.type !== 'text' || phrasing.value,
+                ) ||
+                blocks.length === 0
+              ) {
                 $flush();
               }
               return blocks;

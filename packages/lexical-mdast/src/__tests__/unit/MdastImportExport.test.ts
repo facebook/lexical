@@ -1583,6 +1583,17 @@ describe('@lexical/mdast import/export', () => {
       });
     });
 
+    it('trims the whitespace an <hr> in a cell was written with', () => {
+      const markdown = '| a |\n| - |\n| a <hr> b |';
+      using editor = createEditor(true);
+      editor.update(() => $convertFromMarkdownString(markdown), {
+        discrete: true,
+      });
+      expect(editor.read(() => $convertToMarkdownString()).split('\n')[2]).toBe(
+        '| a<br><hr><br>b |',
+      );
+    });
+
     it('reads <br> in a cell as a paragraph boundary', () => {
       using editor = createEditor(true);
       editor.update(

@@ -41,6 +41,7 @@ import {
   createState,
   defineExtension,
   enumValue,
+  type LexicalNode,
 } from 'lexical';
 import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
 import {gfmTable} from 'micromark-extension-gfm-table';
@@ -198,19 +199,35 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
                 : TableCellHeaderStates.NO_STATUS,
             ).setFormat(align[columnIndex] || ''),
             cellLines(cell).flatMap(line => {
-              // A line of only `<hr>` is a rule, as export writes one.
-              const rule =
-                line.length === 1 && voidTags(line[0], 'hr') === 1
-                  ? ctx.importNode({type: 'thematicBreak'})
-                  : [];
-              return rule.length > 0
-                ? rule
-                : [
-                    $append(
-                      $createParagraphNode(),
-                      ctx.importChildren({children: line, type: 'tableCell'}),
-                    ),
-                  ];
+              // Each `<hr>` is a rule, as export writes one, and the phrasing
+              // around it a paragraph of its own.
+              const blocks: LexicalNode[] = [];
+              let run: PhrasingContent[] = [];
+              const $flush = () =>
+                blocks.push(
+                  $append(
+                    $createParagraphNode(),
+                    ctx.importChildren({children: run, type: 'tableCell'}),
+                  ),
+                );
+              for (const child of line) {
+                const rules = Array.from({length: voidTags(child, 'hr')}, () =>
+                  ctx.importNode({type: 'thematicBreak'}),
+                ).flat();
+                if (rules.length > 0) {
+                  if (run.length > 0) {
+                    $flush();
+                    run = [];
+                  }
+                  blocks.push(...rules);
+                } else {
+                  run.push(child);
+                }
+              }
+              if (run.length > 0 || blocks.length === 0) {
+                $flush();
+              }
+              return blocks;
             }),
           ),
         ),
@@ -220,6 +237,7 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
 };
 
 const BR: Html = {type: 'html', value: '<br>'};
+const HR: Html = {type: 'html', value: '<hr>'};
 
 /**
  * Rejoins formatting that export split around a line break (`**a**`, break,
@@ -270,6 +288,10 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
   return mapPhrasing(joinAtBreaks(nodes), node => {
     if (node.type === 'break') {
       return [BR];
+    }
+    if ((node.type as string) === 'thematicBreak') {
+      // GFM has no rule in a cell but HTML's, which import reads back.
+      return [HR];
     }
     if (/^(?:emphasis|strong|delete)$/.test(node.type)) {
       return [
@@ -332,7 +354,7 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
           ...math,
           value: math.value
             .replace(/(^|[^\\])((?:\\\\)*)%.*/gm, '$1$2')
-            .replace(/\s+/g, ' ')
+            .replace(/\s*[\r\n]\s*/g, ' ')
             .replace(/\\[^]|\|/g, found =>
               found === '|' ? '\\vert ' : found === '\\|' ? '\\Vert ' : found,
             ),
@@ -398,7 +420,20 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
               value:
                 twin === 'inlineMath'
                   ? node.value
-                  : node.value.replace(/\s+/g, ' '),
+                  : // A cell is one line: a JavaScript expression keeps its
+                    // literals, a template's line ends as `\n`, and drops its
+                    // line comments.
+                    node.value.replace(
+                      /(["'])(?:\\[^]|(?!\1)[^\\])*\1|`(?:\\[^]|[^`\\])*`|\/\/.*|\s*[\r\n]\s*/g,
+                      found =>
+                        found[0] === '`'
+                          ? found.replace(/\r?\n|\r/g, '\\n')
+                          : found[0] === '/'
+                            ? ''
+                            : /^\s/.test(found)
+                              ? ' '
+                              : found,
+                    ),
             }),
       } as MdastNode);
     }
@@ -418,8 +453,7 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
         lines.push(cellPhrasing([node as PhrasingContent]));
         return;
       case 'thematicBreak':
-        // GFM has no rule in a cell but HTML's, which import reads back.
-        lines.push([{type: 'html', value: '<hr>'}]);
+        lines.push([HR]);
         return;
       case 'definition':
         // Definitions are the document's, and no node exports one.

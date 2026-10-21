@@ -13,6 +13,7 @@ import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
   $generateNodesFromMarkdownString,
+  type ElementTransformer,
   type TextMatchTransformer,
   TRANSFORMERS,
 } from '@lexical/markdown';
@@ -89,6 +90,31 @@ describe('a code span', () => {
       '` \nx\n `',
     );
   });
+
+  it.each(['\\*', '&#65;'])(
+    'keeps %j in a line an element transformer makes code',
+    text => {
+      const CODE_LINE: ElementTransformer = {
+        dependencies: [],
+        export: () => null,
+        regExp: /^CODE: /,
+        replace: (_parent, children) => {
+          for (const child of children) {
+            if ($isTextNode(child)) {
+              child.toggleFormat('code');
+            }
+          }
+        },
+        type: 'element',
+      };
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      editor.update(
+        () => $convertFromMarkdownString(`CODE: ${text}`, [CODE_LINE]),
+        {discrete: true},
+      );
+      expect(editor.read(() => $getRoot().getTextContent())).toBe(text);
+    },
+  );
 
   it('leaves the text after it to read its escapes', () => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);

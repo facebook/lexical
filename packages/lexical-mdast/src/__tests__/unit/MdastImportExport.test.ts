@@ -1556,6 +1556,33 @@ describe('@lexical/mdast import/export', () => {
       expect(importExport(out, true)).toBe(out);
     });
 
+    it('writes a rule inside a paragraph in a cell as <hr> and reads each back', () => {
+      const out = exportCell(() =>
+        $createParagraphNode().append(
+          $createTextNode('a'),
+          $createHorizontalRuleNode(),
+          $createHorizontalRuleNode(),
+          $createTextNode('b'),
+        ),
+      );
+      expect(cellOf(out)).toBe('a<hr><hr>b');
+      using editor = createEditor(true);
+      editor.update(() => $convertFromMarkdownString(out), {discrete: true});
+      editor.read(() => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        const cell = $assertNodeType(
+          table.getLastChildOrThrow<ElementNode>().getFirstChild(),
+          $isElementNode,
+        );
+        expect(cell.getChildren().map(child => child.getType())).toEqual([
+          'paragraph',
+          'horizontalrule',
+          'horizontalrule',
+          'paragraph',
+        ]);
+      });
+    });
+
     it('reads <br> in a cell as a paragraph boundary', () => {
       using editor = createEditor(true);
       editor.update(
@@ -1714,6 +1741,11 @@ describe('@lexical/mdast import/export', () => {
       [{type: 'math', value: 'a % c\n+ b\\%'}, '$a + b\\%$'],
       [{type: 'math', value: 'a\\\\%b\nc'}, '$a\\\\ c$'],
       [{type: 'mdxFlowExpression', value: ''}, '{}'],
+      // A JavaScript expression keeps its literals.
+      [
+        {type: 'mdxFlowExpression', value: '"first  last" +\t`a\nb` // c\n+ d'},
+        '{"first  last" +\t`a\\nb`  + d}',
+      ],
       [{type: 'inlineMath', value: 'a % c\n+ |b|'}, '$a + \\vert b\\vert $'],
       // A `<` that starts no tag is text, whose line end is kept.
       [

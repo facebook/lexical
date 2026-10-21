@@ -274,20 +274,25 @@ describe('footnotes', () => {
     expect(markdownOf(editor)).toBe('');
   });
 
-  test('selecting the body text and pressing Backspace clears the footnotes', async () => {
-    const {editor, root} = mountEditor('body[^a] text\n\n[^a]: the note');
-    root.focus();
-    editor.update(
-      () => {
-        const body = $getRoot().getFirstChildOrThrow<ElementNode>();
-        body.select(0, body.getChildrenSize());
-      },
-      {discrete: true},
-    );
-    await userEvent.keyboard('{Backspace}');
-    expect(root.querySelector('.footnote-def')).toBeNull();
-    expect(markdownOf(editor)).toBe('');
-  });
+  test.each(['body[^a] text', '# body[^a]\n\ntext'])(
+    'selecting the body of %j and pressing Backspace clears the footnotes',
+    async body => {
+      const {editor, root} = mountEditor(`${body}\n\n[^a]: the note`);
+      root.focus();
+      editor.update(
+        () => {
+          const first = $getRoot().getFirstChildOrThrow<ElementNode>();
+          const last = $getRoot().getLastChildOrThrow<ElementNode>();
+          const selection = first.select(0, 0);
+          selection.focus.set(last.getKey(), last.getChildrenSize(), 'element');
+        },
+        {discrete: true},
+      );
+      await userEvent.keyboard('{Backspace}');
+      expect(root.querySelector('.footnote-def')).toBeNull();
+      expect(markdownOf(editor)).toBe('');
+    },
+  );
 
   test.each([
     'a caret in a definition',

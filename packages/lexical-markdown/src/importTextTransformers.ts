@@ -165,7 +165,9 @@ export function $importTextTransformers(
     return;
   }
 
-  // No transformer matched, so read the node's escapes. Callers pass no code
-  // span, which takes none.
-  textNode.setTextContent(unescapeText(textNode.getTextContent()));
+  // No transformer matched, so read the node's escapes, unless an element
+  // transformer made the line code, which takes none.
+  if ($canContainTransformableMarkdown(textNode)) {
+    textNode.setTextContent(unescapeText(textNode.getTextContent()));
+  }
 }

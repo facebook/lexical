@@ -34,6 +34,7 @@ import {
   HeadingNode,
   RichTextExtension,
 } from '@lexical/rich-text';
+import {$dfs} from '@lexical/utils';
 import {
   $create,
   $createParagraphNode,
@@ -60,6 +61,7 @@ import {
   MdastCommonMarkExtension,
   type MdastExportHandler,
   MdastExtension,
+  MdastHorizontalRuleExtension,
   MdastHtmlExtension,
   MdastShadowRootQuoteExtension,
   MdastStrikethroughExtension,
@@ -330,6 +332,10 @@ function $collectTextNodes(): TextNode[] {
   };
   visit($getRoot());
   return out;
+}
+
+function $countRules(): number {
+  return $dfs().filter(({node}) => node.getType() === 'horizontalrule').length;
 }
 
 describe('MdastHtmlExtension', () => {
@@ -897,27 +903,33 @@ describe('MdastHtmlExtension', () => {
     });
   });
 
-  it('keeps a horizontal rule in a table cell across round trips', () => {
-    using editor = buildEditorFromExtensions(
-      defineExtension({
-        dependencies: [
-          MdastCommonMarkExtension,
-          MdastExtension,
-          MdastTableExtension,
-          MdastHtmlExtension,
-        ],
-        name: '[table-rule]',
-      }),
-    );
-    let markdown = '| h |\n| - |\n| a<br><hr><br>b |';
-    for (let i = 0; i < 3; i++) {
-      editor.update(() => $convertFromMarkdownString(markdown), {
-        discrete: true,
-      });
-      markdown = editor.read(() => $convertToMarkdownString());
-      expect(markdown.split('\n')[2]).toBe('| a<br><hr><br>b |');
-    }
-  });
+  it.each(['a<br><hr><br>b', 'a<hr>b', '<hr><hr>', '<u>a<hr>b</u>'])(
+    'keeps the horizontal rules of %j in a table cell across round trips',
+    cell => {
+      using editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            MdastCommonMarkExtension,
+            MdastExtension,
+            MdastTableExtension,
+            MdastHtmlExtension,
+            MdastHorizontalRuleExtension,
+          ],
+          name: '[table-rule]',
+        }),
+      );
+      let markdown = `| h |\n| - |\n| ${cell} |`;
+      const rules = (cell.match(/<hr>/g) || []).length;
+      for (let i = 0; i < 3; i++) {
+        editor.update(() => $convertFromMarkdownString(markdown), {
+          discrete: true,
+        });
+        expect(editor.read($countRules)).toBe(rules);
+        markdown = editor.read(() => $convertToMarkdownString());
+      }
+      expect(markdown.split('\n')[2]).toMatch(/<hr>/);
+    },
+  );
 
   describe('raw HTML a node exports to in a table cell', () => {
     function tableCellEditor(): LexicalEditorWithDispose {

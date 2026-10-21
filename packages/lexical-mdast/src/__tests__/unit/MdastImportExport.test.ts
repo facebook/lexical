@@ -1751,6 +1751,14 @@ describe('@lexical/mdast import/export', () => {
       [{type: 'math', value: 'a\n  b'}, '$a b$'],
       [{type: 'math', value: 'a % c\n+ b\\%'}, '$a + b\\%$'],
       [{type: 'math', value: 'a\\\\%b\nc'}, '$a\\\\ c$'],
+      [
+        {type: 'math', value: '\\text{a|b} | \\mbox{c}'},
+        '$\\text{a\\textbar{}b} \\vert  \\mbox{c}$',
+      ],
+      [
+        {type: 'mdxFlowExpression', value: '`a ${\n  b\n}\nc`'},
+        '{`a ${ b }\\nc`}',
+      ],
       [{type: 'mdxFlowExpression', value: ''}, '{}'],
       // A JavaScript expression keeps its literals.
       [

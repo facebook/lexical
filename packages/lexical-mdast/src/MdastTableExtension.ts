@@ -6,7 +6,12 @@
  *
  */
 
-import type {MdastExportHandler, MdastImportHandler, MdastNode} from './types';
+import type {
+  MdastExportHandler,
+  MdastImportContext,
+  MdastImportHandler,
+  MdastNode,
+} from './types';
 import type {
   AlignType,
   Emphasis,
@@ -162,23 +167,71 @@ function cellLines(cell: TableCell): PhrasingContent[][] {
     }
   }
   // The cell's own edges were trimmed by the parser, and keep what it left.
-  return lines.map((line, lineIndex) =>
-    line
-      .map((node, i): PhrasingContent => {
-        if (node.type !== 'text') {
-          return node;
-        }
-        let {value} = node;
-        if (i === 0 && lineIndex > 0) {
-          value = value.replace(/^[ \t]+/, '');
-        }
-        if (i === line.length - 1 && lineIndex < lines.length - 1) {
-          value = value.replace(/[ \t]+$/, '');
-        }
-        return {...node, value};
-      })
-      .filter(node => node.type !== 'text' || node.value !== ''),
-  );
+  return lines.map((line, i) => trimEdges(line, i > 0, i < lines.length - 1));
+}
+
+/**
+ * `line` with the spaces and tabs a separator was written with trimmed from
+ * its `start` or `end`, and the text left empty dropped.
+ */
+function trimEdges(
+  line: PhrasingContent[],
+  start: boolean,
+  end: boolean,
+): PhrasingContent[] {
+  return line
+    .map((node, i): PhrasingContent => {
+      if (node.type !== 'text') {
+        return node;
+      }
+      let {value} = node;
+      if (i === 0 && start) {
+        value = value.replace(/^[ \t]+/, '');
+      }
+      if (i === line.length - 1 && end) {
+        value = value.replace(/[ \t]+$/, '');
+      }
+      return {...node, value};
+    })
+    .filter(node => node.type !== 'text' || node.value !== '');
+}
+
+/**
+ * The blocks of a cell's line: each `<hr>` in it is a rule, as export
+ * writes one, and the phrasing around it a paragraph of its own, trimmed as
+ * beside a `<br>`.
+ */
+function $lineBlocks(
+  line: PhrasingContent[],
+  ctx: MdastImportContext,
+): LexicalNode[] {
+  const runs: PhrasingContent[][] = [[]];
+  const rules: LexicalNode[][] = [];
+  for (const child of line) {
+    const rule = Array.from({length: voidTags(child, 'hr')}, () =>
+      ctx.importNode({type: 'thematicBreak'}),
+    ).flat();
+    if (rule.length > 0) {
+      rules.push(rule);
+      runs.push([]);
+    } else {
+      runs[runs.length - 1].push(child);
+    }
+  }
+  return runs.flatMap((run, i) => {
+    const children = trimEdges(run, i > 0, i < rules.length);
+    return [
+      ...(children.length > 0 || runs.length === 1
+        ? [
+            $append(
+              $createParagraphNode(),
+              ctx.importChildren({children, type: 'tableCell'}),
+            ),
+          ]
+        : []),
+      ...(rules[i] || []),
+    ];
+  });
 }
 
 const $importTable: MdastImportHandler<Table> = (node, ctx) => {
@@ -198,58 +251,7 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
                 ? TableCellHeaderStates.ROW
                 : TableCellHeaderStates.NO_STATUS,
             ).setFormat(align[columnIndex] || ''),
-            cellLines(cell).flatMap(line => {
-              // Each `<hr>` is a rule, as export writes one, and the phrasing
-              // around it a paragraph of its own.
-              const blocks: LexicalNode[] = [];
-              let run: PhrasingContent[] = [];
-              const $flush = () =>
-                blocks.push(
-                  $append(
-                    $createParagraphNode(),
-                    ctx.importChildren({children: run, type: 'tableCell'}),
-                  ),
-                );
-              // The whitespace an `<hr>` was written with is trimmed, as a
-              // `<br>`'s is.
-              let afterRule = false;
-              for (const child of line) {
-                const rules = Array.from({length: voidTags(child, 'hr')}, () =>
-                  ctx.importNode({type: 'thematicBreak'}),
-                ).flat();
-                if (rules.length > 0) {
-                  const last = run[run.length - 1];
-                  if (last && last.type === 'text') {
-                    last.value = last.value.replace(/[ \t]+$/, '');
-                  }
-                  if (
-                    run.some(
-                      phrasing => phrasing.type !== 'text' || phrasing.value,
-                    )
-                  ) {
-                    $flush();
-                  }
-                  run = [];
-                  blocks.push(...rules);
-                  afterRule = true;
-                } else {
-                  if (afterRule && child.type === 'text') {
-                    child.value = child.value.replace(/^[ \t]+/, '');
-                  }
-                  afterRule = false;
-                  run.push(child);
-                }
-              }
-              if (
-                run.some(
-                  phrasing => phrasing.type !== 'text' || phrasing.value,
-                ) ||
-                blocks.length === 0
-              ) {
-                $flush();
-              }
-              return blocks;
-            }),
+            cellLines(cell).flatMap(line => $lineBlocks(line, ctx)),
           ),
         ),
       ),
@@ -257,8 +259,10 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
   );
 };
 
-const BR: Html = {type: 'html', value: '<br>'};
-const HR: Html = {type: 'html', value: '<hr>'};
+// Fresh nodes, as an exported tree may be edited in place.
+function rawHtml(value: '<br>' | '<hr>'): Html {
+  return {type: 'html', value};
+}
 
 /**
  * Rejoins formatting that export split around a line break (`**a**`, break,
@@ -308,11 +312,11 @@ function joinAtBreaks(nodes: readonly PhrasingContent[]): PhrasingContent[] {
 function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
   return mapPhrasing(joinAtBreaks(nodes), node => {
     if (node.type === 'break') {
-      return [BR];
+      return [rawHtml('<br>')];
     }
     if ((node.type as string) === 'thematicBreak') {
       // GFM has no rule in a cell but HTML's, which import reads back.
-      return [HR];
+      return [rawHtml('<hr>')];
     }
     if (/^(?:emphasis|strong|delete)$/.test(node.type)) {
       return [
@@ -376,8 +380,13 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
           value: math.value
             .replace(/(^|[^\\])((?:\\\\)*)%.*/gm, '$1$2')
             .replace(/\s*[\r\n]\s*/g, ' ')
-            .replace(/\\[^]|\|/g, found =>
-              found === '|' ? '\\vert ' : found === '\\|' ? '\\Vert ' : found,
+            .replace(/\\(?:text\w*|mbox)\{[^{}]*\}|\\[^]|\|/g, found =>
+              found === '|'
+                ? '\\vert '
+                : found === '\\|'
+                  ? '\\Vert '
+                  : // In text, a pipe is `\textbar`.
+                    found.replace(/\|/g, '\\textbar{}'),
             ),
         } as unknown as PhrasingContent,
       ];
@@ -389,7 +398,7 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
       return node.value
         .split(/\r?\n|\r/)
         .flatMap((value, i): PhrasingContent[] => [
-          ...(i > 0 ? [BR] : []),
+          ...(i > 0 ? [rawHtml('<br>')] : []),
           ...(value ? [{...node, value}] : []),
         ]);
     }
@@ -448,7 +457,14 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
                       /\\[^]|(["'])(?:\\[^]|(?!\1)[^\\])*\1|`(?:\\[^]|[^`\\])*`|\/\*[^]*?\*\/|\/\/.*|\s*[\r\n]\s*/g,
                       found =>
                         found[0] === '`'
-                          ? found.replace(/\r?\n|\r/g, '\\n')
+                          ? found.replace(
+                              /\$\{[^}]*\}|\r?\n|\r/g,
+                              // A substitution is code, not text.
+                              text =>
+                                text[0] === '$'
+                                  ? text.replace(/\s*[\r\n]\s*/g, ' ')
+                                  : '\\n',
+                            )
                           : found[0] === '/'
                             ? found[1] === '*'
                               ? found.replace(/\s*[\r\n]\s*/g, ' ')
@@ -476,7 +492,7 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
         lines.push(cellPhrasing([node as PhrasingContent]));
         return;
       case 'thematicBreak':
-        lines.push([HR]);
+        lines.push([rawHtml('<hr>')]);
         return;
       case 'definition':
         // Definitions are the document's, and no node exports one.
@@ -495,7 +511,9 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
     }
   };
   nodes.forEach(visit);
-  return lines.flatMap((line, i) => (i > 0 ? [BR, ...line] : line));
+  return lines.flatMap((line, i) =>
+    i > 0 ? [rawHtml('<br>'), ...line] : line,
+  );
 }
 
 /**

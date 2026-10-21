@@ -1091,6 +1091,7 @@ describe('@lexical/mdast import/export', () => {
   // value: U+2028 ends a line in JavaScript but not in Markdown.
   const SCRIPTS: [string, string][] = [
     ['/[//]/.test("/")', '/[//]/.test("/")'],
+    ['"a|b" + `c|d`', '"a\\x7cb" + `c\\x7cd`'],
     ['`a ${({x: 1}).x\n} b`', '`a ${({x: 1}).x\u2028} b`'],
     [
       '`a ${(() => {\n  return 1;\n})()\n} b`',
@@ -1852,7 +1853,7 @@ describe('@lexical/mdast import/export', () => {
       [
         {
           attributes: [
-            {name: 'title', type: 'mdxJsxAttribute', value: 'a\nb'},
+            {name: 'title', type: 'mdxJsxAttribute', value: 'a\nb|c'},
             {
               name: 'data',
               type: 'mdxJsxAttribute',
@@ -1865,7 +1866,15 @@ describe('@lexical/mdast import/export', () => {
           ],
           type: 'mdxJsxFlowElement',
         },
-        '<abbr title={"a\\nb"} data={[\u20281]} {...x\u2028}>x</abbr>',
+        '<abbr title="a&#10;b&#124;c" data={[\u20281]} {...x\u2028}>x</abbr>',
+      ],
+      [{name: 'abbr', type: 'mdxJsxFlowElement'}, '<abbr></abbr>'],
+      [
+        {
+          type: 'mdxFlowExpression',
+          value: '[<a t="a|b\nc" /\n>, <b>x|y</b>, 1 // c|d\n+ 2]',
+        },
+        '{[<a t="a&#124;b&#10;c" /\u2028>, <b>x&#124;y</b>, 1 // c\\x7cd\u2028+ 2]}',
       ],
       [
         {
@@ -1883,6 +1892,7 @@ describe('@lexical/mdast import/export', () => {
         '$\\text{a {b {c {d\\textbar{}e}}}} \\text {a \\{ b\\textbar{}c} \\textstyle{\\vert x\\vert } \\text{abcd}$',
       ],
       [{type: 'math', value: 'a % one\n% two\n\\alpha%\n  b'}, '$a \\alpha b$'],
+      [{type: 'math', value: 'a % one\n  % two\nb'}, '$a b$'],
       // A `<` that starts no tag is text, whose line end is kept.
       [
         {type: 'html', value: '<pre>a < b\nc > d</pre>'},
@@ -1916,7 +1926,7 @@ describe('@lexical/mdast import/export', () => {
                       inlineMath: ((node: {value: string}) =>
                         `$${node.value}$`) as Handle,
                       mdxJsxTextElement: ((node, _, state, info) =>
-                        `<${node.name}${node.attributes
+                        `<${node.name}${(node.attributes || [])
                           .map(
                             ({
                               name,
@@ -1931,7 +1941,7 @@ describe('@lexical/mdast import/export', () => {
                           )
                           .join(
                             '',
-                          )}>${state.containerPhrasing(node, info)}</${node.name}>`) as Handle,
+                          )}>${node.children ? state.containerPhrasing(node, info) : ''}</${node.name}>`) as Handle,
                       mdxTextExpression: ((node: {value: string}) =>
                         `{${node.value}}`) as Handle,
                       textDirective: ((node, _, state, info) =>

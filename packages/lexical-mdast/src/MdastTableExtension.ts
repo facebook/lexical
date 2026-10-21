@@ -374,41 +374,39 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
     }
     if ((node.type as string) === 'mdxJsxTextElement') {
       const element = node as unknown as {
-        attributes: {type: string; value?: string | Html | null}[];
-        children: PhrasingContent[];
+        attributes?: {type: string; value?: string | Html | null}[];
+        children?: PhrasingContent[];
       };
       return [
         {
           ...node,
-          // An attribute's expression on one line, and a string with a line
-          // end as an expression, since its references are written escaped.
-          attributes: element.attributes.map(attribute => {
-            const {value} = attribute;
-            return {
-              ...attribute,
-              value:
-                typeof value !== 'string'
-                  ? value && {...value, value: scriptLine(value.value || '')}
-                  : attribute.type !== 'mdxJsxAttribute'
-                    ? scriptLine(value)
-                    : /[\r\n]/.test(value)
-                      ? {
-                          type: 'mdxJsxAttributeValueExpression',
-                          value: JSON.stringify(value),
-                        }
-                      : value,
-            };
+          // Attributes on one line: an expression's code, and a string's
+          // line ends and pipes as references, which its value reads.
+          ...(element.attributes && {
+            attributes: element.attributes.map(attribute => {
+              const {value} = attribute;
+              return {
+                ...attribute,
+                value:
+                  typeof value !== 'string'
+                    ? value && {...value, value: scriptLine(value.value || '')}
+                    : attribute.type !== 'mdxJsxAttribute'
+                      ? scriptLine(value)
+                      : jsxReferences(value),
+              };
+            }),
           }),
-          children: cellPhrasing(element.children),
+          ...(element.children && {children: cellPhrasing(element.children)}),
         } as unknown as PhrasingContent,
       ];
     }
     if ((node.type as string) === 'inlineMath') {
       const math = node as unknown as {type: 'inlineMath'; value: string};
-      // A cell is one line, and a TeX comment ends with its line end and
-      // the spaces after it, which a control word before it ends at too. GFM ends a cell at `|` even in math, so TeX's
-      // `|` and `\|` are written as their command forms, or as `\textbar`
-      // in text.
+      // A cell is one line. A TeX comment ends with its line end and the
+      // next line's indentation, so a control word before it gets a space
+      // to end at. GFM ends a cell at `|` even in math, so TeX's `|` and
+      // `\|` are written as their command forms, or as `\textbar` in text.
+      // (A column rule in an array's spec has no other form.)
       let depth = 0;
       let text = 0;
       return [
@@ -416,7 +414,7 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
           ...math,
           value: math.value
             .replace(
-              /(^|[^\\])((?:\\\\)*(\\[a-z]+)?)%.*(?:\r\n?|\n)?[ \t]*/gim,
+              /(^|[^\\])((?:\\\\)*(\\[a-z]+)?)%.*(?:(?:\r\n?|\n)[ \t]*%.*)*(?:\r\n?|\n)?[ \t]*/gim,
               (_, before, commands, word) =>
                 before + commands + (word ? ' ' : ''),
             )
@@ -459,15 +457,22 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
 // `/` divides, and in the text of a template, a JSX tag, and the children of
 // a JSX element.
 const SCRIPT_TOKENS = [
-  /\\(?:\r\n|[^])|(["'])(?:\\(?:\r\n|[^])|(?!\1)[^\\])*\1|\/\*[^]*?\*\/|\/\/.*|\+\+|--|\s+|[\w$\u0080-￿]+|[^]/y,
+  /\\(?:\r\n|[^])|(["'])(?:\\(?:\r\n|[^])|(?!\1)[^\\])*\1|\/\*[^]*?\*\/|\/\/.*|\+\+|--|\s+|[\w$\u0080-\uffff]+|[^]/y,
   /\\(?:\r\n|[^])|\$\{|\r\n?|\n|[^\\$`\r\n]+|[^]/y,
-  /(["'])[^]*?\1|\/>|\/\*[^]*?\*\/|\/\/.*|\s+|[^]/y,
+  /(["'])[^]*?\1|\/\s*>|\/\*[^]*?\*\/|\/\/.*|\s+|[^]/y,
   /<\/[^>]*>|[^<{]+|[^]/y,
 ];
 // The tokens of code where a value can start, which can be a regular
 // expression literal.
 const OPERAND_TOKEN =
-  /\/(?![*/])(?:\\.|\[(?:\\.|[^\]\\\r\n])*\]|[^/\\\r\n[])+\/\w*|\\(?:\r\n|[^])|(["'])(?:\\(?:\r\n|[^])|(?!\1)[^\\])*\1|\/\*[^]*?\*\/|\/\/.*|\+\+|--|\s+|[\w$\u0080-￿]+|[^]/y;
+  /\/(?![*/])(?:\\.|\[(?:\\.|[^\]\\\r\n])*\]|[^/\\\r\n[])+\/\w*|\\(?:\r\n|[^])|(["'])(?:\\(?:\r\n|[^])|(?!\1)[^\\])*\1|\/\*[^]*?\*\/|\/\/.*|\+\+|--|\s+|[\w$\u0080-\uffff]+|[^]/y;
+
+/** JSX text or an attribute's string on one line, with its pipes. */
+function jsxReferences(text: string): string {
+  return text.replace(/\r\n?|\n|\|/g, found =>
+    found === '|' ? '&#124;' : '&#10;',
+  );
+}
 
 /**
  * A JavaScript expression on one line, as a cell needs, with its value: line
@@ -475,7 +480,10 @@ const OPERAND_TOKEN =
  * (for comments and semicolon insertion) but Markdown doesn't, a template
  * writes its line ends as `\n` (which only its raw strings tell apart), a
  * string drops its line continuations, and JSX keeps the text its line ends
- * make. Nothing else is changed, so code read wrongly is written as it was.
+ * make. A `|` in a string, a template's text or a comment is written as
+ * `\x7c`, and in JSX as `&#124;`; elsewhere (an operator, a regular
+ * expression) GFM has no way to hold it. Nothing else is changed, so code
+ * read wrongly is written as it was.
  */
 function scriptLine(code: string): string {
   // The open contexts, the innermost last: the brace depth of code, or -1
@@ -494,6 +502,7 @@ function scriptLine(code: string): string {
           : SCRIPT_TOKENS[0];
     token.lastIndex = i;
     found = token.exec(code)![0];
+    const blank = context >= 0 && /^\s|^\/[*/]/.test(found);
     let write = found;
     if (context === -1) {
       if (found === '`') {
@@ -502,8 +511,12 @@ function scriptLine(code: string): string {
       } else if (found === '${') {
         contexts.push(0);
         operand = true;
-      } else if (/^\\?[\r\n]/.test(found)) {
-        write = found[0] === '\\' ? '' : '\\n';
+      } else {
+        write = /^\\?[\r\n]/.test(found)
+          ? found[0] === '\\'
+            ? ''
+            : '\\n'
+          : found.replace(/\|/g, '\\x7c');
       }
     } else if (context < 0) {
       if (found === '{') {
@@ -514,25 +527,24 @@ function scriptLine(code: string): string {
       } else if (found === '>' && context === -2) {
         contexts[contexts.length - 1] = -3;
       } else if (context === -2 && /^["']/.test(found)) {
-        // An attribute's line ends, as references.
-        write = found.replace(/\r\n?|\n/g, '&#10;');
-      } else {
-        // JSX text drops the whitespace of a line end at its edges.
-        write = found.replace(/\s*[\r\n]\s*/g, (end, at) =>
-          context === -2 || found.startsWith('</')
-            ? '\u2028'
-            : at && at + end.length < found.length
-              ? ' '
-              : '',
+        write = jsxReferences(found);
+      } else if (context === -3 && found[0] !== '<') {
+        // JSX text drops the spaces of a line end at its edges.
+        write = jsxReferences(
+          found.replace(/[ \t]*(?:\r\n?|\n)[ \t]*/g, (end, at) =>
+            at && at + end.length < found.length ? ' ' : '',
+          ),
         );
-        if (found === '/>' || found.startsWith('</')) {
+      } else {
+        write = found.replace(/\s*[\r\n]\s*/g, '\u2028');
+        if (/^\/\s*>|^<\//.test(found)) {
           contexts.pop();
           operand = false;
         }
       }
-    } else if (/^\s|^\/[*/]/.test(found)) {
+    } else if (blank) {
       // Whitespace and comments don't change what can follow.
-      write = found.replace(/\s*[\r\n]\s*/g, '\u2028');
+      write = found.replace(/\s*[\r\n]\s*/g, '\u2028').replace(/\|/g, '\\x7c');
     } else {
       if (found === '`') {
         contexts.push(-1);
@@ -543,17 +555,17 @@ function scriptLine(code: string): string {
       } else if (found === '{' || found === '}') {
         contexts[contexts.length - 1] += found === '{' ? 1 : -1;
       } else if (/^["']/.test(found)) {
-        // A string's line continuations.
-        write = found.replace(/\\(?:\r\n?|\n)/g, '');
+        // A string's line continuations, and its pipes as escapes.
+        write = found.replace(/\\(?:\r\n?|\n)/g, '').replace(/\|/g, '\\x7c');
       }
-      operand = /^[\w$\u0080-￿]/.test(found)
+      operand = /^[\w$\u0080-\uffff]/.test(found)
         ? previous !== '.' &&
           /^(?:return|typeof|case|do|else|in|of|new|delete|void|throw|instanceof|yield|await)$/.test(
             found,
           )
         : !/^(?:[)\]`'"]|\/.|\+\+|--)/.test(found);
     }
-    if (!/^\s|^\/[*/]/.test(found)) {
+    if (!blank) {
       previous = found;
     }
     line += write;

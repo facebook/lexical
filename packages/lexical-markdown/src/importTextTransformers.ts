@@ -165,11 +165,7 @@ export function $importTextTransformers(
     return;
   }
 
-  // Handle escape characters, which a code span doesn't take. The node is
-  // the code span itself when the span was all of its text.
-  if ($canContainTransformableMarkdown(textNode)) {
-    const textContent = textNode.getTextContent();
-    const unescapedText = unescapeText(textContent);
-    textNode.setTextContent(unescapedText);
-  }
+  // No transformer matched, so read the node's escapes. Callers pass no code
+  // span, which takes none.
+  textNode.setTextContent(unescapeText(textNode.getTextContent()));
 }

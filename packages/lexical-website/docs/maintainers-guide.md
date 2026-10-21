@@ -8,9 +8,9 @@ configurations.
 
 ### Workspaces
 
-The top-level `package.json` uses
-[pnpm workspaces](https://pnpm.io/workspaces) to
-configure the monorepo. This mostly means that all packages share a
+The monorepo is configured with
+[pnpm workspaces](https://pnpm.io/workspaces); the set of workspace
+packages is declared in the top-level `pnpm-workspace.yaml`. This mostly means that all packages share a
 top-level `pnpm-lock.yaml` and `pnpm -C {package} run {command}` is often
 used to run a command from a nested package's package.json.
 
@@ -24,9 +24,6 @@ Some packages in the monorepo do not get published to npm, for example:
   [playground.lexical.dev](https://playground.lexical.dev/) demo site
 * `packages/lexical-website` - the [lexical.dev](https://lexical.dev/)
   docusaurus website that you may even be reading right now
-* `packages/lexical-test-utils` - `@lexical/test-utils`, private React
-  testing helpers shared across package unit tests
-
 Internal runtime code shared by more than one package lives in
 `packages/lexical-internal` (`@lexical/internal`). Unlike the others above
 it **is** published, but only so its source resolves through normal package
@@ -273,10 +270,14 @@ It writes one module per package, beside the nodes it serializes:
 
 | Module | Classes |
 | --- | --- |
-| `packages/lexical/src/LexicalGeneratedJSON.ts` | TextNode, ParagraphNode, LineBreakNode, TabNode |
+| `packages/lexical/src/LexicalGeneratedJSON.ts` | ElementNode, TextNode, ParagraphNode, LineBreakNode, TabNode |
 | `packages/lexical-rich-text/src/LexicalRichTextGeneratedJSON.ts` | HeadingNode, QuoteNode |
 | `packages/lexical-link/src/LexicalLinkGeneratedJSON.ts` | LinkNode, AutoLinkNode |
 | `packages/lexical-mark/src/LexicalMarkGeneratedJSON.ts` | MarkNode |
+| `packages/lexical-list/src/LexicalListGeneratedJSON.ts` | ListNode, ListItemNode |
+| `packages/lexical-table/src/LexicalTableGeneratedJSON.ts` | TableNode, TableRowNode, TableCellNode |
+| `packages/lexical-code-core/src/LexicalCodeCoreGeneratedJSON.ts` | CodeNode, CodeHighlightNode |
+| `packages/lexical-react/src/shared/LexicalReactGeneratedJSON.ts` | DecoratorBlockNode |
 
 Each class receives its own generated code through its `$config`'s
 `generated` property, so nothing has to match code to class by type string at
@@ -383,12 +384,15 @@ Increment the monorepo version. The `-i` argument must be one of
 `minor` | `patch` | `prerelease`.
 
 The postversion script will:
-- Create a local `${npm_package_version}__release` branch
+- Create a local `${CHANNEL}__release` branch (the version-named
+  `${npm_package_version}__release` branch is only a remote push target,
+  and only when the channel is not `nightly`)
 - `pnpm run update-version` to update example and sub-package monorepo dependencies
 - `pnpm install` to update the pnpm-lock.yaml
 - `pnpm run update-packages` to update other generated config
-- `pnpm run extract-codes` to extract the error codes
-- `pnpm run update-changelog` to update the changelog (if it's not a prerelease)
+- `pnpm run extract-codes` to extract the error codes and
+  `pnpm run update-changelog` to update the changelog (both only when
+  `CHANNEL` is `latest`)
 - Create a version commit and tag from the branch
 
 This is typically executed through the `version.yml` GitHub Workflow which
@@ -532,6 +536,50 @@ git push --delete origin v0.46.0-dev.0 dev__release 0.46.0-dev.0__release
 The `increment-version=true + channel=latest` combination is refused
 by the workflow's guard job — real `latest` releases must go through
 `version.yml` first.
+
+## Continuous releases (pkg.pr.new)
+
+Every commit to a pull request and every commit to `main` publishes all public
+packages to [pkg.pr.new](https://github.com/stackblitz-labs/pkg.pr.new) through
+the `pkg-pr-new.yml` workflow. Nothing goes to npm: the nightly, next and latest
+channels above are unchanged and still publish through `call-release.yml`.
+
+```sh
+npm i https://pkg.pr.new/lexical@9372      # latest commit of PR #9372
+npm i https://pkg.pr.new/lexical@4282a68   # a specific commit
+npm i https://pkg.pr.new/lexical@main      # tip of main
+```
+
+The bot comments install commands on each pull request. Previews are built
+with `pnpm run prepare-release`, the same build as the npm channels, after
+`scripts/npm/preview-version.mjs` stamps a version in the nightly line:
+`0.52.1-pr.9372.g4282a68` for a PR and `0.52.1-main.g4282a68` for `main`, next
+to `0.52.1-nightly.20261019.0` on npm. That version is also what
+`LexicalEditor.version` reports. Dependencies between Lexical packages are
+rewritten to the same commit's pkg.pr.new URLs, so `@lexical/react` from a
+preview depends on `lexical` from that preview, not on an npm release.
+
+The bot's comment lists npm commands, and npm dedupes those dependencies by
+name and version, so `@9372` or `@main` URLs are fine. pnpm and yarn key URL
+dependencies by URL instead: install with the long commit URLs that the
+packages use for each other, or you get more than one copy of `lexical`. pnpm
+11+ also refuses URL dependencies of URL dependencies unless
+`blockExoticSubdeps` is off. Each run's job summary lists these commands:
+
+```sh
+pnpm add --config.block-exotic-subdeps=false \
+  lexical@https://pkg.pr.new/facebook/lexical/lexical@4282a68 \
+  @lexical/react@https://pkg.pr.new/facebook/lexical/@lexical/react@4282a68
+yarn add \
+  lexical@https://pkg.pr.new/facebook/lexical/lexical@4282a68 \
+  @lexical/react@https://pkg.pr.new/facebook/lexical/@lexical/react@4282a68
+```
+
+On a cold cache, yarn 1 can fail with "the file appears to be corrupt" while
+it downloads the same URL for several packages at once. Run it again.
+
+The workflow requires the [pkg.pr.new GitHub App](https://github.com/apps/pkg-pr-new)
+to be installed on the repository.
 
 ## Release Procedure
 

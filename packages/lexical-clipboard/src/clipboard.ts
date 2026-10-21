@@ -23,26 +23,32 @@ import {
   $getChildCaret,
   $getChildCaretAtIndex,
   $getCollapsedCaretRange,
+  $getDOMSlot,
   $getEditor,
   $getNearestNodeFromDOMNode,
   $getRoot,
   $getSelection,
   $getSelectionSlotFrame,
+  $getSiblingCaret,
   $getSlot,
   $getSlotNames,
   $getTextPointCaret,
+  $isChildCaret,
   $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
   $isTextNode,
   $isTextPointCaret,
+  $normalizeCaret,
   $parseSerializedNode,
+  $rewindSiblingCaret,
   $setSelectionFromCaretRange,
   $splitAtPointCaretNext,
   type BaseSelection,
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
   defineExtension,
+  type ElementNode,
   findAllLexicalElementsDeep,
   getDOMSelection,
   getDOMSelectionPoints,
@@ -257,14 +263,56 @@ function $resolveDropPointCaret(
   if ($isTextNode(node)) {
     return $getTextPointCaret(node, 'next', hit.offset);
   }
-  if ($isElementNode(node)) {
-    return $getChildCaretAtIndex(node, hit.offset, 'next');
-  }
   const parent = node.getParent();
-  if (parent === null) {
-    return null;
+  if ($isElementNode(node)) {
+    // The DOM offset also counts the DOM the editor renders between the
+    // children (such as a zero-size anchor before a leading decorator), and
+    // a point outside the element's slot is beside the element.
+    const dom = editor.getElementByKey(node.getKey());
+    if (dom === null) {
+      return null;
+    }
+    const slot = $getDOMSlot(node, dom, editor);
+    return hit.node === slot.element || parent
+      ? $getChildCaretAtIndex(
+          ...slot.resolveChildIndex(node, dom, hit.node, hit.offset),
+          'next',
+        )
+      : null;
   }
-  return $getChildCaretAtIndex(parent, node.getIndexWithinParent() + 1, 'next');
+  return (
+    parent &&
+    $getChildCaretAtIndex(parent, node.getIndexWithinParent() + 1, 'next')
+  );
+}
+
+// A text edge and the element point beside it are the same drop position.
+// Inline wrappers do not introduce another position at their outer edges,
+// but block boundaries, line breaks, and decorators do.
+function $normalizeDropBoundary(point: PointCaret<'next'>): PointCaret<'next'> {
+  let caret = point;
+  if ($isTextPointCaret(caret)) {
+    if (caret.offset === 0) {
+      caret = $rewindSiblingCaret(caret.getSiblingCaret());
+    } else if (caret.offset === caret.origin.getTextContentSize()) {
+      caret = caret.getSiblingCaret();
+    } else {
+      return caret;
+    }
+  }
+  for (;;) {
+    const parent: ElementNode | null = caret.getParentAtCaret();
+    if (parent === null || !parent.isInline() || parent.isShadowRoot()) {
+      return caret;
+    }
+    if ($isChildCaret(caret)) {
+      caret = $rewindSiblingCaret($getSiblingCaret(parent, 'next'));
+    } else if (caret.getNodeAtCaret() === null) {
+      caret = $getSiblingCaret(parent, 'next');
+    } else {
+      return caret;
+    }
+  }
 }
 
 function $isDropCaretInsideSelection(
@@ -275,9 +323,10 @@ function $isDropCaretInsideSelection(
     $caretRangeFromSelection(selection),
     'next',
   );
+  const drop = $normalizeDropBoundary(dropCaret);
   return (
-    $comparePointCaretNext(start, dropCaret) < 0 &&
-    $comparePointCaretNext(dropCaret, end) < 0
+    $comparePointCaretNext($normalizeDropBoundary(start), drop) <= 0 &&
+    $comparePointCaretNext(drop, $normalizeDropBoundary(end)) <= 0
   );
 }
 
@@ -309,13 +358,6 @@ function $doDrop(
     return false;
   }
 
-  // Split at the drop caret so we have a stable NodeCaret boundary that
-  // survives text-content mutations in its siblings.
-  const stableDropCaret = $splitAtPointCaretNext(dropCaret);
-  if (stableDropCaret === null) {
-    return false;
-  }
-
   const isSameEditorDrag = marker.editorKey === editor.getKey();
   const currentSelection = $getSelection();
 
@@ -335,19 +377,35 @@ function $doDrop(
       event.preventDefault();
       return true;
     }
+  }
+
+  // Prefer a text boundary to its containing element: deletion can merge
+  // blocks and remove the element while its unselected children survive.
+  // Only split text; splitting an element here would add a paragraph break.
+  const normalizedDropCaret = $normalizeCaret(dropCaret);
+  const stableDropCaret = $isTextPointCaret(normalizedDropCaret)
+    ? $splitAtPointCaretNext(normalizedDropCaret)
+    : normalizedDropCaret;
+  if (stableDropCaret === null) {
+    return false;
+  }
+  const oppositeDropCaret = stableDropCaret.getFlipped();
+
+  if (isSameEditorDrag && $isRangeSelection(currentSelection)) {
     currentSelection.removeText();
   }
 
-  // If the drop caret's origin was swept away by the source removal, abort —
-  // this can happen on a same-editor drag whose range covered the entire
-  // text node we tried to split at.
-  if (!stableDropCaret.origin.isAttached()) {
-    event.preventDefault();
-    return true;
-  }
-
+  // Either side can move with the surviving content. Keep both rather than
+  // falling back to the source selection when one origin is removed.
+  const insertCaret = stableDropCaret.origin.isAttached()
+    ? stableDropCaret
+    : oppositeDropCaret;
+  invariant(
+    insertCaret.origin.isAttached(),
+    '$doDrop: drop position was removed by source deletion',
+  );
   const dropSelection = $setSelectionFromCaretRange(
-    $getCollapsedCaretRange(stableDropCaret),
+    $getCollapsedCaretRange(insertCaret),
   );
   $insertDataTransfer(dataTransfer, dropSelection, editor);
 

@@ -6,6 +6,8 @@
  *
  */
 
+// @vitest-environment node
+
 import type {Paragraph, PhrasingContent} from 'mdast';
 
 import {TEXT_TYPE_TO_FORMAT} from 'lexical';
@@ -66,21 +68,28 @@ function formatRuns(
   return out;
 }
 
-/** Serializes phrasing to markdown and re-parses it, comparing format runs. */
-function roundTrips(phrasing: PhrasingContent[]): {md: string; ok: boolean} {
-  const md = toMarkdown(
-    {children: [{children: phrasing, type: 'paragraph'}], type: 'root'},
-    {extensions: [gfmStrikethroughToMarkdown()]},
-  );
-  const back = fromMarkdown(md, {
-    extensions: [gfmStrikethrough()],
-    mdastExtensions: [gfmStrikethroughFromMarkdown()],
-  });
-  const paragraph = back.children[0] as Paragraph;
-  const ok =
-    JSON.stringify(formatRuns(paragraph.children)) ===
-    JSON.stringify(formatRuns(phrasing));
-  return {md, ok};
+/** Serializes every phrasing tree, reusing the parse of identical markdown. */
+function createRoundTripChecker() {
+  const parsedRuns = new Map<string, string>();
+  return (phrasing: PhrasingContent[]): {md: string; ok: boolean} => {
+    const md = toMarkdown(
+      {children: [{children: phrasing, type: 'paragraph'}], type: 'root'},
+      {extensions: [gfmStrikethroughToMarkdown()]},
+    );
+    let parsed = parsedRuns.get(md);
+    if (parsed === undefined) {
+      const back = fromMarkdown(md, {
+        extensions: [gfmStrikethrough()],
+        mdastExtensions: [gfmStrikethroughFromMarkdown()],
+      });
+      const paragraph = back.children[0] as Paragraph;
+      parsed = JSON.stringify(formatRuns(paragraph.children));
+      parsedRuns.set(md, parsed);
+    }
+    // Different trees may serialize identically but mean different things.
+    // Always compare the parsed runs with this tree's own expected runs.
+    return {md, ok: parsed === JSON.stringify(formatRuns(phrasing))};
+  };
 }
 
 /** Deterministic PRNG so failures are reproducible. */
@@ -123,6 +132,7 @@ function randomRuns(
 
 describe('phrasingFromTextRuns', () => {
   it('round-trips arbitrary bold/italic overlap exactly', () => {
+    const roundTrips = createRoundTripChecker();
     const rand = mulberry32(99);
     const formats = [TEXT_TYPE_TO_FORMAT.bold, TEXT_TYPE_TO_FORMAT.italic];
     for (let trial = 0; trial < 2000; trial++) {
@@ -136,6 +146,7 @@ describe('phrasingFromTextRuns', () => {
   });
 
   it('never round-trips worse than per-run nesting, for any format mix', () => {
+    const roundTrips = createRoundTripChecker();
     // Strikethrough and inline code delimiters are not flanking-safe in every
     // position, so a perfect round-trip cannot be promised for every random
     // sequence — but the grouped nesting must never fail where the old

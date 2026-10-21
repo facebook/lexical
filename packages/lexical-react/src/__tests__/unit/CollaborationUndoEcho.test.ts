@@ -6,6 +6,8 @@
  *
  */
 
+// @vitest-environment node
+
 /**
  * Regression test for the "empty-paragraph echo" on collaborative undo
  * (facebook/lexical#8651, issue #6614).

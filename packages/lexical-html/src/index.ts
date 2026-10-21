@@ -94,7 +94,6 @@ export {
   defineOverlayRules,
   type DOMImportConfig,
   DOMImportExtension,
-  HorizontalRuleImportExtension,
   HorizontalRuleImportRules,
   ImportOverlays,
   ImportSource,

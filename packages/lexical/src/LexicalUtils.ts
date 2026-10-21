@@ -34,6 +34,7 @@ import {
   normalizeClassNames,
   type UpdateTag,
 } from '.';
+import {$detachNode} from './caret/LexicalCaretTree';
 import {
   CAN_USE_DOM,
   IS_APPLE,
@@ -542,53 +543,7 @@ export function $markSlotsUsed(): void {
  * Please do not use it as it may change in the future.
  */
 export function $removeFromParent(node: LexicalNode): void {
-  invariant(
-    $getSlotHostKey(node) === null,
-    '$removeFromParent: node %s is slotted into host %s; a slotted node and a child are mutually exclusive. Remove it from its slot first.',
-    node.__key,
-    String($getSlotHostKey(node)),
-  );
-  const oldParent = node.getParent();
-  if (oldParent !== null) {
-    const writableNode = node.getWritable();
-    const writableParent = oldParent.getWritable();
-    const prevSibling = node.getPreviousSibling();
-    const nextSibling = node.getNextSibling();
-
-    // Store sibling keys
-    const nextSiblingKey = nextSibling !== null ? nextSibling.__key : null;
-    const prevSiblingKey = prevSibling !== null ? prevSibling.__key : null;
-
-    // Get writable siblings once
-    const writablePrevSibling =
-      prevSibling !== null ? prevSibling.getWritable() : null;
-    const writableNextSibling =
-      nextSibling !== null ? nextSibling.getWritable() : null;
-
-    // Update parent's first/last pointers
-    if (prevSibling === null) {
-      writableParent.__first = nextSiblingKey;
-    }
-    if (nextSibling === null) {
-      writableParent.__last = prevSiblingKey;
-    }
-
-    // Update sibling links
-    if (writablePrevSibling !== null) {
-      writablePrevSibling.__next = nextSiblingKey;
-    }
-    if (writableNextSibling !== null) {
-      writableNextSibling.__prev = prevSiblingKey;
-    }
-
-    // Clear node's links
-    writableNode.__prev = null;
-    writableNode.__next = null;
-    writableNode.__parent = null;
-
-    // Update parent size
-    writableParent.__size--;
-  }
+  $detachNode(node.getParent() === null ? node : node.getWritable());
 }
 /** @deprecated renamed to {@link $removeFromParent} by @lexical/eslint-plugin rules-of-lexical */
 export const removeFromParent = $removeFromParent;
@@ -672,6 +627,17 @@ export function $getCompositionKey(): null | NodeKey {
   }
   const editor = getActiveEditor();
   return editor._compositionKey;
+}
+
+/** Desktop WebKit renders a suffix so an empty composing node can host the IME. */
+export function $isEmptyCompositionTarget(node: TextNode): boolean {
+  return (
+    !IS_IOS &&
+    (IS_SAFARI || IS_APPLE_WEBKIT) &&
+    node.__text === '' &&
+    // DOM selection reconciliation runs after the state becomes read-only.
+    node.__key === getActiveEditor()._compositionKey
+  );
 }
 
 /**
@@ -841,7 +807,10 @@ export function $restoreEmptyContainerParagraph(
   if (
     !$isRootOrShadowRoot(container) ||
     !container.isAttached() ||
-    !container.isEmpty() ||
+    // Root slots (such as footnotes) do not replace the editable body.
+    ($isRootNode(container)
+      ? container.getChildrenSize() !== 0
+      : !container.isEmpty()) ||
     !(
       $isRootNode(container) ||
       (removedChild !== null && INTERNAL_$isBlock(removedChild))
@@ -885,10 +854,14 @@ export function $setSelection(selection: null | BaseSelection): void {
   editorState._selection = selection;
 }
 
-export function $flushMutations(): void {
+/**
+ * @param rerenderText Render the text that the browser changed from the
+ * editor state, as the editor applied the input that changed it itself.
+ */
+export function $flushMutations(rerenderText?: boolean): void {
   errorOnReadOnly();
   const editor = getActiveEditor();
-  flushRootMutations(editor);
+  flushRootMutations(editor, rerenderText);
 }
 
 export function $getNodeFromDOM(dom: Node): null | LexicalNode {
@@ -938,7 +911,23 @@ export function getEditorsToPropagate(editor: LexicalEditor): LexicalEditor[] {
   return editorsToPropagate;
 }
 
+let serverUIDCounter = 0;
+
+/**
+ * Generates the identifiers `createEditor` uses for an editor's key and its
+ * default namespace.
+ *
+ * In a browser they are random, because both are compared across windows: a
+ * drag marker carries the source editor's key, and a clipboard payload carries
+ * its namespace. Without a DOM (server rendering) a counter is used instead,
+ * which is unique within the process: neither value is serialized into
+ * rendered markup, and frameworks such as Next.js fail a prerender that reads
+ * `Math.random()` (#9318).
+ */
 export function createUID(): string {
+  if (!CAN_USE_DOM) {
+    return `s${(++serverUIDCounter).toString(36)}`;
+  }
   return Math.random()
     .toString(36)
     .replace(/[^a-z]+/g, '')
@@ -1002,6 +991,7 @@ export function $updateTextNodeFromDOMContent(
 
   if (node.isAttached() && (compositionEnd || !node.isDirty())) {
     const isComposing = node.isComposing();
+    const isSafariComposition = !IS_IOS && (IS_SAFARI || IS_APPLE_WEBKIT);
 
     if (node.isToken() && isComposing) {
       return;
@@ -1010,13 +1000,16 @@ export function $updateTextNodeFromDOMContent(
     let normalizedTextContent = textContent;
 
     if (isComposing || compositionEnd) {
-      if (textContent.endsWith(COMPOSITION_SUFFIX)) {
+      if (
+        textContent.endsWith(COMPOSITION_SUFFIX) &&
+        (!isSafariComposition || textContent !== node.getTextContent())
+      ) {
         normalizedTextContent = textContent.slice(
           0,
           -COMPOSITION_SUFFIX.length,
         );
       }
-      if (compositionEnd) {
+      if (compositionEnd && !isSafariComposition) {
         const char = COMPOSITION_START_CHAR;
         let index;
         while ((index = normalizedTextContent.indexOf(char)) !== -1) {
@@ -1039,6 +1032,11 @@ export function $updateTextNodeFromDOMContent(
       const selection = $getSelection();
 
       if (normalizedTextContent === '') {
+        if (isComposing && !compositionEnd && isSafariComposition) {
+          // The composition key owns this target until composition ends.
+          $setTextContentWithSelection(node, '', selection);
+          return;
+        }
         $setCompositionKey(null);
         if (!IS_SAFARI && !IS_IOS && !IS_APPLE_WEBKIT) {
           // For composition (mainly Android), we have to remove the node on a later update
@@ -1653,10 +1651,169 @@ export function getDOMOwnerDocument(
       : null;
 }
 
+/**
+ * Computed scroll-padding keeps percentages, which resolve against the
+ * scrollport width. 'auto' parses as NaN and counts as 0.
+ */
+function parseScrollPadding(value: string, clientWidth: number): number {
+  const length = parseFloat(value);
+  if (!isFinite(length)) {
+    return 0;
+  }
+  return value.endsWith('%') ? (length * clientWidth) / 100 : length;
+}
+
+/**
+ * When `element` is a horizontal scroll container (overflow-x auto or
+ * scroll) with something to scroll, scrolls it sideways so the caret rect
+ * [left, right] is inside its scrollport, less its scroll-padding. Returns
+ * how far it actually scrolled, in viewport px.
+ *
+ * The caret may also be above or below the element, like a caret below the
+ * visible part of a root with overflow: auto. It is still revealed sideways
+ * here. Scrolling sideways doesn't move it up or down, and scrolling up or
+ * down doesn't move it sideways, so the vertical pass that runs after this
+ * one reveals it vertically and leaves this reveal alone.
+ */
+function scrollIntoViewHorizontally(
+  view: Window,
+  element: HTMLElement,
+  left: number,
+  right: number,
+): number {
+  // Cheap check first. Layout is already clean because the caret rect was
+  // just measured.
+  const clientWidth = element.clientWidth;
+  const maxScroll = element.scrollWidth - clientWidth;
+  if (maxScroll <= 0) {
+    return 0;
+  }
+  // Only overflow-x auto or scroll counts, the same test as the table's sticky
+  // scrollbar. Hidden and clip are left alone, like a table wrapper with a
+  // frozen row.
+  const style = view.getComputedStyle(element);
+  if (style.overflowX !== 'auto' && style.overflowX !== 'scroll') {
+    return 0;
+  }
+  const rect = element.getBoundingClientRect();
+  // The rects are in viewport px, but clientLeft, clientWidth, scroll-padding
+  // and scrollLeft are in the element's own px. They differ under CSS zoom or
+  // a transform: scale. offsetWidth is rounded, so a difference of 1px or less
+  // is not a scale.
+  const offsetWidth = element.offsetWidth;
+  const scale =
+    offsetWidth > 0 && Math.abs(rect.width - offsetWidth) > 1
+      ? rect.width / offsetWidth
+      : 1;
+  const isRTL = style.direction === 'rtl';
+  // Scrollport, not border box: clientLeft covers the border and a left
+  // scrollbar.
+  const scrollportLeft = rect.left + element.clientLeft * scale;
+  const viewLeft =
+    scrollportLeft +
+    parseScrollPadding(style.scrollPaddingLeft, clientWidth) * scale;
+  const viewRight =
+    scrollportLeft +
+    (clientWidth - parseScrollPadding(style.scrollPaddingRight, clientWidth)) *
+      scale;
+  // A collapsed caret rect has no width, but the caret is painted about 1px
+  // wide. Without this, End can stop with the caret clipped at the edge.
+  let caretLeft = left;
+  let caretRight = Math.max(right, left + 1);
+  if (caretRight - caretLeft > viewRight - viewLeft) {
+    // Wider than the view: an element point measured on the whole node
+    // after it, like a long token. The caret is at its inline start.
+    if (isRTL) {
+      caretLeft = caretRight - 1;
+    } else {
+      caretRight = caretLeft + 1;
+    }
+  }
+  let diff = 0;
+  if (caretLeft < viewLeft) {
+    diff = caretLeft - viewLeft;
+  } else if (caretRight > viewRight) {
+    diff = caretRight - viewRight;
+  }
+  if (diff === 0) {
+    return 0;
+  }
+  const scrollLeft = element.scrollLeft;
+  // Browsers round the scroll position they are given, which can leave the
+  // caret a fraction of a pixel outside the view. So round it the way the
+  // element scrolls, which takes the caret a little further in instead.
+  const unrounded = scrollLeft + diff / scale;
+  const targetScrollLeft =
+    diff > 0 ? Math.ceil(unrounded) : Math.floor(unrounded);
+  // Standard scrollLeft is 0 at the inline start and negative in RTL.
+  let nextScrollLeft = isRTL
+    ? Math.min(0, Math.max(-maxScroll, targetScrollLeft))
+    : Math.max(0, Math.min(maxScroll, targetScrollLeft));
+  // When scrolling back toward the start, and the caret would also fit with
+  // the element scrolled all the way back, go all the way back. The caret's
+  // position at scrollLeft 0 is its position now plus scrollLeft, in viewport
+  // px, in both directions. This shows the whole start of the line,
+  // including the indentation that smart Home and Enter leave the caret
+  // after, whatever the width of the theme's gutter.
+  const startOffset = scrollLeft * scale;
+  if (
+    Math.abs(nextScrollLeft) < Math.abs(scrollLeft) &&
+    caretLeft + startOffset >= viewLeft &&
+    caretRight + startOffset <= viewRight
+  ) {
+    nextScrollLeft = 0;
+  }
+  if (nextScrollLeft === scrollLeft) {
+    return 0;
+  }
+  element.scrollLeft = nextScrollLeft;
+  // Read back, like scrollTop below. An element that doesn't really scroll
+  // (a <table>) reports 0, so outer scrollers stay correct.
+  return (element.scrollLeft - scrollLeft) * scale;
+}
+
+/**
+ * The rect to scroll into view for a caret, which is a collapsed range.
+ * WebKit gives a collapsed range at the logical end of right to left text no
+ * rect at all. Then this measures the character next to the caret instead,
+ * and the caret is at one of its edges.
+ */
+export function getCaretRect(range: Range): DOMRect {
+  const rect = range.getBoundingClientRect();
+  const {startContainer, startOffset} = range;
+  if (
+    !range.collapsed ||
+    rect.width !== 0 ||
+    rect.height !== 0 ||
+    !isDOMTextNode(startContainer) ||
+    startContainer.length === 0
+  ) {
+    return rect;
+  }
+  const characterRange = range.cloneRange();
+  if (startOffset > 0) {
+    characterRange.setStart(startContainer, startOffset - 1);
+  } else {
+    characterRange.setEnd(startContainer, 1);
+  }
+  return characterRange.getBoundingClientRect();
+}
+
+/**
+ * Scrolls the caret into view. First it scrolls sideways, in the horizontal
+ * scroll containers from the caret up to and including the editor root (for
+ * example a code block with a long line, or a table's scroll wrapper). Then
+ * it scrolls vertically, in the root and its ancestors up to the window.
+ *
+ * @param selectionNode The caret's DOM node: the anchor's Text node, or its
+ * $getDOMSlot element for an element point. The horizontal pass starts
+ * there. Without it only the vertical pass runs.
+ */
 export function scrollIntoViewIfNeeded(
   editor: LexicalEditor,
   selectionRect: DOMRect,
   rootElement: HTMLElement,
+  selectionNode: Node | null = null,
 ): void {
   const doc = getDOMOwnerDocument(rootElement);
   const defaultView = getDefaultView(doc);
@@ -1675,6 +1832,31 @@ export function scrollIntoViewIfNeeded(
   const rootRect = rootElement.getBoundingClientRect();
   if (selectionRect.bottom < rootRect.top) {
     return;
+  }
+  // Horizontal scroll containers inside the editor, like a code block with a
+  // long line, and the root itself are scrolled sideways to reveal the caret.
+  // The page and the editor's ancestors are never scrolled horizontally. The
+  // vertical walk below still starts at the root, because scrolling every
+  // element on the way up would also move overflow: hidden elements inside
+  // the editor.
+  if (selectionNode !== null && selectionRect.height > 0) {
+    let {left: currentLeft, right: currentRight} = selectionRect;
+    let scroller: HTMLElement | null = isHTMLElement(selectionNode)
+      ? selectionNode
+      : getParentElement(selectionNode);
+    // contains() also stops a walk that getParentElement took out of the
+    // editor through a slot assignment.
+    while (scroller !== null && rootElement.contains(scroller)) {
+      const xOffset = scrollIntoViewHorizontally(
+        defaultView,
+        scroller,
+        currentLeft,
+        currentRight,
+      );
+      currentLeft -= xOffset;
+      currentRight -= xOffset;
+      scroller = scroller === rootElement ? null : getParentElement(scroller);
+    }
   }
   let {top: currentTop, bottom: currentBottom} = selectionRect;
   let targetTop = 0;
@@ -1726,7 +1908,7 @@ export function scrollIntoViewIfNeeded(
 
     if (diff !== 0) {
       if (isBodyElement) {
-        // Only handles scrolling of Y axis
+        // Only the Y axis: horizontal scrolling stays inside the editor (above)
         defaultView.scrollBy(0, diff);
       } else {
         const scrollTop = element.scrollTop;
@@ -5007,6 +5189,15 @@ function injectSynthesizedStatics(
       if (importDOM) {
         klass.importDOM = () => importDOM;
       }
+    }
+    // Inject a delegated getTextContentSize if only getTextContent is overridden
+    const proto = klass.prototype;
+    if (
+      hasOwnKey(proto, 'getTextContent') &&
+      !hasOwnKey(proto, 'getTextContentSize')
+    ) {
+      klass.prototype.getTextContentSize =
+        LexicalNode.prototype.getTextContentSize;
     }
   }
 }

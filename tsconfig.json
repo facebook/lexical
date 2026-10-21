@@ -136,8 +136,20 @@
       "@lexical/hashtag": ["./packages/lexical-hashtag/src/index.ts"],
       "@lexical/headless": ["./packages/lexical-headless/src/index.ts"],
       "@lexical/headless/dom": ["./packages/lexical-headless/src/dom.ts"],
+      "@lexical/headless/HeadlessExtension": [
+        "./packages/lexical-headless/src/HeadlessExtension.ts"
+      ],
       "@lexical/history": ["./packages/lexical-history/src/index.ts"],
       "@lexical/html": ["./packages/lexical-html/src/index.ts"],
+      "@lexical/internal/createDevError": [
+        "./packages/lexical-internal/src/createDevError.ts"
+      ],
+      "@lexical/internal/createError": [
+        "./packages/lexical-internal/src/createError.ts"
+      ],
+      "@lexical/internal/createProdError": [
+        "./packages/lexical-internal/src/createProdError.ts"
+      ],
       "@lexical/internal/devInvariant": [
         "./packages/lexical-internal/src/devInvariant.ts"
       ],

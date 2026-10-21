@@ -102,11 +102,6 @@ down the root cause.
 
 This is a TODO, the infrastructure was designed with this in mind.
 
-### Helpers for working with nested editors
-
-It's not quite clear what all of the use cases for nested Extension editors are,
-this is a TODO.
-
 ### Documented patterns for RSC/SSR/Headless
 
 Having a known peer dependency that is used to declare SSR may help

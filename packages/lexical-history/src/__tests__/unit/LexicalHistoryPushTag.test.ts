@@ -8,8 +8,11 @@
 
 // @vitest-environment node
 
-import {createHeadlessEditor} from '@lexical/headless';
-import {createEmptyHistoryState, registerHistory} from '@lexical/history';
+import {
+  buildEditorFromExtensions,
+  getExtensionDependencyFromEditor,
+} from '@lexical/extension';
+import {HistoryExtension} from '@lexical/history';
 import {
   $create,
   $createParagraphNode,
@@ -17,6 +20,7 @@ import {
   $getDocument,
   $getRoot,
   $isParagraphNode,
+  configExtension,
   ElementNode,
   HISTORY_MERGE_TAG,
   HISTORY_PUSH_TAG,
@@ -62,15 +66,26 @@ function readChildren(editor: LexicalEditor) {
 }
 
 function createEditorWithHistory() {
-  const editor = createHeadlessEditor({
+  const editor = buildEditorFromExtensions({
+    dependencies: [
+      // Keep every update within the merge window without relying on wall time.
+      configExtension(HistoryExtension, {
+        delay: 1000,
+        disabled: false,
+        now: () => 0,
+      }),
+    ],
+    name: 'test',
     nodes: [InlineEmptyElementNode],
     onError: error => {
       throw error;
     },
   });
-  const historyState = createEmptyHistoryState();
-  // Keep every update within the merge window without relying on wall time.
-  onTestFinished(registerHistory(editor, historyState, 1000, () => 0));
+  onTestFinished(() => editor.dispose());
+  const historyState = getExtensionDependencyFromEditor(
+    editor,
+    HistoryExtension,
+  ).output.historyState.peek();
   editor.update(() => $getRoot().append($createParagraphNode()), {
     discrete: true,
   });

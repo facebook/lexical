@@ -110,10 +110,14 @@ import {
 } from './LexicalKeyboardShortcuts';
 import {createRefCountedRegistry} from './LexicalRefCountedRegistry';
 import {
+  $createPoint,
   $createRangeSelectionFromDom,
+  $getPointSlotFrame,
   $internalCreateRangeSelection,
   $internalRefreshSelectionFormatAndStyle,
   $internalResolveSelectionPoint,
+  $isSameFrame,
+  $prepareCompositionTarget,
   type RangeSelection,
 } from './LexicalSelection';
 import {
@@ -150,7 +154,6 @@ import {
   getNearestEditorFromDOMNode,
   getParentElement,
   getWindow,
-  isBackspace,
   isDOMCapturingSelection,
   isDOMDocumentNode,
   isDOMNode,
@@ -1420,13 +1423,42 @@ function $handleBeforeInput(event: InputEvent): boolean {
     );
   }
 
+  // Set when a forward deletion's range lay before a caret in a slot, the
+  // shape of a plain Delete (#9363), which then deletes one character.
+  let deleteForwardCharacter = false;
   if (
     (!selection.dirty || inputState.unprocessedBeforeInputData !== null) &&
     selection.isCollapsed() &&
     !$isRootNode(selection.anchor.getNode()) &&
     targetRange !== null
   ) {
+    const {key, offset, type} = selection.anchor;
+    const frame = editor._slotsUsed && $getPointSlotFrame(selection.anchor);
     selection.applyDOMRange(targetRange);
+    // A deletion's range must stay in the caret's frame and, in a slot, not
+    // reach past the caret on the side it keeps: at the end of a
+    // decorator-host slot Chromium's forward delete covers the line before
+    // the caret instead (#9363). Such a deletion is measured from the caret.
+    const isForward = inputType.endsWith('Forward');
+    if (frame !== false && (isForward || inputType.endsWith('Backward'))) {
+      const caret = $createPoint(key, offset, type);
+      const {anchor, focus} = selection;
+      const leftFrame =
+        !$isSameFrame($getPointSlotFrame(anchor), frame) ||
+        !$isSameFrame($getPointSlotFrame(focus), frame);
+      const wrongSide =
+        !leftFrame &&
+        frame !== null &&
+        (isForward
+          ? anchor.isBefore(caret) || focus.isBefore(caret)
+          : caret.isBefore(anchor) || caret.isBefore(focus));
+      if (leftFrame || wrongSide) {
+        anchor.set(key, offset, type);
+        focus.set(key, offset, type);
+        deleteForwardCharacter =
+          wrongSide && inputType === 'deleteContentForward';
+      }
+    }
   }
 
   inputState.unprocessedBeforeInputData = null;
@@ -1488,6 +1520,7 @@ function $handleBeforeInput(event: InputEvent): boolean {
     }
 
     case 'insertFromComposition': {
+      inputState.compositionPhase = 'idle';
       const skipRedundantInsert = inputState.hadOrphanedCompositionEvents;
       inputState.hadOrphanedCompositionEvents = false;
       const prevCompositionKey = editor._compositionKey;
@@ -1577,7 +1610,11 @@ function $handleBeforeInput(event: InputEvent): boolean {
     case 'deleteContentForward':
     case 'deleteHardLineForward':
     case 'deleteSoftLineForward': {
-      dispatchCommand(editor, DELETE_LINE_COMMAND, false);
+      dispatchCommand(
+        editor,
+        deleteForwardCharacter ? DELETE_CHARACTER_COMMAND : DELETE_LINE_COMMAND,
+        false,
+      );
       break;
     }
 
@@ -1826,15 +1863,19 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
           (anchor.offset === node.getTextContentSize() &&
             !node.canInsertTextAfter())))
     ) {
-      // We insert a zero width character, ready for the composition
-      // to get inserted into the new node we create. If
-      // we don't do this, Safari will fail on us because
-      // there is no text node matching the selection.
-      dispatchCommand(
-        editor,
-        CONTROLLED_TEXT_INSERTION_COMMAND,
-        COMPOSITION_START_CHAR,
-      );
+      // Prepare a text node for the native composition. Desktop WebKit uses
+      // the rendered composition suffix instead of adding a placeholder to
+      // the document text.
+      // IS_SAFARI also recognizes WebKit ports on non-Apple platforms.
+      if (!IS_IOS && (IS_SAFARI || IS_APPLE_WEBKIT)) {
+        $prepareCompositionTarget(selection);
+      } else {
+        dispatchCommand(
+          editor,
+          CONTROLLED_TEXT_INSERTION_COMMAND,
+          COMPOSITION_START_CHAR,
+        );
+      }
       const updatedSelection = $getSelection();
       if ($isRangeSelection(updatedSelection)) {
         $setCompositionKey(updatedSelection.anchor.key);
@@ -1972,17 +2013,14 @@ function onCompositionEnd(
   event: CompositionEvent,
   editor: LexicalEditor,
 ): void {
-  // Firefox fires compositionEnd before input; Safari fires it before
-  // keydown. The 'ending-*' phases defer handling for those browsers.
-  // Chrome/Webkit fires input first, so it dispatches immediately.
+  // Firefox finishes in the following input event. Desktop WebKit commits
+  // through insertFromComposition; an empty cancellation finishes here.
   const inputState = editor._inputState;
   if (IS_FIREFOX) {
     inputState.compositionPhase = 'ending-firefox';
-  } else if (!IS_IOS && (IS_SAFARI || IS_APPLE_WEBKIT)) {
-    // https://github.com/facebook/lexical/pull/7061
-    inputState.compositionPhase = 'ending-safari';
-    inputState.compositionEndData = event.data;
-  } else {
+  } else if (event.data === '' || IS_IOS || !(IS_SAFARI || IS_APPLE_WEBKIT)) {
+    // Cancellation has no insertFromComposition event to finish the Safari
+    // composition. Release it now so the next ordinary key can dispatch.
     dispatchCommand(editor, COMPOSITION_END_COMMAND, event);
   }
 }
@@ -2002,7 +2040,10 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   if (event.key !== 'Backspace') {
     clearHandledSelectionCommandInsertText(inputState);
   }
-  if (editor.isComposing()) {
+  if (
+    editor.isComposing() ||
+    (!IS_IOS && (IS_SAFARI || IS_APPLE_WEBKIT) && event.keyCode === 229)
+  ) {
     return;
   }
   dispatchCommand(editor, KEY_DOWN_COMMAND, event);
@@ -2183,24 +2224,9 @@ function buildKeyDownShortcuts(): KeyDownShortcut[] {
 
 function $handleKeyDown(event: KeyboardEvent): boolean {
   const editor = getActiveEditor();
-  const inputState = editor._inputState;
   if (event.key == null) {
     return true;
   }
-  if (inputState.compositionPhase === 'ending-safari') {
-    const isBack = isBackspace(event);
-    if (isBack) {
-      updateEditorSync(editor, () => {
-        $onCompositionEndImpl(editor, inputState.compositionEndData);
-      });
-    }
-    inputState.compositionPhase = 'idle';
-    inputState.compositionEndData = '';
-    if (isBack) {
-      return true;
-    }
-  }
-
   let keyDownShortcuts = editor._keyDownShortcuts;
   if (keyDownShortcuts === null) {
     keyDownShortcuts = compileKeyboardShortcuts(buildKeyDownShortcuts());

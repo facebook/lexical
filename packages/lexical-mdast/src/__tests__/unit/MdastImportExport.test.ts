@@ -1714,6 +1714,7 @@ describe('@lexical/mdast import/export', () => {
       [{type: 'math', value: 'a % c\n+ b\\%'}, '$a + b\\%$'],
       [{type: 'math', value: 'a\\\\%b\nc'}, '$a\\\\ c$'],
       [{type: 'mdxFlowExpression', value: ''}, '{}'],
+      [{type: 'inlineMath', value: 'a % c\n+ |b|'}, '$a + \\vert b\\vert $'],
       // A `<` that starts no tag is text, whose line end is kept.
       [
         {type: 'html', value: '<pre>a < b\nc > d</pre>'},

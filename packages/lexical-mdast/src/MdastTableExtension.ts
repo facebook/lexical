@@ -332,14 +332,18 @@ function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
     }
     if ((node.type as string) === 'inlineMath') {
       const math = node as unknown as {type: 'inlineMath'; value: string};
-      // GFM ends a cell at `|` even in math, so TeX's `|` and `\|` are
-      // written as their command forms.
+      // A cell is one line, and a line end ends a TeX comment, which a
+      // space would not. GFM ends a cell at `|` even in math, so TeX's `|`
+      // and `\|` are written as their command forms.
       return [
         {
           ...math,
-          value: math.value.replace(/\\[^]|\|/g, found =>
-            found === '|' ? '\\vert ' : found === '\\|' ? '\\Vert ' : found,
-          ),
+          value: math.value
+            .replace(/(^|[^\\])((?:\\\\)*)%.*/gm, '$1$2')
+            .replace(/\s+/g, ' ')
+            .replace(/\\[^]|\|/g, found =>
+              found === '|' ? '\\vert ' : found === '\\|' ? '\\Vert ' : found,
+            ),
         } as unknown as PhrasingContent,
       ];
     }
@@ -399,11 +403,10 @@ function cellContent(nodes: readonly MdastNode[]): PhrasingContent[] {
                   : cellContent(node.children),
             }
           : 'value' in node && {
-              // A line end ends a TeX comment, which a space would not.
-              value: (twin === 'inlineMath'
-                ? node.value.replace(/(^|[^\\])((?:\\\\)*)%.*/gm, '$1$2')
-                : node.value
-              ).replace(/\s+/g, ' '),
+              value:
+                twin === 'inlineMath'
+                  ? node.value
+                  : node.value.replace(/\s+/g, ' '),
             }),
       } as MdastNode);
     }
@@ -548,10 +551,11 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
  * nodes it ships. The first table row is treated as the header row in both
  * directions. A GFM cell holds a single line, so each paragraph and line
  * break in a cell is written as a `<br>`-separated line, and `<br>` reads
- * back as a paragraph boundary. Other blocks in a cell (lists, headings,
- * quotes, code) are flattened into lines. Column alignment is the element format of the column's cells
- * (`TableCellNode.setFormat`), exported as the alignment most of the
- * column's cells have, or else its header cell's.
+ * back as a paragraph boundary, or as a line break inside formatting or a
+ * link. Other blocks in a cell (lists, headings, quotes, code) are
+ * flattened into lines. Column alignment is the element format of the
+ * column's cells (`TableCellNode.setFormat`), exported as the alignment
+ * most of the column's cells have, or else its header cell's.
  *
  * @example
  * ```ts

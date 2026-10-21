@@ -594,7 +594,8 @@ const $createTableCell = (
             ? '\n'
             : match;
       }
-      // The whitespace a `<br>` is written with is padding, but in code.
+      // The whitespace a `<br>` is written with is padding, but in code and
+      // before a block.
       const line = text.slice(lineStart, offset);
       lineStart = offset + match.length;
       // A code block opens with a fence at the start of a line, and
@@ -625,9 +626,12 @@ const $createTableCell = (
         fence === '' &&
         testAt(CELL_FENCE_LINE_REG_EXP, text, lineStart);
       if (atLineStart) {
-        // Code keeps the whitespace around its line breaks.
+        // Code keeps the whitespace around its line breaks, and a block its
+        // indentation (a nested list item's).
         return fence === ''
-          ? '\n' + guardAt(lineStart)
+          ? '\n' +
+              (testAt(CELL_BLOCK_START_REG_EXP, text, lineStart) ? trail : '') +
+              guardAt(lineStart)
           : (fenceLine ? '' : lead) + '\n' + trail;
       }
       let char = mark;

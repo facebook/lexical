@@ -1028,6 +1028,26 @@ describe('playground TABLE markdown transformer', () => {
     expect(cellTexts(imported)).toEqual([[['h']], [['x\n\ny']]]);
   });
 
+  it('round-trips a nested list in a cell', () => {
+    const markdown = exportTable(() =>
+      $cellOf(
+        $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('x')),
+          $createListItemNode().append(
+            $createListNode('bullet').append(
+              $createListItemNode().append($createTextNode('y')),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(markdown.split('\n')[2]).toBe('| - x<br>    - y |');
+    using imported = importMarkdown(markdown);
+    expect(imported.read(() => $convertToMarkdownString([TABLE]))).toBe(
+      markdown,
+    );
+  });
+
   it('keeps a lone delimiter row out of the table below it', () => {
     using editor = importMarkdown(['| --- |', '| a |'].join('\n'));
     editor.read(() => {

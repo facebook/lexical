@@ -125,7 +125,7 @@ configured by contributing `mdast-util-to-markdown` options through
 GFM table cells hold a single line, so `MdastTableExtension` writes each
 paragraph or line break in a cell as `<br>`, the line separator GitHub and
 most renderers accept there, and reads `<br>`, `<br/>` and `<br />` back as
-paragraph boundaries. Other blocks in a cell, such as lists and code blocks,
+paragraph boundaries, or as line breaks inside formatting or a link. Other blocks in a cell, such as lists and code blocks,
 are flattened to one line per item. A column's alignment (`:-:`) is set as
 the element format of each of its cells, so it renders as their
 `text-align` and stays with the column when columns are added or removed.

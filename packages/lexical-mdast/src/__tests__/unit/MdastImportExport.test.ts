@@ -1352,19 +1352,6 @@ describe('@lexical/mdast import/export', () => {
       ).toBe('|  a  |\n| :-: |\n|  1  |\n|  2  |');
     });
 
-    it("takes the header from the table's first row with cells", () => {
-      expect(
-        editColumns('| a |\n| - |\n| 1 |\n| 2 |', row => {
-          if (row.getIndexWithinParent() === 0) {
-            $assertNodeType(row.getFirstChild(), $isElementNode).setFormat(
-              'right',
-            );
-            row.insertBefore($createTableRowNode());
-          }
-        }),
-      ).toBe('|    |\n| -: |\n|  a |\n|  1 |\n|  2 |');
-    });
-
     it('takes no header alignment from a selection without the header row', () => {
       using editor = createEditor(true);
       editor.update(

@@ -133,7 +133,9 @@ line end of its own, and a pipe after a backslash in code, math or raw
 HTML. With
 `MdastHtmlExtension`, a table holding any of that is written as an HTML
 table with Markdown in its cells, which GitHub and CommonMark renderers
-read, and other tables stay GFM. Without it, those blocks are flattened to
+read, and other tables stay GFM; it reads back with the HTML import
+rules of `TableExtension`, which `MdastTableExtension` depends on (configure
+it with `configExtension(TableExtension, {...})`). Without it, those blocks are flattened to
 one line per item. A column's alignment (`:-:`) is set as
 the element format of each of its cells, so it renders as their
 `text-align` and stays with the column when columns are added or removed.

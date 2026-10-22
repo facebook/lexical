@@ -102,7 +102,6 @@ export {
   $unmergeCellNode,
 } from './LexicalTableUtils';
 export {
-  TableImportExtension,
   TableImportRules,
   TableRowSchema,
   TableSchema,

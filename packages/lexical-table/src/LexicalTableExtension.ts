@@ -9,8 +9,10 @@
 import type {LexicalEditor} from 'lexical';
 
 import {effect, namedSignals} from '@lexical/extension';
+import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
 import {
   $fullReconcile,
+  configExtension,
   defineExtension,
   isHTMLElement,
   mergeRegister,
@@ -33,7 +35,7 @@ import {
   registerTableSelectionObserver,
 } from './LexicalTablePluginHelpers';
 import {TableRowNode} from './LexicalTableRowNode';
-import {TableImportExtension} from './TableImportExtension';
+import {TableImportRules} from './TableImportExtension';
 
 export interface TableConfig {
   /**
@@ -152,7 +154,10 @@ export const TableExtension = defineExtension({
     // DOMImportExtension support for the nodes registered here. Inert
     // unless the editor routes HTML through the pipeline (e.g. via
     // ClipboardDOMImportExtension or $generateNodesFromDOMViaExtension).
-    TableImportExtension,
+    CoreImportExtension,
+    configExtension(DOMImportExtension, {
+      rules: TableImportRules,
+    }),
   ],
   name: '@lexical/table/Table',
   nodes: () => [TableNode, TableRowNode, TableCellNode],

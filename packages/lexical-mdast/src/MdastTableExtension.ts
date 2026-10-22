@@ -13,6 +13,7 @@ import type {
   MdastImportHandler,
   MdastNode,
 } from './types';
+import type {TableCellNode, TableRowNode} from '@lexical/table';
 import type {
   AlignType,
   BlockContent,
@@ -39,10 +40,8 @@ import {
   $isTableNode,
   $isTableRowNode,
   TableCellHeaderStates,
-  TableCellNode,
-  TableImportExtension,
+  TableExtension,
   TableNode,
-  TableRowNode,
 } from '@lexical/table';
 import {
   $createParagraphNode,
@@ -555,13 +554,9 @@ function $alignColumns(
       .filter($isTableCellNode)
       .forEach((cell, i) => (columns[i] ??= []).push($getCellAlign(cell)));
   }
-  // The header is the table's first row of cells, which a selection's
-  // export may leave out.
-  const headerRow = table
-    .getChildren()
-    .find(
-      row => $isTableRowNode(row) && row.getChildren().some($isTableCellNode),
-    );
+  // The header is the table's first row, which a selection's export may
+  // leave out.
+  const headerRow = table.getFirstChild();
   const legacy = $getState(table, legacyAlignState);
   const headerCells = $isTableRowNode(headerRow)
     ? headerRow.getChildren().filter($isTableCellNode)
@@ -678,7 +673,8 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
  * otherwise with those blocks flattened into lines. Column alignment is the
  * element format of the column's cells (`TableCellNode.setFormat`),
  * exported as the alignment most of the column's cells have, or else its
- * header cell's.
+ * header cell's. It depends on `TableExtension`, which can be configured
+ * with `configExtension(TableExtension, {...})`.
  *
  * @example
  * ```ts
@@ -704,11 +700,11 @@ export const MdastTableExtension = defineExtension({
       micromarkExtensions: [/* @__PURE__ */ gfmTable()],
       toMarkdownExtensions: [/* @__PURE__ */ gfmTableToMarkdown()],
     }),
-    // A table written as HTML reads back through HTML import.
-    TableImportExtension,
+    // The table nodes, and the HTML import rules a table written as HTML
+    // reads back with.
+    TableExtension,
   ],
   name: '@lexical/mdast/Table',
-  nodes: [TableNode, TableRowNode, TableCellNode],
   peerDependencies: [
     declarePeerDependency<typeof MdastHtmlExtension>('@lexical/mdast/Html'),
   ],

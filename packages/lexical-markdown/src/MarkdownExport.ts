@@ -519,16 +519,16 @@ function $exportTextFormat(
     // Each bracket in a link's text, where one would close or open the link,
     // and elsewhere a `]` before a `(`, where text would read as a link. Each
     // run of backslashes is read once, which keeps a long run linear.
-    const parent = node.getParent();
+    const link = $getInlineAncestor(node, $isLinkNode);
     output = output.replace(
-      $isLinkNode(parent) && !$isAutoLinkNode(parent)
+      link && !$isAutoLinkNode(link)
         ? /(\\*)([[\]])|\\+/g
         : /(\\*)(\](?=\())|\\+/g,
       (found, backslashes: string, bracket: string | undefined) =>
         bracket === undefined ? found : escape(backslashes, bracket),
     );
     // A `!` before a link would make it an image.
-    if (output.endsWith('!') && $isLinkNode(node.getNextSibling())) {
+    if (output.endsWith('!') && $startsWithLink($getNextInline(node))) {
       const start = output.length - 1;
       let end = start;
       while (end > 0 && output[end - 1] === '\\') {
@@ -701,4 +701,43 @@ function $checkHasFormat(n: TextNode | null, f: TextFormatType): boolean {
     return false;
   }
   return true;
+}
+
+/**
+ * The nearest ancestor of `node`, within its block, that passes `predicate`.
+ */
+function $getInlineAncestor<T extends LexicalNode>(
+  node: LexicalNode,
+  predicate: (candidate: LexicalNode | null) => candidate is T,
+): T | null {
+  for (let parent = node.getParent(); parent; parent = parent.getParent()) {
+    if (predicate(parent)) {
+      return parent;
+    }
+    if (!parent.isInline()) {
+      return null;
+    }
+  }
+  return null;
+}
+
+/** The inline node that follows `node` in its block, out of any wrapper. */
+function $getNextInline(node: LexicalNode): LexicalNode | null {
+  let current: LexicalNode = node;
+  while (!current.getNextSibling()) {
+    const parent = current.getParent();
+    if (!parent || !parent.isInline()) {
+      return null;
+    }
+    current = parent;
+  }
+  return current.getNextSibling();
+}
+
+/** Whether `node` is a link or an inline wrapper that starts with one. */
+function $startsWithLink(node: LexicalNode | null): boolean {
+  while ($isElementNode(node) && node.isInline() && !$isLinkNode(node)) {
+    node = node.getFirstChild();
+  }
+  return $isLinkNode(node);
 }

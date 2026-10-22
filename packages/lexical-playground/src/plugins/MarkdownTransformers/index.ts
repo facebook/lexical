@@ -210,9 +210,8 @@ export const TWEET: ElementTransformer = {
 };
 
 // Very primitive table setup
-// A row may be indented by up to three spaces and end in spaces and tabs,
-// and a CRLF line in a carriage return.
-const TABLE_ROW_REG_EXP = /^ {0,3}\|([^]+)\|[ \t\r]*$/;
+// A row may be indented by up to three spaces and end in spaces and tabs.
+const TABLE_ROW_REG_EXP = /^ {0,3}\|([^]+)\|[ \t]*$/;
 
 // Stands in for the `<` of text that reads as a `<br>`, which the text
 // export would escape twice.

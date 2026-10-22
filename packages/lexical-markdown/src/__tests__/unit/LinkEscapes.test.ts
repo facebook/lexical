@@ -8,8 +8,9 @@
 
 // @vitest-environment node
 
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {$createLinkNode} from '@lexical/link';
+import {$createMarkNode, MarkNode} from '@lexical/mark';
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
@@ -69,4 +70,52 @@ describe('link syntax in text', () => {
       expect(JSON.stringify(editor.getEditorState().toJSON())).toBe(json);
     },
   );
+
+  it.each([
+    [
+      'a bracket in link text inside a mark',
+      () => [
+        $createLinkNode('u').append(
+          $createMarkNode(['m']).append($createTextNode('a]b')),
+        ),
+      ],
+      '[a\\]b](u)',
+    ],
+    [
+      'a "!" inside a mark before a link',
+      () => [
+        $createMarkNode(['m']).append($createTextNode('a!')),
+        $createLinkNode('u').append($createTextNode('l')),
+      ],
+      'a\\![l](u)',
+    ],
+    [
+      'a "!" before a link inside a mark',
+      () => [
+        $createTextNode('a!'),
+        $createMarkNode(['m']).append(
+          $createLinkNode('u').append($createTextNode('l')),
+        ),
+      ],
+      'a\\![l](u)',
+    ],
+  ])('escapes %s', (_, $build: () => LexicalNode[], written: string) => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [MarkdownTestExtension],
+        name: 'MarkTest',
+        nodes: [MarkNode],
+      }),
+    );
+    editor.update(
+      () =>
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append(...$build())),
+      {discrete: true},
+    );
+    expect(editor.read(() => $convertToMarkdownString(TRANSFORMERS))).toBe(
+      written,
+    );
+  });
 });

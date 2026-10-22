@@ -1185,6 +1185,11 @@ export class LexicalEditor {
   _pendingEditorState: null | EditorState;
   /** @internal */
   _compositionKey: null | NodeKey;
+  /**
+   * @internal The composition key for which a collaboration update held back
+   * a text merge; merges stay held back until the composition key changes.
+   */
+  _compositionMergeHeld: null | NodeKey;
   /** @internal */
   _deferred: (() => void)[];
   /** @internal */
@@ -1277,6 +1282,7 @@ export class LexicalEditor {
     this._pendingEditorState = null;
     // Used to help co-ordinate selection and events
     this._compositionKey = null;
+    this._compositionMergeHeld = null;
     this._deferred = [];
     // Used during reconciliation
     this._keyToDOMMap = new GenMap();

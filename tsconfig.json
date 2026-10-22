@@ -371,7 +371,7 @@
       "@lexical/yjs": ["./packages/lexical-yjs/src/index.ts"],
       "lexical/src": ["./packages/lexical/src"],
       "lexical/src/__tests__/utils": [
-        "./packages/lexical/src/__tests__/utils/index.tsx"
+        "./packages/lexical/src/__tests__/utils/assertNodeType.ts"
       ],
       "lexical/src/*": ["./packages/lexical/src/*"],
       "@lexical/a11y/src": ["./packages/lexical-a11y/src"],

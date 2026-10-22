@@ -1274,18 +1274,18 @@ export const LINK: TextMatchTransformer = {
       outsideLinkText = '[' + linkTextParts[0];
       parsedLinkText = linkTextParts.slice(1).join('[');
     }
-    // Both new nodes stand in for the TextNode being replaced, so the text
-    // left outside the link carries its inline format just like the link's own
-    // text node does. Read the format before the replace below detaches it.
+    // The link's text stands in for the TextNode being replaced, so it carries
+    // its inline format. Read the format before the replace below detaches it.
     const format = textNode.getFormat();
     const linkTextNode = $createTextNode(parsedLinkText);
     linkTextNode.setFormat(format);
     linkNode.append(linkTextNode);
-    textNode.replace(linkNode);
-
-    if (outsideLinkText) {
-      linkNode.insertBefore($createTextNode(outsideLinkText).setFormat(format));
-    }
+    // The text outside the link stays in the matched node, which the
+    // importer goes on to read.
+    (outsideLinkText
+      ? textNode.splitText(outsideLinkText.length)[1]
+      : textNode
+    ).replace(linkNode);
     return linkTextNode;
   },
   trigger: ')',

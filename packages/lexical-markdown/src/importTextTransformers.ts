@@ -116,17 +116,30 @@ export function $importTextTransformers(
     }
     if (
       'matchedNode' in result &&
-      result.transformedNode === undefined &&
       $canContainTransformableMarkdown(result.matchedNode) &&
       result.matchedNode.getParent() !== null
     ) {
-      // A transformer that returns nothing may have edited the matched node
-      // in place, such as its format or its text, which still reads its
-      // escapes. The parent test, unlike isAttached(), also holds in a tree
-      // not attached to the root.
-      result.matchedNode.setTextContent(
-        unescapeText(result.matchedNode.getTextContent()),
-      );
+      // The parent test, unlike isAttached(), also holds in a tree not
+      // attached to the root.
+      if (result.transformedNode === undefined) {
+        // A transformer that returns nothing may have edited the matched
+        // node in place, such as its format or its text, which still reads
+        // its escapes.
+        result.matchedNode.setTextContent(
+          unescapeText(result.matchedNode.getTextContent()),
+        );
+      } else if (
+        result.matchedNode !== result.transformedNode &&
+        result.matchedNode.getTextContent() !== foundTextMatch!.match[0]
+      ) {
+        // One that kept part of it as text, such as the `[` before a link,
+        // leaves that part to be read.
+        $importTextTransformers(
+          result.matchedNode,
+          textFormatTransformersIndex,
+          textMatchTransformers,
+        );
+      }
     }
     // Each piece, `textNode` among them, has had its escapes read.
     return;

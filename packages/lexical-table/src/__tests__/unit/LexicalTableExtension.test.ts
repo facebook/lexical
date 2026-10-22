@@ -51,7 +51,9 @@ import {
   describe,
   expect,
   it,
+  onTestFinished,
   test,
+  vi,
 } from 'vitest';
 
 describe('TableExtension', () => {
@@ -68,6 +70,21 @@ describe('TableExtension', () => {
   });
   afterEach(() => {
     editor.dispose();
+  });
+
+  it('warns of a missing tableScrollableWrapper once a root element is attached', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
+    using unthemed = buildEditorFromExtensions(TableExtension);
+    expect(warn).not.toHaveBeenCalled();
+    unthemed.setRootElement(document.createElement('div'));
+    unthemed.setRootElement(null);
+    unthemed.setRootElement(document.createElement('div'));
+    expect(warn.mock.calls).toEqual([
+      [
+        'TableNode: hasHorizontalScroll is active but theme.tableScrollableWrapper is not defined.',
+      ],
+    ]);
   });
 
   it('Creates a table with INSERT_TABLE_COMMAND', () => {

@@ -399,9 +399,23 @@ export function setScrollableTablesActive(
 ): void {
   if (active) {
     if (__DEV__ && editor._config.theme.tableScrollableWrapper === undefined) {
-      console.warn(
-        'TableNode: hasHorizontalScroll is active but theme.tableScrollableWrapper is not defined.',
-      );
+      // Only an editor that renders tables needs the class, so this waits
+      // for its first root element.
+      const warn = () =>
+        console.warn(
+          'TableNode: hasHorizontalScroll is active but theme.tableScrollableWrapper is not defined.',
+        );
+      if (editor.getRootElement()) {
+        warn();
+      } else {
+        // Called at once with no root, then with the first one.
+        const unregister = editor.registerRootListener(rootElement => {
+          if (rootElement) {
+            unregister();
+            warn();
+          }
+        });
+      }
     }
     scrollableEditors.add(editor);
   } else {

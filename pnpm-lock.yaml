@@ -1107,15 +1107,27 @@ importers:
         specifier: '>=5.2'
         version: 6.0.3
     devDependencies:
+      '@types/markdown-it':
+        specifier: ^14.2.0
+        version: 14.2.0
+      markdown-it:
+        specifier: ^14.3.1
+        version: 14.3.1
       mdast-util-directive:
         specifier: ^3.1.0
         version: 3.1.0(supports-color@10.2.2)
+      mdast-util-math:
+        specifier: ^3.0.0
+        version: 3.0.0(supports-color@10.2.2)
       mdast-util-mdx:
         specifier: ^3.0.0
         version: 3.0.0(supports-color@10.2.2)
       micromark-extension-directive:
         specifier: ^3.0.2
         version: 3.0.2
+      micromark-extension-math:
+        specifier: ^3.1.0
+        version: 3.1.0
       micromark-extension-mdxjs:
         specifier: ^3.0.0
         version: 3.0.0
@@ -5868,9 +5880,6 @@ packages:
   '@types/har-format@1.2.16':
     resolution: {integrity: sha512-fluxdy7ryD3MV6h8pTfTYpy/xQzCFC7m89nOH9y94cNqJ1mDIDPut7MnRHI3F6qRmh/cT2fUjG1MLdCNb4hE9A==}
 
-  '@types/hast@3.0.4':
-    resolution: {integrity: sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==}
-
   '@types/hast@3.0.5':
     resolution: {integrity: sha512-rp/ezSWaD1m44dPKICGhiskI13nVr7qTloFwDa/IYkhhf5nzwP+zIQcIJh3WIFSBOy/H1PzB40jPjMDksN4F+g==}
 
@@ -5925,14 +5934,23 @@ packages:
   '@types/keyv@3.1.4':
     resolution: {integrity: sha512-BQ5aZNSCpj7D6K2ksrRCTmKRLEpnPvWDiLPfoGyhZ++8YtiK9d/3DBKPJgry359X/P1PfruyYwvnvwFjuEiEIg==}
 
+  '@types/linkify-it@5.0.0':
+    resolution: {integrity: sha512-sVDA58zAw4eWAffKOaQH5/5j3XeayukzDk+ewSsnv3p4yJEZHCCzMDiZM8e0OUrRvmpGZ85jf4yDHkHsgBNr9Q==}
+
   '@types/lodash-es@4.17.12':
     resolution: {integrity: sha512-0NgftHUcV4v34VhXm8QBSftKVXtbkBG3ViCjs6+eJ5a6y6Mi/jiFGPc1sC7QK+9BFhWrURE3EOggmWaSxL9OzQ==}
 
   '@types/lodash@4.17.25':
     resolution: {integrity: sha512-+K1NIO8I+F9/wNulfVvu23QYd0Pe9/OCqRrim4NoYIf1VoEDL90Ve4ClzpyqBLc7NpGGWRvYNCKZ1BE/Jpf8dQ==}
 
+  '@types/markdown-it@14.2.0':
+    resolution: {integrity: sha512-NoQ2yGlLWj4wpxMs+TYmRKk3thDrQ97agr7sFqfLsAlvoS8SNQuTrlObhFqG9iugdTtgOE9jpJ6FNM4ZGsa5xQ==}
+
   '@types/mdast@4.0.4':
     resolution: {integrity: sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA==}
+
+  '@types/mdurl@2.0.0':
+    resolution: {integrity: sha512-RGdgjQUZba5p6QEFAVx2OGb8rQDL/cPRG7GiedRzMcJ1tYnUANBncjbSB1NRGwbvjcPeikRABz2nshyPk1bhWg==}
 
   '@types/mdx@2.0.13':
     resolution: {integrity: sha512-+OWZQfAYyio6YkJb3HLxDrvnx6SWWDbC0zVPfBRzUk0/nqoDyf6dNxQi3eArPe8rJ473nobTMQ/8Zk+LxJ+Yuw==}
@@ -9908,6 +9926,9 @@ packages:
   mdast-util-gfm@3.1.0:
     resolution: {integrity: sha512-0ulfdQOM3ysHhCJ1p06l0b0VKlhU0wuQs3thxZQagjcjPrlFRqY215uZGHHJan9GEAXd9MbfPjFJz+qMkVR6zQ==}
 
+  mdast-util-math@3.0.0:
+    resolution: {integrity: sha512-Tl9GBNeG/AhJnQM221bJR2HPvLOSnLE/T9cJI9tlc6zwQk2nPk/4f0cHkOdEixQPC/j8UtKDdITswvLAy1OZ1w==}
+
   mdast-util-mdx-expression@2.0.1:
     resolution: {integrity: sha512-J6f+9hUp+ldTZqKRSg7Vw5V6MqjATc+3E4gf3CFNcuZNWD8XdyI6zQ8GqH7f8169MM6P7hMBRDVGnn7oHB9kXQ==}
 
@@ -10001,6 +10022,9 @@ packages:
 
   micromark-extension-gfm@3.0.0:
     resolution: {integrity: sha512-vsKArQsicm7t0z2GugkCKtZehqUm31oeGBV/KVSorWSy8ZlNAv7ytjFhvaryUiCUJYqs+NoE6AFhpQvBTM6Q4w==}
+
+  micromark-extension-math@3.1.0:
+    resolution: {integrity: sha512-lvEqd+fHjATVs+2v/8kg9i5Q0AP2k85H0WUOwpIVvUML8BapsMvh1XAogmQjOCsLpoKRCVQqEkQBB3NhVBcsOg==}
 
   micromark-extension-mdx-expression@3.0.1:
     resolution: {integrity: sha512-dD/ADLJ1AeMvSAKBwO22zG22N4ybhe7kFIZ3LsDI0GlsNr2A3KYxb0LdC1u5rj4Nw+CHKY0RVdnHX8vj8ejm4Q==}
@@ -12521,6 +12545,9 @@ packages:
 
   unist-util-position@5.0.0:
     resolution: {integrity: sha512-fucsC7HjXvkB5R3kTCO7kUjRdrS0BJt3M/FPxmHMBOm8JQi2BsHAHFsy27E0EolP8rp0NzXsJ+jNPyDWvOJZPA==}
+
+  unist-util-remove-position@5.0.0:
+    resolution: {integrity: sha512-Hp5Kh3wLxv0PHj9m2yZhhLt58KzPtEYKQQ4yxfYFEO7EvHwzyDYnduhHnY1mDxoqr7VUwVuHXk9RXKIiYS1N8Q==}
 
   unist-util-stringify-position@4.0.0:
     resolution: {integrity: sha512-0ASV06AAoKCDkS2+xw5RXJywruurpbC4JZSm7nr7MOt1ojAzvyyaO+UxZf18j8FCF6kmzCZKcAgN/yu2gm2XgQ==}
@@ -17241,7 +17268,7 @@ snapshots:
     dependencies:
       '@types/estree': 1.0.9
       '@types/estree-jsx': 1.0.5
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       '@types/mdx': 2.0.13
       acorn: 8.18.0
       collapse-white-space: 2.1.0
@@ -19010,10 +19037,6 @@ snapshots:
 
   '@types/har-format@1.2.16': {}
 
-  '@types/hast@3.0.4':
-    dependencies:
-      '@types/unist': 3.0.3
-
   '@types/hast@3.0.5':
     dependencies:
       '@types/unist': 3.0.3
@@ -19073,15 +19096,24 @@ snapshots:
     dependencies:
       '@types/node': 26.4.1
 
+  '@types/linkify-it@5.0.0': {}
+
   '@types/lodash-es@4.17.12':
     dependencies:
       '@types/lodash': 4.17.25
 
   '@types/lodash@4.17.25': {}
 
+  '@types/markdown-it@14.2.0':
+    dependencies:
+      '@types/linkify-it': 5.0.0
+      '@types/mdurl': 2.0.0
+
   '@types/mdast@4.0.4':
     dependencies:
       '@types/unist': 3.0.3
+
+  '@types/mdurl@2.0.0': {}
 
   '@types/mdx@2.0.13': {}
 
@@ -24019,6 +24051,18 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  mdast-util-math@3.0.0(supports-color@10.2.2):
+    dependencies:
+      '@types/hast': 3.0.5
+      '@types/mdast': 4.0.4
+      devlop: 1.1.0
+      longest-streak: 3.1.0
+      mdast-util-from-markdown: 2.1.0(supports-color@10.2.2)
+      mdast-util-to-markdown: 2.2.0
+      unist-util-remove-position: 5.0.0
+    transitivePeerDependencies:
+      - supports-color
+
   mdast-util-mdx-expression@2.0.1(supports-color@10.2.2):
     dependencies:
       '@types/estree-jsx': 1.0.5
@@ -24248,6 +24292,16 @@ snapshots:
       micromark-extension-gfm-tagfilter: 2.0.0
       micromark-extension-gfm-task-list-item: 2.1.0
       micromark-util-combine-extensions: 2.0.1
+      micromark-util-types: 2.0.2
+
+  micromark-extension-math@3.1.0:
+    dependencies:
+      '@types/katex': 0.16.7
+      devlop: 1.1.0
+      katex: 0.16.47
+      micromark-factory-space: 2.0.1
+      micromark-util-character: 2.1.1
+      micromark-util-symbol: 2.0.1
       micromark-util-types: 2.0.2
 
   micromark-extension-mdx-expression@3.0.1:
@@ -27116,6 +27170,11 @@ snapshots:
   unist-util-position@5.0.0:
     dependencies:
       '@types/unist': 3.0.3
+
+  unist-util-remove-position@5.0.0:
+    dependencies:
+      '@types/unist': 3.0.3
+      unist-util-visit: 5.1.0
 
   unist-util-stringify-position@4.0.0:
     dependencies:

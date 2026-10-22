@@ -52,6 +52,7 @@
     "bench": "vitest bench --project \"bench*\" --run",
     "test-eslint-integration": "node packages/lexical-eslint-plugin/__tests__/integration/integration-test.mjs",
     "test-integration": "vitest --project integration --no-watch",
+    "test-conformance": "vitest --project conformance --no-watch",
     "test-e2e-chromium": "cross-env E2E_BROWSER=chromium playwright test --project=\"chromium\"",
     "test-e2e-firefox": "cross-env E2E_BROWSER=firefox playwright test --project=\"firefox\"",
     "test-e2e-webkit": "cross-env E2E_BROWSER=webkit playwright test --project=\"webkit\"",

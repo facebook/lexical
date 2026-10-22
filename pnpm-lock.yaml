@@ -1113,24 +1113,12 @@ importers:
       markdown-it:
         specifier: ^14.3.1
         version: 14.3.1
-      mdast-util-directive:
-        specifier: ^3.1.0
-        version: 3.1.0(supports-color@10.2.2)
       mdast-util-math:
         specifier: ^3.0.0
         version: 3.0.0(supports-color@10.2.2)
-      mdast-util-mdx:
-        specifier: ^3.0.0
-        version: 3.0.0(supports-color@10.2.2)
-      micromark-extension-directive:
-        specifier: ^3.0.2
-        version: 3.0.2
       micromark-extension-math:
         specifier: ^3.1.0
         version: 3.1.0
-      micromark-extension-mdxjs:
-        specifier: ^3.0.0
-        version: 3.0.0
 
   packages/lexical-offset:
     dependencies:

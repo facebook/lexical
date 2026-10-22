@@ -60,19 +60,14 @@ import {
   type TextNode,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
-import {directiveFromMarkdown, directiveToMarkdown} from 'mdast-util-directive';
 import {fromMarkdown} from 'mdast-util-from-markdown';
 import {gfmTableFromMarkdown} from 'mdast-util-gfm-table';
-import {mdxFromMarkdown, mdxToMarkdown} from 'mdast-util-mdx';
 import {
   defaultHandlers,
   type Handle,
   type Handlers,
 } from 'mdast-util-to-markdown';
-import {toString} from 'mdast-util-to-string';
-import {directive} from 'micromark-extension-directive';
 import {gfmTable} from 'micromark-extension-gfm-table';
-import {mdxjs} from 'micromark-extension-mdxjs';
 import {assert, describe, expect, it} from 'vitest';
 
 import {
@@ -1700,14 +1695,8 @@ describe('@lexical/mdast import/export', () => {
       [{type: 'inlineMath', value: 'a|b'}, '$a\\|b$'],
       [{type: 'inlineCode', value: 'a|b'}, '`a\\|b`'],
       [
-        {type: 'html', value: '<b title="a|b">x|y</b>'},
-        '<b title="a&#124;b">x&#124;y</b>',
-      ],
-      [{type: 'mdxTextExpression', value: 'a + b'}, '{a + b}'],
-      [{type: 'mdxFlowExpression', value: 'a + b'}, '{a + b}'],
-      [
-        {children: [{type: 'text', value: 'x'}], type: 'textDirective'},
-        ':abbr[x]',
+        {type: 'html', value: '<!-- a|b --><b title="a|b">x|y</b>'},
+        '<!-- a\\|b --><b title="a\\|b">x\\|y</b>',
       ],
     ])('writes %j in a cell as it is', (exported, written) => {
       expect(exportCellOf(exported, true)).toContain(`| ${written} |`);
@@ -1717,22 +1706,12 @@ describe('@lexical/mdast import/export', () => {
       // A line end, which a cell has no form for.
       [{type: 'inlineMath', value: 'a\n+ b|c'}, '$a + b\\|c$'],
       [{type: 'html', value: '<pre>a\nb</pre>'}, '<pre>a b</pre>'],
-      [{type: 'mdxTextExpression', value: 'a +\n b'}, '{a +  b}'],
       // A pipe after a backslash, which micromark reads otherwise.
       [{type: 'inlineMath', value: '\\|x\\|'}, '$\\\\\\|x\\\\\\|$'],
       [{type: 'inlineCode', value: 'a\\|b'}, '`a\\\\\\|b`'],
-      // A pipe that has no escape.
-      [{type: 'mdxTextExpression', value: 'a | b'}, '{a \\| b}'],
-      [
-        {type: 'html', value: '<script>a|b</script>'},
-        '<script>a&#124;b</script>',
-      ],
+      [{type: 'html', value: '<i>a\\|b</i>'}, '<i>a\\\\\\|b</i>'],
       // A block that a cell holds as phrasing.
       [{type: 'math', value: 'a|b'}, '$a\\|b$'],
-      [
-        {children: [{type: 'text', value: 'x'}], type: 'leafDirective'},
-        ':abbr[x]',
-      ],
     ])('writes %j as HTML, or else on its row', (exported, written) => {
       const markdown = exportCellOf(exported);
       expect(markdown).toContain(`| ${written} |`);
@@ -1765,31 +1744,8 @@ describe('@lexical/mdast import/export', () => {
                   handlers: {
                     inlineMath: ((node: {value: string}) =>
                       `$${node.value}$`) as Handle,
-                    leafDirective: ((node, _, state, info) =>
-                      `::${node.name}[${state.containerPhrasing(node, info)}]`) as Handle,
                     math: ((node: {value: string}) =>
                       `$$\n${node.value}\n$$`) as Handle,
-                    mdxJsxTextElement: ((node, _, state, info) =>
-                      `<${node.name}${(node.attributes || [])
-                        .map(
-                          ({
-                            name,
-                            value,
-                          }: {
-                            name?: string;
-                            value: string | {value: string};
-                          }) =>
-                            name
-                              ? ` ${name}=${typeof value === 'string' ? `"${value}"` : `{${value.value}}`}`
-                              : ` {${value}}`,
-                        )
-                        .join(
-                          '',
-                        )}>${node.children ? state.containerPhrasing(node, info) : ''}</${node.name}>`) as Handle,
-                    mdxTextExpression: ((node: {value: string}) =>
-                      `{${node.value}}`) as Handle,
-                    textDirective: ((node, _, state, info) =>
-                      `:${node.name}[${state.containerPhrasing(node, info)}]`) as Handle,
                   } as Partial<Handlers>,
                 },
               ],
@@ -1824,139 +1780,6 @@ describe('@lexical/mdast import/export', () => {
       expect(
         exportCellOf({type: 'inlineCode', value: slashes + 'a'}),
       ).toContain(slashes + 'a');
-    });
-
-    describe('writes MDX in a cell that MDX reads back', () => {
-      /** The cell a node exports to, as MDX reads it back. */
-      function readBack(exported: object): Record<string, unknown> {
-        using editor = buildEditorFromExtensions(
-          defineExtension({
-            dependencies: [
-              MdastCommonMarkExtension,
-              MdastTableExtension,
-              configExtension(MdastExtension, {
-                exportRules: [
-                  {
-                    $export: () => exported as MdastNode,
-                    type: HorizontalRuleNode,
-                  },
-                ],
-                toMarkdownExtensions: [mdxToMarkdown(), directiveToMarkdown()],
-              }),
-            ],
-            name: '[root]',
-          }),
-        );
-        editor.update(
-          () => {
-            $convertFromMarkdownString('| a |\n| - |\n| b |');
-            const table = $assertNodeType(
-              $getRoot().getFirstChild(),
-              $isTableNode,
-            );
-            $assertNodeType(
-              table.getLastChildOrThrow<ElementNode>().getFirstChild(),
-              $isElementNode,
-            )
-              .clear()
-              .append($createHorizontalRuleNode());
-          },
-          {discrete: true},
-        );
-        const tree = fromMarkdown(
-          editor.read(() => $convertToMarkdownString()),
-          {
-            extensions: [mdxjs(), gfmTable(), directive()],
-            mdastExtensions: [
-              mdxFromMarkdown(),
-              gfmTableFromMarkdown(),
-              directiveFromMarkdown(),
-            ],
-          },
-        );
-        const [table] = tree.children as Table[];
-        expect(table.children[1].children).toHaveLength(1);
-        const [node] = table.children[1].children[0].children;
-        return node as unknown as Record<string, unknown>;
-      }
-      // eslint-disable-next-line no-new-func
-      const evaluate = (code: string) => new Function(`return (${code}\n);`)();
-
-      it('keeps the attributes and text of JSX', () => {
-        const node = readBack({
-          attributes: [
-            {name: 'title', type: 'mdxJsxAttribute', value: 'a\r\nb|c&#124;'},
-            {
-              name: 'data',
-              type: 'mdxJsxAttribute',
-              value: {type: 'mdxJsxAttributeValueExpression', value: '[\n1]'},
-            },
-          ],
-          children: [
-            {children: [{type: 'text', value: 'x|y'}], type: 'paragraph'},
-          ],
-          name: 'abbr',
-          type: 'mdxJsxFlowElement',
-        });
-        const [title, data] = node.attributes as {
-          value: string | {value: string};
-        }[];
-        expect(title.value).toBe('a\r\nb|c&#124;');
-        expect(evaluate((data.value as {value: string}).value)).toEqual([1]);
-        expect(toString(node)).toBe('x|y');
-      });
-
-      it('keeps the attributes of a directive', () => {
-        const node = readBack({
-          attributes: {title: 'a|b\nc&#124;'},
-          children: [{type: 'text', value: 'x'}],
-          name: 'abbr',
-          type: 'leafDirective',
-        });
-        expect(node.attributes).toEqual({title: 'a|b\nc&#124;'});
-      });
-
-      it.each([
-        ['leafDirective', 'textDirective'],
-        ['containerDirective', 'textDirective'],
-        ['mdxJsxFlowElement', 'mdxJsxTextElement'],
-      ])('keeps the attributes of what a %s holds', (type, inner) => {
-        const jsx = /^mdx/.test(type);
-        const nested = {
-          attributes: jsx
-            ? [{name: 'title', type: 'mdxJsxAttribute', value: 'a&b\nc'}]
-            : {title: 'a&b\nc'},
-          children: [{type: 'text', value: 'x'}],
-          name: 'abbr',
-          type: inner,
-        };
-        const node = readBack({
-          attributes: jsx ? [] : {},
-          children:
-            type === 'leafDirective'
-              ? [nested]
-              : [{children: [nested], type: 'paragraph'}],
-          name: 'outer',
-          type,
-        });
-        const [child] = (node.children as Record<string, unknown>[]).filter(
-          ({type: childType}) => childType === inner,
-        );
-        expect(child.attributes).toEqual(
-          jsx
-            ? [expect.objectContaining({name: 'title', value: 'a&b\nc'})]
-            : {title: 'a&b\nc'},
-        );
-      });
-
-      it('writes a directive with neither label nor string attributes', () => {
-        const node = readBack({
-          attributes: {width: 3},
-          name: 'abbr',
-          type: 'leafDirective',
-        });
-        expect(node.attributes).toEqual({width: '3'});
-      });
     });
 
     it('keeps spaces written as references at the edges of a cell', () => {

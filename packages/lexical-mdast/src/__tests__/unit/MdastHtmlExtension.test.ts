@@ -6,7 +6,7 @@
  *
  */
 
-import type {BlockContent} from 'mdast';
+import type {BlockContent, Html} from 'mdast';
 
 import {$createCodeNode} from '@lexical/code-core';
 import {
@@ -60,6 +60,8 @@ import {
   type TextNode,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
+import {mathFromMarkdown} from 'mdast-util-math';
+import {math} from 'micromark-extension-math';
 import {describe, expect, it} from 'vitest';
 
 import {
@@ -1118,6 +1120,38 @@ describe('MdastHtmlExtension', () => {
       expect(editor.read(() => $convertToMarkdownString())).toContain(
         '| **x\\|y** |',
       );
+    });
+
+    it('reads \\| in math inside raw HTML in a cell as a pipe', () => {
+      using editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            MdastCommonMarkExtension,
+            MdastTableExtension,
+            MdastHtmlExtension,
+            configExtension(MdastExtension, {
+              importRules: [
+                {
+                  // Math as its TeX, which is all this test reads.
+                  $import: node => [$createTextNode((node as Html).value)],
+                  type: 'inlineMath',
+                },
+              ],
+              mdastExtensions: [mathFromMarkdown()],
+              micromarkExtensions: [math()],
+            }),
+          ],
+          name: '[root]',
+        }),
+      );
+      editor.update(
+        () => $convertFromMarkdownString('| a |\n| - |\n| <u>$x\\|y$</u> |'),
+        {discrete: true},
+      );
+      editor.read(() => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        expect(table.getLastChildOrThrow().getTextContent()).toBe('x|y');
+      });
     });
   });
 });

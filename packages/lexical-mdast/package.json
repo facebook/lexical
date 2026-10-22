@@ -42,12 +42,8 @@
   "devDependencies": {
     "@types/markdown-it": "^14.2.0",
     "markdown-it": "^14.3.1",
-    "mdast-util-directive": "^3.1.0",
     "mdast-util-math": "^3.0.0",
-    "mdast-util-mdx": "^3.0.0",
-    "micromark-extension-directive": "^3.0.2",
-    "micromark-extension-math": "^3.1.0",
-    "micromark-extension-mdxjs": "^3.0.0"
+    "micromark-extension-math": "^3.1.0"
   },
   "repository": {
     "type": "git",

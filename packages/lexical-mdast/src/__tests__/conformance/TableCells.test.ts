@@ -96,7 +96,7 @@ function generate(next: () => number): PhrasingContent[] {
       const tag = pick(['b', 'pre', 'script']);
       nodes.push({
         type: 'html',
-        value: `<${tag} title="${word('ab |\n')}">${word('ab |\n')}</${tag}>`,
+        value: `<${tag} title="${word('ab |\\\n')}">${word('ab |\\\n')}</${tag}>`,
       });
     } else {
       // A hard break, as read; an editor's line break is written as a
@@ -118,11 +118,8 @@ function needsHtml(nodes: PhrasingContent[]): boolean {
     };
     return (
       (children !== undefined && needsHtml(children)) ||
-      ((node.type === 'inlineCode' || (node.type as string) === 'inlineMath') &&
-        (/[\r\n]/.test(value!) || /(?:^|[^\\])(?:\\\\)*\\\|/.test(value!))) ||
-      (node.type === 'html' &&
-        (/[\r\n]/.test(value!) ||
-          (/^<script/.test(value!) && value!.includes('|'))))
+      (/^(?:html|inlineCode|inlineMath)$/.test(node.type) &&
+        (/[\r\n]/.test(value!) || /(?:^|[^\\])(?:\\\\)*\\\|/.test(value!)))
     );
   });
 }
@@ -209,9 +206,7 @@ function micromarkCell(markdown: string): PhrasingContent[] {
     node.type === 'html' || (node.type as string) === 'inlineMath'
       ? {
           ...node,
-          value: (node as Html).value
-            .replace(/\\\|/g, '|')
-            .replace(/&#124;/g, '|'),
+          value: (node as Html).value.replace(/\\\|/g, '|'),
         }
       : node,
   );

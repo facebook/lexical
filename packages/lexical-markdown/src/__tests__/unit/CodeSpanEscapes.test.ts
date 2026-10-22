@@ -51,26 +51,31 @@ describe('a code span', () => {
   });
 
   // A reader strips only U+0020 padding, so other whitespace needs none.
-  it.each([' ', '  ', '\tx\t', '\u00a0'])('round-trips %j bare', text => {
-    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
-    editor.update(
-      () =>
-        $getRoot()
-          .clear()
-          .append(
-            $createParagraphNode().append(
-              $createTextNode(text).toggleFormat('code'),
+  it.each([' ', '  ', '\tx\t', '\u00a0', ' \r '])(
+    'round-trips %j bare',
+    text => {
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $createTextNode(text).toggleFormat('code'),
+              ),
             ),
-          ),
-      {discrete: true},
-    );
-    const markdown = editor.read(() => $convertToMarkdownString(TRANSFORMERS));
-    expect(markdown).toBe('`' + text + '`');
-    editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
-      discrete: true,
-    });
-    expect(editor.read(() => $getRoot().getTextContent())).toBe(text);
-  });
+        {discrete: true},
+      );
+      const markdown = editor.read(() =>
+        $convertToMarkdownString(TRANSFORMERS),
+      );
+      expect(markdown).toBe('`' + text + '`');
+      editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
+        discrete: true,
+      });
+      expect(editor.read(() => $getRoot().getTextContent())).toBe(text);
+    },
+  );
 
   it('pads a span whose ends are line endings', () => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);

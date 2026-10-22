@@ -52,6 +52,7 @@ import {
   type ElementNode,
   type LexicalEditor,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, it, onTestFinished} from 'vitest';
 
 import {
@@ -401,18 +402,75 @@ describe('playground TABLE markdown transformer', () => {
     expect(cellTexts(editor)).toEqual([[['a']], [['x |']]]);
   });
 
-  it('keeps an escaped row above a table as text', () => {
-    using editor = importMarkdown('\\| a |\n| b |');
+  it.each([
+    // An escaped row is text, and the row below has no delimiter row.
+    ['\\| a |\n| b |', ['| a |', '| b |']],
+    ['| --- |\n| a |', ['| --- |', '| a |']],
+    // The delimiter row has a cell fewer than the header.
+    ['| a | b |\n| --- |\n| c | d |', ['| a | b |', '| --- |', '| c | d |']],
+  ])('reads %j as text, as GFM does', (markdown, lines) => {
+    using editor = importMarkdown(markdown);
     expect(
       editor.read(() =>
         $getRoot()
           .getChildren()
-          .map(node => [node.getType(), node.getTextContent()]),
+          .map(node => node.getTextContent()),
+      ),
+    ).toEqual([lines.join('\n')]);
+  });
+
+  it('makes a table of a row typed into the editor', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [TableMarkdownTestExtension],
+        name: 'TableShortcutTest',
+        register: shortcutEditor =>
+          registerMarkdownShortcuts(shortcutEditor, [TABLE]),
+      }),
+    );
+    typeMarkdown(editor, '| a | ');
+    expect(cellTexts(editor)).toEqual([[['a']]]);
+  });
+
+  it('reads and writes the alignment of a delimiter row', () => {
+    const markdown =
+      '| a | b | c | d |\n| :-- | :-: | --: | --- |\n| 1 | 2 | 3 | 4 |';
+    using editor = importMarkdown(markdown);
+    expect(
+      editor.read(() =>
+        $getRoot()
+          .getLastChildOrThrow<ElementNode>()
+          .getChildren()
+          .map(row =>
+            $assertNodeType(row, $isElementNode)
+              .getChildren()
+              .map(cell =>
+                $assertNodeType(cell, $isElementNode).getFormatType(),
+              ),
+          ),
       ),
     ).toEqual([
-      ['paragraph', '| a |'],
-      ['table', 'b'],
+      ['left', 'center', 'right', ''],
+      ['left', 'center', 'right', ''],
     ]);
+    expect(editor.read(() => $convertToMarkdownString([TABLE]))).toBe(
+      markdown.replace(':-- | :-: | --: | ---', ':--- | :---: | ---: | ---'),
+    );
+  });
+
+  it('writes the first row as the header of a table with none', () => {
+    const markdown = exportTable(() =>
+      $createTableNode().append(
+        ...['a', 'b'].map(text =>
+          $createTableRowNode().append(
+            $createTableCellNode().append(
+              $createParagraphNode().append($createTextNode(text)),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(markdown).toBe('| a |\n| --- |\n| b |');
   });
 
   function $cellOf(...blocks: ElementNode[]): TableNode {
@@ -713,9 +771,9 @@ describe('playground TABLE markdown transformer', () => {
         ),
       ),
     );
-    expect(markdown.split('\n')[2]).toBe('| \\| x \\| |');
+    expect(markdown.split('\n')[2]).toBe('| \\| x \\|<br>\\| --- \\| |');
     using imported = importMarkdown(markdown);
-    expect(cellTexts(imported)).toEqual([[['h']], [['| x |']]]);
+    expect(cellTexts(imported)).toEqual([[['h']], [['| x |\n| --- |']]]);
   });
 
   it('round-trips the text of a nested list in a cell', () => {
@@ -738,21 +796,12 @@ describe('playground TABLE markdown transformer', () => {
     );
   });
 
-  it('keeps a lone delimiter row out of the table below it', () => {
-    using editor = importMarkdown(['| --- |', '| a |'].join('\n'));
-    editor.read(() => {
-      const [first, table] = $getRoot().getChildren();
-      expect($isParagraphNode(first) && first.getTextContent()).toBe('| --- |');
-      assert($isTableNode(table), 'The row must be a table');
-    });
-  });
-
-  it('round-trips a header row below the first', () => {
+  it('reads a delimiter row below the first as a body row', () => {
     const markdown = ['| a |', '| --- |', '| b |', '| --- |', '| c |'].join(
       '\n',
     );
     using editor = importMarkdown(markdown);
-    expect(cellTexts(editor)).toEqual([[['a']], [['b']], [['c']]]);
+    expect(cellTexts(editor)).toEqual([[['a']], [['b']], [['---']], [['c']]]);
     expect(editor.read(() => $convertToMarkdownString([TABLE]))).toBe(markdown);
   });
 

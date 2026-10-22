@@ -45,6 +45,7 @@ import {
   $isLineBreakNode,
   $isParagraphNode,
   $isTextNode,
+  type ElementFormatType,
   type LexicalNode,
   LineBreakNode,
   type ParagraphNode,
@@ -209,6 +210,10 @@ export const TWEET: ElementTransformer = {
 // Very primitive table setup
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
 
+// Stands in for the `<` of text that reads as a `<br>`, which the text
+// export would escape twice.
+const ESCAPED_LT = '\uFDD0';
+
 /**
  * A line break in a table cell, which is a `<br>`. Export writes a bare
  * newline, which becomes one: the default export would put a hard line
@@ -218,8 +223,6 @@ const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
  * a `<br>` wherever GFM does, inside formatting and links too, but not in
  * code or after an escaping backslash.
  */
-const ESCAPED_LT = '\uFDD0';
-
 const TABLE_CELL_LINE_BREAK: TextMatchTransformer = {
   dependencies: [LineBreakNode],
   export: (node, _, exportFormat) =>
@@ -258,10 +261,12 @@ const TABLE_CELL_CODE: ElementTransformer = {
           .getTextContent()
           .split('\n')
           .map(line => {
-            const fence = '`'.repeat(
-              Math.max(0, ...(line.match(/`+/g) || []).map(run => run.length)) +
-                1,
-            );
+            // A loop, as one argument per run would overflow the stack.
+            let longest = 0;
+            for (const [run] of line.matchAll(/`+/g)) {
+              longest = Math.max(longest, run.length);
+            }
+            const fence = '`'.repeat(longest + 1);
             // A reader strips a space from each end of a span with
             // something else in it.
             return line && /^[ `]|[ `]$/.test(line) && /[^ ]/.test(line)
@@ -317,7 +322,15 @@ function $exportTableCell(
     .replaceAll(ESCAPED_LT, '\\<');
 }
 
-export const TABLE: ElementTransformer = {
+// The alignment a delimiter cell (`:-:`) gives its column, and back.
+const DELIMITER_ALIGN: Record<string, ElementFormatType> = {
+  '-': '',
+  '-:': 'right',
+  ':-': 'left',
+  ':-:': 'center',
+};
+
+export const TABLE: MultilineElementTransformer = {
   dependencies: [TableNode, TableRowNode, TableCellNode],
   export: (node: LexicalNode) => {
     if (!$isTableNode(node)) {
@@ -333,39 +346,73 @@ export const TABLE: ElementTransformer = {
     ];
 
     for (const row of node.getChildren()) {
-      const rowOutput = [];
       if (!$isTableRowNode(row)) {
         continue;
       }
-
-      let isHeaderRow = false;
-      for (const cell of row.getChildren()) {
-        // It's TableCellNode so it's just to make flow happy
-        if ($isTableCellNode(cell)) {
-          rowOutput.push($exportTableCell(cell, transformers));
-          // The top-left cell of a table with both header kinds is ROW|COLUMN.
-          if (cell.hasHeaderState(TableCellHeaderStates.ROW)) {
-            isHeaderRow = true;
-          }
-        }
-      }
-
-      // A row of dashes and colons would read as a delimiter row.
+      const cells = row.getChildren().filter($isTableCellNode);
       output.push(
-        `| ${(rowOutput.every(cell => /^:?-+:?$/.test(cell))
-          ? rowOutput.map(cell => cell.replace(/[-:]/, '\\$&'))
-          : rowOutput
-        ).join(' | ')} |`,
+        `| ${cells.map(cell => $exportTableCell(cell, transformers)).join(' | ')} |`,
       );
-      if (isHeaderRow) {
-        output.push(`| ${rowOutput.map(_ => '---').join(' | ')} |`);
+      // GFM reads the first row as the header, and its cells' alignment as
+      // their columns'.
+      if (output.length === 1) {
+        output.push(
+          `| ${cells
+            .map(cell => {
+              const align = cell.getFormatType();
+              return `${align === 'left' || align === 'center' ? ':' : ''}---${align === 'right' || align === 'center' ? ':' : ''}`;
+            })
+            .join(' | ')} |`,
+        );
       }
     }
 
     return output.join('\n');
   },
-  regExp: TABLE_ROW_REG_EXP,
-  replace: (parentNode, _1, match, isImport) => {
+  // GFM reads a table from a header row and a delimiter row with as many
+  // cells, and then each row below it, with the header's cells.
+  handleImportAfterStartMatch: ({lines, rootNode, startLineIndex}) => {
+    const header = readTableRow(lines[startLineIndex]);
+    const delimiter = lines[startLineIndex + 1] ?? '';
+    const delimiterCells = readTableRow(delimiter);
+    if (
+      !header ||
+      !delimiterCells ||
+      delimiterCells.length !== header.length ||
+      !isTableDelimiterRow(delimiter)
+    ) {
+      return null;
+    }
+    const align = delimiterCells.map(
+      cell => DELIMITER_ALIGN[cell.trim().replace(/-+/, '-')],
+    );
+    const rows = [header];
+    let end = startLineIndex + 1;
+    for (let row; (row = readTableRow(lines[end + 1] ?? '')); end++) {
+      rows.push(row);
+    }
+    const transformers = getCellTransformers();
+    const table = $createTableNode().append(
+      ...rows.map(row =>
+        $createTableRowNode().append(
+          ...align.map((format, i) =>
+            $createTableCell(row[i] ?? '', transformers)
+              .setHeaderStyles(
+                row === header
+                  ? TableCellHeaderStates.ROW
+                  : TableCellHeaderStates.NO_STATUS,
+              )
+              .setFormat(format),
+          ),
+        ),
+      ),
+    );
+    rootNode.append(table);
+    return [true, end];
+  },
+  regExpStart: TABLE_ROW_REG_EXP,
+  // Called for a row typed into the editor.
+  replace: (parentNode, _1, match) => {
     // Header row
     if (isTableDelimiterRow(match[0])) {
       // With no table above it, the line stays text.
@@ -403,22 +450,9 @@ export const TABLE: ElementTransformer = {
     }
 
     const rows = [matchCells];
-    const above = parentNode.getPreviousSibling();
     let maxCells = matchCells.length;
-    // A row read below a header takes the header's cells, as in GFM.
-    if ($isTableNode(above) && isImport) {
-      const header = above.getFirstChild();
-      const cell = $isTableRowNode(header) ? header.getFirstChild() : null;
-      if (
-        $isTableCellNode(cell) &&
-        cell.hasHeaderState(TableCellHeaderStates.ROW)
-      ) {
-        maxCells = above.getColumnCount();
-      }
-    }
-    // Typed rows above stayed paragraphs; an imported row above is a table
-    // already, and a paragraph there was text (an escaped pipe).
-    let sibling = isImport ? null : above;
+    // Rows typed above stayed paragraphs.
+    let sibling = parentNode.getPreviousSibling();
 
     while (sibling) {
       if (!$isParagraphNode(sibling)) {
@@ -484,7 +518,7 @@ export const TABLE: ElementTransformer = {
       target.selectEnd();
     }
   },
-  type: 'element',
+  type: 'multiline-element',
 };
 
 /**
@@ -492,17 +526,12 @@ export const TABLE: ElementTransformer = {
  * an optional colon at either end, padded with spaces and tabs.
  */
 function isTableDelimiterRow(line: string): boolean {
-  const match = line.match(TABLE_ROW_REG_EXP);
+  const cells = readTableRow(line);
   return (
-    match !== null &&
-    splitTableRow(match[1]).every(cell => /^[ \t]*:?-+:?[ \t]*$/.test(cell))
+    cells !== null && cells.every(cell => /^[ \t]*:?-+:?[ \t]*$/.test(cell))
   );
 }
 
-/**
- * A cell read as GFM reads it: its padding trimmed, `\|` as a pipe, and
- * each `<br>` a line end, with the spaces beside it kept.
- */
 /**
  * A cell read from its Markdown, a line of inline content. Two `<br>` in a
  * row, which export writes between paragraphs, start a new paragraph.
@@ -539,19 +568,27 @@ function $createTableCell(
   return cell;
 }
 
-const $mapToTableCells = (textContent: string): TableCellNode[] | null => {
-  const match = textContent.match(TABLE_ROW_REG_EXP);
-  if (!match || !match[1]) {
+/**
+ * The cells of the row `line` as written, or null if it is not a row. A
+ * row ends at its last pipe, unless that pipe is escaped (`| x \\|`), when
+ * it is the last cell's content.
+ */
+function readTableRow(line: string): string[] | null {
+  const match = line.match(TABLE_ROW_REG_EXP);
+  if (!match) {
     return null;
   }
-  const transformers = getCellTransformers();
-  // A row ends at its last pipe, unless that pipe is escaped (`| x \|`),
-  // when it is the last cell's content.
   const cells = splitTableRow(match[1] + '|');
   if (cells[cells.length - 1] === '') {
     cells.pop();
   }
-  return cells.map(text => $createTableCell(text, transformers));
+  return cells;
+}
+
+const $mapToTableCells = (textContent: string): TableCellNode[] | null => {
+  const transformers = getCellTransformers();
+  const cells = readTableRow(textContent);
+  return cells && cells.map(text => $createTableCell(text, transformers));
 };
 
 /**

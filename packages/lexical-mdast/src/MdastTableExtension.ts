@@ -115,22 +115,18 @@ function $getCellAlign(cell: TableCellNode): AlignType {
   return shared === undefined ? own : shared;
 }
 
-/**
- * The number of `tag` void elements (`<br>`, `<br/>`, `<br />`, any case)
- * that `node` is a run of, or 0 when it is anything else. With
- * `MdastHtmlExtension` a run arrives as one `htmlInline` node.
- */
-function voidTags(node: MdastNode, tag: 'br' | 'hr'): number {
-  return (node.type === 'html' || node.type === 'htmlInline') &&
+/** Whether `node` is a `tag` void element (`<br>`, `<br/>`, `<br />`, any case). */
+function isVoidTag(node: MdastNode, tag: 'br' | 'hr'): boolean {
+  return (
+    (node.type === 'html' || node.type === 'htmlInline') &&
     !('children' in node && node.children.length > 0) &&
     VOID_TAGS_RE[tag].test(node.value)
-    ? node.value.split('<').length - 1
-    : 0;
+  );
 }
 
 const VOID_TAGS_RE = {
-  br: /^\s*(?:<br\s*\/?>\s*)+$/i,
-  hr: /^\s*(?:<hr\s*\/?>\s*)+$/i,
+  br: /^\s*<br\s*\/?>\s*$/i,
+  hr: /^\s*<hr\s*\/?>\s*$/i,
 };
 
 /**
@@ -160,9 +156,8 @@ function mapPhrasing(
  */
 function readPipes(nodes: PhrasingContent[]): PhrasingContent[] {
   return mapPhrasing(nodes, node => {
-    const breaks = voidTags(node, 'br');
-    if (breaks > 0) {
-      return Array.from({length: breaks}, () => ({type: 'break'}));
+    if (isVoidTag(node, 'br')) {
+      return [{type: 'break'}];
     }
     const {value} = node as {value?: string};
     return /^(?:html|htmlInline|inlineMath)$/.test(node.type)
@@ -241,11 +236,8 @@ function $lineBlocks(
   const runs: PhrasingContent[][] = [[]];
   const rules: LexicalNode[][] = [];
   for (const child of line) {
-    const rule = Array.from({length: voidTags(child, 'hr')}, () =>
-      ctx.importNode({type: 'thematicBreak'}),
-    ).flat();
-    if (rule.length > 0) {
-      rules.push(rule);
+    if (isVoidTag(child, 'hr')) {
+      rules.push(ctx.importNode({type: 'thematicBreak'}));
       runs.push([]);
     } else {
       runs[runs.length - 1].push(child);
@@ -299,7 +291,7 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
 };
 
 function isRule(node: PhrasingContent | undefined): boolean {
-  return node !== undefined && voidTags(node, 'hr') > 0;
+  return node !== undefined && isVoidTag(node, 'hr');
 }
 
 // Fresh nodes, as an exported tree may be edited in place.

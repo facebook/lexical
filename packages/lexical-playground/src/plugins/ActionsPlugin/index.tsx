@@ -79,9 +79,11 @@ type EditorMode = 'wysiwyg' | 'markdown' | 'html';
 export default function ActionsPlugin({
   shouldPreserveNewLinesInMarkdown,
   useCollabV2,
+  useCollabY,
 }: {
   shouldPreserveNewLinesInMarkdown: boolean;
   useCollabV2: boolean;
+  useCollabY: boolean;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
@@ -391,7 +393,7 @@ export default function ActionsPlugin({
         aria-label={isHtml ? 'Convert from html' : 'Convert to html'}>
         <i className="html" />
       </button>
-      {isCollabActive && (
+      {(isCollabActive || useCollabY) && (
         <>
           <button
             className="action-button connect"

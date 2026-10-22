@@ -420,13 +420,13 @@ export const TABLE: ElementTransformer = {
 
 /**
  * Whether `line` is a GFM delimiter row: every cell a run of dashes, with
- * an optional colon at either end, padded with any whitespace.
+ * an optional colon at either end, padded with spaces and tabs.
  */
 function isTableDelimiterRow(line: string): boolean {
   const match = line.match(TABLE_ROW_REG_EXP);
   return (
     match !== null &&
-    splitTableRow(match[1]).every(cell => /^\s*:?-+:?\s*$/.test(cell))
+    splitTableRow(match[1]).every(cell => /^[ \t]*:?-+:?[ \t]*$/.test(cell))
   );
 }
 

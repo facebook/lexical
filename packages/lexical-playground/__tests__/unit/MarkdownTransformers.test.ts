@@ -394,6 +394,11 @@ describe('playground TABLE markdown transformer', () => {
     expect(cellTexts(editor)).toEqual([[['a']], [['x']]]);
   });
 
+  it('reads a row of dashes padded with other whitespace as a body row', () => {
+    using editor = importMarkdown('| h |\n| --- |\n| \u00a0---\u00a0 |');
+    expect(cellTexts(editor)).toEqual([[['h']], [['\u00a0---\u00a0']]]);
+  });
+
   it('reads an escaped pipe at the end of a row as content', () => {
     using editor = importMarkdown('| a |\n| - |\n| x \\|');
     expect(cellTexts(editor)).toEqual([[['a']], [['x |']]]);

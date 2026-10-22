@@ -424,7 +424,7 @@ function cellPhrasing(
         } as PhrasingContent,
       ];
     }
-    if (/^html(?:Block|Inline)?$/.test(type)) {
+    if (type === 'html' || type === 'htmlBlock') {
       // A line end beside embedded Markdown (a `<template>` holding its
       // place) only sets it apart, but blocks embedded one after another
       // have no line of their own.
@@ -442,17 +442,15 @@ function cellPhrasing(
         {
           ...node,
           value: escapePipes(rawLine(html, fit), fit),
-          // `MdastHtmlExtension`'s raw HTML with Markdown embedded in it:
-          // phrasing, or the paragraphs of block HTML.
+          // `MdastHtmlExtension`'s raw HTML with Markdown embedded in it,
+          // which a cell holds as paragraphs. (Its `htmlInline` is only
+          // read.)
           ...(children && {
-            children:
-              type === 'htmlBlock'
-                ? (children as unknown as BlockContent[]).map(child =>
-                    child.type === 'paragraph'
-                      ? {...child, children: cellPhrasing(child.children, fit)}
-                      : ((fit.exact = false), child),
-                  )
-                : cellPhrasing(children, fit),
+            children: (children as unknown as BlockContent[]).map(child =>
+              child.type === 'paragraph'
+                ? {...child, children: cellPhrasing(child.children, fit)}
+                : ((fit.exact = false), child),
+            ),
           }),
         } as PhrasingContent,
       ];
@@ -461,10 +459,10 @@ function cellPhrasing(
   });
 }
 
-// The phrasing content that holds phrasing content, with that of
-// `MdastHtmlExtension` and of the directive and MDX extensions to mdast.
+// The phrasing content that holds phrasing content, with that of the
+// directive and MDX extensions to mdast.
 const PHRASING_PARENT_RE =
-  /^(?:delete|emphasis|link|linkReference|strong|htmlInline|textDirective|mdxJsxTextElement)$/;
+  /^(?:delete|emphasis|link|linkReference|strong|textDirective|mdxJsxTextElement)$/;
 
 /**
  * The phrasing content of a cell's exported blocks as one line, separated
@@ -488,7 +486,9 @@ function cellContent(
       case 'math':
         // Math in a line of its own, which is near it.
         fit.exact = false;
-        lines.push(phrase([{...node, type: 'inlineMath'} as PhrasingContent]));
+        lines.push(
+          phrase([{...node, type: 'inlineMath'} as unknown as PhrasingContent]),
+        );
         return;
       case 'paragraph':
       case 'tableCell':

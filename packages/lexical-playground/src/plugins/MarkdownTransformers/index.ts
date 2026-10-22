@@ -345,7 +345,7 @@ export const TABLE: ElementTransformer = {
         $isTableCellNode(cell) &&
         cell.hasHeaderState(TableCellHeaderStates.ROW)
       ) {
-        maxCells = $getTableColumnsSize(above);
+        maxCells = above.getColumnCount();
       }
     }
     // Typed rows above stayed paragraphs; an imported row above is a table
@@ -401,7 +401,7 @@ export const TABLE: ElementTransformer = {
     let target = table;
     if (
       $isTableNode(previousSibling) &&
-      $getTableColumnsSize(previousSibling) === maxCells
+      previousSibling.getColumnCount() === maxCells
     ) {
       previousSibling.append(...table.getChildren());
       parentNode.remove();
@@ -431,11 +431,6 @@ function isTableDelimiterRow(line: string): boolean {
     isTableRowDivider(line) &&
     splitTableRow(match[1]).every(cell => cell.includes('-'))
   );
-}
-
-function $getTableColumnsSize(table: TableNode) {
-  const row = table.getFirstChild();
-  return $isTableRowNode(row) ? row.getChildrenSize() : 0;
 }
 
 /**

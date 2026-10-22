@@ -24,6 +24,7 @@ import {
 import {$importTextTransformers} from './importTextTransformers';
 import {
   $createMarkdownLineBreakNode,
+  $splitMarkdownHardLineBreakMarker,
   type ElementTransformer,
   type MultilineElementTransformer,
   type TextFormatTransformer,
@@ -256,6 +257,9 @@ function $importBlocks(
     }
   }
 
+  if (textNode.isAttached()) {
+    $splitMarkdownHardLineBreakMarker(textNode);
+  }
   $importTextTransformers(
     textNode,
     textFormatTransformersIndex,
@@ -285,10 +289,10 @@ function $importBlocks(
       }
 
       if (targetNode != null && targetNode.getTextContentSize() > 0) {
-        targetNode.splice(targetNode.getChildrenSize(), 0, [
+        targetNode.append(
           $createMarkdownLineBreakNode(targetNode),
           ...elementNode.getChildren(),
-        ]);
+        );
         elementNode.remove();
       }
     }

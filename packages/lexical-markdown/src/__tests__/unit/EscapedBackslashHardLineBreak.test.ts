@@ -9,7 +9,11 @@
 // @vitest-environment node
 
 import {buildEditorFromExtensions} from '@lexical/extension';
-import {$convertFromMarkdownString, TRANSFORMERS} from '@lexical/markdown';
+import {
+  $convertFromMarkdownString,
+  $convertToMarkdownString,
+  TRANSFORMERS,
+} from '@lexical/markdown';
 import {$getRoot} from 'lexical';
 import {describe, expect, it} from 'vitest';
 
@@ -71,5 +75,23 @@ describe('escaped backslash at end of line', () => {
   it('keeps the literal backslash in the imported text', () => {
     // `foo\\` is an escaped backslash, so the paragraph text is `foo\ bar`.
     expect(importText(TWO + '\nbar')).toBe('foo\\ bar');
+  });
+
+  // Lines are kept apart as line breaks, so the break's marker is what
+  // export writes for it.
+  it.each([
+    [TWO, 'foo\\\nbar', 'foo\\\\\nbar'],
+    [THREE, 'foo\\\nbar', 'foo\\\\\\\nbar'],
+    [ONE, 'foo\nbar', 'foo\\\nbar'],
+  ])('reads %j and the next line unmerged', (line, text, markdown) => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(
+      () => $convertFromMarkdownString(line + '\nbar', TRANSFORMERS),
+      {discrete: true},
+    );
+    expect(editor.read(() => $getRoot().getTextContent())).toBe(text);
+    expect(editor.read(() => $convertToMarkdownString(TRANSFORMERS))).toBe(
+      markdown,
+    );
   });
 });

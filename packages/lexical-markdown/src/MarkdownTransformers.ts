@@ -36,7 +36,6 @@ import {
   $createTextNode,
   $findMatchingParent,
   $getState,
-  $isLineBreakNode,
   $isTextNode,
   $setState,
   type BaseSelection,
@@ -337,49 +336,32 @@ export function parseMarkdownHardLineBreak(
   return spaces ? [spaces[1], spaces[2]] : null;
 }
 
-function $hasNonWhitespaceContentOnLine(
-  children: LexicalNode[],
-  endIndex: number,
-): boolean {
-  for (let i = endIndex - 1; i >= 0; i--) {
-    if ($isLineBreakNode(children[i])) {
-      return false;
-    }
-    if (/\S/.test(children[i].getTextContent())) {
-      return true;
-    }
+// The text nodes that hold the marker a line ends with, which is a hard line
+// break if the next line joins its paragraph and text if it doesn't.
+const hardLineBreakMarkers = new WeakSet<TextNode>();
+
+/**
+ * Sets the hard line break marker `textNode`, a line as written, ends with
+ * apart in a node of its own, before its escapes are read: once they are,
+ * an escaped backslash (`\\`) would read as one.
+ */
+export function $splitMarkdownHardLineBreakMarker(textNode: TextNode): void {
+  const hardLineBreak = parseMarkdownHardLineBreak(textNode.getTextContent());
+  if (hardLineBreak !== null && !textNode.hasFormat('code')) {
+    const marker = $createTextNode(hardLineBreak[1]);
+    hardLineBreakMarkers.add(marker);
+    textNode.setTextContent(hardLineBreak[0]).insertAfter(marker);
   }
-  return false;
 }
 
 function $extractMarkdownHardLineBreakMarker(
   previousNode: ElementNode,
 ): MarkdownHardLineBreak | null {
-  const children = previousNode.getChildren();
-  const lastChildIndex = children.length - 1;
-  const lastChild = children[lastChildIndex];
-
-  if (!$isTextNode(lastChild)) {
-    return null;
+  const lastChild = previousNode.getLastChild();
+  if ($isTextNode(lastChild) && hardLineBreakMarkers.has(lastChild)) {
+    lastChild.remove();
+    return lastChild.getTextContent();
   }
-
-  const lastText = lastChild.getTextContent();
-  const hardLineBreak = parseMarkdownHardLineBreak(lastText);
-
-  if (hardLineBreak !== null) {
-    const [text, marker] = hardLineBreak;
-    lastChild.setTextContent(text);
-    return marker;
-  }
-
-  if (
-    /^ {2,}$/.test(lastText) &&
-    $hasNonWhitespaceContentOnLine(children, lastChildIndex)
-  ) {
-    lastChild.setTextContent('');
-    return lastText;
-  }
-
   return null;
 }
 
@@ -831,10 +813,10 @@ export const QUOTE: ElementTransformer = {
     if (isImport) {
       const previousNode = parentNode.getPreviousSibling();
       if ($isQuoteNode(previousNode)) {
-        previousNode.splice(previousNode.getChildrenSize(), 0, [
+        previousNode.append(
           $createMarkdownLineBreakNode(previousNode),
           ...children,
-        ]);
+        );
         parentNode.remove();
         return;
       }

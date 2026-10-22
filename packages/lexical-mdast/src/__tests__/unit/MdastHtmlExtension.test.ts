@@ -1033,6 +1033,41 @@ describe('MdastHtmlExtension', () => {
       expect(editor.read(() => $convertToMarkdownString())).toBe(markdown);
     });
 
+    it('keeps raw HTML with adjacent inline parts on the row', () => {
+      using editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            MdastCommonMarkExtension,
+            MdastTableExtension,
+            MdastHtmlExtension,
+            configExtension(MdastExtension, {
+              exportRules: [
+                {
+                  $export: () =>
+                    rawHtmlBlock(
+                      '<span>',
+                      [{type: 'text', value: 'a'}],
+                      [{type: 'text', value: 'b'}],
+                      '</span>',
+                    ),
+                  type: KeyNode,
+                },
+              ],
+            }),
+          ],
+          name: '[table-adjacent-parts]',
+          nodes: [KeyNode],
+        }),
+      );
+      const markdown = exportWithCell(editor, () => [
+        $createParagraphNode().append(
+          $createTextNode('x '),
+          $create(KeyNode).append($createTextNode('k')),
+        ),
+      ]);
+      expect(markdown.split('\n')[2]).toBe('| x <span>ab</span> |');
+    });
+
     it('writes a table with a block element in a cell as HTML', () => {
       using editor = tableCellEditor();
       const markdown = exportWithCell(editor, () => {

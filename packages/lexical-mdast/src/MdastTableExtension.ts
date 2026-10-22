@@ -277,7 +277,10 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
         // A row has the header's cells, as GFM reads it: those past them
         // are dropped and missing ones are empty.
         Array.from(node.children[0].children, (_, columnIndex) => {
-          const cell = row.children[columnIndex];
+          const cell: TableCell = row.children[columnIndex] || {
+            children: [],
+            type: 'tableCell',
+          };
           // Every cell of the column carries the alignment, so it renders as
           // the cell's text-align and moves with the cells when columns are
           // edited.
@@ -287,7 +290,7 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
                 ? TableCellHeaderStates.ROW
                 : TableCellHeaderStates.NO_STATUS,
             ).setFormat(align[columnIndex] || ''),
-            cell ? cellLines(cell).flatMap(line => $lineBlocks(line, ctx)) : [],
+            cellLines(cell).flatMap(line => $lineBlocks(line, ctx)),
           );
         }),
       ),
@@ -437,7 +440,7 @@ function cellPhrasing(
           ? ''
           : space,
       );
-      if (/<\/template><template/.test(html)) {
+      if (/<\/template>[^\S\r\n]*[\r\n]\s*<template data-mdast-child=/.test(value!)) {
         fit.exact = false;
       }
       return [

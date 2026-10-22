@@ -335,12 +335,9 @@ export const TABLE: ElementTransformer = {
     }
 
     const rows = [matchCells];
-    // Typed rows above stayed paragraphs; an imported row above is a table
-    // already, and a paragraph there was text (an escaped pipe).
-    let sibling = isImport ? null : parentNode.getPreviousSibling();
+    const above = parentNode.getPreviousSibling();
     let maxCells = matchCells.length;
     // A row read below a header takes the header's cells, as in GFM.
-    const above = parentNode.getPreviousSibling();
     if ($isTableNode(above) && isImport) {
       const header = above.getFirstChild();
       const cell = $isTableRowNode(header) ? header.getFirstChild() : null;
@@ -351,6 +348,9 @@ export const TABLE: ElementTransformer = {
         maxCells = $getTableColumnsSize(above);
       }
     }
+    // Typed rows above stayed paragraphs; an imported row above is a table
+    // already, and a paragraph there was text (an escaped pipe).
+    let sibling = isImport ? null : above;
 
     while (sibling) {
       if (!$isParagraphNode(sibling)) {

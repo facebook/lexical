@@ -18,7 +18,7 @@ import {
   $isTableCellNode,
   $isTableRowNode,
   $isTableSelection,
-  TableCellHeaderStates,
+  $setTableRowIsHeader,
   TableExtension,
   type TableNode,
   type TableRowNode,
@@ -124,29 +124,12 @@ function $alignInsertedRow(
  * inserted above it or it is deleted.
  */
 function $headFirstRow(table: TableNode) {
-  if (!table.isAttached()) {
-    return;
+  if (table.isAttached()) {
+    $setTableRowIsHeader(table, 0, true);
+    if (table.getChildrenSize() > 1) {
+      $setTableRowIsHeader(table, 1, false);
+    }
   }
-  table
-    .getChildren()
-    .slice(0, 2)
-    .forEach((row, i) => {
-      if ($isTableRowNode(row)) {
-        for (const cell of row.getChildren()) {
-          if (
-            $isTableCellNode(cell) &&
-            cell.hasHeaderState(TableCellHeaderStates.ROW) !== (i === 0)
-          ) {
-            cell.setHeaderStyles(
-              i === 0
-                ? TableCellHeaderStates.ROW
-                : TableCellHeaderStates.NO_STATUS,
-              TableCellHeaderStates.ROW,
-            );
-          }
-        }
-      }
-    });
 }
 
 /**

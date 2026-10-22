@@ -670,7 +670,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
  * back as a paragraph boundary, or as a line break inside formatting or a
  * link, and a pipe in code, math or HTML is escaped as GFM reads it. A
  * table with a cell GFM can't hold as it is (a list, heading, quote or code
- * block, or a line end in code, math or HTML) is written as an HTML table
+ * block, or a line end in math or HTML) is written as an HTML table
  * with Markdown in its cells when the editor has `MdastHtmlExtension`, and
  * otherwise with those blocks flattened into lines. Column alignment is the
  * element format of the column's cells (`TableCellNode.setFormat`),

@@ -128,8 +128,9 @@ most renderers accept there, and reads `<br>`, `<br/>` and `<br />` back as
 paragraph boundaries, or as line breaks inside formatting or a link. A
 pipe in code, math or raw HTML is written as `\|`, which GFM reads as a
 pipe before anything else in the cell. Some content has no form in a GFM
-cell: lists, headings, quotes and code blocks, code, math or raw HTML with
-a line end of its own, and a pipe after a backslash in them. With
+cell: lists, headings, quotes and code blocks, math or raw HTML with a
+line end of its own, and a pipe after a backslash in code, math or raw
+HTML. With
 `MdastHtmlExtension`, a table holding any of that is written as an HTML
 table with Markdown in its cells, which GitHub and CommonMark renderers
 read, and other tables stay GFM. Without it, those blocks are flattened to

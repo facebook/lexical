@@ -99,6 +99,17 @@ function decodeCharacterReference(
     : String.fromCodePoint(codePoint);
 }
 
+/**
+ * Whether `&` and then `reference` (`#65;`, `amp;`, matched as one of the
+ * forms `unescapeText` reads) is read as a character reference.
+ */
+export function isCharacterReference(reference: string): boolean {
+  return (
+    reference[0] === '#' ||
+    decodeNamedCharacterReference(reference.slice(0, -1)) !== false
+  );
+}
+
 export function unescapeText(value: string): string {
   // One pass, so an escaped `\&#35;` stays the text `&#35;`.
   return value.replace(

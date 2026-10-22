@@ -48,7 +48,7 @@ import {
   type TextNode,
 } from 'lexical';
 
-import {$isEmptyParagraph, unescapeText} from './utils';
+import {$isEmptyParagraph, isCharacterReference, unescapeText} from './utils';
 
 export type Transformer =
   | ElementTransformer
@@ -1149,8 +1149,9 @@ export const ITALIC_UNDERSCORE: TextFormatTransformer = {
 // query string keeps the separators it was written with.
 function escapeCharacterReferences(value: string): string {
   return value.replace(
-    /&(?=#\d+;|#[Xx][\dA-Fa-f]+;|[A-Za-z][\dA-Za-z]*;)/g,
-    '&#38;',
+    /&(#\d{1,7};|#[Xx][\dA-Fa-f]{1,6};|[A-Za-z][\dA-Za-z]{0,31};)/g,
+    (found, reference: string) =>
+      isCharacterReference(reference) ? '&#38;' + reference : found,
   );
 }
 

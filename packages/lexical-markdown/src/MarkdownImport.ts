@@ -257,7 +257,9 @@ function $importBlocks(
     }
   }
 
-  if (textNode.isAttached()) {
+  // The parent test, unlike isAttached(), also holds in a tree not attached
+  // to the root.
+  if (textNode.getParent() !== null) {
     $splitMarkdownHardLineBreakMarker(textNode);
   }
   $importTextTransformers(

@@ -4088,6 +4088,11 @@ describe('link destination round trip', () => {
     // An `&` that begins no reference is ordinary, so a query string keeps the
     // separators it was written with.
     ['https://example.com/?a=1&b=2', '[x](https://example.com/?a=1&b=2)'],
+    // Nor do a name that is no HTML entity and a number that is too long.
+    [
+      'https://example.com/?a&nosuch;&#12345678;',
+      '[x](https://example.com/?a&nosuch;&#12345678;)',
+    ],
     [
       'https://example.com/?a=1&b=2;c=3',
       '[x](https://example.com/?a=1&b=2;c=3)',

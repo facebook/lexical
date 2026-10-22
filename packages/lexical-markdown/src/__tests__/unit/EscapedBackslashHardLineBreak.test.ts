@@ -12,9 +12,11 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
+  $generateNodesFromMarkdownString,
   TRANSFORMERS,
 } from '@lexical/markdown';
-import {$getRoot} from 'lexical';
+import {$getRoot, $isParagraphNode} from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {describe, expect, it} from 'vitest';
 
 import {
@@ -93,5 +95,24 @@ describe('escaped backslash at end of line', () => {
     expect(editor.read(() => $convertToMarkdownString(TRANSFORMERS))).toBe(
       markdown,
     );
+  });
+
+  it('reads a hard line break in nodes generated outside the root', () => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    let texts;
+    editor.update(
+      () => {
+        const [paragraph] = $generateNodesFromMarkdownString(
+          'foo\\\nbar\nbaz  \nqux',
+          TRANSFORMERS,
+        );
+        texts = $assertNodeType(paragraph, $isParagraphNode)
+          .getChildren()
+          .map(node => node.getTextContent());
+      },
+      {discrete: true},
+    );
+    // The markers are taken off the text, as they are in the root.
+    expect(texts).toEqual(['foo', '\n', 'bar', '\n', 'baz', '\n', 'qux']);
   });
 });

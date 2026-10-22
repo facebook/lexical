@@ -31,7 +31,11 @@ import {
   type TextMatchTransformer,
   type Transformer,
 } from './MarkdownTransformers';
-import {$isEmptyParagraph, transformersByType} from './utils';
+import {
+  $isEmptyParagraph,
+  isCharacterReference,
+  transformersByType,
+} from './utils';
 
 /**
  * Renders string from markdown. The selection is moved to the start after the operation.
@@ -510,13 +514,15 @@ function $exportTextFormat(
     // Each run of backslashes is read once, with the `&` after it or else
     // alone, which keeps a long run linear.
     output = output.replace(
-      /(\\*)(&(?=#\d{1,7};|#x[\da-f]{1,6};|[a-z][\da-z]{0,31};))|\\+/gi,
-      (found, backslashes: string, amp: string | undefined) =>
-        amp === undefined
+      /(\\*)&(#\d{1,7};|#x[\da-f]{1,6};|[a-z][\da-z]{0,31};)|\\+/gi,
+      (found, backslashes: string, reference: string | undefined) =>
+        reference === undefined || !isCharacterReference(reference)
           ? found
           : (shouldPreserveNewLines
               ? backslashes.replace(/\\/g, '\\\\')
-              : backslashes) + '\\&',
+              : backslashes) +
+            '\\&' +
+            reference,
     );
   }
 

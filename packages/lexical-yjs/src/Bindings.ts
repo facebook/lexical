@@ -40,6 +40,18 @@ export interface BaseBinding {
   nodeProperties: Map<string, {[property: string]: unknown}>; // node type to property to default value
   excludedProperties: ExcludedProperties;
   /**
+   * What to do with content of a node type this editor does not register,
+   * written by a collaborator whose build has more node classes (for example
+   * while a new node type rolls out):
+   *
+   * - `'throw'` (the default): applying the remote change throws
+   *   `Node <type> is not registered`.
+   * - `'keep'`: the content is kept in the shared document, untouched, but is
+   *   not shown on this editor. Each such type is reported once through the
+   *   editor's `onWarn` handler.
+   */
+  unregisteredNodeTypes?: UnregisteredNodeTypes;
+  /**
    * True only while the initial editor state is being written into an empty
    * shared document (the `shouldBootstrap` path). Bootstrapping is not a user
    * edit, so the {@link UndoManager} returned by `createUndoManager` does not
@@ -73,12 +85,16 @@ export type AnyBinding = Binding | BindingV2;
 
 export type ExcludedProperties = Map<Klass<LexicalNode>, Set<string>>;
 
+/** See {@link BaseBinding.unregisteredNodeTypes}. */
+export type UnregisteredNodeTypes = 'throw' | 'keep';
+
 function createBaseBinding(
   editor: LexicalEditor,
   id: string,
   doc: Doc,
   docMap: Map<string, Doc>,
   excludedProperties?: ExcludedProperties,
+  unregisteredNodeTypes: UnregisteredNodeTypes = 'throw',
 ): BaseBinding {
   const binding = {
     clientID: doc.clientID,
@@ -92,6 +108,7 @@ function createBaseBinding(
     id,
     isBootstrapping: false,
     nodeProperties: new Map(),
+    unregisteredNodeTypes,
   };
   initializeNodeProperties(binding);
   return binding;
@@ -127,6 +144,12 @@ export interface CreateYjsBindingOptions {
    * precedence over {@link CreateYjsBindingOptions.rootName}.
    */
   getXmlText?: (doc: Doc) => XmlText;
+  /**
+   * What to do with content of a node type this editor does not register:
+   * `'throw'` (the default) or `'keep'`. See
+   * {@link BaseBinding.unregisteredNodeTypes}.
+   */
+  unregisteredNodeTypes?: UnregisteredNodeTypes;
 }
 
 /**
@@ -143,6 +166,7 @@ export function createYjsBinding({
   excludedProperties,
   rootName = 'root',
   getXmlText,
+  unregisteredNodeTypes,
 }: CreateYjsBindingOptions): Binding {
   const rootXmlText = getXmlText
     ? getXmlText(doc)
@@ -163,6 +187,7 @@ export function createYjsBinding({
     doc,
     docMap,
     excludedProperties,
+    unregisteredNodeTypes,
   );
   editor._recordNodeMoves = true;
   return {
@@ -179,12 +204,20 @@ export function createBinding(
   doc: Doc | null | undefined,
   docMap: Map<string, Doc>,
   excludedProperties?: ExcludedProperties,
+  options: Pick<CreateYjsBindingOptions, 'unregisteredNodeTypes'> = {},
 ): Binding {
   invariant(
     doc !== undefined && doc !== null,
     'createBinding: doc is null or undefined',
   );
-  return createYjsBinding({doc, docMap, editor, excludedProperties, id});
+  return createYjsBinding({
+    doc,
+    docMap,
+    editor,
+    excludedProperties,
+    id,
+    unregisteredNodeTypes: options.unregisteredNodeTypes,
+  });
 }
 
 /** Options for {@link createBindingV2__EXPERIMENTAL}. */
@@ -211,6 +244,12 @@ export interface CreateBindingV2Options__EXPERIMENTAL {
    * {@link CreateBindingV2Options__EXPERIMENTAL.rootName}.
    */
   getXmlElement?: (doc: Doc) => XmlElement;
+  /**
+   * What to do with content of a node type this editor does not register:
+   * `'throw'` (the default) or `'keep'`. See
+   * {@link BaseBinding.unregisteredNodeTypes}.
+   */
+  unregisteredNodeTypes?: UnregisteredNodeTypes;
 }
 
 export function createBindingV2__EXPERIMENTAL(
@@ -224,7 +263,12 @@ export function createBindingV2__EXPERIMENTAL(
     doc !== undefined && doc !== null,
     'createBinding: doc is null or undefined',
   );
-  const {excludedProperties, rootName = 'root-v2', getXmlElement} = options;
+  const {
+    excludedProperties,
+    rootName = 'root-v2',
+    getXmlElement,
+    unregisteredNodeTypes,
+  } = options;
   const root = getXmlElement
     ? getXmlElement(doc)
     : (doc.get(rootName, XmlElement) as XmlElement);
@@ -239,7 +283,14 @@ export function createBindingV2__EXPERIMENTAL(
     ROOT_NODE_NAME,
   );
   return {
-    ...createBaseBinding(editor, id, doc, docMap, excludedProperties),
+    ...createBaseBinding(
+      editor,
+      id,
+      doc,
+      docMap,
+      excludedProperties,
+      unregisteredNodeTypes,
+    ),
     mapping: new CollabV2Mapping(),
     root,
   };

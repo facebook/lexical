@@ -156,3 +156,36 @@ It's achievable by leveraging headless Lexical and no-op provider for Yjs:
   }
   ```
 </details>
+
+## Collaborators with different node types
+
+Clients in one room can run builds that register different node classes, for
+example while a new node type rolls out. What a client does with content of a
+node type it has not registered is set by the binding option
+`unregisteredNodeTypes`:
+
+- `'throw'` (the default): applying the remote change throws
+  `Node <type> is not registered`, which goes to the editor's `onError`.
+- `'keep'`: the client keeps that content in the Yjs document untouched but
+  does not show it, and never deletes, rewrites or reorders it. Edits made
+  inside that content by clients that do register the type keep syncing
+  between them. An element whose text sits next to such content (for example
+  a paragraph with an unknown inline node) is hidden as a whole on that client
+  until the unknown content is gone. Each unregistered type is reported once
+  per editor through the editor's `onWarn` handler, so you can route it to
+  your telemetry.
+
+```jsx
+<CollaborationPlugin
+  id="main"
+  providerFactory={providerFactory}
+  shouldBootstrap={false}
+  unregisteredNodeTypes="keep"
+/>
+```
+
+`CollaborationPluginV2__EXPERIMENTAL` takes the same prop. Without React, pass
+it to `createYjsBinding({..., unregisteredNodeTypes: 'keep'})`,
+`createBinding(editor, provider, id, doc, docMap, excludedProperties, {unregisteredNodeTypes: 'keep'})`
+or `createBindingV2__EXPERIMENTAL(editor, id, doc, docMap, {unregisteredNodeTypes: 'keep'})`.
+Either way, register the node class on every client to show the content.

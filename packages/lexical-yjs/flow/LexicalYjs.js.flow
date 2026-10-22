@@ -112,7 +112,10 @@ export type BaseBinding = {
   id: string,
   isBootstrapping: boolean,
   nodeProperties: Map<string, {[property: string]: unknown}>,
+  unregisteredNodeTypes?: UnregisteredNodeTypes,
 };
+
+export type UnregisteredNodeTypes = 'throw' | 'keep';
 
 export type Binding = {
   ...BaseBinding,
@@ -377,6 +380,7 @@ declare export function createBinding(
   doc: ?Doc,
   docMap: Map<string, Doc>,
   excludedProperties?: ExcludedProperties,
+  options?: {unregisteredNodeTypes?: UnregisteredNodeTypes},
 ): Binding;
 
 export type CreateYjsBindingOptions = {
@@ -387,6 +391,7 @@ export type CreateYjsBindingOptions = {
   excludedProperties?: ExcludedProperties,
   rootName?: string,
   getXmlText?: (doc: Doc) => XmlText,
+  unregisteredNodeTypes?: UnregisteredNodeTypes,
 };
 
 declare export function createYjsBinding(
@@ -397,6 +402,7 @@ export type CreateBindingV2Options__EXPERIMENTAL = {
   excludedProperties?: ExcludedProperties,
   rootName?: string,
   getXmlElement?: (doc: Doc) => XmlElement,
+  unregisteredNodeTypes?: UnregisteredNodeTypes,
 };
 
 declare export function createBindingV2__EXPERIMENTAL(

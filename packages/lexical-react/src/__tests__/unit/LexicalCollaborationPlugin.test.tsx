@@ -7,7 +7,6 @@
  */
 
 import type {InitialEditorStateType} from '@lexical/react/LexicalComposer';
-import type {Provider} from '@lexical/yjs';
 import type {LexicalEditor} from 'lexical';
 
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
@@ -21,11 +20,21 @@ import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {
+  createBinding,
+  createBindingV2__EXPERIMENTAL,
+  type Provider,
+  syncLexicalUpdateToYjs,
+  syncLexicalUpdateToYjsV2__EXPERIMENTAL,
+  type UnregisteredNodeTypes,
+} from '@lexical/yjs';
+import {
+  $create,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $isParagraphNode,
   createEditor,
+  ElementNode,
   UNDO_COMMAND,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
@@ -753,5 +762,160 @@ describe(`LexicalCollaborationPlugin`, () => {
       expect(notes.get('a')!.toString()).toContain('hello');
       expect(notes.get('a')!.toString()).toContain('world');
     });
+  });
+  /**
+   * `unregisteredNodeTypes` reaches the binding of both plugins: by default
+   * content of a node type the editor does not register fails with
+   * `Node <type> is not registered`, as before the option existed; with
+   * `'keep'` it is kept in Yjs, not shown, and reported through `onWarn`.
+   */
+  describe('unregisteredNodeTypes', () => {
+    class CalloutNode extends ElementNode {
+      $config() {
+        return this.config('test-callout', {extends: ElementNode});
+      }
+    }
+
+    // A Yjs update from a client that registers CalloutNode: two paragraphs
+    // with a callout between them.
+    function remoteUpdate(useCollabV2: boolean): Uint8Array {
+      const editor = createEditor({
+        namespace: 'remote',
+        nodes: [CalloutNode],
+        onError(error: Error) {
+          throw error;
+        },
+      });
+      const doc = new Y.Doc();
+      const docMap = new Map([['main', doc]]);
+      if (useCollabV2) {
+        const binding = createBindingV2__EXPERIMENTAL(
+          editor,
+          'main',
+          doc,
+          docMap,
+        );
+        editor.registerUpdateListener(p =>
+          syncLexicalUpdateToYjsV2__EXPERIMENTAL(
+            binding,
+            createTestProvider(),
+            p.prevEditorState,
+            p.editorState,
+            p.dirtyElements,
+            p.dirtyLeaves,
+            p.normalizedNodes,
+            p.tags,
+          ),
+        );
+      } else {
+        const binding = createBinding(
+          editor,
+          createTestProvider(),
+          'main',
+          doc,
+          docMap,
+        );
+        editor.registerUpdateListener(p =>
+          syncLexicalUpdateToYjs(
+            binding,
+            createTestProvider(),
+            p.prevEditorState,
+            p.editorState,
+            p.dirtyElements,
+            p.dirtyLeaves,
+            p.normalizedNodes,
+            p.tags,
+          ),
+        );
+      }
+      editor.update(
+        () => {
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('alpha')),
+            $create(CalloutNode).append($createParagraphNode()),
+            $createParagraphNode().append($createTextNode('omega')),
+          );
+        },
+        {discrete: true},
+      );
+      return Y.encodeStateAsUpdate(doc);
+    }
+
+    for (const useCollabV2 of [false, true]) {
+      for (const mode of [undefined, 'throw', 'keep'] as const) {
+        test(`${useCollabV2 ? 'V2' : 'V1'} plugin, unregisteredNodeTypes=${mode}`, async () => {
+          const doc = new Y.Doc();
+          const provider = createSyncedProvider();
+          const errors: string[] = [];
+          const warnings: string[] = [];
+          let editor: LexicalEditor | undefined;
+          function CaptureEditor() {
+            [editor] = useLexicalComposerContext();
+            return null;
+          }
+          const config = {
+            ...editorConfig,
+            onError(error: Error) {
+              errors.push(error.message);
+            },
+            onWarn(error: Error) {
+              warnings.push(error.message);
+            },
+          };
+          const props: {unregisteredNodeTypes?: UnregisteredNodeTypes} =
+            mode === undefined ? {} : {unregisteredNodeTypes: mode};
+          await act(async () => {
+            reactRoot.render(
+              <LexicalCollaboration>
+                <LexicalComposer initialConfig={config}>
+                  <CaptureEditor />
+                  {useCollabV2 ? (
+                    <CollaborationPluginV2__EXPERIMENTAL
+                      id="main"
+                      doc={doc}
+                      provider={provider}
+                      {...props}
+                    />
+                  ) : (
+                    <CollaborationPlugin
+                      id="main"
+                      providerFactory={(id, yjsDocMap) => {
+                        yjsDocMap.set(id, doc);
+                        return provider;
+                      }}
+                      shouldBootstrap={false}
+                      {...props}
+                    />
+                  )}
+                  <RichTextPlugin
+                    contentEditable={<ContentEditable />}
+                    placeholder={<></>}
+                    ErrorBoundary={LexicalErrorBoundary}
+                  />
+                </LexicalComposer>
+              </LexicalCollaboration>,
+            );
+          });
+          await act(async () => {
+            Y.applyUpdate(doc, remoteUpdate(useCollabV2));
+          });
+          if (mode === 'keep') {
+            expect(errors).toEqual([]);
+            expect(warnings).toHaveLength(1);
+            expect(warnings[0]).toContain('"test-callout" is not registered');
+            expect(editor!.read(() => $getRoot().getTextContent())).toBe(
+              'alpha\n\nomega',
+            );
+          } else {
+            expect(warnings).toEqual([]);
+            expect(errors).toContain(
+              useCollabV2
+                ? '$createOrUpdateNodeFromYElement: Node test-callout is not registered'
+                : 'Node test-callout is not registered',
+            );
+          }
+        });
+      }
+    }
   });
 });

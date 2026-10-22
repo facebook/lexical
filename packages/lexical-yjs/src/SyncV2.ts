@@ -66,6 +66,8 @@ import {
   $isSlotValueNode,
   $syncPropertiesFromYjs,
   getDefaultNodeProperties,
+  hasUnregisteredNodeTypes,
+  isOpaqueNodeType,
   isReservedSlotName,
   ROOT_NODE_NAME,
   setSlotsAttr,
@@ -88,6 +90,199 @@ type TextAttributes = {
 const isRootElement = (el: XmlElement): boolean =>
   el.nodeName === ROOT_NODE_NAME;
 
+// Whether visible text in the run has a TextNode type (`t`) this editor does
+// not register. Walks the run's items like toDelta, without building it.
+const hasUnregisteredTextType = (
+  binding: BindingV2,
+  text: XmlText,
+): boolean => {
+  let type: unknown = null;
+  for (let n = text._start; n !== null; n = n.right) {
+    if (n.deleted) {
+      continue;
+    } else if (n.content instanceof ContentFormat) {
+      if (n.content.key === 't') {
+        type = n.content.value;
+      }
+    } else if (
+      n.countable &&
+      typeof type === 'string' &&
+      isOpaqueNodeType(binding, type)
+    ) {
+      return true;
+    }
+  }
+  return false;
+};
+
+// Whether a known element holds content this editor cannot show (an
+// unregistered element, or text of an unregistered TextNode type) together
+// with text. Skipping only that content would leave the text around it
+// adjacent in Lexical, where it is joined and then written back as one run,
+// moving text across the hidden content.
+const hasOpaqueContentAmongText = (
+  binding: BindingV2,
+  el: XmlElement,
+): boolean => {
+  let hasText = false;
+  let hasOpaqueChild = false;
+  for (const child of el.toArray()) {
+    if (child instanceof XmlText) {
+      hasText = true;
+      if (!hasOpaqueChild && hasUnregisteredTextType(binding, child)) {
+        hasOpaqueChild = true;
+      }
+    } else if (
+      child instanceof XmlElement &&
+      isOpaqueNodeType(binding, child.nodeName)
+    ) {
+      hasOpaqueChild = true;
+    }
+  }
+  return hasText && hasOpaqueChild;
+};
+
+// The result of hasOpaqueContentAmongText per binding and element. It depends
+// only on the element's own children and their text formats, which only a
+// remote change can turn opaque (this editor cannot create a type it does not
+// register), so it is computed when an element is first read from Yjs and
+// refreshed when a remote change reaches that element ($syncOpaqueChange).
+let opaqueContentCache:
+  | WeakMap<BindingV2, WeakMap<XmlElement, boolean>>
+  | undefined;
+
+const hasOpaqueContentCached = (
+  binding: BindingV2,
+  el: XmlElement,
+  refresh: boolean,
+): boolean => {
+  if (opaqueContentCache === undefined) {
+    opaqueContentCache = new WeakMap();
+  }
+  let cache = opaqueContentCache.get(binding);
+  if (cache === undefined) {
+    cache = new WeakMap();
+    opaqueContentCache.set(binding, cache);
+  }
+  let result = refresh ? undefined : cache.get(el);
+  if (result === undefined) {
+    if (!refresh && binding.mapping.get(el) !== undefined) {
+      // Created by this editor, so it holds only registered types.
+      return false;
+    }
+    result = hasOpaqueContentAmongText(binding, el);
+    cache.set(el, result);
+  }
+  return result;
+};
+
+/**
+ * An element is "opaque" when its node type is not registered on this editor
+ * (it was written by a collaborator with more node classes, e.g. during the
+ * rollout of a new node type), or when it holds such content among text (see
+ * hasOpaqueContentAmongText). It is never materialized into Lexical, and the
+ * Lexical -> Yjs diff only looks at the visible children around it, so this
+ * editor never deletes, rewrites, or reorders it. Changes inside it stay in
+ * Yjs only.
+ */
+const isOpaqueYType = (
+  binding: BindingV2,
+  t: unknown,
+  refresh: boolean = false,
+): boolean =>
+  t instanceof XmlElement &&
+  !isRootElement(t) &&
+  (isOpaqueNodeType(binding, t.nodeName) ||
+    hasOpaqueContentCached(binding, t, refresh));
+
+const getParentElement = (
+  t: XmlElement | XmlText | YMap<unknown>,
+): XmlElement | null => {
+  // A slot value's parent is its host's `__slots` map.
+  const parent = t.parent instanceof YMap ? t.parent.parent : t.parent;
+  return parent instanceof XmlElement ? parent : null;
+};
+
+// Re-syncs the Lexical node of el's parent (or slot host), which drops or
+// creates el's Lexical node.
+const $syncParentOf = (binding: BindingV2, el: XmlElement): void => {
+  const isSlotValue = el.parent instanceof YMap;
+  const parent = getParentElement(el);
+  if (parent !== null) {
+    $createOrUpdateNodeFromYElement(
+      parent,
+      binding,
+      new Set(isSlotValue ? [SLOTS_ATTR_KEY] : []),
+      !isSlotValue,
+    );
+  }
+};
+
+/**
+ * Handles a remote change to `el` (the element whose children, attributes, or
+ * text changed) for content this editor cannot show. Returns whether the
+ * change needs no further handling: it is inside opaque content, or it made
+ * `el` start or stop being opaque, which re-syncs the parent instead.
+ */
+export const $syncOpaqueChange = (
+  binding: BindingV2,
+  el: XmlElement,
+): boolean => {
+  // Only el's own children changed, so only its cached result is stale.
+  let opaque = isOpaqueYType(binding, el, true) ? el : null;
+  for (let cur = getParentElement(el); cur !== null && cur !== binding.root; ) {
+    if (isOpaqueYType(binding, cur)) {
+      opaque = cur;
+    }
+    cur = getParentElement(cur);
+  }
+  if (opaque !== null) {
+    if (binding.mapping.get(opaque) !== undefined) {
+      // Shown until now.
+      $syncParentOf(binding, opaque);
+    }
+    return true;
+  }
+  if (el !== binding.root && hasUnregisteredNodeTypes(binding)) {
+    // Hidden until now: the outermost element without a Lexical node is the
+    // one to create.
+    let hidden: XmlElement | null = null;
+    for (
+      let cur: XmlElement | null = el;
+      cur !== null && cur !== binding.root;
+      cur = getParentElement(cur)
+    ) {
+      if (binding.mapping.get(cur) === undefined) {
+        hidden = cur;
+      }
+    }
+    if (hidden !== null) {
+      $syncParentOf(binding, hidden);
+      return true;
+    }
+  }
+  return false;
+};
+
+type YChild = XmlElement | XmlText | XmlHook;
+
+// The children the Lexical tree mirrors, with their indices in `el`.
+const visibleChildren = (
+  binding: BindingV2,
+  el: XmlElement,
+): {children: YChild[]; indices: number[]} => {
+  const all = el.toArray() as YChild[];
+  const children: YChild[] = [];
+  const indices: number[] = [];
+  for (let i = 0; i < all.length; i++) {
+    if (!isOpaqueYType(binding, all[i])) {
+      children.push(all[i]);
+      indices.push(i);
+    }
+  }
+  return {children, indices};
+};
+
 export const $createOrUpdateNodeFromYElement = (
   el: XmlElement,
   binding: BindingV2,
@@ -97,6 +292,14 @@ export const $createOrUpdateNodeFromYElement = (
   prevSnapshot?: Snapshot,
   computeYChange?: ComputeYChange,
 ): LexicalNode | null => {
+  if (isOpaqueYType(binding, el)) {
+    // Left in Yjs, untouched, and skipped.
+    if (binding.mapping.get(el) !== undefined) {
+      // It was shown until now.
+      $deleteMappingForSubtree(el, binding);
+    }
+    return null;
+  }
   let node = binding.mapping.get(el);
   if (node && keysChanged && keysChanged.size === 0 && !childListChanged) {
     return node;
@@ -236,6 +439,11 @@ export const $createOrUpdateNodeFromYElement = (
           ? Array.from(slotsY.entries())
           : Object.entries(typeMapGetAllSnapshot(slotsY, snapshot));
       for (const [name, slotType] of slotEntries) {
+        if (isOpaqueYType(binding, slotType)) {
+          // Stays in Yjs only. Leaving the name out of yNames drops a stale
+          // local occupant, so the next local edit cannot write it back.
+          continue;
+        }
         yNames.add(name);
         // Names and values are peer-controlled. An entry that would trip
         // $setSlot's invariants is skipped as a silent no-op (the local doc
@@ -387,11 +595,21 @@ const $createOrUpdateTextNodesFromYText = (
   const nodeTypes: string[] = deltas.map(
     delta => delta.attributes.t ?? TextNode.getType(),
   );
+  const registeredNodes = binding.editor._nodes;
+  const unregisteredType = nodeTypes.find(type => !registeredNodes.has(type));
+  if (
+    unregisteredType !== undefined &&
+    isOpaqueNodeType(binding, unregisteredType)
+  ) {
+    // Its element is normally skipped before this point
+    // (hasOpaqueContentAmongText). Skip the run rather than throw if not.
+    binding.mapping.delete(text);
+    return null;
+  }
   const canReuseNodes =
     nodes.length === nodeTypes.length &&
     nodes.every((node, i) => node.getType() === nodeTypes[i]);
   if (!canReuseNodes) {
-    const registeredNodes = binding.editor._nodes;
     nodes = nodeTypes.map(type => {
       const nodeInfo = registeredNodes.get(type);
       if (nodeInfo === undefined) {
@@ -547,6 +765,10 @@ const $updateSlotsYType = (
   for (const name of Array.from(slotsY.keys())) {
     if (!nextNames.has(name)) {
       const removed = slotsY.get(name);
+      if (isOpaqueYType(binding, removed)) {
+        // Never shown here, so its absence from Lexical is not a removal.
+        continue;
+      }
       if (removed !== undefined) {
         $deleteMappingForSubtree(removed, binding);
       }
@@ -780,18 +1002,23 @@ const $equalYTypePNode = (
     // property; leaving it in would make every slotted host compare unequal.
     const yattrs = ytype.getAttributes() as Record<string, unknown>;
     delete yattrs[SLOTS_ATTR_KEY];
-    return (
-      ytype._length === normalizedContent.length &&
-      equalAttrs(yattrs, {
+    if (
+      // Opaque children are not compared, so there can be more Y children.
+      ytype._length < normalizedContent.length ||
+      !equalAttrs(yattrs, {
         ...propertiesToAttributes(lnode, binding),
         ...stateToAttributes(lnode),
-      }) &&
-      $equalSlots(ytype, lnode, binding) &&
-      ytype
-        .toArray()
-        .every((ychild, i) =>
-          $equalYTypePNode(ychild, normalizedContent[i], binding),
-        )
+      }) ||
+      !$equalSlots(ytype, lnode, binding)
+    ) {
+      return false;
+    }
+    const yChildren = visibleChildren(binding, ytype).children;
+    return (
+      yChildren.length === normalizedContent.length &&
+      yChildren.every((ychild, i) =>
+        $equalYTypePNode(ychild, normalizedContent[i], binding),
+      )
     );
   }
   return (
@@ -821,7 +1048,7 @@ const $computeChildEqualityFactor = (
   lnode: LexicalNode,
   binding: BindingV2,
 ): EqualityFactor => {
-  const yChildren = ytype.toArray();
+  const yChildren = visibleChildren(binding, ytype).children;
   const pChildren = normalizeNodeContent(lnode);
   const pChildCnt = pChildren.length;
   const yChildCnt = yChildren.length;
@@ -1045,7 +1272,12 @@ export const $updateYFragment = (
   // update children
   const lChildren = normalizeNodeContent(node);
   const lChildCnt = lChildren.length;
-  const yChildren = yDomFragment.toArray();
+  // Opaque children are left out of the diff, and `yIndices` maps the rest
+  // back to their indices in yDomFragment.
+  const {children: yChildren, indices: yIndices} = visibleChildren(
+    binding,
+    yDomFragment,
+  );
   const yChildCnt = yChildren.length;
   const minCnt = Math.min(lChildCnt, yChildCnt);
   let left = 0;
@@ -1167,9 +1399,9 @@ export const $updateYFragment = (
         );
         right += 1;
       } else {
-        binding.mapping.delete(yDomFragment.get(left));
-        yDomFragment.delete(left, 1);
-        yDomFragment.insert(left, [
+        binding.mapping.delete(yDomFragment.get(yIndices[left]));
+        yDomFragment.delete(yIndices[left], 1);
+        yDomFragment.insert(yIndices[left], [
           $createTypeFromTextOrElementNode(leftL, binding),
         ]);
         left += 1;
@@ -1183,17 +1415,38 @@ export const $updateYFragment = (
     // Only delete the content of the Y.Text to retain remote changes on the same Y.Text object
     yChildren[0].delete(0, yChildren[0].length);
   } else if (yDelLen > 0) {
-    yDomFragment
-      .slice(left, left + yDelLen)
-      .forEach(type => binding.mapping.delete(type));
-    yDomFragment.delete(left, yDelLen);
+    // Delete from the end in runs of adjacent indices, so that opaque
+    // children in between survive and the earlier indices stay valid.
+    for (let end = left + yDelLen; end > left; ) {
+      let start = end - 1;
+      while (start > left && yIndices[start - 1] === yIndices[start] - 1) {
+        start--;
+      }
+      for (let i = start; i < end; i++) {
+        binding.mapping.delete(yChildren[i] as XmlElement | XmlText);
+      }
+      yDomFragment.delete(yIndices[start], end - start);
+      end = start;
+    }
   }
   if (left + right < lChildCnt) {
     const ins = [];
     for (let i = left; i < lChildCnt - right; i++) {
       ins.push($createTypeFromTextOrElementNode(lChildren[i], binding));
     }
-    yDomFragment.insert(left, ins);
+    // Insert right after the preceding visible child, so that new content
+    // (e.g. the second half of a split) stays next to its left neighbour
+    // instead of jumping over an opaque child. With no preceding visible
+    // child, insert before the next one (shifted by the deletions above).
+    let index: number;
+    if (left > 0) {
+      index = yIndices[left - 1] + 1;
+    } else if (right > 0) {
+      index = yIndices[left + yDelLen] - yDelLen;
+    } else {
+      index = yDomFragment.length;
+    }
+    yDomFragment.insert(index, ins);
   }
 };
 

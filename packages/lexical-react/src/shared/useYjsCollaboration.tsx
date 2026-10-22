@@ -31,6 +31,7 @@ import {
   syncYjsChangesToLexicalV2__EXPERIMENTAL,
   syncYjsStateToLexicalV2__EXPERIMENTAL,
   TOGGLE_CONNECT_COMMAND,
+  type UnregisteredNodeTypes,
 } from '@lexical/yjs';
 import {
   $createParagraphNode,
@@ -214,6 +215,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     getXmlElement?: (ydoc: Doc) => XmlElement;
     selectionHighlight?: boolean;
     __shouldBootstrapUnsafe?: boolean;
+    unregisteredNodeTypes?: UnregisteredNodeTypes;
   } = {},
 ): BindingV2 {
   const {
@@ -223,6 +225,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     getXmlElement,
     selectionHighlight = false,
     __shouldBootstrapUnsafe: shouldBootstrap,
+    unregisteredNodeTypes,
   } = options;
 
   // Note: v2 does not support 'reload' event, which is not an actual Yjs event type.
@@ -240,6 +243,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
       excludedProperties,
       getXmlElement,
       rootName,
+      unregisteredNodeTypes,
     }),
   );
 

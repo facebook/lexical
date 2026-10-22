@@ -49,12 +49,19 @@ import {
   type SyncCursorPositionsFn,
   syncLexicalSelectionToYjs,
 } from './SyncCursors';
-import {$createOrUpdateNodeFromYElement, $updateYFragment} from './SyncV2';
+import {
+  $createOrUpdateNodeFromYElement,
+  $syncOpaqueChange,
+  $updateYFragment,
+} from './SyncV2';
 import {
   $getOrInitCollabNodeFromSharedType,
   $moveSelectionToPreviousNode,
   doesSelectionNeedRecovering,
   getNodeTypeFromSharedType,
+  hasUnregisteredNodeTypes,
+  isInOpaqueSharedType,
+  isOpaqueCollabNode,
   SLOTS_ATTR_KEY,
   syncWithTransaction,
 } from './Utils';
@@ -90,6 +97,11 @@ function $syncStateEvent(binding: Binding, event: YMapEvent<any>): boolean {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function $syncEvent(binding: Binding, event: any): void {
+  if (isInOpaqueSharedType(binding, event.target)) {
+    // A change inside content of a node type this editor does not register
+    // stays in Yjs only.
+    return;
+  }
   if (event instanceof YMapEvent && $syncStateEvent(binding, event)) {
     return;
   }
@@ -154,7 +166,9 @@ function $syncEvent(binding: Binding, event: any): void {
 
     if (childListChanged) {
       collabNode.applyChildrenYjsDelta(binding, delta);
-      collabNode.syncChildrenFromYjs(binding);
+      if (!$syncOpaqueTransition(binding, collabNode)) {
+        collabNode.syncChildrenFromYjs(binding);
+      }
     }
   } else if (
     collabNode instanceof CollabTextNode &&
@@ -190,6 +204,40 @@ function $syncEvent(binding: Binding, event: any): void {
   } else {
     invariant(false, 'Expected text, element, or decorator event');
   }
+}
+
+// An element is hidden while it holds content this editor cannot show
+// (isOpaqueCollabNode). When a remote change starts or ends that, re-sync its
+// parent, which drops or creates its Lexical node. Returns whether it did.
+function $syncOpaqueTransition(
+  binding: Binding,
+  collabNode: CollabElementNode,
+): boolean {
+  const parent = collabNode._parent;
+  if (parent === null || !hasUnregisteredNodeTypes(binding)) {
+    return false;
+  }
+  const isShown = collabNode.getNode() !== null;
+  if (isShown !== isOpaqueCollabNode(binding, collabNode, true)) {
+    return false;
+  }
+  if (parent instanceof CollabElementNode) {
+    if (parent._children.includes(collabNode)) {
+      parent.syncChildrenFromYjs(binding);
+    } else {
+      // A slot value of an element host.
+      const hostNode = parent.getNode();
+      if (hostNode !== null) {
+        parent.syncSlotsFromYjs(binding, hostNode);
+      }
+    }
+  } else {
+    const hostNode = parent.getNode();
+    if (hostNode !== null) {
+      parent.syncSlotsFromYjs(binding, hostNode);
+    }
+  }
+  return true;
 }
 
 export function syncYjsChangesToLexical(
@@ -443,6 +491,15 @@ function $syncEventV2(
   event: YEvent<XmlElement | XmlText | YMap<unknown>>,
 ): void {
   const {target} = event;
+  const changedElement =
+    target instanceof XmlElement
+      ? target
+      : target.parent instanceof XmlElement
+        ? target.parent
+        : null;
+  if (changedElement !== null && $syncOpaqueChange(binding, changedElement)) {
+    return;
+  }
   if (target instanceof XmlElement && event instanceof YXmlEvent) {
     $createOrUpdateNodeFromYElement(
       target,

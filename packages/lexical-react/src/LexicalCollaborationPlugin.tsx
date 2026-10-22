@@ -21,6 +21,7 @@ import {
   type ExcludedProperties,
   type Provider,
   type SyncCursorPositionsFn,
+  type UnregisteredNodeTypes,
 } from '@lexical/yjs';
 import {type JSX, useEffect, useRef, useState} from 'react';
 
@@ -80,6 +81,16 @@ type CollaborationPluginProps = {
    * write it into the new root.
    */
   getXmlText?: (doc: Doc) => XmlText;
+  /**
+   * What to do with content of a node type this editor does not register,
+   * written by a collaborator whose build has more node classes (for example
+   * while a new node type rolls out). `'throw'` (the default): applying the
+   * remote change throws `Node <type> is not registered`. `'keep'`: the content
+   * is kept in the shared document, untouched, but is not shown on this
+   * editor, and each such type is reported once through the editor's `onWarn`
+   * handler. Read when the binding is created.
+   */
+  unregisteredNodeTypes?: UnregisteredNodeTypes;
 };
 
 /**
@@ -105,6 +116,7 @@ export function CollaborationPlugin({
   selectionHighlight,
   rootName,
   getXmlText,
+  unregisteredNodeTypes,
 }: CollaborationPluginProps): JSX.Element {
   const isBindingInitialized = useRef(false);
   // The inputs that produced the current Provider. A ref rather than the effect
@@ -193,10 +205,12 @@ export function CollaborationPlugin({
       getXmlText,
       id,
       rootName,
+      unregisteredNodeTypes,
     });
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setBinding(newBinding);
-    // `excludedProperties`, `rootName` and `getXmlText` configure the binding
+    // `excludedProperties`, `rootName`, `getXmlText` and
+    // `unregisteredNodeTypes` configure the binding
     // and are read on the pass that creates it (which is not necessarily the
     // first one -- the effect returns early until the provider exists, so a
     // root that only resolves after mount is still picked up). They are
@@ -333,6 +347,16 @@ type CollaborationPluginV2Props = {
    * write it into the new root.
    */
   getXmlElement?: (doc: Doc) => XmlElement;
+  /**
+   * What to do with content of a node type this editor does not register,
+   * written by a collaborator whose build has more node classes (for example
+   * while a new node type rolls out). `'throw'` (the default): applying the
+   * remote change throws `Node <type> is not registered`. `'keep'`: the content
+   * is kept in the shared document, untouched, but is not shown on this
+   * editor, and each such type is reported once through the editor's `onWarn`
+   * handler. Read when the binding is created.
+   */
+  unregisteredNodeTypes?: UnregisteredNodeTypes;
 };
 
 /**
@@ -357,6 +381,7 @@ export function CollaborationPluginV2__EXPERIMENTAL({
   selectionHighlight,
   rootName,
   getXmlElement,
+  unregisteredNodeTypes,
 }: CollaborationPluginV2Props): JSX.Element {
   const collabContext = useCollaborationContext(username, cursorColor);
   const {yjsDocMap, name, color} = collabContext;
@@ -379,6 +404,7 @@ export function CollaborationPluginV2__EXPERIMENTAL({
       getXmlElement,
       rootName,
       selectionHighlight,
+      unregisteredNodeTypes,
     },
   );
 

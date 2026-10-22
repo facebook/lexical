@@ -36,6 +36,7 @@ import {
   createLexicalNodeFromCollabNode,
   getNodeTypeFromSharedType,
   getPositionFromElementAndOffset,
+  isOpaqueCollabNode,
   spliceString,
   syncPropertiesFromLexical,
 } from './Utils';
@@ -366,7 +367,10 @@ export class CollabElementNode {
     const prevLexicalChildrenKeys = $createChildrenArray(lexicalNode, null);
     const nextLexicalChildrenKeys: NodeKey[] = [];
     const lexicalChildrenKeysLength = prevLexicalChildrenKeys.length;
-    const collabChildren = this._children;
+    // Content this editor cannot show has no Lexical node.
+    const collabChildren = this._children.filter(
+      child => !isOpaqueCollabNode(binding, child),
+    );
     const collabChildrenLength = collabChildren.length;
     const collabNodeMap = binding.collabNodeMap;
     const visitedKeys = new Set();
@@ -626,6 +630,53 @@ export class CollabElementNode {
     const prevEndIndex = prevChildren.length - 1;
     const nextEndIndex = nextChildren.length - 1;
     const collabNodeMap = binding.collabNodeMap;
+    // Lexical child indices skip content this editor cannot show, which
+    // exists only in Yjs. When there is some, `shown` holds the index in
+    // `_children` of each Lexical child, so that indices can be translated
+    // and that content is never deleted.
+    const children = this._children;
+    let shown: number[] | null = null;
+    if (children.some(child => isOpaqueCollabNode(binding, child))) {
+      shown = [];
+      for (let i = 0; i < children.length; i++) {
+        if (!isOpaqueCollabNode(binding, children[i])) {
+          shown.push(i);
+        }
+      }
+    }
+    const toCollabIndex = (lexicalIndex: number) =>
+      shown === null
+        ? lexicalIndex
+        : lexicalIndex < shown.length
+          ? shown[lexicalIndex]
+          : children.length;
+    // New content goes right after the preceding Lexical child, so that it
+    // (e.g. the second half of a split) stays next to its left neighbour
+    // instead of jumping over content this editor cannot show.
+    const toCollabInsertIndex = (lexicalIndex: number) =>
+      shown === null
+        ? lexicalIndex
+        : lexicalIndex > 0
+          ? shown[lexicalIndex - 1] + 1
+          : shown.length > 0
+            ? shown[0]
+            : children.length;
+    const removeShown = (lexicalIndex: number) => {
+      if (shown !== null) {
+        shown.splice(lexicalIndex, 1);
+        for (let i = lexicalIndex; i < shown.length; i++) {
+          shown[i]--;
+        }
+      }
+    };
+    const insertShown = (lexicalIndex: number, collabIndex: number) => {
+      if (shown !== null) {
+        shown.splice(lexicalIndex, 0, collabIndex);
+        for (let i = lexicalIndex + 1; i < shown.length; i++) {
+          shown[i]++;
+        }
+      }
+    };
     let stableKeys: Set<NodeKey> | undefined;
     let prevIndex = 0;
     let nextIndex = 0;
@@ -638,7 +689,7 @@ export class CollabElementNode {
         if (prevKey === nextKey) {
           this._syncChildFromLexical(
             binding,
-            nextIndex,
+            toCollabIndex(nextIndex),
             nextKey,
             prevNodeMap,
             dirtyElements,
@@ -660,7 +711,8 @@ export class CollabElementNode {
 
       if (!stableKeys.has(prevKey)) {
         // Removed, or moved elsewhere (re-created at its new position)
-        this.splice(binding, nextIndex, 1);
+        this.splice(binding, toCollabIndex(nextIndex), 1);
+        removeShown(nextIndex);
         prevIndex++;
       } else if (!stableKeys.has(nextKey)) {
         // Created, or moved here (its old collab node is deleted when
@@ -672,13 +724,15 @@ export class CollabElementNode {
           this,
         );
         collabNodeMap.set(nextKey, collabNode);
-        this.splice(binding, nextIndex, 0, collabNode);
+        const collabIndex = toCollabInsertIndex(nextIndex);
+        this.splice(binding, collabIndex, 0, collabNode);
+        insertShown(nextIndex, collabIndex);
         nextIndex++;
       } else {
         // Both stable, so prevKey === nextKey
         this._syncChildFromLexical(
           binding,
-          nextIndex,
+          toCollabIndex(nextIndex),
           nextKey,
           prevNodeMap,
           dirtyElements,
@@ -702,12 +756,20 @@ export class CollabElementNode {
           nextChildNode,
           this,
         );
-        this.append(collabNode);
+        if (shown === null) {
+          this.append(collabNode);
+        } else {
+          const collabIndex = toCollabInsertIndex(nextIndex);
+          this.splice(binding, collabIndex, 0, collabNode);
+          insertShown(nextIndex, collabIndex);
+        }
         collabNodeMap.set(key, collabNode);
       }
     } else if (removeOldChildren && !appendNewChildren) {
-      for (let i = this._children.length - 1; i >= nextIndex; i--) {
-        this.splice(binding, i, 1);
+      // From the end, so the earlier indices stay valid.
+      const lexicalSize = shown === null ? children.length : shown.length;
+      for (let i = lexicalSize - 1; i >= nextIndex; i--) {
+        this.splice(binding, toCollabIndex(i), 1);
       }
     }
   }

@@ -85,6 +85,7 @@ export type {
   CreateBindingV2Options__EXPERIMENTAL,
   CreateYjsBindingOptions,
   ExcludedProperties,
+  UnregisteredNodeTypes,
 } from './Bindings';
 export {
   createBinding,

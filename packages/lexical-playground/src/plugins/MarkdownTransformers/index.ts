@@ -208,7 +208,8 @@ export const TWEET: ElementTransformer = {
 };
 
 // Very primitive table setup
-const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
+// A row may be indented by up to three spaces and end in spaces and tabs.
+const TABLE_ROW_REG_EXP = /^ {0,3}\|(.+)\|[ \t]*$/;
 
 // Stands in for the `<` of text that reads as a `<br>`, which the text
 // export would escape twice.
@@ -228,12 +229,14 @@ const TABLE_CELL_LINE_BREAK: TextMatchTransformer = {
   export: (node, _, exportFormat) =>
     $isLineBreakNode(node)
       ? '\n'
-      : $isTextNode(node) && !node.hasFormat('code')
-        ? exportFormat(
-            node,
-            node.getTextContent().replace(/<(?=br\s*\/?>)/gi, ESCAPED_LT),
-          )
-        : null,
+      : $isEquationNode(node)
+        ? $exportCellEquation(node)
+        : $isTextNode(node) && !node.hasFormat('code')
+          ? exportFormat(
+              node,
+              node.getTextContent().replace(/<(?=br\s*\/?>)/gi, ESCAPED_LT),
+            )
+          : null,
   // With the backslashes before it, which escape it when there is an odd
   // run of them.
   importRegExp: /(\\*)<br\s*\/?>/i,
@@ -250,31 +253,41 @@ const TABLE_CELL_LINE_BREAK: TextMatchTransformer = {
 };
 
 /**
- * A code block in a table cell, which GFM can't hold, as a code span for
- * each of its lines, which a cell reads back as code.
+ * An equation in a table cell, which holds one line, as an inline one.
  */
-const TABLE_CELL_CODE: ElementTransformer = {
-  dependencies: [CodeNode],
+function $exportCellEquation(node: EquationNode): string {
+  return `$${escapeInlineEquation(node.getEquation().replace(/\s*\n\s*/g, ' '))}$`;
+}
+
+/**
+ * A block GFM's cell can't hold, written as what it can: a code block as a
+ * code span for each of its lines, which a cell reads back as code, and a
+ * block equation as an inline one.
+ */
+const TABLE_CELL_BLOCK: ElementTransformer = {
+  dependencies: [CodeNode, EquationNode],
   export: node =>
-    $isCodeNode(node)
-      ? node
-          .getTextContent()
-          .split('\n')
-          .map(line => {
-            // A loop, as one argument per run would overflow the stack.
-            let longest = 0;
-            for (const [run] of line.matchAll(/`+/g)) {
-              longest = Math.max(longest, run.length);
-            }
-            const fence = '`'.repeat(longest + 1);
-            // A reader strips a space from each end of a span with
-            // something else in it.
-            return line && /^[ `]|[ `]$/.test(line) && /[^ ]/.test(line)
-              ? `${fence} ${line} ${fence}`
-              : line && fence + line + fence;
-          })
-          .join('\n')
-      : null,
+    $isEquationNode(node)
+      ? $exportCellEquation(node)
+      : $isCodeNode(node)
+        ? node
+            .getTextContent()
+            .split('\n')
+            .map(line => {
+              // A loop, as one argument per run would overflow the stack.
+              let longest = 0;
+              for (const [run] of line.matchAll(/`+/g)) {
+                longest = Math.max(longest, run.length);
+              }
+              const fence = '`'.repeat(longest + 1);
+              // A reader strips a space from each end of a span with
+              // something else in it.
+              return line && /^[ `]|[ `]$/.test(line) && /[^ ]/.test(line)
+                ? `${fence} ${line} ${fence}`
+                : line && fence + line + fence;
+            })
+            .join('\n')
+        : null,
   regExp: /(?!)/,
   replace: () => false,
   type: 'element',
@@ -341,8 +354,10 @@ export const TABLE: MultilineElementTransformer = {
     // A nested table is written as its lines, which a cell reads as text.
     const transformers = [
       TABLE_CELL_LINE_BREAK,
-      TABLE_CELL_CODE,
-      ...PLAYGROUND_TRANSFORMERS.filter(t => t !== CODE),
+      TABLE_CELL_BLOCK,
+      ...PLAYGROUND_TRANSFORMERS.filter(
+        t => t !== CODE && t !== BLOCK_EQUATION,
+      ),
     ];
 
     for (const row of node.getChildren()) {

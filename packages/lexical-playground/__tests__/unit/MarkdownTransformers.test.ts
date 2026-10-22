@@ -461,6 +461,32 @@ describe('playground TABLE markdown transformer', () => {
     ]);
   });
 
+  it.each([
+    ['| a |\n| - |\n| x |  ', [[['a']], [['x']]]],
+    ['   | a |\t\n | - |\n  | x |', [[['a']], [['x']]]],
+  ])('reads the padded rows of %j', (markdown, cells) => {
+    using editor = importMarkdown(markdown);
+    expect(editor.read(() => $getRoot().getChildrenSize())).toBe(1);
+    expect(cellTexts(editor)).toEqual(cells);
+  });
+
+  it.each([
+    [() => $createEquationNode('x+y\n= z', false), '$x+y = z$'],
+    [
+      () => $createParagraphNode().append($createEquationNode('a\n b', true)),
+      '$a b$',
+    ],
+  ])('writes an equation in a cell on its line, as %#', ($build, written) => {
+    const markdown = exportTable(() => $cellOf($build() as ElementNode));
+    expect(markdown.split('\n')[2]).toBe(`| ${written} |`);
+    using imported = importMarkdown(markdown);
+    imported.read(() => {
+      const equation = $getRoot().getLastDescendant();
+      assert($isEquationNode(equation), 'The cell must hold an equation');
+      expect(equation.getEquation()).toBe(written.slice(1, -1));
+    });
+  });
+
   it('reads and writes the alignment of a delimiter row', () => {
     const markdown =
       '| a | b | c | d |\n| :-- | :-: | --: | --- |\n| 1 | 2 | 3 | 4 |';

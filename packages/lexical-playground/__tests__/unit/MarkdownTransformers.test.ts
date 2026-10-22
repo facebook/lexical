@@ -511,6 +511,25 @@ describe('playground TABLE markdown transformer', () => {
     });
   });
 
+  it('writes the alignment the paragraphs of a header cell share', () => {
+    const markdown = exportTable(() =>
+      $createTableNode().append(
+        $createTableRowNode().append(
+          $createTableCellNode(TableCellHeaderStates.ROW).append(
+            $createParagraphNode()
+              .setFormat('center')
+              .append($createTextNode('a')),
+          ),
+          $createTableCellNode(TableCellHeaderStates.ROW).append(
+            $createParagraphNode().setFormat('right'),
+            $createParagraphNode(),
+          ),
+        ),
+      ),
+    );
+    expect(markdown.split('\n')[1]).toBe('| :---: | --- |');
+  });
+
   it('reads and writes the alignment of a delimiter row', () => {
     const markdown =
       '| a | b | c | d |\n| :-- | :-: | --: | --- |\n| 1 | 2 | 3 | 4 |';

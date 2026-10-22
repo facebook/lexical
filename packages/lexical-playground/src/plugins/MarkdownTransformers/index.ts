@@ -43,6 +43,7 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
+  $isElementNode,
   $isLineBreakNode,
   $isParagraphNode,
   $isTextNode,
@@ -333,6 +334,19 @@ function $exportTableCell(
     .replaceAll(ESCAPED_LT, '\\<');
 }
 
+/**
+ * A cell's alignment: its own, or else that of its blocks when they share
+ * one, which is what the toolbar sets with the caret in the cell.
+ */
+function $getCellAlign(cell: TableCellNode): ElementFormatType {
+  const blocks = cell.getChildren().filter($isElementNode);
+  const align = blocks.length > 0 ? blocks[0].getFormatType() : '';
+  return (
+    cell.getFormatType() ||
+    (blocks.every(block => block.getFormatType() === align) ? align : '')
+  );
+}
+
 // The alignment a delimiter cell (`:-:`) gives its column, and back.
 const DELIMITER_ALIGN: Record<string, ElementFormatType> = {
   '-': '',
@@ -379,7 +393,7 @@ export const TABLE: MultilineElementTransformer = {
         output.push(
           `| ${cells
             .map(value => {
-              const align = value && value.cell.getFormatType();
+              const align = value && $getCellAlign(value.cell);
               return `${align === 'left' || align === 'center' ? ':' : ''}---${align === 'right' || align === 'center' ? ':' : ''}`;
             })
             .join(' | ')} |`,

@@ -227,6 +227,19 @@ function getCellTransformers(): Transformer[] {
 }
 
 /**
+ * `text` without the spaces and tabs at its ends, which GFM trims from a
+ * cell. The end is trimmed by hand: a regex is quadratic on a long run of
+ * spaces inside.
+ */
+function trimCell(text: string): string {
+  let end = text.length;
+  while (end > 0 && /[ \t]/.test(text[end - 1])) {
+    end--;
+  }
+  return text.slice(0, end).replace(/^[ \t]+/, '');
+}
+
+/**
  * A cell's content as the Markdown of one GFM cell: each newline is a
  * `<br>`, and each pipe is escaped as `\|`, which GFM reads back as a pipe
  * before anything else, even in code.
@@ -235,8 +248,7 @@ function $exportTableCell(
   cell: TableCellNode,
   transformers: Transformer[],
 ): string {
-  return $convertToMarkdownString(transformers, cell)
-    .replace(/^[ \t]+|[ \t]+$/g, '')
+  return trimCell($convertToMarkdownString(transformers, cell))
     .replace(/\|/g, '\\|')
     .replace(/\n/g, '<br>');
 }
@@ -424,8 +436,7 @@ const $createTableCell = (
   // selection alone.
   $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
     ...$generateNodesFromMarkdownString(
-      textContent
-        .replace(/^[ \t]+|[ \t]+$/g, '')
+      trimCell(textContent)
         .replace(/\\\|/g, '|')
         .replace(/<br\s*\/?>/gi, '\n'),
       transformers,

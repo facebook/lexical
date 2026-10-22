@@ -1800,6 +1800,22 @@ describe('@lexical/mdast import/export', () => {
       ).toContain(slashes + 'a');
     });
 
+    it('reads long runs of spaces in a cell in linear time', () => {
+      const spaces = ' '.repeat(1e5);
+      using editor = createEditor(true);
+      editor.update(
+        () =>
+          $convertFromMarkdownString(`| a |\n| - |\n| a<br>b${spaces}c<br>d |`),
+        {discrete: true},
+      );
+      editor.read(() => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        expect(table.getLastChildOrThrow().getTextContent()).toContain(
+          `b${spaces}c`,
+        );
+      });
+    });
+
     it('keeps spaces written as references at the edges of a cell', () => {
       using editor = createEditor(true);
       editor.update(

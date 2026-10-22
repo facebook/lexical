@@ -273,6 +273,21 @@ describe('a character reference', () => {
     },
   );
 
+  it('writes a long run of backslashes in linear time', () => {
+    const slashes = '\\'.repeat(1e5);
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(
+      () =>
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode(slashes))),
+      {discrete: true},
+    );
+    expect(editor.read(() => $convertToMarkdownString(TRANSFORMERS))).toBe(
+      slashes + slashes,
+    );
+  });
+
   it('round-trips text that reads as one', () => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
     editor.update(

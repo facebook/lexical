@@ -219,7 +219,12 @@ function trimEdges(
         value = value.replace(/^[ \t]+/, '');
       }
       if (i === line.length - 1 && end) {
-        value = value.replace(/[ \t]+$/, '');
+        // By hand: a regex is quadratic on a long run of spaces inside.
+        let to = value.length;
+        while (to > 0 && /[ \t]/.test(value[to - 1])) {
+          to--;
+        }
+        value = value.slice(0, to);
       }
       return {...node, value};
     })

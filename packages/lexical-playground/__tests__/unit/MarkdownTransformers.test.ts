@@ -741,6 +741,15 @@ describe('playground TABLE markdown transformer', () => {
     expect(cellTexts(editor)).toEqual([[['h']], [[' a　']]]);
   });
 
+  it('writes and reads long runs of spaces in a cell in linear time', () => {
+    const text = `a${' '.repeat(1e5)}b`;
+    const markdown = exportTable(() =>
+      $cellOf($createParagraphNode().append($createTextNode(text))),
+    );
+    using imported = importMarkdown(markdown);
+    expect(cellTexts(imported)).toEqual([[['h']], [[text]]]);
+  });
+
   it('reads cells with transformers added to PLAYGROUND_TRANSFORMERS later', () => {
     const markdown = ['| h |', '| --- |', '| :) |'].join('\n');
     importMarkdown(markdown).dispose();

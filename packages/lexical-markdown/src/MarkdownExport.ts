@@ -506,12 +506,16 @@ function $exportTextFormat(
     // Text that reads as a character reference keeps its `&` (`\&#65;`).
     // When backslashes are kept as they are, the ones right before it are
     // escaped too, or the last would escape the escape instead.
+    // Each run of backslashes is read once, with the `&` after it, which
+    // keeps a long run linear.
     output = output.replace(
-      /(\\*)&(?=(?:#x?)?\w+;)/gi,
-      (_, backslashes: string) =>
-        (shouldPreserveNewLines
-          ? backslashes.replace(/\\/g, '\\\\')
-          : backslashes) + '\\&',
+      /(\\*)(&(?=(?:#x?)?\w+;))?/gi,
+      (found, backslashes: string, amp: string | undefined) =>
+        amp === undefined
+          ? found
+          : (shouldPreserveNewLines
+              ? backslashes.replace(/\\/g, '\\\\')
+              : backslashes) + '\\&',
     );
   }
 
@@ -531,10 +535,11 @@ function $exportTextFormat(
   } else {
     // Extract leading and trailing whitespaces.
     // CommonMark flanking rules require formatting tags to be adjacent to non-whitespace characters.
-    const match = output.match(/^(\s*)(.*?)(\s*)$/s) || ['', '', output, ''];
-    leadingSpace = match[1];
-    trimmedOutput = match[2];
-    trailingSpace = match[3];
+    // `trim` drops what `\s` matches, in linear time, which a regex for the
+    // three parts is not on a long run of spaces inside.
+    trimmedOutput = output.trim();
+    leadingSpace = output.slice(0, output.length - output.trimStart().length);
+    trailingSpace = output.slice(leadingSpace.length + trimmedOutput.length);
     isWhitespaceOnly = trimmedOutput === '';
   }
 

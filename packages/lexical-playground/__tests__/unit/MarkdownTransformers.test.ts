@@ -50,6 +50,7 @@ import {
   createEditor,
   defineExtension,
   type ElementNode,
+  KEY_ENTER_COMMAND,
   type LexicalEditor,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
@@ -430,6 +431,34 @@ describe('playground TABLE markdown transformer', () => {
     );
     typeMarkdown(editor, '| a | ');
     expect(cellTexts(editor)).toEqual([[['a']]]);
+  });
+
+  it('leaves Enter after a row typed into the editor to insert its line', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [TableMarkdownTestExtension],
+        name: 'TableShortcutTest',
+        register: shortcutEditor =>
+          registerMarkdownShortcuts(shortcutEditor, [TABLE]),
+      }),
+    );
+    typeMarkdown(editor, '| a |');
+    editor.update(
+      () => {
+        editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+      },
+      {discrete: true},
+    );
+    expect(
+      editor.read(() =>
+        $getRoot()
+          .getChildren()
+          .map(node => [node.getType(), node.getTextContent()]),
+      ),
+    ).toEqual([
+      ['paragraph', '| a |'],
+      ['paragraph', ''],
+    ]);
   });
 
   it('reads and writes the alignment of a delimiter row', () => {

@@ -411,8 +411,13 @@ export const TABLE: MultilineElementTransformer = {
     return [true, end];
   },
   regExpStart: TABLE_ROW_REG_EXP,
-  // Called for a row typed into the editor.
+  // Called for a row typed into the editor, which the space typed after it
+  // turns into a table. Enter, which runs every multiline transformer, is
+  // left to insert its line.
   replace: (parentNode, _1, match) => {
+    if (!/\s$/.test(match[0])) {
+      return false;
+    }
     // Header row
     if (isTableDelimiterRow(match[0])) {
       // With no table above it, the line stays text.

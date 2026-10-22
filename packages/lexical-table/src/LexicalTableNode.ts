@@ -370,9 +370,8 @@ export function findStickyScrollbarElements(
 }
 
 const scrollableEditors = new WeakSet<LexicalEditor>();
-// Each editor that warned of a missing theme.tableScrollableWrapper (null),
-// or the root listener that will once it has a root.
-const scrollWarnings = new WeakMap<LexicalEditor, null | (() => void)>();
+// Each editor that warned of a missing theme.tableScrollableWrapper.
+const scrollWarnings = new WeakSet<LexicalEditor>();
 
 export function $isScrollableTablesActive(
   editor: LexicalEditor = $getEditor(),
@@ -401,46 +400,9 @@ export function setScrollableTablesActive(
   active: boolean,
 ): void {
   if (active) {
-    if (
-      __DEV__ &&
-      editor._config.theme.tableScrollableWrapper === undefined &&
-      !scrollWarnings.has(editor)
-    ) {
-      // Only an editor that renders tables needs the class, so this waits
-      // for its first root element.
-      const warn = () =>
-        console.warn(
-          'TableNode: hasHorizontalScroll is active but theme.tableScrollableWrapper is not defined.',
-        );
-      if (editor.getRootElement()) {
-        scrollWarnings.set(editor, null);
-        warn();
-      } else {
-        // Called at once with no root, then with the first one.
-        scrollWarnings.set(
-          editor,
-          editor.registerRootListener(rootElement => {
-            if (rootElement) {
-              cancelScrollWarning(editor);
-              scrollWarnings.set(editor, null);
-              warn();
-            }
-          }),
-        );
-      }
-    }
     scrollableEditors.add(editor);
   } else {
-    cancelScrollWarning(editor);
     scrollableEditors.delete(editor);
-  }
-}
-
-function cancelScrollWarning(editor: LexicalEditor): void {
-  const unregister = scrollWarnings.get(editor);
-  if (unregister) {
-    scrollWarnings.delete(editor);
-    unregister();
   }
 }
 
@@ -542,6 +504,19 @@ export class TableNode extends ElementNode {
     addClassNamesToElement(tableElement, config.theme.table);
     this.updateTableElement(null, tableElement, config);
     if ($isScrollableTablesActive(editor)) {
+      const activeEditor = editor || $getEditor();
+      // Only an editor that renders a table needs the class, so this waits
+      // for its first one.
+      if (
+        __DEV__ &&
+        config.theme.tableScrollableWrapper === undefined &&
+        !scrollWarnings.has(activeEditor)
+      ) {
+        scrollWarnings.add(activeEditor);
+        console.warn(
+          'TableNode: hasHorizontalScroll is active but theme.tableScrollableWrapper is not defined.',
+        );
+      }
       const hasStickyScrollbar = $isStickyScrollbarActive(editor);
       const scrollableWrapper = $createScrollableWrapper(
         tableElement,

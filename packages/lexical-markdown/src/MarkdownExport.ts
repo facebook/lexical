@@ -506,10 +506,10 @@ function $exportTextFormat(
     // Text that reads as a character reference keeps its `&` (`\&#65;`).
     // When backslashes are kept as they are, the ones right before it are
     // escaped too, or the last would escape the escape instead.
-    // Each run of backslashes is read once, with the `&` after it, which
-    // keeps a long run linear.
+    // Each run of backslashes is read once, with the `&` after it or else
+    // alone, which keeps a long run linear.
     output = output.replace(
-      /(\\*)(&(?=(?:#x?)?\w+;))?/gi,
+      /(\\*)(&(?=(?:#x?)?\w+;))|\\+/gi,
       (found, backslashes: string, amp: string | undefined) =>
         amp === undefined
           ? found

@@ -187,13 +187,12 @@ function readPipes(nodes: PhrasingContent[]): PhrasingContent[] {
  */
 function cellLines(cell: TableCell): PhrasingContent[][] {
   const lines: PhrasingContent[][] = [[]];
-  for (const child of cell.children) {
-    const count = voidTags(child, 'br');
-    for (let i = 0; i < count; i++) {
+  // A cell holds no line end, so a break in it at the top is a `<br>`.
+  for (const child of readPipes(cell.children)) {
+    if (child.type === 'break') {
       lines.push([]);
-    }
-    if (count === 0) {
-      lines[lines.length - 1].push(...readPipes([child]));
+    } else {
+      lines[lines.length - 1].push(child);
     }
   }
   // The cell's own edges were trimmed by the parser, and keep what it left.

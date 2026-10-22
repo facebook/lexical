@@ -241,24 +241,8 @@ const TABLE_CELL_LINE_BREAK: TextMatchTransformer = {
           : null,
   importRegExp: /<br\s*\/?>/i,
   regExp: /(?!)/,
-  replace: (textNode, match) => {
-    // An odd run of backslashes before it escapes it. They are in the text
-    // split from before the match, which has yet to read its escapes, as the
-    // end of a node before that is a delimiter. Counted by hand: a regex is
-    // quadratic on a long run.
-    const before = match.index ? textNode.getPreviousSibling() : null;
-    const text = $isTextNode(before) ? before.getTextContent() : '';
-    let start = text.length;
-    while (start > 0 && text[start - 1] === '\\') {
-      start--;
-    }
-    if ((text.length - start) % 2 === 0) {
-      textNode.replace($createLineBreakNode());
-    } else if ($isTextNode(before)) {
-      // The escaping backslash is read here, as the rest of the escape is
-      // in the matched text.
-      before.setTextContent(text.slice(0, -1));
-    }
+  replace: textNode => {
+    textNode.replace($createLineBreakNode());
   },
   type: 'text-match',
 };
@@ -481,11 +465,8 @@ export const TABLE: MultilineElementTransformer = {
       return;
     }
 
-    const matchCells = $mapToTableCells(match[0]);
-
-    if (matchCells == null) {
-      return;
-    }
+    // The regex matched the whole row.
+    const matchCells = $mapToTableCells(match[0])!;
 
     const rows = [matchCells];
     let maxCells = matchCells.length;

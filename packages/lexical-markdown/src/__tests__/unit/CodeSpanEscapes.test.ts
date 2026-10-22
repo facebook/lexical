@@ -77,6 +77,25 @@ describe('a code span', () => {
     },
   );
 
+  it('writes one with many runs of backticks', () => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    const text = '`a'.repeat(2e5);
+    editor.update(
+      () =>
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $createTextNode(text).toggleFormat('code'),
+            ),
+          ),
+      {discrete: true},
+    );
+    expect(editor.read(() => $convertToMarkdownString(TRANSFORMERS))).toBe(
+      '`` ' + text + ' ``',
+    );
+  });
+
   it('pads a span whose ends are line endings', () => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
     editor.update(

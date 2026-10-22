@@ -1072,10 +1072,11 @@ export function getCodeSpanDelimiter(content: string): {
   fence: string;
   padded: string;
 } {
-  const backtickRuns = content.match(/`+/g);
-  const longestRun = backtickRuns
-    ? Math.max(...backtickRuns.map(run => run.length))
-    : 0;
+  // A loop, as one argument per run would overflow the stack.
+  let longestRun = 0;
+  for (const [run] of content.matchAll(/`+/g)) {
+    longestRun = Math.max(longestRun, run.length);
+  }
   const fence = '`'.repeat(longestRun + 1);
   const needsPadding =
     content.length === 0 ||

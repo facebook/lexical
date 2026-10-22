@@ -437,7 +437,7 @@ function cellPhrasing(
         /[\r\n]/.test(space) &&
         (all.startsWith('</template>', at - 11) ||
           all.startsWith('<template data-mdast-child=', at + space.length))
-          ? ''
+          ? space.replace(/[\r\n]/g, '')
           : space,
       );
       if (
@@ -500,8 +500,11 @@ function cellContent(
         );
         return;
       case 'paragraph':
-      case 'tableCell':
         lines.push(phrase((node as Paragraph).children));
+        return;
+      case 'tableCell':
+        // A nested table's cell, which its own export already wrote.
+        lines.push((node as TableCell).children);
         return;
       case 'thematicBreak':
         lines.push([rawHtml('<hr>')]);

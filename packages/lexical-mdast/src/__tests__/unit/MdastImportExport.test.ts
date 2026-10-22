@@ -83,6 +83,7 @@ import {
   MdastCommonMarkExtension,
   MdastExtension,
   MdastHeadingExtension,
+  MdastHorizontalRuleExtension,
   MdastHtmlExtension,
   type MdastNode,
   MdastShadowRootQuoteExtension,
@@ -1114,6 +1115,51 @@ describe('@lexical/mdast import/export', () => {
         ['center', 'right'],
         ['center', 'right'],
       ]);
+    });
+
+    it('escapes the pipes of a nested table once when flattening it', () => {
+      using editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            MdastCommonMarkExtension,
+            MdastTableExtension,
+            MdastHorizontalRuleExtension,
+            configExtension(MdastExtension, {
+              exportRules: [
+                {
+                  $export: () => ({type: 'html', value: '<b>a|b</b>'}),
+                  type: HorizontalRuleNode,
+                },
+              ],
+            }),
+          ],
+          name: '[nested-table-pipes]',
+        }),
+      );
+      editor.update(
+        () => {
+          $convertFromMarkdownString(
+            '| x |\n| - |\n| y |\n\n| h |\n| - |\n| z |',
+          );
+          const [outer, inner] = $getRoot().getChildren<ElementNode>();
+          $assertNodeType(
+            inner.getLastChildOrThrow<ElementNode>().getFirstChild(),
+            $isElementNode,
+          )
+            .clear()
+            .append($createHorizontalRuleNode());
+          $assertNodeType(
+            outer.getLastChildOrThrow<ElementNode>().getFirstChild(),
+            $isElementNode,
+          )
+            .clear()
+            .append(inner);
+        },
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertToMarkdownString())).toBe(
+        '| x                |\n| ---------------- |\n| h<br><b>a\\|b</b> |',
+      );
     });
 
     it('drops the cells of a row past the header, as GFM does', () => {

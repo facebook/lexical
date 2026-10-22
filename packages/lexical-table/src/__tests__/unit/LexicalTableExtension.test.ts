@@ -76,6 +76,13 @@ describe('TableExtension', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     onTestFinished(() => warn.mockRestore());
     using unthemed = buildEditorFromExtensions(TableExtension);
+    const {hasHorizontalScroll} = getExtensionDependencyFromEditor(
+      unthemed,
+      TableExtension,
+    ).output;
+    // Turned off and on again before the root, it still warns once.
+    hasHorizontalScroll.value = false;
+    hasHorizontalScroll.value = true;
     expect(warn).not.toHaveBeenCalled();
     unthemed.setRootElement(document.createElement('div'));
     unthemed.setRootElement(null);
@@ -85,6 +92,18 @@ describe('TableExtension', () => {
         'TableNode: hasHorizontalScroll is active but theme.tableScrollableWrapper is not defined.',
       ],
     ]);
+  });
+
+  it('does not warn of a missing tableScrollableWrapper once scrolling is off', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
+    using unthemed = buildEditorFromExtensions(TableExtension);
+    getExtensionDependencyFromEditor(
+      unthemed,
+      TableExtension,
+    ).output.hasHorizontalScroll.value = false;
+    unthemed.setRootElement(document.createElement('div'));
+    expect(warn).not.toHaveBeenCalled();
   });
 
   it('Creates a table with INSERT_TABLE_COMMAND', () => {

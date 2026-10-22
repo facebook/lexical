@@ -1068,6 +1068,40 @@ describe('MdastHtmlExtension', () => {
       expect(markdown.split('\n')[2]).toBe('| x <span>ab</span> |');
     });
 
+    it('keeps the spaces before a line end beside embedded Markdown on the row', () => {
+      using editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            MdastCommonMarkExtension,
+            MdastTableExtension,
+            MdastHtmlExtension,
+            configExtension(MdastExtension, {
+              exportRules: [
+                {
+                  $export: () =>
+                    rawHtmlBlock(
+                      '<span>Label: \n',
+                      [{type: 'text', value: 'foo'}],
+                      '\n</span>',
+                    ),
+                  type: KeyNode,
+                },
+              ],
+            }),
+          ],
+          name: '[table-template-space]',
+          nodes: [KeyNode],
+        }),
+      );
+      const markdown = exportWithCell(editor, () => [
+        $createParagraphNode().append(
+          $createTextNode('x '),
+          $create(KeyNode).append($createTextNode('k')),
+        ),
+      ]);
+      expect(markdown.split('\n')[2]).toBe('| x <span>Label: foo</span> |');
+    });
+
     it('writes a table with a block element in a cell as HTML', () => {
       using editor = tableCellEditor();
       const markdown = exportWithCell(editor, () => {

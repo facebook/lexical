@@ -542,15 +542,19 @@ function cellContent(
 }
 
 /**
- * The GFM alignment of each column of `table`'s `rows`. GFM aligns columns,
- * not cells: a column takes the alignment that most of its cells have, so
- * aligning one body cell doesn't align its column, or else that of its
- * header cell, the cell the delimiter row is under, so rows inserted into an
- * aligned column don't clear it.
+ * The GFM alignment of each column of `table`, which export writes in its
+ * delimiter row, read from `rows` (all of its rows by default). GFM aligns
+ * columns, not cells: a column takes the alignment most of its cells render
+ * with (their element format, or their paragraphs'), so aligning one body
+ * cell doesn't align its column, or else that of its header cell, the cell
+ * the delimiter row is under, so rows inserted into an aligned column don't
+ * clear it.
+ *
+ * @experimental
  */
-function $alignColumns(
+export function $getTableColumnAlign(
   table: TableNode,
-  rows: readonly TableRowNode[],
+  rows: readonly TableRowNode[] = table.getChildren().filter($isTableRowNode),
 ): AlignType[] {
   // The alignment of each cell in each column.
   const columns: AlignType[][] = [];
@@ -578,17 +582,6 @@ function $alignColumns(
       legacy[i] ||
       null,
   );
-}
-
-/**
- * The GFM alignment of each column of `table`, which export writes in its
- * delimiter row: the alignment most of the column's cells render with
- * (their element format, or their paragraphs'), or else its header cell's.
- *
- * @experimental
- */
-export function $getTableColumnAlign(table: TableNode): AlignType[] {
-  return $alignColumns(table, table.getChildren().filter($isTableRowNode));
 }
 
 /**
@@ -666,7 +659,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     );
   }
   return {
-    align: $alignColumns(node, rows),
+    align: $getTableColumnAlign(node, rows),
     children: lines.map(
       (row): TableRow => ({
         children: row.map(
@@ -688,8 +681,8 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
  * back as a paragraph boundary, or as a line break inside formatting or a
  * link, and a pipe in code, math or HTML is escaped as GFM reads it. A
  * table with a cell GFM can't hold as it is (a list, heading, quote, code
- * or math block, a line end in math or HTML, or a pipe after a backslash
- * in code, math or HTML) is written as an HTML table
+ * or math block, a line end in math or HTML, or a pipe after an odd
+ * run of backslashes in code, math or HTML) is written as an HTML table
  * with Markdown in its cells when the editor has `MdastHtmlExtension`, and
  * otherwise with those blocks flattened into lines. Column alignment is the
  * element format of the column's cells (`TableCellNode.setFormat`),

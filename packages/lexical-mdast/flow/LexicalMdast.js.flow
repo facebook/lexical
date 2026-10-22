@@ -15,7 +15,7 @@ import type {
   LexicalNode,
 } from 'lexical';
 import type {NamedSignalsOutput} from '@lexical/extension';
-import type {TableNode} from '@lexical/table';
+import type {TableNode, TableRowNode} from '@lexical/table';
 
 // mdast / micromark structures stay `unknown` rather than opaque: Flow
 // consumers receive them from untyped remark/unified tooling and construct
@@ -214,6 +214,7 @@ declare export var MdastTableExtension: LexicalExtension<
 >;
 declare export function $getTableColumnAlign(
   table: TableNode,
+  rows?: ReadonlyArray<TableRowNode>,
 ): Array<'left' | 'right' | 'center' | null>;
 declare export var MdastGfmExtension: LexicalExtension<
   ExtensionConfigBase,

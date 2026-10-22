@@ -293,7 +293,7 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
 };
 
 function isRule(node: PhrasingContent | undefined): boolean {
-  return node !== undefined && node.type === 'html' && node.value === '<hr>';
+  return node !== undefined && voidTags(node, 'hr') > 0;
 }
 
 // Fresh nodes, as an exported tree may be edited in place.
@@ -502,25 +502,25 @@ function cellContent(
       case 'definition':
         // Definitions are the document's, and no node exports one.
         return;
+      case 'code':
+        fit.exact = false;
+        for (const value of (node as Code).value.split(/\r?\n|\r/)) {
+          lines.push(value ? phrase([{type: 'inlineCode', value}]) : []);
+        }
+        return;
     }
     if (!('children' in node) || PHRASING_PARENT_RE.test(type)) {
       // Phrasing content exported at the cell's top level (an image, a
       // footnote reference, an inline decorator's fallback) is a line of its
       // own after a block's, and runs on with the phrasing before it.
-      if (type !== 'code') {
-        if (lines[lines.length - 1] !== phrasing) {
-          lines.push((phrasing = []));
-        }
-        phrasing.push(...phrase([node as PhrasingContent]));
-        return;
+      if (lines[lines.length - 1] !== phrasing) {
+        lines.push((phrasing = []));
       }
+      phrasing.push(...phrase([node as PhrasingContent]));
+      return;
     }
     fit.exact = false;
-    if (type === 'code') {
-      for (const value of (node as Code).value.split(/\r?\n|\r/)) {
-        lines.push(value ? phrase([{type: 'inlineCode', value}]) : []);
-      }
-    } else if (type === 'heading') {
+    if (type === 'heading') {
       lines.push(phrase((node as Heading).children));
     } else {
       (node as Parent).children.forEach(visit);

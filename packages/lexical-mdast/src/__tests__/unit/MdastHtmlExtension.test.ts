@@ -11,6 +11,7 @@ import type {BlockContent, Html} from 'mdast';
 import {$createCodeNode} from '@lexical/code-core';
 import {
   buildEditorFromExtensions,
+  HorizontalRuleNode,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
 import {
@@ -941,6 +942,35 @@ describe('MdastHtmlExtension', () => {
       expect(markdown.split('\n')[2]).toMatch(/<hr>/);
     },
   );
+
+  it('writes no <br> beside a rule a node exports as `<hr />` in a table cell', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          MdastCommonMarkExtension,
+          MdastTableExtension,
+          MdastHtmlExtension,
+          MdastHorizontalRuleExtension,
+          configExtension(MdastExtension, {
+            exportRules: [
+              {
+                $export: () => ({type: 'html', value: '<hr />'}),
+                type: HorizontalRuleNode,
+              },
+            ],
+          }),
+        ],
+        name: '[table-rule-html]',
+      }),
+    );
+    editor.update(
+      () => $convertFromMarkdownString('| h |\n| - |\n| a<hr>b |'),
+      {discrete: true},
+    );
+    expect(editor.read(() => $convertToMarkdownString()).split('\n')[2]).toBe(
+      '| a<hr />b |',
+    );
+  });
 
   describe('raw HTML a node exports to in a table cell', () => {
     function tableCellEditor(): LexicalEditorWithDispose {

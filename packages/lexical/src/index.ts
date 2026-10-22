@@ -209,6 +209,8 @@ export {
 export type {
   AbstractStaticNodeConfigRecord,
   BaseStaticNodeConfig,
+  CollabBlockGroupConfig,
+  CollabNodeConfig,
   DOMChildConversion,
   DOMConversion,
   DOMConversionFn,
@@ -417,6 +419,7 @@ export {
   getComposedEventTarget,
   getComposedSchemaFields,
   getComposedStaticRange,
+  getDeclaredCollabConfig,
   getDOMOwnerDocument,
   getDOMSelection,
   getDOMSelectionFromTarget,

@@ -127,6 +127,127 @@ export type SerializedLexicalNode = {
 };
 
 /**
+ * @experimental collab-node-config
+ *
+ * How collaboration bindings store a node class in a shared document,
+ * declared with `$config({collab})`. Lexical itself never reads it: it does
+ * not change the editor, the node's JSON, `importDOM`/`exportDOM` or
+ * `@lexical/yjs`. It is read by `@lexical/y`, the Yjs 14 binding, and by any
+ * other binding that chooses to; a binding ignores the keys it does not
+ * understand.
+ *
+ * Precise semantics:
+ *
+ * - **Storage follows the class, never one instance.** A binding decides a
+ *   node's representation from its class (these declarations, schema
+ *   completeness and slots), never from one instance's field values or
+ *   children. For example a `'line'` instance that holds a block child stays
+ *   a line, and the child is stored as a node inside the line's content.
+ * - **Each key is inherited separately.** A subclass that declares `collab`
+ *   keeps the keys it leaves out from its nearest ancestor that declares
+ *   them (see {@link getDeclaredCollabConfig}).
+ * - **Schema completeness.** `block: 'line'`, a `block` group and
+ *   `inline: 'format'` store only the class's `$config({json})` schema fields
+ *   and its NodeState, so a binding honours them only for a schema-complete
+ *   class: every class from it up to (not including) the declaring class has
+ *   its own `$config()` and none of them hand-writes `exportJSON`,
+ *   `updateFromJSON` or `afterCloneFrom` (a binding may also check that
+ *   instances carry no properties outside the schema). Any other class (a
+ *   legacy subclass of a declaring class, for example) is stored as a
+ *   `'node'`, with its own full JSON.
+ * - **`isInline()` still decides where a node sits.** A binding has to
+ *   reproduce the tree, and Lexical places nodes by `isInline()`, so `inline`
+ *   applies to the instances whose `isInline()` returns true and `block` and
+ *   `content` to the others. The declaration never makes a node inline or
+ *   block. When the two disagree (a class declared `inline: 'format'` whose
+ *   `isInline()` returns false, or a class that computes `isInline()` from a
+ *   field), the instance is stored like any other node in that position: a
+ *   block that declares no `block` is a `'node'`, an inline element that is
+ *   not a `'format'` is an `'element'`. An instance whose `isInline()`
+ *   changes is written again in its new representation, like a node
+ *   replaced by another.
+ * - **A declaration is part of the document format.** Changing a class's
+ *   declaration changes how documents that use the class are stored by the
+ *   bindings that read it: treat it like a change to the node's
+ *   serialization.
+ */
+export interface CollabNodeConfig {
+  /**
+   * How an inline {@link ElementNode} (`isInline()` returns true) is stored.
+   *
+   * - `'element'` (the default): a node with children of its own, stored as
+   *   its own shared element containing them.
+   * - `'format'`: a node that only annotates the text it wraps, the way a
+   *   text format such as bold does (a link, a highlight). A binding may store
+   *   it as a format over those characters, so that wrapping or unwrapping
+   *   text keeps the characters and merges with concurrent typing or
+   *   formatting. Its synchronized value is its schema fields beyond
+   *   ElementNode's plus its NodeState (see schema completeness above). When
+   *   the tree is rebuilt from such a store, adjacent nodes with equal values
+   *   merge, an empty node cannot be represented, and overlapping nodes nest
+   *   with the longest range outermost.
+   */
+  readonly inline?: 'element' | 'format';
+  /**
+   * How a block {@link ElementNode} (`isInline()` returns false) is stored in
+   * the container it sits in. A binding may store a container's declared
+   * blocks in one shared sequence instead of one shared element per block, so
+   * that splitting, joining, retyping or re-indenting a block keeps its
+   * characters and merges with concurrent typing.
+   *
+   * - `'node'` (the default): a node with children of its own, stored as its
+   *   own shared element, and its children by these same rules.
+   * - `'line'`: a block of inline content (a paragraph, a heading, a list
+   *   item). A binding may store its content in its container's sequence,
+   *   followed by a marker that carries its type, its schema fields and its
+   *   NodeState. A block child of a line is stored as a node inside the
+   *   line's content (the line stays a line). A class that declares slots is
+   *   stored as a `'node'`.
+   * - `{mode: 'group', ...}`: a node that only groups consecutive `'line'`
+   *   items (a list). A binding may store no node for it and rebuild it from
+   *   its items' markers, which carry the group's `key` fields: consecutive
+   *   items with equal key fields form one group. With `nested`, an item that
+   *   only holds a nested group of the same class is a nesting level, stored
+   *   as a level on the items rather than as a node. Fields of the group that
+   *   are not in `key`, its NodeState, and the item fields listed in
+   *   `derived` (recomputed from the structure) are not synchronized.
+   *
+   * A binding validates a hint when it uses it (a group needs key fields,
+   * and its items must be lines) and stores the class as a `'node'` when it
+   * cannot honour it. Reading the hints never throws.
+   */
+  readonly block?: 'node' | 'line' | CollabBlockGroupConfig;
+  /**
+   * What a block {@link ElementNode} stored as a `'node'` holds: `'block'`
+   * (lines and other blocks, like a table cell) or `'inline'` (inline content
+   * only, like a code block). A binding may record it when it first stores
+   * the node, so that every reader, including one that does not register the
+   * class, reads the content the same way (for example leftover inline
+   * content of a block container as a paragraph). When undeclared, a binding
+   * decides from the node's children when it first stores it.
+   */
+  readonly content?: 'block' | 'inline';
+}
+
+/**
+ * @experimental collab-node-config
+ *
+ * A node that only groups consecutive `'line'` items. See
+ * {@link CollabNodeConfig.block}.
+ */
+export interface CollabBlockGroupConfig {
+  readonly mode: 'group';
+  /** The `'line'` classes this group holds (lazy, like `$config` nodes). */
+  readonly items: () => readonly Klass<LexicalNode>[];
+  /** Schema fields of the group whose equality decides group membership. */
+  readonly key: readonly string[];
+  /** An item may hold only a nested group of the same class (a level). */
+  readonly nested?: boolean;
+  /** Schema fields of the items that the group recomputes from its structure. */
+  readonly derived?: readonly string[];
+}
+
+/**
  * EXPERIMENTAL
  * The configuration of a node returned by LexicalNode.$config()
  *
@@ -224,6 +345,15 @@ export interface StaticNodeConfigValue<
    * concurrency instead of racing on attribute creation.
    */
   readonly slots?: readonly string[];
+  /**
+   * @experimental collab-node-config
+   *
+   * How collaboration bindings (`@lexical/y`) store this node class in a
+   * shared document. Lexical itself never reads it. See
+   * {@link CollabNodeConfig}; read it with {@link getDeclaredCollabConfig}.
+   * Each key is inherited separately.
+   */
+  readonly collab?: CollabNodeConfig;
   /**
    * The exact superclass of the node. Always name it.
    *

@@ -55,6 +55,8 @@ export class ParagraphNode extends ElementNode {
 
   $config() {
     return this.config('paragraph', {
+      // @experimental A block of inline content (see CollabNodeConfig.block).
+      collab: {block: 'line'},
       extends: ElementNode,
       generated: GENERATED_PARAGRAPH,
       importDOM: {

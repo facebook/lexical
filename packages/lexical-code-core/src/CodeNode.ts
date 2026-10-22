@@ -119,6 +119,9 @@ export class CodeNode extends ElementNode {
 
   $config() {
     return this.config('code', {
+      // @experimental A code block holds inline content only (see
+      // CollabNodeConfig.content).
+      collab: {content: 'inline'},
       extends: ElementNode,
       generated: GENERATED_CODE,
       importDOM: {

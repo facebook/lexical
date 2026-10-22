@@ -81,6 +81,7 @@ import {
   $isEphemeral,
   $isLexicalNode,
   $markEphemeral,
+  type CollabNodeConfig,
   LexicalNode,
   type LexicalParseJSON,
   type LexicalPrivateDOM,
@@ -5486,6 +5487,50 @@ export function* iterStaticNodeConfigChain(
       (declared && config.ownNodeConfig && config.ownNodeConfig.extends) ||
       getSuperclassOf(current);
   }
+}
+
+const collabConfigCache = new WeakMap<Klass<LexicalNode>, CollabNodeConfig>();
+
+/**
+ * @experimental collab-node-config
+ *
+ * Returns the `collab` declarations of a node class (how collaboration
+ * bindings such as `@lexical/y` store it): each key of
+ * {@link CollabNodeConfig} from the nearest class in its config chain that
+ * declares that key (a subclass declaration of a key replaces its ancestors'
+ * for that key only). Keys no class declares are absent. The result depends
+ * on the class only, never on an instance, and is cached per class.
+ *
+ * @param klass The node class
+ * @returns The declared {@link CollabNodeConfig}
+ */
+export function getDeclaredCollabConfig(
+  klass: Klass<LexicalNode>,
+): CollabNodeConfig {
+  let config = collabConfigCache.get(klass);
+  if (config === undefined) {
+    const merged: {
+      -readonly [K in keyof CollabNodeConfig]: CollabNodeConfig[K];
+    } = {};
+    for (const {ownNodeConfig} of iterStaticNodeConfigChain(klass)) {
+      const declared = ownNodeConfig && ownNodeConfig.collab;
+      if (!declared) {
+        continue;
+      }
+      if (merged.inline === undefined && declared.inline !== undefined) {
+        merged.inline = declared.inline;
+      }
+      if (merged.block === undefined && declared.block !== undefined) {
+        merged.block = declared.block;
+      }
+      if (merged.content === undefined && declared.content !== undefined) {
+        merged.content = declared.content;
+      }
+    }
+    config = Object.freeze(merged);
+    collabConfigCache.set(klass, config);
+  }
+  return config;
 }
 
 /**

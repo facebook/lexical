@@ -546,6 +546,91 @@ holds current versions. This matters only for a node reference you kept across
 a mutation and then exported by hand.
 
 
+### Collaboration storage with `collab` {#collab}
+
+:::warning Experimental
+`collab` is experimental, and so is the binding that reads it.
+:::
+
+The `collab` key of `$config` describes **how collaboration bindings store a
+node class in a shared document**. It is read by `@lexical/y`, the
+collaboration binding for Yjs 14. Lexical itself never reads it: the key does
+not change the editor, the node's JSON, HTML import or export, or the Yjs 13
+binding `@lexical/yjs`. An application that does not use `@lexical/y` can
+ignore it.
+
+A binding that keeps one shared element per Lexical node turns structural
+edits into deletes and re-inserts. Text that a collaborator types into a
+paragraph while you split it, or into a link while you remove it, can then be
+lost. When a binding knows that a paragraph is only a run of inline content,
+or that a link only annotates the characters it wraps, it can store their
+characters once. Splitting the paragraph or unlinking the text then keeps
+those characters and merges with concurrent typing. `collab` is how a class
+says what it is:
+
+| Key | Values | Meaning |
+| -- | -- | -- |
+| `inline` | `'element'` (default), `'format'` | For an inline element: a `'format'` only annotates the text it wraps (a link), so a binding may store it as a format over those characters. |
+| `block` | `'node'` (default), `'line'`, `{mode: 'group', items, key, nested?, derived?}` | For a block element: a `'line'` is a block of inline content (a paragraph), stored as its content followed by a marker. A group only groups consecutive lines (a list) and is rebuilt from them: consecutive items with equal `key` fields form one group, `nested` lets an item that only holds a nested group be a level, and `derived` item fields are recomputed rather than stored. |
+| `content` | `'block'`, `'inline'` | For a block element stored as a `'node'`: whether it holds blocks (a table cell) or inline content only (a code block). |
+
+The built-in nodes declare:
+
+| Class | Declaration |
+| -- | -- |
+| `ParagraphNode`, `HeadingNode`, `QuoteNode`, `ListItemNode` | `collab: {block: 'line'}` |
+| `ListNode` | `collab: {block: {mode: 'group', items: () => [ListItemNode], key: ['listType', 'start'], nested: true, derived: ['value', 'indent']}}` |
+| `LinkNode` (and so `AutoLinkNode`) | `collab: {inline: 'format'}` |
+| `CodeNode` | `collab: {content: 'inline'}` |
+
+Every other node is stored as a node of its own, as it would be without the
+key. A custom node opts in the same way:
+
+```ts
+class CalloutNode extends ElementNode {
+  $config() {
+    return this.config('callout', {
+      // A block of inline content, like a paragraph.
+      collab: {block: 'line'},
+      extends: ElementNode,
+      json: calloutSchema,
+    });
+  }
+}
+```
+
+The rules a binding follows:
+
+- **Storage follows the class, never one instance.** A binding decides a
+  node's representation from its class: the declarations, schema
+  completeness and slots. One instance's field values or children never
+  change it. A `'line'` that holds a block child stays a line, and the child
+  is stored as a node inside the line's content.
+- **Each key is inherited separately.** A subclass that declares `collab`
+  keeps the keys it leaves out. `getDeclaredCollabConfig(klass)` returns the
+  merged result.
+- **Schema completeness.** A line, a group or a format stores only the
+  class's schema fields (`json`) and its NodeState. A binding honours these
+  declarations only for a class whose properties are all there: the class and
+  every class between it and the declaring class have their own `$config()`,
+  and none of them hand-writes `exportJSON`, `updateFromJSON` or
+  `afterCloneFrom`. Any other class, for example a legacy subclass of
+  `LinkNode` with a hand-written `exportJSON`, is stored as a node with its
+  full JSON, so nothing it holds is dropped. A slotted class is stored as a
+  node too.
+- **`isInline()` still decides where a node sits.** A binding has to
+  reproduce the tree, so `inline` applies to instances whose `isInline()`
+  returns true, and `block` and `content` to the others. The declaration
+  never makes a node inline or block. A class declared `inline: 'format'`
+  whose `isInline()` returns false is stored like any other block in that
+  position (a node), and a class that computes `isInline()` from a field is
+  written again in its new form when the field changes. As with a moved
+  block, text that a collaborator types inside the node during that change
+  lands next to it.
+- **The declaration is part of the document format.** Changing it changes
+  how `@lexical/y` stores documents that use the class, so treat it like a
+  change to the node's JSON.
+
 ### Versioning & Breaking Changes
 
 Serialized documents outlive the code that wrote them, so avoid breaking

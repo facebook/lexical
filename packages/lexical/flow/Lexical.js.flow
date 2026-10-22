@@ -2290,6 +2290,43 @@ declare export function setterDefaultOf(
   key: string,
 ): unknown;
 
+/**
+ * @experimental collab-node-config
+ *
+ * How collaboration bindings (`@lexical/y`) store a node class in a shared
+ * document, declared with `$config({collab})`. Lexical itself never reads it.
+ * Storage follows the class, never one instance; each key is inherited
+ * separately; `isInline()` still decides where a node sits.
+ */
+export interface CollabNodeConfig {
+  readonly inline?: 'element' | 'format';
+  readonly block?: 'node' | 'line' | CollabBlockGroupConfig;
+  readonly content?: 'block' | 'inline';
+}
+
+/**
+ * @experimental collab-node-config
+ *
+ * A node that only groups consecutive `'line'` items (a list).
+ */
+export interface CollabBlockGroupConfig {
+  readonly mode: 'group';
+  readonly items: () => ReadonlyArray<Class<LexicalNode>>;
+  readonly key: ReadonlyArray<string>;
+  readonly nested?: boolean;
+  readonly derived?: ReadonlyArray<string>;
+}
+
+/**
+ * @experimental collab-node-config
+ *
+ * The collaboration hints of a node class, each key from the nearest class
+ * in its config chain that declares it.
+ */
+declare export function getDeclaredCollabConfig(
+  klass: Class<LexicalNode>,
+): CollabNodeConfig;
+
 export interface StaticNodeConfigValue<
   T extends LexicalNode,
   Type extends string,
@@ -2302,6 +2339,7 @@ export interface StaticNodeConfigValue<
   readonly generated?: GeneratedJSONFactory;
   readonly stateConfigs?: ReadonlyArray<RequiredNodeStateConfig>;
   readonly slots?: ReadonlyArray<string>;
+  readonly collab?: CollabNodeConfig;
   readonly extends?: Class<LexicalNode>;
 }
 

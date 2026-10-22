@@ -42,12 +42,10 @@ const DEFAULT_SELECTION_STATE: ToolbarSelectionState = {
 
 function $readSelectionState(): ToolbarSelectionState {
   const selection = $getSelection();
+  // A multi-cell TableSelection still edits its table.
+  const isInTable = $getSelectedTable() !== null;
   if (!$isRangeSelection(selection)) {
-    // A multi-cell TableSelection still edits its table.
-    const isInTable = $getSelectedTable() !== null;
-    return isInTable
-      ? {...DEFAULT_SELECTION_STATE, isInTable}
-      : DEFAULT_SELECTION_STATE;
+    return {...DEFAULT_SELECTION_STATE, isInTable};
   }
   const anchorNode = selection.anchor.getNode();
   // Deleting all content can leave the selection on the root, which has no
@@ -66,7 +64,7 @@ function $readSelectionState(): ToolbarSelectionState {
     blockType,
     isBold: selection.hasFormat('bold'),
     isCode: selection.hasFormat('code'),
-    isInTable: $getSelectedTable() !== null,
+    isInTable,
     isItalic: selection.hasFormat('italic'),
   };
 }

@@ -15,7 +15,7 @@ import {
   CodeNode,
 } from '@lexical/code-core';
 import {buildEditorFromExtensions} from '@lexical/extension';
-import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
+import {$createLinkNode, LinkNode} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
@@ -424,70 +424,10 @@ describe('playground TABLE markdown transformer', () => {
 
   it('reads each spelling of <br> back', () => {
     using editor = importMarkdown(
-      ['| a |', '| --- |', '| x <br/> y<BR /><br>z |'].join('\n'),
+      ['| a |', '| --- |', '| x<br/>y<BR /><br>z |'].join('\n'),
     );
     expect(cellTexts(editor)).toEqual([[['a']], [['x\ny', 'z']]]);
   });
-
-  it.each([
-    ['**a<br>b**', 'bold'],
-    ['*a<br>b*', 'italic'],
-    ['~~a<br>b~~', 'strikethrough'],
-  ] as const)('keeps %j whole in a cell', (body, format) => {
-    using editor = importMarkdown(
-      ['| h |', '| --- |', `| ${body} |`].join('\n'),
-    );
-    expect(cellTexts(editor)).toEqual([[['h']], [['a\nb']]]);
-    editor.read(() => {
-      const texts = $getRoot()
-        .getLastChildOrThrow<ElementNode>()
-        .getAllTextNodes();
-      expect(texts.slice(-2).map(text => text.hasFormat(format))).toEqual([
-        true,
-        true,
-      ]);
-    });
-  });
-
-  it.each([
-    ['*a<br>*', 'italic', 'a\n'],
-    ['**<br>a**', 'bold', '\na'],
-  ] as const)('reads %j as GFM does', (body, format, text) => {
-    using editor = importMarkdown(
-      ['| h |', '| --- |', `| ${body} |`].join('\n'),
-    );
-    expect(cellTexts(editor)).toEqual([[['h']], [[text]]]);
-    editor.read(() => {
-      const [a] = $getRoot()
-        .getLastChildOrThrow<ElementNode>()
-        .getAllTextNodes()
-        .filter(node => node.getTextContent() === 'a');
-      expect(a.hasFormat(format)).toBe(true);
-    });
-  });
-
-  it.each([
-    ['**a<br># b**', 'bold', '# b'],
-    ['*a<br>- b*', 'italic', '- b'],
-    ['_a<br>1. b_', 'italic', '1. b'],
-  ] as const)(
-    'keeps %j whole before block-looking text',
-    (body, format, text) => {
-      using editor = importMarkdown(
-        ['| h |', '| --- |', `| ${body} |`].join('\n'),
-      );
-      expect(cellTexts(editor)).toEqual([[['h']], [[`a\n${text}`]]]);
-      editor.read(() => {
-        const texts = $getRoot()
-          .getLastChildOrThrow<ElementNode>()
-          .getAllTextNodes();
-        expect(texts.slice(-2).map(node => node.hasFormat(format))).toEqual([
-          true,
-          true,
-        ]);
-      });
-    },
-  );
 
   it.each([
     ['5*<br># b', ['5*', 'b']],
@@ -524,17 +464,6 @@ describe('playground TABLE markdown transformer', () => {
     );
   });
 
-  it('keeps a link whole before block-looking text', () => {
-    using editor = importMarkdown(
-      ['| h |', '| --- |', '| [a<br># b](https://example.com) |'].join('\n'),
-    );
-    editor.read(() => {
-      const link = $getRoot().getLastDescendant()?.getParent();
-      assert($isLinkNode(link), 'The cell must hold a link');
-      expect(link.getTextContent()).toBe('a\n# b');
-    });
-  });
-
   it('still reads a block after a paragraph in a cell', () => {
     using editor = importMarkdown(
       ['| h |', '| --- |', '| **a** b<br># c |'].join('\n'),
@@ -550,95 +479,6 @@ describe('playground TABLE markdown transformer', () => {
       ['| h |', '| --- |', `| ${body} |`].join('\n'),
     );
     expect(cellTexts(editor)).toEqual([[['h']], [[cell]]]);
-  });
-
-  it('keeps a line break in an inline equation in a cell', () => {
-    using editor = importMarkdown(
-      ['| h |', '| --- |', '| $a<br>b$ |'].join('\n'),
-    );
-    editor.read(() => {
-      const equation = $getRoot().getLastDescendant();
-      assert($isEquationNode(equation), 'The cell must hold an equation');
-      expect(equation.getEquation()).toBe('a\nb');
-    });
-  });
-
-  it('keeps a line break in an inline equation with the mark in it', () => {
-    using editor = importMarkdown(
-      ['| h |', '| --- |', '| $a&#8192;<br>b$ c\u2000<br>d |'].join('\n'),
-    );
-    editor.read(() => {
-      const paragraph = $getRoot().getLastDescendant()?.getParent();
-      assert($isElementNode(paragraph), 'The cell must hold a paragraph');
-      expect(
-        paragraph
-          .getChildren()
-          .map(node =>
-            $isEquationNode(node) ? node.getEquation() : node.getTextContent(),
-          ),
-      ).toEqual(['a&#8192;\nb', ' c\u2000', '\n', 'd']);
-    });
-  });
-
-  it('keeps a link with a <br> in its text whole', () => {
-    using editor = importMarkdown(
-      ['| h |', '| --- |', '| [a<br>b](https://example.com) |'].join('\n'),
-    );
-    expect(cellTexts(editor)).toEqual([[['h']], [['a\nb']]]);
-    editor.read(() => {
-      const link = $getRoot().getLastDescendant()?.getParent();
-      assert($isLinkNode(link), 'The cell must hold a link');
-      expect(link.getTextContent()).toBe('a\nb');
-    });
-  });
-
-  it.each(['`<br>`', '`a<br>b` c'])(
-    'reads a <br> in a code span as code: %j',
-    body => {
-      using editor = importMarkdown(
-        ['| h |', '| --- |', `| ${body} |`].join('\n'),
-      );
-      expect(cellTexts(editor)).toEqual([[['h']], [[body.replace(/`/g, '')]]]);
-      expect(editor.read(() => $convertToMarkdownString([TABLE]))).toBe(
-        ['| h |', '| --- |', `| ${body} |`].join('\n'),
-      );
-    },
-  );
-
-  it.each([
-    ['one\\ntwo', [['one\ntwo']]],
-    ['one\\n\\ntwo', [['one', 'two']]],
-    ['[a](http://x)\\nb', [['a\nb']]],
-    ['costs $5\\nb', [['costs $5\nb']]],
-    ['costs $5\\nb $3', [['costs $5\nb $3']]],
-  ])('reads the legacy \\n in %j as a line break', (body, cell) => {
-    using editor = importMarkdown(
-      ['| h |', '| --- |', `| ${body} |`].join('\n'),
-    );
-    expect(cellTexts(editor)).toEqual([[['h']], cell]);
-  });
-
-  it.each([
-    ['$\\nabla f$', '\\nabla f'],
-    ['[x](http://a.com/\\n)', 'http://a.com/\\n'],
-    ['![x](a\\n.png)', 'a\\n.png'],
-  ])('reads the \\n in %j as itself', (body, value) => {
-    using editor = importMarkdown(
-      ['| h |', '| --- |', `| ${body} |`].join('\n'),
-    );
-    editor.read(() => {
-      const node = $getRoot().getLastDescendant()?.getParent();
-      const inline = $isLinkNode(node) ? node : $getRoot().getLastDescendant();
-      expect(
-        $isEquationNode(inline)
-          ? inline.getEquation()
-          : $isLinkNode(inline)
-            ? inline.getURL()
-            : $isImageNode(inline)
-              ? inline.getSrc()
-              : null,
-      ).toBe(value);
-    });
   });
 
   it('writes a hard line break marked with a backslash as a bare <br>', () => {
@@ -677,7 +517,7 @@ describe('playground TABLE markdown transformer', () => {
     );
   });
 
-  it.each(['<br>', 'a\\|b', 'a\\\\|b', 'a|b\\', '\\<br>', '|q|'])(
+  it.each(['a\\|b', 'a\\\\|b', 'a|b\\', '|q|'])(
     'round-trips the text %j in a cell',
     text => {
       const markdown = exportTable(() =>
@@ -691,8 +531,8 @@ describe('playground TABLE markdown transformer', () => {
     },
   );
 
-  it.each(['a\\|b', 'a\\\\|b', 'a\\\\\\|b', 'a\\<br>b'])(
-    'round-trips code %j with a backslash before a pipe or <br>',
+  it.each(['a\\|b', 'a\\\\|b', 'a\\\\\\|b'])(
+    'round-trips code %j with a backslash before a pipe',
     code => {
       const markdown = exportTable(() =>
         $cellOf(
@@ -708,166 +548,6 @@ describe('playground TABLE markdown transformer', () => {
       );
     },
   );
-
-  it('splits code before a backslash and pipe with an empty comment', () => {
-    const markdown = exportTable(() =>
-      $cellOf(
-        $createParagraphNode().append(
-          $createTextNode('a\\|b').toggleFormat('code'),
-        ),
-      ),
-    );
-    expect(markdown.split('\n')[2]).toBe('| `a\\`<!---->`\\|b` |');
-  });
-
-  it.each(['**a&#12288;&#8287;&#8201;<br>b**', '**a\u3000\u205f\u2009<br>b**'])(
-    'keeps %j whole with the old line-break marks in it',
-    body => {
-      using editor = importMarkdown(
-        ['| h |', '| --- |', `| ${body} |`].join('\n'),
-      );
-      expect(cellTexts(editor)).toEqual([
-        [['h']],
-        [['a\u3000\u205f\u2009\nb']],
-      ]);
-      editor.read(() => {
-        const texts = $getRoot()
-          .getLastChildOrThrow<ElementNode>()
-          .getAllTextNodes();
-        expect(texts.slice(-2).map(node => node.hasFormat('bold'))).toEqual([
-          true,
-          true,
-        ]);
-      });
-    },
-  );
-
-  it.each([
-    ['``a\\`<!---->`\\|b``', 'a\\`<!---->`|b'],
-    ['`a\\``<!---->``\\|b`', 'a\\``<!---->``|b'],
-  ])('keeps the comment in code %j that export did not split', (body, code) => {
-    using editor = importMarkdown(
-      ['| h |', '| --- |', `| ${body} |`].join('\n'),
-    );
-    expect(cellTexts(editor)).toEqual([[['h']], [[code]]]);
-  });
-
-  it.each(['``\\|``', '``a``', '``a`` b'])(
-    'round-trips code %j that needs a long code span',
-    code => {
-      const markdown = exportTable(() =>
-        $cellOf(
-          $createParagraphNode().append(
-            $createTextNode(code).toggleFormat('code'),
-          ),
-        ),
-      );
-      using imported = importMarkdown(markdown);
-      expect(cellTexts(imported)).toEqual([[['h']], [[code]]]);
-      expect(imported.read(() => $convertToMarkdownString([TABLE]))).toBe(
-        markdown,
-      );
-    },
-  );
-
-  it('reads a code span that opens a line after a <br> as inline code', () => {
-    using editor = importMarkdown(
-      ['| h |', '| --- |', '| # a<br>``` ``b`` ``` c |'].join('\n'),
-    );
-    expect(cellTexts(editor)).toEqual([[['h']], [['a', '``b`` c']]]);
-  });
-
-  it.each([
-    '**a\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a<br>b**',
-    '**a&#8192;&#8193;<br>b\u2000c**',
-  ])('keeps %j whole whatever spaces it holds', body => {
-    using editor = importMarkdown(
-      ['| h |', '| --- |', `| ${body} |`].join('\n'),
-    );
-    const [, [[text]]] = cellTexts(editor);
-    expect(text.split('\n')).toHaveLength(2);
-    editor.read(() => {
-      const texts = $getRoot()
-        .getLastChildOrThrow<ElementNode>()
-        .getAllTextNodes();
-      expect(texts.slice(1).every(node => node.hasFormat('bold'))).toBe(true);
-    });
-  });
-
-  it('keeps a link whole whatever spaces it holds', () => {
-    using editor = importMarkdown(
-      [
-        '| h |',
-        '| --- |',
-        '| [a\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a<br>b](https://example.com) |',
-      ].join('\n'),
-    );
-    editor.read(() => {
-      const link = $getRoot().getLastDescendant()?.getParent();
-      assert($isLinkNode(link), 'The cell must hold a link');
-      expect(link.getTextContent()).toBe(
-        'a\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\nb',
-      );
-    });
-  });
-
-  it.each([
-    ['**c<br># d**', false],
-    ['[c<br># d](https://example.com)', true],
-  ])('keeps %j whole after an image with a <br> in its alt', (body, link) => {
-    using editor = importMarkdown(
-      ['| h |', '| --- |', `| ![a<br>b](image.png) ${body} |`].join('\n'),
-    );
-    editor.read(() => {
-      const paragraph = $getRoot().getLastDescendant()?.getParent();
-      assert($isElementNode(paragraph), 'The cell must hold the text');
-      const image = $getRoot()
-        .getLastChildOrThrow<ElementNode>()
-        .getAllTextNodes();
-      expect(image.slice(1).map(node => node.getTextContent())).toEqual([
-        ' ',
-        'c',
-        '# d',
-      ]);
-      if (link) {
-        assert($isLinkNode(paragraph), 'The text must be in a link');
-      } else {
-        expect(image.slice(2).every(node => node.hasFormat('bold'))).toBe(true);
-      }
-    });
-  });
-
-  it('keeps a <br> in an image alt as written', () => {
-    using editor = importMarkdown(
-      ['| h |', '| --- |', '| ![a<br>b](image.png) |'].join('\n'),
-    );
-    editor.read(() => {
-      const image = $getRoot().getLastDescendant();
-      assert($isImageNode(image), 'The cell must hold an image');
-      expect(image.getAltText()).toBe('a<br>b');
-    });
-  });
-
-  it('keeps a line break in an equation whatever spaces a cell holds', () => {
-    using editor = importMarkdown(
-      [
-        '| h |',
-        '| --- |',
-        '| $a<br>b$ %s |'.replace(
-          '%s',
-          '\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a',
-        ),
-      ].join('\n'),
-    );
-    editor.read(() => {
-      const equation = $getRoot()
-        .getLastChildOrThrow<ElementNode>()
-        .getLastDescendant()
-        ?.getPreviousSibling();
-      assert($isEquationNode(equation), 'The cell must hold an equation');
-      expect(equation.getEquation()).toBe('a\nb');
-    });
-  });
 
   it.each([
     ['````<br>a<br>````', 'a'],
@@ -889,13 +569,6 @@ describe('playground TABLE markdown transformer', () => {
     });
   });
 
-  it('keeps two code spans with a comment between them apart', () => {
-    using editor = importMarkdown(
-      ['| h |', '| --- |', '| `a`<!---->`b` |'].join('\n'),
-    );
-    expect(cellTexts(editor)).toEqual([[['h']], [['a<!---->b']]]);
-  });
-
   it('reads a list after an unopened ** before a <br>', () => {
     using editor = importMarkdown(
       ['| h |', '| --- |', '| x **<br>- y** |'].join('\n'),
@@ -903,71 +576,13 @@ describe('playground TABLE markdown transformer', () => {
     expect(cellTexts(editor)).toEqual([[['h']], [['x **', 'y**']]]);
   });
 
-  it('keeps a <br> in a link title and an image src as written', () => {
-    using editor = importMarkdown(
-      [
-        '| h |',
-        '| --- |',
-        '| [a](https://e.com "t<br>u") ![b](x<br>y.png) |',
-      ].join('\n'),
-    );
-    editor.read(() => {
-      const [link, , image] = $getRoot()
-        .getLastChildOrThrow<ElementNode>()
-        .getLastChildOrThrow<ElementNode>()
-        .getFirstChildOrThrow<ElementNode>()
-        .getFirstChildOrThrow<ElementNode>()
-        .getChildren();
-      assert($isLinkNode(link), 'The cell must hold a link');
-      assert($isImageNode(image), 'The cell must hold an image');
-      expect([link.getTitle(), image.getSrc()]).toEqual([
-        't<br>u',
-        'x<br>y.png',
-      ]);
-    });
-  });
-
-  it('keeps bold whole across a line that looks like a fence', () => {
-    using editor = importMarkdown(
-      ['| h |', '| --- |', '| **a<br>``` b<br>c** |'].join('\n'),
-    );
-    expect(cellTexts(editor)).toEqual([[['h']], [['a\n``` b\nc']]]);
-    editor.read(() => {
-      const texts = $getRoot()
-        .getLastChildOrThrow<ElementNode>()
-        .getAllTextNodes();
-      expect(texts.slice(1).every(node => node.hasFormat('bold'))).toBe(true);
-    });
-  });
-
-  it('keeps bold whole when the cell holds every private-use character', () => {
-    let taken = '           ';
-    for (let code = 0xe000; code <= 0xf8ff; code++) {
-      taken += String.fromCharCode(code);
-    }
-    using editor = importMarkdown(
-      ['| h |', '| --- |', `| ${taken} **a<br>b** |`].join('\n'),
-    );
-    editor.read(() => {
-      const texts = $getRoot()
-        .getLastChildOrThrow<ElementNode>()
-        .getAllTextNodes();
-      expect(texts.slice(-2).map(node => node.getTextContent())).toEqual([
-        'a',
-        'b',
-      ]);
-      expect(texts.slice(-2).every(node => node.hasFormat('bold'))).toBe(true);
-    });
-  });
-
   it.each([
     'const x = `a\nb`;',
     '`a\nb`',
     '``a\nb``',
     'x `a\n\nb` y',
-    'const x = `a<br>b`;',
     'x `a\\|b` y',
-    'a\\|b\\\\|c\\<br>d',
+    'a\\|b\\\\|c',
     'if x:\n  print(x)\n\treturn',
     '"""a  \nb"""',
     'x\\',

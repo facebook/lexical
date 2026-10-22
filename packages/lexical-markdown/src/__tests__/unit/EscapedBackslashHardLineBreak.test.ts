@@ -70,6 +70,13 @@ describe('escaped backslash at end of line', () => {
     expect(normalizeMarkdown(TWO + '\nbar', true)).toBe(TWO + ' bar');
   });
 
+  it.each(['foo  \r\nbar', 'foo\\\rbar'])(
+    'reads a hard line break before a CR line ending in %j',
+    markdown => {
+      expect(importText(markdown)).toBe('foo\nbar');
+    },
+  );
+
   it('keeps a real hard line break unmerged', () => {
     expect(normalizeMarkdown(ONE + '\nbar', true)).toBe(ONE + '\nbar');
   });

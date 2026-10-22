@@ -130,10 +130,11 @@ export function $importTextTransformers(
         );
       } else if (
         result.matchedNode !== result.transformedNode &&
-        result.matchedNode.getTextContent() !== foundTextMatch!.match[0]
+        result.matchedNode.getTextContentSize() <
+          foundTextMatch!.match[0].length
       ) {
         // One that kept part of it as text, such as the `[` before a link,
-        // leaves that part to be read.
+        // leaves that part to be read. It is shorter, so this ends.
         $importTextTransformers(
           result.matchedNode,
           textFormatTransformersIndex,

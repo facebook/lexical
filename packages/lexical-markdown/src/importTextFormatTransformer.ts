@@ -182,7 +182,7 @@ function scanCodeSpans(text: string): {
     let content = text.slice(opener.index + opener.length, closer.index);
     // A line ending reads as a space here, so a span of only spaces and
     // line endings keeps its ends.
-    if (/^[ \r\n][^]*[ \r\n]$/.test(content) && /[^ \r\n]/.test(content)) {
+    if (/^[ \n][^]*[ \n]$/.test(content) && /[^ \n]/.test(content)) {
       content = content.slice(1, -1);
     }
 

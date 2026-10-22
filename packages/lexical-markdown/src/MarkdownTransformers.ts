@@ -48,7 +48,12 @@ import {
   type TextNode,
 } from 'lexical';
 
-import {$isEmptyParagraph, isCharacterReference, unescapeText} from './utils';
+import {
+  $isEmptyParagraph,
+  isCharacterReference,
+  isEscaped,
+  unescapeText,
+} from './utils';
 
 export type Transformer =
   | ElementTransformer
@@ -1263,17 +1268,33 @@ export const LINK: TextMatchTransformer = {
     const linkTitle =
       rawLinkTitle != null ? unescapeText(rawLinkTitle) : undefined;
     const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
-    const openBracketAmount = linkText.split('[').length - 1;
-    const closeBracketAmount = linkText.split(']').length - 1;
-    let parsedLinkText = linkText;
-    let outsideLinkText = '';
-    if (openBracketAmount < closeBracketAmount) {
+    // The link's text starts after the last `[` that no `]` after it
+    // closes, as CommonMark matches brackets, and what is before it stays
+    // text. An escaped bracket is text: one escaping the closing `]` leaves
+    // no link, as does an inner `]` that closes the first `[`.
+    if (isEscaped(linkText, linkText.length)) {
       return;
-    } else if (openBracketAmount > closeBracketAmount) {
-      const linkTextParts = linkText.split('[');
-      outsideLinkText = '[' + linkTextParts[0];
-      parsedLinkText = linkTextParts.slice(1).join('[');
     }
+    let depth = 0;
+    let opener = -1;
+    for (let i = linkText.length - 1; i >= 0 && opener < 0; i--) {
+      const bracket = linkText[i];
+      if ((bracket !== '[' && bracket !== ']') || isEscaped(linkText, i)) {
+        continue;
+      }
+      if (bracket === ']') {
+        depth++;
+      } else if (depth) {
+        depth--;
+      } else {
+        opener = i;
+      }
+    }
+    if (opener < 0 && depth) {
+      return;
+    }
+    const parsedLinkText = linkText.slice(opener + 1);
+    const outsideLinkText = opener < 0 ? '' : '[' + linkText.slice(0, opener);
     // The link's text stands in for the TextNode being replaced, so it carries
     // its inline format. Read the format before the replace below detaches it.
     const format = textNode.getFormat();
@@ -1346,7 +1367,8 @@ export function normalizeMarkdown(
   input: string,
   shouldMergeAdjacentLines = false,
 ): string {
-  const lines = input.split('\n');
+  // Each CommonMark line ending, CRLF and a lone CR too.
+  const lines = input.split(/\r\n?|\n/);
   let codeBlockFenceLength = 0;
   const sanitizedLines: string[] = [];
 

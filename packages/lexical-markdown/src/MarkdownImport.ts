@@ -54,7 +54,8 @@ export function $importMarkdownNodes(
   const textFormatTransformersIndex = createTextFormatTransformersIndex(
     byType.textFormat,
   );
-  const lines = markdownString.split('\n');
+  // Each CommonMark line ending, CRLF and a lone CR too.
+  const lines = markdownString.split(/\r\n?|\n/);
   const linesLength = lines.length;
 
   // A list line is measured against the column its parent item's content

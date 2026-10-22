@@ -504,9 +504,10 @@ function $exportTextFormat(
   let output = textContent;
   if (!isCode) {
     // Preserve literal backslashes when preserving source newlines.
+    // A `]` before a `(` too, where text would read as a link.
     output = shouldPreserveNewLines
-      ? output.replace(/([*_`~])/g, '\\$1')
-      : output.replace(/([*_`~\\])/g, '\\$1');
+      ? output.replace(/([*_`~]|\](?=\())/g, '\\$1')
+      : output.replace(/([*_`~\\]|\](?=\())/g, '\\$1');
     // Text that reads as a character reference keeps its `&` (`\&#65;`,
     // `\&amp;`).
     // When backslashes are kept as they are, the ones right before it are

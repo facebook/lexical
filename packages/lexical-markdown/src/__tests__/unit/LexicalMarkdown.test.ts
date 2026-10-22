@@ -829,6 +829,7 @@ describe('Markdown', () => {
     {
       html: '<p><span style="white-space: pre-wrap;">[foo </span><a href="/uri"><span style="white-space: pre-wrap;">bar</span></a><span style="white-space: pre-wrap;">](/uri)</span></p>',
       md: '[foo [bar](/uri)](/uri)',
+      mdAfterExport: '[foo [bar](/uri)\\](/uri)',
     },
     {
       // https://spec.commonmark.org/0.31.2/#link-destination allows a balanced
@@ -957,6 +958,8 @@ describe('Markdown', () => {
     {
       html: '<p><span style="white-space: pre-wrap;">[hello]](https://lexical.dev)</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
       md: '[hello]](https://lexical.dev)[world](https://lexical.dev)',
+      mdAfterExport:
+        '[hello]\\](https://lexical.dev)[world](https://lexical.dev)',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">[h</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
@@ -971,6 +974,32 @@ describe('Markdown', () => {
       md: '[**a** [c](https://lexical.dev)',
     },
     {
+      html: '<p><span style="white-space: pre-wrap;">[a] </span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">b</span></a></p>',
+      md: '[a] [b](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[a [b </span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">c</span></a></p>',
+      md: '[a [b [c](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[a]] </span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">b</span></a></p>',
+      md: '[a]] [b](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[a](https://lexical.dev)</span></p>',
+      md: '\\[a](https://lexical.dev)',
+      mdAfterExport: '[a\\](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[a](https://lexical.dev)</span></p>',
+      md: '[a\\](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[a </span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">b</span></a></p>',
+      md: '\\[a [b](https://lexical.dev)',
+      mdAfterExport: '[a [b](https://lexical.dev)',
+    },
+    {
       html: '<p><i><em style="white-space: pre-wrap;">[h</em></i><a href="https://lexical.dev"><i><em style="white-space: pre-wrap;">ello</em></i></a></p>',
       md: '*[h[ello](https://lexical.dev)*',
       mdAfterExport: '*[h*[*ello*](https://lexical.dev)',
@@ -978,6 +1007,7 @@ describe('Markdown', () => {
     {
       html: '<p><span style="white-space: pre-wrap;">[](https://lexical.dev)</span></p>',
       md: '[](https://lexical.dev)',
+      mdAfterExport: '[\\](https://lexical.dev)',
     },
     {
       html: '<p><a href="https://lexical.dev"><b><strong style="white-space: pre-wrap;">link</strong></b></a><b><strong style="white-space: pre-wrap;">text</strong></b></p>',

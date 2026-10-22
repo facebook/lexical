@@ -8,6 +8,8 @@
 import type {TextMatchTransformer} from './MarkdownTransformers';
 import type {TextNode} from 'lexical';
 
+import {isEscaped} from './utils';
+
 export function $findOutermostTextMatchTransformer(
   textNode_: TextNode,
   textMatchTransformers: TextMatchTransformer[],
@@ -28,7 +30,10 @@ export function $findOutermostTextMatchTransformer(
     if (!transformer.replace || !transformer.importRegExp) {
       continue;
     }
-    const match = textNode.getTextContent().match(transformer.importRegExp);
+    const match = matchUnescaped(
+      textNode.getTextContent(),
+      transformer.importRegExp,
+    );
 
     if (!match) {
       continue;
@@ -107,4 +112,23 @@ export function $importFoundTextMatchTransformer(
     nodeBefore,
     transformedNode: potentialTransformedNode || undefined,
   };
+}
+
+/**
+ * The first match of `regExp` in `text` that no backslash escapes: one that
+ * starts with ASCII punctuation after an odd run of backslashes is literal
+ * text in CommonMark, as in `\[a](u)`.
+ */
+function matchUnescaped(text: string, regExp: RegExp): RegExpExecArray | null {
+  const search = new RegExp(
+    regExp.source,
+    regExp.flags.replace(/[gy]/g, '') + 'g',
+  );
+  for (let match; (match = search.exec(text)); ) {
+    if (!isEscaped(text, match.index) || !/^[!-/:-@[-`{-~]/.test(match[0])) {
+      return match;
+    }
+    search.lastIndex = match.index + 1;
+  }
+  return null;
 }

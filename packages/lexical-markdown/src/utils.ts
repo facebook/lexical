@@ -123,3 +123,15 @@ export function unescapeText(value: string): string {
     ) => escaped ?? decodeCharacterReference(match, digits, hex, name),
   );
 }
+
+/**
+ * Whether the character at `index` in `text` follows an odd run of
+ * backslashes, which escapes it.
+ */
+export function isEscaped(text: string, index: number): boolean {
+  let start = index;
+  while (start > 0 && text[start - 1] === '\\') {
+    start--;
+  }
+  return (index - start) % 2 === 1;
+}

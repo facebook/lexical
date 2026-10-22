@@ -660,6 +660,23 @@ describe('playground TABLE markdown transformer', () => {
     expect(cellTexts(imported)).toEqual([[['h']], [['x\n\ny']]]);
   });
 
+  it('writes a nested table in a cell as its lines', () => {
+    const markdown = exportTable(() =>
+      $cellOf(
+        $createTableNode().append(
+          $createTableRowNode().append(
+            $createTableCellNode().append(
+              $createParagraphNode().append($createTextNode('x')),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(markdown.split('\n')[2]).toBe('| \\| x \\| |');
+    using imported = importMarkdown(markdown);
+    expect(cellTexts(imported)).toEqual([[['h']], [['| x |']]]);
+  });
+
   it('round-trips a nested list in a cell', () => {
     const markdown = exportTable(() =>
       $cellOf(

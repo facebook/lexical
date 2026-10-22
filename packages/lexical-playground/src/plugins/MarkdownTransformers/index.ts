@@ -249,7 +249,8 @@ export const TABLE: ElementTransformer = {
     }
 
     const output: string[] = [];
-    const transformers = [TABLE_CELL_LINE_BREAK, ...getCellTransformers()];
+    // A nested table is written as its lines, which a cell reads as text.
+    const transformers = [TABLE_CELL_LINE_BREAK, ...PLAYGROUND_TRANSFORMERS];
 
     for (const row of node.getChildren()) {
       const rowOutput = [];

@@ -1091,6 +1091,53 @@ describe('MdastHtmlExtension', () => {
       expect(reader.read(() => $convertToMarkdownString())).toBe(markdown);
     });
 
+    it('keeps the empty paragraphs of a cell in an HTML table', () => {
+      using editor = tableCellEditor();
+      // The paragraphs of each body row's first cell.
+      const $firstColumn = () =>
+        $getRoot()
+          .getFirstChildOrThrow<ElementNode>()
+          .getChildren<ElementNode>()
+          .slice(1)
+          .map(row =>
+            row
+              .getFirstChildOrThrow<ElementNode>()
+              .getChildren()
+              .map(child => child.getTextContent()),
+          );
+      editor.update(
+        () => {
+          $convertFromMarkdownString(
+            '| h | i |\n| - | - |\n| <br>a<br><br>b<br> | x |\n| <br> | y |',
+          );
+          // A code block makes the table HTML.
+          $assertNodeType(
+            $getRoot()
+              .getFirstChildOrThrow<ElementNode>()
+              .getLastChildOrThrow<ElementNode>()
+              .getLastChild(),
+            $isElementNode,
+          )
+            .clear()
+            .append($createCodeNode().append($createTextNode('c')));
+        },
+        {discrete: true},
+      );
+      const before = editor.read($firstColumn);
+      expect(before).toEqual([
+        ['', 'a', '', 'b', ''],
+        ['', ''],
+      ]);
+      const markdown = editor.read(() => $convertToMarkdownString());
+      expect(markdown).toMatch(/^<table>/);
+      using reader = tableCellEditor();
+      reader.update(() => $convertFromMarkdownString(markdown), {
+        discrete: true,
+      });
+      expect(reader.read($firstColumn)).toEqual(before);
+      expect(reader.read(() => $convertToMarkdownString())).toBe(markdown);
+    });
+
     it('writes a table with a cell GFM cannot hold as HTML and reads it back', () => {
       using editor = tableCellEditor();
       editor.update(

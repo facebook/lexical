@@ -614,10 +614,22 @@ function htmlTable(cells: MdastNode[][][], align: AlignType[][]): HtmlBlock {
         // GitHub keeps only `align`, and HTML import reads `text-align`.
         `<${tag}${cellAlign ? ` align="${cellAlign}" style="text-align: ${cellAlign}"` : ''}>`,
         // An empty cell's one empty paragraph is no Markdown.
-        ...(blocks.some(
+        ...(blocks.length > 1 ||
+        blocks.some(
           block => block.type !== 'paragraph' || block.children.length > 0,
         )
-          ? ['\n\n', {flow: blocks as BlockContent[]}, '\n\n']
+          ? [
+              '\n\n',
+              {
+                // Markdown has no empty paragraph, but HTML's reads back.
+                flow: blocks.map(block =>
+                  block.type === 'paragraph' && block.children.length === 0
+                    ? {type: 'html', value: '<p></p>'}
+                    : block,
+                ) as BlockContent[],
+              },
+              '\n\n',
+            ]
           : []),
         `</${tag}>\n`,
       );

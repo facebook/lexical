@@ -347,9 +347,9 @@ interface CellFit {
   exact: boolean;
 }
 
-/** `value` on one line: a line end in it has no form in a cell. */
-function rawLine(value: string, fit: CellFit): string {
-  if (/[\r\n]/.test(value)) {
+/** `value` on one line, noting in `fit` that a line end in it has no form. */
+function rawLine(value: string, fit?: CellFit): string {
+  if (fit && /[\r\n]/.test(value)) {
     fit.exact = false;
   }
   return value.replace(/\r\n?|\n/g, ' ');
@@ -413,7 +413,7 @@ function cellPhrasing(
           ...node,
           // A line end in code reads as a space anywhere, so it fits.
           value: escapePipes(
-            rawLine(value!, type === 'inlineCode' ? {exact: true} : fit),
+            rawLine(value!, type === 'inlineCode' ? undefined : fit),
             fit,
             type === 'inlineCode' ? '' : '\\',
           ),

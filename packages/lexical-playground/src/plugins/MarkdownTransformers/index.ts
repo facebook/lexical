@@ -212,7 +212,7 @@ const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
 const TABLE_CELL_LINE_BREAK: TextMatchTransformer = {
   dependencies: [LineBreakNode],
   export: node => ($isLineBreakNode(node) ? '\n' : null),
-  regExp: /$^/,
+  regExp: /(?!)/,
   type: 'text-match',
 };
 
@@ -282,11 +282,11 @@ export const TABLE: ElementTransformer = {
       }
 
       // A row of dashes and colons would read as a delimiter row.
-      const line = `| ${rowOutput.join(' | ')} |`;
       output.push(
-        isTableDelimiterRow(line)
-          ? `| ${rowOutput.map(cell => cell.replace(/[-:]/, '\\$&')).join(' | ')} |`
-          : line,
+        `| ${(rowOutput.every(cell => /^:?-+:?$/.test(cell))
+          ? rowOutput.map(cell => cell.replace(/[-:]/, '\\$&'))
+          : rowOutput
+        ).join(' | ')} |`,
       );
       if (isHeaderRow) {
         output.push(`| ${rowOutput.map(_ => '---').join(' | ')} |`);

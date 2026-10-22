@@ -87,6 +87,8 @@ describe('TableExtension', () => {
     unthemed.setRootElement(document.createElement('div'));
     unthemed.setRootElement(null);
     unthemed.setRootElement(document.createElement('div'));
+    hasHorizontalScroll.value = false;
+    hasHorizontalScroll.value = true;
     expect(warn.mock.calls).toEqual([
       [
         'TableNode: hasHorizontalScroll is active but theme.tableScrollableWrapper is not defined.',

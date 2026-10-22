@@ -370,9 +370,9 @@ export function findStickyScrollbarElements(
 }
 
 const scrollableEditors = new WeakSet<LexicalEditor>();
-// The root listener of each editor waiting to warn of a missing
-// theme.tableScrollableWrapper.
-const pendingScrollWarnings = new WeakMap<LexicalEditor, () => void>();
+// Each editor that warned of a missing theme.tableScrollableWrapper (null),
+// or the root listener that will once it has a root.
+const scrollWarnings = new WeakMap<LexicalEditor, null | (() => void)>();
 
 export function $isScrollableTablesActive(
   editor: LexicalEditor = $getEditor(),
@@ -404,7 +404,7 @@ export function setScrollableTablesActive(
     if (
       __DEV__ &&
       editor._config.theme.tableScrollableWrapper === undefined &&
-      !pendingScrollWarnings.has(editor)
+      !scrollWarnings.has(editor)
     ) {
       // Only an editor that renders tables needs the class, so this waits
       // for its first root element.
@@ -413,14 +413,16 @@ export function setScrollableTablesActive(
           'TableNode: hasHorizontalScroll is active but theme.tableScrollableWrapper is not defined.',
         );
       if (editor.getRootElement()) {
+        scrollWarnings.set(editor, null);
         warn();
       } else {
         // Called at once with no root, then with the first one.
-        pendingScrollWarnings.set(
+        scrollWarnings.set(
           editor,
           editor.registerRootListener(rootElement => {
             if (rootElement) {
               cancelScrollWarning(editor);
+              scrollWarnings.set(editor, null);
               warn();
             }
           }),
@@ -435,9 +437,9 @@ export function setScrollableTablesActive(
 }
 
 function cancelScrollWarning(editor: LexicalEditor): void {
-  const unregister = pendingScrollWarnings.get(editor);
+  const unregister = scrollWarnings.get(editor);
   if (unregister) {
-    pendingScrollWarnings.delete(editor);
+    scrollWarnings.delete(editor);
     unregister();
   }
 }

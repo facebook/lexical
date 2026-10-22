@@ -39,7 +39,6 @@ import {
   $isTableCellNode,
   $isTableNode,
 } from '@lexical/table';
-import katex from 'katex';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -89,6 +88,7 @@ import {
   MdastCommonMarkExtension,
   MdastExtension,
   MdastHeadingExtension,
+  MdastHtmlExtension,
   type MdastNode,
   MdastShadowRootQuoteExtension,
   MdastStrikethroughExtension,
@@ -1096,56 +1096,6 @@ describe('@lexical/mdast import/export', () => {
     expect(twice).toBe(once);
   });
 
-  // JavaScript expressions and how a cell writes them, which keeps their
-  // value: U+2028 ends a line in JavaScript but not in Markdown.
-  const SCRIPTS: [string, string][] = [
-    ['/[//]/.test("/")', '/[//]/.test("/")'],
-    ['"a|b" + `c|d`', '"a\\x7cb" + `c\\x7cd`'],
-    ['"a\\|b\\\\" + `c\\|d`', '"a\\x7cb\\\\" + `c\\x7cd`'],
-    ['(1 << 2) + "a|b"', '(1 << 2) + "a\\x7cb"'],
-    // A method named as a keyword.
-    ['[2].with(0, 4) / "|".length / 1', '[2].with(0, 4) / "\\x7c".length / 1'],
-    // A regular expression after a condition.
-    [
-      '(() => { if (1) /"/.test("a")\nreturn 2 // "\n})()',
-      '(() => { if (1) /"/.test("a")\u2028return 2 // "\u2028})()',
-    ],
-    [
-      '(() => { const s = "a"; if (1) /`/.test(s)\nreturn 2 })()',
-      '(() => { const s = "a"; if (1) /`/.test(s)\u2028return 2 })()',
-    ],
-    ['`a ${({x: 1}).x\n} b`', '`a ${({x: 1}).x\u2028} b`'],
-    [
-      '`a ${(() => {\n  return 1;\n})()\n} b`',
-      '`a ${(() => {\u2028return 1;\u2028})()\u2028} b`',
-    ],
-    // A tag gets the same strings and values.
-    [
-      '((s, ...v) => JSON.stringify([s, v]))`<b>\n</b>${1}\nb`',
-      '((s, ...v) => JSON.stringify([s, v]))`<b>\\n</b>${1}\\nb`',
-    ],
-    ['JSON.parse(`{\n  "a": 1\n}`)', 'JSON.parse(`{\\n  "a": 1\\n}`)'],
-    ['"a\\\nb" + 1 / 2 // c\n+ 3', '"ab" + 1 / 2 // c\u2028+ 3'],
-    // Where a `/` divides.
-    [
-      '[1].map(i => i++ / 2 + "x/y"\n+ "z")',
-      '[1].map(i => i++ / 2 + "x/y"\u2028+ "z")',
-    ],
-    ['({in: 4}).in / 2 + "x/y"\n+ "z"', '({in: 4}).in / 2 + "x/y"\u2028+ "z"'],
-    ['(é => é / 2 + "a/b"\n+ "c")(4)', '(é => é / 2 + "a/b"\u2028+ "c")(4)'],
-    // A line end ends a statement.
-    [
-      '(() => { if (1) {} /[//]/.test("/")\n  return 1 })()',
-      '(() => { if (1) {} /[//]/.test("/")\u2028return 1 })()',
-    ],
-  ];
-
-  it.each(SCRIPTS)('writes %j in a cell with its value', (value, written) => {
-    // eslint-disable-next-line no-new-func
-    const evaluate = (code: string) => new Function(`return (${code}\n);`)();
-    expect(evaluate(written)).toEqual(evaluate(value));
-  });
-
   describe('with MdastTableExtension', () => {
     it('writes no alignment for a column whose paragraphs are justified', () => {
       using editor = createEditor(true);
@@ -1746,267 +1696,62 @@ describe('@lexical/mdast import/export', () => {
       );
     });
 
-    it('writes a line end in raw HTML in a cell as a reference', () => {
-      using editor = buildEditorFromExtensions(
-        defineExtension({
-          dependencies: [
-            MdastCommonMarkExtension,
-            MdastTableExtension,
-            configExtension(MdastExtension, {
-              exportRules: [
-                {
-                  $export: () => ({
-                    type: 'html',
-                    value:
-                      'a\n<b\ntitle="p\nq">b</b>\n<pre>c\n d</pre>' +
-                      "<!-- don't\nship --><style>a\nb</style>" +
-                      '<script>// c|\nx("|")</script>' +
-                      '<script type="application/json">{"a":\n1}</script>' +
-                      '<script>\n<!--\nalert("a|b")\n//--></script>' +
-                      '<script>a\n+ "|"',
-                  }),
-                  type: HorizontalRuleNode,
-                },
-              ],
-            }),
-          ],
-          name: '[root]',
-        }),
-      );
-      editor.update(
-        () => {
-          $convertFromMarkdownString('| a |\n| - |\n| b |');
-          $assertNodeType(
-            $assertNodeType($getRoot().getFirstChild(), $isTableNode)
-              .getLastChildOrThrow<ElementNode>()
-              .getFirstChild(),
-            $isElementNode,
-          )
-            .clear()
-            .append($createHorizontalRuleNode());
-        },
-        {discrete: true},
-      );
-      expect(editor.read(() => $convertToMarkdownString())).toContain(
-        '| a&#10;<b title="p&#10;q">b</b>&#10;<pre>c&#10; d</pre>' +
-          "<!-- don't ship --><style>a b</style>" +
-          '<script>// c\\x7c\u2028x("\\x7c")</script>' +
-          '<script type="application/json">{"a": 1}</script>' +
-          '<script>\u2028<!--\u2028alert("a\\x7cb")\u2028//--></script>' +
-          '<script>a\u2028+ "\\x7c" |',
-      );
-    });
-
     it.each<[object, string]>([
+      [{type: 'inlineMath', value: 'a|b'}, '$a\\|b$'],
+      [{type: 'inlineCode', value: 'a|b'}, '`a\\|b`'],
+      [
+        {type: 'html', value: '<b title="a|b">x|y</b>'},
+        '<b title="a&#124;b">x&#124;y</b>',
+      ],
+      [{type: 'mdxTextExpression', value: 'a + b'}, '{a + b}'],
+      [{type: 'mdxFlowExpression', value: 'a + b'}, '{a + b}'],
       [
         {children: [{type: 'text', value: 'x'}], type: 'textDirective'},
         ':abbr[x]',
       ],
+    ])('writes %j in a cell as it is', (exported, written) => {
+      expect(exportCellOf(exported, true)).toContain(`| ${written} |`);
+    });
+
+    it.each<[object, string]>([
+      // A line end, which a cell has no form for.
+      [{type: 'inlineMath', value: 'a\n+ b|c'}, '$a + b\\|c$'],
+      [{type: 'html', value: '<pre>a\nb</pre>'}, '<pre>a b</pre>'],
+      [{type: 'mdxTextExpression', value: 'a +\n b'}, '{a +  b}'],
+      // A pipe after a backslash, which micromark reads otherwise.
+      [{type: 'inlineMath', value: '\\|x\\|'}, '$\\\\\\|x\\\\\\|$'],
+      [{type: 'inlineCode', value: 'a\\|b'}, '`a\\\\\\|b`'],
+      // A pipe that has no escape.
+      [{type: 'mdxTextExpression', value: 'a | b'}, '{a \\| b}'],
       [
-        {
-          children: [
-            {children: [{type: 'text', value: 'x'}], type: 'paragraph'},
-            {children: [{type: 'text', value: 'y'}], type: 'paragraph'},
-          ],
-          type: 'containerDirective',
-        },
-        ':abbr[x<br>y]',
+        {type: 'html', value: '<script>a|b</script>'},
+        '<script>a&#124;b</script>',
       ],
+      // A block that a cell holds as phrasing.
+      [{type: 'math', value: 'a|b'}, '$a\\|b$'],
       [
-        {
-          children: [
-            {type: 'text', value: 'a '},
-            {type: 'html', value: '<b>'},
-            {type: 'text', value: 'x'},
-            {type: 'html', value: '</b>'},
-          ],
-          type: 'leafDirective',
-        },
-        ':abbr[a <b>x</b>]',
+        {children: [{type: 'text', value: 'x'}], type: 'leafDirective'},
+        ':abbr[x]',
       ],
-      [{type: 'math', value: 'a\n  b'}, '$a b$'],
-      [{type: 'math', value: 'a % c\n+ b\\%'}, '$a + b\\%$'],
-      [{type: 'math', value: 'a\\\\%b\nc'}, '$a\\\\c$'],
-      [
-        {type: 'math', value: '\\text{a|b} | \\mbox{c}'},
-        '$\\text{a\\textbar b} \\vert \\mbox{c}$',
-      ],
-      [
-        {type: 'mdxFlowExpression', value: '`a ${\n  b\n}\nc`'},
-        '{`a ${\u2028b\u2028}\\nc`}',
-      ],
-      [{type: 'mdxFlowExpression', value: ''}, '{}'],
-      // A JavaScript expression keeps its literals.
-      [
-        {type: 'mdxFlowExpression', value: '"first  last" +\t`a\nb` // c\n+ d'},
-        '{"first  last" +\t`a\\nb` // c\u2028+ d}',
-      ],
-      [
-        {
-          type: 'mdxFlowExpression',
-          value: "x.replace(/https?:\\/\\//, '') /* it's\n a */ + 'b'",
-        },
-        "{x.replace(/https?:\\/\\//, '') /* it's\u2028a */ + 'b'}",
-      ],
-      [{type: 'inlineMath', value: 'a % c\n+ |b|'}, '$a + \\vert b\\vert$'],
-      ...SCRIPTS.map(([value, written]): [object, string] => [
-        {type: 'mdxFlowExpression', value},
-        `{${written}}`,
-      ]),
-      [
-        {type: 'math', value: '\\text{a {b}|c} \\text{a \\textbf{b|c}}'},
-        '$\\text{a {b}\\textbar c} \\text{a \\textbf{b\\textbar c}}$',
-      ],
-      // JSX keeps its text.
-      [
-        {
-          type: 'mdxFlowExpression',
-          value:
-            '<>\n  <a href={u} title="x\ny">see http://a.dev\n  b {c\n} d</a>\n</>',
-        },
-        '{<><a href={u} title="x&#10;y">see http://a.dev b {c\u2028} d</a></>}',
-      ],
-      [
-        {
-          type: 'mdxFlowExpression',
-          value: "<p>{name}'s\n  page</p>",
-        },
-        "{<p>{name}'s page</p>}",
-      ],
-      [
-        {
-          type: 'mdxFlowExpression',
-          value: '<a // b\n  c="1"></a\n>',
-        },
-        '{<a // b\u2028c="1"></a\u2028>}',
-      ],
-      [
-        {
-          attributes: [
-            {name: 'title', type: 'mdxJsxAttribute', value: 'a\nb|c'},
-            {
-              name: 'data',
-              type: 'mdxJsxAttribute',
-              value: {type: 'mdxJsxAttributeValueExpression', value: '[\n1]'},
-            },
-            {type: 'mdxJsxExpressionAttribute', value: '...x\n'},
-          ],
-          children: [
-            {children: [{type: 'text', value: 'x'}], type: 'paragraph'},
-          ],
-          type: 'mdxJsxFlowElement',
-        },
-        '<abbr title="a&#10;b&#124;c" data={[\u20281]} {...x\u2028}>x</abbr>',
-      ],
-      [{name: 'abbr', type: 'mdxJsxFlowElement'}, '<abbr></abbr>'],
-      [
-        {
-          type: 'mdxFlowExpression',
-          value: '[<a t="a|b\nc" /\n>, <b>x|y</b>, 1 // c|d\n+ 2]',
-        },
-        '{[<a t="a&#124;b&#10;c" /\u2028>, <b>x&#124;y</b>, 1 // c\\x7cd\u2028+ 2]}',
-      ],
-      [
-        {
-          children: [{type: 'mdxTextExpression', value: 'a +\n b'}],
-          type: 'paragraph',
-        },
-        '{a +\u2028b}',
-      ],
-      [
-        {
-          type: 'math',
-          value:
-            '\\text{a {b {c {d|e}}}} \\text {a \\{ b|c} \\textstyle{|x|} \\text{ab%\n  cd}',
-        },
-        '$\\text{a {b {c {d\\textbar e}}}} \\text {a \\{ b\\textbar c} \\textstyle{\\vert x\\vert} \\text{ab  cd}$',
-      ],
-      [
-        {type: 'math', value: 'a % one\n% two\n\\alpha%\n  b'},
-        '$a \\alpha  b$',
-      ],
-      [{type: 'math', value: 'a % one\n  % two\nb'}, '$a   b$'],
-      [
-        {
-          type: 'math',
-          value:
-            '\\text{a|%\nb} \\text{a|%\n b} \\text{a|@b} \\text{\\LaTeX %\n b} \\text{\\LaTeX\n%\n b} \\text a{|} \\verb a!  b a \\text{a| b} \\mbox{x|y}',
-        },
-        '$\\text{a\\textbar b} \\text{a\\textbar\\ b} \\text{a\\textbar @b} \\text{\\LaTeX \\ b} \\text{\\LaTeX \\ b} \\text a{\\vert} \\verb a!  b a \\text{a\\textbar\\ b} \\mbox{x\\vert y}$',
-      ],
-      [{type: 'math', value: 'a%x\rb|c'}, '$a%x b c$'],
-      [
-        {
-          type: 'math',
-          value: '\\text{\\LaTeX%\n b} \\text%\n{a|b} \\verb|a!"+=/|',
-        },
-        '$\\text{\\LaTeX\\ b} \\text{a\\textbar b} \\verb#a!"+=/#$',
-      ],
-      [
-        {
-          type: 'math',
-          value: 'x%c\n  \\\\%d\ny\\beta%\n  \\alpha%\nb \\verb|x|',
-        },
-        '$x  \\\\y\\beta  \\alpha b \\verb!x!$',
-      ],
-      [{type: 'mdxFlowExpression', value: '<p>a\n\n  b</p>'}, '{<p>a b</p>}'],
-      [
-        {type: 'mdxFlowExpression', value: '<a /* | */ b="1" />'},
-        '{<a /* \\x7c */ b="1" />}',
-      ],
-      // Code that isn't valid gets no line end either.
-      [{type: 'mdxFlowExpression', value: '1 \\\n+ 2'}, '{1 \\\u2028+ 2}'],
-      // A `}` that closes nothing.
-      [{type: 'mdxFlowExpression', value: 'x}y\nz'}, '{x}y\u2028z}'],
-      [
-        {
-          type: 'math',
-          value: '\\href{https://x.y/a%20b|c}{t} \\verb|100%| \\alpha % x|y',
-        },
-        '$\\href{https://x.y/a%20b%7Cc}{t} \\verb!100%! \\alpha % x y$',
-      ],
-      // A `<` that starts no tag is text, whose line end is kept.
-      [
-        {type: 'html', value: '<pre>a < b\nc > d</pre>'},
-        '<pre>a < b&#10;c > d</pre>',
-      ],
-      // A custom element named like a raw text one, and a comment closed
-      // at once, are not raw text.
-      [
-        {
-          type: 'html',
-          value:
-            '<style-box><pre>a\nb</pre></style-box><!--><pre>c\nd</pre><!---->',
-        },
-        '<style-box><pre>a&#10;b</pre></style-box><!--><pre>c&#10;d</pre><!---->',
-      ],
-      // An unclosed tag with quotes is read in linear time.
-      [{type: 'html', value: `a <${'"'.repeat(60)}`}, `a <${'"'.repeat(60)}`],
-      [
-        {type: 'math', value: '|x| + \\|y\\| \\\\|z'},
-        '$\\vert x\\vert + \\Vert y\\Vert \\\\\\vert z$',
-      ],
-    ])(
-      'keeps %j a block exports to in a cell on its row',
-      (exported, written) => {
-        expect(exportCellOf(exported)).toContain(`| ${written} |`);
-        const {type, value} = exported as {type: string; value?: string};
-        if (/math/i.test(type) && value) {
-          // KaTeX renders it the same, with the playground's options.
-          const render = (tex: string) =>
-            katex.renderToString(tex, {output: 'html', throwOnError: false});
-          expect(render(written.slice(1, -1))).toBe(render(value));
-        }
-      },
-    );
+    ])('writes %j as HTML, or else on its row', (exported, written) => {
+      const markdown = exportCellOf(exported);
+      expect(markdown).toContain(`| ${written} |`);
+      const [table] = fromMarkdown(markdown, {
+        extensions: [gfmTable()],
+        mdastExtensions: [gfmTableFromMarkdown()],
+      }).children as Table[];
+      expect(table.children.map(row => row.children.length)).toEqual([1, 1]);
+      expect(exportCellOf(exported, true)).toMatch(/^<table>\n/);
+    });
 
     /** The Markdown of a table whose cell holds what a node exports. */
-    function exportCellOf(exported: object): string {
+    function exportCellOf(exported: object, html = false): string {
       using editor = buildEditorFromExtensions(
         defineExtension({
           dependencies: [
             MdastCommonMarkExtension,
             MdastTableExtension,
+            ...(html ? [MdastHtmlExtension] : []),
             configExtension(MdastExtension, {
               exportRules: [
                 {
@@ -2020,6 +1765,10 @@ describe('@lexical/mdast import/export', () => {
                   handlers: {
                     inlineMath: ((node: {value: string}) =>
                       `$${node.value}$`) as Handle,
+                    leafDirective: ((node, _, state, info) =>
+                      `::${node.name}[${state.containerPhrasing(node, info)}]`) as Handle,
+                    math: ((node: {value: string}) =>
+                      `$$\n${node.value}\n$$`) as Handle,
                     mdxJsxTextElement: ((node, _, state, info) =>
                       `<${node.name}${(node.attributes || [])
                         .map(
@@ -2067,18 +1816,14 @@ describe('@lexical/mdast import/export', () => {
       return editor.read(() => $convertToMarkdownString());
     }
 
-    it('reads long runs of spaces in a cell in linear time', () => {
+    it('writes long runs in a cell in linear time', () => {
       const spaces = ' '.repeat(1e5);
-      expect(exportCellOf({type: 'math', value: `a${spaces}b`})).toContain(
-        `$a${spaces}b$`,
-      );
-      const tags = '<b'.repeat(5e4);
-      expect(exportCellOf({type: 'html', value: tags})).toContain(tags);
-      for (const value of [`a${spaces}b`, `<a>${spaces}</a>`]) {
-        expect(exportCellOf({type: 'mdxFlowExpression', value})).toContain(
-          `{${value}}`,
-        );
-      }
+      const html = `<span>a${spaces}b</span>`;
+      expect(exportCellOf({type: 'html', value: html}, true)).toContain(html);
+      const slashes = '\\'.repeat(1e5);
+      expect(
+        exportCellOf({type: 'inlineCode', value: slashes + 'a'}),
+      ).toContain(slashes + 'a');
     });
 
     describe('writes MDX in a cell that MDX reads back', () => {
@@ -2136,57 +1881,6 @@ describe('@lexical/mdast import/export', () => {
       }
       // eslint-disable-next-line no-new-func
       const evaluate = (code: string) => new Function(`return (${code}\n);`)();
-
-      it.each(SCRIPTS)('%j keeps its value', value => {
-        const node = readBack({type: 'mdxFlowExpression', value});
-        expect(evaluate(node.value as string)).toEqual(evaluate(value));
-      });
-
-      /** The literal values and JSX text an MDX expression holds. */
-      function values(value: string): unknown[] {
-        const [paragraph] = fromMarkdown(`{${value}}`, {
-          extensions: [mdxjs()],
-          mdastExtensions: [mdxFromMarkdown()],
-        }).children;
-        return estreeValues(paragraph);
-      }
-      function estreeValues(node: unknown): unknown[] {
-        if (!node || typeof node !== 'object') {
-          return [];
-        }
-        const {type, value} = node as {type?: string; value?: unknown};
-        return type === 'Literal'
-          ? [value]
-          : type === 'JSXText'
-            ? // The text JSX makes of it: lines without the spaces at their
-              // inner edges, and blank ones dropped.
-              [
-                String(value)
-                  .split(/\r\n?|\n/)
-                  .map((line, i, lines) =>
-                    line
-                      .replace(i ? /^[ \t]+/ : /^$/, '')
-                      .replace(i < lines.length - 1 ? /[ \t]+$/ : /^$/, ''),
-                  )
-                  .filter(Boolean)
-                  .join(' '),
-              ].filter(Boolean)
-            : Object.entries(node).flatMap(([key, child]) =>
-                key === 'position' || key === 'loc' ? [] : estreeValues(child),
-              );
-      }
-
-      it.each([
-        '<a t="a|b\nc" /* | */ />',
-        '[(1 << 2) + "a|b", <b>x|y\n\n  z</b>]',
-        '<a b=<c /> d="x|y">t|u</a>',
-        // A keyword before JSX, and space it doesn't hold.
-        '() => { return\u00a0<a>x\n  y</a> }',
-        '<>\n  <a href={u} title="x\ny">see http://a.dev\n  b {c\n} d</a>\n</>',
-      ])('%j keeps its values', value => {
-        const node = readBack({type: 'mdxFlowExpression', value});
-        expect(values(node.value as string)).toEqual(values(value));
-      });
 
       it('keeps the attributes and text of JSX', () => {
         const node = readBack({

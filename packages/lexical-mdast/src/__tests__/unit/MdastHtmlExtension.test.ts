@@ -8,6 +8,7 @@
 
 import type {BlockContent} from 'mdast';
 
+import {$createCodeNode} from '@lexical/code-core';
 import {
   buildEditorFromExtensions,
   type LexicalEditorWithDispose,
@@ -27,16 +28,23 @@ import {
   sel,
 } from '@lexical/html';
 import {LinkExtension} from '@lexical/link';
-import {ListExtension, ListNode} from '@lexical/list';
+import {
+  $createListItemNode,
+  $createListNode,
+  ListExtension,
+  ListNode,
+} from '@lexical/list';
 import {
   $createQuoteNode,
   $isQuoteNode,
   HeadingNode,
   RichTextExtension,
 } from '@lexical/rich-text';
+import {$isTableNode} from '@lexical/table';
 import {$dfs} from '@lexical/utils';
 import {
   $create,
+  $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -51,6 +59,7 @@ import {
   type LexicalNode,
   type TextNode,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {describe, expect, it} from 'vitest';
 
 import {
@@ -992,11 +1001,12 @@ describe('MdastHtmlExtension', () => {
       expect(editor.read(() => $convertToMarkdownString())).toBe(markdown);
     });
 
-    it('keeps a block element and its attributes', () => {
+    it('writes a table with a block element in a cell as HTML', () => {
       using editor = tableCellEditor();
       const markdown = exportWithCell(editor, () => {
         const callout = $create(CalloutNode).append(
-          $createParagraphNode().append($createTextNode('body')),
+          $createParagraphNode().append($createTextNode('one')),
+          $createParagraphNode().append($createTextNode('two')),
         );
         $setSlot(
           callout,
@@ -1005,26 +1015,108 @@ describe('MdastHtmlExtension', () => {
         );
         return [callout];
       });
-      expect(markdown.split('\n')).toHaveLength(3);
-      expect(markdown.split('\n')[2]).toContain('<x-callout open>');
-    });
-
-    it('keeps the blocks of a block element apart', () => {
-      using editor = tableCellEditor();
-      const markdown = exportWithCell(editor, () => [
-        $create(CalloutNode).append(
-          $createParagraphNode().append($createTextNode('one')),
-          $createParagraphNode().append($createTextNode('two')),
-        ),
-      ]);
-      expect(markdown.split('\n')[2]).toBe(
-        '| <x-callout open>&#10;<header data-lexical-slot="title"></header>one<br>two</x-callout> |',
-      );
-      editor.update(() => $convertFromMarkdownString(markdown), {
+      expect(markdown).toMatch(/^<table>\n/);
+      expect(markdown).toContain('<x-callout open>');
+      using reader = tableCellEditor();
+      reader.update(() => $convertFromMarkdownString(markdown), {
         discrete: true,
       });
+      expect(reader.read(() => $convertToMarkdownString())).toBe(markdown);
+    });
+
+    it('writes a table with a cell GFM cannot hold as HTML and reads it back', () => {
+      using editor = tableCellEditor();
+      editor.update(
+        () => {
+          $convertFromMarkdownString('| h | i |\n| :-: | - |\n| x | y |');
+          const table = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isTableNode,
+          );
+          $assertNodeType(
+            table.getLastChildOrThrow<ElementNode>().getFirstChild(),
+            $isElementNode,
+          )
+            .clear()
+            .append(
+              $createCodeNode().append(
+                $createTextNode('a|b'),
+                $createLineBreakNode(),
+                $createTextNode('c'),
+              ),
+              $createListNode('bullet').append(
+                $createListItemNode().append($createTextNode('d')),
+              ),
+            );
+        },
+        {discrete: true},
+      );
+      const markdown = editor.read(() => $convertToMarkdownString());
+      expect(markdown).toBe(
+        [
+          '<table>',
+          '<thead>',
+          '<tr>',
+          '<th align="center" style="text-align: center">',
+          '',
+          'h',
+          '',
+          '</th>',
+          '<th>',
+          '',
+          'i',
+          '',
+          '</th>',
+          '</tr>',
+          '</thead>',
+          '<tbody>',
+          '<tr>',
+          '<td align="center" style="text-align: center">',
+          '',
+          '```',
+          'a|b',
+          'c',
+          '```',
+          '',
+          '- d',
+          '',
+          '</td>',
+          '<td>',
+          '',
+          'y',
+          '',
+          '</td>',
+          '</tr>',
+          '</tbody>',
+          '</table>',
+        ].join('\n'),
+      );
+      using reader = tableCellEditor();
+      reader.update(() => $convertFromMarkdownString(markdown), {
+        discrete: true,
+      });
+      reader.read(() => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        const cell = $assertNodeType(
+          table.getLastChildOrThrow<ElementNode>().getFirstChild(),
+          $isElementNode,
+        );
+        expect(cell.getChildren().map(child => child.getType())).toEqual([
+          'code',
+          'list',
+        ]);
+      });
+      expect(reader.read(() => $convertToMarkdownString())).toBe(markdown);
+    });
+
+    it('reads \\| in raw HTML in a cell as a pipe, as GFM does', () => {
+      using editor = tableCellEditor();
+      editor.update(
+        () => $convertFromMarkdownString('| a |\n| - |\n| <b>x\\|y</b> |'),
+        {discrete: true},
+      );
       expect(editor.read(() => $convertToMarkdownString())).toContain(
-        'one<br>two',
+        '| **x\\|y** |',
       );
     });
   });

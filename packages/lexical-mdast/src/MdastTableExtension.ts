@@ -6,6 +6,7 @@
  *
  */
 
+import type {MdastHtmlExtension, RawHtmlBlockPart} from './MdastHtmlExtension';
 import type {
   MdastExportHandler,
   MdastImportContext,
@@ -14,17 +15,23 @@ import type {
 } from './types';
 import type {
   AlignType,
+  BlockContent,
+  Code,
   Emphasis,
+  Heading,
   Html,
   HtmlBlock,
-  HtmlInline,
+  Paragraph,
+  Parent,
   PhrasingContent,
   Table,
   TableCell,
   TableRow,
+  Text,
 } from 'mdast';
 
-import {configExtension} from '@lexical/extension';
+import {$getPeerDependency, configExtension} from '@lexical/extension';
+import {DOMImportExtension} from '@lexical/html';
 import {
   $createTableCellNode,
   $createTableNode,
@@ -34,6 +41,7 @@ import {
   $isTableRowNode,
   TableCellHeaderStates,
   TableCellNode,
+  TableImportRules,
   TableNode,
   TableRowNode,
 } from '@lexical/table';
@@ -44,6 +52,7 @@ import {
   $setState,
   arrayValue,
   createState,
+  declarePeerDependency,
   defineExtension,
   enumValue,
   type LexicalNode,
@@ -53,6 +62,7 @@ import {gfmTable} from 'micromark-extension-gfm-table';
 
 import {$append} from './handlers';
 import {MdastExtension} from './MdastExtension';
+import {rawHtmlBlock} from './MdastHtmlExtension';
 
 /** A GFM column alignment as mdast spells it; anything else reads as `null`. */
 const alignValue = enumValue<AlignType>([null, 'left', 'center', 'right']);
@@ -161,7 +171,12 @@ function cellLines(cell: TableCell): PhrasingContent[][] {
           if (breaks > 0) {
             return Array.from({length: breaks}, () => ({type: 'break'}));
           }
-          return node.type === 'htmlInline' ? [node] : undefined;
+          // GFM reads `\|` in a cell as a pipe before anything else, which
+          // micromark leaves to code.
+          const {value} = node as {value?: string};
+          return /^(?:html|htmlInline|inlineMath)$/.test(node.type)
+            ? [{...node, value: value!.replace(/\\\|/g, '|')}]
+            : undefined;
         }),
       );
     }
@@ -305,400 +320,193 @@ function joinAtBreaks(nodes: readonly PhrasingContent[]): PhrasingContent[] {
 }
 
 /**
- * Rewrites exported phrasing content for a GFM cell, which holds one line:
- * line breaks (`break` nodes and newlines in text or code) become `<br>`,
- * which gfm-table would otherwise write as spaces, and raw HTML is put on
- * one line with its pipes as references (`&#124;`), since a cell splits on
- * `|` even inside HTML.
+ * Whether a GFM cell holds what was exported to it as it is. When one
+ * doesn't, its table is written as HTML if the editor has
+ * `MdastHtmlExtension`, or else as close as a cell can come.
  */
-function cellPhrasing(nodes: readonly PhrasingContent[]): PhrasingContent[] {
-  return mapPhrasing(joinAtBreaks(nodes), node => {
-    if (node.type === 'break') {
-      return [rawHtml('<br>')];
+interface CellFit {
+  exact: boolean;
+}
+
+/** `value` on one line: a line end in it has no form in a cell. */
+function rawLine(value: string, fit: CellFit): string {
+  if (/[\r\n]/.test(value)) {
+    fit.exact = false;
+  }
+  return value.replace(/\r\n?|\n/g, ' ');
+}
+
+/**
+ * A raw value with each pipe escaped as `\|`, which GFM reads back as a
+ * pipe before anything else, even in code and math. A pipe after a
+ * backslash has no such form that micromark reads as GFM does, so it is
+ * not exact, and it gets the backslash that keeps the row whole.
+ */
+function escapePipes(value: string, fit: CellFit, escape = '\\'): string {
+  // Each run of backslashes is read once, with the pipe after it.
+  return value.replace(/(\\*)(\|?)/g, (found, slashes: string, pipe) => {
+    if (!pipe) {
+      return found;
     }
-    if ((node.type as string) === 'thematicBreak') {
-      // GFM has no rule in a cell but HTML's, which import reads back.
-      return [rawHtml('<hr>')];
+    if (slashes.length % 2) {
+      fit.exact = false;
+      slashes += '\\';
     }
-    if (FORMATTING_RE.test(node.type)) {
-      return [
-        {
-          ...node,
-          children: cellPhrasing((node as Emphasis).children),
-        } as PhrasingContent,
-      ];
-    }
-    const raw = node as Html | HtmlBlock | HtmlInline;
-    if (/^html(?:Block|Inline)?$/.test(raw.type)) {
-      return [
-        {
-          ...raw,
-          // Line ends beside embedded Markdown (a `<template>` holding its
-          // place) only set it apart, as a `<br>` sets the blocks of a cell
-          // apart. Any other is a reference (`&#10;`), which reads as the
-          // line end it was in text, `<pre>` and attribute values, but a
-          // space between a tag's attributes.
-          value: raw.value
-            .replace(
-              /(<\/template>)?\s*?(?:\r?\n|\r)\s*(?=(<template data-mdast-child=)|)/g,
-              (found: string, end?: string, start?: string) =>
-                end && start ? end + '<br>' : end || start ? end || '' : found,
-            )
-            .replace(
-              /<!--(?:-?>|[^]*?-->)|<(script|style)(?=[\s/>]|$)[^]*?(?:<\/\1\s*>|$)|<(?=[!/?a-z])(?:[^<>"']|"[^"]*"|'[^']*'|"(?![^"]*")|'(?![^']*'))*>|\r?\n|\r/gi,
-              (found: string, rawText?: string) =>
-                found[0] !== '<'
-                  ? '&#10;'
-                  : // Comments and script or style text read no references:
-                    // JavaScript is written as an MDX expression is, but
-                    // for JSX.
-                    found.startsWith('<!--')
-                    ? found.replace(/\r?\n|\r/g, ' ')
-                    : rawText
-                      ? found.replace(
-                          /^([^>]*>?)([^]*?)(<\/[^<]*)?$/,
-                          (_, open: string, text: string, close = '') =>
-                            oneLine(open, ' ') +
-                            (/^script$/i.test(rawText) &&
-                            !/\stype\s*=\s*["']?(?!["'\s>]|(?:text|application)\/(?:java|ecma)script|module)/i.test(
-                              open,
-                            )
-                              ? scriptLine(text, true)
-                              : oneLine(text, ' ')) +
-                            oneLine(close, ' '),
-                        )
-                      : found.replace(
-                          /("[^"]*"|'[^']*')|\r?\n|\r/g,
-                          (_, quoted?: string) =>
-                            quoted ? quoted.replace(/\r?\n|\r/g, '&#10;') : ' ',
-                        ),
-            )
-            .replace(/\|/g, '&#124;'),
-          // `MdastHtmlExtension`'s raw HTML with Markdown embedded in it:
-          // each embedded block is one line too.
-          ...('children' in raw && {
-            children:
-              raw.type === 'htmlBlock'
-                ? raw.children.map(child => ({
-                    children: cellContent([child]),
-                    type: 'paragraph',
-                  }))
-                : cellPhrasing(raw.children),
-          }),
-        } as PhrasingContent,
-      ];
-    }
-    if ((node.type as string) === 'mdxTextExpression') {
-      return [{...node, value: scriptLine((node as Html).value || '')}];
-    }
-    if ((node.type as string) === 'mdxJsxTextElement') {
-      const element = node as unknown as {
-        attributes?: {type: string; value?: string | Html | null}[];
-        children?: PhrasingContent[];
-      };
-      return [
-        {
-          ...node,
-          // Attributes on one line: an expression's code, and a string's
-          // line ends and pipes as references, which its value reads.
-          ...(element.attributes && {
-            attributes: element.attributes.map(attribute => {
-              const {value} = attribute;
-              return {
-                ...attribute,
-                value:
-                  typeof value !== 'string'
-                    ? value && {...value, value: scriptLine(value.value || '')}
-                    : attribute.type !== 'mdxJsxAttribute'
-                      ? scriptLine(value)
-                      : references(value, true),
-              };
-            }),
-          }),
-          ...(element.children && {children: cellPhrasing(element.children)}),
-        } as unknown as PhrasingContent,
-      ];
-    }
-    if ((node.type as string) === 'textDirective') {
-      const {attributes, children} = node as {
-        attributes?: Record<string, unknown>;
-        children?: PhrasingContent[];
-      };
-      return [
-        {
-          ...node,
-          // Attribute strings read references, like JSX's.
-          ...(attributes && {
-            attributes: Object.fromEntries(
-              Object.entries(attributes).map(([name, value]) => [
-                name,
-                value == null ? value : references(String(value), true),
-              ]),
-            ),
-          }),
-          ...(children && {children: cellPhrasing(children)}),
-        } as unknown as PhrasingContent,
-      ];
-    }
-    if ((node.type as string) === 'inlineMath') {
-      const math = node as unknown as {type: 'inlineMath'; value: string};
-      return [
-        {...math, value: texLine(math.value)} as unknown as PhrasingContent,
-      ];
-    }
-    if (
-      (node.type === 'text' || node.type === 'inlineCode') &&
-      /[\r\n]/.test(node.value)
-    ) {
-      return node.value
-        .split(/\r?\n|\r/)
-        .flatMap((value, i): PhrasingContent[] => [
-          ...(i > 0 ? [rawHtml('<br>')] : []),
-          ...(value ? [{...node, value}] : []),
-        ]);
-    }
-    return undefined;
+    return slashes + escape + '|';
   });
 }
 
-// The tokens of a JavaScript expression in code, after a value, where a
-// `/` divides, and in the text of a template, a JSX tag, and the children of
-// a JSX element.
-const SCRIPT_TOKENS = [
-  /\\(?:\r\n|[^])|(["'])(?:\\(?:\r\n|[^])|(?!\1)[^\\\r\n])*\1|\/\*[^]*?\*\/|\/\/.*|\+\+|--|<<|\s+|(?:[\w$]|(?!\s)[\u0080-\uffff])+|[^]/y,
-  /\\(?:\r\n|[^])|\$\{|\r\n?|\n|[^\\$`\r\n]+|[^]/y,
-  /(["'])[^]*?\1|\/\s*>|\/\*[^]*?\*\/|\/\/.*|\s+|[^]/y,
-  /<\/[^>]*>|[^<{]+|[^]/y,
-];
-// A regular expression literal, which can start where a value can.
-const REGEX_TOKEN =
-  /\/(?![*/])(?:\\.|\[(?:\\.|[^\]\\\r\n])*\]|[^/\\\r\n[])+\/\w*/y;
-
-/** Text whose whitespace runs with a line end are one separator each. */
-function oneLine(text: string, separator: string): string {
-  return text.replace(/\s+/g, space =>
-    /[\r\n]/.test(space) ? separator : space,
-  );
-}
-
-/**
- * Text that reads character references (JSX, an attribute's string) on one
- * line and without pipes, and, for text that was read already, with its
- * `&` as one too.
- */
-function references(text: string, read?: boolean): string {
-  return text.replace(
-    read ? /[\r\n|&]/g : /[\r\n|]/g,
-    found => `&#${found.charCodeAt(0)};`,
-  );
-}
-
-// KaTeX's tokens: `\verb` and a URL argument, read verbatim; a control
-// word or symbol; a comment, which a line feed ends; whitespace; a group's
-// braces; a pipe; and other text.
-const TEX_TOKEN =
-  /\\verb\*?([^a-zA-Z\n])[^\n]*?\1|\\(?:url|href)[ \t\r\n]*\{(?:[^{}]|\{[^{}]*\})*\}|\\(?:[a-zA-Z@]+|[^])|%[^\n]*\n?|[ \t\r\n]+|[^\\%{}| \t\r\n]+|[^]/g;
-
-// What a line of TeX ends with: a control word, or one and the whitespace it
-// takes, or whitespace.
-type TexEnd = '' | 'word' | 'wordSpace' | 'space';
-
-/**
- * TeX on one line, as a cell needs, that KaTeX reads as it did. Comments a
- * line end ends are dropped. GFM ends a cell at `|` even in math, so `|`
- * and `\|` are written as `\vert` and `\Vert`, `\textbar` in text, `%7C`
- * in a URL, and `\verb` takes another delimiter. (A column rule in an
- * array's spec has no other form.) A control word written before a letter
- * it didn't end at gets a space to end at, and one before a space it didn't
- * take, in text, gets `\ ` for it.
- */
-function texLine(tex: string): string {
-  let line = '';
-  // The group depth, and that of the innermost text group, or 0.
-  let depth = 0;
-  let text = 0;
-  // Whether a text command waits for its group, and whether the last token
-  // read was a control word, which takes the whitespace after it.
-  let textCommand = false;
-  let afterWord = false;
-  let end = '' as TexEnd;
-  for (const [found, delimiter] of tex.matchAll(TEX_TOKEN)) {
-    const word = afterWord;
-    afterWord = false;
-    let write = found;
-    let next = '' as TexEnd;
-    if (delimiter) {
-      // Any delimiter its text lacks.
-      const other =
-        delimiter === '|' &&
-        [...'!"+=/#&()-.:;<>?@[]^_~'].find(c => !found.includes(c));
-      write = other ? found.replace(/\|/g, other) : found;
-    } else if (found[0] === '%') {
-      write = found.endsWith('\n') ? '' : found.replace(/[\r|]/g, ' ');
-      next = end;
-    } else if (/^[ \t\r\n]/.test(found)) {
-      write = oneLine(found, ' ');
-      next = end === 'word' || end === 'wordSpace' ? 'wordSpace' : 'space';
-      if (!word && text && end) {
-        // A space the line's end would take or join.
-        write = '\\ ';
-        next = '';
-      }
-    } else {
-      const group = textCommand;
-      textCommand = false;
-      if (/^\\(?:url|href)\W/.test(found)) {
-        write = oneLine(found.replace(/\|/g, '%7C'), ' ');
-      } else if (/^\\[a-zA-Z@]/.test(found)) {
-        afterWord = true;
-        next = 'word';
-        textCommand = /^\\text(?!style)[a-zA-Z]*$/.test(found);
-      } else if (found === '{') {
-        depth++;
-        if (group && !text) {
-          text = depth;
-        }
-      } else if (found === '}') {
-        text = text === depth-- ? 0 : text;
-      } else if (/^\\?\|$/.test(found)) {
-        write = text
-          ? found === '|'
-            ? '\\textbar'
-            : found
-          : found === '|'
-            ? '\\vert'
-            : '\\Vert';
-        next = write === found ? '' : 'word';
-      } else if (/^\\[\r\n]/.test(found)) {
-        write = '\\ ';
-      } else if (end === 'word' && /^[a-zA-Z@]/.test(found)) {
-        write = ' ' + found;
-      }
-    }
-    end = next;
-    line += write;
+/** The code of an MDX expression, which has no escape for a pipe. */
+function scriptLine(code: string, fit: CellFit): string {
+  if (code.includes('|')) {
+    fit.exact = false;
   }
-  return line;
-}
-
-/** A literal's text without line continuations, and its pipes as escapes. */
-function literalPipes(text: string): string {
-  return text.replace(/\\(?:\r\n?|[^])|\|/g, found =>
-    /^\\?\|$/.test(found) ? '\\x7c' : /^\\[\r\n]/.test(found) ? '' : found,
-  );
+  return escapePipes(rawLine(code, fit), fit);
 }
 
 /**
- * A JavaScript expression on one line, as a cell needs, with its value: line
- * ends between tokens become U+2028, which JavaScript reads as a line end
- * (for comments and semicolon insertion) but Markdown doesn't, a template
- * writes its line ends as `\n` (which only its raw strings tell apart), a
- * string drops its line continuations, and JSX keeps the text its line ends
- * make. A `|` in a string, a template's text or a comment is written as
- * `\x7c`, and in JSX as `&#124;`; elsewhere (an operator, a regular
- * expression) GFM has no way to hold it. Nothing else is changed, so code
- * read wrongly is written as it was.
+ * Text that reads character references (a JSX or directive attribute's
+ * string) on one line and without pipes, with its `&` as one too.
  */
-function scriptLine(code: string, noJsx?: boolean): string {
-  // The open contexts, the innermost last: the brace depth of code, or -1
-  // in a template's text, -2 in a JSX tag, -3 in a JSX element's children.
-  const contexts = [0];
-  let line = '';
-  let operand = true;
-  let previous = '';
-  // For each open parenthesis, whether it holds a statement's condition,
-  // after which a value can start.
-  const conditions: boolean[] = [];
-  for (let i = 0, found: string; i < code.length; i += found.length) {
-    const context = contexts[contexts.length - 1];
-    const token = SCRIPT_TOKENS[context < 0 ? -context : 0];
-    REGEX_TOKEN.lastIndex = token.lastIndex = i;
-    found = ((context >= 0 && operand && REGEX_TOKEN.exec(code)) ||
-      token.exec(code))![0];
-    const blank = context >= 0 && /^\s|^\/[*/]/.test(found);
-    let write = found;
-    if (context === -1) {
-      if (found === '`') {
-        contexts.pop();
-        operand = false;
-      } else if (found === '${') {
-        contexts.push(0);
-        operand = true;
-      } else {
-        write = /^\\?[\r\n]/.test(found)
-          ? found[0] === '\\'
-            ? ''
-            : '\\n'
-          : literalPipes(found);
+function references(text: string): string {
+  return text.replace(/[\r\n|&]/g, found => `&#${found.charCodeAt(0)};`);
+}
+
+// Raw HTML with text that reads no references, so a pipe in it has no form.
+const RAW_TEXT_RE = /<(?:script|style|textarea|title)(?=[\s/>]|$)/i;
+
+/**
+ * Rewrites exported phrasing content for a GFM cell, which holds one line:
+ * line breaks (`break` nodes and newlines in text) become `<br>`, which
+ * gfm-table would otherwise write as spaces, a rule `<hr>`, and the pipes
+ * in raw values are escaped, since a cell splits on `|` even in code. What
+ * has no form on one line (a line end in code, math or HTML) is noted in
+ * `fit` and written with spaces.
+ */
+function cellPhrasing(
+  nodes: readonly PhrasingContent[],
+  fit: CellFit,
+): PhrasingContent[] {
+  return mapPhrasing(joinAtBreaks(nodes), node => {
+    const type = node.type as string;
+    const {value} = node as {value?: string};
+    const {attributes, children} = node as {
+      attributes?: unknown;
+      children?: PhrasingContent[];
+    };
+    if (type === 'break' || type === 'thematicBreak') {
+      // GFM has no rule in a cell but HTML's, which import reads back.
+      return [rawHtml(type === 'break' ? '<br>' : '<hr>')];
+    }
+    if (FORMATTING_RE.test(type)) {
+      return [{...node, children: cellPhrasing(children!, fit)} as Emphasis];
+    }
+    if ((type === 'text' || type === 'inlineCode') && /[\r\n]/.test(value!)) {
+      // Code takes no `<br>`, so a code span per line is only near it.
+      if (type !== 'text') {
+        fit.exact = false;
       }
-    } else if (context < 0) {
-      if (found === '{') {
-        contexts.push(0);
-        operand = true;
-      } else if (found === '<') {
-        // An element in children, or as an attribute's value.
-        contexts.push(-2);
-      } else if (found === '>' && context === -2) {
-        contexts[contexts.length - 1] = -3;
-      } else if (context === -2 && /^["']/.test(found)) {
-        write = references(found);
-      } else if (context === -3 && found[0] !== '<') {
-        // JSX text drops the spaces of a line end at its edges.
-        write = references(
-          found.replace(/[ \t\r\n]+/g, (space, at) =>
-            !/[\r\n]/.test(space)
-              ? space
-              : at && at + space.length < found.length
-                ? ' '
-                : '',
+      return value!
+        .split(/\r?\n|\r/)
+        .flatMap((line, i): PhrasingContent[] => [
+          ...(i > 0 ? [rawHtml('<br>')] : []),
+          ...(line ? cellPhrasing([{...node, value: line} as Text], fit) : []),
+        ]);
+    }
+    if (type === 'inlineCode' || type === 'inlineMath') {
+      // gfm-table escapes the pipes in code itself.
+      return [
+        {
+          ...node,
+          value: escapePipes(
+            rawLine(value!, fit),
+            fit,
+            type === 'inlineCode' ? '' : '\\',
           ),
-        );
-      } else {
-        write = literalPipes(oneLine(found, '\u2028'));
-        if (/^\/\s*>|^<\//.test(found)) {
-          contexts.pop();
-          operand = false;
-        }
-      }
-    } else if (blank) {
-      // Whitespace and comments don't change what can follow.
-      write = literalPipes(oneLine(found, '\u2028'));
-    } else {
-      if (found === '`') {
-        contexts.push(-1);
-      } else if (operand && found === '<' && !noJsx) {
-        contexts.push(-2);
-      } else if (found === '}' && !context && contexts.length > 1) {
-        contexts.pop();
-      } else if (found === '{' || found === '}') {
-        // A `}` that closes nothing leaves the code as it is.
-        contexts[contexts.length - 1] += found === '{' ? 1 : context && -1;
-      } else if (/^["']/.test(found)) {
-        // A string's line continuations, and its pipes as escapes.
-        write = literalPipes(found);
-      }
-      if (found === '(') {
-        conditions.push(/^(?:if|while|for|with)$/.test(previous));
-      }
-      operand =
-        found === ')'
-          ? !!conditions.pop()
-          : /^[\w$\u0080-\uffff]/.test(found)
-            ? previous !== '.' &&
-              /^(?:return|typeof|case|do|else|in|of|new|delete|void|throw|instanceof|yield|await)$/.test(
-                found,
-              )
-            : !/^(?:[\]`'"]|\/.|\+\+|--)/.test(found);
+        } as PhrasingContent,
+      ];
     }
-    if (!blank) {
-      // A property (`a.with`) keeps its dot, as it is no keyword.
-      previous = previous === '.' ? '.' + found : found;
+    if (/^html(?:Block|Inline)?$/.test(type)) {
+      // A line end beside embedded Markdown (a `<template>` holding its
+      // place) only sets it apart, but blocks embedded one after another
+      // have no line of their own.
+      const html = value!.replace(/\s+/g, (space, at: number, all: string) =>
+        /[\r\n]/.test(space) &&
+        (all.startsWith('</template>', at - 11) ||
+          all.startsWith('<template data-mdast-child=', at + space.length))
+          ? ''
+          : space,
+      );
+      if (
+        /<\/template><template/.test(html) ||
+        (html.includes('|') && RAW_TEXT_RE.test(html))
+      ) {
+        fit.exact = false;
+      }
+      return [
+        {
+          ...node,
+          value: rawLine(html, fit).replace(/\|/g, '&#124;'),
+          // `MdastHtmlExtension`'s raw HTML with Markdown embedded in it:
+          // phrasing, or the paragraphs of block HTML.
+          ...(children && {
+            children:
+              type === 'htmlBlock'
+                ? (children as unknown as BlockContent[]).map(child =>
+                    child.type === 'paragraph'
+                      ? {...child, children: cellPhrasing(child.children, fit)}
+                      : ((fit.exact = false), child),
+                  )
+                : cellPhrasing(children, fit),
+          }),
+        } as PhrasingContent,
+      ];
     }
-    line += write;
-  }
-  // A line end read wrongly, or in code that isn't valid, is still not
-  // written as one.
-  return line.replace(/\r\n?|\n/g, '\u2028');
+    if (type === 'mdxTextExpression') {
+      return [{...node, value: scriptLine(value || '', fit)} as Html];
+    }
+    if (type === 'mdxJsxTextElement' || type === 'textDirective') {
+      return [
+        {
+          ...node,
+          // A string reads references; an expression's code is as above.
+          ...(attributes != null && {
+            attributes: Array.isArray(attributes)
+              ? attributes.map(
+                  (attribute: {type: string; value?: string | Html | null}) => {
+                    const attributeValue = attribute.value;
+                    return {
+                      ...attribute,
+                      value:
+                        typeof attributeValue !== 'string'
+                          ? attributeValue && {
+                              ...attributeValue,
+                              value: scriptLine(
+                                attributeValue.value || '',
+                                fit,
+                              ),
+                            }
+                          : attribute.type !== 'mdxJsxAttribute'
+                            ? scriptLine(attributeValue, fit)
+                            : references(attributeValue),
+                    };
+                  },
+                )
+              : Object.fromEntries(
+                  Object.entries(attributes).map(([name, attributeValue]) => [
+                    name,
+                    attributeValue == null
+                      ? attributeValue
+                      : references(String(attributeValue)),
+                  ]),
+                ),
+          }),
+          ...(children && {children: cellPhrasing(children, fit)}),
+        } as unknown as PhrasingContent,
+      ];
+    }
+    return undefined;
+  });
 }
 
 // The phrasing content that holds phrasing content, with that of
@@ -707,7 +515,7 @@ const PHRASING_PARENT_RE =
   /^(?:delete|emphasis|link|linkReference|strong|htmlInline|textDirective|mdxJsxTextElement)$/;
 
 // Flow content of mdast extensions that has a phrasing twin, which a cell
-// can hold.
+// can hold in its place. Only an expression is the same in a line.
 const PHRASING_TWIN: Record<string, string> = {
   containerDirective: 'textDirective',
   leafDirective: 'textDirective',
@@ -717,65 +525,78 @@ const PHRASING_TWIN: Record<string, string> = {
 };
 
 /**
- * The phrasing content of a cell's exported blocks as one line: a GFM cell
- * can't hold blocks, so each one with phrasing (a paragraph, a heading, a
- * list item's paragraph, a line of code) is a line of its own, and lines
- * are separated by `<br>`, empty ones included.
+ * The phrasing content of a cell's exported blocks as one line, separated
+ * by `<br>`, empty ones included. A GFM cell holds paragraphs and rules as
+ * they are; any other block (a heading, a list, a quote, code) is noted in
+ * `fit` and flattened, each block with phrasing (a list item's paragraph, a
+ * line of code) a line of its own.
  */
 function cellContent(
   nodes: readonly MdastNode[],
-  phrase: (phrasing: PhrasingContent[]) => PhrasingContent[] = cellPhrasing,
+  fit: CellFit,
+  phrase: (phrasing: PhrasingContent[]) => PhrasingContent[] = phrasing =>
+    cellPhrasing(phrasing, fit),
 ): PhrasingContent[] {
   const lines: PhrasingContent[][] = [];
   // The line of the last top-level phrasing, which phrasing right after it
   // runs on.
   let phrasing: PhrasingContent[] = [];
   const visit = (node: MdastNode) => {
-    const twin = PHRASING_TWIN[node.type];
+    const type = node.type as string;
+    const twin = PHRASING_TWIN[type];
     if (twin) {
+      if (type !== 'mdxFlowExpression') {
+        fit.exact = false;
+      }
       return visit({
         ...node,
         type: twin,
         // A leaf directive's label is phrasing already. Phrasing is
         // rewritten once, with the twin's.
         ...('children' in node &&
-          (node.type as string) !== 'leafDirective' && {
-            children: cellContent(node.children, same => same),
+          type !== 'leafDirective' && {
+            children: cellContent(node.children, fit, same => same),
           }),
       } as MdastNode);
     }
-    switch (node.type) {
+    switch (type) {
       case 'paragraph':
-      case 'heading':
       case 'tableCell':
-        lines.push(phrase(node.children));
-        return;
-      case 'code':
-        for (const value of node.value.split(/\r?\n|\r/)) {
-          lines.push(value ? [{type: 'inlineCode', value}] : []);
-        }
-        return;
-      case 'html':
-      case 'htmlBlock':
-        lines.push(phrase([node as PhrasingContent]));
+        lines.push(phrase((node as Paragraph).children));
         return;
       case 'thematicBreak':
         lines.push([rawHtml('<hr>')]);
+        return;
+      case 'html':
+        lines.push(phrase([node as Html]));
         return;
       case 'definition':
         // Definitions are the document's, and no node exports one.
         return;
     }
-    if ('children' in node && !PHRASING_PARENT_RE.test(node.type)) {
-      node.children.forEach(visit);
-    } else {
+    if (!('children' in node) || PHRASING_PARENT_RE.test(type)) {
       // Phrasing content exported at the cell's top level (an image, a
       // footnote reference, an inline decorator's fallback) is a line of its
       // own after a block's, and runs on with the phrasing before it.
-      if (lines[lines.length - 1] !== phrasing) {
-        lines.push((phrasing = []));
+      if (type !== 'code') {
+        if (lines[lines.length - 1] !== phrasing) {
+          lines.push((phrasing = []));
+        }
+        phrasing.push(...phrase([node as PhrasingContent]));
+        return;
       }
-      phrasing.push(...phrase([node as PhrasingContent]));
+    }
+    fit.exact = false;
+    if (type === 'code') {
+      for (const value of (node as Code).value.split(/\r?\n|\r/)) {
+        lines.push(value ? phrase([{type: 'inlineCode', value}]) : []);
+      }
+    } else if (type === 'heading') {
+      lines.push(phrase((node as Heading).children));
+    } else if (type !== 'htmlBlock') {
+      // The Markdown in `MdastHtmlExtension`'s block HTML, which is only
+      // written as part of HTML, isn't flattened.
+      (node as Parent).children.forEach(visit);
     }
   };
   nodes.forEach(visit);
@@ -836,6 +657,39 @@ export function $getTableColumnAlign(table: TableNode): AlignType[] {
   return $alignColumns(table, table.getChildren().filter($isTableRowNode));
 }
 
+/**
+ * A table as HTML, for one with a cell that GFM can't hold: Markdown is
+ * read between blank lines in HTML, so each cell holds its blocks as they
+ * are, and GFM readers, CommonMark ones and MDX alike read it.
+ */
+function htmlTable(cells: MdastNode[][][], align: AlignType[]): HtmlBlock {
+  const parts: RawHtmlBlockPart[] = ['<table>\n'];
+  cells.forEach((row, rowIndex) => {
+    const tag = rowIndex ? 'td' : 'th';
+    parts.push(
+      rowIndex
+        ? rowIndex === 1
+          ? '<tbody>\n<tr>\n'
+          : '<tr>\n'
+        : '<thead>\n<tr>\n',
+    );
+    row.forEach((blocks, column) => {
+      const cellAlign = align[column];
+      parts.push(
+        // GitHub keeps only `align`, and HTML import reads `text-align`.
+        `<${tag}${cellAlign ? ` align="${cellAlign}" style="text-align: ${cellAlign}"` : ''}>`,
+        ...(blocks.length > 0
+          ? ['\n\n', {flow: blocks as BlockContent[]}, '\n\n']
+          : []),
+        `</${tag}>\n`,
+      );
+    });
+    parts.push(rowIndex ? '</tr>\n' : '</tr>\n</thead>\n');
+  });
+  parts.push(cells.length > 1 ? '</tbody>\n</table>' : '</table>');
+  return rawHtmlBlock(...parts);
+}
+
 const $exportTable: MdastExportHandler = (node, ctx) => {
   if (!$isTableNode(node)) {
     return null;
@@ -848,19 +702,28 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     .filter(
       (row): row is TableRowNode => $isTableRowNode(row) && ctx.isIncluded(row),
     );
+  const cells = rows.map(row =>
+    row
+      .getChildren()
+      .filter($isTableCellNode)
+      .map(cell => ctx.exportChildren(cell)),
+  );
+  const fit: CellFit = {exact: true};
+  const lines = cells.map(row => row.map(blocks => cellContent(blocks, fit)));
+  const align = $alignColumns(node, rows);
+  if (
+    !fit.exact &&
+    $getPeerDependency<typeof MdastHtmlExtension>('@lexical/mdast/Html')
+  ) {
+    return htmlTable(cells, align);
+  }
   return {
-    align: $alignColumns(node, rows),
-    children: rows.map(
+    align,
+    children: lines.map(
       (row): TableRow => ({
-        children: row
-          .getChildren()
-          .filter($isTableCellNode)
-          .map(
-            (cell): TableCell => ({
-              children: cellContent(ctx.exportChildren(cell)),
-              type: 'tableCell',
-            }),
-          ),
+        children: row.map(
+          (children): TableCell => ({children, type: 'tableCell'}),
+        ),
         type: 'tableRow',
       }),
     ),
@@ -875,8 +738,12 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
  * directions. A GFM cell holds a single line, so each paragraph and line
  * break in a cell is written as a `<br>`-separated line, and `<br>` reads
  * back as a paragraph boundary, or as a line break inside formatting or a
- * link. Other blocks in a cell (lists, headings, quotes, code) are
- * flattened into lines. Column alignment is the element format of the
+ * link, and a pipe in code, math or HTML is escaped as GFM reads it. A
+ * table with a cell GFM can't hold as it is (a list, heading, quote or code
+ * block, or a line end in math or HTML) is written as an HTML table with
+ * Markdown in its cells when the editor has `MdastHtmlExtension`, and
+ * otherwise with those blocks flattened into lines. Column alignment is the
+ * element format of the
  * column's cells (`TableCellNode.setFormat`), exported as the alignment
  * most of the column's cells have, or else its header cell's.
  *
@@ -904,8 +771,13 @@ export const MdastTableExtension = defineExtension({
       micromarkExtensions: [/* @__PURE__ */ gfmTable()],
       toMarkdownExtensions: [/* @__PURE__ */ gfmTableToMarkdown()],
     }),
+    // A table written as HTML reads back through HTML import.
+    configExtension(DOMImportExtension, {rules: TableImportRules}),
   ],
   name: '@lexical/mdast/Table',
   nodes: [TableNode, TableRowNode, TableCellNode],
+  peerDependencies: [
+    declarePeerDependency<typeof MdastHtmlExtension>('@lexical/mdast/Html'),
+  ],
   register: editor => editor.registerNodeTransform(TableNode, $moveLegacyAlign),
 });

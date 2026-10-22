@@ -125,8 +125,14 @@ configured by contributing `mdast-util-to-markdown` options through
 GFM table cells hold a single line, so `MdastTableExtension` writes each
 paragraph or line break in a cell as `<br>`, the line separator GitHub and
 most renderers accept there, and reads `<br>`, `<br/>` and `<br />` back as
-paragraph boundaries, or as line breaks inside formatting or a link. Other blocks in a cell, such as lists and code blocks,
-are flattened to one line per item. A column's alignment (`:-:`) is set as
+paragraph boundaries, or as line breaks inside formatting or a link. A
+pipe in code, math or raw HTML is written as `\|`, which GFM reads as a
+pipe before anything else in the cell. Some content has no form in a GFM
+cell: lists, headings, quotes and code blocks, and math or raw HTML with a
+line end of its own. With `MdastHtmlExtension`, a table holding any of that
+is written as an HTML table with Markdown in its cells, which GitHub,
+CommonMark renderers and MDX all read, and other tables stay GFM. Without
+it, those blocks are flattened to one line per item. A column's alignment (`:-:`) is set as
 the element format of each of its cells, so it renders as their
 `text-align` and stays with the column when columns are added or removed.
 GFM can't align a single cell, so on export a column takes the alignment

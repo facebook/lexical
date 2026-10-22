@@ -1050,6 +1050,13 @@ describe('MdastHtmlExtension', () => {
                 $createListItemNode().append($createTextNode('d')),
               ),
             );
+          // An empty cell is written empty.
+          $assertNodeType(
+            table.getFirstChildOrThrow<ElementNode>().getLastChild(),
+            $isElementNode,
+          )
+            .clear()
+            .append($createParagraphNode());
           // HTML aligns a cell apart from its column.
           $assertNodeType(
             table.getLastChildOrThrow<ElementNode>().getLastChild(),
@@ -1069,11 +1076,7 @@ describe('MdastHtmlExtension', () => {
           'h',
           '',
           '</th>',
-          '<th>',
-          '',
-          'i',
-          '',
-          '</th>',
+          '<th></th>',
           '</tr>',
           '</thead>',
           '<tbody>',

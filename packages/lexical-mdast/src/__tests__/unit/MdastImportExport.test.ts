@@ -1596,6 +1596,22 @@ describe('@lexical/mdast import/export', () => {
       });
     });
 
+    it('writes no <br> beside a rule that ends or starts a paragraph in a cell', () => {
+      const out = exportCell(
+        () =>
+          $createParagraphNode().append(
+            $createTextNode('a'),
+            $createHorizontalRuleNode(),
+          ),
+        () =>
+          $createParagraphNode().append(
+            $createHorizontalRuleNode(),
+            $createTextNode('b'),
+          ),
+      );
+      expect(cellOf(out)).toBe('a<hr><hr>b');
+    });
+
     it('trims the whitespace an <hr> in a cell was written with', () => {
       const markdown = '| a |\n| - |\n| a <hr> b |';
       using editor = createEditor(true);

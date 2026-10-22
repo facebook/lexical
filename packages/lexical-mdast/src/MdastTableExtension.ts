@@ -290,6 +290,10 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
   );
 };
 
+function isRule(node: PhrasingContent | undefined): boolean {
+  return node !== undefined && node.type === 'html' && node.value === '<hr>';
+}
+
 // Fresh nodes, as an exported tree may be edited in place.
 function rawHtml(value: '<br>' | '<hr>'): Html {
   return {type: 'html', value};
@@ -471,7 +475,6 @@ function cellContent(
 ): PhrasingContent[] {
   const phrase = (phrasing: PhrasingContent[]) => cellPhrasing(phrasing, fit);
   const lines: PhrasingContent[][] = [];
-  const rules = new Set<PhrasingContent[]>();
   // The line of the last top-level phrasing, which phrasing right after it
   // runs on.
   let phrasing: PhrasingContent[] = [];
@@ -488,7 +491,7 @@ function cellContent(
         lines.push(phrase((node as Paragraph).children));
         return;
       case 'thematicBreak':
-        rules.add(lines[lines.push([rawHtml('<hr>')]) - 1]);
+        lines.push([rawHtml('<hr>')]);
         return;
       case 'html':
         lines.push(phrase([node as Html]));
@@ -523,7 +526,7 @@ function cellContent(
   nodes.forEach(visit);
   // A rule ends the lines beside it, as import reads it.
   return lines.flatMap((line, i) =>
-    i > 0 && !rules.has(line) && !rules.has(lines[i - 1])
+    i > 0 && !isRule(line[0]) && !isRule(lines[i - 1][lines[i - 1].length - 1])
       ? [rawHtml('<br>'), ...line]
       : line,
   );
@@ -602,7 +605,10 @@ function htmlTable(cells: MdastNode[][][], align: AlignType[][]): HtmlBlock {
       parts.push(
         // GitHub keeps only `align`, and HTML import reads `text-align`.
         `<${tag}${cellAlign ? ` align="${cellAlign}" style="text-align: ${cellAlign}"` : ''}>`,
-        ...(blocks.length > 0
+        // An empty cell's one empty paragraph is no Markdown.
+        ...(blocks.some(
+          block => block.type !== 'paragraph' || block.children.length > 0,
+        )
           ? ['\n\n', {flow: blocks as BlockContent[]}, '\n\n']
           : []),
         `</${tag}>\n`,
@@ -626,12 +632,8 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     .filter(
       (row): row is TableRowNode => $isTableRowNode(row) && ctx.isIncluded(row),
     );
-  const cells = rows.map(row =>
-    row
-      .getChildren()
-      .filter($isTableCellNode)
-      .map(cell => ctx.exportChildren(cell)),
-  );
+  const cellNodes = rows.map(row => row.getChildren().filter($isTableCellNode));
+  const cells = cellNodes.map(row => row.map(cell => ctx.exportChildren(cell)));
   const fit: CellFit = {exact: true};
   const lines = cells.map(row => row.map(blocks => cellContent(blocks, fit)));
   if (
@@ -641,9 +643,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     // HTML aligns each cell as it is.
     return htmlTable(
       cells,
-      rows.map(row =>
-        row.getChildren().filter($isTableCellNode).map($getCellAlign),
-      ),
+      cellNodes.map(row => row.map($getCellAlign)),
     );
   }
   return {

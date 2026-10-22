@@ -27,6 +27,7 @@ import {
   type Transformer,
 } from '@lexical/markdown';
 import {
+  $computeTableMapSkipCellCheck,
   $createTableCellNode,
   $createTableNode,
   $createTableRowNode,
@@ -208,8 +209,9 @@ export const TWEET: ElementTransformer = {
 };
 
 // Very primitive table setup
-// A row may be indented by up to three spaces and end in spaces and tabs.
-const TABLE_ROW_REG_EXP = /^ {0,3}\|(.+)\|[ \t]*$/;
+// A row may be indented by up to three spaces and end in spaces and tabs,
+// and a CRLF line in a carriage return.
+const TABLE_ROW_REG_EXP = /^ {0,3}\|([^]+)\|[ \t\r]*$/;
 
 // Stands in for the `<` of text that reads as a `<br>`, which the text
 // export would escape twice.
@@ -237,16 +239,25 @@ const TABLE_CELL_LINE_BREAK: TextMatchTransformer = {
               node.getTextContent().replace(/<(?=br\s*\/?>)/gi, ESCAPED_LT),
             )
           : null,
-  // With the backslashes before it, which escape it when there is an odd
-  // run of them.
-  importRegExp: /(\\*)<br\s*\/?>/i,
+  importRegExp: /<br\s*\/?>/i,
   regExp: /(?!)/,
   replace: (textNode, match) => {
-    const backslashes = match[1].length;
-    if (backslashes % 2 === 0) {
-      (backslashes ? textNode.splitText(backslashes)[1] : textNode).replace(
-        $createLineBreakNode(),
-      );
+    // An odd run of backslashes before it escapes it. They are in the text
+    // split from before the match, which has yet to read its escapes, as the
+    // end of a node before that is a delimiter. Counted by hand: a regex is
+    // quadratic on a long run.
+    const before = match.index ? textNode.getPreviousSibling() : null;
+    const text = $isTextNode(before) ? before.getTextContent() : '';
+    let start = text.length;
+    while (start > 0 && text[start - 1] === '\\') {
+      start--;
+    }
+    if ((text.length - start) % 2 === 0) {
+      textNode.replace($createLineBreakNode());
+    } else if ($isTextNode(before)) {
+      // The escaping backslash is read here, as the rest of the escape is
+      // in the matched text.
+      before.setTextContent(text.slice(0, -1));
     }
   },
   type: 'text-match',
@@ -256,7 +267,7 @@ const TABLE_CELL_LINE_BREAK: TextMatchTransformer = {
  * An equation in a table cell, which holds one line, as an inline one.
  */
 function $exportCellEquation(node: EquationNode): string {
-  return `$${escapeInlineEquation(node.getEquation().replace(/\s*\n\s*/g, ' '))}$`;
+  return `$${escapeInlineEquation(node.getEquation().replace(/\n/g, ' '))}$`;
 }
 
 /**
@@ -360,27 +371,34 @@ export const TABLE: MultilineElementTransformer = {
       ),
     ];
 
-    for (const row of node.getChildren()) {
-      if (!$isTableRowNode(row)) {
-        continue;
-      }
-      const cells = row.getChildren().filter($isTableCellNode);
+    // GFM drops the cells past the header's, so every row is written as wide
+    // as the table, with an empty cell for each place a merged cell covers.
+    const [map] = $computeTableMapSkipCellCheck(node, null, null);
+    const width = map.reduce((max, row) => Math.max(max, row.length), 0);
+    map.forEach((row, rowIndex) => {
+      const cells = Array.from({length: width}, (_, i) => row[i]);
       output.push(
-        `| ${cells.map(cell => $exportTableCell(cell, transformers)).join(' | ')} |`,
+        `| ${cells
+          .map((value, i) =>
+            value && value.startRow === rowIndex && value.startColumn === i
+              ? $exportTableCell(value.cell, transformers)
+              : '',
+          )
+          .join(' | ')} |`,
       );
       // GFM reads the first row as the header, and its cells' alignment as
       // their columns'.
-      if (output.length === 1) {
+      if (rowIndex === 0) {
         output.push(
           `| ${cells
-            .map(cell => {
-              const align = cell.getFormatType();
+            .map(value => {
+              const align = value && value.cell.getFormatType();
               return `${align === 'left' || align === 'center' ? ':' : ''}---${align === 'right' || align === 'center' ? ':' : ''}`;
             })
             .join(' | ')} |`,
         );
       }
-    }
+    });
 
     return output.join('\n');
   },
@@ -394,7 +412,7 @@ export const TABLE: MultilineElementTransformer = {
       !header ||
       !delimiterCells ||
       delimiterCells.length !== header.length ||
-      !isTableDelimiterRow(delimiter)
+      !delimiterCells.every(isTableDelimiterCell)
     ) {
       return null;
     }
@@ -547,9 +565,11 @@ export const TABLE: MultilineElementTransformer = {
  */
 function isTableDelimiterRow(line: string): boolean {
   const cells = readTableRow(line);
-  return (
-    cells !== null && cells.every(cell => /^[ \t]*:?-+:?[ \t]*$/.test(cell))
-  );
+  return cells !== null && cells.every(isTableDelimiterCell);
+}
+
+function isTableDelimiterCell(cell: string): boolean {
+  return /^[ \t]*:?-+:?[ \t]*$/.test(cell);
 }
 
 /**

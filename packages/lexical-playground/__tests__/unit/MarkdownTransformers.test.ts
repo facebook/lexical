@@ -464,6 +464,8 @@ describe('playground TABLE markdown transformer', () => {
   it.each([
     ['| a |\n| - |\n| x |  ', [[['a']], [['x']]]],
     ['   | a |\t\n | - |\n  | x |', [[['a']], [['x']]]],
+    ['| a |\r\n| - |\r\n| x |\r\n', [[['a']], [['x']]]],
+    ['| a\u2028b |\n| - |\n| x\u2029 |', [[['a\u2028b']], [['x\u2029']]]],
   ])('reads the padded rows of %j', (markdown, cells) => {
     using editor = importMarkdown(markdown);
     expect(editor.read(() => $getRoot().getChildrenSize())).toBe(1);
@@ -473,7 +475,7 @@ describe('playground TABLE markdown transformer', () => {
   it.each([
     [() => $createEquationNode('x+y\n= z', false), '$x+y = z$'],
     [
-      () => $createParagraphNode().append($createEquationNode('a\n b', true)),
+      () => $createParagraphNode().append($createEquationNode('a\nb', true)),
       '$a b$',
     ],
   ])('writes an equation in a cell on its line, as %#', ($build, written) => {
@@ -884,6 +886,43 @@ describe('playground TABLE markdown transformer', () => {
   it('trims only spaces and tabs from a cell', () => {
     using editor = importMarkdown(['| h |', '| --- |', '|  a　 |'].join('\n'));
     expect(cellTexts(editor)).toEqual([[['h']], [[' a　']]]);
+  });
+
+  it('writes and reads long runs of backslashes in a cell in linear time', () => {
+    const text = '\\'.repeat(1e5);
+    const markdown = exportTable(() =>
+      $cellOf($createParagraphNode().append($createTextNode(text))),
+    );
+    using imported = importMarkdown(markdown);
+    expect(cellTexts(imported)).toEqual([[['h']], [[text]]]);
+  });
+
+  it('writes each row as wide as the table, merged cells included', () => {
+    const markdown = exportTable(() =>
+      $createTableNode().append(
+        $createTableRowNode().append(
+          $createTableCellNode(TableCellHeaderStates.ROW, 2).append(
+            $createParagraphNode().append($createTextNode('h')),
+          ),
+        ),
+        $createTableRowNode().append(
+          $createTableCellNode()
+            .setRowSpan(2)
+            .append($createParagraphNode().append($createTextNode('a'))),
+          $createTableCellNode().append(
+            $createParagraphNode().append($createTextNode('b')),
+          ),
+        ),
+        $createTableRowNode().append(
+          $createTableCellNode().append(
+            $createParagraphNode().append($createTextNode('c')),
+          ),
+        ),
+      ),
+    );
+    expect(markdown).toBe(
+      ['| h |  |', '| --- | --- |', '| a | b |', '|  | c |'].join('\n'),
+    );
   });
 
   it('writes and reads long runs of spaces in a cell in linear time', () => {

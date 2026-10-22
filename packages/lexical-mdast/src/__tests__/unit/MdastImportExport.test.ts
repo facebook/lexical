@@ -1710,6 +1710,8 @@ describe('@lexical/mdast import/export', () => {
     it.each<[object, string]>([
       [{type: 'inlineMath', value: 'a|b'}, '$a\\|b$'],
       [{type: 'inlineCode', value: 'a|b'}, '`a\\|b`'],
+      // A line end in code reads as a space in HTML too.
+      [{type: 'inlineCode', value: 'a\nb'}, '`a b`'],
       [
         {type: 'html', value: '<!-- a|b --><b title="a|b">x|y</b>'},
         '<!-- a\\|b --><b title="a\\|b">x\\|y</b>',

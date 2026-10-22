@@ -412,8 +412,9 @@ function cellPhrasing(
       return [
         {
           ...node,
+          // A line end in code reads as a space anywhere, so it fits.
           value: escapePipes(
-            rawLine(value!, fit),
+            rawLine(value!, type === 'inlineCode' ? {exact: true} : fit),
             fit,
             type === 'inlineCode' ? '' : '\\',
           ),

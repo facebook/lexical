@@ -55,10 +55,12 @@ function random(seed: number): () => number {
 function generate(next: () => number): PhrasingContent[] {
   const pick = <T>(items: readonly T[]): T =>
     items[Math.floor(next() * items.length)];
+  // No blank line, which would end the paragraph in any form.
   const word = (chars: string) =>
     Array.from({length: 1 + Math.floor(next() * 6)}, () => pick([...chars]))
       .join('')
-      .replace(/^\s+|\s+$/g, '') || 'a';
+      .replace(/^\s+|\s+$/g, '')
+      .replace(/\n\s*\n/g, '\n') || 'a';
   // Text first, so that raw HTML doesn't start a block of its own.
   const nodes: PhrasingContent[] = [{type: 'text', value: 'x '}];
   for (let i = 0, n = 1 + Math.floor(next() * 3); i < n; i++) {
@@ -89,7 +91,7 @@ function generate(next: () => number): PhrasingContent[] {
         url: word('ab|\\'),
       });
     } else if (kind === 'code') {
-      nodes.push({type: 'inlineCode', value: word('ab |\\')});
+      nodes.push({type: 'inlineCode', value: word('ab |\\\n')});
     } else if (kind === 'math') {
       nodes.push({type: 'inlineMath', value: word('ab |\\{}\n')} as never);
     } else if (kind === 'html') {
@@ -119,7 +121,9 @@ function needsHtml(nodes: PhrasingContent[]): boolean {
     return (
       (children !== undefined && needsHtml(children)) ||
       (/^(?:html|inlineCode|inlineMath)$/.test(node.type) &&
-        (/[\r\n]/.test(value!) || /(?:^|[^\\])(?:\\\\)*\\\|/.test(value!)))
+        /(?:^|[^\\])(?:\\\\)*\\\|/.test(value!)) ||
+      // A line end in code reads as a space in any form.
+      (/^(?:html|inlineMath)$/.test(node.type) && /[\r\n]/.test(value!))
     );
   });
 }
@@ -214,7 +218,7 @@ function micromarkCell(markdown: string): PhrasingContent[] {
 
 /**
  * `nodes` without positions, with adjacent text joined, a `<br>` as the
- * break it is, and the spaces beside a break or an edge, which render as
+ * break it is, a line end in code as the space it renders, and the spaces beside a break or an edge, which render as
  * nothing, dropped.
  */
 function plain(nodes: PhrasingContent[]): unknown[] {
@@ -227,7 +231,11 @@ function plain(nodes: PhrasingContent[]): unknown[] {
     } else if (type === 'text' && last && last.type === 'text') {
       last.value += value;
     } else {
-      joined.push({type, value});
+      // Code renders a line end as a space.
+      joined.push({
+        type,
+        value: type === 'inlineCode' ? value.replace(/\r\n?|\n/g, ' ') : value,
+      });
     }
   }
   return joined

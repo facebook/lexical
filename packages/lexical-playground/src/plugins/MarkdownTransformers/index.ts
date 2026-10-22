@@ -17,7 +17,6 @@ import {
   CHECK_LIST,
   ELEMENT_TRANSFORMERS,
   type ElementTransformer,
-  isTableRowDivider,
   MULTILINE_ELEMENT_TRANSFORMERS,
   type MultilineElementTransformer,
   TEXT_FORMAT_TRANSFORMERS,
@@ -420,16 +419,14 @@ export const TABLE: ElementTransformer = {
 };
 
 /**
- * Whether `line` is a GFM delimiter row, which has at least one dash in
- * every cell. `isTableRowDivider` also accepts a row of empty cells
- * (`|  |  |`), which is how an empty row is written.
+ * Whether `line` is a GFM delimiter row: every cell a run of dashes, with
+ * an optional colon at either end, padded with any whitespace.
  */
 function isTableDelimiterRow(line: string): boolean {
   const match = line.match(TABLE_ROW_REG_EXP);
   return (
     match !== null &&
-    isTableRowDivider(line) &&
-    splitTableRow(match[1]).every(cell => cell.includes('-'))
+    splitTableRow(match[1]).every(cell => /^\s*:?-+:?\s*$/.test(cell))
   );
 }
 

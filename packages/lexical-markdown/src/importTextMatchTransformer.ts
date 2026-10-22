@@ -86,7 +86,7 @@ export function $importFoundTextMatchTransformer(
   transformedNode?: TextNode;
   nodeBefore: TextNode | undefined; // If split
   nodeAfter: TextNode | undefined; // If split
-} | null {
+} {
   let transformedNode, nodeAfter, nodeBefore;
 
   if (startIndex === 0) {
@@ -98,10 +98,8 @@ export function $importFoundTextMatchTransformer(
     );
   }
 
-  if (!transformer.replace) {
-    return null;
-  }
-  const potentialTransformedNode = transformer.replace(transformedNode, match);
+  // $findOutermostTextMatchTransformer only finds transformers that replace.
+  const potentialTransformedNode = transformer.replace!(transformedNode, match);
 
   return {
     matchedNode: transformedNode,

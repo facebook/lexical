@@ -101,9 +101,6 @@ export function $importTextTransformers(
           foundTextMatch!.transformer,
           foundTextMatch!.match,
         );
-    if (!result) {
-      return;
-    }
     for (const node of [
       result.nodeAfter,
       result.nodeBefore,

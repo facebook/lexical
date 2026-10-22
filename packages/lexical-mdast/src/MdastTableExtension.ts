@@ -585,6 +585,8 @@ function $alignColumns(
  * The GFM alignment of each column of `table`, which export writes in its
  * delimiter row: the alignment most of the column's cells render with
  * (their element format, or their paragraphs'), or else its header cell's.
+ *
+ * @experimental
  */
 export function $getTableColumnAlign(table: TableNode): AlignType[] {
   return $alignColumns(table, table.getChildren().filter($isTableRowNode));

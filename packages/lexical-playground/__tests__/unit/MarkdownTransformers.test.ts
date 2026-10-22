@@ -8,12 +8,7 @@
 
 // @vitest-environment node
 
-import {
-  $createCodeNode,
-  $isCodeNode,
-  CodeHighlightNode,
-  CodeNode,
-} from '@lexical/code-core';
+import {$createCodeNode, CodeHighlightNode, CodeNode} from '@lexical/code-core';
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {$createLinkNode, LinkNode} from '@lexical/link';
 import {
@@ -50,6 +45,8 @@ import {
   $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
+  $isTabNode,
+  $isTextNode,
   createEditor,
   defineExtension,
   type ElementNode,
@@ -473,23 +470,68 @@ describe('playground TABLE markdown transformer', () => {
     expect(cellTexts(editor)).toEqual([[['a']], [['x\ny', 'z']]]);
   });
 
+  // A GFM cell holds inline content only, so what reads as a block on a
+  // line of its own is text after a <br>.
   it.each([
-    ['5*<br># b', ['5*', 'b']],
-    ['_id<br>- x', ['_id', 'x']],
-    ['a_b_<br># h', ['a_b_', 'h']],
-    ['[TODO<br># b<br># c', ['[TODO', 'b', 'c']],
-    ['$x*y$ z_<br># h', ['x*y z_', 'h']],
-    ['[a](https://e.com/_a)<br># h', ['a', 'h']],
-    ['***a** b*<br># h', ['a b', 'h']],
-    ['a *<br># b', ['a *', 'b']],
-  ])('reads the block after the <br> in %j', (body, blocks) => {
+    ['5*<br># b', '5*\n# b'],
+    ['_id<br>- x', '_id\n- x'],
+    ['[TODO<br># b<br># c', '[TODO\n# b\n# c'],
+    ['$x*y$ z_<br># h', 'x*y z_\n# h'],
+    ['***a** b*<br># h', 'a b\n# h'],
+    ['**a** b<br># c', 'a b\n# c'],
+    ['````<br>a<br>````', '<br>a<br>'],
+  ])('reads %j as inline content', (body, text) => {
     using editor = importMarkdown(
       ['| h |', '| --- |', `| ${body} |`].join('\n'),
     );
-    expect(cellTexts(editor)).toEqual([[['h']], [blocks]]);
+    expect(cellTexts(editor)).toEqual([[['h']], [[text]]]);
   });
 
-  it('round-trips a link with an underscore in its URL before a heading', () => {
+  it.each([
+    [
+      '**a<br>b**',
+      [['a', 'bold'], 'linebreak', ['b', 'bold']],
+      '**a**<br>**b**',
+    ],
+    [
+      'x **<br>- y**',
+      [['x ', ''], 'linebreak', ['- y', 'bold']],
+      'x <br>**- y**',
+    ],
+    ['`a<br>b`', [['a<br>b', 'code']], '`a<br>b`'],
+    ['\\<br>x', [['<br>x', '']], '\\<br>x'],
+    ['\\\\<br>x', [['\\', ''], 'linebreak', ['x', '']], '\\\\<br>x'],
+  ])('reads the <br> in %j as GFM does', (body, nodes, written) => {
+    using editor = importMarkdown(
+      ['| h |', '| --- |', `| ${body} |`].join('\n'),
+    );
+    expect(
+      editor.read(() =>
+        $getRoot()
+          .getLastChildOrThrow<ElementNode>()
+          .getLastChildOrThrow<ElementNode>()
+          .getFirstChildOrThrow<ElementNode>()
+          .getFirstChildOrThrow<ElementNode>()
+          .getChildren()
+          .map(node =>
+            $isTextNode(node)
+              ? [
+                  node.getTextContent(),
+                  (['bold', 'code'] as const).find(format =>
+                    node.hasFormat(format),
+                  ) || '',
+                ]
+              : node.getType(),
+          ),
+      ),
+    ).toEqual(nodes);
+    // Export closes and reopens formatting around a line break.
+    expect(
+      editor.read(() => $convertToMarkdownString([TABLE])).split('\n')[2],
+    ).toBe(`| ${written} |`);
+  });
+
+  it('writes a heading in a cell as the text GFM shows', () => {
     const markdown = exportTable(() =>
       $cellOf(
         $createParagraphNode().append(
@@ -498,21 +540,14 @@ describe('playground TABLE markdown transformer', () => {
         $createHeadingNode('h1').append($createTextNode('b')),
       ),
     );
-    using imported = importMarkdown(markdown);
     expect(markdown.split('\n')[2]).toBe(
       '| [a](https://e.com/_a)<br><br># b |',
     );
-    expect(cellTexts(imported)).toEqual([[['h']], [['a', 'b']]]);
+    using imported = importMarkdown(markdown);
+    expect(cellTexts(imported)).toEqual([[['h']], [['a', '# b']]]);
     expect(imported.read(() => $convertToMarkdownString([TABLE]))).toBe(
       markdown,
     );
-  });
-
-  it('still reads a block after a paragraph in a cell', () => {
-    using editor = importMarkdown(
-      ['| h |', '| --- |', '| **a** b<br># c |'].join('\n'),
-    );
-    expect(cellTexts(editor)).toEqual([[['h']], [['a b', 'c']]]);
   });
 
   it.each([
@@ -594,33 +629,6 @@ describe('playground TABLE markdown transformer', () => {
   );
 
   it.each([
-    ['````<br>a<br>````', 'a'],
-    ['````<br>a ``` b<br>````', 'a ``` b'],
-    ['````<br>```<br>x<br>````', '```\nx'],
-  ])('reads the code block %j with a long fence', (body, code) => {
-    using editor = importMarkdown(
-      ['| h |', '| --- |', `| ${body} |`].join('\n'),
-    );
-    editor.read(() => {
-      const cell = $getRoot()
-        .getLastChildOrThrow<ElementNode>()
-        .getLastChildOrThrow<ElementNode>()
-        .getFirstChildOrThrow<ElementNode>();
-      expect(cell.getChildren().map(block => block.getType())).toEqual([
-        'code',
-      ]);
-      expect(cell.getTextContent()).toBe(code);
-    });
-  });
-
-  it('reads a list after an unopened ** before a <br>', () => {
-    using editor = importMarkdown(
-      ['| h |', '| --- |', '| x **<br>- y** |'].join('\n'),
-    );
-    expect(cellTexts(editor)).toEqual([[['h']], [['x **', 'y**']]]);
-  });
-
-  it.each([
     'const x = `a\nb`;',
     '`a\nb`',
     '``a\nb``',
@@ -631,15 +639,23 @@ describe('playground TABLE markdown transformer', () => {
     '"""a  \nb"""',
     'x\\',
     'a \\\nb\\\\\nc',
-  ])('round-trips code block %j', code => {
+    ' a ',
+    '  ',
+  ])('writes code block %j as a code span for each line', code => {
     const markdown = exportTable(() =>
       $cellOf($createCodeNode('js').append($createTextNode(code))),
     );
     using imported = importMarkdown(markdown);
     imported.read(() => {
-      const block = $getRoot().getLastDescendant()?.getParent();
-      assert($isCodeNode(block), 'The cell must hold a code block');
-      expect(block.getTextContent()).toBe(code);
+      const cell = $getRoot()
+        .getLastChildOrThrow<ElementNode>()
+        .getLastChildOrThrow<ElementNode>()
+        .getFirstChildOrThrow<ElementNode>();
+      expect(cell.getTextContent()).toBe(code);
+      // A tab is read as a TabNode of its own, outside the code.
+      for (const text of cell.getAllTextNodes()) {
+        expect(text.hasFormat('code') || $isTabNode(text)).toBe(true);
+      }
     });
   });
 
@@ -664,32 +680,14 @@ describe('playground TABLE markdown transformer', () => {
     },
   );
 
-  it('reads the line that opens a code block in a cell as code', () => {
-    const markdown = [
-      '| h |',
-      '| --- |',
-      '| ```js a\\\\\\|b<br>x<br>``` |',
-    ].join('\n');
-    using editor = importMarkdown(markdown);
-    expect(editor.read(() => $convertToMarkdownString([TABLE]))).toBe(markdown);
-  });
-
-  it('round-trips a code block with a pipe and a blank line in a cell', () => {
+  it('writes a code block with a pipe and a blank line in a cell', () => {
     const markdown = exportTable(() =>
       $cellOf($createCodeNode('js').append($createTextNode('a | b\n\nc'))),
     );
-    expect(markdown.split('\n')[2]).toBe(
-      '| ```js<br>a \\| b<br><br>c<br>``` |',
-    );
-    using imported = importMarkdown(markdown);
-    imported.read(() => {
-      const code = $getRoot().getLastDescendant()?.getParent();
-      assert($isCodeNode(code), 'The cell must hold a code block');
-      expect(code.getTextContent()).toBe('a | b\n\nc');
-    });
+    expect(markdown.split('\n')[2]).toBe('| `a \\| b`<br><br>`c` |');
   });
 
-  it('round-trips a list in a cell', () => {
+  it('writes a list in a cell as the text GFM shows', () => {
     const markdown = exportTable(() =>
       $cellOf(
         $createListNode('bullet').append(
@@ -700,8 +698,7 @@ describe('playground TABLE markdown transformer', () => {
     );
     expect(markdown.split('\n')[2]).toBe('| - x<br>- y |');
     using imported = importMarkdown(markdown);
-    // A list's text puts a blank line between its items.
-    expect(cellTexts(imported)).toEqual([[['h']], [['x\n\ny']]]);
+    expect(cellTexts(imported)).toEqual([[['h']], [['- x\n- y']]]);
   });
 
   it('writes a nested table in a cell as its lines', () => {
@@ -721,7 +718,7 @@ describe('playground TABLE markdown transformer', () => {
     expect(cellTexts(imported)).toEqual([[['h']], [['| x |']]]);
   });
 
-  it('round-trips a nested list in a cell', () => {
+  it('round-trips the text of a nested list in a cell', () => {
     const markdown = exportTable(() =>
       $cellOf(
         $createListNode('bullet').append(

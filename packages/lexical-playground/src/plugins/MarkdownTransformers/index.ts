@@ -6,6 +6,7 @@
  *
  */
 
+import {$isCodeNode, CodeNode} from '@lexical/code-core';
 import {
   $createHorizontalRuleNode,
   $isHorizontalRuleNode,
@@ -15,6 +16,7 @@ import {
   $convertToMarkdownString,
   $generateNodesFromMarkdownString,
   CHECK_LIST,
+  CODE,
   ELEMENT_TRANSFORMERS,
   type ElementTransformer,
   MULTILINE_ELEMENT_TRANSFORMERS,
@@ -37,12 +39,15 @@ import {
   TableRowNode,
 } from '@lexical/table';
 import {
+  $createLineBreakNode,
+  $createParagraphNode,
   $createTextNode,
   $isLineBreakNode,
   $isParagraphNode,
   $isTextNode,
   type LexicalNode,
   LineBreakNode,
+  type ParagraphNode,
 } from 'lexical';
 
 import {
@@ -205,24 +210,83 @@ export const TWEET: ElementTransformer = {
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
 
 /**
- * Writes a line break in a table cell as a bare newline, which becomes a
- * `<br>`. The default export would put a hard line break's marker (`\` or
- * two spaces) in front of it, and `\<br>` reads back as an escaped `<`.
+ * A line break in a table cell, which is a `<br>`. Export writes a bare
+ * newline, which becomes one: the default export would put a hard line
+ * break's marker (`\` or two spaces) in front of it, and `\<br>` reads back
+ * as an escaped `<`. Text that reads as a `<br>` is written with its `<`
+ * escaped, through a placeholder the text export leaves alone. Import reads
+ * a `<br>` wherever GFM does, inside formatting and links too, but not in
+ * code or after an escaping backslash.
  */
+const ESCAPED_LT = '\uFDD0';
+
 const TABLE_CELL_LINE_BREAK: TextMatchTransformer = {
   dependencies: [LineBreakNode],
-  export: node => ($isLineBreakNode(node) ? '\n' : null),
+  export: (node, _, exportFormat) =>
+    $isLineBreakNode(node)
+      ? '\n'
+      : $isTextNode(node) && !node.hasFormat('code')
+        ? exportFormat(
+            node,
+            node.getTextContent().replace(/<(?=br\s*\/?>)/gi, ESCAPED_LT),
+          )
+        : null,
+  // With the backslashes before it, which escape it when there is an odd
+  // run of them.
+  importRegExp: /(\\*)<br\s*\/?>/i,
   regExp: /(?!)/,
+  replace: (textNode, match) => {
+    const backslashes = match[1].length;
+    if (backslashes % 2 === 0) {
+      (backslashes ? textNode.splitText(backslashes)[1] : textNode).replace(
+        $createLineBreakNode(),
+      );
+    }
+  },
   type: 'text-match',
 };
 
 /**
- * The transformers that read a cell: PLAYGROUND_TRANSFORMERS as it is now,
- * but TABLE. A GFM cell can't hold a table, and its pipes are unescaped
- * before it is read, so a line such as `\|q\|` must not read as one.
+ * A code block in a table cell, which GFM can't hold, as a code span for
+ * each of its lines, which a cell reads back as code.
+ */
+const TABLE_CELL_CODE: ElementTransformer = {
+  dependencies: [CodeNode],
+  export: node =>
+    $isCodeNode(node)
+      ? node
+          .getTextContent()
+          .split('\n')
+          .map(line => {
+            const fence = '`'.repeat(
+              Math.max(0, ...(line.match(/`+/g) || []).map(run => run.length)) +
+                1,
+            );
+            // A reader strips a space from each end of a span with
+            // something else in it.
+            return line && /^[ `]|[ `]$/.test(line) && /[^ ]/.test(line)
+              ? `${fence} ${line} ${fence}`
+              : line && fence + line + fence;
+          })
+          .join('\n')
+      : null,
+  regExp: /(?!)/,
+  replace: () => false,
+  type: 'element',
+};
+
+/**
+ * The transformers that read a cell, which holds inline content only, as in
+ * GFM: those of PLAYGROUND_TRANSFORMERS as it is now that read text, and a
+ * `<br>` as a line break.
  */
 function getCellTransformers(): Transformer[] {
-  return PLAYGROUND_TRANSFORMERS.filter(t => t !== TABLE);
+  return [
+    TABLE_CELL_LINE_BREAK,
+    ...PLAYGROUND_TRANSFORMERS.filter(
+      t => t.type === 'text-format' || t.type === 'text-match',
+    ),
+  ];
 }
 
 /**
@@ -249,7 +313,8 @@ function $exportTableCell(
 ): string {
   return trimCell($convertToMarkdownString(transformers, cell))
     .replace(/\|/g, '\\|')
-    .replace(/\n/g, '<br>');
+    .replace(/\n/g, '<br>')
+    .replaceAll(ESCAPED_LT, '\\<');
 }
 
 export const TABLE: ElementTransformer = {
@@ -261,7 +326,11 @@ export const TABLE: ElementTransformer = {
 
     const output: string[] = [];
     // A nested table is written as its lines, which a cell reads as text.
-    const transformers = [TABLE_CELL_LINE_BREAK, ...PLAYGROUND_TRANSFORMERS];
+    const transformers = [
+      TABLE_CELL_LINE_BREAK,
+      TABLE_CELL_CODE,
+      ...PLAYGROUND_TRANSFORMERS.filter(t => t !== CODE),
+    ];
 
     for (const row of node.getChildren()) {
       const rowOutput = [];
@@ -434,20 +503,41 @@ function isTableDelimiterRow(line: string): boolean {
  * A cell read as GFM reads it: its padding trimmed, `\|` as a pipe, and
  * each `<br>` a line end, with the spaces beside it kept.
  */
-const $createTableCell = (
+/**
+ * A cell read from its Markdown, a line of inline content. Two `<br>` in a
+ * row, which export writes between paragraphs, start a new paragraph.
+ */
+function $createTableCell(
   textContent: string,
   transformers: Transformer[] = [],
-): TableCellNode =>
+): TableCellNode {
+  const cell = $createTableCellNode(TableCellHeaderStates.NO_STATUS);
   // Generating the nodes, unlike converting into the cell, leaves the
   // selection alone.
-  $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
-    ...$generateNodesFromMarkdownString(
-      trimCell(textContent)
-        .replace(/\\\|/g, '|')
-        .replace(/<br\s*\/?>/gi, '\n'),
-      transformers,
-    ),
-  );
+  for (const node of $generateNodesFromMarkdownString(
+    trimCell(textContent).replace(/\\\|/g, '|'),
+    transformers,
+  )) {
+    cell.append(node);
+    if (!$isParagraphNode(node)) {
+      continue;
+    }
+    let paragraph: ParagraphNode = node;
+    const children = node.getChildren();
+    for (let i = 0; i < children.length; i++) {
+      if ($isLineBreakNode(children[i]) && $isLineBreakNode(children[i + 1])) {
+        children[i].remove();
+        children[++i].remove();
+        const next = $createParagraphNode();
+        paragraph.insertAfter(next);
+        paragraph = next;
+      } else if (paragraph !== node) {
+        paragraph.append(children[i]);
+      }
+    }
+  }
+  return cell;
+}
 
 const $mapToTableCells = (textContent: string): TableCellNode[] | null => {
   const match = textContent.match(TABLE_ROW_REG_EXP);

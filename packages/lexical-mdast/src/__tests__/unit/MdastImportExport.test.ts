@@ -1708,12 +1708,12 @@ describe('@lexical/mdast import/export', () => {
       );
     });
 
-    it('reads <br> in a cell as a paragraph boundary', () => {
+    it('reads <br> in a cell as a paragraph boundary, with attributes too', () => {
       using editor = createEditor(true);
       editor.update(
         () => {
           $convertFromMarkdownString(
-            '| a |\n| - |\n| x <br/> y<BR /><br>**z<br>w** |',
+            '| a |\n| - |\n| x <br/> y<BR class="c" /><br>**z<br>w** |',
           );
         },
         {discrete: true},
@@ -1731,7 +1731,10 @@ describe('@lexical/mdast import/export', () => {
       });
       expect(
         cellOf(
-          importExport('| a |\n| - |\n| x <br/> y<BR /><br>**z<br>w** |', true),
+          importExport(
+            '| a |\n| - |\n| x <br/> y<BR class="c" /><br>**z<br>w** |',
+            true,
+          ),
         ),
       ).toBe('x<br>y<br><br>**z<br>w**');
     });

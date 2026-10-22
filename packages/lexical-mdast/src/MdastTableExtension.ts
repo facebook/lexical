@@ -115,7 +115,10 @@ function $getCellAlign(cell: TableCellNode): AlignType {
   return shared === undefined ? own : shared;
 }
 
-/** Whether `node` is a `tag` void element (`<br>`, `<br/>`, `<br />`, any case). */
+/**
+ * Whether `node` is a `tag` void element (`<br>`, `<br/>`, `<br class="c">`,
+ * any case).
+ */
 function isVoidTag(node: MdastNode, tag: 'br' | 'hr'): boolean {
   return (
     (node.type === 'html' || node.type === 'htmlInline') &&
@@ -125,8 +128,8 @@ function isVoidTag(node: MdastNode, tag: 'br' | 'hr'): boolean {
 }
 
 const VOID_TAGS_RE = {
-  br: /^\s*<br\s*\/?>\s*$/i,
-  hr: /^\s*<hr\s*\/?>\s*$/i,
+  br: /^\s*<br(?:[\s/][^>]*)?>\s*$/i,
+  hr: /^\s*<hr(?:[\s/][^>]*)?>\s*$/i,
 };
 
 /**

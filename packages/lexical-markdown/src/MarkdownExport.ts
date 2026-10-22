@@ -503,14 +503,15 @@ function $exportTextFormat(
     output = shouldPreserveNewLines
       ? output.replace(/([*_`~])/g, '\\$1')
       : output.replace(/([*_`~\\])/g, '\\$1');
-    // Text that reads as a character reference keeps its `&` (`\&#65;`),
-    // with the references escapeCharacterReferences finds in links.
+    // Text that import would read as a character reference, a decimal one,
+    // keeps its `&` (`\&#65;`). Hex and named references are left as they
+    // are, as import leaves them, so a document reads back as it was.
     // When backslashes are kept as they are, the ones right before it are
     // escaped too, or the last would escape the escape instead.
     // Each run of backslashes is read once, with the `&` after it or else
     // alone, which keeps a long run linear.
     output = output.replace(
-      /(\\*)(&(?=#\d+;|#x[\da-f]+;|[a-z][\da-z]*;))|\\+/gi,
+      /(\\*)(&(?=#\d{1,7};))|\\+/g,
       (found, backslashes: string, amp: string | undefined) =>
         amp === undefined
           ? found

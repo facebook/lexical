@@ -1092,6 +1092,17 @@ describe('@lexical/mdast import/export', () => {
   });
 
   describe('with MdastTableExtension', () => {
+    it('drops the cells of a row past the header, as GFM does', () => {
+      using editor = createEditor(true);
+      editor.update(
+        () => $convertFromMarkdownString('| h |\n| - |\n| a | b |'),
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertToMarkdownString())).toBe(
+        '| h |\n| - |\n| a |',
+      );
+    });
+
     it('writes no alignment for a column whose paragraphs are justified', () => {
       using editor = createEditor(true);
       editor.update(

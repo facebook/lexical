@@ -85,71 +85,40 @@ export function $importTextTransformers(
     }
   }
 
-  if (foundTextFormat) {
-    const result = $importTextFormatTransformer(
-      textNode,
-      foundTextFormat.startIndex,
-      foundTextFormat.endIndex,
-      foundTextFormat.transformer,
-      foundTextFormat.match,
-    );
-
-    if ($canContainTransformableMarkdown(result.nodeAfter)) {
-      $importTextTransformers(
-        result.nodeAfter,
-        textFormatTransformersIndex,
-        textMatchTransformers,
-      );
-    }
-    if ($canContainTransformableMarkdown(result.nodeBefore)) {
-      $importTextTransformers(
-        result.nodeBefore,
-        textFormatTransformersIndex,
-        textMatchTransformers,
-      );
-    }
-    if ($canContainTransformableMarkdown(result.transformedNode)) {
-      $importTextTransformers(
-        result.transformedNode,
-        textFormatTransformersIndex,
-        textMatchTransformers,
-      );
-    }
-    // Each piece, `textNode` among them, has had its escapes read.
-    return;
-  } else if (foundTextMatch) {
-    const result = $importFoundTextMatchTransformer(
-      textNode,
-      foundTextMatch.startIndex,
-      foundTextMatch.endIndex,
-      foundTextMatch.transformer,
-      foundTextMatch.match,
-    );
+  if (foundTextFormat || foundTextMatch) {
+    const result = foundTextFormat
+      ? $importTextFormatTransformer(
+          textNode,
+          foundTextFormat.startIndex,
+          foundTextFormat.endIndex,
+          foundTextFormat.transformer,
+          foundTextFormat.match,
+        )
+      : $importFoundTextMatchTransformer(
+          textNode,
+          foundTextMatch!.startIndex,
+          foundTextMatch!.endIndex,
+          foundTextMatch!.transformer,
+          foundTextMatch!.match,
+        );
     if (!result) {
       return;
     }
-
-    if ($canContainTransformableMarkdown(result.nodeAfter)) {
-      $importTextTransformers(
-        result.nodeAfter,
-        textFormatTransformersIndex,
-        textMatchTransformers,
-      );
+    for (const node of [
+      result.nodeAfter,
+      result.nodeBefore,
+      result.transformedNode,
+    ]) {
+      if ($canContainTransformableMarkdown(node)) {
+        $importTextTransformers(
+          node,
+          textFormatTransformersIndex,
+          textMatchTransformers,
+        );
+      }
     }
-    if ($canContainTransformableMarkdown(result.nodeBefore)) {
-      $importTextTransformers(
-        result.nodeBefore,
-        textFormatTransformersIndex,
-        textMatchTransformers,
-      );
-    }
-    if ($canContainTransformableMarkdown(result.transformedNode)) {
-      $importTextTransformers(
-        result.transformedNode,
-        textFormatTransformersIndex,
-        textMatchTransformers,
-      );
-    } else if (
+    if (
+      'matchedNode' in result &&
       result.transformedNode === undefined &&
       $canContainTransformableMarkdown(result.matchedNode) &&
       result.matchedNode.getParent() !== null
@@ -162,6 +131,7 @@ export function $importTextTransformers(
         unescapeText(result.matchedNode.getTextContent()),
       );
     }
+    // Each piece, `textNode` among them, has had its escapes read.
     return;
   }
 

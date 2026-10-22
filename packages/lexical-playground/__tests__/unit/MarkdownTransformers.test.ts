@@ -374,6 +374,20 @@ describe('playground TABLE markdown transformer', () => {
     });
   }
 
+  it('keeps an escaped row above a table as text', () => {
+    using editor = importMarkdown('\\| a |\n| b |');
+    expect(
+      editor.read(() =>
+        $getRoot()
+          .getChildren()
+          .map(node => [node.getType(), node.getTextContent()]),
+      ),
+    ).toEqual([
+      ['paragraph', '| a |'],
+      ['table', 'b'],
+    ]);
+  });
+
   function $cellOf(...blocks: ElementNode[]): TableNode {
     return $createTableNode().append(
       $createTableRowNode().append(

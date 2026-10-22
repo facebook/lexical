@@ -274,19 +274,22 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
     node.children.map((row, rowIndex) =>
       $append(
         $createTableRowNode(),
-        row.children.map((cell, columnIndex) =>
-          // Every cell of the column carries the alignment, so it renders as
-          // the cell's text-align and moves with the cells when columns are
-          // edited.
-          $append(
-            $createTableCellNode(
-              rowIndex === 0
-                ? TableCellHeaderStates.ROW
-                : TableCellHeaderStates.NO_STATUS,
-            ).setFormat(align[columnIndex] || ''),
-            cellLines(cell).flatMap(line => $lineBlocks(line, ctx)),
+        // GFM ignores the cells past the header's.
+        row.children
+          .slice(0, node.children[0].children.length)
+          .map((cell, columnIndex) =>
+            // Every cell of the column carries the alignment, so it renders as
+            // the cell's text-align and moves with the cells when columns are
+            // edited.
+            $append(
+              $createTableCellNode(
+                rowIndex === 0
+                  ? TableCellHeaderStates.ROW
+                  : TableCellHeaderStates.NO_STATUS,
+              ).setFormat(align[columnIndex] || ''),
+              cellLines(cell).flatMap(line => $lineBlocks(line, ctx)),
+            ),
           ),
-        ),
       ),
     ),
   );

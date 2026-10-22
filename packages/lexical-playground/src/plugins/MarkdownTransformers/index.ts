@@ -297,7 +297,7 @@ export const TABLE: ElementTransformer = {
     return output.join('\n');
   },
   regExp: TABLE_ROW_REG_EXP,
-  replace: (parentNode, _1, match) => {
+  replace: (parentNode, _1, match, isImport) => {
     // Header row
     if (isTableDelimiterRow(match[0])) {
       // With no table above it, the line stays text.
@@ -335,7 +335,9 @@ export const TABLE: ElementTransformer = {
     }
 
     const rows = [matchCells];
-    let sibling = parentNode.getPreviousSibling();
+    // Typed rows above stayed paragraphs; an imported row above is a table
+    // already, and a paragraph there was text (an escaped pipe).
+    let sibling = isImport ? null : parentNode.getPreviousSibling();
     let maxCells = matchCells.length;
 
     while (sibling) {

@@ -472,6 +472,28 @@ describe('playground TABLE markdown transformer', () => {
     expect(cellTexts(editor)).toEqual(cells);
   });
 
+  it('reads indented rows when merging adjacent lines', () => {
+    using editor = buildEditorFromExtensions(TableMarkdownTestExtension);
+    editor.update(
+      () =>
+        $convertFromMarkdownString(
+          'p\n | a |\n| - |\n  | x |',
+          [TABLE],
+          undefined,
+          false,
+          true,
+        ),
+      {discrete: true},
+    );
+    expect(
+      editor.read(() =>
+        $getRoot()
+          .getChildren()
+          .map(node => node.getType()),
+      ),
+    ).toEqual(['paragraph', 'table']);
+  });
+
   it.each([
     [() => $createEquationNode('x+y\n= z', false), '$x+y = z$'],
     [
@@ -580,7 +602,7 @@ describe('playground TABLE markdown transformer', () => {
 
   it('reads each spelling of <br> back', () => {
     using editor = importMarkdown(
-      ['| a |', '| --- |', '| x<br/>y<BR /><br>z |'].join('\n'),
+      ['| a |', '| --- |', '| x<br/>y<BR class="c" /><br>z |'].join('\n'),
     );
     expect(cellTexts(editor)).toEqual([[['a']], [['x\ny', 'z']]]);
   });

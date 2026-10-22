@@ -236,10 +236,13 @@ const TABLE_CELL_LINE_BREAK: TextMatchTransformer = {
         : $isTextNode(node) && !node.hasFormat('code')
           ? exportFormat(
               node,
-              node.getTextContent().replace(/<(?=br\s*\/?>)/gi, ESCAPED_LT),
+              node
+                .getTextContent()
+                .replace(/<(?=br(?:[\s/][^<>]*)?>)/gi, ESCAPED_LT),
             )
           : null,
-  importRegExp: /<br\s*\/?>/i,
+  // With attributes too, as GFM allows.
+  importRegExp: /<br(?:[\s/][^<>]*)?>/i,
   regExp: /(?!)/,
   replace: textNode => {
     textNode.replace($createLineBreakNode());

@@ -458,9 +458,13 @@ const $mapToTableCells = (textContent: string): TableCellNode[] | null => {
     return null;
   }
   const transformers = getCellTransformers();
-  return splitTableRow(match[1]).map(text =>
-    $createTableCell(text, transformers),
-  );
+  // A row ends at its last pipe, unless that pipe is escaped (`| x \|`),
+  // when it is the last cell's content.
+  const cells = splitTableRow(match[1] + '|');
+  if (cells[cells.length - 1] === '') {
+    cells.pop();
+  }
+  return cells.map(text => $createTableCell(text, transformers));
 };
 
 /**

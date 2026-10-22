@@ -440,7 +440,11 @@ function cellPhrasing(
           ? ''
           : space,
       );
-      if (/<\/template>[^\S\r\n]*[\r\n]\s*<template data-mdast-child=/.test(value!)) {
+      if (
+        /<\/template>[^\S\r\n]*[\r\n]\s*<template data-mdast-child=/.test(
+          value!,
+        )
+      ) {
         fit.exact = false;
       }
       return [
@@ -504,9 +508,6 @@ function cellContent(
         return;
       case 'html':
         lines.push(phrase([node as Html]));
-        return;
-      case 'definition':
-        // Definitions are the document's, and no node exports one.
         return;
       case 'code':
         fit.exact = false;

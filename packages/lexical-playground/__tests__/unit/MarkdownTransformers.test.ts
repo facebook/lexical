@@ -389,6 +389,11 @@ describe('playground TABLE markdown transformer', () => {
     expect(cellTexts(editor)).toEqual(cells);
   });
 
+  it('reads an escaped pipe at the end of a row as content', () => {
+    using editor = importMarkdown('| a |\n| - |\n| x \\|');
+    expect(cellTexts(editor)).toEqual([[['a']], [['x |']]]);
+  });
+
   it('keeps an escaped row above a table as text', () => {
     using editor = importMarkdown('\\| a |\n| b |');
     expect(

@@ -1111,7 +1111,7 @@ describe('Markdown', () => {
       skipExport: true,
     },
     {
-      html: '<p><span style="white-space: pre-wrap;">foo</span><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;"> </span><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">bar</span><br><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">baz</span></p>',
+      html: '<p><span style="white-space: pre-wrap;">foo</span><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;"> </span><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">bar</span><br><span style="white-space: pre-wrap;">baz</span></p>',
       md: 'foo\t \tbar\n\tbaz',
       skipExport: true,
     },
@@ -2680,7 +2680,7 @@ describe('markdown whitespace import (default mode)', () => {
     ).toBe(md);
   }
 
-  it('preserves trailing whitespace on a standalone paragraph line (default mode)', () => {
+  it('drops trailing whitespace on a standalone paragraph line (default mode), as CommonMark does', () => {
     // A paragraph with trailing spaces, separated by an empty line from the next.
     const md = 'hello world   \n\nnext paragraph';
     const editor = createTestEditor();
@@ -2701,7 +2701,7 @@ describe('markdown whitespace import (default mode)', () => {
           HIGHLIGHT_TEXT_MATCH_IMPORT,
         ]),
       ),
-    ).toBe(md);
+    ).toBe('hello world\n\nnext paragraph');
   });
 
   it('preserves leading whitespace on a standalone paragraph line (default mode)', () => {

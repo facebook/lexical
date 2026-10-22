@@ -355,7 +355,7 @@ export function $splitMarkdownHardLineBreakMarker(textNode: TextNode): void {
   }
 }
 
-function $extractMarkdownHardLineBreakMarker(
+export function $extractMarkdownHardLineBreakMarker(
   previousNode: ElementNode,
 ): MarkdownHardLineBreak | null {
   const lastChild = previousNode.getLastChild();

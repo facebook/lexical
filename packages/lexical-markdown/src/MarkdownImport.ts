@@ -6,6 +6,7 @@
  *
  */
 
+import {$isCodeNode} from '@lexical/code-core';
 import {$isListItemNode, $isListNode, type ListItemNode} from '@lexical/list';
 import {$isQuoteNode} from '@lexical/rich-text';
 import {
@@ -16,6 +17,7 @@ import {
   $isElementNode,
   $isParagraphNode,
   $isTabNode,
+  $isTextNode,
   type ElementNode,
   type LexicalNode,
   type TextNode,
@@ -24,6 +26,7 @@ import {
 import {$importTextTransformers} from './importTextTransformers';
 import {
   $createMarkdownLineBreakNode,
+  $extractMarkdownHardLineBreakMarker,
   $splitMarkdownHardLineBreakMarker,
   type ElementTransformer,
   type MultilineElementTransformer,
@@ -100,6 +103,9 @@ export function $importMarkdownNodes(
       continue;
     }
     if ($isElementNode(child)) {
+      if (!shouldPreserveNewLines) {
+        $trimBlockEnd(child);
+      }
       for (const textNode of child.getAllTextNodes()) {
         $normalizeMarkdownTextNode(textNode);
       }
@@ -292,6 +298,11 @@ function $importBlocks(
       }
 
       if (targetNode != null && targetNode.getTextContentSize() > 0) {
+        // CommonMark strips the indent of a paragraph's continuation line.
+        const first = elementNode.getFirstChild();
+        if ($isTextNode(first) && !first.hasFormat('code')) {
+          first.setTextContent(first.getTextContent().replace(/^[ \t]+/, ''));
+        }
         targetNode.append(
           $createMarkdownLineBreakNode(targetNode),
           ...elementNode.getChildren(),
@@ -299,6 +310,37 @@ function $importBlocks(
         elementNode.remove();
       }
     }
+  }
+}
+
+/**
+ * Strips the spaces and tabs a block of inline content and each such block
+ * in it end with, which CommonMark drops, a two-space hard line break marker
+ * that no line joined included. Code takes its text as it is.
+ */
+function $trimBlockEnd(block: ElementNode): void {
+  if ($isCodeNode(block)) {
+    return;
+  }
+  if ($extractMarkdownHardLineBreakMarker(block) === '\\') {
+    // A backslash that ends a block is text.
+    block.append($createTextNode('\\'));
+    return;
+  }
+  const last = block.getLastChild();
+  if ($isElementNode(last) && !last.isInline()) {
+    for (const child of block.getChildren()) {
+      if ($isElementNode(child)) {
+        $trimBlockEnd(child);
+      }
+    }
+  } else if ($isTextNode(last) && !last.hasFormat('code')) {
+    const text = last.getTextContent();
+    let end = text.length;
+    while (end > 0 && (text[end - 1] === ' ' || text[end - 1] === '\t')) {
+      end--;
+    }
+    last.setTextContent(text.slice(0, end));
   }
 }
 

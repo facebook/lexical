@@ -40,6 +40,7 @@ import {
   MdastAlertExtension,
 } from '../../extensions/MdastAlertExtension';
 import {
+  $createCollapsibleNode,
   INSERT_COLLAPSIBLE_COMMAND,
   MdastCollapsibleExtension,
 } from '../../extensions/MdastCollapsibleExtension';
@@ -272,6 +273,29 @@ describe('footnotes', () => {
     );
     expect(root.querySelector('.footnote-def')).toBeNull();
     expect(markdownOf(editor)).toBe('');
+  });
+
+  test('deleting everything else clears the footnotes a slot refers to', () => {
+    const {editor, root} = mountEditor('body[^a] text\n\n[^a]: the note');
+    editor.update(
+      () => {
+        // The reference moves into a collapsible's summary slot.
+        const paragraph = $getRoot().getFirstChildOrThrow<ElementNode>();
+        const collapsible = $createCollapsibleNode();
+        const summary = $getSlot(collapsible, 'summary');
+        assert($isElementNode(summary));
+        summary.append(...paragraph.getChildren());
+        paragraph.replace(collapsible);
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        $getRoot().clear().append($createParagraphNode()).selectEnd();
+      },
+      {discrete: true},
+    );
+    expect(root.querySelector('.footnote-def')).toBeNull();
   });
 
   test.each(['body[^a] text', '# body[^a]\n\ntext'])(

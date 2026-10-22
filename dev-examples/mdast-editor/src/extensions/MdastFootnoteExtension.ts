@@ -33,7 +33,7 @@ import {
   RenderContextMarkdownSelection,
   type RootContent,
 } from '@lexical/mdast';
-import {$dfsIterator, mergeRegister} from '@lexical/utils';
+import {$dfsWithSlotsIterator, mergeRegister} from '@lexical/utils';
 import {
   $addUpdateTag,
   $create,
@@ -734,14 +734,21 @@ function $isBodyEmpty(root: RootNode): boolean {
     .every(child => $isParagraphNode(child) && child.isEmpty());
 }
 
-/** Whether the body (the root's children, not its slots) has a reference. */
+/**
+ * Whether the body (the root's children and their slots, not the root's
+ * footnotes) has a reference.
+ */
 function $bodyHasRef(): boolean {
-  for (const {node} of $dfsIterator()) {
-    if ($isFootnoteRefNode(node)) {
-      return true;
-    }
-  }
-  return false;
+  return $getRoot()
+    .getChildren()
+    .some(child => {
+      for (const {node} of $dfsWithSlotsIterator(child)) {
+        if ($isFootnoteRefNode(node)) {
+          return true;
+        }
+      }
+      return false;
+    });
 }
 
 /**

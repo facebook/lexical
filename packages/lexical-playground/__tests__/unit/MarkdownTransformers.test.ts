@@ -374,6 +374,21 @@ describe('playground TABLE markdown transformer', () => {
     });
   }
 
+  it.each([
+    ['| h |\n| --- |\n| a | b |', [[['h']], [['a']]]],
+    [
+      '| a | b |\n| --- | --- |\n| x |',
+      [
+        [['a'], ['b']],
+        [['x'], ['']],
+      ],
+    ],
+  ])('gives a row of %j the header cells', (markdown, cells) => {
+    using editor = importMarkdown(markdown);
+    expect(editor.read(() => $getRoot().getChildrenSize())).toBe(1);
+    expect(cellTexts(editor)).toEqual(cells);
+  });
+
   it('keeps an escaped row above a table as text', () => {
     using editor = importMarkdown('\\| a |\n| b |');
     expect(

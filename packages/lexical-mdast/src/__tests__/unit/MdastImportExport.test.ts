@@ -1092,6 +1092,30 @@ describe('@lexical/mdast import/export', () => {
   });
 
   describe('with MdastTableExtension', () => {
+    it('gives the cells a short row lacks its columns alignment', () => {
+      using editor = createEditor(true);
+      editor.update(
+        () => $convertFromMarkdownString('| a | b |\n| :-: | -: |\n| x |'),
+        {discrete: true},
+      );
+      expect(
+        editor.read(() =>
+          $assertNodeType($getRoot().getFirstChild(), $isTableNode)
+            .getChildren()
+            .map(row =>
+              $assertNodeType(row, $isElementNode)
+                .getChildren()
+                .map(cell =>
+                  $assertNodeType(cell, $isElementNode).getFormatType(),
+                ),
+            ),
+        ),
+      ).toEqual([
+        ['center', 'right'],
+        ['center', 'right'],
+      ]);
+    });
+
     it('drops the cells of a row past the header, as GFM does', () => {
       using editor = createEditor(true);
       editor.update(

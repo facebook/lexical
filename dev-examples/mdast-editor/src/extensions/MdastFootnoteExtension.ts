@@ -729,9 +729,17 @@ export function $clearFootnotes(): void {
 
 /** Whether everything outside the footnotes section is empty paragraphs. */
 function $isBodyEmpty(root: RootNode): boolean {
-  return root
-    .getChildren()
-    .every(child => $isParagraphNode(child) && child.isEmpty());
+  // Stops at the first block with content, which is usually the first.
+  for (
+    let child = root.getFirstChild();
+    child;
+    child = child.getNextSibling()
+  ) {
+    if (!$isParagraphNode(child) || !child.isEmpty()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /**

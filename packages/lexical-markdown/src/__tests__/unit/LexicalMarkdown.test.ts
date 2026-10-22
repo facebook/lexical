@@ -4189,7 +4189,7 @@ describe('link title round trip', () => {
   }
 });
 
-describe('decimal character references that name no character', () => {
+describe('character references', () => {
   // `String.fromCodePoint` throws on a number past U+10FFFF, so one of these
   // in the text or a link used to abort the whole import. CommonMark reads at
   // most seven digits, and replaces U+0000 and an invalid code point with
@@ -4203,6 +4203,10 @@ describe('decimal character references that name no character', () => {
     ['a&#12345678;b', 'a&#12345678;b'],
     ['a&#1114111;b', 'a\u{10FFFF}b'],
     ['a&#35;b', 'a#b'],
+    // Hex and named references are read too, and a name that is no HTML
+    // entity stays text.
+    ['a&#x23;b&#X10FFFF;&#x110000;', 'a#b\u{10FFFF}\uFFFD'],
+    ['a&amp;b&copy;&nosuch;&amp', 'a&b\u00a9&nosuch;&amp'],
   ];
 
   for (const [md, text] of TEXT_CASES) {

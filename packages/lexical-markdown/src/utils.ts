@@ -14,6 +14,7 @@ import type {
   Transformer,
 } from './MarkdownTransformers';
 
+import {decodeNamedCharacterReference} from 'decode-named-character-reference';
 import {$isParagraphNode, $isTextNode, type LexicalNode} from 'lexical';
 
 export function indexBy<T>(
@@ -76,12 +77,21 @@ export function $isEmptyParagraph(node: LexicalNode): boolean {
   );
 }
 
-// A decimal character reference has one to seven digits, and one that names
-// U+0000, a surrogate or a number past U+10FFFF reads as U+FFFD instead of
-// making `String.fromCodePoint` throw.
-// https://spec.commonmark.org/0.31.2/#decimal-numeric-character
-function decodeDecimalCharacterReference(_: string, digits: string): string {
-  const codePoint = Number(digits);
+// A numeric character reference has one to seven decimal or one to six hex
+// digits, and one that names U+0000, a surrogate or a number past U+10FFFF
+// reads as U+FFFD instead of making `String.fromCodePoint` throw. A named
+// one is read only when it is an HTML entity name.
+// https://spec.commonmark.org/0.31.2/#entity-and-numeric-character-references
+function decodeCharacterReference(
+  match: string,
+  digits: string | undefined,
+  hex: string | undefined,
+  name: string | undefined,
+): string {
+  if (name !== undefined) {
+    return decodeNamedCharacterReference(name) || match;
+  }
+  const codePoint = digits !== undefined ? Number(digits) : parseInt(hex!, 16);
   return codePoint === 0 ||
     (codePoint >= 0xd800 && codePoint <= 0xdfff) ||
     codePoint > 0x10ffff
@@ -92,8 +102,13 @@ function decodeDecimalCharacterReference(_: string, digits: string): string {
 export function unescapeText(value: string): string {
   // One pass, so an escaped `\&#35;` stays the text `&#35;`.
   return value.replace(
-    /\\([!-/:-@[-`{-~])|&#(\d{1,7});/g,
-    (match, escaped: string | undefined, digits: string | undefined) =>
-      escaped ?? decodeDecimalCharacterReference(match, digits!),
+    /\\([!-/:-@[-`{-~])|&(?:#(\d{1,7})|#[xX]([\da-fA-F]{1,6})|([a-zA-Z][\da-zA-Z]{0,31}));/g,
+    (
+      match,
+      escaped: string | undefined,
+      digits: string | undefined,
+      hex: string | undefined,
+      name: string | undefined,
+    ) => escaped ?? decodeCharacterReference(match, digits, hex, name),
   );
 }

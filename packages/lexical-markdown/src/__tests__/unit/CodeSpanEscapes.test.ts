@@ -254,11 +254,8 @@ describe('a character reference', () => {
     );
   });
 
-  it.each([
-    [['&#65; &#x41; &amp;'], '\\&#65; &#x41; &amp;'],
-    [['&#x41; &amp;'], '&#x41; &amp;'],
-  ])(
-    'escapes the & of text %j only before a reference import reads',
+  it.each([[['&#65; &#x41; &amp;'], '\\&#65; \\&#x41; \\&amp;']])(
+    'escapes the & of text %j that reads as a reference',
     (texts, markdown) => {
       using editor = buildEditorFromExtensions([MarkdownTestExtension]);
       editor.update(

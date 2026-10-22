@@ -1159,10 +1159,10 @@ export const ITALIC_UNDERSCORE: TextFormatTransformer = {
   type: 'text-format',
 };
 
-// `unescapeText` decodes a numeric character reference and a CommonMark reader
-// decodes the named ones too, so an `&` that begins one cannot be written raw
-// in a link destination or the URL comes back as the character it names. It
-// goes out as `&#38;` instead, which both of them read back as a single `&`.
+// `unescapeText` decodes a character reference as a CommonMark reader does,
+// so an `&` that begins one cannot be written raw in a link destination or
+// the URL comes back as the character it names. It goes out as `&#38;`
+// instead, which both of them read back as a single `&`.
 // An `&` that begins nothing is an ordinary character and stays as it is, so a
 // query string keeps the separators it was written with.
 function escapeCharacterReferences(value: string): string {

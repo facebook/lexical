@@ -1535,7 +1535,7 @@ describe('@lexical/mdast import/export', () => {
               $createTextNode('c1\nc2').toggleFormat('code'),
             ),
           ),
-          '`c1`<br>`c2`',
+          '`c1 c2`',
         ],
       ];
       for (const [out, expected] of cases) {

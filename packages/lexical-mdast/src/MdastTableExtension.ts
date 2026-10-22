@@ -395,16 +395,12 @@ function cellPhrasing(
     if (FORMATTING_RE.test(type)) {
       return [{...node, children: cellPhrasing(children!, fit)} as Emphasis];
     }
-    if ((type === 'text' || type === 'inlineCode') && /[\r\n]/.test(value!)) {
-      // Code takes no `<br>`, so a code span per line is only near it.
-      if (type !== 'text') {
-        fit.exact = false;
-      }
+    if (type === 'text' && /[\r\n]/.test(value!)) {
       return value!
         .split(/\r?\n|\r/)
         .flatMap((line, i): PhrasingContent[] => [
           ...(i > 0 ? [rawHtml('<br>')] : []),
-          ...(line ? cellPhrasing([{...node, value: line} as Text], fit) : []),
+          ...(line ? [{...node, value: line} as Text] : []),
         ]);
     }
     if (type === 'inlineCode' || type === 'inlineMath') {

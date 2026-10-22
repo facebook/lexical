@@ -56,9 +56,13 @@ export function transformersByType(transformers: Transformer[]): Readonly<{
   };
 }
 
-export const PUNCTUATION_OR_SPACE = /[!-/:-@[-`{-~\s]/;
+// CommonMark counts every character in the Unicode P (punctuation) and S
+// (symbol) general categories as punctuation, which includes all of the ASCII
+// punctuation characters. Delimiter flanking depends on it.
+// https://spec.commonmark.org/0.31.2/#unicode-punctuation-character
+export const PUNCTUATION_OR_SPACE = /[\p{P}\p{S}\s]/u;
 export const WHITESPACE = /\s/;
-export const PUNCTUATION = /[!"#$%&'()*+,\-./:;<=>?@[\]^_`{|}~]/;
+export const PUNCTUATION = /[\p{P}\p{S}]/u;
 
 const MARKDOWN_EMPTY_LINE_REG_EXP = /^\s{0,3}$/;
 

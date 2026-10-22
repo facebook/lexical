@@ -21,6 +21,7 @@ import type {
   ElementDOMSlot,
   SerializedElementNode,
   LexicalExtension,
+  ExtensionConfigBase,
 } from 'lexical';
 import type {NamedSignalsOutput} from '@lexical/extension';
 
@@ -470,6 +471,7 @@ export type TableConfig = {
 
 
 declare export var TableExtension: LexicalExtension<TableConfig, "@lexical/table/Table", NamedSignalsOutput<TableConfig>, void>;
+declare export var TableImportExtension: LexicalExtension<ExtensionConfigBase, "@lexical/table/Import", void, void>;
 
 declare export function $isSimpleTable(table: TableNode): boolean;
 

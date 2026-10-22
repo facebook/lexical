@@ -31,7 +31,6 @@ import type {
 } from 'mdast';
 
 import {$getPeerDependency, configExtension} from '@lexical/extension';
-import {DOMImportExtension} from '@lexical/html';
 import {
   $createTableCellNode,
   $createTableNode,
@@ -41,7 +40,7 @@ import {
   $isTableRowNode,
   TableCellHeaderStates,
   TableCellNode,
-  TableImportRules,
+  TableImportExtension,
   TableNode,
   TableRowNode,
 } from '@lexical/table';
@@ -702,7 +701,7 @@ export const MdastTableExtension = defineExtension({
       toMarkdownExtensions: [/* @__PURE__ */ gfmTableToMarkdown()],
     }),
     // A table written as HTML reads back through HTML import.
-    configExtension(DOMImportExtension, {rules: TableImportRules}),
+    TableImportExtension,
   ],
   name: '@lexical/mdast/Table',
   nodes: [TableNode, TableRowNode, TableCellNode],

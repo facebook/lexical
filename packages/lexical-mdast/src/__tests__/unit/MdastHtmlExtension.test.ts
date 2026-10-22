@@ -40,7 +40,7 @@ import {
   HeadingNode,
   RichTextExtension,
 } from '@lexical/rich-text';
-import {$isTableNode} from '@lexical/table';
+import {$isTableNode, TableExtension} from '@lexical/table';
 import {$dfs} from '@lexical/utils';
 import {
   $create,
@@ -62,7 +62,7 @@ import {
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {mathFromMarkdown} from 'mdast-util-math';
 import {math} from 'micromark-extension-math';
-import {describe, expect, it} from 'vitest';
+import {describe, expect, it, onTestFinished, vi} from 'vitest';
 
 import {
   $convertFromMarkdownString,
@@ -1128,6 +1128,33 @@ describe('MdastHtmlExtension', () => {
       expect(editor.read(() => $convertToMarkdownString())).toContain(
         '| **x\\|y** |',
       );
+    });
+
+    it('reads an HTML table back once beside TableExtension', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      onTestFinished(() => warn.mockRestore());
+      using editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            MdastCommonMarkExtension,
+            MdastTableExtension,
+            MdastHtmlExtension,
+            configExtension(TableExtension, {hasHorizontalScroll: false}),
+          ],
+          name: '[root]',
+        }),
+      );
+      editor.update(
+        () =>
+          $convertFromMarkdownString(
+            '<table>\n<tr>\n<td>\n\n- a\n\n</td>\n</tr>\n</table>',
+          ),
+        {discrete: true},
+      );
+      editor.read(() => {
+        $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+      });
+      expect(warn.mock.calls).toEqual([]);
     });
 
     it('reads \\| in math inside raw HTML in a cell as a pipe', () => {

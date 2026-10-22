@@ -10,7 +10,9 @@ import {
   $propagateTextAlignToBlockChildren,
   type ChildSchema,
   contextValue,
+  CoreImportExtension,
   defineImportRule,
+  DOMImportExtension,
   type ImportContextPairOrUpdater,
   ImportTextFormat,
   ImportTextStyle,
@@ -23,6 +25,8 @@ import {
   $isLineBreakNode,
   $isTextNode,
   $setFormatFromDOM,
+  configExtension,
+  defineExtension,
   IS_BOLD,
   IS_ITALIC,
   IS_STRIKETHROUGH,
@@ -312,3 +316,18 @@ export const TableRowSchema: ChildSchema = {
  * @experimental
  */
 export const TableImportRules = [TableRule, TableRowRule, TableCellRule];
+
+/**
+ * Registers {@link TableImportRules} (with `CoreImportExtension`), for an
+ * extension that imports tables from HTML without {@link TableExtension}'s
+ * editing behaviors. An editor with both registers the rules once.
+ *
+ * @experimental
+ */
+export const TableImportExtension = defineExtension({
+  dependencies: [
+    CoreImportExtension,
+    configExtension(DOMImportExtension, {rules: TableImportRules}),
+  ],
+  name: '@lexical/table/Import',
+});

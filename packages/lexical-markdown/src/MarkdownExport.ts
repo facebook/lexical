@@ -508,35 +508,42 @@ function $exportTextFormat(
     output = shouldPreserveNewLines
       ? output.replace(/([*_`~])/g, '\\$1')
       : output.replace(/([*_`~\\])/g, '\\$1');
+    // When backslashes are kept as they are, the ones right before an escape
+    // added below are escaped too, or the last would escape the escape.
+    const escape = (backslashes: string, char: string) =>
+      (shouldPreserveNewLines
+        ? backslashes.replace(/\\/g, '\\\\')
+        : backslashes) +
+      '\\' +
+      char;
     // Each bracket in a link's text, where one would close or open the link,
-    // and elsewhere a `]` before a `(`, where text would read as a link.
+    // and elsewhere a `]` before a `(`, where text would read as a link. Each
+    // run of backslashes is read once, which keeps a long run linear.
     const parent = node.getParent();
     output = output.replace(
       $isLinkNode(parent) && !$isAutoLinkNode(parent)
-        ? /([[\]])/g
-        : /(\](?=\())/g,
-      '\\$1',
+        ? /(\\*)([[\]])|\\+/g
+        : /(\\*)(\](?=\())|\\+/g,
+      (found, backslashes: string, bracket: string | undefined) =>
+        bracket === undefined ? found : escape(backslashes, bracket),
     );
     // A `!` before a link would make it an image.
     if (output.endsWith('!') && $isLinkNode(node.getNextSibling())) {
-      output = output.slice(0, -1) + '\\!';
+      const start = output.length - 1;
+      let end = start;
+      while (end > 0 && output[end - 1] === '\\') {
+        end--;
+      }
+      output = output.slice(0, end) + escape(output.slice(end, start), '!');
     }
     // Text that reads as a character reference keeps its `&` (`\&#65;`,
     // `\&amp;`).
-    // When backslashes are kept as they are, the ones right before it are
-    // escaped too, or the last would escape the escape instead.
-    // Each run of backslashes is read once, with the `&` after it or else
-    // alone, which keeps a long run linear.
     output = output.replace(
       /(\\*)&(#\d{1,7};|#x[\da-f]{1,6};|[a-z][\da-z]{0,31};)|\\+/gi,
       (found, backslashes: string, reference: string | undefined) =>
         reference === undefined || !isCharacterReference(reference)
           ? found
-          : (shouldPreserveNewLines
-              ? backslashes.replace(/\\/g, '\\\\')
-              : backslashes) +
-            '\\&' +
-            reference,
+          : escape(backslashes, '&') + reference,
     );
   }
 

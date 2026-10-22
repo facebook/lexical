@@ -503,23 +503,11 @@ function $exportTextFormat(
     output = shouldPreserveNewLines
       ? output.replace(/([*_`~])/g, '\\$1')
       : output.replace(/([*_`~\\])/g, '\\$1');
-    // Text that reads as a character reference keeps its `&` (`\&#65;`),
-    // as does one that the text nodes after it complete (`&am` + `p;`).
+    // Text that reads as a character reference keeps its `&` (`\&#65;`).
     // When backslashes are kept as they are, the ones right before it are
     // escaped too, or the last would escape the escape instead.
-    const tail = /&(?:#x?)?\w*$/.exec(textContent);
-    let joined = tail === null ? '' : tail[0];
-    for (
-      let next = node.getNextSibling();
-      tail !== null && $isTextNode(next) && joined.length < 40;
-      next = next.getNextSibling()
-    ) {
-      joined += next.getTextContent();
-    }
     output = output.replace(
-      /^&(?:#x?)?\w+;/.test(joined)
-        ? /(\\*)&(?=(?:#x?)?\w*(?:;|$))/gi
-        : /(\\*)&(?=(?:#x?)?\w+;)/gi,
+      /(\\*)&(?=(?:#x?)?\w+;)/gi,
       (_, backslashes: string) =>
         (shouldPreserveNewLines
           ? backslashes.replace(/\\/g, '\\\\')

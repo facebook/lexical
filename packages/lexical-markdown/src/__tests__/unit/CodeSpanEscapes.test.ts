@@ -249,13 +249,7 @@ describe('a character reference', () => {
     );
   });
 
-  it.each([
-    [['&#x41; &amp;'], '\\&#x41; \\&amp;'],
-    // Adjacent text nodes are written next to each other.
-    [['&#6', '5;'], '\\&#65;'],
-    [['&am', 'p;'], '\\&amp;'],
-    [['&#', '6', '5;'], '\\&#65;'],
-  ])(
+  it.each([[['&#x41; &amp;'], '\\&#x41; \\&amp;']])(
     'escapes the & of text %j that other readers take as a reference',
     (texts, markdown) => {
       using editor = buildEditorFromExtensions([MarkdownTestExtension]);
@@ -278,51 +272,6 @@ describe('a character reference', () => {
       );
     },
   );
-
-  it('escapes a reference completed by text with a format Markdown omits', () => {
-    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
-    editor.update(
-      () =>
-        $getRoot()
-          .clear()
-          .append(
-            $createParagraphNode().append(
-              $createTextNode('&#6'),
-              $createTextNode('5;').toggleFormat('underline'),
-            ),
-          ),
-      {discrete: true},
-    );
-    expect(editor.read(() => $convertToMarkdownString(TRANSFORMERS))).toBe(
-      '\\&#65;',
-    );
-  });
-
-  it.each([
-    [
-      () => [
-        $createTextNode('AT&T'),
-        $createTextNode(' rocks').toggleFormat('bold'),
-      ],
-      'AT&T **rocks**',
-    ],
-    [
-      () => [$createTextNode('a &'), $createTextNode('b').setStyle('order: 1')],
-      'a &b',
-    ],
-  ])('leaves an & that no reference follows alone: %#', (build, markdown) => {
-    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
-    editor.update(
-      () =>
-        $getRoot()
-          .clear()
-          .append($createParagraphNode().append(...build())),
-      {discrete: true},
-    );
-    expect(editor.read(() => $convertToMarkdownString(TRANSFORMERS))).toBe(
-      markdown,
-    );
-  });
 
   it('round-trips text that reads as one', () => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);

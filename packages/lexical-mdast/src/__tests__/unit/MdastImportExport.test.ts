@@ -86,6 +86,7 @@ import {
   MdastHorizontalRuleExtension,
   MdastHtmlExtension,
   type MdastNode,
+  MdastRichTextExtension,
   MdastShadowRootQuoteExtension,
   MdastStrikethroughExtension,
   MdastTableExtension,
@@ -1159,6 +1160,22 @@ describe('@lexical/mdast import/export', () => {
       );
       expect(editor.read(() => $convertToMarkdownString())).toBe(
         '| x                |\n| ---------------- |\n| h<br><b>a\\|b</b> |',
+      );
+    });
+
+    it('keeps a <hr> in a cell of an editor with no rule as text', () => {
+      using editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [MdastRichTextExtension, MdastTableExtension],
+          name: '[table-no-rule]',
+        }),
+      );
+      editor.update(
+        () => $convertFromMarkdownString('| a |\n| - |\n| x<hr>y |'),
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertToMarkdownString())).toBe(
+        '| a       |\n| ------- |\n| x\\<hr>y |',
       );
     });
 

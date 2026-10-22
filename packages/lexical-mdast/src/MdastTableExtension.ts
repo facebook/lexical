@@ -236,8 +236,12 @@ function $lineBlocks(
   const runs: PhrasingContent[][] = [[]];
   const rules: LexicalNode[][] = [];
   for (const child of line) {
-    if (isVoidTag(child, 'hr')) {
-      rules.push(ctx.importNode({type: 'thematicBreak'}));
+    // An editor with no rule keeps the `<hr>` as raw HTML.
+    const rule = isVoidTag(child, 'hr')
+      ? ctx.importNode({type: 'thematicBreak'})
+      : [];
+    if (rule.length > 0) {
+      rules.push(rule);
       runs.push([]);
     } else {
       runs[runs.length - 1].push(child);

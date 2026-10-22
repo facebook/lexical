@@ -6,6 +6,7 @@
  *
  */
 
+import {$isAutoLinkNode, $isLinkNode} from '@lexical/link';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
   $getRoot,
@@ -504,10 +505,22 @@ function $exportTextFormat(
   let output = textContent;
   if (!isCode) {
     // Preserve literal backslashes when preserving source newlines.
-    // A `]` before a `(` too, where text would read as a link.
     output = shouldPreserveNewLines
-      ? output.replace(/([*_`~]|\](?=\())/g, '\\$1')
-      : output.replace(/([*_`~\\]|\](?=\())/g, '\\$1');
+      ? output.replace(/([*_`~])/g, '\\$1')
+      : output.replace(/([*_`~\\])/g, '\\$1');
+    // Each bracket in a link's text, where one would close or open the link,
+    // and elsewhere a `]` before a `(`, where text would read as a link.
+    const parent = node.getParent();
+    output = output.replace(
+      $isLinkNode(parent) && !$isAutoLinkNode(parent)
+        ? /([[\]])/g
+        : /(\](?=\())/g,
+      '\\$1',
+    );
+    // A `!` before a link would make it an image.
+    if (output.endsWith('!') && $isLinkNode(node.getNextSibling())) {
+      output = output.slice(0, -1) + '\\!';
+    }
     // Text that reads as a character reference keeps its `&` (`\&#65;`,
     // `\&amp;`).
     // When backslashes are kept as they are, the ones right before it are

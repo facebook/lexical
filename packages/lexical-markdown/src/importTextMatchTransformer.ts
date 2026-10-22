@@ -114,16 +114,21 @@ export function $importFoundTextMatchTransformer(
   };
 }
 
+// A global copy of each importRegExp, to search from a position.
+const GLOBAL_REGEXPS = new WeakMap<RegExp, RegExp>();
+
 /**
  * The first match of `regExp` in `text` that no backslash escapes: one that
  * starts with ASCII punctuation after an odd run of backslashes is literal
  * text in CommonMark, as in `\[a](u)`.
  */
 function matchUnescaped(text: string, regExp: RegExp): RegExpExecArray | null {
-  const search = new RegExp(
-    regExp.source,
-    regExp.flags.replace(/[gy]/g, '') + 'g',
-  );
+  let search = GLOBAL_REGEXPS.get(regExp);
+  if (!search) {
+    search = new RegExp(regExp.source, regExp.flags.replace(/[gy]/g, '') + 'g');
+    GLOBAL_REGEXPS.set(regExp, search);
+  }
+  search.lastIndex = 0;
   for (let match; (match = search.exec(text)); ) {
     if (!isEscaped(text, match.index) || !/^[!-/:-@[-`{-~]/.test(match[0])) {
       return match;

@@ -950,10 +950,14 @@ describe('Markdown', () => {
     {
       html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">[h]ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">h[e]llo</span></a></p>',
       md: '[[h]ello](https://lexical.dev)[h[e]llo](https://lexical.dev)',
+      mdAfterExport:
+        '[\\[h\\]ello](https://lexical.dev)[h\\[e\\]llo](https://lexical.dev)',
     },
     {
       html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">h[e[ll]]o</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
       md: '[h[e[ll]]o](https://lexical.dev)[world](https://lexical.dev)',
+      mdAfterExport:
+        '[h\\[e\\[ll\\]\\]o](https://lexical.dev)[world](https://lexical.dev)',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">[hello]](https://lexical.dev)</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
@@ -998,6 +1002,22 @@ describe('Markdown', () => {
       html: '<p><span style="white-space: pre-wrap;">[a </span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">b</span></a></p>',
       md: '\\[a [b](https://lexical.dev)',
       mdAfterExport: '[a [b](https://lexical.dev)',
+    },
+    {
+      html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">a](b)</span></a></p>',
+      md: '[a\\](b)](https://lexical.dev)',
+    },
+    {
+      html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">a]</span></a></p>',
+      md: '[a\\]](https://lexical.dev)',
+    },
+    {
+      html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">[a</span></a></p>',
+      md: '[\\[a](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">a!</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">x</span></a></p>',
+      md: 'a\\![x](https://lexical.dev)',
     },
     {
       html: '<p><i><em style="white-space: pre-wrap;">[h</em></i><a href="https://lexical.dev"><i><em style="white-space: pre-wrap;">ello</em></i></a></p>',

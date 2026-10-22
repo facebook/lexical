@@ -1241,7 +1241,7 @@ export const LINK: TextMatchTransformer = {
   // are characters, which costs a quadratic walk of every run that never
   // reaches the closing parenthesis.
   importRegExp:
-    /(?:\[(.+?)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:[^"]*\\")*[^"]*)"|'((?:[^']*\\')*[^']*)'|\(((?:\\.|[^()\\])*)\)))?\s*)?\))/,
+    /(?:\[((?:\\.|[^\\\n])+?)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:[^"]*\\")*[^"]*)"|'((?:[^']*\\')*[^']*)'|\(((?:\\.|[^()\\])*)\)))?\s*)?\))/,
   regExp:
     /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:[^"]*\\")*[^"]*)"|'((?:[^']*\\')*[^']*)'|\(((?:\\.|[^()\\])*)\)))?\s*)?\))$/,
   replace: (textNode, match) => {
@@ -1270,11 +1270,8 @@ export const LINK: TextMatchTransformer = {
     const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
     // The link's text starts after the last `[` that no `]` after it
     // closes, as CommonMark matches brackets, and what is before it stays
-    // text. An escaped bracket is text: one escaping the closing `]` leaves
-    // no link, as does an inner `]` that closes the first `[`.
-    if (isEscaped(linkText, linkText.length)) {
-      return;
-    }
+    // text. An escaped bracket is text, and an inner `]` that closes the
+    // first `[` leaves no link.
     let depth = 0;
     let opener = -1;
     for (let i = linkText.length - 1; i >= 0 && opener < 0; i--) {
@@ -1424,8 +1421,9 @@ export function normalizeMarkdown(
       ORDERED_LIST_REGEX.test(line) ||
       UNORDERED_LIST_REGEX.test(line) ||
       CHECK_LIST_REGEX.test(line) ||
-      TABLE_ROW_REG_EXP.test(line) ||
-      isTableRowDivider(line) ||
+      // A table row may be indented by up to three spaces.
+      TABLE_ROW_REG_EXP.test(line.replace(/^ {1,3}/, '')) ||
+      isTableRowDivider(line.replace(/^ {1,3}/, '')) ||
       lastLineHasHardLineBreak ||
       !shouldMergeAdjacentLines ||
       TAG_START_REGEX.test(line) ||

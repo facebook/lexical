@@ -1551,7 +1551,7 @@ describe('@lexical/mdast import/export', () => {
         () => $createHorizontalRuleNode(),
         text('b'),
       );
-      expect(cellOf(out)).toBe('a<br><hr><br>b');
+      expect(cellOf(out)).toBe('a<hr>b');
       using editor = createEditor(true);
       editor.update(() => $convertFromMarkdownString(out), {discrete: true});
       editor.read(() => {
@@ -1603,7 +1603,7 @@ describe('@lexical/mdast import/export', () => {
         discrete: true,
       });
       expect(editor.read(() => $convertToMarkdownString()).split('\n')[2]).toBe(
-        '| a<br><hr><br>b |',
+        '| a<hr>b |',
       );
     });
 

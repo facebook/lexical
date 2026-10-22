@@ -1050,6 +1050,11 @@ describe('MdastHtmlExtension', () => {
                 $createListItemNode().append($createTextNode('d')),
               ),
             );
+          // HTML aligns a cell apart from its column.
+          $assertNodeType(
+            table.getLastChildOrThrow<ElementNode>().getLastChild(),
+            $isElementNode,
+          ).setFormat('right');
         },
         {discrete: true},
       );
@@ -1083,7 +1088,7 @@ describe('MdastHtmlExtension', () => {
           '- d',
           '',
           '</td>',
-          '<td>',
+          '<td align="right" style="text-align: right">',
           '',
           'y',
           '',

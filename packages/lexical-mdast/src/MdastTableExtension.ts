@@ -471,6 +471,7 @@ function cellContent(
 ): PhrasingContent[] {
   const phrase = (phrasing: PhrasingContent[]) => cellPhrasing(phrasing, fit);
   const lines: PhrasingContent[][] = [];
+  const rules = new Set<PhrasingContent[]>();
   // The line of the last top-level phrasing, which phrasing right after it
   // runs on.
   let phrasing: PhrasingContent[] = [];
@@ -487,7 +488,7 @@ function cellContent(
         lines.push(phrase((node as Paragraph).children));
         return;
       case 'thematicBreak':
-        lines.push([rawHtml('<hr>')]);
+        rules.add(lines[lines.push([rawHtml('<hr>')]) - 1]);
         return;
       case 'html':
         lines.push(phrase([node as Html]));
@@ -515,15 +516,16 @@ function cellContent(
       }
     } else if (type === 'heading') {
       lines.push(phrase((node as Heading).children));
-    } else if (type !== 'htmlBlock') {
-      // The Markdown in `MdastHtmlExtension`'s block HTML, which is only
-      // written as part of HTML, isn't flattened.
+    } else {
       (node as Parent).children.forEach(visit);
     }
   };
   nodes.forEach(visit);
+  // A rule ends the lines beside it, as import reads it.
   return lines.flatMap((line, i) =>
-    i > 0 ? [rawHtml('<br>'), ...line] : line,
+    i > 0 && !rules.has(line) && !rules.has(lines[i - 1])
+      ? [rawHtml('<br>'), ...line]
+      : line,
   );
 }
 
@@ -584,7 +586,7 @@ export function $getTableColumnAlign(table: TableNode): AlignType[] {
  * read between blank lines in HTML, so each cell holds its blocks as they
  * are, as GFM and CommonMark readers read it.
  */
-function htmlTable(cells: MdastNode[][][], align: AlignType[]): HtmlBlock {
+function htmlTable(cells: MdastNode[][][], align: AlignType[][]): HtmlBlock {
   const parts: RawHtmlBlockPart[] = ['<table>\n'];
   cells.forEach((row, rowIndex) => {
     const tag = rowIndex ? 'td' : 'th';
@@ -596,7 +598,7 @@ function htmlTable(cells: MdastNode[][][], align: AlignType[]): HtmlBlock {
         : '<thead>\n<tr>\n',
     );
     row.forEach((blocks, column) => {
-      const cellAlign = align[column];
+      const cellAlign = align[rowIndex][column];
       parts.push(
         // GitHub keeps only `align`, and HTML import reads `text-align`.
         `<${tag}${cellAlign ? ` align="${cellAlign}" style="text-align: ${cellAlign}"` : ''}>`,
@@ -632,15 +634,20 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   );
   const fit: CellFit = {exact: true};
   const lines = cells.map(row => row.map(blocks => cellContent(blocks, fit)));
-  const align = $alignColumns(node, rows);
   if (
     !fit.exact &&
     $getPeerDependency<typeof MdastHtmlExtension>('@lexical/mdast/Html')
   ) {
-    return htmlTable(cells, align);
+    // HTML aligns each cell as it is.
+    return htmlTable(
+      cells,
+      rows.map(row =>
+        row.getChildren().filter($isTableCellNode).map($getCellAlign),
+      ),
+    );
   }
   return {
-    align,
+    align: $alignColumns(node, rows),
     children: lines.map(
       (row): TableRow => ({
         children: row.map(

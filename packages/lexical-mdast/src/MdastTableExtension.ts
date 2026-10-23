@@ -35,7 +35,6 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $findMatchingParent,
-  $getNodeByKeyOrThrow,
   $getSelection,
   $isElementNode,
   $isNodeSelection,
@@ -641,14 +640,18 @@ function $formatColumns(format: ElementFormatType): boolean {
   const inOneTable =
     table !== null && focusCell !== null && table.is($findTableNode(focusCell));
   const nodes = inOneTable ? [] : selection.getNodes();
-  const reached = new Map<string, Set<string>>();
+  const reached = new Map<string, {cells: Set<string>; table: TableNode}>();
   for (const cell of inOneTable
     ? [anchorCell, focusCell]
     : nodes.map($findCellNode)) {
     const cellTable = cell && $findTableNode(cell);
     if (cell && cellTable) {
-      const cells = reached.get(cellTable.getKey()) || new Set();
-      reached.set(cellTable.getKey(), cells.add(cell.getKey()));
+      const entry = reached.get(cellTable.getKey()) || {
+        cells: new Set(),
+        table: cellTable,
+      };
+      entry.cells.add(cell.getKey());
+      reached.set(cellTable.getKey(), entry);
     }
   }
   if (reached.size === 0) {
@@ -670,8 +673,8 @@ function $formatColumns(format: ElementFormatType): boolean {
   if (gfmAlign(format) === null && format !== '') {
     return true;
   }
-  reached.forEach((cells, key) => {
-    const {grid} = $tableGrid($getNodeByKeyOrThrow<TableNode>(key));
+  reached.forEach(({cells, table: reachedTable}) => {
+    const {grid} = $tableGrid(reachedTable);
     let from = Infinity;
     let to = -1;
     grid.forEach(row =>

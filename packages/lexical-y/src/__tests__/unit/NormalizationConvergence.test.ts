@@ -684,6 +684,35 @@ describe('a line written inside a line is stored as lines', () => {
   );
 
   test.each(RUNS)(
+    'a block put inside a heading written inside a list item, lifted from other surroundings (%o)',
+    async ({ids, delivery}) => {
+      const t = await setup($list, {delivery, ids});
+      unnormalized(t.a, () =>
+        ($block([0, 0]) as ElementNode).append(
+          $createHeadingNode('h2').append($createTextNode('head tail')),
+        ),
+      );
+      await t.sync();
+      t.offline();
+      unnormalized(t.b, () => {
+        const [, right] = $block([1])
+          .getFirstChildOrThrow<TextNode>()
+          .splitText(4);
+        right.insertBefore($createBoxNode().append($p('boxed')));
+      });
+      // c types in the heading before it sees the block: it lifts the
+      // block from other surroundings than a.
+      t.c.update(() => $selectIn([1], 9).insertText('C'));
+      deliverFirst(t.b, t.a);
+      deliverFirst(t.b, t.c);
+      await flush();
+      await t.sync();
+      await expectClean(t, ['item', 'head', 'boxed', 'tailC']);
+      expect(storedNames(t.a)).not.toContain('i:heading');
+    },
+  );
+
+  test.each(RUNS)(
     "a heading written as a list item's first child ‖ typing in it (%o)",
     async ({ids, delivery}) => {
       const t = await setup($list, {delivery, ids});
@@ -706,6 +735,135 @@ describe('a line written inside a line is stored as lines', () => {
       });
       await t.sync();
       await expectClean(t, ['headB', 'item']);
+      expect(storedNames(t.a)).not.toContain('i:heading');
+    },
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Lifts in place: a block a peer wrote inside a line keeps its shared node
+// when it is lifted out (it is marked a unit of the container where it is),
+// so peers typing in it, or lifting it from different surroundings, never
+// copy or lose it.
+
+/** Deliver only the first update `from` sent while offline to `to`. */
+function deliverFirst(from: Peer, to: Peer) {
+  const list = to.pending.get(from);
+  if (list !== undefined && list.length > 0) {
+    const [first, ...rest] = list;
+    to.pending.set(from, rest);
+    Y.applyUpdate(to.doc, first as Uint8Array<ArrayBuffer>, to.net);
+  }
+}
+
+/** Names of the live nodes of the root, and the lifted ones (`u` = 1). */
+function stored(peer: Peer): {names: string[]; lifted: string[]} {
+  const names: string[] = [];
+  const lifted: string[] = [];
+  for (let it = peer.binding.root._start; it !== null; it = it.right) {
+    if (!it.deleted && it.content instanceof Y.ContentType) {
+      const y = it.content.type as Y.Node;
+      names.push(String(y.name));
+      if (y.getAttr('u') === 1) {
+        lifted.push(String(y.name));
+      }
+    }
+  }
+  return {lifted, names};
+}
+
+describe('lifts in place keep the lifted block', () => {
+  const RUNS = ID_ORDERS.flatMap(ids =>
+    (['causal', 'sender'] as const).map(delivery => ({delivery, ids})),
+  );
+  test.each(RUNS)(
+    'a block lifted out of the middle of a line ‖ typing next to it and in it (%o)',
+    async ({ids, delivery}) => {
+      const t = await setup(() => $getRoot().append($p('left right')), {
+        delivery,
+        ids,
+      });
+      t.offline();
+      unnormalized(t.a, () => {
+        const [, right] = $block([0])
+          .getFirstChildOrThrow<TextNode>()
+          .splitText(5);
+        right.insertBefore($createBoxNode().append($p('boxed')));
+      });
+      // c types where the block goes before it sees it: it lifts the block
+      // from other surroundings than b.
+      t.c.update(() => $selectIn([0], 4).insertText('Z'));
+      deliverFirst(t.a, t.b);
+      deliverFirst(t.a, t.c);
+      await flush();
+      t.b.update(() => $selectIn([1, 0], 5).insertText('B'));
+      t.c.update(() => $selectIn([2], 0).insertText('C'));
+      await t.sync();
+      await expectClean(t, ['leftZ', 'boxedB', 'C', 'right']);
+      expect(stored(t.a).names).not.toContain('b:test_box');
+      expect(stored(t.a).lifted).toEqual(['i:test_box']);
+      expect(t.a.binding.root.getAttr('lexical-y')).toBe(2);
+    },
+  );
+
+  test.each(RUNS)(
+    'two blocks written at the end of one line by two peers, lifted by a third (%o)',
+    async ({ids, delivery}) => {
+      const t = await setup(() => $getRoot().append($p('gamma')), {
+        delivery,
+        ids,
+      });
+      t.offline();
+      unnormalized(t.a, () =>
+        $block([0]).append(
+          $createTableNode().append(
+            $createTableRowNode().append(
+              $createTableCellNode().append($createTextNode('cell')),
+            ),
+          ),
+        ),
+      );
+      unnormalized(t.b, () =>
+        $block([0]).append($createBoxNode().append($p('boxed'))),
+      );
+      deliverFirst(t.a, t.c);
+      deliverFirst(t.b, t.c);
+      await flush();
+      t.c.update(() => $selectIn([0], 5).insertText('C'));
+      await t.sync();
+      await expectClean(t, ['gammaC', 'cell', 'boxed']);
+      expect(stored(t.a).names).not.toContain('b:test_box');
+      expect(stored(t.a).names).not.toContain('b:table');
+    },
+  );
+
+  test.each(RUNS)(
+    'a heading written inside a list item ‖ typing in the heading (%o)',
+    async ({ids, delivery}) => {
+      const t = await setup(
+        () =>
+          $getRoot().append(
+            $createListNode('bullet').append(
+              $createListItemNode().append($createTextNode('item')),
+            ),
+          ),
+        {delivery, ids},
+      );
+      t.offline();
+      unnormalized(t.a, () =>
+        ($block([0, 0]) as ElementNode).append(
+          $createHeadingNode('h2').append($createTextNode('head')),
+        ),
+      );
+      deliverFirst(t.a, t.b);
+      deliverFirst(t.a, t.c);
+      await flush();
+      t.b.update(() => $selectIn([1], 4).insertText('B'));
+      t.c.update(() => $selectIn([1], 0).insertText('C'));
+      await t.sync();
+      await expectClean(t, ['item', 'CheadB']);
+      // A line written inside a line is stored as lines, nothing to lift.
+      expect(stored(t.a).lifted).toEqual([]);
       expect(storedNames(t.a)).not.toContain('i:heading');
     },
   );
@@ -822,107 +980,201 @@ function $edit(r: ReturnType<typeof rng>, typed: string[]): string {
 }
 
 const FUZZ_SUMMARY = {
-  duplicated: [] as number[],
   healed: [] as number[],
   seeds: 0,
 };
 
+/** One seed of a normalization fuzz (see the describes below). */
+async function fuzzSeed(
+  seed: number,
+  base: number,
+  init: () => void,
+  edit: (r: ReturnType<typeof rng>, typed: string[]) => string,
+  summary: {healed: number[]; seeds: number},
+): Promise<void> {
+  const r = rng(base + seed);
+  // Token names per seed, so a seed replays on its own.
+  tokenCounter = 0;
+  const t = await setup(init, {
+    delivery: r.p(0.5) ? 'causal' : 'sender',
+    ids: r.pick(ID_ORDERS),
+  });
+  const typed: string[] = [];
+  const trace: string[] = [];
+  for (let round = 0; round < 4; round++) {
+    for (const peer of t.peers) {
+      peer.online = r.p(0.5);
+    }
+    for (const [pi, peer] of t.peers.entries()) {
+      const n = r.int(3);
+      for (let i = 0; i < n; i++) {
+        const raw = r.p(Number(process.env.NORMALIZE_FUZZ_RAW ?? 0.4));
+        const $fn = () => {
+          trace.push(
+            `r${round} p${pi + 1}${raw ? ' raw' : ''}: ${edit(r, typed)}`,
+          );
+        };
+        if (raw) {
+          unnormalized(peer, $fn);
+        } else {
+          peer.update($fn);
+        }
+      }
+    }
+    if (r.p(0.5)) {
+      await t.sync();
+      trace.push(`synced = ${t.a.describe()}`);
+    }
+  }
+  await t.sync();
+  // Then a full state exchange, as a provider's sync on reconnect: the
+  // harness's merged partial deliveries can leave a peer holding pending
+  // structs it never gets the start of (seen without any normalization
+  // too); a state exchange delivers everything.
+  for (let round = 0; round < 3; round++) {
+    for (const from of t.peers) {
+      for (const to of t.peers) {
+        if (from !== to) {
+          Y.applyUpdate(to.doc, Y.encodeStateAsUpdate(from.doc), to.net);
+        }
+      }
+    }
+    await t.sync();
+  }
+  if (process.env.NORMALIZE_FUZZ_TRACE === String(seed)) {
+    // eslint-disable-next-line no-console
+    console.log(trace.join('\n'));
+  }
+  // Converged: every peer and a fresh reader show the same tree. A
+  // remote self-check mismatch is healed by reading again (counted).
+  const first = t.a.describe();
+  for (const peer of t.peers) {
+    expect(peer.errors).toEqual([]);
+    expect(peer.describe()).toBe(first);
+  }
+  const fresh = await freshReader(t.a);
+  expect(fresh.describe()).toBe(first);
+  const text = t.a.read(() => $getRoot().getTextContent());
+  const lost = typed.filter(tok => count(text, tok) === 0);
+  const dup = typed.filter(tok => count(text, tok) > 1);
+  summary.seeds++;
+  // Repairs are lifts in place, merges or wraps that keep every item,
+  // and a line written inside a line is stored as lines: nothing is
+  // copied or lost, whatever peers held around them.
+  expect({dup, lost, seed}).toEqual({dup: [], lost: [], seed});
+  if (t.peers.some(p => p.warnings.some(w => w.includes('self-check')))) {
+    summary.healed.push(seed);
+  }
+  for (const peer of [...t.peers, fresh]) {
+    expect(violations(peer)).toEqual([]);
+  }
+}
+
 describe('fuzz: normalization repairs by 3 peers with partial delivery', () => {
+  const SEEDS = Number(process.env.NORMALIZE_FUZZ_SEEDS ?? 100);
+  // Seeds that copied or lost text while a line written inside a line was
+  // stored as a node of its own (a heading inside a list item, lifted out
+  // and then split, given a block or turned into an item), and one (1453)
+  // where a later write stored such a line as a node again: always run.
+  const REGRESSIONS = [
+    405, 435, 446, 899, 937, 1078, 1388, 1453, 1507, 1683, 1820,
+  ];
+  test.each([
+    ...Array.from({length: SEEDS}, (_, i) => i + 1),
+    ...REGRESSIONS.filter(seed => seed > SEEDS),
+  ])('seed %i', async seed => {
+    await fuzzSeed(
+      seed,
+      7000,
+      () =>
+        $getRoot().append(
+          $p('alpha beta'),
+          $createListNode('bullet').append(
+            $createListItemNode().append($createTextNode('one')),
+          ),
+          $p('gamma'),
+        ),
+      $edit,
+      FUZZ_SUMMARY,
+    );
+  });
+  afterAll(() => {
+    // eslint-disable-next-line no-console
+    console.log('normalization fuzz: ' + JSON.stringify(FUZZ_SUMMARY));
+  });
+});
+
+// Plain paragraphs written into quotes and list items (joined into them as
+// lines by the normalization), mixed with the edits above.
+function $editHeld(r: ReturnType<typeof rng>, typed: string[]): string {
+  const root = $getRoot();
+  const k = r.int(5);
+  if (k === 0) {
+    const quotes = root
+      .getChildren()
+      .filter((n): n is ElementNode => n.getType() === 'quote');
+    if (quotes.length > 0) {
+      const quote = r.pick(quotes);
+      const tok = token();
+      typed.push(tok);
+      quote.splice(r.int(quote.getChildrenSize() + 1), 0, [$p(tok)]);
+      return `paragraph ${tok} into a quote`;
+    }
+  }
+  if (k === 1) {
+    const items = root
+      .getAllTextNodes()
+      .map(n => n.getParent())
+      .filter((p): p is ListItemNode => $isListItemNode(p));
+    if (items.length > 0) {
+      const item = r.pick(items);
+      const tok = token();
+      typed.push(tok);
+      item.splice(r.int(item.getChildrenSize() + 1), 0, [$p(tok)]);
+      return `paragraph ${tok} into an item`;
+    }
+  }
+  if (k === 2) {
+    const tok = token();
+    typed.push(tok);
+    r.pick(root.getChildren()).insertAfter(
+      $createQuoteNode().append($createTextNode(tok)),
+    );
+    return `quote ${tok}`;
+  }
+  return $edit(r, typed);
+}
+
+const HELD_SUMMARY = {
+  healed: [] as number[],
+  seeds: 0,
+};
+
+describe('fuzz: paragraphs held by quotes and list items, 3 peers', () => {
   const SEEDS = Number(process.env.NORMALIZE_FUZZ_SEEDS ?? 100);
   test.each(Array.from({length: SEEDS}, (_, i) => i + 1))(
     'seed %i',
     async seed => {
-      const r = rng(7000 + seed);
-      const t = await setup(
+      await fuzzSeed(
+        seed,
+        9000,
         () =>
           $getRoot().append(
             $p('alpha beta'),
-            $createListNode('bullet').append(
+            $createQuoteNode().append($createTextNode('delta')),
+            $createListNode('number').append(
               $createListItemNode().append($createTextNode('one')),
+              $createListItemNode().append($createTextNode('two')),
             ),
             $p('gamma'),
           ),
-        {
-          delivery: r.p(0.5) ? 'causal' : 'sender',
-          ids: r.pick(ID_ORDERS),
-        },
+        $editHeld,
+        HELD_SUMMARY,
       );
-      const typed: string[] = [];
-      const trace: string[] = [];
-      for (let round = 0; round < 4; round++) {
-        for (const peer of t.peers) {
-          peer.online = r.p(0.5);
-        }
-        for (const [pi, peer] of t.peers.entries()) {
-          const n = r.int(3);
-          for (let i = 0; i < n; i++) {
-            const raw = r.p(Number(process.env.NORMALIZE_FUZZ_RAW ?? 0.4));
-            const $fn = () => {
-              trace.push(
-                `r${round} p${pi + 1}${raw ? ' raw' : ''}: ${$edit(r, typed)}`,
-              );
-            };
-            if (raw) {
-              unnormalized(peer, $fn);
-            } else {
-              peer.update($fn);
-            }
-          }
-        }
-        if (r.p(0.5)) {
-          await t.sync();
-          trace.push(`synced = ${t.a.describe()}`);
-        }
-      }
-      await t.sync();
-      // Then a full state exchange, as a provider's sync on reconnect: the
-      // harness's merged partial deliveries can leave a peer holding pending
-      // structs it never gets the start of (seen without any normalization
-      // too); a state exchange delivers everything.
-      for (let round = 0; round < 3; round++) {
-        for (const from of t.peers) {
-          for (const to of t.peers) {
-            if (from !== to) {
-              Y.applyUpdate(to.doc, Y.encodeStateAsUpdate(from.doc), to.net);
-            }
-          }
-        }
-        await t.sync();
-      }
-      if (process.env.NORMALIZE_FUZZ_TRACE === String(seed)) {
-        // eslint-disable-next-line no-console
-        console.log(trace.join('\n'));
-      }
-      // Converged: every peer and a fresh reader show the same tree. A
-      // remote self-check mismatch is healed by reading again (counted).
-      const first = t.a.describe();
-      for (const peer of t.peers) {
-        expect(peer.errors).toEqual([]);
-        expect(peer.describe()).toBe(first);
-      }
-      const fresh = await freshReader(t.a);
-      expect(fresh.describe()).toBe(first);
-      const text = t.a.read(() => $getRoot().getTextContent());
-      const lost = typed.filter(tok => count(text, tok) === 0);
-      const dup = typed.filter(tok => count(text, tok) > 1);
-      expect({lost, seed}).toEqual({lost: [], seed});
-      FUZZ_SUMMARY.seeds++;
-      if (dup.length > 0) {
-        // Two peers repaired one violation while holding different content
-        // next to it (a concurrent edit one had not received): their
-        // repairs differ, so both apply (see the README, Limits).
-        FUZZ_SUMMARY.duplicated.push(seed);
-      }
-      if (t.peers.some(p => p.warnings.some(w => w.includes('self-check')))) {
-        FUZZ_SUMMARY.healed.push(seed);
-      }
-      for (const peer of [...t.peers, fresh]) {
-        expect(violations(peer)).toEqual([]);
-      }
     },
   );
   afterAll(() => {
     // eslint-disable-next-line no-console
-    console.log('normalization fuzz: ' + JSON.stringify(FUZZ_SUMMARY));
+    console.log('held paragraphs fuzz: ' + JSON.stringify(HELD_SUMMARY));
   });
 });

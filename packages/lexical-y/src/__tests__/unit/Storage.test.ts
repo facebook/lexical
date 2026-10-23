@@ -83,7 +83,8 @@ describe('@lexical/y storage', () => {
       ),
     );
     const root = t.a.binding.root;
-    expect(root.getAttr('lexical-y')).toBe(LAYOUT_VERSION);
+    // A new document starts at layout 1 (2 once it holds a move record).
+    expect(root.getAttr('lexical-y')).toBe(1);
     const children = root.toDelta().toJSON().children as {insert: unknown}[];
     expect(
       children.map(c => (typeof c.insert === 'string' ? c.insert : '¶')),

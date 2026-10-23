@@ -6,8 +6,7 @@
  *
  */
 
-import type {Hidden} from './Hidden';
-import type {Item} from '@y/y';
+import type {Item, Node as YNode} from '@y/y';
 
 import {ContentFormat, ContentString, ContentType} from '@y/y';
 import {
@@ -22,6 +21,14 @@ import {
 } from 'lexical';
 
 import {type Formats, isLiveContent} from './Cursor';
+import {
+  enterZone,
+  formatsBefore,
+  isMoveItem,
+  type Shown,
+  stepZone,
+  viewZone,
+} from './Moves';
 import {
   $isWrapper,
   $lineBreakAttrs,
@@ -203,12 +210,43 @@ export function readAtoms(
   stop: Item | null,
   formats: Formats,
   out: Atoms,
-  hidden: Hidden | null = null,
+  hidden: Shown | null = null,
+  limit = Infinity,
+  last: Item | null = null,
 ): Formats {
-  const current = new Map(formats);
+  let current = new Map(formats);
   let attrs: Attrs | null = null;
-  for (let it = start; it !== null && it !== stop; it = it.right) {
-    if (it.deleted) {
+  // With moves, the walk of a zone enters the ranges inline records show
+  // (formats are taken again after a jump: they are positional).
+  const view = viewZone(hidden);
+  const walk = view === null ? null : view.copy();
+  if (walk !== null) {
+    hidden = walk;
+  }
+  const y = start === null ? null : (start.parent as YNode);
+  let prev: Item | null = null;
+  for (
+    let it =
+      start === stop
+        ? null
+        : walk === null
+          ? start
+          : enterZone(walk, y!, start, stop);
+    it !== null && (walk !== null || it !== stop) && out.length < limit;
+    prev = it,
+      it =
+        walk === null
+          ? it === last
+            ? null
+            : it.right
+          : stepZone(walk, y!, it, stop, last)
+  ) {
+    if (walk !== null && (prev === null ? it !== start : it !== prev.right)) {
+      current = formatsBefore(y!, it);
+      attrs = null;
+    }
+    if (it.deleted || isMoveItem(it)) {
+      // Move records are not content (they show other units).
       continue;
     }
     if (hidden !== null && it.countable) {
@@ -272,11 +310,32 @@ export function readAtoms(
 export function countLive(
   start: Item | null,
   stop: Item | null,
-  hidden: Hidden | null = null,
+  hidden: Shown | null = null,
+  last: Item | null = null,
 ): number {
   let n = 0;
-  for (let it = start; it !== null && it !== stop; it = it.right) {
-    if (isLiveContent(it)) {
+  const view = viewZone(hidden);
+  const walk = view === null ? null : view.copy();
+  if (walk !== null) {
+    hidden = walk;
+  }
+  const y = start === null ? null : (start.parent as YNode);
+  for (
+    let it =
+      start === stop
+        ? null
+        : walk === null
+          ? start
+          : enterZone(walk, y!, start, stop);
+    it !== null && (walk !== null || it !== stop);
+    it =
+      walk === null
+        ? it === last
+          ? null
+          : it.right
+        : stepZone(walk, y!, it, stop, last)
+  ) {
+    if (isLiveContent(it) && !isMoveItem(it)) {
       n += hidden === null ? it.length : hidden.shownLength(it);
     }
   }

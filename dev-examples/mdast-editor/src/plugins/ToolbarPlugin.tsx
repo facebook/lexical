@@ -24,10 +24,12 @@ import {
   $insertTableRowAtSelection,
   $isTableCellNode,
   $isTableRowNode,
+  $isTableSelection,
   INSERT_TABLE_COMMAND,
 } from '@lexical/table';
 import {
   $getSelection,
+  $isRangeSelection,
   FORMAT_TEXT_COMMAND,
   type LexicalEditor,
   REDO_COMMAND,
@@ -105,14 +107,16 @@ type TableAction = (typeof TABLE_ACTIONS)[number]['value'];
 
 /**
  * Edits the table the selection is in. A column is aligned by its header
- * cell, which MdastTableExtension gives the rest of the column; it also
- * keeps the first row the header row whatever rows are inserted or
+ * cell, which MdastStrictTableExtension gives the rest of the column; it
+ * also keeps the first row the header row whatever rows are inserted or
  * deleted.
  */
 function applyTableAction(editor: LexicalEditor, action: TableAction): void {
   editor.update(() => {
     const selection = $getSelection();
-    const cell = selection && $findCellNode(selection.getNodes()[0]);
+    const cell =
+      ($isRangeSelection(selection) || $isTableSelection(selection)) &&
+      $findCellNode(selection.anchor.getNode());
     if (!cell) {
       return;
     }

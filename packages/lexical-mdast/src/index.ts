@@ -50,7 +50,10 @@ export {
   RenderContextMarkdownExport,
 } from './MdastHtmlExtension';
 export {ImportContextMarkdown} from './MdastImport';
-export {MdastTableExtension} from './MdastTableExtension';
+export {
+  MdastStrictTableExtension,
+  MdastTableExtension,
+} from './MdastTableExtension';
 export type {
   CompiledMdast,
   MdastExportContext,

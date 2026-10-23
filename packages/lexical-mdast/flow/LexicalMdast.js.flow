@@ -211,6 +211,12 @@ declare export var MdastTableExtension: LexicalExtension<
   void,
   void,
 >;
+declare export var MdastStrictTableExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/mdast/StrictTable',
+  void,
+  void,
+>;
 declare export var MdastGfmExtension: LexicalExtension<
   ExtensionConfigBase,
   '@lexical/mdast/Gfm',

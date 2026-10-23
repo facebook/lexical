@@ -115,7 +115,7 @@ function $createParagraphBreakNode(): LineBreakNode {
 }
 
 /** Reads the first source character of `node` (an inline delimiter, if any). */
-function inlineMarker(
+export function inlineMarker(
   ctx: MdastImportContext,
   node: {position?: {start: {offset?: number}}},
 ): string | undefined {

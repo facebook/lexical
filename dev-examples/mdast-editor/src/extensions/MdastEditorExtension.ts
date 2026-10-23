@@ -28,6 +28,7 @@ import {
   MdastExtension,
   MdastGfmExtension,
   MdastShortcutsExtension,
+  MdastStrictTableExtension,
 } from '@lexical/mdast';
 import {
   $createHeadingNode,
@@ -36,7 +37,6 @@ import {
   RichTextExtension,
 } from '@lexical/rich-text';
 import {$setBlocksType} from '@lexical/selection';
-import {TableExtension} from '@lexical/table';
 import {mergeRegister} from '@lexical/utils';
 import {
   $caretFromPoint,
@@ -145,12 +145,9 @@ export const MdastEditorExtension = defineExtension({
     // CodeExtension / CodeIndentExtension dependencies).
     CodeShikiExtension,
     RichTextExtension,
-    // Table editing for the GFM tables MdastGfmExtension reads, without the
-    // merged cells and cell colors a GFM table has no form for.
-    configExtension(TableExtension, {
-      hasCellBackgroundColor: false,
-      hasCellMerge: false,
-    }),
+    // Table editing kept to what a GFM table holds, so tables read back as
+    // they are (with TableExtension, merged cells split).
+    MdastStrictTableExtension,
     ListExtension,
     CheckListExtension,
     HistoryExtension,

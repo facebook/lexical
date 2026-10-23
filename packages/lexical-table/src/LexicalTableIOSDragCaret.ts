@@ -25,9 +25,11 @@ export function registerIOSTableDragCaretHiding(
   editor: LexicalEditor,
 ): () => void {
   return editor.registerRootListener(rootElement => {
-    const view =
-      rootElement === null ? null : rootElement.ownerDocument.defaultView;
-    if (rootElement === null || view === null) {
+    if (rootElement === null) {
+      return;
+    }
+    const view = rootElement.ownerDocument.defaultView;
+    if (view === null) {
       return;
     }
     // The inline caret-color to restore, or null when not hiding. Other code
@@ -57,10 +59,12 @@ export function registerIOSTableDragCaretHiding(
       restoreCaretColor = null;
     };
 
-    rootElement.addEventListener('touchstart', onTouchStart, true);
+    // Passive, so a touch scroll starting in the editor does not wait on it.
+    const options = {capture: true, passive: true};
+    rootElement.addEventListener('touchstart', onTouchStart, options);
     // On the window, since the finger can be lifted outside the editor.
-    view.addEventListener('touchend', onTouchEnd, true);
-    view.addEventListener('touchcancel', onTouchEnd, true);
+    view.addEventListener('touchend', onTouchEnd, options);
+    view.addEventListener('touchcancel', onTouchEnd, options);
     return () => {
       rootElement.removeEventListener('touchstart', onTouchStart, true);
       view.removeEventListener('touchend', onTouchEnd, true);

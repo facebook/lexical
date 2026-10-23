@@ -42,30 +42,17 @@ import {
 import {COLUMN_WIDTH, PIXEL_VALUE_REG_EXP} from './constants';
 import {GENERATED_TABLECELL} from './LexicalTableGeneratedJSON';
 
-const EMPTY_CELL_OVERLAY_ATTRIBUTE = 'data-lexical-table-empty-cell-overlay';
+/** @internal */
+export const EMPTY_CELL_OVERLAY_ATTRIBUTE =
+  'data-lexical-table-empty-cell-overlay';
 
-/**
- * The unmanaged overlay an empty cell carries on iOS (see
- * `registerIOSEmptyCellOverlays`), or null.
- * @internal
- */
-export function getEmptyCellOverlay(cellDOM: HTMLElement): HTMLElement | null {
+// The unmanaged overlay an empty cell carries on iOS (see
+// `registerIOSEmptyCellOverlays`), or null.
+function getEmptyCellOverlay(cellDOM: HTMLElement): HTMLElement | null {
   const last = cellDOM.lastElementChild;
   return isHTMLElement(last) && last.hasAttribute(EMPTY_CELL_OVERLAY_ATTRIBUTE)
     ? last
     : null;
-}
-
-/** @internal */
-export function createEmptyCellOverlay(doc: Document): HTMLElement {
-  const overlay = doc.createElement('div');
-  overlay.setAttribute(EMPTY_CELL_OVERLAY_ATTRIBUTE, 'true');
-  overlay.contentEditable = 'false';
-  overlay.style.cssText =
-    'position:absolute;top:0;right:0;bottom:0;left:0;' +
-    '-webkit-user-select:none;user-select:none;' +
-    '-webkit-touch-callout:none;touch-action:manipulation';
-  return overlay;
 }
 
 // Declared as bindings and collected into the exported object, rather than

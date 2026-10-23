@@ -155,6 +155,20 @@ describe('iOS empty table cell overlay', () => {
     expect(cell.style.position).toBe(before);
   });
 
+  test('a touch on the cell holding the caret covers it on pointerdown', () => {
+    // iOS holds back this tap's pointerup until the next tap has started.
+    const paragraph = cellDOM(0).querySelector('p')!;
+    document.getSelection()!.collapse(paragraph, 0);
+    pointer(paragraph, 'pointerdown');
+    expect(overlayOf(0)).not.toBe(null);
+  });
+
+  test('a touch elsewhere waits for pointerup before covering', () => {
+    const paragraph = cellDOM(0).querySelector('p')!;
+    pointer(paragraph, 'pointerdown');
+    expect(overlayOf(0)).toBe(null);
+  });
+
   test('a drag that ends in pointerup leaves the start cell uncovered', () => {
     const paragraph = cellDOM(0).querySelector('p')!;
     pointer(paragraph, 'pointerdown', 'touch', 0);

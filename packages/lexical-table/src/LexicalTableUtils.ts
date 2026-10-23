@@ -16,6 +16,7 @@ import {
   $createTextNode,
   $findMatchingParent,
   $getSelection,
+  $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
@@ -949,6 +950,12 @@ function $cellContainsEmptyParagraph(cell: TableCellNode): boolean {
     return false;
   }
   return true;
+}
+
+export function $isCellEmpty(cell: TableCellNode): boolean {
+  return cell
+    .getChildren()
+    .every(child => $isElementNode(child) && child.isEmpty());
 }
 
 export function $unmergeCell(): void {

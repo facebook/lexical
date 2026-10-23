@@ -104,6 +104,7 @@ Experimental micromark/mdast-based Markdown support (every extension in this pac
 - [MdastHorizontalRuleExtension](/docs/api/modules/lexical_mdast#mdasthorizontalruleextension) - Thematic breaks (HorizontalRuleNode)
 - [MdastStrikethroughExtension](/docs/api/modules/lexical_mdast#mdaststrikethroughextension) - GFM strikethrough (text format)
 - [MdastTableExtension](/docs/api/modules/lexical_mdast#mdasttableextension) - GFM tables (TableNode, ...)
+- [MdastStrictTableExtension](/docs/api/modules/lexical_mdast#mdaststricttableextension) - Opt-in: table editing kept to what a GFM table holds (header row, one line per cell, column alignment), with TableExtension
 - [MdastCommonMarkExtension](/docs/api/modules/lexical_mdast#mdastcommonmarkextension) - Bundle of the six CommonMark extensions
 - [MdastGfmExtension](/docs/api/modules/lexical_mdast#mdastgfmextension) - Bundle of the four GFM extensions
 - [MdastShadowRootQuoteExtension](/docs/api/modules/lexical_mdast#mdastshadowrootquoteextension) - Opt-in: blockquotes as block containers with full-fidelity nested content

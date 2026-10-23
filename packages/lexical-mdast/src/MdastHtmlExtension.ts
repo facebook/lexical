@@ -55,7 +55,6 @@ import {
 } from 'lexical';
 import {fromMarkdown} from 'mdast-util-from-markdown';
 
-import {escapeCellPipes} from './handlers';
 import {MdastExtension} from './MdastExtension';
 
 // The mdast nodes raw HTML is normalized into — one for a block-level tag
@@ -954,17 +953,15 @@ const htmlBlockToMarkdown: ToMarkdownExtension = {
     htmlBlock: ((node: HtmlBlock, _parent, state, info) => {
       const tracker = state.createTracker(info);
       const segments = node.value.split(PLACEHOLDER_SPLIT_RE);
-      // A GFM table cell holds one line, where GFM reads a pipe before
-      // anything else, so the raw HTML in one has its pipes escaped, and it
-      // and its children have their line endings written as spaces.
+      // A GFM table cell holds one line (MdastTableExtension escapes the raw
+      // HTML of one), so the Markdown children of one have their line
+      // endings written as spaces.
       const inCell = state.stack.includes('tableCell');
       let value = '';
       for (let i = 0; i < segments.length; i++) {
         if (i % 2 === 0) {
           if (segments[i] !== '') {
-            value += tracker.move(
-              inCell ? escapeCellPipes(segments[i]) : segments[i],
-            );
+            value += tracker.move(segments[i]);
           }
           continue;
         }

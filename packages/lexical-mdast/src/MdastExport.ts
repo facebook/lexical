@@ -51,7 +51,6 @@ import {toString as mdastToString} from 'mdast-util-to-string';
 import {
   $exportLineBreak,
   $isBlockLevelNode,
-  escapeCellPipes,
   exportText,
   phrasingFromTextRuns,
   TEXT_FORMAT_MASK,
@@ -150,11 +149,6 @@ const syntaxToMarkdown = (
 ): ToMarkdownExtension => ({
   handlers: {
     break(node: Break, parent, state, info) {
-      // A GFM table cell holds one line, so a line break in it is written
-      // as the `<br>` tag, which GFM renderers read as one.
-      if (state.stack.includes('tableCell')) {
-        return '<br>';
-      }
       // Delegate first: the default handler substitutes a space when a real
       // EOL is unsafe in the current construct (headings, table cells). Only
       // when it chose the hard-break form does the preserved marker apply:
@@ -201,10 +195,8 @@ const syntaxToMarkdown = (
       if (style === 'literal' && node.title == null) {
         // A bare GFM autolink literal: emit the visible text as-is. The
         // gfm-autolink-literal to-markdown extension keeps surrounding
-        // escaping consistent so it re-parses as the same literal. A GFM
-        // table cell ends at a pipe, so one in the literal is escaped there.
-        const text = mdastToString(node);
-        return state.stack.includes('tableCell') ? escapeCellPipes(text) : text;
+        // escaping consistent so it re-parses as the same literal.
+        return mdastToString(node);
       }
       if (style === 'inline') {
         // Force `[text](url)` even when the text equals the URL (the

@@ -18,6 +18,7 @@ import {$createLinkNode, $isLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
 import {
+  $createTableSelectionFrom,
   $insertTableRowAtNode,
   $isTableCellNode,
   $isTableNode,
@@ -37,9 +38,11 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
+  $setSelection,
   configExtension,
   defineExtension,
   type ElementNode,
+  FORMAT_ELEMENT_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   IS_BOLD,
   TextNode,
@@ -231,6 +234,32 @@ describe('MdastTableExtension', () => {
     );
   });
 
+  it('reads a row span of 0 as the rest of the rows', () => {
+    expect(
+      convert(
+        table('| a | b |', '| - | - |', '| 1 | 2 |', '| 3 | 4 |'),
+        () => {
+          const [, [one], [three]] = $cells();
+          three.remove();
+          one.setRowSpan(0);
+        },
+        false,
+      ),
+    ).toBe(table('| a | b |', '| - | - |', '| 1 | 2 |', '|   | 4 |'));
+  });
+
+  it('writes the block decorators of a cell after the table', () => {
+    expect(
+      convert(
+        table('| a |', '| - |', '| x |'),
+        () => {
+          $cells()[1][0].append($createHorizontalRuleNode());
+        },
+        false,
+      ),
+    ).toBe(table('| a |', '| - |', '| x |', '', '***'));
+  });
+
   it('writes a merged cell with empty cells where it spans', () => {
     expect(
       convert(
@@ -329,9 +358,14 @@ describe('MdastTableExtension', () => {
       discrete: true,
     });
     editor.read(() => {
-      expect($cells()[1][0].getTextContent()).toBe(
-        '<span title="|"> <span title="\\\\|">',
-      );
+      const html = '<span title="|"> <span title="\\\\|">';
+      expect($cells()[1][0].getTextContent()).toBe(html);
+      // The escapes are written with the cell, not kept in its mdast.
+      const [tableNode] = $convertToMdast().children;
+      assert(tableNode.type === 'table');
+      expect(tableNode.children[1].children[0].children).toEqual([
+        {type: 'html', value: html},
+      ]);
       expect($convertToMarkdownString()).toBe(markdown);
     });
     // A pipe after an odd run of backslashes, which a cell can't hold, is
@@ -521,25 +555,49 @@ describe('MdastStrictTableExtension', () => {
     ).toBe(table('|  a  |     |', '| :-: | :-: |', '|  1  |     |'));
   });
 
-  it('aligns a column when a block in one of its cells is aligned', () => {
-    expect(
-      convert(table('| a | b |', '| - | - |', '| 1 | 2 |'), () => {
-        $assertNodeType(
-          $cells()[1][1].getFirstChild(),
-          $isElementNode,
-        ).setFormat('center');
-      }),
-    ).toBe(table('| a |  b  |', '| - | :-: |', '| 1 |  2  |'));
+  it('aligns the columns a selection spans', () => {
+    using editor = createEditor(true);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(
+          table('| a | b | c |', '| - | - | - |', '| 1 | 2 | 3 |'),
+        );
+        $cells()[1][1].getAllTextNodes()[0].select(0, 0);
+      },
+      {discrete: true},
+    );
+    editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
+    // GFM has no justified column.
+    editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(
+        table('| a |  b  | c |', '| - | :-: | - |', '| 1 |  2  | 3 |'),
+      );
+    });
+    editor.update(
+      () => {
+        const [[a], [, , three]] = $cells();
+        $setSelection($createTableSelectionFrom($table(), three, a));
+      },
+      {discrete: true},
+    );
+    editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
+    editor.read(() => {
+      expect($table().getFormatType()).toBe('');
+      expect($convertToMarkdownString()).toBe(
+        table('|  a |  b |  c |', '| -: | -: | -: |', '|  1 |  2 |  3 |'),
+      );
+    });
   });
 
-  it('ignores an alignment GFM has no form for', () => {
+  it('ignores the alignment of a block in a cell', () => {
     expect(
       convert(table('| a | b |', '| :-: | - |', '| 1 | 2 |'), () => {
         const [, [one, two]] = $cells();
         $assertNodeType(one.getFirstChild(), $isElementNode).setFormat(
           'justify',
         );
-        $assertNodeType(two.getFirstChild(), $isElementNode).setFormat('start');
+        $assertNodeType(two.getFirstChild(), $isElementNode).setFormat('left');
       }),
     ).toBe(table('|  a  | b |', '| :-: | - |', '|  1  | 2 |'));
   });
@@ -552,23 +610,12 @@ describe('MdastStrictTableExtension', () => {
     ).toBe(table('|    |', '| -: |', '|  a |', '|  1 |'));
   });
 
-  it('aligns every column when the whole table is aligned', () => {
-    using editor = createEditor(true);
-    editor.update(
-      () => {
-        $convertFromMarkdownString(
-          table('| a | b |', '| - | - |', '| 1 | 2 |'),
-        );
+  it('clears the alignment of the table', () => {
+    expect(
+      convert(table('| a | b |', '| :- | - |', '| 1 | 2 |'), () => {
         $table().setFormat('right');
-      },
-      {discrete: true},
-    );
-    editor.read(() => {
-      expect($table().getFormatType()).toBe('');
-      expect($convertToMarkdownString()).toBe(
-        table('|  a |  b |', '| -: | -: |', '|  1 |  2 |'),
-      );
-    });
+      }),
+    ).toBe(table('| a  | b |', '| :- | - |', '| 1  | 2 |'));
   });
 
   it('cuts a row span past the last row', () => {

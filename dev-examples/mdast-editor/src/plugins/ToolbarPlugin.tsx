@@ -18,18 +18,15 @@ import {
   $deleteTableColumnAtSelection,
   $deleteTableRowAtSelection,
   $findCellNode,
-  $getTableColumnIndexFromTableCellNode,
-  $getTableNodeFromLexicalNodeOrThrow,
   $insertTableColumnAtSelection,
   $insertTableRowAtSelection,
-  $isTableCellNode,
-  $isTableRowNode,
   $isTableSelection,
   INSERT_TABLE_COMMAND,
 } from '@lexical/table';
 import {
   $getSelection,
   $isRangeSelection,
+  FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   type LexicalEditor,
   REDO_COMMAND,
@@ -133,23 +130,9 @@ function applyTableAction(editor: LexicalEditor, action: TableAction): void {
       case 'deleteColumn':
         $deleteTableColumnAtSelection();
         return;
-      default: {
-        // Every cell of each selected column, as GFM aligns columns.
-        const columns = new Set(
-          ($isTableSelection(selection) ? selection.getNodes() : [cell])
-            .filter($isTableCellNode)
-            .map($getTableColumnIndexFromTableCellNode),
-        );
-        for (const row of $getTableNodeFromLexicalNodeOrThrow(cell)
-          .getChildren()
-          .filter($isTableRowNode)) {
-          row.getChildren().forEach((rowCell, column) => {
-            if ($isTableCellNode(rowCell) && columns.has(column)) {
-              rowCell.setFormat(action);
-            }
-          });
-        }
-      }
+      default:
+        // MdastStrictTableExtension aligns the selected columns.
+        editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, action);
     }
   });
 }

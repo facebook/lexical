@@ -7,7 +7,13 @@
  */
 
 import type {MdastExportHandler, MdastImportHandler, MdastNode} from './types';
-import type {AlignType, PhrasingContent, Table, TableCell} from 'mdast';
+import type {
+  AlignType,
+  Paragraph,
+  PhrasingContent,
+  Table,
+  TableCell,
+} from 'mdast';
 import type {
   Handle,
   Options as ToMarkdownExtension,
@@ -97,24 +103,22 @@ function mapPhrasing(
 
 /**
  * The alignment of each column: that of the first cell from the top that
- * starts in it and has one (its header cell's, unless a row was inserted
- * above it). A cell has the alignment of its first block's format, if the
- * block has one (aligning the text in it, or pasting an aligned table, sets
- * it), or else of its own.
+ * starts in it and has a format (its header cell's, unless a row was
+ * inserted above it), none for a format GFM has no alignment for. A cell
+ * has its first block's format, if the block has one (aligning the text in
+ * it, or pasting an aligned table, sets it), or else its own.
  */
 function $columnAlign(grid: GridCell[][]): AlignType[] {
   const align: AlignType[] = [];
   grid.forEach(cells =>
     cells.forEach(({cell, origin}, column) => {
       const block = cell.getFirstChild();
-      align[column] =
-        align[column] ||
-        (origin
-          ? gfmAlign(
-              ($isElementNode(block) && block.getFormatType()) ||
-                cell.getFormatType(),
-            )
-          : null);
+      const format =
+        ($isElementNode(block) && block.getFormatType()) ||
+        cell.getFormatType();
+      if (origin && format && align[column] === undefined) {
+        align[column] = gfmAlign(format);
+      }
     }),
   );
   return align;
@@ -367,14 +371,6 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   if (to < 0) {
     return exported;
   }
-  // The lines of a cell, separated by breaks (which the cell writer below
-  // writes as `<br>`).
-  const $content = (lines: LexicalNode[][]) =>
-    lines.flatMap((line, i): PhrasingContent[] =>
-      i > 0
-        ? [{type: 'break'}, ...ctx.exportInline(line)]
-        : ctx.exportInline(line),
-    );
   // A selection export that starts and ends in the one cell it reaches
   // writes its content, as copying text in a cell does.
   const selection = $getRenderContextValue(RenderContextMarkdownSelection);
@@ -387,7 +383,12 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     )
   ) {
     return [
-      {children: $content($linesOf(onlyCell)), type: 'paragraph'},
+      ...$linesOf(onlyCell).map(
+        (line): Paragraph => ({
+          children: ctx.exportInline(line),
+          type: 'paragraph',
+        }),
+      ),
       ...exported,
     ];
   }
@@ -403,7 +404,13 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
           (column): TableCell => ({
             children:
               cells[column] && cells[column].origin
-                ? $content(lines[column])
+                ? // The lines of the cell, separated by breaks (which the
+                  // cell writer below writes as `<br>`).
+                  lines[column].flatMap((line, i): PhrasingContent[] =>
+                    i > 0
+                      ? [{type: 'break'}, ...ctx.exportInline(line)]
+                      : ctx.exportInline(line),
+                  )
                 : [],
             type: 'tableCell',
           }),
@@ -639,7 +646,7 @@ function $formatColumns(format: ElementFormatType): boolean {
   const reached = new Map<string, Set<string>>();
   for (const cell of inOneTable
     ? [anchorCell, focusCell]
-    : [anchorCell, focusCell, ...nodes.map($findCellNode)]) {
+    : nodes.map($findCellNode)) {
     const cellTable = cell && $findTableNode(cell);
     if (cell && cellTable) {
       const cells = reached.get(cellTable.getKey()) || new Set();

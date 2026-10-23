@@ -324,6 +324,20 @@ describe('MdastTableExtension', () => {
     });
   });
 
+  it('writes a column unaligned when the text in its header is', () => {
+    expect(
+      convert(
+        table('| a | b |', '| :-: | - |', '| 1 | 2 |'),
+        () =>
+          $assertNodeType(
+            $cells()[0][0].getFirstChild(),
+            $isElementNode,
+          ).setFormat('justify'),
+        false,
+      ),
+    ).toBe(table('| a | b |', '| - | - |', '| 1 | 2 |'));
+  });
+
   it('writes a column unaligned when the text in its cell is', () => {
     expect(
       convert(
@@ -561,6 +575,24 @@ describe('MdastTableExtension', () => {
     );
     editor.read(() => {
       expect($convertSelectionToMarkdownString()).toBe('y');
+    });
+  });
+
+  it('writes the blocks a selection in a cell reaches as paragraphs', () => {
+    using editor = createEditor(false);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(table('| a |', '| - |', '| x |'));
+        const [cell] = $cells()[1];
+        const y = $createTextNode('y');
+        cell.append($createParagraphNode().append(y));
+        const selection = cell.getAllTextNodes()[0].select(0, 0);
+        selection.focus.set(y.getKey(), 1, 'text');
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertSelectionToMarkdownString()).toBe('x\n\ny');
     });
   });
 

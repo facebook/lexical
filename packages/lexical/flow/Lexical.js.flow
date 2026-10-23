@@ -1896,6 +1896,8 @@ export type LexicalWarningCode =
   | '@lexical/y/recovered-write'
   | '@lexical/y/nested-fallback'
   | '@lexical/y/unsynced-value'
+  | '@lexical/y/editor-warning'
+  | '@lexical/y/follow-ups-exhausted'
   | string;
 declare export class LexicalWarning extends Error {
   readonly code: LexicalWarningCode;

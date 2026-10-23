@@ -338,17 +338,17 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     let lines = cellsLines.get(cell);
     if (!lines) {
       const cellLines = $cellLines(cell);
-      // The empty line a cell of only block decorators has is not reached
-      // through them by a selection.
+      // The empty line a cell of only block decorators has is reached by a
+      // selection that passes over the cell, not one that ends in it.
       const reached = cellLines.lines.map((line, i) =>
         line.length > 0
           ? line.some(ctx.isIncluded)
-          : ctx.isIncluded(cellLines.owners[i]) &&
-            !(
-              ctx.selection &&
-              cell.is(cellLines.owners[i]) &&
-              cellLines.decorators.length > 0
-            ),
+          : cell.is(cellLines.owners[i]) &&
+              cellLines.decorators.length > 0 &&
+              selection
+            ? cell.isSelected(selection) &&
+              !ends.some(end => cell.is(end) || cell.isParentOf(end))
+            : ctx.isIncluded(cellLines.owners[i]),
       );
       lines = cellLines.lines.slice(
         reached.indexOf(true),

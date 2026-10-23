@@ -1043,6 +1043,29 @@ describe('MdastStrictTableExtension', () => {
     ).toBe([table('| a | b |', '| - | - |', '| 1 | 2 |'), '***'].join('\n\n'));
   });
 
+  it('copies a column of cells holding only block decorators', () => {
+    using editor = createEditor(false);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(
+          ['x', table('| a | b |', '| - | - |'), 'y'].join('\n\n'),
+        );
+        const tableNode = $assertNodeType(
+          $getRoot().getChildAtIndex(1),
+          $isTableNode,
+        );
+        $cells(tableNode)[0][1].clear().append($createHorizontalRuleNode());
+        $getRoot().select(0, 3);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertSelectionToMarkdownString()).toBe(
+        ['x', table('| a |   |', '| - | - |'), '***', 'y'].join('\n\n'),
+      );
+    });
+  });
+
   it('keeps a table whose cells hold only block decorators', () => {
     expect(
       convert(

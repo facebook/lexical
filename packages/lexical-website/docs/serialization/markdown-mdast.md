@@ -115,11 +115,14 @@ The literal syntax of each construct is preserved on the Lexical
 nodes with [NodeState](/docs/concepts/node-state): list bullet
 `-`/`*`/`+`, ordered delimiter `.`/`)`, code fence style and
 info-string meta, setext vs ATX headings, hard-break style, soft line
-breaks, thematic break marker, table column alignment, `_` vs `*`
-emphasis, and link style (`[text](url)` vs `<autolink>` vs bare GFM
-literal). Normalization is never forced; nodes created in the editor
-defer to the document-level serialization options, which can be
-configured by contributing `mdast-util-to-markdown` options through
+breaks, thematic break marker, `_` vs `*` emphasis, and link style
+(`[text](url)` vs `<autolink>` vs bare GFM literal). A table column's
+alignment is the element format of the column's cells, written from the
+header row's. Normalization is never forced (unless you add
+`MdastStrictTableExtension`, which keeps tables in the editor to what a
+GFM table holds); nodes created in the editor defer to the
+document-level serialization options, which can be configured by
+contributing `mdast-util-to-markdown` options through
 `toMarkdownExtensions`.
 
 ## unified / remark interop

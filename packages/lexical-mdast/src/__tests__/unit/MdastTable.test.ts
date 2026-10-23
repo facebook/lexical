@@ -598,6 +598,50 @@ describe('MdastStrictTableExtension', () => {
     });
   });
 
+  it('keeps a caret before a block decorator before the line after it', () => {
+    using editor = createEditor(true);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(table('| a |', '| - |', '| x |'));
+        const [, [cell]] = $cells();
+        cell.append(
+          $createHorizontalRuleNode(),
+          $createParagraphNode().append($createTextNode('after')),
+        );
+        cell.select(1, 1);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const paragraph = $assertNodeType(
+        $cells()[1][0].getFirstChild(),
+        $isParagraphNode,
+      );
+      expect(paragraph.getTextContent()).toBe('x\nafter');
+      const selection = $getSelection();
+      assert($isRangeSelection(selection));
+      expect(selection.anchor.getNode().is(paragraph)).toBe(true);
+      expect(selection.anchor.offset).toBe(2);
+    });
+  });
+
+  it.each([true, false])(
+    'leaves out a table with no cells (strict: %s)',
+    strict => {
+      expect(
+        convert(
+          ['before', table('| a |', '| - |', '| 1 |'), 'after'].join('\n\n'),
+          () => {
+            $cells($assertNodeType($getRoot().getChildAtIndex(1), $isTableNode))
+              .flat()
+              .forEach(cell => cell.remove());
+          },
+          strict,
+        ),
+      ).toBe('before\n\nafter');
+    },
+  );
+
   it('keeps the first row the header row', () => {
     using editor = createEditor(true);
     editor.update(
@@ -659,6 +703,37 @@ describe('MdastStrictTableExtension', () => {
       expect($table().getFormatType()).toBe('');
       expect($convertToMarkdownString()).toBe(
         table('|  a |  b |  c |', '| -: | -: | -: |', '|  1 |  2 |  3 |'),
+      );
+    });
+  });
+
+  it('keeps the alignment of a column a merged body cell spans', () => {
+    expect(
+      convert(table('| a | b |', '| :-: | - |', '| 1 | 2 |'), () => {
+        const [, [one, two]] = $cells();
+        two.remove();
+        one.setColSpan(2);
+      }),
+    ).toBe(table('|  a  | b |', '| :-: | - |', '|  1  |   |'));
+  });
+
+  it('aligns the columns of a selection that ends after the table', () => {
+    using editor = createEditor(true);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(
+          [table('| a | b |', '| - | - |', '| 1 | 2 |'), 'after'].join('\n\n'),
+        );
+        const selection = $cells()[1][1].getAllTextNodes()[0].select(0, 0);
+        const after = $getRoot().getLastChildOrThrow<ElementNode>();
+        selection.focus.set(after.getKey(), 1, 'element');
+      },
+      {discrete: true},
+    );
+    editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(
+        [table('| a |  b |', '| - | -: |', '| 1 |  2 |'), 'after'].join('\n\n'),
       );
     });
   });

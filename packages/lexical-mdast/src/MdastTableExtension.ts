@@ -40,6 +40,7 @@ import {
 import {
   $createLineBreakNode,
   $createParagraphNode,
+  $getNodeByKeyOrThrow,
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
@@ -140,8 +141,8 @@ function $tableGrid(table: TableNode): {
 /**
  * The inline content of a cell as lines (at least one): those of each block
  * in it, a nested block's on lines of its own. Also returns the blocks with
- * no inline form (block decorators), the lines each block element spans,
- * and the block (or the cell) each line is in.
+ * no inline form (block decorators), the lines each block spans, and the
+ * block (or the cell) each line is in.
  */
 function $cellLines(cell: TableCellNode): {
   blocks: Map<string, [number, number]>;
@@ -166,6 +167,8 @@ function $cellLines(cell: TableCellNode): {
       blocks.set(node.getKey(), [first, lines.length - 1]);
       line = undefined;
     } else if ($isDecoratorNode(node) && !node.isInline()) {
+      // It spans no line, before the line after it.
+      blocks.set(node.getKey(), [lines.length, lines.length - 1]);
       decorators.push(node);
     } else {
       if (!line) {
@@ -279,28 +282,30 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   const width = grid.reduce((max, cells) => Math.max(max, cells.length), 0);
   const children: TableRow[] = [];
   const decorators: LexicalNode[] = [];
-  // The lines of each cell a row has, from the first a selection export
-  // reaches to the last (an empty one by its block), and its block
-  // decorators the export reaches.
+  // The lines of each cell in the rows a selection export reaches, from the
+  // first line it reaches to the last (an empty one by its block), and the
+  // block decorators it reaches in them.
   const written = new Map<TableCellNode, LexicalNode[][]>();
-  const $written = (cell: TableCellNode) => {
-    let lines = written.get(cell);
-    if (!lines) {
-      const cellLines = $cellLines(cell);
-      const reached = cellLines.lines.map((line, i) =>
-        line.length > 0
-          ? line.some(ctx.isIncluded)
-          : ctx.isIncluded(cellLines.owners[i]),
-      );
-      lines = cellLines.lines.slice(
-        reached.indexOf(true),
-        reached.lastIndexOf(true) + 1,
-      );
-      written.set(cell, lines);
-      decorators.push(...cellLines.decorators.filter(ctx.isIncluded));
+  rows.forEach((row, rowIndex) => {
+    if (ctx.isIncluded(row)) {
+      grid[rowIndex].forEach(({cell}) => {
+        if (!written.has(cell)) {
+          const {lines, owners, decorators: blocks} = $cellLines(cell);
+          const reached = lines.map((line, i) =>
+            line.length > 0
+              ? line.some(ctx.isIncluded)
+              : ctx.isIncluded(owners[i]),
+          );
+          written.set(
+            cell,
+            lines.slice(reached.indexOf(true), reached.lastIndexOf(true) + 1),
+          );
+          decorators.push(...blocks.filter(ctx.isIncluded));
+        }
+      });
     }
-    return lines;
-  };
+  });
+  const linesOf = (cell: TableCellNode) => written.get(cell) || [];
   rows.forEach((row, rowIndex) => {
     // Structural iteration bypasses the walk's selection filter, so rows a
     // selection export does not reach are skipped here, as are rows where it
@@ -309,7 +314,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     const cells = grid[rowIndex];
     if (
       !ctx.isIncluded(row) ||
-      (cells.length > 0 && !cells.some(at => $written(at.cell).length > 0))
+      (cells.length > 0 && !cells.some(at => linesOf(at.cell).length > 0))
     ) {
       return;
     }
@@ -320,7 +325,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
         if (at && at.origin) {
           // The lines of the cell, separated by breaks (which the cell
           // writer below writes as `<br>`).
-          $written(at.cell).forEach((line, i) => {
+          linesOf(at.cell).forEach((line, i) => {
             if (i > 0) {
               cellChildren.push({type: 'break'});
             }
@@ -333,7 +338,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     });
   });
   const exported = ctx.exportChildren(decorators);
-  if (children.length === 0) {
+  if (children.length === 0 || width === 0) {
     return exported;
   }
   // GFM aligns columns, by the alignment of the header row's cells.
@@ -429,6 +434,11 @@ function $normalizeTable(table: TableNode): void {
   // first, as the split can't fill it, and a column span of 0 is 1 (as the
   // grid reads them).
   let {grid} = $tableGrid(table);
+  // A table with no cells has nothing GFM can write.
+  if (!grid.some(cells => cells.length > 0)) {
+    table.remove();
+    return;
+  }
   let split = false;
   grid.forEach((cells, rowIndex) =>
     cells.forEach(({cell, origin}) => {
@@ -450,15 +460,14 @@ function $normalizeTable(table: TableNode): void {
   if (split) {
     ({grid} = $tableGrid(table));
   }
-  // A column's alignment is the first its cells have (its header cell's,
-  // unless a row was inserted above it); other formats, of the table or a
-  // block in a cell, are cleared.
-  const align: AlignType[] = [];
-  grid.forEach(cells =>
-    cells.forEach(({cell}, column) => {
-      align[column] = align[column] || gfmAlign(cell.getFormatType());
-    }),
-  );
+  // The columns are aligned as the cells of the first row with an aligned
+  // cell are (the header row, unless a row was inserted above it); other
+  // formats, of the table or a block in a cell, are cleared.
+  const alignRow =
+    grid.find(cells =>
+      cells.some(({cell}) => gfmAlign(cell.getFormatType())),
+    ) || [];
+  const align = alignRow.map(({cell}) => gfmAlign(cell.getFormatType()));
   if (table.getFormatType() !== '') {
     table.setFormat('');
   }
@@ -531,7 +540,9 @@ function $normalizeTable(table: TableNode): void {
           target && joined.is(target.getParent())
             ? target.getIndexWithinParent()
             : targetSpan
-              ? ends[targetSpan[0]][0]
+              ? targetSpan[0] < ends.length
+                ? ends[targetSpan[0]][0]
+                : ends[ends.length - 1][1]
               : ends[span[1]][1],
           'element',
         );
@@ -546,42 +557,56 @@ function $normalizeTable(table: TableNode): void {
 }
 
 /**
- * Aligns the columns from the selection's anchor cell to its focus cell,
- * for an alignment GFM has, and ignores any other: GFM aligns columns, not
- * cells or blocks.
+ * Aligns the columns of the cells the selection reaches in each table (from
+ * the first to the last), for an alignment GFM has, and ignores any other:
+ * GFM aligns columns, not cells or blocks.
  */
 function $formatColumns(format: ElementFormatType): boolean {
   const selection = $getSelection();
   if (!$isRangeSelection(selection) && !$isTableSelection(selection)) {
     return false;
   }
-  const anchor = $findCellNode(selection.anchor.getNode());
-  const focus = $findCellNode(selection.focus.getNode());
-  const table = anchor && $findTableNode(anchor);
-  if (!table || !focus || !table.is($findTableNode(focus))) {
-    return false;
+  // The cells the selection reaches, by table.
+  const reached = new Map<string, Set<string>>();
+  for (const node of [selection.anchor.getNode(), ...selection.getNodes()]) {
+    const cell = $findCellNode(node);
+    const table = cell && $findTableNode(cell);
+    if (table) {
+      const cells = reached.get(table.getKey()) || new Set();
+      reached.set(table.getKey(), cells.add(cell.getKey()));
+    }
   }
-  const {grid} = $tableGrid(table);
-  const columns = grid.flatMap(cells =>
-    cells.flatMap(({cell}, column) =>
-      cell.is(anchor) || cell.is(focus) ? [column] : [],
-    ),
-  );
-  if (columns.length === 0) {
-    return false;
-  }
-  const from = Math.min(...columns);
-  const to = Math.max(...columns);
-  if (gfmAlign(format) || format === '') {
-    grid.forEach(cells =>
-      cells.forEach(({cell}, column) => {
-        if (column >= from && column <= to && cell.getFormatType() !== format) {
+  const aligns = gfmAlign(format) !== null || format === '';
+  let found = false;
+  reached.forEach((cells, key) => {
+    const {grid} = $tableGrid($getNodeByKeyOrThrow<TableNode>(key));
+    const columns = grid.flatMap(row =>
+      row.flatMap(({cell}, column) =>
+        cells.has(cell.getKey()) ? [column] : [],
+      ),
+    );
+    found = found || columns.length > 0;
+    const from = Math.min(...columns);
+    const to = Math.max(...columns);
+    grid.forEach(row =>
+      row.forEach(({cell}, column) => {
+        if (
+          aligns &&
+          column >= from &&
+          column <= to &&
+          cell.getFormatType() !== format
+        ) {
           cell.setFormat(format);
         }
       }),
     );
-  }
-  return true;
+  });
+  // Blocks outside a table the selection reaches are formatted as usual.
+  return (
+    found &&
+    $findCellNode(selection.anchor.getNode()) !== null &&
+    $findCellNode(selection.focus.getNode()) !== null
+  );
 }
 
 /** Normalizes the table a changed cell is in. */

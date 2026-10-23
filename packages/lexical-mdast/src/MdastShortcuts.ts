@@ -25,6 +25,7 @@ import {
 } from '@lexical/rich-text';
 import {
   $addUpdateTag,
+  $findMatchingParent,
   $getNodeByKey,
   $getSelection,
   $isParagraphNode,
@@ -278,15 +279,10 @@ function $tryCheckbox(
  * spares bundles that have no tables `@lexical/table`.)
  */
 function $isBlockContainer(node: LexicalNode | null): boolean {
-  if (!$isRootOrShadowRoot(node)) {
-    return false;
-  }
-  for (let n: LexicalNode | null = node; n; n = n.getParent()) {
-    if (n.getType() === 'tablecell') {
-      return false;
-    }
-  }
-  return true;
+  return (
+    $isRootOrShadowRoot(node) &&
+    !$findMatchingParent(node, parent => parent.getType() === 'tablecell')
+  );
 }
 
 function $isShortcutParagraph(

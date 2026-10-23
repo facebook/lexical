@@ -36,13 +36,11 @@ import {
   $isRootOrShadowRoot,
   $isSiblingCaret,
   $isTextNode,
-  $markSlotEditable,
   $normalizeCaret,
   $setPointFromCaret,
   $setSelection,
   addClassNamesToElement,
   type BaseSelection,
-  BEFORE_INPUT_COMMAND,
   type CaretDirection,
   type ChildCaret,
   COMMAND_PRIORITY_HIGH,
@@ -62,10 +60,8 @@ import {
   getDOMSelection,
   getDOMSelectionPoints,
   getDOMSelectionRange,
-  getEditorPropertyFromDOMNode,
   INSERT_PARAGRAPH_COMMAND,
   IS_FIREFOX,
-  IS_IOS,
   isDOMDocumentNode,
   isDOMNode,
   isDOMShadowRoot,
@@ -92,11 +88,7 @@ import {
   type SiblingCaret,
 } from 'lexical';
 
-import {
-  $isTableCellNode,
-  getTableCellContentWrapper,
-  type TableCellNode,
-} from './LexicalTableCellNode';
+import {$isTableCellNode, type TableCellNode} from './LexicalTableCellNode';
 import {
   $getElementForTableNode,
   $isScrollableTablesActive,
@@ -127,151 +119,6 @@ import {
 } from './LexicalTableUtils';
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
-
-function clearTouchTapCellKey(tableObservers: TableObservers): void {
-  tableObservers.touchTapCellKey = null;
-}
-
-function shouldPreserveTouchTapOnWindowBlur(
-  editor: LexicalEditor,
-  tableObservers: TableObservers,
-): boolean {
-  const marker = tableObservers.touchTapCellKey;
-  if (marker === null) {
-    return false;
-  }
-  return editor.read('latest', () => {
-    const cell = $getNodeByKey(marker);
-    return (
-      $isTableCellNode(cell) &&
-      $getIOSEmptyCellEditableWrapper(editor, cell, false) !== null
-    );
-  });
-}
-
-function $isSelectionInsideNode(
-  selection: BaseSelection | null,
-  node: ElementNode,
-): boolean {
-  if (!$isRangeSelection(selection)) {
-    return false;
-  }
-  const anchor = selection.anchor.getNode();
-  const focus = selection.focus.getNode();
-  return (
-    (node.is(anchor) || node.isParentOf(anchor)) &&
-    (node.is(focus) || node.isParentOf(focus))
-  );
-}
-
-function $isTableCellEmpty(cell: TableCellNode): boolean {
-  const children = cell.getChildren();
-  return (
-    children.length > 0 &&
-    children.every(child => $isElementNode(child) && child.isEmpty())
-  );
-}
-
-function $getIOSEmptyCellEditableWrapper(
-  editor: LexicalEditor,
-  cell: TableCellNode,
-  requireActive: boolean,
-): HTMLElement | null {
-  if (!IS_IOS || !$isTableCellEmpty(cell)) {
-    return null;
-  }
-  const cellDOM = editor.getElementByKey(cell.getKey());
-  const rootElement = editor.getRootElement();
-  const wrapper = isHTMLElement(cellDOM)
-    ? getTableCellContentWrapper(cellDOM)
-    : null;
-  const activeElement =
-    rootElement === null ? null : getActiveElement(rootElement);
-  const owned =
-    wrapper !== null && getEditorPropertyFromDOMNode(wrapper) === editor;
-  if (
-    !isHTMLElement(cellDOM) ||
-    wrapper === null ||
-    rootElement === null ||
-    cellDOM.getAttribute('contenteditable') !== 'false' ||
-    wrapper.getAttribute('contenteditable') !==
-      (editor.isEditable() ? 'true' : 'false') ||
-    !owned ||
-    (requireActive && activeElement !== wrapper)
-  ) {
-    return null;
-  }
-  return wrapper;
-}
-
-/** @internal */
-export function $syncIOSTableCellEditableWrappers(
-  editor: LexicalEditor,
-  tableNode: TableNode,
-): void {
-  if (!IS_IOS) {
-    return;
-  }
-  for (const row of tableNode.getChildren()) {
-    if (!$isTableRowNode(row)) {
-      continue;
-    }
-    for (const cell of row.getChildren()) {
-      if (!$isTableCellNode(cell)) {
-        continue;
-      }
-      const cellDOM = editor.getElementByKey(cell.getKey());
-      const wrapper = isHTMLElement(cellDOM)
-        ? getTableCellContentWrapper(cellDOM)
-        : null;
-      if (wrapper !== null) {
-        $markSlotEditable(wrapper, editor);
-      }
-    }
-  }
-}
-
-// WebKit's default Backspace at the start of an editing host moves the caret
-// into the previous host, which with the iOS cell wrapper is the cell to the
-// left; an empty cell has nothing else for it to do.
-function $shouldPreventEmptyCellBackwardDelete(
-  editor: LexicalEditor,
-  tableNode: TableNode,
-  isBackward: boolean,
-): boolean {
-  if (!IS_IOS || !isBackward) {
-    return false;
-  }
-  const selection = $getSelection();
-  if (!$isRangeSelection(selection)) {
-    return false;
-  }
-  const cell = $findParentTableCellNodeInTable(
-    tableNode,
-    selection.anchor.getNode(),
-  );
-  if (
-    cell === null ||
-    !$isSelectionInsideNode(selection, cell) ||
-    $getIOSEmptyCellEditableWrapper(editor, cell, true) === null
-  ) {
-    return false;
-  }
-  if (!selection.isCollapsed()) {
-    return true;
-  }
-  const firstChild = cell.getFirstChild();
-  const {anchor} = selection;
-  const isAtCellStart =
-    (firstChild !== null &&
-      anchor.key === firstChild.getKey() &&
-      anchor.type === 'element' &&
-      anchor.offset === 0) ||
-    (anchor.key === cell.getKey() &&
-      anchor.type === 'element' &&
-      anchor.offset === 0);
-  return isAtCellStart;
-}
 
 function $getTableNodeByKeyOrThrow(key: NodeKey): TableNode {
   const tableNode = $getNodeByKeyOrThrow(key);
@@ -393,6 +240,7 @@ const ARROW_KEY_COMMANDS_WITH_DIRECTION = [
 const DELETE_TEXT_COMMANDS = [
   DELETE_WORD_COMMAND,
   DELETE_LINE_COMMAND,
+  DELETE_CHARACTER_COMMAND,
 ] as const;
 const DELETE_KEY_COMMANDS = [
   KEY_BACKSPACE_COMMAND,
@@ -417,7 +265,7 @@ export function registerTableWindowHandlers(
     }
 
     const pointerDownCallback = (event: PointerEvent) => {
-      clearTouchTapCellKey(tableObservers);
+      tableObservers.touchTapCellKey = null;
       // Listener is on editorWindow; the composed target is needed so the
       // rootElement.contains check below sees the shadow-internal target.
       const target = getComposedEventTarget(event);
@@ -464,25 +312,7 @@ export function registerTableWindowHandlers(
     };
 
     const clearTouchTap = () => {
-      clearTouchTapCellKey(tableObservers);
-    };
-    const onWindowBlur = () => {
-      // The iOS selection UI blurs the window before the selectionchange of
-      // a double tap arrives; clearing the marker here would let that range
-      // expand to the whole table (#9347). 500ms covers the observed gap.
-      if (shouldPreserveTouchTapOnWindowBlur(editor, tableObservers)) {
-        const preservedMarker = tableObservers.touchTapCellKey;
-        editorWindow.setTimeout(() => {
-          if (tableObservers.touchTapCellKey === preservedMarker) {
-            clearTouchTapCellKey(tableObservers);
-          }
-        }, 500);
-      } else {
-        clearTouchTapCellKey(tableObservers);
-      }
-    };
-    const onWindowKeyDown = () => {
-      clearTouchTapCellKey(tableObservers);
+      tableObservers.touchTapCellKey = null;
     };
     return mergeRegister(
       registerEventListener(editorWindow, 'pointerdown', pointerDownCallback),
@@ -490,7 +320,7 @@ export function registerTableWindowHandlers(
       // that handler stops propagation. A later keyboard selection is not a tap.
       registerEventListeners(
         editorWindow,
-        {blur: onWindowBlur, keydown: onWindowKeyDown},
+        {blur: clearTouchTap, keydown: clearTouchTap},
         {capture: true},
       ),
       clearTouchTap,
@@ -510,7 +340,6 @@ function $handleTableClick(
   if (!editorWindow) {
     return;
   }
-  const touchTapMarkerState = {preserveOnPointerUp: false};
   const createPointerHandlers = (startingCell: TableDOMCell) => {
     if (tableObserver.isSelecting) {
       return;
@@ -796,12 +625,8 @@ function $handleTableClick(
 
     const onPointerUp = (upEvent: PointerEvent) => {
       if (isGesturePointer(upEvent)) {
-        const beyondTapSlop = isBeyondTapSlop(upEvent.clientX, upEvent.clientY);
-        const shouldClearTapMarker =
-          tableObserver.isPointerDrag ||
-          (beyondTapSlop && !touchTapMarkerState.preserveOnPointerUp);
-        if (shouldClearTapMarker) {
-          clearTouchTapCellKey(tableObservers);
+        if (isBeyondTapSlop(upEvent.clientX, upEvent.clientY)) {
+          tableObservers.touchTapCellKey = null;
         }
         stopSelecting();
       }
@@ -816,7 +641,7 @@ function $handleTableClick(
     // gesture, so every subsequent tap selects cells (#8538).
     const onPointerGestureEnd = (endEvent: PointerEvent) => {
       if (isGesturePointer(endEvent)) {
-        clearTouchTapCellKey(tableObservers);
+        tableObservers.touchTapCellKey = null;
         stopSelecting();
       }
     };
@@ -826,7 +651,7 @@ function $handleTableClick(
         return;
       }
       if (!isPointerDownOnEvent(moveEvent) && tableObserver.isSelecting) {
-        clearTouchTapCellKey(tableObservers);
+        tableObservers.touchTapCellKey = null;
         stopSelecting();
         return;
       }
@@ -841,7 +666,7 @@ function $handleTableClick(
         isBeyondTapSlop(lastClientX, lastClientY)
       ) {
         tableObserver.isPointerDrag = true;
-        clearTouchTapCellKey(tableObservers);
+        tableObservers.touchTapCellKey = null;
       }
       let focusCell: null | TableDOMCell = null;
       // In firefox the moveEvent.target may be captured so we must always
@@ -882,9 +707,6 @@ function $handleTableClick(
   ) {
     const cellNode = $getNearestNodeFromDOMNode(selectedDOMCell.elem);
     tableObservers.touchTapCellKey = cellNode ? cellNode.getKey() : null;
-    touchTapMarkerState.preserveOnPointerUp =
-      $isTableCellNode(cellNode) &&
-      $getIOSEmptyCellEditableWrapper(editor, cellNode, false) !== null;
   }
   const tableNode = $getTableNodeByKeyOrThrow(tableObserver.tableNodeKey);
   const prevSelection = $getPreviousSelection();
@@ -1077,43 +899,6 @@ export function applyTableHandlers(
       ),
     );
   }
-
-  // HIGH: both must run before the EDITOR handlers that dispatch and perform
-  // the delete.
-  tableObserver.listenersToRemove.add(
-    editor.registerCommand(
-      BEFORE_INPUT_COMMAND,
-      event => {
-        clearTouchTapCellKey(tableObservers);
-        if (
-          event.inputType !== 'deleteContentBackward' ||
-          !$shouldPreventEmptyCellBackwardDelete(editor, tableNode, true)
-        ) {
-          return false;
-        }
-        event.preventDefault();
-        return true;
-      },
-      COMMAND_PRIORITY_HIGH,
-    ),
-  );
-
-  tableObserver.listenersToRemove.add(
-    editor.registerCommand(
-      DELETE_CHARACTER_COMMAND,
-      isBackward => {
-        if ($deleteTextHandler()) {
-          return true;
-        }
-        return $shouldPreventEmptyCellBackwardDelete(
-          editor,
-          tableNode,
-          isBackward,
-        );
-      },
-      COMMAND_PRIORITY_HIGH,
-    ),
-  );
 
   const $deleteCellHandler = (
     event: KeyboardEvent | ClipboardEvent | null,
@@ -1558,7 +1343,7 @@ export function $handleTableSelectionChangeCommand(
   }
 
   if ($isRangeSelection(selection)) {
-    $fixRangeSelectionForSelectedTable(editor, selection, tableObservers);
+    $fixRangeSelectionForSelectedTable(selection, tableObservers);
   }
 
   return false;
@@ -1573,7 +1358,6 @@ export function $syncTableSelectionObservers(
     tableNode,
     tableObserver,
   ] of tableObservers.$getTableNodesAndObservers()) {
-    $syncIOSTableCellEditableWrappers(editor, tableNode);
     $syncTableSelectionState(editor, tableNode, tableObserver);
   }
 }
@@ -1582,7 +1366,6 @@ export function $syncTableSelectionObservers(
  * Handles cases where range selections cross into, out of, or within tables.
  */
 function $fixRangeSelectionForSelectedTable(
-  editor: LexicalEditor,
   selection: RangeSelection,
   tableObservers: TableObservers,
 ) {
@@ -1598,42 +1381,6 @@ function $fixRangeSelectionForSelectedTable(
     ? $findTableNode(anchorCellNode)
     : null;
   const focusCellTable = focusCellNode ? $findTableNode(focusCellNode) : null;
-
-  const touchTapCell =
-    tableObservers.touchTapCellKey === null
-      ? null
-      : $getNodeByKey(tableObservers.touchTapCellKey);
-  const activeEmptyWrapper = $isTableCellNode(touchTapCell)
-    ? $getIOSEmptyCellEditableWrapper(editor, touchTapCell, true)
-    : null;
-  const previousAnchorNode = $isRangeSelection(prevSelection)
-    ? $getNodeByKey(prevSelection.anchor.key)
-    : null;
-  const previousCaretCell =
-    $isRangeSelection(prevSelection) &&
-    prevSelection.isCollapsed() &&
-    previousAnchorNode !== null
-      ? $findCellNode(previousAnchorNode)
-      : null;
-
-  // A nested editing host changes how WebKit represents the island endpoint:
-  // it may import as the paragraph, cell, or an adjacent boundary. The
-  // remembered focused island is the reliable gesture target, so collapse a
-  // native double-tap range there before table normalization can expand it.
-  if (
-    activeEmptyWrapper !== null &&
-    $isTableCellNode(touchTapCell) &&
-    previousCaretCell !== null &&
-    previousCaretCell.is(touchTapCell) &&
-    ((anchorCellNode !== null && anchorCellNode.is(touchTapCell)) ||
-      (focusCellNode !== null && focusCellNode.is(touchTapCell))) &&
-    !selection.dirty &&
-    !selection.isCollapsed()
-  ) {
-    clearTouchTapCellKey(tableObservers);
-    touchTapCell.selectStart();
-    return;
-  }
 
   // iOS can double-tap an empty cell by issuing only selectionchange after
   // the first tap's pointerup. Its word selection reaches outside the cell;

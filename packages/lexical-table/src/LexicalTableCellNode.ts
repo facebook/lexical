@@ -10,11 +10,9 @@ import {
   $applyNodeReplacement,
   $createParagraphNode,
   $getDocument,
-  $getEditor,
   $isInlineElementOrDecoratorNode,
   $isLineBreakNode,
   $isTextNode,
-  $markSlotEditable,
   $setDirectionFromDOM,
   addClassNamesToElement,
   type DOMConversionOutput,
@@ -23,7 +21,6 @@ import {
   type ElementDOMSlot,
   ElementNode,
   enumValue,
-  IS_IOS,
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
@@ -45,6 +42,32 @@ import {
 import {COLUMN_WIDTH, PIXEL_VALUE_REG_EXP} from './constants';
 import {GENERATED_TABLECELL} from './LexicalTableGeneratedJSON';
 
+const EMPTY_CELL_OVERLAY_ATTRIBUTE = 'data-lexical-table-empty-cell-overlay';
+
+/**
+ * The unmanaged overlay an empty cell carries on iOS (see
+ * `registerIOSEmptyCellOverlays`), or null.
+ * @internal
+ */
+export function getEmptyCellOverlay(cellDOM: HTMLElement): HTMLElement | null {
+  const last = cellDOM.lastElementChild;
+  return isHTMLElement(last) && last.hasAttribute(EMPTY_CELL_OVERLAY_ATTRIBUTE)
+    ? last
+    : null;
+}
+
+/** @internal */
+export function createEmptyCellOverlay(doc: Document): HTMLElement {
+  const overlay = doc.createElement('div');
+  overlay.setAttribute(EMPTY_CELL_OVERLAY_ATTRIBUTE, 'true');
+  overlay.contentEditable = 'false';
+  overlay.style.cssText =
+    'position:absolute;top:0;right:0;bottom:0;left:0;' +
+    '-webkit-user-select:none;user-select:none;' +
+    '-webkit-touch-callout:none;touch-action:manipulation';
+  return overlay;
+}
+
 // Declared as bindings and collected into the exported object, rather than
 // written as literals inside it, so that the schema below can name one without
 // a module-scope property read. Such a read is a side effect to esbuild and
@@ -55,26 +78,6 @@ const NO_STATUS = 0;
 const ROW = 1;
 const COLUMN = 2;
 const BOTH = 3;
-const TABLE_CELL_CONTENT_ATTRIBUTE = 'data-lexical-table-cell-content';
-
-/**
- * The editing-host wrapper a cell renders around its content on iOS, or null
- * on other platforms (and for cell DOM created before the editor existed).
- * @internal
- */
-export function getTableCellContentWrapper(
-  cellDOM: HTMLElement,
-): HTMLElement | null {
-  for (const child of cellDOM.children) {
-    if (
-      isHTMLElement(child) &&
-      child.hasAttribute(TABLE_CELL_CONTENT_ATTRIBUTE)
-    ) {
-      return child;
-    }
-  }
-  return null;
-}
 
 export const TableCellHeaderStates = {
   BOTH,
@@ -197,10 +200,7 @@ export class TableCellNode extends ElementNode {
     this.__verticalAlign = undefined;
   }
 
-  createDOM(
-    config: EditorConfig,
-    editor?: LexicalEditor,
-  ): HTMLTableCellElement {
+  createDOM(config: EditorConfig): HTMLTableCellElement {
     const element = $getDocument().createElement(this.getTag());
 
     if (this.__width) {
@@ -225,24 +225,15 @@ export class TableCellNode extends ElementNode {
       this.hasHeader() && config.theme.tableCellHeader,
     );
 
-    if (IS_IOS && editor !== undefined) {
-      element.contentEditable = 'false';
-      const content = $getDocument().createElement('div');
-      content.setAttribute(TABLE_CELL_CONTENT_ATTRIBUTE, 'true');
-      content.style.outline = 'none';
-      content.style.boxShadow = 'none';
-      content.style.setProperty('-webkit-tap-highlight-color', 'transparent');
-      $markSlotEditable(content, editor);
-      element.append(content);
-    }
-
     return element;
   }
 
   getDOMSlot(element: HTMLElement): ElementDOMSlot<HTMLElement> {
-    const content = getTableCellContentWrapper(element);
     const slot = super.getDOMSlot(element);
-    return content !== null ? slot.withElement(content) : slot;
+    // Keep the cell's children before the overlay, so DOM child offsets
+    // still match the node's children.
+    const overlay = getEmptyCellOverlay(element);
+    return overlay === null ? slot : slot.withBefore(overlay);
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
@@ -250,13 +241,6 @@ export class TableCellNode extends ElementNode {
 
     if (isHTMLElement(output.element)) {
       const element = output.element as HTMLTableCellElement;
-      // The wrapper and its contenteditable are live-editing scaffolding;
-      // exported HTML keeps the <td><p> shape.
-      const content = getTableCellContentWrapper(element);
-      if (content !== null) {
-        content.remove();
-      }
-      element.removeAttribute('contenteditable');
       element.setAttribute(
         'data-temporary-table-cell-lexical-key',
         this.getKey(),
@@ -378,13 +362,7 @@ export class TableCellNode extends ElementNode {
     return this.getLatest().__headerState !== TableCellHeaderStates.NO_STATUS;
   }
 
-  updateDOM(prevNode: this, dom: HTMLElement): boolean {
-    if (IS_IOS) {
-      const slot = this.getDOMSlot(dom);
-      if (slot.element !== dom) {
-        $markSlotEditable(slot.element, $getEditor());
-      }
-    }
+  updateDOM(prevNode: this): boolean {
     return (
       prevNode.__headerState !== this.__headerState ||
       prevNode.__width !== this.__width ||

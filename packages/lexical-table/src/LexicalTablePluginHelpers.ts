@@ -55,6 +55,8 @@ import {
   INSERT_TABLE_COMMAND,
   type InsertTableCommandPayload,
 } from './LexicalTableCommands';
+import {registerIOSTableDragCaretHiding} from './LexicalTableIOSDragCaret';
+import {registerIOSEmptyCellOverlays} from './LexicalTableIOSEmptyCellOverlay';
 import {$isTableNode, TableNode} from './LexicalTableNode';
 import {$getTableAndElementByKey, TableObservers} from './LexicalTableObserver';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
@@ -66,7 +68,6 @@ import {
 import {
   $findTableNode,
   $handleTableSelectionChangeCommand,
-  $syncIOSTableCellEditableWrappers,
   $syncTableSelectionObservers,
   applyTableHandlers,
   getTableElement,
@@ -339,7 +340,7 @@ export function registerTableSelectionObserver(
   const tableObservers = new TableObservers();
   let selectionNeedsSync = false;
 
-  const $initializeTableNode = (
+  const initializeTableNode = (
     tableNode: TableNode,
     nodeKey: NodeKey,
     dom: HTMLElement,
@@ -353,26 +354,12 @@ export function registerTableSelectionObserver(
       tableObservers,
     );
     tableObservers.observers.set(nodeKey, [tableSelection, tableElement]);
-    $syncIOSTableCellEditableWrappers(editor, tableNode);
   };
-
-  const removeEditableListener = IS_IOS
-    ? editor.registerEditableListener(() => {
-        if (editor.getRootElement() !== null) {
-          editor.read('latest', () => {
-            for (const [
-              tableNode,
-            ] of tableObservers.$getTableNodesAndObservers()) {
-              $syncIOSTableCellEditableWrappers(editor, tableNode);
-            }
-          });
-        }
-      })
-    : () => {};
 
   return mergeRegister(
     registerTableWindowHandlers(editor, tableObservers),
-    removeEditableListener,
+    IS_IOS ? registerIOSEmptyCellOverlays(editor) : () => {},
+    IS_IOS ? registerIOSTableDragCaretHiding(editor) : () => {},
     // Register once so attaching/replacing a root cannot reorder HIGH listeners.
     editor.registerCommand(
       SELECTION_CHANGE_COMMAND,
@@ -419,11 +406,11 @@ export function registerTableSelectionObserver(
               const {tableNode, tableElement} =
                 $getTableAndElementByKey(nodeKey);
               if (tableSelection === undefined) {
-                $initializeTableNode(tableNode, nodeKey, tableElement);
+                initializeTableNode(tableNode, nodeKey, tableElement);
               } else if (tableElement !== tableSelection[1]) {
                 // The update created a new DOM node, destroy the existing TableObserver
                 tableObservers.removeObserver(nodeKey);
-                $initializeTableNode(tableNode, nodeKey, tableElement);
+                initializeTableNode(tableNode, nodeKey, tableElement);
               }
             } else if (mutation === 'destroyed') {
               tableObservers.removeObserver(nodeKey);

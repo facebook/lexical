@@ -84,6 +84,48 @@ const editor = buildEditorFromExtensions(
 );
 ```
 
+### Errors and warnings
+
+`onError` and `onWarn` are root properties too. `onError` receives errors
+an update could not recover from; it throws by default. `onWarn` receives
+recoverable, warn-level conditions the editor or a package has already
+handled (an update listener that keeps scheduling updates, a collaboration
+document opened read only); by default it throws in development, so the
+condition is hard to miss, and calls `console.warn` in production.
+
+A package that reports a condition with a stable code passes a
+`LexicalWarning` to `onWarn`. It is an `Error` with a `code` namespaced by
+the package (such as `'@lexical/y/self-check'`) and optional `data` for
+programs, documented with each code; the message is for people and may
+change.
+
+```ts
+import {defineExtension, LexicalWarning} from 'lexical';
+
+const AppExtension = defineExtension({
+  name: '@example/app',
+  onWarn(error, editor) {
+    if (error instanceof LexicalWarning) {
+      switch (error.code) {
+        case '@lexical/y/unknown-node-types':
+          showReadOnlyBanner(editor);
+          break;
+        default:
+          break;
+      }
+      reportWarning(error.code, error.message, error.data);
+      return;
+    }
+    console.warn(error);
+  },
+});
+```
+
+Codes are public API: a code is never renamed, never reused for another
+condition, and new codes may be added in any release. The `code` type lists
+the known codes for completion but accepts any string, so keep a `default`
+branch in a `switch` over codes.
+
 ## Extension Dependencies
 
 Lexical Extensions have two ways for extensions to depend on and specify

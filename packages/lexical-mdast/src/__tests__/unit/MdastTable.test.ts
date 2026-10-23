@@ -29,6 +29,7 @@ import {
   type TableRowNode,
 } from '@lexical/table';
 import {
+  $createNodeSelection,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -409,6 +410,20 @@ describe('MdastTableExtension', () => {
       expect($cells()[1][0].getTextContent()).toBe('  x\n \t');
       expect($convertToMarkdownString()).toBe(markdown);
     });
+    // A backslash before the space stays a backslash.
+    editor.update(
+      () => {
+        $cells()[1][0]
+          .clear()
+          .append($createParagraphNode().append($createTextNode('x\\ ')));
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(
+        table('| a         |', '| --------- |', '| x\\\\&#x20; |'),
+      );
+    });
   });
 
   it('writes the empty lines at the edges of a cell', () => {
@@ -473,6 +488,40 @@ describe('MdastTableExtension', () => {
       expect(
         tableNode.children[1].children[0].children.map(child => child.type),
       ).toEqual(['text', 'break', 'text']);
+    });
+  });
+
+  it('writes nothing of a cell a selection doesn’t reach', () => {
+    using editor = createEditor(false);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(
+          table('| a | b |', '| - | - |', '| 1 | x |', '| 3 | 4 |'),
+        );
+        const [, [one, x], [, four]] = $cells();
+        x.clear().append($createParagraphNode(), $createParagraphNode());
+        four.append($createHorizontalRuleNode());
+        one.getAllTextNodes()[0].select(0, 1);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertSelectionToMarkdownString()).toBe(
+        table('| 1 |   |', '| - | - |'),
+      );
+    });
+    // A block decorator alone is written without its table.
+    editor.update(
+      () => {
+        const rule = $cells()[2][1].getLastChildOrThrow();
+        const selection = $createNodeSelection();
+        selection.add(rule.getKey());
+        $setSelection(selection);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertSelectionToMarkdownString()).toBe('***');
     });
   });
 

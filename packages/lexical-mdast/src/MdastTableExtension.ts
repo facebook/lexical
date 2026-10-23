@@ -140,24 +140,28 @@ function $tableGrid(table: TableNode): {
 /**
  * The inline content of a cell as lines (at least one): those of each block
  * in it, a nested block's on lines of its own. Also returns the blocks with
- * no inline form (block decorators), and the lines each block element spans.
+ * no inline form (block decorators), the lines each block element spans,
+ * and the block (or the cell) each line is in.
  */
 function $cellLines(cell: TableCellNode): {
   blocks: Map<string, [number, number]>;
   decorators: LexicalNode[];
   lines: LexicalNode[][];
+  owners: LexicalNode[];
 } {
   const lines: LexicalNode[][] = [];
+  const owners: LexicalNode[] = [];
   const blocks = new Map<string, [number, number]>();
   const decorators: LexicalNode[] = [];
   let line: LexicalNode[] | undefined;
-  const $visit = (node: LexicalNode) => {
+  const $visit = (node: LexicalNode, owner: LexicalNode) => {
     if ($isElementNode(node) && !node.isInline()) {
       line = undefined;
       const first = lines.length;
-      node.getChildren().forEach($visit);
+      node.getChildren().forEach(child => $visit(child, node));
       if (lines.length === first) {
         lines.push([]);
+        owners.push(node);
       }
       blocks.set(node.getKey(), [first, lines.length - 1]);
       line = undefined;
@@ -166,15 +170,17 @@ function $cellLines(cell: TableCellNode): {
     } else {
       if (!line) {
         lines.push((line = []));
+        owners.push(owner);
       }
       line.push(node);
     }
   };
-  cell.getChildren().forEach($visit);
+  cell.getChildren().forEach(child => $visit(child, cell));
   if (lines.length === 0) {
     lines.push([]);
+    owners.push(cell);
   }
-  return {blocks, decorators, lines};
+  return {blocks, decorators, lines, owners};
 }
 
 const $importTable: MdastImportHandler<Table> = (node, ctx) => {
@@ -273,42 +279,63 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   const width = grid.reduce((max, cells) => Math.max(max, cells.length), 0);
   const children: TableRow[] = [];
   const decorators: LexicalNode[] = [];
+  // The lines of each cell a row has, from the first a selection export
+  // reaches to the last (an empty one by its block), and its block
+  // decorators the export reaches.
+  const written = new Map<TableCellNode, LexicalNode[][]>();
+  const $written = (cell: TableCellNode) => {
+    let lines = written.get(cell);
+    if (!lines) {
+      const cellLines = $cellLines(cell);
+      const reached = cellLines.lines.map((line, i) =>
+        line.length > 0
+          ? line.some(ctx.isIncluded)
+          : ctx.isIncluded(cellLines.owners[i]),
+      );
+      lines = cellLines.lines.slice(
+        reached.indexOf(true),
+        reached.lastIndexOf(true) + 1,
+      );
+      written.set(cell, lines);
+      decorators.push(...cellLines.decorators.filter(ctx.isIncluded));
+    }
+    return lines;
+  };
   rows.forEach((row, rowIndex) => {
     // Structural iteration bypasses the walk's selection filter, so rows a
-    // selection export does not reach are skipped here. Cells stay: dropping
-    // one would shift the remaining cells into other columns.
-    if (!ctx.isIncluded(row)) {
+    // selection export does not reach are skipped here, as are rows where it
+    // reaches only block decorators. Cells stay: dropping one would shift
+    // the remaining cells into other columns.
+    const cells = grid[rowIndex];
+    if (
+      !ctx.isIncluded(row) ||
+      (cells.length > 0 && !cells.some(at => $written(at.cell).length > 0))
+    ) {
       return;
     }
     children.push({
       children: Array.from({length: width}, (_, column): TableCell => {
-        const at = grid[rowIndex][column];
+        const at = cells[column];
         const cellChildren: PhrasingContent[] = [];
         if (at && at.origin) {
-          // The lines of the cell, separated by breaks (which the `break`
-          // handler writes as `<br>`). A selection export writes those from
-          // the first line it reaches to the last.
-          const cellLines = $cellLines(at.cell);
-          const {lines} = cellLines;
-          decorators.push(...cellLines.decorators.filter(ctx.isIncluded));
-          const included = lines.map(line => line.some(ctx.isIncluded));
-          const partial = lines.some(
-            (line, i) => line.length > 0 && !included[i],
-          );
-          const first = partial ? included.indexOf(true) : 0;
-          const last = partial ? included.lastIndexOf(true) : lines.length - 1;
-          for (let i = Math.max(first, 0); i <= last; i++) {
-            if (i > first) {
+          // The lines of the cell, separated by breaks (which the cell
+          // writer below writes as `<br>`).
+          $written(at.cell).forEach((line, i) => {
+            if (i > 0) {
               cellChildren.push({type: 'break'});
             }
-            cellChildren.push(...ctx.exportInline(lines[i]));
-          }
+            cellChildren.push(...ctx.exportInline(line));
+          });
         }
         return {children: cellChildren, type: 'tableCell'};
       }),
       type: 'tableRow',
     });
   });
+  const exported = ctx.exportChildren(decorators);
+  if (children.length === 0) {
+    return exported;
+  }
   // GFM aligns columns, by the alignment of the header row's cells.
   return [
     {
@@ -319,9 +346,12 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
       children,
       type: 'table',
     },
-    ...ctx.exportChildren(decorators),
+    ...exported,
   ];
 };
+
+/** A space or tab as a character reference. */
+const encodeSpace = (space: string) => `&#x${space === ' ' ? 20 : 9};`;
 
 /** A node of Markdown that the table handler writes as it is. */
 const CELL_LINE = 'lexicalTableCellLine';
@@ -361,7 +391,13 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
               {...info, after: ' ', before: ' '},
             )
             .replace(/\r?\n|\r/g, ' ')
-            .replace(/^[\t ]|[\t ]$/g, space => `&#x${space === ' ' ? 20 : 9};`)
+            .replace(/^[\t ]/, encodeSpace)
+            // A backslash before the last space would escape its `&`.
+            .replace(
+              /(\\*)([\t ])$/,
+              (_, slashes: string, space: string) =>
+                `${slashes}${slashes.length % 2 ? '\\' : ''}${encodeSpace(space)}`,
+            )
             .replace(/(\\*)\|/g, (pipe, slashes: string) =>
               slashes.length % 2 ? pipe : `${slashes}\\|`,
             ),

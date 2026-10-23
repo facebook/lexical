@@ -16,7 +16,7 @@ import {
 } from '@lexical/extension';
 import {$createLinkNode, $isLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
-import {$createHeadingNode} from '@lexical/rich-text';
+import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
 import {
   $insertTableRowAtNode,
   $isTableCellNode,
@@ -36,9 +36,13 @@ import {
   $isLineBreakNode,
   $isParagraphNode,
   $isRangeSelection,
+  $isTextNode,
+  configExtension,
   defineExtension,
   type ElementNode,
   INSERT_PARAGRAPH_COMMAND,
+  IS_BOLD,
+  TextNode,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, it} from 'vitest';
@@ -258,7 +262,7 @@ describe('MdastTableExtension', () => {
     ).toBe(table('| a |', '| - |', '| 1 |'));
   });
 
-  it('reads escaped pipes in autolink literals', () => {
+  it('reads and writes escaped pipes in autolink literals', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [
@@ -283,6 +287,104 @@ describe('MdastTableExtension', () => {
       );
       expect(link.getURL()).toBe('http://a.dev/b|c');
       expect(link.getTextContent()).toBe('http://a.dev/b|c');
+      expect($convertToMarkdownString()).toBe(
+        table(
+          '| a                 |',
+          '| ----------------- |',
+          '| http://a.dev/b\\|c |',
+        ),
+      );
+    });
+  });
+
+  it('escapes the pipes in raw HTML in a cell after any backslashes', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          MdastCommonMarkExtension,
+          MdastTableExtension,
+          // Raw HTML imports as text without MdastHtmlExtension; this writes
+          // it back as raw HTML.
+          configExtension(MdastExtension, {
+            exportRules: [
+              {
+                $export: node =>
+                  $isTextNode(node) && node.getTextContent().startsWith('<')
+                    ? {type: 'html', value: node.getTextContent()}
+                    : null,
+                type: TextNode,
+              },
+            ],
+          }),
+        ],
+        name: '[root]',
+      }),
+    );
+    const markdown = table(
+      '| a                                     |',
+      '| ------------------------------------- |',
+      '| <span title="\\|"> <span title="\\\\\\|"> |',
+    );
+    editor.update(() => $convertFromMarkdownString(markdown), {
+      discrete: true,
+    });
+    editor.read(() => {
+      expect($cells()[1][0].getTextContent()).toBe(
+        '<span title="|"> <span title="\\\\|">',
+      );
+      expect($convertToMarkdownString()).toBe(markdown);
+    });
+    // A pipe after an odd run of backslashes, which a cell can't hold, is
+    // still escaped.
+    editor.update(
+      () => {
+        $cells()[1][0].getAllTextNodes()[0].setTextContent('<i title="\\|">');
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(
+        table(
+          '| a                |',
+          '| ---------------- |',
+          '| <i title="\\\\\\|"> |',
+        ),
+      );
+    });
+  });
+
+  it('writes the empty lines at the edges of a cell', () => {
+    expect(
+      convert(
+        table('| a |', '| - |', '| x |'),
+        () => {
+          const [cell] = $cells()[1];
+          cell.getFirstChildOrThrow().insertBefore($createParagraphNode());
+          cell.append($createParagraphNode());
+        },
+        false,
+      ),
+    ).toBe(table('| a         |', '| --------- |', '| <br>x<br> |'));
+  });
+
+  it('writes the lines of a cell a selection reaches', () => {
+    using editor = createEditor(false);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(table('| a |', '| - |', '| x |'));
+        const [cell] = $cells()[1];
+        const y = $createTextNode('y');
+        cell.append(
+          $createParagraphNode(),
+          $createParagraphNode().append(y),
+          $createParagraphNode(),
+        );
+        y.select(0, 1);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertSelectionToMarkdownString()).toBe(table('| y |', '| - |'));
     });
   });
 
@@ -477,13 +579,39 @@ describe('MdastStrictTableExtension', () => {
     ).toBe(table('| a | b |', '| - | - |', '| 1 | 2 |'));
   });
 
-  it('leaves a block marker typed in a cell as text', () => {
+  it('keeps the text format of the first block of a joined cell', () => {
+    using editor = createEditor(true);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(table('| a |', '| - |', '| x |'));
+        const [cell] = $cells()[1];
+        $assertNodeType(cell.getFirstChild(), $isParagraphNode).setTextFormat(
+          IS_BOLD,
+        );
+        cell.append($createParagraphNode());
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const [cell] = $cells()[1];
+      expect(cell.getChildrenSize()).toBe(1);
+      expect(
+        $assertNodeType(cell.getFirstChild(), $isParagraphNode).getTextFormat(),
+      ).toBe(IS_BOLD);
+    });
+  });
+
+  // A quote can only be in a cell without MdastStrictTableExtension.
+  it.each([
+    ['paragraph', true],
+    ['quote', false],
+  ])('leaves a block marker typed in a %s in a cell as text', (_, strict) => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [
           MdastCommonMarkExtension,
           MdastShortcutsExtension,
-          MdastStrictTableExtension,
+          strict ? MdastStrictTableExtension : MdastTableExtension,
         ],
         name: '[root]',
         theme: {tableScrollableWrapper: 'table-wrapper'},
@@ -492,7 +620,11 @@ describe('MdastStrictTableExtension', () => {
     editor.update(
       () => {
         $convertFromMarkdownString(table('| a |', '| - |', '| x |'));
-        $cells()[1][0].getAllTextNodes()[0].select(0, 0);
+        const [text] = $cells()[1][0].getAllTextNodes();
+        if (!strict) {
+          text.getParentOrThrow().replace($createQuoteNode().append(text));
+        }
+        text.select(0, 0);
       },
       {discrete: true},
     );

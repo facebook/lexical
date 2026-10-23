@@ -23,7 +23,6 @@ import {
   $isQuoteNode,
   type QuoteNode,
 } from '@lexical/rich-text';
-import {$isTableCellNode} from '@lexical/table';
 import {
   $addUpdateTag,
   $getNodeByKey,
@@ -272,16 +271,23 @@ function $tryCheckbox(
   return false;
 }
 
+/**
+ * Whether a block typed in `node` becomes the block its marker starts. A
+ * GFM table cell holds no block, so a marker typed in one stays text. (The
+ * cell is known by its type, which spares bundles that have no tables
+ * `@lexical/table`.)
+ */
+function $isBlockContainer(node: LexicalNode | null): boolean {
+  return $isRootOrShadowRoot(node) && node.getType() !== 'tablecell';
+}
+
 function $isShortcutParagraph(
   node: LexicalNode,
   anchorNode: TextNode,
 ): boolean {
-  const parent = node.getParent();
-  // A GFM table cell holds no block, so a marker typed in one stays text.
   return (
     $isParagraphNode(node) &&
-    $isRootOrShadowRoot(parent) &&
-    !$isTableCellNode(parent) &&
+    $isBlockContainer(node.getParent()) &&
     node.getFirstChild() === anchorNode
   );
 }
@@ -306,7 +312,7 @@ function $isShortcutQuote(
   return (
     $isQuoteNode(node) &&
     !node.isShadowRoot() &&
-    $isRootOrShadowRoot(node.getParent()) &&
+    $isBlockContainer(node.getParent()) &&
     node.getFirstChild() === anchorNode
   );
 }

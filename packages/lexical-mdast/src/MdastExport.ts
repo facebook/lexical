@@ -51,6 +51,7 @@ import {toString as mdastToString} from 'mdast-util-to-string';
 import {
   $exportLineBreak,
   $isBlockLevelNode,
+  escapeCellPipes,
   exportText,
   phrasingFromTextRuns,
   TEXT_FORMAT_MASK,
@@ -200,8 +201,10 @@ const syntaxToMarkdown = (
       if (style === 'literal' && node.title == null) {
         // A bare GFM autolink literal: emit the visible text as-is. The
         // gfm-autolink-literal to-markdown extension keeps surrounding
-        // escaping consistent so it re-parses as the same literal.
-        return mdastToString(node);
+        // escaping consistent so it re-parses as the same literal. A GFM
+        // table cell ends at a pipe, so one in the literal is escaped there.
+        const text = mdastToString(node);
+        return state.stack.includes('tableCell') ? escapeCellPipes(text) : text;
       }
       if (style === 'inline') {
         // Force `[text](url)` even when the text equals the URL (the

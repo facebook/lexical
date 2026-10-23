@@ -114,6 +114,21 @@ function $createParagraphBreakNode(): LineBreakNode {
   return $setState($createLineBreakNode(), paragraphBreakState, true);
 }
 
+/**
+ * Raw `value` written into a GFM table cell, which holds one line and ends
+ * at a pipe unless a backslash escapes it: line endings become spaces, and
+ * each pipe is escaped after an even run of backslashes (an odd one, which
+ * GFM can't read back, gains a backslash).
+ */
+export function escapeCellPipes(value: string): string {
+  return value
+    .replace(/\r?\n|\r/g, ' ')
+    .replace(
+      /(\\*)\|/g,
+      (_, slashes: string) => `${slashes}${slashes.length % 2 ? '\\' : ''}\\|`,
+    );
+}
+
 /** Reads the first source character of `node` (an inline delimiter, if any). */
 export function inlineMarker(
   ctx: MdastImportContext,

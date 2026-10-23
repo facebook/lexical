@@ -9,13 +9,11 @@
 import type {MdastExportHandler, MdastImportHandler, MdastNode} from './types';
 import type {
   AlignType,
-  Html,
   PhrasingContent,
   Table,
   TableCell,
   TableRow,
 } from 'mdast';
-import type {Options as ToMarkdownExtension} from 'mdast-util-to-markdown';
 
 import {configExtension} from '@lexical/extension';
 import {
@@ -52,7 +50,7 @@ import {
 import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
 import {gfmTable} from 'micromark-extension-gfm-table';
 
-import {$append, inlineMarker} from './handlers';
+import {$append, escapeCellPipes, inlineMarker} from './handlers';
 import {MdastExtension} from './MdastExtension';
 
 /** An inline HTML `<br>` tag, the line break a GFM cell can hold. */
@@ -253,18 +251,33 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
         const at = grid[rowIndex][column];
         const cellChildren: PhrasingContent[] = [];
         if (at && at.origin) {
-          // The lines of the cell, which the to-markdown handler below
-          // separates with `<br>`; lines a selection leaves out are skipped.
-          for (const line of $cellLines(at.cell).lines) {
-            if (line.length === 0 || line.some(ctx.isIncluded)) {
-              if (cellChildren.length > 0) {
-                cellChildren.push({type: 'break'});
-              }
-              cellChildren.push(...ctx.exportInline(line));
+          // The lines of the cell, separated by breaks (which the `break`
+          // handler writes as `<br>`). A selection export writes those from
+          // the first line it reaches to the last.
+          const {lines} = $cellLines(at.cell);
+          const included = lines.map(line => line.some(ctx.isIncluded));
+          const partial = lines.some(
+            (line, i) => line.length > 0 && !included[i],
+          );
+          const first = partial ? included.indexOf(true) : 0;
+          const last = partial ? included.lastIndexOf(true) : lines.length - 1;
+          for (let i = Math.max(first, 0); i <= last; i++) {
+            if (i > first) {
+              cellChildren.push({type: 'break'});
             }
+            cellChildren.push(...ctx.exportInline(lines[i]));
           }
         }
-        return {children: cellChildren, type: 'tableCell'};
+        // Raw HTML has the escapes a cell needs, as GFM reads a pipe in a
+        // cell before anything else.
+        return {
+          children: mapPhrasing(cellChildren, child =>
+            child.type === 'html'
+              ? [{...child, value: escapeCellPipes(child.value)}]
+              : undefined,
+          ),
+          type: 'tableCell',
+        };
       }),
       type: 'tableRow',
     });
@@ -278,20 +291,6 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     children,
     type: 'table',
   };
-};
-
-/**
- * A GFM cell holds one line, so raw HTML in it has each pipe escaped, as
- * GFM reads one there before anything else. (A line break in a cell is
- * written as `<br>` by the `break` handler.)
- */
-const tableCellToMarkdown: ToMarkdownExtension = {
-  handlers: {
-    html: (node: Html, _parent, state) =>
-      state.stack.includes('tableCell')
-        ? node.value.replace(/\|/g, '\\|')
-        : node.value,
-  },
 };
 
 /**
@@ -382,7 +381,14 @@ function $normalizeTable(table: TableNode): void {
           ? element.getChildAtIndex(point.offset)
           : null;
       });
-      const joined = $createParagraphNode();
+      // The paragraph takes the text format of the cell's first block, the
+      // format text typed into an empty one gets.
+      const block = cell.getFirstChild();
+      const joined = $isElementNode(block)
+        ? $createParagraphNode()
+            .setTextFormat(block.getTextFormat())
+            .setTextStyle(block.getTextStyle())
+        : $createParagraphNode();
       const ends = lines.map((line, i) => {
         if (i > 0) {
           joined.append($createLineBreakNode());
@@ -460,10 +466,7 @@ export const MdastTableExtension = defineExtension({
       importRules: [{$import: $importTable, type: 'table'}],
       mdastExtensions: [/* @__PURE__ */ gfmTableFromMarkdown()],
       micromarkExtensions: [/* @__PURE__ */ gfmTable()],
-      toMarkdownExtensions: [
-        /* @__PURE__ */ gfmTableToMarkdown(),
-        tableCellToMarkdown,
-      ],
+      toMarkdownExtensions: [/* @__PURE__ */ gfmTableToMarkdown()],
     }),
   ],
   name: '@lexical/mdast/Table',

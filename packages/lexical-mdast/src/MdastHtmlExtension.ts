@@ -55,6 +55,7 @@ import {
 } from 'lexical';
 import {fromMarkdown} from 'mdast-util-from-markdown';
 
+import {escapeCellPipes} from './handlers';
 import {MdastExtension} from './MdastExtension';
 
 // The mdast nodes raw HTML is normalized into — one for a block-level tag
@@ -954,17 +955,15 @@ const htmlBlockToMarkdown: ToMarkdownExtension = {
       const tracker = state.createTracker(info);
       const segments = node.value.split(PLACEHOLDER_SPLIT_RE);
       // A GFM table cell holds one line, where GFM reads a pipe before
-      // anything else, so the raw HTML in one has its pipes escaped and its
-      // line endings written as spaces.
+      // anything else, so the raw HTML in one has its pipes escaped, and it
+      // and its children have their line endings written as spaces.
       const inCell = state.stack.includes('tableCell');
       let value = '';
       for (let i = 0; i < segments.length; i++) {
         if (i % 2 === 0) {
           if (segments[i] !== '') {
             value += tracker.move(
-              inCell
-                ? segments[i].replace(/\|/g, '\\|').replace(/\r?\n|\r/g, ' ')
-                : segments[i],
+              inCell ? escapeCellPipes(segments[i]) : segments[i],
             );
           }
           continue;
@@ -973,12 +972,13 @@ const htmlBlockToMarkdown: ToMarkdownExtension = {
         if (child !== undefined) {
           // The before/after characters drive the escaping of the embedded
           // Markdown's edges; they are whatever raw HTML surrounds it.
+          const markdown = state.handle(child, node, state, {
+            ...tracker.current(),
+            after: (segments[i + 1] || '\n')[0],
+            before: value === '' ? '\n' : value[value.length - 1],
+          });
           value += tracker.move(
-            state.handle(child, node, state, {
-              ...tracker.current(),
-              after: (segments[i + 1] || '\n')[0],
-              before: value === '' ? '\n' : value[value.length - 1],
-            }),
+            inCell ? markdown.replace(/\r?\n|\r/g, ' ') : markdown,
           );
         }
       }

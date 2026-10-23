@@ -305,6 +305,7 @@ export {
   type SerializationSchemaValue,
   setterDefaultOf,
   setterTableOf,
+  setValue,
   stringValue,
   transformValue,
   unionValue,

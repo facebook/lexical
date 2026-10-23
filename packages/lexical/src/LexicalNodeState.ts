@@ -30,6 +30,7 @@ import {
   isSchemaEqual,
   type SchemaInput,
   type SerializationSchema,
+  unparseSetValue,
 } from './LexicalSchema';
 import {errorOnReadOnly} from './LexicalUpdates';
 import {
@@ -340,6 +341,15 @@ export type NodeStateJSON<T extends LexicalNode> = Prettify<
  * //    ^? State<'format', StateValueConfig<number>>
  * ```
  *
+ * {@link setValue} builds a set of strings, which supplies its own equality
+ * (same members in any order) and JSON (a sorted array):
+ *
+ * @example
+ * ```ts
+ * const tagsState = createState('tags', {parse: setValue(stringValue())});
+ * //    ^? State<'tags', StateValueConfig<ReadonlySet<string>>>
+ * ```
+ *
  * Only the parse option is required, it is generally not useful to
  * override `unparse` or `isEqual`. However, if you are using
  * non-primitive types such as Array, Object, Date, or something
@@ -463,9 +473,14 @@ export class StateConfig<K extends string | symbol, V> {
       : undefined;
     this.schema = schema;
     this.parse = stateValueConfig.parse.bind(stateValueConfig);
-    this.unparse = (stateValueConfig.unparse || coerceToJSON).bind(
-      stateValueConfig,
-    );
+    // A setValue parses to a Set, which is not JSON: it is written as a
+    // sorted array unless the caller declared an unparse of its own.
+    this.unparse = (
+      stateValueConfig.unparse ||
+      (schema !== undefined && schema.meta.kind === 'set'
+        ? unparseSetValue
+        : coerceToJSON)
+    ).bind(stateValueConfig);
     // A schema already knows its own domain, so a `parse` that is one supplies
     // the equality and the default this state compares against — unless the
     // caller declared its own. Without this a reference-typed schema

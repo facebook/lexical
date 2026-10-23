@@ -136,6 +136,7 @@ const sidebars = {
         'collaboration/react',
         'collaboration/y',
         'collaboration/y-server',
+        'collaboration/comments',
         'collaboration/faq',
       ],
       label: 'Collaboration',

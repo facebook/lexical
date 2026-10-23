@@ -72,6 +72,21 @@ export type SerializationSchemaMeta =
   | {readonly kind: 'enum'; readonly values: readonly unknown[]}
   | {readonly kind: 'array'; readonly item: InnerSerializationSchema}
   | {
+      /**
+       * A {@link setValue}: distinct `item` strings in no particular order,
+       * written to JSON as one sorted array.
+       *
+       * This kind is also how something outside the core recognizes a
+       * set-valued NodeState: `stateConfig.schema?.meta.kind === 'set'`. A
+       * collaboration binding can use it to store each member separately, so
+       * that two peers adding different members both keep theirs.
+       *
+       * @experimental
+       */
+      readonly kind: 'set';
+      readonly item: InnerSerializationSchema;
+    }
+  | {
       readonly kind: 'nullable';
       readonly inner: InnerSerializationSchema;
       /** Whether a value equal to `inner`'s default is treated as `null`. */
@@ -1276,7 +1291,29 @@ function undeclared(combinator: string, inner: AnySerializationSchema): void {
       '%s: the schema it wraps names an accessor. Accessors are named once, on the outermost schema of a property, both directions in that one call',
       combinator,
     );
+    notNestedSet(combinator, inner);
   }
+}
+
+/**
+ * Refuse a {@link setValue} anywhere but as the whole value of a
+ * `createState`. It parses to a `Set`, which is not JSON: only a StateConfig
+ * writes it out (as a sorted array), while a node property or an enclosing
+ * schema writes the value as it is. A development build only, like
+ * {@link undeclared}.
+ */
+function notNestedSet(
+  combinator: string,
+  inner: AnySerializationSchema | null | undefined,
+): void {
+  // A hand-rolled schema may carry no meta at all
+  const meta: SerializationSchemaMeta | null | undefined =
+    inner == null ? undefined : inner.meta;
+  invariant(
+    meta == null || meta.kind !== 'set',
+    '%s: setValue can only be the whole value of a createState, not part of another schema or a node property',
+    combinator,
+  );
 }
 
 /**
@@ -2883,6 +2920,97 @@ export function arrayValue<T, In = T>(
 }
 
 /**
+ * Build a {@link SerializationSchema} for a set of strings, each coerced by
+ * `item`, for use as the value of a NodeState:
+ *
+ * ```ts
+ * const tagsState = createState('tags', {parse: setValue(stringValue())});
+ * //    ^? StateConfig<'tags', ReadonlySet<string>>
+ * ```
+ *
+ * A set has no order and no duplicates, and the rest follows from that:
+ *
+ * - Parsing reads an array, keeps the entries `item` accepts and drops
+ *   duplicates. Anything else, `undefined` included, is the empty set, which
+ *   is the default.
+ * - Two sets are equal when they have the same members, in any order, so a
+ *   state holding the empty set is left out of the JSON like any default.
+ * - The JSON is one array of the members sorted by UTF-16 code unit, so equal
+ *   sets always serialize identically and a round trip through JSON is stable.
+ *   The parsed `Set` iterates in that order too.
+ *
+ * The members are strings so that this order is well defined, and so that a
+ * member can be used as a key, for example by a collaboration binding that
+ * stores each member on its own (see the `'set'` kind of
+ * {@link SerializationSchemaMeta}). Narrower string domains such as
+ * `enumValue(['a', 'b'])` work as the item too.
+ *
+ * Only a StateConfig knows to write the `Set` as an array, so `setValue` must be
+ * the whole value of a `createState`: it can not be wrapped by another schema
+ * or used for a node property, and a development build refuses both.
+ *
+ * @example
+ * ```ts
+ * const parseTags = setValue(stringValue());
+ * parseTags(['b', 'a', 'b', 1]); // Set {'a', 'b'}
+ * parseTags('nope');             // Set {}
+ * ```
+ *
+ * @experimental
+ * @__NO_SIDE_EFFECTS__
+ */
+export function setValue<T extends string, In = T>(
+  item: SerializationSchema<T, never, In>,
+): SerializationSchema<ReadonlySet<T>, never, readonly In[]> {
+  undeclared('setValue', item);
+  return makeSchema(
+    value => {
+      const members: T[] = [];
+      if (Array.isArray(value)) {
+        for (let i = 0; i < value.length; i++) {
+          const member: unknown = value[i];
+          // Dropped rather than coerced: `item` would turn an out-of-domain
+          // entry into its default, a member nobody added.
+          if (member !== undefined && $acceptsValue(item, member)) {
+            members.push(item(member));
+          }
+        }
+      }
+      return new Set(members.sort());
+    },
+    {item, kind: 'set'},
+    undefined,
+    isSetEqual,
+    value => Array.isArray(value),
+  );
+}
+
+/**
+ * {@link setValue}'s equality: the same members, in any order. Total, like the
+ * other built-in comparators.
+ */
+function isSetEqual<T>(a: ReadonlySet<T>, b: ReadonlySet<T>): boolean {
+  return (
+    a === b ||
+    (a instanceof Set &&
+      b instanceof Set &&
+      a.size === b.size &&
+      Array.from(a).every(member => b.has(member)))
+  );
+}
+
+/**
+ * The JSON of a {@link setValue}: its members as a sorted array, so that equal
+ * sets serialize identically. Used by StateConfig as the default `unparse` of
+ * a state whose value is a `setValue`.
+ *
+ * @internal
+ */
+export function unparseSetValue(value: unknown): string[] {
+  return Array.from(new Set(value as Iterable<string>)).sort();
+}
+
+/**
  * Compose per-property {@link SerializationSchema}s into a single {@link SerializationSchema} for an
  * object-valued property. Calling it coerces each known property in turn
  * (ignoring any extra properties), so `objectValue(...)` applied to a partial
@@ -2968,6 +3096,7 @@ function checkFieldNames(
         combinator,
         key,
       );
+      notNestedSet(combinator, fields[key]);
     }
   }
 }

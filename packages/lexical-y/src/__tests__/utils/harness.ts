@@ -219,6 +219,8 @@ export class Peer {
     clientID: number,
     readonly net: Network,
     readonly nodes: Klass<LexicalNode>[] = NODES,
+    /** Runs on the editor before the binding is created */
+    readonly prepare?: (editor: LexicalEditor) => void,
   ) {
     this.doc = new Y.Doc({gc: false});
     this.doc.clientID = clientID;
@@ -233,6 +235,9 @@ export class Peer {
         this.warnings.push(String(e && (e as Error).message));
       },
     });
+    if (prepare) {
+      prepare(this.editor);
+    }
     this.binding = new YBinding(this.editor, this.doc, {
       // The binding's warnings go to the editor's onWarn (above). The tests
       // turn the self-check on (it is off by default), so that a mismatch
@@ -339,6 +344,7 @@ export async function setup(
     ids?: number[];
     delivery?: Delivery;
     nodes?: Klass<LexicalNode>[];
+    prepare?: (editor: LexicalEditor) => void;
   } = {},
 ): Promise<Setup> {
   const net: Network = {
@@ -348,7 +354,9 @@ export async function setup(
     queue: [],
   };
   const ids = options.ids ?? [1, 2];
-  const peers = ids.map(id => new Peer(id, net, options.nodes));
+  const peers = ids.map(
+    id => new Peer(id, net, options.nodes, options.prepare),
+  );
   const [a] = peers;
   a.update(() => {
     $getRoot().clear();
@@ -424,7 +432,7 @@ export async function freshReader(
     pumping: false,
     queue: [],
   };
-  const peer = new Peer(99, net, nodes || from.nodes);
+  const peer = new Peer(99, net, nodes || from.nodes, from.prepare);
   Y.applyUpdate(peer.doc, Y.encodeStateAsUpdate(from.doc), 'load');
   peer.binding.initialize();
   await flush();

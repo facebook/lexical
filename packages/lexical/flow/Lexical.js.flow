@@ -276,6 +276,7 @@ declare export class LexicalEditor {
   _editable: boolean;
   _headless: boolean;
   _recordNodeMoves: boolean;
+  _recordTextEdits: boolean;
   isComposing(): boolean;
   registerUpdateListener(listener: UpdateListener): () => void;
   registerRootListener(listener: RootListener): () => void;
@@ -454,6 +455,19 @@ declare export function createEditor(editorConfig?: {
 export interface EditorState {
   _nodeMap: NodeMap;
   _movedNodes: null | WeakMap<NodeMap, Set<NodeKey>>;
+  _splitNodes: null | WeakMap<NodeMap, Map<NodeKey, [NodeKey, number]>>;
+  _textEdits: null | WeakMap<
+    NodeMap,
+    Array<
+      | ['splice', NodeKey, number, number, string, string]
+      | ['split', NodeKey, ReadonlyArray<NodeKey>, ReadonlyArray<number>, string]
+      | ['merge', NodeKey, NodeKey, boolean, string, string]
+      | ['set', NodeKey, string, string]
+      | ['attach', NodeKey, NodeKey, NodeKey | null, NodeKey | null, string | null]
+      | ['detach', NodeKey, NodeKey]
+      | ['delete', NodeKey],
+    >,
+  >;
   _selection: null | BaseSelection;
   _flushSync: boolean;
   _readOnly: boolean;
@@ -1772,6 +1786,15 @@ declare export function $insertNodeToNearestRootAtCaret<T extends LexicalNode>(
 ): NodeCaret<CaretDirection>;
 
 /**
+ * LexicalWarning
+ */
+declare export class LexicalWarning extends Error {
+  readonly code: string;
+  readonly data?: unknown;
+  constructor(code: string, message: string, data?: unknown): void;
+}
+
+/**
  * LexicalUpdateTags
  */
 declare export var COLLABORATION_TAG: 'collaboration';
@@ -1781,6 +1804,7 @@ declare export var HISTORY_MERGE_TAG: 'history-merge';
 declare export var HISTORY_PUSH_TAG: 'history-push';
 declare export var PASTE_TAG: 'paste';
 declare export var SKIP_COLLAB_TAG: 'skip-collab';
+declare export var DEFER_COMPOSITION_MERGE_TAG: 'defer-composition-merge';
 declare export var SKIP_DOM_SELECTION_TAG: 'skip-dom-selection';
 declare export var SKIP_SCROLL_INTO_VIEW_TAG: 'skip-scroll-into-view';
 export type UpdateTag =
@@ -1791,6 +1815,7 @@ export type UpdateTag =
   | typeof HISTORY_PUSH_TAG
   | typeof PASTE_TAG
   | typeof SKIP_COLLAB_TAG
+  | typeof DEFER_COMPOSITION_MERGE_TAG
   | typeof SKIP_DOM_SELECTION_TAG
   | typeof SKIP_SCROLL_INTO_VIEW_TAG
   | string;

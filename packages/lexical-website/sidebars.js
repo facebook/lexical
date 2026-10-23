@@ -135,6 +135,7 @@ const sidebars = {
     {
       items: [
         'collaboration/react',
+        'collaboration/y',
         'collaboration/comments',
         'collaboration/block-ids',
         'collaboration/faq',

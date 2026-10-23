@@ -15,6 +15,7 @@ import * as yrs028 from 'ywasm';
 import * as yrs023 from 'ywasm-0.23';
 
 import {type ClientIDRange, YBinding} from '../..';
+import {editYState, readYState, seedYState} from '../../headless';
 import {$p, $selectIn, NODES} from '../utils/harness';
 
 // A relay on yrs (y-crdt) stores updates and answers a reconnecting client
@@ -106,5 +107,98 @@ describe('@lexical/y with yrs relays', () => {
     Y.applyUpdate(doc, Y.encodeStateAsUpdate(other));
     expect(doc.clientID).not.toBe(other.clientID);
     expect(doc.clientID).toBeLessThanOrEqual(0xffffffff);
+  });
+});
+
+describe('@lexical/y/headless with yrs relays', () => {
+  const $text = () =>
+    $getRoot()
+      .getChildren()
+      .map(node => node.getTextContent())
+      .join(' / ');
+
+  function roundTrip(
+    yrs: Yrs,
+    range: ClientIDRange,
+    direct: boolean,
+    serverRange: ClientIDRange = range,
+  ) {
+    const config = {clientIDRange: serverRange, nodes: NODES};
+    const relay = new yrs.YDoc({}) as never;
+    // The server seeds the document into the relay.
+    yrs.applyUpdate(
+      relay,
+      seedYState(config, () => $getRoot().append($p('hello'))),
+      null,
+    );
+    // A browser loads it from the relay, binds and types.
+    const doc = new Y.Doc();
+    Y.applyUpdate(doc, yrs.encodeStateAsUpdate(relay), 'relay');
+    doc.on('update', (u: Uint8Array, origin: unknown) => {
+      if (origin !== 'relay') {
+        yrs.applyUpdate(relay, u, null);
+      }
+    });
+    const editor = createEditor({
+      nodes: NODES,
+      onError: e => {
+        throw e;
+      },
+    });
+    const binding = new YBinding(editor, doc, {
+      clientIDRange: range,
+      selfCheck: true,
+    });
+    binding.start();
+    editor.update(() => $selectIn([0], 5).insertText(' world'), {
+      discrete: true,
+    });
+    // The server edits the relay's state and stores its update there.
+    const {update} = editYState(yrs.encodeStateAsUpdate(relay), config, () =>
+      $getRoot().append($p('from the server')),
+    );
+    yrs.applyUpdate(relay, update!, null);
+    if (direct) {
+      // The server also sends its update to connected browsers itself.
+      Y.applyUpdate(doc, update!, 'relay');
+    }
+    // The browser reconnects: the relay sends what it lacks.
+    Y.applyUpdate(
+      doc,
+      yrs.encodeStateAsUpdate(relay, Y.encodeStateVector(doc)),
+      'relay',
+    );
+    const browser = editor.getEditorState().read($text);
+    const stored = readYState(yrs.encodeStateAsUpdate(relay), config, $text);
+    binding.dispose();
+    return {browser, stored};
+  }
+
+  for (const [version, yrs] of [
+    ['0.23', yrs023],
+    ['0.28', yrs028],
+  ] as const) {
+    for (const direct of [false, true]) {
+      test(`ywasm ${version} relay round trip, 32-bit ids${
+        direct ? ', update also sent directly' : ''
+      }`, () => {
+        const r = roundTrip(yrs, 'uint32', direct);
+        expect(r.browser).toBe('hello world / from the server');
+        expect(r.stored).toBe(r.browser);
+      });
+    }
+  }
+
+  test('ywasm 0.28 relay round trip, 53-bit ids', () => {
+    const r = roundTrip(yrs028, 'uint53', true);
+    expect(r.browser).toBe('hello world / from the server');
+    expect(r.stored).toBe(r.browser);
+  });
+
+  test('ywasm 0.23 relay with 53-bit server ids duplicates a direct update', () => {
+    // The relay stores the server's content under a truncated id, so a
+    // browser that also received the update directly gets it twice.
+    const r = roundTrip(yrs023, 'uint32', true, 'uint53');
+    expect(r.browser).toBe('hello world / from the server / from the server');
   });
 });

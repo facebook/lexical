@@ -55,6 +55,16 @@ export type LexicalWarningCode =
    * is not synchronized.
    */
   | '@lexical/y/unsynced-value'
+  /**
+   * `@lexical/y/headless`: a warning the editor reported that is not a
+   * `LexicalWarning`, passed on as one.
+   */
+  | '@lexical/y/editor-warning'
+  /**
+   * `@lexical/y/headless`: an edit's listeners kept scheduling updates; the
+   * rest were not committed.
+   */
+  | '@lexical/y/follow-ups-exhausted'
   | (string & {});
 
 /**

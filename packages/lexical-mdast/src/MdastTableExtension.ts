@@ -206,10 +206,7 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
   const unescapePipes = (value: string) => value.replace(/\\\|/g, '|');
   const replace = (child: MdastNode): MdastNode[] | undefined => {
     if (child.type === 'html' || child.type === 'htmlInline') {
-      if (
-        BR_RE.test(child.value) &&
-        !('children' in child && child.children.length > 0)
-      ) {
+      if (BR_RE.test(child.value)) {
         return [{type: 'break'}];
       }
       const value = unescapePipes(child.value);
@@ -563,23 +560,28 @@ function $formatColumns(format: ElementFormatType): boolean {
   if (!$isRangeSelection(selection) && !$isTableSelection(selection)) {
     return false;
   }
-  // The cells the selection reaches, by table.
-  const reached = new Map<string, Set<string>>();
+  // The cells the selection reaches, by table: in a table it starts and
+  // ends in, its anchor and focus cells.
   const anchorCell = $findCellNode(selection.anchor.getNode());
   const focusCell = $findCellNode(selection.focus.getNode());
-  for (const cell of [
-    anchorCell,
-    focusCell,
-    ...selection.getNodes().filter($isTableCellNode),
-  ]) {
-    const table = cell && $findTableNode(cell);
-    if (cell && table) {
-      const cells = reached.get(table.getKey()) || new Set();
-      reached.set(table.getKey(), cells.add(cell.getKey()));
+  const table = anchorCell && $findTableNode(anchorCell);
+  const inOneTable =
+    table !== null && focusCell !== null && table === $findTableNode(focusCell);
+  const reached = new Map<string, Set<string>>();
+  for (const cell of inOneTable
+    ? [anchorCell, focusCell]
+    : [
+        anchorCell,
+        focusCell,
+        ...selection.getNodes().filter($isTableCellNode),
+      ]) {
+    const cellTable = cell && $findTableNode(cell);
+    if (cell && cellTable) {
+      const cells = reached.get(cellTable.getKey()) || new Set();
+      reached.set(cellTable.getKey(), cells.add(cell.getKey()));
     }
   }
   const aligns = gfmAlign(format) !== null || format === '';
-  let found = false;
   reached.forEach((cells, key) => {
     const {grid} = $tableGrid($getNodeByKeyOrThrow<TableNode>(key));
     let from = Infinity;
@@ -592,7 +594,6 @@ function $formatColumns(format: ElementFormatType): boolean {
         }
       }),
     );
-    found = found || to >= 0;
     if (aligns) {
       grid.forEach(row =>
         row.forEach(({cell}, column) => {
@@ -609,12 +610,7 @@ function $formatColumns(format: ElementFormatType): boolean {
   });
   // A selection that leaves a table, or goes from one table to another,
   // reaches blocks outside them, which are formatted as usual.
-  return (
-    found &&
-    anchorCell !== null &&
-    focusCell !== null &&
-    $findTableNode(anchorCell) === $findTableNode(focusCell)
-  );
+  return inOneTable;
 }
 
 /** Normalizes the table a changed cell is in. */
@@ -678,10 +674,12 @@ export const MdastTableExtension = defineExtension({
  * row is the header row; a cell holds one paragraph of inline content,
  * whose line breaks are written as `<br>` (Enter in a cell inserts one);
  * and columns are aligned rather than cells. A column's alignment is the
- * element format of its cells, which it is read from (the first of them
- * that has one). `FORMAT_ELEMENT_COMMAND` in a table aligns the columns
- * from the selection's anchor cell to its focus cell, and does nothing for
- * an alignment GFM has no form for (justify, start, end); the formats of
+ * element format of its cells, read from the first row with an aligned
+ * cell (the header row, unless a row was inserted above it).
+ * `FORMAT_ELEMENT_COMMAND` in a table aligns the columns from the
+ * selection's anchor cell to its focus cell (from the first cell it reaches
+ * to the last in a table it leaves), and does nothing for an alignment GFM
+ * has no form for (justify, start, end); the formats of
  * the table and of the blocks in cells are cleared. Blocks put into a cell
  * become lines of its paragraph, except block decorators, which move after
  * the table, and merged cells are split.

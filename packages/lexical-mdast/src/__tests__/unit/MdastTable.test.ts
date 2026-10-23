@@ -732,6 +732,28 @@ describe('MdastStrictTableExtension', () => {
     ).toBe(table('|  a  | b |', '| :-: | - |', '|  1  |   |'));
   });
 
+  it('aligns the columns from the anchor cell to the focus cell', () => {
+    using editor = createEditor(true);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(
+          table('| a | b |', '| - | - |', '| 1 | 2 |', '| 3 | 4 |'),
+        );
+        const [, [one], [three]] = $cells();
+        const selection = one.getAllTextNodes()[0].select(0, 0);
+        const [text] = three.getAllTextNodes();
+        selection.focus.set(text.getKey(), 1, 'text');
+      },
+      {discrete: true},
+    );
+    editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(
+        table('|  a  | b |', '| :-: | - |', '|  1  | 2 |', '|  3  | 4 |'),
+      );
+    });
+  });
+
   it('aligns the columns of a selection that ends after the table', () => {
     using editor = createEditor(true);
     editor.update(

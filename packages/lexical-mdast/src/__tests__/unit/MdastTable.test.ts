@@ -18,6 +18,9 @@ import {$createLinkNode, $isLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
 import {
+  $createTableCellNode,
+  $createTableNode,
+  $createTableRowNode,
   $createTableSelectionFrom,
   $insertTableRowAtNode,
   $isTableCellNode,
@@ -593,6 +596,68 @@ describe('MdastTableExtension', () => {
     );
     editor.read(() => {
       expect($convertSelectionToMarkdownString()).toBe('x\n\ny');
+    });
+  });
+
+  it('writes the nodes a selection in a cell reaches in order', () => {
+    using editor = createEditor(false);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(table('| a |', '| - |', '| x |'));
+        const [cell] = $cells()[1];
+        const y = $createTextNode('y');
+        cell.append(
+          $createHorizontalRuleNode(),
+          $createParagraphNode().append(y),
+        );
+        const selection = cell.getAllTextNodes()[0].select(0, 0);
+        selection.focus.set(y.getKey(), 1, 'text');
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertSelectionToMarkdownString()).toBe('x\n\n***\n\ny');
+    });
+    editor.update(
+      () => {
+        const selection = $createNodeSelection();
+        selection.add(
+          $assertNodeType(
+            $cells()[1][0].getChildAtIndex(1),
+            $isHorizontalRuleNode,
+          ).getKey(),
+        );
+        $setSelection(selection);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertSelectionToMarkdownString()).toBe('***');
+    });
+  });
+
+  it('writes a nested table a selection stays in', () => {
+    using editor = createEditor(false);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(table('| a |', '| - |', '| x |'));
+        const [cell] = $cells()[1];
+        const inner = $createTextNode('inner');
+        cell.append(
+          $createTableNode().append(
+            $createTableRowNode().append(
+              $createTableCellNode().append(
+                $createParagraphNode().append(inner),
+              ),
+            ),
+          ),
+        );
+        inner.select(0, 5);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertSelectionToMarkdownString()).toBe('inner');
     });
   });
 

@@ -7,13 +7,7 @@
  */
 
 import type {MdastExportHandler, MdastImportHandler, MdastNode} from './types';
-import type {
-  AlignType,
-  Paragraph,
-  PhrasingContent,
-  Table,
-  TableCell,
-} from 'mdast';
+import type {AlignType, PhrasingContent, Table, TableCell} from 'mdast';
 import type {
   Handle,
   Options as ToMarkdownExtension,
@@ -367,30 +361,22 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     });
     written.push({cells, lines});
   });
-  const exported = ctx.exportChildren(decorators);
-  if (to < 0) {
-    return exported;
-  }
-  // A selection export that starts and ends in the one cell it reaches
-  // writes its content, as copying text in a cell does.
+  // A selection export of nodes in one cell writes them as they are, as
+  // copying in a cell does.
   const selection = $getRenderContextValue(RenderContextMarkdownSelection);
   const [onlyCell] = reachedCells;
   if (
-    reachedCells.size === 1 &&
-    ($isRangeSelection(selection) || $isTableSelection(selection)) &&
-    [selection.anchor, selection.focus].every(point =>
-      onlyCell.is($findCellNode(point.getNode())),
-    )
+    onlyCell &&
+    selection &&
+    selection
+      .getNodes()
+      .every(selected => onlyCell.is(selected) || onlyCell.isParentOf(selected))
   ) {
-    return [
-      ...$linesOf(onlyCell).map(
-        (line): Paragraph => ({
-          children: ctx.exportInline(line),
-          type: 'paragraph',
-        }),
-      ),
-      ...exported,
-    ];
+    return ctx.exportChildren(onlyCell);
+  }
+  const exported = ctx.exportChildren(decorators);
+  if (to < 0) {
+    return exported;
   }
   // The columns from the first a selection export reaches to the last.
   const columns = <T>(map: (column: number) => T) =>

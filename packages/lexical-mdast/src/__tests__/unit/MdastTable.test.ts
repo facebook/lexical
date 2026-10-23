@@ -539,7 +539,7 @@ describe('MdastTableExtension', () => {
       {discrete: true},
     );
     editor.read(() => {
-      expect($convertSelectionToMarkdownString()).toBe(table('| y |', '| - |'));
+      expect($convertSelectionToMarkdownString()).toBe('y');
     });
   });
 
@@ -588,7 +588,7 @@ describe('MdastTableExtension', () => {
       {discrete: true},
     );
     editor.read(() => {
-      expect($convertSelectionToMarkdownString()).toBe(table('| 1 |', '| - |'));
+      expect($convertSelectionToMarkdownString()).toBe('1');
     });
     // A block decorator alone is written without its table.
     editor.update(
@@ -617,7 +617,7 @@ describe('MdastTableExtension', () => {
       {discrete: true},
     );
     editor.read(() => {
-      expect($convertSelectionToMarkdownString()).toBe(table('| 3 |', '| - |'));
+      expect($convertSelectionToMarkdownString()).toBe('3');
     });
   });
 

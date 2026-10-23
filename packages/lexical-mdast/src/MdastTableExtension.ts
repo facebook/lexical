@@ -14,6 +14,7 @@ import type {
 } from 'mdast-util-to-markdown';
 
 import {configExtension} from '@lexical/extension';
+import {$getRenderContextValue} from '@lexical/html';
 import {
   $createTableCellNode,
   $createTableNode,
@@ -55,6 +56,7 @@ import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
 import {gfmTable} from 'micromark-extension-gfm-table';
 
 import {$append, $isBlockLevelNode, inlineMarker} from './handlers';
+import {RenderContextMarkdownSelection} from './MdastExport';
 import {MdastExtension} from './MdastExtension';
 
 /** An inline HTML `<br>` tag, the line break a GFM cell can hold. */
@@ -346,29 +348,43 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   if (to < 0) {
     return exported;
   }
+  // The lines of a cell, separated by breaks (which the cell writer below
+  // writes as `<br>`).
+  const $content = (lines: LexicalNode[][]) =>
+    lines.flatMap((line, i): PhrasingContent[] =>
+      i > 0
+        ? [{type: 'break'}, ...ctx.exportInline(line)]
+        : ctx.exportInline(line),
+    );
+  // A selection export that reaches one cell writes its content, as
+  // copying text in a cell does.
+  if (
+    written.length === 1 &&
+    from === to &&
+    $getRenderContextValue(RenderContextMarkdownSelection) !== null
+  ) {
+    return [
+      {children: $content(written[0].lines[from]), type: 'paragraph'},
+      ...exported,
+    ];
+  }
   // The columns from the first a selection export reaches to the last.
-  const columns = (map: (column: number) => TableCell | AlignType) =>
+  const columns = <T>(map: (column: number) => T) =>
     Array.from({length: to - from + 1}, (_, i) => map(from + i));
   const align = $columnAlign(grid);
   return [
     {
-      align: columns(column => align[column] || null) as AlignType[],
+      align: columns(column => align[column] || null),
       children: written.map(({cells, lines}) => ({
-        children: columns(column => {
-          const at = cells[column];
-          const cellChildren: PhrasingContent[] = [];
-          if (at && at.origin) {
-            // The lines of the cell, separated by breaks (which the cell
-            // writer below writes as `<br>`).
-            lines[column].forEach((line, i) => {
-              if (i > 0) {
-                cellChildren.push({type: 'break'});
-              }
-              cellChildren.push(...ctx.exportInline(line));
-            });
-          }
-          return {children: cellChildren, type: 'tableCell'};
-        }) as TableCell[],
+        children: columns(
+          (column): TableCell => ({
+            children:
+              cells[column] && cells[column].origin
+                ? $content(lines[column])
+                : [],
+            type: 'tableCell',
+          }),
+        ),
         type: 'tableRow',
       })),
       type: 'table',

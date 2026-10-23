@@ -7,13 +7,7 @@
  */
 
 import type {MdastExportHandler, MdastImportHandler, MdastNode} from './types';
-import type {
-  AlignType,
-  PhrasingContent,
-  Table,
-  TableCell,
-  TableRow,
-} from 'mdast';
+import type {AlignType, PhrasingContent, Table, TableCell} from 'mdast';
 import type {
   Handle,
   Options as ToMarkdownExtension,
@@ -99,21 +93,25 @@ function mapPhrasing(
 }
 
 /**
- * The alignment of each column: that of its cell in the first row with an
- * aligned cell (the header row, unless a row was inserted above it). A cell
- * has the alignment of its first block, which aligning the text in it (or
- * pasting an aligned table) sets, or else its own.
+ * The alignment of each column: that of the first cell from the top that
+ * starts in it and has one (its header cell's, unless a row was inserted
+ * above it). A cell has the alignment of its first block, which aligning
+ * the text in it (or pasting an aligned table) sets, or else its own.
  */
 function $columnAlign(grid: GridCell[][]): AlignType[] {
-  const $align = (cell: TableCellNode) => {
-    const block = cell.getFirstChild();
-    return (
-      ($isElementNode(block) && gfmAlign(block.getFormatType())) ||
-      gfmAlign(cell.getFormatType())
-    );
-  };
-  const row = grid.find(cells => cells.some(({cell}) => $align(cell))) || [];
-  return row.map(({cell}) => $align(cell));
+  const align: AlignType[] = [];
+  grid.forEach(cells =>
+    cells.forEach(({cell, origin}, column) => {
+      const block = cell.getFirstChild();
+      align[column] =
+        align[column] ||
+        (origin
+          ? ($isElementNode(block) && gfmAlign(block.getFormatType())) ||
+            gfmAlign(cell.getFormatType())
+          : null);
+    }),
+  );
+  return align;
 }
 
 /** A cell at a row and column of a table, which a merged cell spans. */
@@ -286,15 +284,13 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   // spans, and every row as wide as the widest. Block decorators, which a
   // cell can't hold, are written after the table.
   const {grid, rows} = $tableGrid(node);
-  const width = grid.reduce((max, cells) => Math.max(max, cells.length), 0);
-  const children: TableRow[] = [];
   const decorators: LexicalNode[] = [];
   // The lines of a cell, from the first line a selection export reaches to
   // the last (an empty one by its block); the block decorators it reaches
   // are collected.
-  const written = new Map<TableCellNode, LexicalNode[][]>();
+  const cellsLines = new Map<TableCellNode, LexicalNode[][]>();
   const $linesOf = (cell: TableCellNode) => {
-    let lines = written.get(cell);
+    let lines = cellsLines.get(cell);
     if (!lines) {
       const cellLines = $cellLines(cell);
       const reached = cellLines.lines.map((line, i) =>
@@ -306,16 +302,18 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
         reached.indexOf(true),
         reached.lastIndexOf(true) + 1,
       );
-      written.set(cell, lines);
+      cellsLines.set(cell, lines);
       decorators.push(...cellLines.decorators.filter(ctx.isIncluded));
     }
     return lines;
   };
+  const written: {cells: GridCell[]; lines: LexicalNode[][][]}[] = [];
+  let from = Infinity;
+  let to = -1;
   rows.forEach((row, rowIndex) => {
     // Structural iteration bypasses the walk's selection filter, so rows a
     // selection export does not reach are skipped here, as are rows where it
-    // reaches only block decorators. Cells stay: dropping one would shift
-    // the remaining cells into other columns.
+    // reaches only block decorators.
     if (!ctx.isIncluded(row)) {
       return;
     }
@@ -331,36 +329,43 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     ) {
       return;
     }
-    children.push({
-      children: Array.from({length: width}, (_, column): TableCell => {
-        const at = cells[column];
-        const cellChildren: PhrasingContent[] = [];
-        if (at && at.origin) {
-          // The lines of the cell, separated by breaks (which the cell
-          // writer below writes as `<br>`).
-          lines[column].forEach((line, i) => {
-            if (i > 0) {
-              cellChildren.push({type: 'break'});
-            }
-            cellChildren.push(...ctx.exportInline(line));
-          });
-        }
-        return {children: cellChildren, type: 'tableCell'};
-      }),
-      type: 'tableRow',
+    lines.forEach((cellLines, column) => {
+      if (cellLines.length > 0) {
+        from = Math.min(from, column);
+        to = Math.max(to, column);
+      }
     });
+    written.push({cells, lines});
   });
   const exported = ctx.exportChildren(decorators);
-  if (children.length === 0 || width === 0) {
+  if (to < 0) {
     return exported;
   }
-  // GFM aligns columns, by the alignment of the first row with an aligned
-  // cell (the header row, unless a row was inserted above it).
+  // The columns from the first a selection export reaches to the last.
+  const columns = (map: (column: number) => TableCell | AlignType) =>
+    Array.from({length: to - from + 1}, (_, i) => map(from + i));
   const align = $columnAlign(grid);
   return [
     {
-      align: Array.from({length: width}, (_, column) => align[column] || null),
-      children,
+      align: columns(column => align[column] || null) as AlignType[],
+      children: written.map(({cells, lines}) => ({
+        children: columns(column => {
+          const at = cells[column];
+          const cellChildren: PhrasingContent[] = [];
+          if (at && at.origin) {
+            // The lines of the cell, separated by breaks (which the cell
+            // writer below writes as `<br>`).
+            lines[column].forEach((line, i) => {
+              if (i > 0) {
+                cellChildren.push({type: 'break'});
+              }
+              cellChildren.push(...ctx.exportInline(line));
+            });
+          }
+          return {children: cellChildren, type: 'tableCell'};
+        }) as TableCell[],
+        type: 'tableRow',
+      })),
       type: 'table',
     },
     ...exported,
@@ -441,11 +446,15 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
  * alignment that each cell of the column has as its element format.
  */
 function $normalizeTable(table: TableNode): void {
-  // Merged cells are split, and the cells split off keep their format. A
-  // row span past the last row (or of 0, the rest of the rows) is cut to it
-  // first, as the split can't fill it, and a column span of 0 is 1 (as the
-  // grid reads them).
+  // A column's alignment is read before merged cells are split (their
+  // copies keep their format, but only the column a cell starts in has its
+  // alignment); other formats, of the table or a block in a cell, are
+  // cleared.
   let {grid} = $tableGrid(table);
+  const align = $columnAlign(grid);
+  // Merged cells are split. A row span past the last row (or of 0, the rest
+  // of the rows) is cut to it first, as the split can't fill it, and a
+  // column span of 0 is 1 (as the grid reads them).
   let split = false;
   grid.forEach((cells, rowIndex) =>
     cells.forEach(({cell, origin}) => {
@@ -467,10 +476,6 @@ function $normalizeTable(table: TableNode): void {
   if (split) {
     ({grid} = $tableGrid(table));
   }
-  // The columns are aligned as the cells of the first row with an aligned
-  // cell are (the header row, unless a row was inserted above it); other
-  // formats, of the table or a block in a cell, are cleared.
-  const align = $columnAlign(grid);
   if (table.getFormatType() !== '') {
     table.setFormat('');
   }
@@ -652,9 +657,9 @@ function $markTableDirty(node: LexicalNode): void {
  * pipe is a pipe in raw HTML and autolinks too. Export writes any table as
  * GFM can: a cell's blocks and line breaks as lines separated by `<br>`, a
  * merged cell with empty cells where it spans, block decorators in a cell
- * after the table, and as the column alignment, the alignment of the cells
- * of the first row with an aligned cell (the header row, unless a row was
- * inserted above it). Add
+ * after the table, and as a column's alignment, that of the first cell from
+ * the top that starts in the column and is aligned (a cell has the alignment
+ * of its first block, or else its own). Add
  * {@link MdastStrictTableExtension} to keep tables in the editor to what GFM
  * holds.
  *
@@ -693,9 +698,9 @@ export const MdastTableExtension = defineExtension({
  * `TableExtension`, configured without cell background colors. The first
  * row is the header row; a cell holds one paragraph of inline content,
  * whose line breaks are written as `<br>` (Enter in a cell inserts one);
- * and columns are aligned rather than cells. A column's alignment is the
- * element format of its cells, read from the first row with an aligned
- * cell (the header row, unless a row was inserted above it).
+ * and columns are aligned rather than cells: a column's alignment, read as
+ * {@link MdastTableExtension} exports it, becomes the element format of
+ * each of its cells.
  * `FORMAT_ELEMENT_COMMAND` in a table aligns the columns from the
  * selection's anchor cell to its focus cell (from the first cell it reaches
  * to the last in a table it leaves), and does nothing for an alignment GFM

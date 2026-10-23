@@ -18,6 +18,7 @@ import {
   $deleteTableColumnAtSelection,
   $deleteTableRowAtSelection,
   $findCellNode,
+  $findTableNode,
   $insertTableColumnAtSelection,
   $insertTableRowAtSelection,
   $isTableSelection,
@@ -109,10 +110,16 @@ type TableAction = (typeof TABLE_ACTIONS)[number]['value'];
 function applyTableAction(editor: LexicalEditor, action: TableAction): void {
   editor.update(() => {
     const selection = $getSelection();
+    if (!$isRangeSelection(selection) && !$isTableSelection(selection)) {
+      return;
+    }
+    // Act only on a selection within one table.
+    const anchorCell = $findCellNode(selection.anchor.getNode());
+    const focusCell = $findCellNode(selection.focus.getNode());
     if (
-      (!$isRangeSelection(selection) && !$isTableSelection(selection)) ||
-      (!$findCellNode(selection.anchor.getNode()) &&
-        !$findCellNode(selection.focus.getNode()))
+      !anchorCell ||
+      !focusCell ||
+      $findTableNode(anchorCell) !== $findTableNode(focusCell)
     ) {
       return;
     }
@@ -125,9 +132,6 @@ function applyTableAction(editor: LexicalEditor, action: TableAction): void {
       // MdastStrictTableExtension aligns the columns of the cells the
       // selection reaches.
       editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, action);
-      return;
-    }
-    if (!$findCellNode(selection.anchor.getNode())) {
       return;
     }
     switch (action) {

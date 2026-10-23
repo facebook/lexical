@@ -364,7 +364,7 @@ describe('MdastTableExtension', () => {
         },
         false,
       ),
-    ).toBe(table('| a  |    | c |', '| :- | :- | - |', '| 1  |    | 3 |'));
+    ).toBe(table('| a  |   | c |', '| :- | - | - |', '| 1  |   | 3 |'));
   });
 
   it('skips what isn’t a row or cell', () => {
@@ -588,9 +588,7 @@ describe('MdastTableExtension', () => {
       {discrete: true},
     );
     editor.read(() => {
-      expect($convertSelectionToMarkdownString()).toBe(
-        table('| 1 |   |', '| - | - |'),
-      );
+      expect($convertSelectionToMarkdownString()).toBe(table('| 1 |', '| - |'));
     });
     // A block decorator alone is written without its table.
     editor.update(
@@ -607,7 +605,7 @@ describe('MdastTableExtension', () => {
     });
   });
 
-  it('exports only the rows a selection reaches', () => {
+  it('exports only the rows and columns a selection reaches', () => {
     using editor = createEditor(false);
     editor.update(
       () => {
@@ -619,8 +617,25 @@ describe('MdastTableExtension', () => {
       {discrete: true},
     );
     editor.read(() => {
+      expect($convertSelectionToMarkdownString()).toBe(table('| 3 |', '| - |'));
+    });
+  });
+
+  it('exports only the columns a table selection spans', () => {
+    using editor = createEditor(false);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(
+          table('| a | b | c |', '| - | :-: | -: |', '| 1 | 2 | 3 |'),
+        );
+        const [, [, two, three]] = $cells();
+        $setSelection($createTableSelectionFrom($table(), two, three));
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
       expect($convertSelectionToMarkdownString()).toBe(
-        table('| 3 |   |', '| - | - |'),
+        table('|  2  |  3 |', '| :-: | -: |'),
       );
     });
   });
@@ -751,7 +766,7 @@ describe('MdastStrictTableExtension', () => {
         two.remove();
         one.setColSpan(2);
       }),
-    ).toBe(table('|  a  |     |', '| :-: | :-: |', '|  1  |     |'));
+    ).toBe(table('|  a  |   |', '| :-: | - |', '|  1  |   |'));
   });
 
   it('aligns the columns a selection spans', () => {
@@ -925,16 +940,16 @@ describe('MdastStrictTableExtension', () => {
     });
   });
 
-  it('ignores the alignment of a block in a cell', () => {
+  it('keeps a column’s alignment over a block’s in a cell below', () => {
     expect(
-      convert(table('| a | b |', '| :-: | - |', '| 1 | 2 |'), () => {
+      convert(table('| a | b |', '| :-: | -: |', '| 1 | 2 |'), () => {
         const [, [one, two]] = $cells();
         $assertNodeType(one.getFirstChild(), $isElementNode).setFormat(
           'justify',
         );
         $assertNodeType(two.getFirstChild(), $isElementNode).setFormat('left');
       }),
-    ).toBe(table('|  a  | b |', '| :-: | - |', '|  1  | 2 |'));
+    ).toBe(table('|  a  |  b |', '| :-: | -: |', '|  1  |  2 |'));
   });
 
   it('keeps column alignment when a row is inserted above the header', () => {

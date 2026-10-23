@@ -17,6 +17,7 @@ import {
   type ListItemNode,
   type ListNode,
 } from '@lexical/list';
+import {$addMarkID, $getNodeMarkIDs, $removeMarkID} from '@lexical/mark';
 import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
 import {$setBlocksType} from '@lexical/selection';
 import {
@@ -26,17 +27,20 @@ import {
   $isTableNode,
 } from '@lexical/table';
 import {
+  $createLineBreakNode,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
   $getRoot,
   $getState,
+  $getWritableNodeState,
   $isElementNode,
   $isTextNode,
   $setSelection,
   $setState,
   createState,
   type ElementNode,
+  type LexicalEditor,
   type LexicalNode,
   type StateConfig,
   type TextNode,
@@ -51,6 +55,25 @@ export function markState(id: string): StateConfig<string, boolean> {
     markStates.set(id, s);
   }
   return s;
+}
+
+/**
+ * Make MarkStateExtension's set-valued `markIds` state known to TextNode and
+ * LineBreakNode on a plain editor (the extension does this for every node
+ * type when the editor is built), so that the editor joins the per-id
+ * formats it reads back into one set.
+ */
+export function prepareMarkState(editor: LexicalEditor): void {
+  editor.update(
+    () => {
+      for (const node of [$createTextNode(), $createLineBreakNode()]) {
+        // $getState registers the StateConfig once the node has a NodeState
+        $getWritableNodeState(node);
+        $getNodeMarkIDs(node);
+      }
+    },
+    {discrete: true},
+  );
 }
 
 export function $block(path: number[]): ElementNode {
@@ -193,6 +216,29 @@ export const SIZE_OPS: SizeOp[] = [
         }
       }
     },
+  },
+  {
+    name: 'add a comment (MarkStateExtension)',
+    run: () => {
+      $addMarkID('c1', $select([1], 4, 19));
+    },
+  },
+  {
+    name: 'add an overlapping comment (MarkStateExtension)',
+    prepare: () => {
+      $addMarkID('c1', $select([1], 4, 19));
+    },
+    run: () => {
+      $addMarkID('c2', $select([1], 10, 25));
+    },
+  },
+  {
+    name: 'remove a comment (MarkStateExtension)',
+    prepare: () => {
+      $addMarkID('c1', $select([1], 4, 19));
+      $addMarkID('c2', $select([1], 10, 25));
+    },
+    run: () => $removeMarkID('c1'),
   },
   {
     name: 'reset a NodeState key on a range',

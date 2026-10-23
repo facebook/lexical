@@ -346,7 +346,10 @@ schema or used for a node property.
 A collaboration binding recognizes a set-valued state by its schema:
 `stateConfig.schema?.meta.kind === 'set'`. The `@lexical/yjs` bindings (v1
 and v2) store a set as one value, so when two peers change the same set of
-the same node at once, the last writer wins.
+the same node at once, the last writer wins. The experimental
+[Yjs 14 binding](../collaboration/y.md) (`@lexical/y`) stores each member
+separately on text, line breaks and nodes it stores as their own Yjs node,
+so there concurrent additions and removals of different members all apply.
 
 ## Capabilities
 

@@ -431,7 +431,17 @@ not merge as a user might expect:
   together) and for a field of one paragraph or list item.
 - **Mark nodes.** `MarkNode` is an element with its own content, so wrapping
   a range moves the text into it, and concurrent typing in that range stays
-  outside.
+  outside. Store comments as NodeState instead, with
+  [`MarkStateExtension`](./comments.md).
+- **Set-valued NodeState** (`setValue`, which `MarkStateExtension` uses)
+  merges per member on text, line breaks and nodes stored as their own Yjs
+  node (such as decorators), so two collaborators commenting on the same
+  words both keep their comment. On a line such as a paragraph or heading, a
+  list item, a list or a link the set is one value, and concurrent changes
+  to it keep one writer's set. Every collaborator needs the state
+  registered (as `MarkStateExtension` does) to read the members back as one
+  set; one that does not keep them as separate keys and writes them back
+  unchanged.
 - **Not synchronized:** named slots, nested editor instances (their JSON
   snapshots are), and properties outside a class's `$config` schema and
   NodeState.

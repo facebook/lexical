@@ -18,7 +18,8 @@ text with an id. `@lexical/mark` offers two ways to store those marks:
 ## When to use `MarkStateExtension`
 
 Prefer it when marks overlap or when the document is edited collaboratively
-with the Yjs v2 binding (`CollaborationPluginV2__EXPERIMENTAL`).
+with the Yjs v2 binding (`CollaborationPluginV2__EXPERIMENTAL`) or the
+[Yjs 14 binding](./y.md) (`@lexical/y`).
 
 - **Overlap.** Text covered by two comments is a single TextNode carrying
   both ids. With `MarkNode`, overlapping comments become sibling wrappers
@@ -35,7 +36,9 @@ with the Yjs v2 binding (`CollaborationPluginV2__EXPERIMENTAL`).
   `@lexical/yjs` bindings store it as one value, so when two collaborators
   change the ids of the same text at once (for example both comment on it),
   the last writer wins for that text and the other id is dropped there.
-  Peers still converge on the same document.
+  Peers still converge on the same document. The
+  [Yjs 14 binding](./y.md) (`@lexical/y`) stores each id separately, so
+  there both ids are kept.
 
 Keep using `MarkNode` when you need one element around the marked content
 (for example to render it as a single DOM element), or when you depend on

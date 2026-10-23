@@ -102,6 +102,10 @@ lifted blocks.
   `w:<type>` = a format wrapper (an inline element stored as a format, such
   as a link), whose value is an object of its fields and NodeState, with `#`
   telling apart two adjacent wrappers with equal fields.
+- **Set-valued NodeState** (a `setValue` state, whose schema has
+  `meta.kind === 'set'`): on text, line breaks and nodes stored as their
+  own `Y.Node`, one `s:<key>\u001f<member>` = `true` entry per member
+  instead of one `s:<key>` value.
 - **Values:** primitives as they are; any other JSON value as `\u0000`
   followed by its JSON with sorted keys.
 

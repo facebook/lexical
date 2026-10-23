@@ -621,6 +621,25 @@ describe('MdastTableExtension', () => {
     });
   });
 
+  it('writes the content of a merged cell a selection stays in', () => {
+    using editor = createEditor(false);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(
+          table('| foo | b |', '| - | - |', '| 1 | 2 |'),
+        );
+        const [[foo, b]] = $cells();
+        b.remove();
+        foo.setColSpan(2);
+        foo.getAllTextNodes()[0].select(0, 3);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertSelectionToMarkdownString()).toBe('foo');
+    });
+  });
+
   it('exports only the columns a table selection spans', () => {
     using editor = createEditor(false);
     editor.update(
@@ -767,6 +786,27 @@ describe('MdastStrictTableExtension', () => {
         one.setColSpan(2);
       }),
     ).toBe(table('|  a  |   |', '| :-: | - |', '|  1  |   |'));
+  });
+
+  it('aligns the column of a node selection in a cell', () => {
+    using editor = createEditor(true);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(
+          table('| a | b |', '| - | -: |', '| 1 | 2 |'),
+        );
+        const selection = $createNodeSelection();
+        selection.add($cells()[1][1].getAllTextNodes()[0].getKey());
+        $setSelection(selection);
+      },
+      {discrete: true},
+    );
+    editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(
+        table('| a |  b  |', '| - | :-: |', '| 1 |  2  |'),
+      );
+    });
   });
 
   it('aligns the columns a selection spans', () => {

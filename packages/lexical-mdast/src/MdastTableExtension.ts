@@ -39,6 +39,7 @@ import {
   $getNodeByKeyOrThrow,
   $getSelection,
   $isElementNode,
+  $isNodeSelection,
   $isParagraphNode,
   $isRangeSelection,
   COMMAND_PRIORITY_CRITICAL,
@@ -124,6 +125,23 @@ interface GridCell {
 }
 
 /**
+ * The rows and columns `cell` spans from `rowIndex` in a table of
+ * `rowCount` rows: a row span of 0 (as in HTML) or past the last row runs
+ * to the last row, and a column span below 1 is 1.
+ */
+function $cellSpans(
+  cell: TableCellNode,
+  rowIndex: number,
+  rowCount: number,
+): [number, number] {
+  const rowSpan = cell.getRowSpan();
+  return [
+    rowSpan > 0 ? Math.min(rowSpan, rowCount - rowIndex) : rowCount - rowIndex,
+    Math.max(1, cell.getColSpan()),
+  ];
+}
+
+/**
  * The table rows of `table`, and the cells of each by column (a sparse
  * array where a row has no cell). Children that aren't table rows or cells
  * are skipped. Unlike `$computeTableMap`, this reads any table, whatever
@@ -141,13 +159,9 @@ function $tableGrid(table: TableNode): {
       while (grid[rowIndex][column]) {
         column++;
       }
-      // A row span of 0 spans the rest of the rows, as in HTML.
-      const rowSpan = cell.getRowSpan();
-      const rowEnd =
-        rowSpan > 0 ? Math.min(rows.length, rowIndex + rowSpan) : rows.length;
-      const colEnd = column + Math.max(1, cell.getColSpan());
-      for (let i = rowIndex; i < rowEnd; i++) {
-        for (let j = column; j < colEnd; j++) {
+      const [rowSpan, colSpan] = $cellSpans(cell, rowIndex, rows.length);
+      for (let i = rowIndex; i < rowIndex + rowSpan; i++) {
+        for (let j = column; j < column + colSpan; j++) {
           grid[i][j] = {cell, origin: i === rowIndex && j === column};
         }
       }
@@ -315,6 +329,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     return lines;
   };
   const written: {cells: GridCell[]; lines: LexicalNode[][][]}[] = [];
+  const reachedCells = new Set<TableCellNode>();
   let from = Infinity;
   let to = -1;
   rows.forEach((row, rowIndex) => {
@@ -338,6 +353,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     }
     lines.forEach((cellLines, column) => {
       if (cellLines.length > 0) {
+        reachedCells.add(cells[column].cell);
         from = Math.min(from, column);
         to = Math.max(to, column);
       }
@@ -358,13 +374,13 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     );
   // A selection export that reaches one cell writes its content, as
   // copying text in a cell does.
+  const [onlyCell] = reachedCells;
   if (
-    written.length === 1 &&
-    from === to &&
+    reachedCells.size === 1 &&
     $getRenderContextValue(RenderContextMarkdownSelection) !== null
   ) {
     return [
-      {children: $content(written[0].lines[from]), type: 'paragraph'},
+      {children: $content($linesOf(onlyCell)), type: 'paragraph'},
       ...exported,
     ];
   }
@@ -473,27 +489,27 @@ function $normalizeTable(table: TableNode): void {
   // cleared.
   let {grid} = $tableGrid(table);
   const align = $columnAlign(grid);
-  // Merged cells are split. A row span past the last row (or of 0, the rest
-  // of the rows) is cut to it first, as the split can't fill it, and a
-  // column span of 0 is 1 (as the grid reads them).
-  let split = false;
+  // Merged cells are split, once every span is set as the grid reads it
+  // (the split can't fill a row span past the last row).
+  const merged: TableCellNode[] = [];
   grid.forEach((cells, rowIndex) =>
     cells.forEach(({cell, origin}) => {
       if (origin) {
-        const rowSpan = cell.getRowSpan();
-        if (!(rowSpan > 0 && rowSpan <= grid.length - rowIndex)) {
-          cell.setRowSpan(grid.length - rowIndex);
+        const [rowSpan, colSpan] = $cellSpans(cell, rowIndex, grid.length);
+        if (cell.getRowSpan() !== rowSpan) {
+          cell.setRowSpan(rowSpan);
         }
-        if (cell.getColSpan() < 1) {
-          cell.setColSpan(1);
+        if (cell.getColSpan() !== colSpan) {
+          cell.setColSpan(colSpan);
         }
-        if (cell.getColSpan() > 1 || cell.getRowSpan() > 1) {
-          $unmergeCellNode(cell);
-          split = true;
+        if (rowSpan > 1 || colSpan > 1) {
+          merged.push(cell);
         }
       }
     }),
   );
+  merged.forEach($unmergeCellNode);
+  const split = merged.length > 0;
   if (split) {
     ({grid} = $tableGrid(table));
   }
@@ -593,24 +609,29 @@ function $normalizeTable(table: TableNode): void {
  */
 function $formatColumns(format: ElementFormatType): boolean {
   const selection = $getSelection();
-  if (!$isRangeSelection(selection) && !$isTableSelection(selection)) {
+  if (
+    !$isRangeSelection(selection) &&
+    !$isTableSelection(selection) &&
+    !$isNodeSelection(selection)
+  ) {
     return false;
   }
   // The cells the selection reaches, by table: in a table it starts and
   // ends in, its anchor and focus cells.
-  const anchorCell = $findCellNode(selection.anchor.getNode());
-  const focusCell = $findCellNode(selection.focus.getNode());
+  const [anchorCell, focusCell] = $isNodeSelection(selection)
+    ? [null, null]
+    : [
+        $findCellNode(selection.anchor.getNode()),
+        $findCellNode(selection.focus.getNode()),
+      ];
   const table = anchorCell && $findTableNode(anchorCell);
   const inOneTable =
     table !== null && focusCell !== null && table === $findTableNode(focusCell);
+  const nodes = inOneTable ? [] : selection.getNodes();
   const reached = new Map<string, Set<string>>();
   for (const cell of inOneTable
     ? [anchorCell, focusCell]
-    : [
-        anchorCell,
-        focusCell,
-        ...selection.getNodes().filter($isTableCellNode),
-      ]) {
+    : [anchorCell, focusCell, ...nodes.map($findCellNode)]) {
     const cellTable = cell && $findTableNode(cell);
     if (cell && cellTable) {
       const cells = reached.get(cellTable.getKey()) || new Set();
@@ -623,7 +644,7 @@ function $formatColumns(format: ElementFormatType): boolean {
   // Blocks outside the tables the selection reaches are formatted as rich
   // text formats them.
   if (!inOneTable) {
-    for (const node of selection.getNodes()) {
+    for (const node of nodes) {
       const block = $findMatchingParent(
         node,
         parent => $isElementNode(parent) && !parent.isInline(),

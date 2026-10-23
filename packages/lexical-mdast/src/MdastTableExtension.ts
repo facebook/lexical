@@ -99,16 +99,16 @@ function mapPhrasing(
 
 /**
  * The alignment of each column: that of its cell in the first row with an
- * aligned cell (the header row, unless a row was inserted above it). With
- * `blocks`, a cell with no alignment of its own has that of its first
- * block, which aligning the text in it sets.
+ * aligned cell (the header row, unless a row was inserted above it). A cell
+ * with no alignment of its own has that of its first block, which aligning
+ * the text in it (or pasting an aligned table) sets.
  */
-function $columnAlign(grid: GridCell[][], blocks = false): AlignType[] {
+function $columnAlign(grid: GridCell[][]): AlignType[] {
   const $align = (cell: TableCellNode) => {
     const block = cell.getFirstChild();
     return (
       gfmAlign(cell.getFormatType()) ||
-      (blocks && $isElementNode(block) ? gfmAlign(block.getFormatType()) : null)
+      ($isElementNode(block) ? gfmAlign(block.getFormatType()) : null)
     );
   };
   const row = grid.find(cells => cells.some(({cell}) => $align(cell))) || [];
@@ -320,9 +320,13 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     }
     const cells = grid[rowIndex];
     const lines = cells.map(({cell}) => $linesOf(cell));
+    // The cells that start in the row, if any, else those spanning it.
+    const own = cells.some(({origin}) => origin);
     if (
       cells.length > 0 &&
-      !cells.some(({origin}, column) => origin && lines[column].length > 0)
+      !cells.some(
+        ({origin}, column) => (origin || !own) && lines[column].length > 0,
+      )
     ) {
       return;
     }
@@ -351,7 +355,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   }
   // GFM aligns columns, by the alignment of the first row with an aligned
   // cell (the header row, unless a row was inserted above it).
-  const align = $columnAlign(grid, true);
+  const align = $columnAlign(grid);
   return [
     {
       align: Array.from({length: width}, (_, column) => align[column] || null),
@@ -441,11 +445,6 @@ function $normalizeTable(table: TableNode): void {
   // first, as the split can't fill it, and a column span of 0 is 1 (as the
   // grid reads them).
   let {grid} = $tableGrid(table);
-  // A table with no cells has nothing GFM can write.
-  if (!grid.some(cells => cells.length > 0)) {
-    table.remove();
-    return;
-  }
   let split = false;
   grid.forEach((cells, rowIndex) =>
     cells.forEach(({cell, origin}) => {
@@ -576,6 +575,9 @@ function $formatColumns(format: ElementFormatType): boolean {
   const table = anchorCell && $findTableNode(anchorCell);
   const inOneTable =
     table !== null && focusCell !== null && table === $findTableNode(focusCell);
+  if (gfmAlign(format) === null && format !== '') {
+    return inOneTable;
+  }
   const reached = new Map<string, Set<string>>();
   for (const cell of inOneTable
     ? [anchorCell, focusCell]
@@ -589,9 +591,6 @@ function $formatColumns(format: ElementFormatType): boolean {
       const cells = reached.get(cellTable.getKey()) || new Set();
       reached.set(cellTable.getKey(), cells.add(cell.getKey()));
     }
-  }
-  if (gfmAlign(format) === null && format !== '') {
-    return inOneTable;
   }
   reached.forEach((cells, key) => {
     const {grid} = $tableGrid($getNodeByKeyOrThrow<TableNode>(key));

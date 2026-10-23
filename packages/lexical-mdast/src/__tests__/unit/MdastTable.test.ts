@@ -322,6 +322,20 @@ describe('MdastTableExtension', () => {
     });
   });
 
+  it('writes a row a merged cell spans with an empty cell', () => {
+    expect(
+      convert(
+        table('| a |', '| - |', '| 1 |', '| 2 |'),
+        () => {
+          const [, [one], [two]] = $cells();
+          two.remove();
+          one.setRowSpan(2);
+        },
+        false,
+      ),
+    ).toBe(table('| a |', '| - |', '| 1 |', '|   |'));
+  });
+
   it('writes a merged cell with empty cells where it spans', () => {
     expect(
       convert(
@@ -848,6 +862,18 @@ describe('MdastStrictTableExtension', () => {
         ].join('\n\n'),
       );
     });
+  });
+
+  it('aligns a column by the text of its cells, as a pasted table is', () => {
+    expect(
+      convert(table('| a | b |', '| - | - |', '| 1 | 2 |'), () => {
+        for (const row of $cells()) {
+          $assertNodeType(row[1].getFirstChild(), $isElementNode).setFormat(
+            'center',
+          );
+        }
+      }),
+    ).toBe(table('| a |  b  |', '| - | :-: |', '| 1 |  2  |'));
   });
 
   it('ignores the alignment of a block in a cell', () => {

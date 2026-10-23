@@ -109,10 +109,21 @@ type TableAction = (typeof TABLE_ACTIONS)[number]['value'];
 function applyTableAction(editor: LexicalEditor, action: TableAction): void {
   editor.update(() => {
     const selection = $getSelection();
-    const cell =
-      ($isRangeSelection(selection) || $isTableSelection(selection)) &&
-      $findCellNode(selection.anchor.getNode());
-    if (!cell) {
+    if (!$isRangeSelection(selection) && !$isTableSelection(selection)) {
+      return;
+    }
+    if (
+      action === 'left' ||
+      action === 'center' ||
+      action === 'right' ||
+      action === ''
+    ) {
+      // MdastStrictTableExtension aligns the columns of the cells the
+      // selection reaches.
+      editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, action);
+      return;
+    }
+    if (!$findCellNode(selection.anchor.getNode())) {
       return;
     }
     switch (action) {
@@ -129,10 +140,6 @@ function applyTableAction(editor: LexicalEditor, action: TableAction): void {
         return;
       case 'deleteColumn':
         $deleteTableColumnAtSelection();
-        return;
-      default:
-        // MdastStrictTableExtension aligns the selected columns.
-        editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, action);
     }
   });
 }

@@ -443,7 +443,6 @@ function createNodeExporter(
     },
     exportInline: source => $exportInline(source),
     isIncluded: $isIncluded,
-    selection,
   };
 
   function $dispatch(
@@ -681,12 +680,19 @@ export function createMdastExport(compiled: CompiledMdast): {
     return out.replace(/\n$/, '');
   };
 
+  // A whole-document export is one even when a handler runs it during a
+  // selection export.
+  const $asDocument = <T>(f: () => T): T =>
+    $withRenderContext([contextValue(RenderContextMarkdownSelection, null)])(f);
+
   const $exportToMdast = (node?: ElementNode): Root =>
-    $toMdast(node || $getRoot(), documentExporter);
+    $asDocument(() => $toMdast(node || $getRoot(), documentExporter));
 
   const $exportToMarkdown = (node?: ElementNode): string => {
     const root = node || $getRoot();
-    return $serialize($toMdast(root, documentExporter), root);
+    return $asDocument(() =>
+      $serialize($toMdast(root, documentExporter), root),
+    );
   };
 
   const $exportSelectionToMarkdown = (

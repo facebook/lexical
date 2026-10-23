@@ -117,8 +117,11 @@ function applyTableAction(editor: LexicalEditor, action: TableAction): void {
       action === ''
     ) {
       // MdastStrictTableExtension aligns the columns of the cells the
-      // selection reaches.
-      if (selection && selection.getNodes().some(node => $findCellNode(node))) {
+      // selection reaches, here only in tables.
+      if (
+        selection &&
+        selection.getNodes().every(node => $findTableNode(node))
+      ) {
         editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, action);
       }
       return;

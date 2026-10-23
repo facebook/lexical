@@ -6,7 +6,7 @@
  *
  */
 
-import type {BaseSelection, ElementNode, Klass, LexicalNode} from 'lexical';
+import type {ElementNode, Klass, LexicalNode} from 'lexical';
 import type {
   BlockContent,
   Nodes as MdastNode,
@@ -163,11 +163,6 @@ export interface MdastExportContext {
    * skip structural children the selection does not reach.
    */
   isIncluded(node: LexicalNode): boolean;
-  /**
-   * The selection this export is limited to, or `null` for a
-   * whole-document export (including one run during a selection export).
-   */
-  selection: BaseSelection | null;
 }
 
 /**

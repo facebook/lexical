@@ -56,7 +56,6 @@ export type MdastExportContext = {
   exportInline(source: ElementNode | ReadonlyArray<LexicalNode>): MdastNode[],
   exportBlocks(source: ElementNode | ReadonlyArray<LexicalNode>): MdastNode[],
   isIncluded(node: LexicalNode): boolean,
-  selection: BaseSelection | null,
 };
 
 export type MdastImportHandler = (

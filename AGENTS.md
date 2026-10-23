@@ -29,7 +29,10 @@ For E2E testing workflow:
 - `pnpm run start` - Start playground dev server + collab server (http://localhost:3000)
 - `pnpm run dev` - Start only the playground dev server (no collab)
 - `pnpm run start:website` - Start Docusaurus website (http://localhost:3001)
-- `pnpm run collab` - Start collab server on localhost:1234
+- `pnpm run collab` - Start collab server on localhost:1234 (collab v1/v2, `@lexical/yjs`)
+- `pnpm run collab:y` - Start the Yjs 14 collab server on localhost:1235 (collab Y, the experimental `@lexical/y`; open the playground with `?isCollab=true&useCollabY=true`)
+- `pnpm run start:y` - Start playground dev server + the Yjs 14 collab server
+- `pnpm run test-e2e-collab-y-chromium` - Run the collab Y E2E specs (`Collaboration.spec.mjs`, `CollabY*.spec.mjs`; needs `pnpm run start:y`)
 
 ### Code Quality
 - `pnpm run lint` - Run ESLint on all files

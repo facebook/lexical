@@ -118,7 +118,8 @@ info-string meta, setext vs ATX headings, hard-break style, soft line
 breaks, thematic break marker, `_` vs `*` emphasis, and link style
 (`[text](url)` vs `<autolink>` vs bare GFM literal). A table column's
 alignment is the element format of the column's cells, written from the
-header row's. Normalization is never forced (unless you add
+first row with an aligned cell (the header row, unless a row was inserted
+above it). Normalization is never forced (unless you add
 `MdastStrictTableExtension`, which keeps tables in the editor to what a
 GFM table holds); nodes created in the editor defer to the
 document-level serialization options, which can be configured by

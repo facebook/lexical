@@ -285,40 +285,39 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   const width = grid.reduce((max, cells) => Math.max(max, cells.length), 0);
   const children: TableRow[] = [];
   const decorators: LexicalNode[] = [];
-  // The lines of each cell in the rows a selection export reaches, from the
-  // first line it reaches to the last (an empty one by its block), and the
-  // block decorators it reaches in them.
+  // The lines of a cell, from the first line a selection export reaches to
+  // the last (an empty one by its block); the block decorators it reaches
+  // are collected.
   const written = new Map<TableCellNode, LexicalNode[][]>();
-  rows.forEach((row, rowIndex) => {
-    if (ctx.isIncluded(row)) {
-      grid[rowIndex].forEach(({cell}) => {
-        if (!written.has(cell)) {
-          const {lines, owners, decorators: blocks} = $cellLines(cell);
-          const reached = lines.map((line, i) =>
-            line.length > 0
-              ? line.some(ctx.isIncluded)
-              : ctx.isIncluded(owners[i]),
-          );
-          written.set(
-            cell,
-            lines.slice(reached.indexOf(true), reached.lastIndexOf(true) + 1),
-          );
-          decorators.push(...blocks.filter(ctx.isIncluded));
-        }
-      });
+  const $linesOf = (cell: TableCellNode) => {
+    let lines = written.get(cell);
+    if (!lines) {
+      const cellLines = $cellLines(cell);
+      const reached = cellLines.lines.map((line, i) =>
+        line.length > 0
+          ? line.some(ctx.isIncluded)
+          : ctx.isIncluded(cellLines.owners[i]),
+      );
+      lines = cellLines.lines.slice(
+        reached.indexOf(true),
+        reached.lastIndexOf(true) + 1,
+      );
+      written.set(cell, lines);
+      decorators.push(...cellLines.decorators.filter(ctx.isIncluded));
     }
-  });
-  const linesOf = (cell: TableCellNode) => written.get(cell) || [];
+    return lines;
+  };
   rows.forEach((row, rowIndex) => {
     // Structural iteration bypasses the walk's selection filter, so rows a
     // selection export does not reach are skipped here, as are rows where it
     // reaches only block decorators. Cells stay: dropping one would shift
     // the remaining cells into other columns.
+    if (!ctx.isIncluded(row)) {
+      return;
+    }
     const cells = grid[rowIndex];
-    if (
-      !ctx.isIncluded(row) ||
-      (cells.length > 0 && !cells.some(at => linesOf(at.cell).length > 0))
-    ) {
+    const lines = cells.map(({cell}) => $linesOf(cell));
+    if (cells.length > 0 && !lines.some(cellLines => cellLines.length > 0)) {
       return;
     }
     children.push({
@@ -328,7 +327,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
         if (at && at.origin) {
           // The lines of the cell, separated by breaks (which the cell
           // writer below writes as `<br>`).
-          linesOf(at.cell).forEach((line, i) => {
+          lines[column].forEach((line, i) => {
             if (i > 0) {
               cellChildren.push({type: 'break'});
             }
@@ -344,13 +343,12 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   if (children.length === 0 || width === 0) {
     return exported;
   }
-  // GFM aligns columns, by the alignment of the header row's cells.
+  // GFM aligns columns, by the alignment of the first row with an aligned
+  // cell (the header row, unless a row was inserted above it).
+  const align = $columnAlign(grid);
   return [
     {
-      align: Array.from(
-        {length: width},
-        (_, column) => $columnAlign(grid)[column] || null,
-      ),
+      align: Array.from({length: width}, (_, column) => align[column] || null),
       children,
       type: 'table',
     },
@@ -567,10 +565,15 @@ function $formatColumns(format: ElementFormatType): boolean {
   }
   // The cells the selection reaches, by table.
   const reached = new Map<string, Set<string>>();
-  for (const node of [selection.anchor.getNode(), ...selection.getNodes()]) {
-    const cell = $findCellNode(node);
+  const anchorCell = $findCellNode(selection.anchor.getNode());
+  const focusCell = $findCellNode(selection.focus.getNode());
+  for (const cell of [
+    anchorCell,
+    focusCell,
+    ...selection.getNodes().filter($isTableCellNode),
+  ]) {
     const table = cell && $findTableNode(cell);
-    if (table) {
+    if (cell && table) {
       const cells = reached.get(table.getKey()) || new Set();
       reached.set(table.getKey(), cells.add(cell.getKey()));
     }
@@ -590,23 +593,22 @@ function $formatColumns(format: ElementFormatType): boolean {
       }),
     );
     found = found || to >= 0;
-    grid.forEach(row =>
-      row.forEach(({cell}, column) => {
-        if (
-          aligns &&
-          column >= from &&
-          column <= to &&
-          cell.getFormatType() !== format
-        ) {
-          cell.setFormat(format);
-        }
-      }),
-    );
+    if (aligns) {
+      grid.forEach(row =>
+        row.forEach(({cell}, column) => {
+          if (
+            column >= from &&
+            column <= to &&
+            cell.getFormatType() !== format
+          ) {
+            cell.setFormat(format);
+          }
+        }),
+      );
+    }
   });
   // A selection that leaves a table, or goes from one table to another,
   // reaches blocks outside them, which are formatted as usual.
-  const anchorCell = $findCellNode(selection.anchor.getNode());
-  const focusCell = $findCellNode(selection.focus.getNode());
   return (
     found &&
     anchorCell !== null &&
@@ -634,8 +636,9 @@ function $markTableDirty(node: LexicalNode): void {
  * pipe is a pipe in raw HTML and autolinks too. Export writes any table as
  * GFM can: a cell's blocks and line breaks as lines separated by `<br>`, a
  * merged cell with empty cells where it spans, block decorators in a cell
- * after the table, and the alignment of the header row's cells as the
- * column alignment. Add
+ * after the table, and as the column alignment, the alignment of the cells
+ * of the first row with an aligned cell (the header row, unless a row was
+ * inserted above it). Add
  * {@link MdastStrictTableExtension} to keep tables in the editor to what GFM
  * holds.
  *

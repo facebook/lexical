@@ -631,7 +631,7 @@ function $formatColumns(format: ElementFormatType): boolean {
       ];
   const table = anchorCell && $findTableNode(anchorCell);
   const inOneTable =
-    table !== null && focusCell !== null && table === $findTableNode(focusCell);
+    table !== null && focusCell !== null && table.is($findTableNode(focusCell));
   const nodes = inOneTable ? [] : selection.getNodes();
   const reached = new Map<string, Set<string>>();
   for (const cell of inOneTable

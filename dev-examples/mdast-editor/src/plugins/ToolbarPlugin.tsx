@@ -129,11 +129,8 @@ function applyTableAction(editor: LexicalEditor, action: TableAction): void {
     const anchorCell = $findCellNode(selection.anchor.getNode());
     const focusCell = $findCellNode(selection.focus.getNode());
     // Rows and columns change only for a selection within one table.
-    if (
-      !anchorCell ||
-      !focusCell ||
-      $findTableNode(anchorCell) !== $findTableNode(focusCell)
-    ) {
+    const table = anchorCell && $findTableNode(anchorCell);
+    if (!table || !focusCell || !table.is($findTableNode(focusCell))) {
       return;
     }
     switch (action) {

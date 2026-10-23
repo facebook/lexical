@@ -443,6 +443,7 @@ function createNodeExporter(
     },
     exportInline: source => $exportInline(source),
     isIncluded: $isIncluded,
+    selection,
   };
 
   function $dispatch(
@@ -681,9 +682,14 @@ export function createMdastExport(compiled: CompiledMdast): {
   };
 
   // A whole-document export is one even when a handler runs it during a
-  // selection export.
+  // selection export, which needs no active editor otherwise.
+  let selectionExports = 0;
   const $asDocument = <T>(f: () => T): T =>
-    $withRenderContext([contextValue(RenderContextMarkdownSelection, null)])(f);
+    selectionExports > 0
+      ? $withRenderContext([
+          contextValue(RenderContextMarkdownSelection, null),
+        ])(f)
+      : f();
 
   const $exportToMdast = (node?: ElementNode): Root =>
     $asDocument(() => $toMdast(node || $getRoot(), documentExporter));
@@ -709,11 +715,19 @@ export function createMdastExport(compiled: CompiledMdast): {
     // serialization — runs under a render context carrying the selection,
     // so export rules and contributed to-markdown handlers can scope their
     // output to a selection export.
-    return $withRenderContext([
-      contextValue(RenderContextMarkdownSelection, selection),
-    ])(() =>
-      $serialize($toMdast(root, createNodeExporter(compiled, selection)), root),
-    );
+    selectionExports++;
+    try {
+      return $withRenderContext([
+        contextValue(RenderContextMarkdownSelection, selection),
+      ])(() =>
+        $serialize(
+          $toMdast(root, createNodeExporter(compiled, selection)),
+          root,
+        ),
+      );
+    } finally {
+      selectionExports--;
+    }
   };
 
   return {$exportSelectionToMarkdown, $exportToMarkdown, $exportToMdast};

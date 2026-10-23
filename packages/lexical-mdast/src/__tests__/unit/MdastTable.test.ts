@@ -12,6 +12,7 @@ import {
   $createHorizontalRuleNode,
   $isHorizontalRuleNode,
   buildEditorFromExtensions,
+  getExtensionDependencyFromEditor,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
 import {$createLinkNode, $isLinkNode} from '@lexical/link';
@@ -598,6 +599,16 @@ describe('MdastTableExtension', () => {
     editor.read(() => {
       expect($convertSelectionToMarkdownString()).toBe('x\n\ny');
     });
+  });
+
+  it('exports a table from an editor state read without an editor', () => {
+    using editor = createEditor(false);
+    const markdown = table('| a |', '| - |', '| 1 |');
+    editor.update(() => $convertFromMarkdownString(markdown), {discrete: true});
+    const {output} = getExtensionDependencyFromEditor(editor, MdastExtension);
+    expect(
+      editor.getEditorState().read(() => output.$convertToMarkdownString()),
+    ).toBe(markdown);
   });
 
   it('writes whole tables in a document export during a selection export', () => {

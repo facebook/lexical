@@ -14,7 +14,6 @@ import type {
 } from 'mdast-util-to-markdown';
 
 import {configExtension} from '@lexical/extension';
-import {$getRenderContextValue} from '@lexical/html';
 import {
   $createTableCellNode,
   $createTableNode,
@@ -57,7 +56,6 @@ import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
 import {gfmTable} from 'micromark-extension-gfm-table';
 
 import {$append, $isBlockLevelNode, inlineMarker} from './handlers';
-import {RenderContextMarkdownSelection} from './MdastExport';
 import {MdastExtension} from './MdastExtension';
 
 /** An inline HTML `<br>` tag, the line break a GFM cell can hold. */
@@ -303,7 +301,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   // A selection export that starts and ends in one cell of the table (or
   // selects nodes in it) writes the cell's nodes as they are, as copying in
   // a cell does; a table selection of cells writes a table.
-  const selection = $getRenderContextValue(RenderContextMarkdownSelection);
+  const {selection} = ctx;
   if (selection && !ctx.isIncluded(node)) {
     return [];
   }

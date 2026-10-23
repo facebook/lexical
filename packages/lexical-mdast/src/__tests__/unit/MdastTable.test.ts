@@ -329,6 +329,29 @@ describe('MdastTableExtension', () => {
     });
   });
 
+  it('skips a row where a selection reaches only a cell’s block decorator', () => {
+    using editor = createEditor(false);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(
+          table('| a | b |', '| - | - |', '| 1 | 2 |', '| 3 | 4 |'),
+        );
+        const [, [one], [three, four]] = $cells();
+        three.remove();
+        one.setRowSpan(2);
+        four.clear().append($createHorizontalRuleNode());
+        const selection = one.getAllTextNodes()[0].select(0, 0);
+        selection.focus.set(four.getKey(), 1, 'element');
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertSelectionToMarkdownString()).toBe(
+        [table('| 1 | 2 |', '| - | - |'), '***'].join('\n\n'),
+      );
+    });
+  });
+
   it('writes a column unaligned when the text in its header is', () => {
     expect(
       convert(
@@ -1008,6 +1031,16 @@ describe('MdastStrictTableExtension', () => {
         TableCellHeaderStates.NO_STATUS,
       ]);
     });
+  });
+
+  it('adds no line for a block of only block decorators in a cell', () => {
+    expect(
+      convert(table('| a | b |', '| - | - |', '| 1 | 2 |'), () => {
+        $cells()[1][0].append(
+          $createQuoteNode().append($createHorizontalRuleNode()),
+        );
+      }),
+    ).toBe([table('| a | b |', '| - | - |', '| 1 | 2 |'), '***'].join('\n\n'));
   });
 
   it('splits merged cells, keeping the alignment of their columns', () => {

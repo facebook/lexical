@@ -198,8 +198,10 @@ function $cellLines(cell: TableCellNode): {
     line = undefined;
     if ($isElementNode(node)) {
       const first = lines.length;
+      const firstDecorator = decorators.length;
       node.getChildren().forEach(child => $visit(child, node));
-      if (lines.length === first) {
+      // An empty block is an empty line; one of block decorators is none.
+      if (lines.length === first && decorators.length === firstDecorator) {
         lines.push([]);
         owners.push(node);
       }
@@ -336,10 +338,13 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     let lines = cellsLines.get(cell);
     if (!lines) {
       const cellLines = $cellLines(cell);
+      // The empty line a cell of only block decorators has is not reached
+      // through them.
       const reached = cellLines.lines.map((line, i) =>
         line.length > 0
           ? line.some(ctx.isIncluded)
-          : ctx.isIncluded(cellLines.owners[i]),
+          : ctx.isIncluded(cellLines.owners[i]) &&
+            !(cell.is(cellLines.owners[i]) && cellLines.decorators.length > 0),
       );
       lines = cellLines.lines.slice(
         reached.indexOf(true),

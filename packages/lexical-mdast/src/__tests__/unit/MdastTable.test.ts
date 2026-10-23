@@ -1043,6 +1043,42 @@ describe('MdastStrictTableExtension', () => {
     ).toBe([table('| a | b |', '| - | - |', '| 1 | 2 |'), '***'].join('\n\n'));
   });
 
+  it('keeps a table whose cells hold only block decorators', () => {
+    expect(
+      convert(
+        table('| a |', '| - |'),
+        () => {
+          $cells()[0][0].clear().append($createHorizontalRuleNode());
+        },
+        false,
+      ),
+    ).toBe([table('|   |', '| - |'), '***'].join('\n\n'));
+  });
+
+  it('moves a caret on a block of only block decorators in a cell', () => {
+    using editor = createEditor(true);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(table('| a |', '| - |', '| 1 |'));
+        const cell = $cells()[1][0];
+        const quote = $createQuoteNode().append($createHorizontalRuleNode());
+        cell
+          .clear()
+          .append(quote, $createParagraphNode().append($createTextNode('x')));
+        quote.select();
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(
+        [table('| a |', '| - |', '| x |'), '***'].join('\n\n'),
+      );
+      const selection = $getSelection();
+      assert($isRangeSelection(selection));
+      expect(selection.anchor.getNode().getTextContent()).toBe('x');
+    });
+  });
+
   it('splits merged cells, keeping the alignment of their columns', () => {
     expect(
       convert(table('| a | b |', '| :-: | - |', '| 1 | 2 |'), () => {

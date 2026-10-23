@@ -339,12 +339,16 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     if (!lines) {
       const cellLines = $cellLines(cell);
       // The empty line a cell of only block decorators has is not reached
-      // through them.
+      // through them by a selection.
       const reached = cellLines.lines.map((line, i) =>
         line.length > 0
           ? line.some(ctx.isIncluded)
           : ctx.isIncluded(cellLines.owners[i]) &&
-            !(cell.is(cellLines.owners[i]) && cellLines.decorators.length > 0),
+            !(
+              ctx.selection &&
+              cell.is(cellLines.owners[i]) &&
+              cellLines.decorators.length > 0
+            ),
       );
       lines = cellLines.lines.slice(
         reached.indexOf(true),
@@ -587,6 +591,10 @@ function $normalizeTable(table: TableNode): void {
         joined.append(...line);
         return [start, joined.getChildrenSize()];
       });
+      // Where the lines from the first of `span` start (the end, past the
+      // last line).
+      const startOf = ([first]: [number, number]) =>
+        first < ends.length ? ends[first][0] : ends[ends.length - 1][1];
       points.forEach((point, i) => {
         const target = targets[i];
         const targetSpan = target && blocks.get(target.getKey());
@@ -596,10 +604,11 @@ function $normalizeTable(table: TableNode): void {
           target && joined.is(target.getParent())
             ? target.getIndexWithinParent()
             : targetSpan
-              ? targetSpan[0] < ends.length
-                ? ends[targetSpan[0]][0]
-                : ends[ends.length - 1][1]
-              : ends[span[1]][1],
+              ? startOf(targetSpan)
+              : // The end of the block's lines, or where they would be.
+                span[1] < span[0]
+                ? startOf(span)
+                : ends[span[1]][1],
           'element',
         );
       });

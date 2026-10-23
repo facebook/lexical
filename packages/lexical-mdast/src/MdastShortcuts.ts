@@ -249,7 +249,11 @@ function $tryCheckbox(
 
   if ($isListItemNode(parent)) {
     const list = parent.getParent();
-    if (!$isListNode(list) || list.getListType() === 'number') {
+    if (
+      !$isListNode(list) ||
+      list.getListType() === 'number' ||
+      $isInTableCell(list)
+    ) {
       return false;
     }
     $stripLeading(parent, match[0].length);
@@ -279,9 +283,13 @@ function $tryCheckbox(
  * spares bundles that have no tables `@lexical/table`.)
  */
 function $isBlockContainer(node: LexicalNode | null): boolean {
+  return $isRootOrShadowRoot(node) && !$isInTableCell(node);
+}
+
+function $isInTableCell(node: LexicalNode): boolean {
   return (
-    $isRootOrShadowRoot(node) &&
-    !$findMatchingParent(node, parent => parent.getType() === 'tablecell')
+    $findMatchingParent(node, parent => parent.getType() === 'tablecell') !==
+    null
   );
 }
 

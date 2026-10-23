@@ -42,7 +42,6 @@ import {
   $createParagraphNode,
   $getNodeByKeyOrThrow,
   $getSelection,
-  $isDecoratorNode,
   $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
@@ -60,7 +59,7 @@ import {
 import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
 import {gfmTable} from 'micromark-extension-gfm-table';
 
-import {$append, inlineMarker} from './handlers';
+import {$append, $isBlockLevelNode, inlineMarker} from './handlers';
 import {MdastExtension} from './MdastExtension';
 
 /** An inline HTML `<br>` tag, the line break a GFM cell can hold. */
@@ -75,7 +74,7 @@ function gfmAlign(format: ElementFormatType): AlignType {
 
 /**
  * `nodes` with each node `replace` returns an array for swapped for it, and
- * the children of the others mapped in turn: a copy where anything changed,
+ * the children of every node mapped in turn: a copy where anything changed,
  * else `nodes` itself.
  */
 function mapPhrasing(
@@ -84,18 +83,30 @@ function mapPhrasing(
 ): PhrasingContent[] {
   let changed = false;
   const mapped = nodes.flatMap(node => {
-    let result = replace(node);
-    if (!result && 'children' in node) {
-      const children = mapPhrasing(node.children, replace);
-      result =
-        children === node.children
-          ? undefined
-          : [{...node, children} as MdastNode];
-    }
-    changed = changed || result !== undefined;
-    return result || [node];
+    const replaced = replace(node);
+    const result = (replaced || [node]).map(child => {
+      const children =
+        'children' in child && mapPhrasing(child.children, replace);
+      return children && children !== child.children
+        ? ({...child, children} as MdastNode)
+        : child;
+    });
+    changed = changed || replaced !== undefined || result[0] !== node;
+    return result;
   });
   return (changed ? mapped : nodes) as PhrasingContent[];
+}
+
+/**
+ * The alignment of each column: that of its cell in the first row with an
+ * aligned cell (the header row, unless a row was inserted above it).
+ */
+function $columnAlign(grid: GridCell[][]): AlignType[] {
+  const row =
+    grid.find(cells =>
+      cells.some(({cell}) => gfmAlign(cell.getFormatType())),
+    ) || [];
+  return row.map(({cell}) => gfmAlign(cell.getFormatType()));
 }
 
 /** A cell at a row and column of a table, which a merged cell spans. */
@@ -156,8 +167,16 @@ function $cellLines(cell: TableCellNode): {
   const decorators: LexicalNode[] = [];
   let line: LexicalNode[] | undefined;
   const $visit = (node: LexicalNode, owner: LexicalNode) => {
-    if ($isElementNode(node) && !node.isInline()) {
-      line = undefined;
+    if (!$isBlockLevelNode(node)) {
+      if (!line) {
+        lines.push((line = []));
+        owners.push(owner);
+      }
+      line.push(node);
+      return;
+    }
+    line = undefined;
+    if ($isElementNode(node)) {
       const first = lines.length;
       node.getChildren().forEach(child => $visit(child, node));
       if (lines.length === first) {
@@ -166,16 +185,10 @@ function $cellLines(cell: TableCellNode): {
       }
       blocks.set(node.getKey(), [first, lines.length - 1]);
       line = undefined;
-    } else if ($isDecoratorNode(node) && !node.isInline()) {
-      // It spans no line, before the line after it.
+    } else {
+      // A block decorator spans no line, before the line after it.
       blocks.set(node.getKey(), [lines.length, lines.length - 1]);
       decorators.push(node);
-    } else {
-      if (!line) {
-        lines.push((line = []));
-        owners.push(owner);
-      }
-      line.push(node);
     }
   };
   cell.getChildren().forEach(child => $visit(child, cell));
@@ -200,17 +213,7 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
         return [{type: 'break'}];
       }
       const value = unescapePipes(child.value);
-      return value === child.value
-        ? undefined
-        : [
-            {
-              ...child,
-              value,
-              ...('children' in child && {
-                children: mapPhrasing(child.children, replace),
-              }),
-            } as MdastNode,
-          ];
+      return value === child.value ? undefined : [{...child, value}];
     }
     // An autolink, `<…>` or literal, rather than `[text](url)`, which reads
     // its escapes as text does. Its text is its URL, as written.
@@ -344,10 +347,10 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   // GFM aligns columns, by the alignment of the header row's cells.
   return [
     {
-      align: Array.from({length: width}, (_, column) => {
-        const at = (grid[0] || [])[column];
-        return at ? gfmAlign(at.cell.getFormatType()) : null;
-      }),
+      align: Array.from(
+        {length: width},
+        (_, column) => $columnAlign(grid)[column] || null,
+      ),
       children,
       type: 'table',
     },
@@ -463,11 +466,7 @@ function $normalizeTable(table: TableNode): void {
   // The columns are aligned as the cells of the first row with an aligned
   // cell are (the header row, unless a row was inserted above it); other
   // formats, of the table or a block in a cell, are cleared.
-  const alignRow =
-    grid.find(cells =>
-      cells.some(({cell}) => gfmAlign(cell.getFormatType())),
-    ) || [];
-  const align = alignRow.map(({cell}) => gfmAlign(cell.getFormatType()));
+  const align = $columnAlign(grid);
   if (table.getFormatType() !== '') {
     table.setFormat('');
   }
@@ -580,14 +579,17 @@ function $formatColumns(format: ElementFormatType): boolean {
   let found = false;
   reached.forEach((cells, key) => {
     const {grid} = $tableGrid($getNodeByKeyOrThrow<TableNode>(key));
-    const columns = grid.flatMap(row =>
-      row.flatMap(({cell}, column) =>
-        cells.has(cell.getKey()) ? [column] : [],
-      ),
+    let from = Infinity;
+    let to = -1;
+    grid.forEach(row =>
+      row.forEach(({cell}, column) => {
+        if (cells.has(cell.getKey())) {
+          from = Math.min(from, column);
+          to = Math.max(to, column);
+        }
+      }),
     );
-    found = found || columns.length > 0;
-    const from = Math.min(...columns);
-    const to = Math.max(...columns);
+    found = found || to >= 0;
     grid.forEach(row =>
       row.forEach(({cell}, column) => {
         if (
@@ -601,11 +603,15 @@ function $formatColumns(format: ElementFormatType): boolean {
       }),
     );
   });
-  // Blocks outside a table the selection reaches are formatted as usual.
+  // A selection that leaves a table, or goes from one table to another,
+  // reaches blocks outside them, which are formatted as usual.
+  const anchorCell = $findCellNode(selection.anchor.getNode());
+  const focusCell = $findCellNode(selection.focus.getNode());
   return (
     found &&
-    $findCellNode(selection.anchor.getNode()) !== null &&
-    $findCellNode(selection.focus.getNode()) !== null
+    anchorCell !== null &&
+    focusCell !== null &&
+    $findTableNode(anchorCell) === $findTableNode(focusCell)
   );
 }
 

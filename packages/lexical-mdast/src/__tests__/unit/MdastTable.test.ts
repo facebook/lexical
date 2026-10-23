@@ -63,6 +63,7 @@ import {
   MdastShortcutsExtension,
   MdastStrictTableExtension,
   MdastTableExtension,
+  MdastTaskListExtension,
 } from '../../index';
 
 function createEditor(strict: boolean): LexicalEditorWithDispose {
@@ -267,6 +268,20 @@ describe('MdastTableExtension', () => {
         false,
       ),
     ).toBe(table('| a |', '| - |', '| x |', '', '***'));
+  });
+
+  it('writes the alignment of the first aligned row', () => {
+    expect(
+      convert(
+        table('| a | b |', '| :-: | -: |', '| 1 | 2 |'),
+        () => {
+          $insertTableRowAtNode($cells()[0][0], false);
+        },
+        false,
+      ),
+    ).toBe(
+      table('|     |    |', '| :-: | -: |', '|  a  |  b |', '|  1  |  2 |'),
+    );
   });
 
   it('writes a merged cell with empty cells where it spans', () => {
@@ -738,6 +753,43 @@ describe('MdastStrictTableExtension', () => {
     });
   });
 
+  it('aligns the columns of a selection from one table to another', () => {
+    using editor = createEditor(true);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(
+          [
+            table('| a |', '| - |', '| 1 |'),
+            'mid',
+            table('| b |', '| - |', '| 2 |'),
+          ].join('\n\n'),
+        );
+        const [first, , second] = $getRoot().getChildren();
+        const selection = $cells($assertNodeType(first, $isTableNode))[1][0]
+          .getAllTextNodes()[0]
+          .select(0, 0);
+        const [text] = $cells(
+          $assertNodeType(second, $isTableNode),
+        )[1][0].getAllTextNodes();
+        selection.focus.set(text.getKey(), 1, 'text');
+      },
+      {discrete: true},
+    );
+    // Left for the blocks between the tables.
+    expect(editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center')).toBe(
+      false,
+    );
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(
+        [
+          table('|  a  |', '| :-: |', '|  1  |'),
+          'mid',
+          table('|  b  |', '| :-: |', '|  2  |'),
+        ].join('\n\n'),
+      );
+    });
+  });
+
   it('ignores the alignment of a block in a cell', () => {
     expect(
       convert(table('| a | b |', '| :-: | - |', '| 1 | 2 |'), () => {
@@ -793,6 +845,48 @@ describe('MdastStrictTableExtension', () => {
       expect(
         $assertNodeType(cell.getFirstChild(), $isParagraphNode).getTextFormat(),
       ).toBe(IS_BOLD);
+    });
+  });
+
+  it('leaves a checkbox typed in a list item in a cell as text', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          MdastCommonMarkExtension,
+          MdastShortcutsExtension,
+          MdastTaskListExtension,
+          MdastTableExtension,
+        ],
+        name: '[root]',
+      }),
+    );
+    editor.update(
+      () => {
+        $convertFromMarkdownString(table('| a |', '| - |', '| x |'));
+        const [text] = $cells()[1][0].getAllTextNodes();
+        text
+          .getParentOrThrow()
+          .replace(
+            $createListNode('bullet').append(
+              $createListItemNode().append(text),
+            ),
+          );
+        text.select(0, 0);
+      },
+      {discrete: true},
+    );
+    for (const chunk of ['[', ' ', ']', ' ']) {
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          assert($isRangeSelection(selection));
+          selection.insertText(chunk);
+        },
+        {discrete: true},
+      );
+    }
+    editor.read(() => {
+      expect($cells()[1][0].getTextContent()).toBe('[ ] x');
     });
   });
 

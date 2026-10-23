@@ -599,6 +599,20 @@ describe('MdastTableExtension', () => {
     });
   });
 
+  it('writes a one-cell table a selection holds whole', () => {
+    using editor = createEditor(false);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(table('| x |', '| - |'));
+        $getRoot().select(0, 1);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertSelectionToMarkdownString()).toBe(table('| x |', '| - |'));
+    });
+  });
+
   it('writes the nodes a selection in a cell reaches in order', () => {
     using editor = createEditor(false);
     editor.update(

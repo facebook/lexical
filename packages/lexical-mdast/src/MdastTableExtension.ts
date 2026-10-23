@@ -241,13 +241,11 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
     }
     // An autolink, `<…>` or literal, rather than `[text](url)`, which reads
     // its escapes as text does. Its text is its URL, as written.
-    const marker = child.type === 'link' && inlineMarker(ctx, child);
-    if (
+    const marker =
       child.type === 'link' &&
-      marker &&
-      marker !== '[' &&
-      child.url.includes('\\|')
-    ) {
+      child.url.includes('\\|') &&
+      inlineMarker(ctx, child);
+    if (child.type === 'link' && marker && marker !== '[') {
       return [
         {
           ...child,
@@ -302,6 +300,28 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   if (!$isTableNode(node)) {
     return null;
   }
+  // A selection export that starts and ends in one cell of the table (or
+  // selects nodes in it) writes the cell's nodes as they are, as copying in
+  // a cell does.
+  const selection = $getRenderContextValue(RenderContextMarkdownSelection);
+  const ends = $isNodeSelection(selection)
+    ? selection.getNodes()
+    : $isRangeSelection(selection) || $isTableSelection(selection)
+      ? [selection.anchor.getNode(), selection.focus.getNode()]
+      : [];
+  const endCell =
+    ends.length > 0
+      ? $findMatchingParent(
+          ends[0],
+          cell => $isTableCellNode(cell) && node.is($findTableNode(cell)),
+        )
+      : null;
+  if (
+    $isTableCellNode(endCell) &&
+    ends.every(end => endCell.is(end) || endCell.isParentOf(end))
+  ) {
+    return ctx.exportChildren(endCell);
+  }
   // A merged cell is written where it starts, with empty cells where it
   // spans, and every row as wide as the widest. Block decorators, which a
   // cell can't hold, are written after the table.
@@ -330,7 +350,6 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     return lines;
   };
   const written: {cells: GridCell[]; lines: LexicalNode[][][]}[] = [];
-  const reachedCells = new Set<TableCellNode>();
   let from = Infinity;
   let to = -1;
   rows.forEach((row, rowIndex) => {
@@ -354,26 +373,12 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     }
     lines.forEach((cellLines, column) => {
       if (cellLines.length > 0) {
-        reachedCells.add(cells[column].cell);
         from = Math.min(from, column);
         to = Math.max(to, column);
       }
     });
     written.push({cells, lines});
   });
-  // A selection export of nodes in one cell writes them as they are, as
-  // copying in a cell does.
-  const selection = $getRenderContextValue(RenderContextMarkdownSelection);
-  const [onlyCell] = reachedCells;
-  if (
-    onlyCell &&
-    selection &&
-    selection
-      .getNodes()
-      .every(selected => onlyCell.is(selected) || onlyCell.isParentOf(selected))
-  ) {
-    return ctx.exportChildren(onlyCell);
-  }
   const exported = ctx.exportChildren(decorators);
   if (to < 0) {
     return exported;
@@ -518,6 +523,10 @@ function $normalizeTable(table: TableNode): void {
     table.setFormat('');
   }
   let last: LexicalNode = table;
+  const selection = $getSelection();
+  const selectionPoints = $isRangeSelection(selection)
+    ? selection.getStartEndPoints()
+    : [];
   grid.forEach((cells, rowIndex) =>
     cells.forEach(({cell}, column) => {
       const headerState =
@@ -545,16 +554,11 @@ function $normalizeTable(table: TableNode): void {
       // Each line of the cell, joined by line breaks. A selection point on
       // a block being removed moves to the same place in its lines.
       const {blocks, decorators, lines} = $cellLines(cell);
-      const selection = $getSelection();
-      const points = $isRangeSelection(selection)
-        ? selection
-            .getStartEndPoints()
-            .filter(
-              point =>
-                point.type === 'element' &&
-                (point.key === cell.getKey() || blocks.has(point.key)),
-            )
-        : [];
+      const points = selectionPoints.filter(
+        point =>
+          point.type === 'element' &&
+          (point.key === cell.getKey() || blocks.has(point.key)),
+      );
       const targets = points.map(point => {
         const element = point.getNode();
         return $isElementNode(element)

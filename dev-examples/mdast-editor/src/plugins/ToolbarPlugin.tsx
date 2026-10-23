@@ -15,6 +15,19 @@ import {
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
 import {
+  $deleteTableColumnAtSelection,
+  $deleteTableRowAtSelection,
+  $findCellNode,
+  $getTableColumnIndexFromTableCellNode,
+  $getTableNodeFromLexicalNodeOrThrow,
+  $insertTableColumnAtSelection,
+  $insertTableRowAtSelection,
+  $isTableCellNode,
+  $isTableRowNode,
+  INSERT_TABLE_COMMAND,
+} from '@lexical/table';
+import {
+  $getSelection,
   FORMAT_TEXT_COMMAND,
   type LexicalEditor,
   REDO_COMMAND,
@@ -50,6 +63,7 @@ const INSERT_TYPES = [
   {label: 'Collapsible section', value: 'details'},
   {label: 'Alert', value: 'alert'},
   {label: 'Footnote', value: 'footnote'},
+  {label: 'Table', value: 'table'},
 ] as const;
 
 type InsertType = (typeof INSERT_TYPES)[number]['value'];
@@ -68,7 +82,67 @@ function applyInsert(editor: LexicalEditor, type: InsertType): void {
     case 'footnote':
       editor.dispatchCommand(INSERT_FOOTNOTE_COMMAND);
       return;
+    case 'table':
+      editor.dispatchCommand(INSERT_TABLE_COMMAND, {columns: '2', rows: '2'});
+      return;
   }
+}
+
+const TABLE_ACTIONS = [
+  {label: 'Insert row above', value: 'rowAbove'},
+  {label: 'Insert row below', value: 'rowBelow'},
+  {label: 'Insert column left', value: 'columnLeft'},
+  {label: 'Insert column right', value: 'columnRight'},
+  {label: 'Delete row', value: 'deleteRow'},
+  {label: 'Delete column', value: 'deleteColumn'},
+  {label: 'Align column left', value: 'left'},
+  {label: 'Align column center', value: 'center'},
+  {label: 'Align column right', value: 'right'},
+  {label: 'Clear column alignment', value: ''},
+] as const;
+
+type TableAction = (typeof TABLE_ACTIONS)[number]['value'];
+
+/**
+ * Edits the table the selection is in. A column is aligned by its header
+ * cell, which MdastTableExtension gives the rest of the column; it also
+ * keeps the first row the header row whatever rows are inserted or
+ * deleted.
+ */
+function applyTableAction(editor: LexicalEditor, action: TableAction): void {
+  editor.update(() => {
+    const selection = $getSelection();
+    const cell = selection && $findCellNode(selection.getNodes()[0]);
+    if (!cell) {
+      return;
+    }
+    switch (action) {
+      case 'rowAbove':
+      case 'rowBelow':
+        $insertTableRowAtSelection(action === 'rowBelow');
+        return;
+      case 'columnLeft':
+      case 'columnRight':
+        $insertTableColumnAtSelection(action === 'columnRight');
+        return;
+      case 'deleteRow':
+        $deleteTableRowAtSelection();
+        return;
+      case 'deleteColumn':
+        $deleteTableColumnAtSelection();
+        return;
+      default: {
+        const header =
+          $getTableNodeFromLexicalNodeOrThrow(cell).getFirstChild();
+        const headerCell = $isTableRowNode(header)
+          ? header.getChildAtIndex($getTableColumnIndexFromTableCellNode(cell))
+          : null;
+        if ($isTableCellNode(headerCell)) {
+          headerCell.setFormat(action);
+        }
+      }
+    }
+  });
 }
 
 function applyBlockType(editor: LexicalEditor, type: BlockType): void {
@@ -199,6 +273,21 @@ export function ToolbarPlugin() {
         </option>
         {INSERT_TYPES.map(({label, value}) => (
           <option key={value} value={value}>
+            {label}
+          </option>
+        ))}
+      </select>
+      <select
+        className={selectClass}
+        value="-"
+        disabled={!isEditable}
+        onChange={e => applyTableAction(editor, e.target.value as TableAction)}
+        aria-label="Table">
+        <option value="-" hidden={true}>
+          Table
+        </option>
+        {TABLE_ACTIONS.map(({label, value}) => (
+          <option key={label} value={value}>
             {label}
           </option>
         ))}

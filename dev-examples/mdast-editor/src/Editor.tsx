@@ -70,6 +70,17 @@ Type \`[^another]\` to mint one.
 - [x] Syntax preserved via NodeState
 - [ ] Ship it
 
+## Tables
+
+GFM tables keep to what Markdown can write: the first row is the header,
+Enter in a cell adds a \`<br>\` line break, and columns are aligned rather
+than cells (Table > Align column):
+
+| Syntax    | Description           | Width |
+| --------- | --------------------- | ----: |
+| Header    | Title<br>on two lines |     6 |
+| Paragraph | \`a \\| b\` and **bold** |    10 |
+
 ## Alerts
 
 GitHub-style alerts are plain blockquotes with a \`[!TYPE]\` marker: the
@@ -132,6 +143,12 @@ const theme = {
   paragraph: 'my-1',
   quote:
     'my-2 border-l-4 border-solid border-zinc-300 pl-3 text-zinc-600 dark:border-zinc-600 dark:text-zinc-300',
+  table: 'my-2 border-collapse',
+  tableCell:
+    'min-w-16 border border-solid border-zinc-300 px-2 py-1 align-top dark:border-zinc-600',
+  tableCellHeader: 'bg-zinc-100 font-semibold dark:bg-zinc-800',
+  tableCellSelected: 'bg-blue-100 dark:bg-blue-900/40',
+  tableScrollableWrapper: 'overflow-x-auto',
   text: {
     bold: 'font-bold',
     code: 'rounded bg-zinc-200/70 px-1 py-0.5 font-mono text-[0.9em] dark:bg-zinc-700/60',

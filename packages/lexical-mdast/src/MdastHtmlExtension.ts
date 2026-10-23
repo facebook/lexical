@@ -953,11 +953,19 @@ const htmlBlockToMarkdown: ToMarkdownExtension = {
     htmlBlock: ((node: HtmlBlock, _parent, state, info) => {
       const tracker = state.createTracker(info);
       const segments = node.value.split(PLACEHOLDER_SPLIT_RE);
+      // A GFM table cell holds one line, where GFM reads a pipe before
+      // anything else, so the raw HTML in one has its pipes escaped and its
+      // line endings written as spaces.
+      const inCell = state.stack.includes('tableCell');
       let value = '';
       for (let i = 0; i < segments.length; i++) {
         if (i % 2 === 0) {
           if (segments[i] !== '') {
-            value += tracker.move(segments[i]);
+            value += tracker.move(
+              inCell
+                ? segments[i].replace(/\|/g, '\\|').replace(/\r?\n|\r/g, ' ')
+                : segments[i],
+            );
           }
           continue;
         }

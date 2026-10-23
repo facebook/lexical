@@ -149,6 +149,11 @@ const syntaxToMarkdown = (
 ): ToMarkdownExtension => ({
   handlers: {
     break(node: Break, parent, state, info) {
+      // A GFM table cell holds one line, so a line break in it is written
+      // as the `<br>` tag, which GFM renderers read as one.
+      if (state.stack.includes('tableCell')) {
+        return '<br>';
+      }
       // Delegate first: the default handler substitutes a space when a real
       // EOL is unsafe in the current construct (headings, table cells). Only
       // when it chose the hard-break form does the preserved marker apply:

@@ -14,7 +14,7 @@ import {
   buildEditorFromExtensions,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
-import {$createLinkNode} from '@lexical/link';
+import {$createLinkNode, $isLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {$createHeadingNode} from '@lexical/rich-text';
 import {
@@ -37,6 +37,7 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   defineExtension,
+  type ElementNode,
   INSERT_PARAGRAPH_COMMAND,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
@@ -44,10 +45,14 @@ import {assert, describe, expect, it} from 'vitest';
 
 import {
   $convertFromMarkdownString,
+  $convertFromMdast,
   $convertSelectionToMarkdownString,
   $convertToMarkdownString,
+  $convertToMdast,
+  MdastAutolinkLiteralExtension,
   MdastCommonMarkExtension,
   MdastExtension,
+  MdastShortcutsExtension,
   MdastStrictTableExtension,
   MdastTableExtension,
 } from '../../index';
@@ -253,6 +258,64 @@ describe('MdastTableExtension', () => {
     ).toBe(table('| a |', '| - |', '| 1 |'));
   });
 
+  it('reads escaped pipes in autolink literals', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          MdastCommonMarkExtension,
+          MdastAutolinkLiteralExtension,
+          MdastTableExtension,
+        ],
+        name: '[root]',
+      }),
+    );
+    editor.update(
+      () =>
+        $convertFromMarkdownString(
+          table('| a |', '| - |', '| http://a.dev/b\\|c |'),
+        ),
+      {discrete: true},
+    );
+    editor.read(() => {
+      const link = $assertNodeType(
+        $cells()[1][0].getFirstChildOrThrow<ElementNode>().getFirstChild(),
+        $isLinkNode,
+      );
+      expect(link.getURL()).toBe('http://a.dev/b|c');
+      expect(link.getTextContent()).toBe('http://a.dev/b|c');
+    });
+  });
+
+  it('imports a table with no rows as nothing', () => {
+    using editor = createEditor(false);
+    editor.update(
+      () =>
+        $convertFromMdast({
+          children: [{children: [], type: 'table'}],
+          type: 'root',
+        }),
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($getRoot().getChildren().some($isTableNode)).toBe(false);
+    });
+  });
+
+  it('keeps a line break in a cell a break in mdast', () => {
+    using editor = createEditor(false);
+    editor.update(
+      () => $convertFromMarkdownString(table('| a |', '| - |', '| x<br>y |')),
+      {discrete: true},
+    );
+    editor.read(() => {
+      const [tableNode] = $convertToMdast().children;
+      assert(tableNode.type === 'table');
+      expect(
+        tableNode.children[1].children[0].children.map(child => child.type),
+      ).toEqual(['text', 'break', 'text']);
+    });
+  });
+
   it('exports only the rows a selection reaches', () => {
     using editor = createEditor(false);
     editor.update(
@@ -367,11 +430,86 @@ describe('MdastStrictTableExtension', () => {
     ).toBe(table('| a |  b  |', '| - | :-: |', '| 1 |  2  |'));
   });
 
-  it('clears an alignment GFM has no form for', () => {
+  it('ignores an alignment GFM has no form for', () => {
     expect(
-      convert(table('| a |', '| :-: |', '| 1 |'), () => {
-        $cells()[0][0].setFormat('justify');
+      convert(table('| a | b |', '| :-: | - |', '| 1 | 2 |'), () => {
+        const [, [one, two]] = $cells();
+        $assertNodeType(one.getFirstChild(), $isElementNode).setFormat(
+          'justify',
+        );
+        $assertNodeType(two.getFirstChild(), $isElementNode).setFormat('start');
       }),
-    ).toBe(table('| a |', '| - |', '| 1 |'));
+    ).toBe(table('|  a  | b |', '| :-: | - |', '|  1  | 2 |'));
+  });
+
+  it('keeps column alignment when a row is inserted above the header', () => {
+    expect(
+      convert(table('| a |', '| -: |', '| 1 |'), () => {
+        $insertTableRowAtNode($cells()[0][0], false);
+      }),
+    ).toBe(table('|    |', '| -: |', '|  a |', '|  1 |'));
+  });
+
+  it('aligns every column when the whole table is aligned', () => {
+    using editor = createEditor(true);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(
+          table('| a | b |', '| - | - |', '| 1 | 2 |'),
+        );
+        $table().setFormat('right');
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($table().getFormatType()).toBe('');
+      expect($convertToMarkdownString()).toBe(
+        table('|  a |  b |', '| -: | -: |', '|  1 |  2 |'),
+      );
+    });
+  });
+
+  it('cuts a row span past the last row', () => {
+    expect(
+      convert(table('| a | b |', '| - | - |', '| 1 | 2 |'), () => {
+        $cells()[1][0].setRowSpan(3);
+      }),
+    ).toBe(table('| a | b |', '| - | - |', '| 1 | 2 |'));
+  });
+
+  it('leaves a block marker typed in a cell as text', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          MdastCommonMarkExtension,
+          MdastShortcutsExtension,
+          MdastStrictTableExtension,
+        ],
+        name: '[root]',
+        theme: {tableScrollableWrapper: 'table-wrapper'},
+      }),
+    );
+    editor.update(
+      () => {
+        $convertFromMarkdownString(table('| a |', '| - |', '| x |'));
+        $cells()[1][0].getAllTextNodes()[0].select(0, 0);
+      },
+      {discrete: true},
+    );
+    for (const chunk of ['#', ' ']) {
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          assert($isRangeSelection(selection));
+          selection.insertText(chunk);
+        },
+        {discrete: true},
+      );
+    }
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(
+        table('| a   |', '| --- |', '| # x |'),
+      );
+    });
   });
 });

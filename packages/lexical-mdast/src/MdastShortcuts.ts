@@ -23,6 +23,7 @@ import {
   $isQuoteNode,
   type QuoteNode,
 } from '@lexical/rich-text';
+import {$isTableCellNode} from '@lexical/table';
 import {
   $addUpdateTag,
   $getNodeByKey,
@@ -275,9 +276,12 @@ function $isShortcutParagraph(
   node: LexicalNode,
   anchorNode: TextNode,
 ): boolean {
+  const parent = node.getParent();
+  // A GFM table cell holds no block, so a marker typed in one stays text.
   return (
     $isParagraphNode(node) &&
-    $isRootOrShadowRoot(node.getParent()) &&
+    $isRootOrShadowRoot(parent) &&
+    !$isTableCellNode(parent) &&
     node.getFirstChild() === anchorNode
   );
 }

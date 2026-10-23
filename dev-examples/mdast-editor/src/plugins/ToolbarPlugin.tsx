@@ -106,10 +106,8 @@ const TABLE_ACTIONS = [
 type TableAction = (typeof TABLE_ACTIONS)[number]['value'];
 
 /**
- * Edits the table the selection is in. A column is aligned by its header
- * cell, which MdastStrictTableExtension gives the rest of the column; it
- * also keeps the first row the header row whatever rows are inserted or
- * deleted.
+ * Edits the table the selection is in. MdastStrictTableExtension keeps the
+ * first row the header row whatever rows are inserted or deleted.
  */
 function applyTableAction(editor: LexicalEditor, action: TableAction): void {
   editor.update(() => {
@@ -136,13 +134,20 @@ function applyTableAction(editor: LexicalEditor, action: TableAction): void {
         $deleteTableColumnAtSelection();
         return;
       default: {
-        const header =
-          $getTableNodeFromLexicalNodeOrThrow(cell).getFirstChild();
-        const headerCell = $isTableRowNode(header)
-          ? header.getChildAtIndex($getTableColumnIndexFromTableCellNode(cell))
-          : null;
-        if ($isTableCellNode(headerCell)) {
-          headerCell.setFormat(action);
+        // Every cell of each selected column, as GFM aligns columns.
+        const columns = new Set(
+          ($isTableSelection(selection) ? selection.getNodes() : [cell])
+            .filter($isTableCellNode)
+            .map($getTableColumnIndexFromTableCellNode),
+        );
+        for (const row of $getTableNodeFromLexicalNodeOrThrow(cell)
+          .getChildren()
+          .filter($isTableRowNode)) {
+          row.getChildren().forEach((rowCell, column) => {
+            if ($isTableCellNode(rowCell) && columns.has(column)) {
+              rowCell.setFormat(action);
+            }
+          });
         }
       }
     }

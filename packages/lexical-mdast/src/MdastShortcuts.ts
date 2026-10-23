@@ -273,12 +273,20 @@ function $tryCheckbox(
 
 /**
  * Whether a block typed in `node` becomes the block its marker starts. A
- * GFM table cell holds no block, so a marker typed in one stays text. (The
- * cell is known by its type, which spares bundles that have no tables
- * `@lexical/table`.)
+ * GFM table cell holds no block, so a marker typed in one, or in a
+ * container in one, stays text. (The cell is known by its type, which
+ * spares bundles that have no tables `@lexical/table`.)
  */
 function $isBlockContainer(node: LexicalNode | null): boolean {
-  return $isRootOrShadowRoot(node) && node.getType() !== 'tablecell';
+  if (!$isRootOrShadowRoot(node)) {
+    return false;
+  }
+  for (let n: LexicalNode | null = node; n; n = n.getParent()) {
+    if (n.getType() === 'tablecell') {
+      return false;
+    }
+  }
+  return true;
 }
 
 function $isShortcutParagraph(

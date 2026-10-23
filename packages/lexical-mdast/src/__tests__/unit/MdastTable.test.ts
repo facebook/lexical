@@ -660,43 +660,55 @@ describe('MdastStrictTableExtension', () => {
   it.each([
     ['paragraph', true],
     ['quote', false],
-  ])('leaves a block marker typed in a %s in a cell as text', (_, strict) => {
-    using editor = buildEditorFromExtensions(
-      defineExtension({
-        dependencies: [
-          MdastCommonMarkExtension,
-          MdastShortcutsExtension,
-          strict ? MdastStrictTableExtension : MdastTableExtension,
-        ],
-        name: '[root]',
-        theme: {tableScrollableWrapper: 'table-wrapper'},
-      }),
-    );
-    editor.update(
-      () => {
-        $convertFromMarkdownString(table('| a |', '| - |', '| x |'));
-        const [text] = $cells()[1][0].getAllTextNodes();
-        if (!strict) {
-          text.getParentOrThrow().replace($createQuoteNode().append(text));
-        }
-        text.select(0, 0);
-      },
-      {discrete: true},
-    );
-    for (const chunk of ['#', ' ']) {
+    ['paragraph in a container', false],
+  ])(
+    'leaves a block marker typed in a %s in a cell as text',
+    (kind, strict) => {
+      using editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            MdastCommonMarkExtension,
+            MdastShortcutsExtension,
+            strict ? MdastStrictTableExtension : MdastTableExtension,
+          ],
+          name: '[root]',
+          theme: {tableScrollableWrapper: 'table-wrapper'},
+        }),
+      );
       editor.update(
         () => {
-          const selection = $getSelection();
-          assert($isRangeSelection(selection));
-          selection.insertText(chunk);
+          $convertFromMarkdownString(table('| a |', '| - |', '| x |'));
+          const [text] = $cells()[1][0].getAllTextNodes();
+          if (kind === 'quote') {
+            text.getParentOrThrow().replace($createQuoteNode().append(text));
+          } else if (!strict) {
+            text
+              .getParentOrThrow()
+              .replace(
+                $createQuoteNode()
+                  .setIsShadowRoot(true)
+                  .append($createParagraphNode().append(text)),
+              );
+          }
+          text.select(0, 0);
         },
         {discrete: true},
       );
-    }
-    editor.read(() => {
-      expect($convertToMarkdownString()).toBe(
-        table('| a   |', '| --- |', '| # x |'),
-      );
-    });
-  });
+      for (const chunk of ['#', ' ']) {
+        editor.update(
+          () => {
+            const selection = $getSelection();
+            assert($isRangeSelection(selection));
+            selection.insertText(chunk);
+          },
+          {discrete: true},
+        );
+      }
+      editor.read(() => {
+        expect($convertToMarkdownString()).toBe(
+          table('| a   |', '| --- |', '| # x |'),
+        );
+      });
+    },
+  );
 });

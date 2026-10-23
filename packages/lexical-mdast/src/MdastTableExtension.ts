@@ -109,7 +109,10 @@ interface GridCell {
  * are skipped. Unlike `$computeTableMap`, this reads any table, whatever
  * transforms the editor has.
  */
-function $tableGrid(table: TableNode): [TableRowNode[], GridCell[][]] {
+function $tableGrid(table: TableNode): {
+  grid: GridCell[][];
+  rows: TableRowNode[];
+} {
   const rows = table.getChildren().filter($isTableRowNode);
   const grid: GridCell[][] = rows.map(() => []);
   rows.forEach((row, rowIndex) => {
@@ -130,7 +133,7 @@ function $tableGrid(table: TableNode): [TableRowNode[], GridCell[][]] {
       }
     }
   });
-  return [rows, grid];
+  return {grid, rows};
 }
 
 /**
@@ -180,13 +183,19 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
   const unescapePipes = (value: string) => value.replace(/\\\|/g, '|');
   const replace = (child: MdastNode): MdastNode[] | undefined => {
     if (child.type === 'html' || child.type === 'htmlInline') {
-      return BR_RE.test(child.value) &&
+      if (
+        BR_RE.test(child.value) &&
         !('children' in child && child.children.length > 0)
-        ? [{type: 'break'}]
+      ) {
+        return [{type: 'break'}];
+      }
+      const value = unescapePipes(child.value);
+      return value === child.value
+        ? undefined
         : [
             {
               ...child,
-              value: unescapePipes(child.value),
+              value,
               ...('children' in child && {
                 children: mapPhrasing(child.children, replace),
               }),
@@ -194,9 +203,14 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
           ];
     }
     // An autolink, `<…>` or literal, rather than `[text](url)`, which reads
-    // its escapes as text does.
+    // its escapes as text does. Its text is its URL, as written.
     const marker = child.type === 'link' && inlineMarker(ctx, child);
-    if (child.type === 'link' && marker && marker !== '[') {
+    if (
+      child.type === 'link' &&
+      marker &&
+      marker !== '[' &&
+      child.url.includes('\\|')
+    ) {
       return [
         {
           ...child,
@@ -254,7 +268,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   // A merged cell is written where it starts, with empty cells where it
   // spans, and every row as wide as the widest. Block decorators, which a
   // cell can't hold, are written after the table.
-  const [rows, grid] = $tableGrid(node);
+  const {grid, rows} = $tableGrid(node);
   const width = grid.reduce((max, cells) => Math.max(max, cells.length), 0);
   const children: TableRow[] = [];
   const decorators: LexicalNode[] = [];
@@ -375,7 +389,7 @@ function $normalizeTable(table: TableNode): void {
   // row span past the last row (or of 0, the rest of the rows) is cut to it
   // first, as the split can't fill it, and a column span of 0 is 1 (as the
   // grid reads them).
-  let [, grid] = $tableGrid(table);
+  let {grid} = $tableGrid(table);
   let split = false;
   grid.forEach((cells, rowIndex) =>
     cells.forEach(({cell, origin}) => {
@@ -395,7 +409,7 @@ function $normalizeTable(table: TableNode): void {
     }),
   );
   if (split) {
-    [, grid] = $tableGrid(table);
+    ({grid} = $tableGrid(table));
   }
   // A column's alignment is the first its cells have (its header cell's,
   // unless a row was inserted above it); other formats, of the table or a
@@ -508,7 +522,7 @@ function $formatColumns(format: ElementFormatType): boolean {
   if (!table || !focus || !table.is($findTableNode(focus))) {
     return false;
   }
-  const [, grid] = $tableGrid(table);
+  const {grid} = $tableGrid(table);
   const columns = grid.flatMap(cells =>
     cells.flatMap(({cell}, column) =>
       cell.is(anchor) || cell.is(focus) ? [column] : [],
@@ -530,9 +544,8 @@ function $formatColumns(format: ElementFormatType): boolean {
 
 /** Normalizes the table a changed cell is in. */
 function $markTableDirty(node: LexicalNode): void {
-  const row = node.getParent();
-  const table = row && row.getParent();
-  if ($isTableNode(table)) {
+  const table = $findTableNode(node);
+  if (table) {
     table.markDirty();
   }
 }
@@ -610,9 +623,8 @@ export const MdastStrictTableExtension = defineExtension({
       editor.registerNodeTransform(TableNode, $normalizeTable),
       editor.registerNodeTransform(TableCellNode, $markTableDirty),
       editor.registerNodeTransform(ParagraphNode, node => {
-        const cell = node.getParent();
-        if ($isTableCellNode(cell)) {
-          $markTableDirty(cell);
+        if ($isTableCellNode(node.getParent())) {
+          $markTableDirty(node);
         }
       }),
       editor.registerCommand(

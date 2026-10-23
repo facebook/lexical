@@ -54,6 +54,7 @@ import {
   TextNode,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
+import {defaultHandlers} from 'mdast-util-to-markdown';
 import {assert, describe, expect, it} from 'vitest';
 
 import {
@@ -597,6 +598,43 @@ describe('MdastTableExtension', () => {
     editor.read(() => {
       expect($convertSelectionToMarkdownString()).toBe('x\n\ny');
     });
+  });
+
+  it('writes whole tables in a document export during a selection export', () => {
+    let whole: string[] = [];
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          MdastCommonMarkExtension,
+          configExtension(MdastExtension, {
+            toMarkdownExtensions: [
+              {
+                handlers: {
+                  root(node, parent, state, info) {
+                    whole = $convertToMdast().children.map(({type}) => type);
+                    return defaultHandlers.root(node, parent, state, info);
+                  },
+                },
+              },
+            ],
+          }),
+          MdastTableExtension,
+        ],
+        name: '[root]',
+      }),
+    );
+    const markdown = table('| a | b |', '| - | - |', '| x | y |');
+    editor.update(
+      () => {
+        $convertFromMarkdownString(markdown);
+        $cells()[1][0].getAllTextNodes()[0].select(0, 1);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertSelectionToMarkdownString()).toBe('x');
+    });
+    expect(whole).toEqual(['table']);
   });
 
   it('writes a one-cell table a selection holds whole', () => {

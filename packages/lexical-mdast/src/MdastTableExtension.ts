@@ -301,8 +301,8 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     return null;
   }
   // A selection export that starts and ends in one cell of the table (or
-  // selects nodes in it) writes the cell's nodes as they are, as copying in
-  // a cell does.
+  // selects nodes in it), and reaches no other, writes the cell's nodes as
+  // they are, as copying in a cell does.
   const selection = $getRenderContextValue(RenderContextMarkdownSelection);
   const ends = $isNodeSelection(selection)
     ? selection.getNodes()
@@ -316,12 +316,9 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
           cell => $isTableCellNode(cell) && node.is($findTableNode(cell)),
         )
       : null;
-  if (
+  const inEndCell =
     $isTableCellNode(endCell) &&
-    ends.every(end => endCell.is(end) || endCell.isParentOf(end))
-  ) {
-    return ctx.exportChildren(endCell);
-  }
+    ends.every(end => endCell.is(end) || endCell.isParentOf(end));
   // A merged cell is written where it starts, with empty cells where it
   // spans, and every row as wide as the widest. Block decorators, which a
   // cell can't hold, are written after the table.
@@ -379,6 +376,16 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     });
     written.push({cells, lines});
   });
+  if (
+    inEndCell &&
+    written.every(({cells, lines}) =>
+      cells.every(
+        ({cell}, column) => lines[column].length === 0 || endCell.is(cell),
+      ),
+    )
+  ) {
+    return ctx.exportBlocks(endCell);
+  }
   const exported = ctx.exportChildren(decorators);
   if (to < 0) {
     return exported;

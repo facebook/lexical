@@ -1,0 +1,1371 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+import {
+  $isElementNode,
+  $isLineBreakNode,
+  $isTextNode,
+  createEditor,
+  ElementNode,
+  getComposedSchemaFields,
+  getDeclaredNodeStructure,
+  getDeclaredSlots,
+  getStaticNodeConfig,
+  type Klass,
+  type LexicalNode,
+  type NodeKey,
+  TEXT_TYPE_TO_FORMAT,
+  type TextNode,
+} from 'lexical';
+
+import {
+  NESTED_FALLBACK_WARNING,
+  noteOnce,
+  UNSYNCED_VALUE_WARNING,
+} from './Warnings';
+
+/*
+ * What each Lexical node class is to the binding, and how node properties
+ * become Yjs attributes and formats.
+ */
+
+export type Attrs = Record<string, unknown>;
+
+/** Name of a line marker child. */
+export const MARKER = '\u00b6';
+/** Name of the terminator of inline content that belongs to a container. */
+export const RUN_END = '\u00a6';
+/** Name prefix of a child node that is a unit of its container. */
+export const BLOCK_PREFIX = 'b:';
+/** Name prefix of a child node inside inline content. */
+export const INLINE_PREFIX = 'i:';
+
+export {LAYOUT_KEY, LAYOUT_VERSION} from './constants';
+/** Container attribute: 'b' when it holds blocks, 'i' when inline content. */
+export const KIND_KEY = 'c';
+
+// Marker keys
+export const TYPE_KEY = 't';
+
+/**
+ * A stored node's type: its name's (`b:<type>` / `i:<type>`, fixed when it
+ * was created), or `t` when the node was replaced in place by a node of
+ * another type (the shared node and its content are kept).
+ */
+export function storedTypeOf(y: {
+  name: unknown;
+  getAttr: (k: string) => unknown;
+}): string {
+  const t = y.getAttr(TYPE_KEY);
+  return typeof t === 'string' ? t : String(y.name).slice(2);
+}
+export const GROUP_KEY = 'g';
+export const GROUP_FIELD_PREFIX = 'g:';
+export const LEVEL_KEY = 'l';
+/**
+ * The key fields of the outer groups of a nested group item (level > 0):
+ * one array of key-field values per outer level, outermost first. An outer
+ * group holding only nested items has no item of its own to carry its key.
+ */
+export const OUTER_KEY = 'o';
+// Property keys (markers, nodes, text)
+export const FIELD_PREFIX = 'p:';
+export const STATE_PREFIX = 's:';
+// Text format keys
+export const TEXT_FORMAT_PREFIX = 'f:';
+export const SEGMENT_KEY = 'k';
+export const WRAPPER_PREFIX = 'w:';
+
+const hasOwn = (obj: object, key: string) =>
+  Object.prototype.hasOwnProperty.call(obj, key);
+
+/**
+ * The class being derived falls back to nested storage: reported to the
+ * editor's `onWarn` by a binding, once per class and reason (see noteOnce).
+ */
+export function warnOnce(message: string): void {
+  // The innermost class being derived.
+  let klass: Klass<LexicalNode> | undefined;
+  for (const k of deriving) {
+    klass = k;
+  }
+  let type = '';
+  if (klass !== undefined) {
+    try {
+      type = klass.getType();
+    } catch (_e) {
+      type = klass.name;
+    }
+  }
+  noteOnce(NESTED_FALLBACK_WARNING, message, {type});
+}
+
+export const klassOf = (node: LexicalNode) =>
+  node.constructor as Klass<LexicalNode>;
+
+// ---------------------------------------------------------------------------
+// Schema completeness
+
+/**
+ * Whether everything a node of `klass` holds is in its serialization schema
+ * and NodeState, which is all a marker or a format stores. Every class from
+ * `klass` up to (excluding) the class that declares the hint must declare its
+ * own `$config()` and must not hand-write `exportJSON`, `updateFromJSON` or
+ * `afterCloneFrom` (each can carry properties the schema does not describe).
+ * The declaring class itself is trusted: the hint is its author's statement.
+ */
+/**
+ * Whether a class wrote its own afterCloneFrom. Lexical synthesizes one for
+ * every class whose $config declares fields (it copies those fields) and
+ * marks it, as core's own declaresOwnAfterCloneFrom checks.
+ */
+function ownsHandWrittenAfterCloneFrom(k: Klass<LexicalNode>): boolean {
+  if (!hasOwn(k.prototype, 'afterCloneFrom')) {
+    return false;
+  }
+  const own = (k.prototype as unknown as {afterCloneFrom?: unknown})
+    .afterCloneFrom as {__lexicalSynthesizedAfterCloneFrom?: true} | undefined;
+  return own === undefined || own.__lexicalSynthesizedAfterCloneFrom !== true;
+}
+
+function isSchemaComplete(
+  klass: Klass<LexicalNode>,
+  declares: (k: Klass<LexicalNode>) => boolean,
+): boolean {
+  for (
+    let k: Klass<LexicalNode> | null = klass;
+    k !== null &&
+    k !== ElementNode &&
+    k !== (Object.getPrototypeOf(ElementNode) as Klass<LexicalNode>);
+    k = Object.getPrototypeOf(k) as Klass<LexicalNode> | null
+  ) {
+    if (declares(k)) {
+      return k === klass || !hasUndeclaredFields(klass, k);
+    }
+    const config = getStaticNodeConfig(k);
+    if (
+      !config.declaresOwnConfig ||
+      hasOwn(k.prototype, 'exportJSON') ||
+      hasOwn(k.prototype, 'updateFromJSON') ||
+      ownsHandWrittenAfterCloneFrom(k)
+    ) {
+      return false;
+    }
+  }
+  return false;
+}
+
+/**
+ * Whether instances of `klass` carry own properties (`__name`) that neither
+ * `declaring` (the class with the collab declaration) nor `klass`'s schema
+ * declares: a subclass with its own $config and an extra property outside it
+ * would lose that property silently in a line or a format.
+ */
+function hasUndeclaredFields(
+  klass: Klass<LexicalNode>,
+  declaring: Klass<LexicalNode>,
+): boolean {
+  let found = false;
+  try {
+    const probe = createEditor({
+      namespace: '@lexical/y schema probe',
+      nodes: [klass, declaring],
+      onError: () => {},
+    });
+    probe.update(
+      () => {
+        const sub = new klass();
+        const base = new declaring();
+        const known = new Set(Object.keys(base));
+        for (const f of Object.keys(getComposedSchemaFields(klass))) {
+          known.add('__' + f);
+        }
+        const extra = Object.keys(sub).filter(
+          k => k.startsWith('__') && !known.has(k),
+        );
+        if (extra.length > 0) {
+          found = true;
+          warnOnce(
+            `@lexical/y: ${klass.name || 'a node class'} has properties outside its $config() schema (${extra.join(', ')}); they are not serialized, so they are not synced (and Lexical drops them when it clones the node): declare them in $config().`,
+          );
+        }
+      },
+      {discrete: true},
+    );
+  } catch (_e) {
+    // A class that cannot be built without arguments: not checked.
+    return false;
+  }
+  return found;
+}
+
+// ---------------------------------------------------------------------------
+// Storage derivation
+//
+// Storage is derived from general facts the classes declare in $config()
+// (`inline`, `children`, `mergeAdjacent`, `derived`), with one fixed rule,
+// first match wins:
+//
+// - block + `children: 'inline'` -> line;
+// - inline + `mergeAdjacent` -> format;
+// - block + `children: [classes]` whose classes all derive as lines, +
+//   `mergeAdjacent` -> group ("a line holding its own group", a list item
+//   holding a list, is the only nesting allowed);
+// - otherwise -> nested.
+//
+// Any of the first three also needs the class's data to be fully in its
+// schema and NodeState (schema completeness), otherwise nested with a dev
+// warning.
+
+/** @experimental How `@lexical/y` stores an element type; see `describeStorage`. */
+export type StorageKind = 'line' | 'format' | 'group' | 'nested';
+
+const isElementKlass = (k: Klass<LexicalNode>): boolean =>
+  k.prototype instanceof ElementNode;
+
+/** Whether instances of an element class are inline (class-level). */
+export function isInlineKlass(klass: Klass<LexicalNode>): boolean {
+  const declared = getDeclaredNodeStructure(klass).inline;
+  if (declared !== undefined) {
+    return declared;
+  }
+  const proto = klass.prototype as {isInline?: () => boolean};
+  if (proto.isInline === ElementNode.prototype.isInline) {
+    return false;
+  }
+  try {
+    return proto.isInline!.call(Object.create(klass.prototype)) === true;
+  } catch (_e) {
+    return false;
+  }
+}
+
+const declaresKey =
+  (key: 'children' | 'mergeAdjacent') =>
+  (klass: Klass<LexicalNode>) =>
+  (k: Klass<LexicalNode>): boolean =>
+    getDeclaredNodeStructure(klass).declaredBy[key] === k;
+
+/** A group candidate by shape: lists classes only, and merges. */
+function isGroupShape(klass: Klass<LexicalNode>): boolean {
+  const d = getDeclaredNodeStructure(klass);
+  return (
+    isElementKlass(klass) &&
+    !isInlineKlass(klass) &&
+    Array.isArray(d.children) &&
+    d.children.length > 0 &&
+    !d.children.includes('inline') &&
+    d.mergeAdjacent !== undefined
+  );
+}
+
+const subclassOf = (k: Klass<LexicalNode>, base: Klass<LexicalNode>) =>
+  k === base || k.prototype instanceof base;
+
+/** Children that make a block a line: inline content, plus its own groups. */
+function lineChildren(klass: Klass<LexicalNode>): boolean {
+  const children = getDeclaredNodeStructure(klass).children;
+  if (children === 'inline') {
+    return true;
+  }
+  if (!Array.isArray(children) || !children.includes('inline')) {
+    return false;
+  }
+  return children.every(
+    e =>
+      e === 'inline' ||
+      (isGroupShape(e as Klass<LexicalNode>) &&
+        (
+          getDeclaredNodeStructure(e as Klass<LexicalNode>)
+            .children as readonly unknown[]
+        ).some(
+          i =>
+            typeof i === 'function' &&
+            subclassOf(klass, i as Klass<LexicalNode>),
+        )),
+  );
+}
+
+/**
+ * Lexical classes whose merge is decided by an overridable method, by the
+ * type of the class that declares `mergeAdjacent` (whose `by` names what the
+ * method compares).
+ */
+const MERGE_METHODS: Readonly<Record<string, string>> = {
+  link: 'shouldMergeAdjacentLink',
+};
+
+/** The merge rule of a format class is declarative (no method override). */
+function hasDeclarativeMerge(klass: Klass<LexicalNode>): boolean {
+  const d = getDeclaredNodeStructure(klass);
+  const config = d.mergeAdjacent;
+  const declaring = d.declaredBy.mergeAdjacent;
+  if (config === undefined || declaring === undefined) {
+    return false;
+  }
+  const declaringType = getStaticNodeConfig(declaring).ownNodeType;
+  const method =
+    typeof declaringType === 'string' &&
+    Object.prototype.hasOwnProperty.call(MERGE_METHODS, declaringType)
+      ? MERGE_METHODS[declaringType]
+      : undefined;
+  if (method !== undefined) {
+    const own = (klass.prototype as unknown as Record<string, unknown>)[method];
+    const declared = (
+      declaring.prototype as unknown as Record<string, unknown>
+    )[method];
+    if (own !== declared) {
+      warnOnce(
+        `@lexical/y: ${klass.name || 'a node class'} overrides ${method}, so its merge rule is not its declared mergeAdjacent; it is stored as a nested node.`,
+      );
+      return false;
+    }
+  }
+  return true;
+}
+
+const derivedKinds = new WeakMap<Klass<LexicalNode>, StorageKind>();
+const deriving = new Set<Klass<LexicalNode>>();
+
+/**
+ * The storage a class derives from its declarations (see above). Depends on
+ * the class only; a document may pin another kind (see the binding's pins).
+ */
+export function deriveStorageKind(klass: Klass<LexicalNode>): StorageKind {
+  let kind = derivedKinds.get(klass);
+  if (kind !== undefined) {
+    return kind;
+  }
+  if (deriving.has(klass)) {
+    return 'nested';
+  }
+  deriving.add(klass);
+  try {
+    kind = deriveUncached(klass);
+  } finally {
+    deriving.delete(klass);
+  }
+  derivedKinds.set(klass, kind);
+  return kind;
+}
+
+function deriveUncached(klass: Klass<LexicalNode>): StorageKind {
+  if (!isElementKlass(klass)) {
+    return 'nested';
+  }
+  const name = klass.name || 'node class';
+  const d = getDeclaredNodeStructure(klass);
+  const inline = isInlineKlass(klass);
+  const slots = getDeclaredSlots(klass).length > 0;
+  if (!inline && lineChildren(klass)) {
+    if (slots) {
+      warnOnce(
+        `@lexical/y: ${name} holds inline content but declares slots; it is stored as a nested node.`,
+      );
+      return 'nested';
+    }
+    if (!isSchemaComplete(klass, declaresKey('children')(klass))) {
+      warnOnce(
+        `@lexical/y: ${name} holds inline content but its serialization is not schema-complete (no own $config(), or a hand-written exportJSON/updateFromJSON/afterCloneFrom); it is stored as a nested node.`,
+      );
+      return 'nested';
+    }
+    return 'line';
+  }
+  if (inline && d.mergeAdjacent !== undefined && hasDeclarativeMerge(klass)) {
+    const type = getStaticNodeConfig(klass).ownNodeType;
+    if (typeof type === 'string' && type.includes(':')) {
+      warnOnce(
+        `@lexical/y: node type ${type} contains ":" and cannot be stored as a format; it is stored as a nested node.`,
+      );
+      return 'nested';
+    }
+    if (!isSchemaComplete(klass, declaresKey('mergeAdjacent')(klass))) {
+      warnOnce(
+        `@lexical/y: ${name} merges adjacent siblings but its serialization is not schema-complete; it is stored as a nested node.`,
+      );
+      return 'nested';
+    }
+    return 'format';
+  }
+  if (isGroupShape(klass)) {
+    const items = (d.children as readonly Klass<LexicalNode>[]).slice();
+    if (items.some(i => deriveStorageKind(i) !== 'line')) {
+      warnOnce(
+        `@lexical/y: the children of ${name} must all be stored as lines for it to be a group; it is stored as a nested node.`,
+      );
+      return 'nested';
+    }
+    if (d.mergeAdjacent!.by.some(e => typeof e !== 'string')) {
+      warnOnce(
+        `@lexical/y: ${name} merges by NodeState; a group is identified by schema fields only, so it is stored as a nested node.`,
+      );
+      return 'nested';
+    }
+    if (slots || !isSchemaComplete(klass, declaresKey('children')(klass))) {
+      warnOnce(
+        `@lexical/y: ${name} is a group by its declarations but its serialization is not schema-complete (or it declares slots); it is stored as a nested node.`,
+      );
+      return 'nested';
+    }
+    return 'group';
+  }
+  return 'nested';
+}
+
+// ---------------------------------------------------------------------------
+// Document pins
+//
+// The first write of a type records its kind (and a group's or format's
+// identity fields) in the document. A later client whose class derives
+// differently uses the recorded kind when its class can be read that way,
+// and opens read only otherwise (the existing gate).
+
+/** Root attribute prefix of a type's recorded storage kind. */
+export const PIN_PREFIX = 'k:';
+
+export type Pin = {readonly kind: StorageKind; readonly by?: readonly string[]};
+
+let activePins: ReadonlyMap<string, Pin> | null = null;
+
+/** Run `fn` with a document's pins in effect (re-entrant). */
+export function withPins<T>(
+  pins: ReadonlyMap<string, Pin> | null,
+  fn: () => T,
+): T {
+  const prev = activePins;
+  activePins = pins;
+  try {
+    return fn();
+  } finally {
+    activePins = prev;
+  }
+}
+
+/**
+ * Whether every class from `klass` up to ElementNode declares its own
+ * $config() and hand-writes no exportJSON/updateFromJSON/afterCloneFrom.
+ */
+function isOwnSchemaComplete(klass: Klass<LexicalNode>): boolean {
+  for (
+    let k: Klass<LexicalNode> | null = klass;
+    k !== null && k !== ElementNode;
+    k = Object.getPrototypeOf(k) as Klass<LexicalNode> | null
+  ) {
+    const config = getStaticNodeConfig(k);
+    if (
+      !config.declaresOwnConfig ||
+      hasOwn(k.prototype, 'exportJSON') ||
+      hasOwn(k.prototype, 'updateFromJSON') ||
+      ownsHandWrittenAfterCloneFrom(k)
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/** Whether a class can be read and written with `kind`. */
+export function canStoreAs(
+  klass: Klass<LexicalNode>,
+  kind: StorageKind,
+): boolean {
+  if (kind === 'nested' || deriveStorageKind(klass) === kind) {
+    return true;
+  }
+  if (!isElementKlass(klass) || getDeclaredSlots(klass).length > 0) {
+    return false;
+  }
+  const inline = isInlineKlass(klass);
+  const complete = isOwnSchemaComplete(klass);
+  const children = getDeclaredNodeStructure(klass).children;
+  if (kind === 'line') {
+    // A block whose content may be inline (undeclared, or declared so).
+    return (
+      !inline && complete && (children === undefined || lineChildren(klass))
+    );
+  }
+  if (kind === 'format') {
+    return (
+      inline && complete && (children === undefined || children === 'inline')
+    );
+  }
+  return false;
+}
+
+/** The kind a class is stored with in the active document. */
+export function storageKindOf(klass: Klass<LexicalNode>): StorageKind {
+  const derived = deriveStorageKind(klass);
+  if (activePins === null) {
+    return derived;
+  }
+  const type = getStaticNodeConfig(klass).ownNodeType;
+  const pin = typeof type === 'string' ? activePins.get(type) : undefined;
+  if (
+    pin === undefined ||
+    pin.kind === derived ||
+    !canStoreAs(klass, pin.kind)
+  ) {
+    return derived;
+  }
+  return pin.kind;
+}
+
+/** The identity fields a pin records for a class (groups and formats). */
+export function identityOf(klass: Klass<LexicalNode>): readonly string[] {
+  const config = getDeclaredNodeStructure(klass).mergeAdjacent;
+  return config === undefined
+    ? []
+    : config.by.map(e => (typeof e === 'string' ? e : '$' + String(e.key)));
+}
+
+/** Items' fields Lexical recomputes (and that are not stored). */
+function derivedFieldsOf(klasses: readonly Klass<LexicalNode>[]): Set<string> {
+  const out = new Set<string>();
+  for (const k of klasses) {
+    for (const f of Object.keys(getComposedSchemaFields(k))) {
+      if (getDeclaredNodeStructure(k).derived.has(f)) {
+        out.add(f);
+      }
+    }
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Specs
+
+export type LineSpec = {readonly fields: ReadonlySet<string>};
+export type GroupSpec = {
+  readonly klass: Klass<LexicalNode>;
+  readonly items: readonly Klass<LexicalNode>[];
+  readonly key: readonly string[];
+  readonly nested: boolean;
+  readonly derived: ReadonlySet<string>;
+};
+export type WrapperSpec = {readonly fields: ReadonlySet<string>};
+
+const lineSpecs = new WeakMap<Klass<LexicalNode>, LineSpec>();
+const groupSpecs = new WeakMap<Klass<LexicalNode>, GroupSpec | null>();
+const wrapperSpecs = new WeakMap<Klass<LexicalNode>, WrapperSpec>();
+
+export function getLineSpec(klass: Klass<LexicalNode>): LineSpec | null {
+  if (storageKindOf(klass) !== 'line') {
+    return null;
+  }
+  let spec = lineSpecs.get(klass);
+  if (spec === undefined) {
+    spec = {fields: new Set(Object.keys(getComposedSchemaFields(klass)))};
+    lineSpecs.set(klass, spec);
+  }
+  return spec;
+}
+
+/** A group spec by shape (whether or not the class is stored as a group). */
+function groupSpecByShape(klass: Klass<LexicalNode>): GroupSpec | null {
+  let spec = groupSpecs.get(klass);
+  if (spec === undefined) {
+    spec = null;
+    if (isGroupShape(klass)) {
+      const d = getDeclaredNodeStructure(klass);
+      const items = (d.children as readonly Klass<LexicalNode>[]).slice();
+      spec = {
+        derived: derivedFieldsOf([klass, ...items]),
+        items,
+        key: identityOf(klass),
+        klass,
+        // A line holding its own group: an item may be a nesting level.
+        nested: items.some(i => {
+          const c = getDeclaredNodeStructure(i).children;
+          return (
+            Array.isArray(c) &&
+            c.some(
+              e => e !== 'inline' && subclassOf(klass, e as Klass<LexicalNode>),
+            )
+          );
+        }),
+      };
+    }
+    groupSpecs.set(klass, spec);
+  }
+  return spec;
+}
+
+/**
+ * The group declaration of a class stored as a node (a subclass that is not
+ * schema-complete): its children are already the group's items, so readers
+ * must not wrap them in another group.
+ */
+export function getContainerGroupSpec(
+  klass: Klass<LexicalNode>,
+): GroupSpec | null {
+  return groupSpecByShape(klass);
+}
+
+export function getGroupSpec(klass: Klass<LexicalNode>): GroupSpec | null {
+  return storageKindOf(klass) === 'group' ? groupSpecByShape(klass) : null;
+}
+
+let elementFields: ReadonlySet<string> | undefined;
+const getElementFieldNames = (): ReadonlySet<string> => {
+  if (elementFields === undefined) {
+    elementFields = new Set(Object.keys(getComposedSchemaFields(ElementNode)));
+  }
+  return elementFields;
+};
+
+export function getWrapperSpec(klass: Klass<LexicalNode>): WrapperSpec | null {
+  if (storageKindOf(klass) !== 'format') {
+    return null;
+  }
+  let spec = wrapperSpecs.get(klass);
+  if (spec === undefined) {
+    const base = getElementFieldNames();
+    spec = {
+      fields: new Set(
+        Object.keys(getComposedSchemaFields(klass)).filter(f => !base.has(f)),
+      ),
+    };
+    wrapperSpecs.set(klass, spec);
+  }
+  return spec;
+}
+
+/** An inline element stored as formats over the content it wraps. */
+export function $isWrapper(node: LexicalNode | null): boolean {
+  return (
+    node !== null &&
+    $isElementNode(node) &&
+    node.isInline() &&
+    getWrapperSpec(klassOf(node)) !== null
+  );
+}
+
+export function $isLine(node: LexicalNode | null): node is ElementNode {
+  return (
+    node !== null &&
+    $isElementNode(node) &&
+    !node.isInline() &&
+    getLineSpec(klassOf(node)) !== null
+  );
+}
+
+/** A group node whose children are all items (or nesting levels). */
+export function $isGroup(node: LexicalNode | null): node is ElementNode {
+  if (node === null || !$isElementNode(node) || node.isInline()) {
+    return false;
+  }
+  const spec = getGroupSpec(klassOf(node));
+  if (spec === null) {
+    return false;
+  }
+  let c = node.getFirstChild();
+  if (c === null) {
+    return false;
+  }
+  for (; c !== null; c = c.getNextSibling()) {
+    if (!spec.items.includes(klassOf(c)) || !$isLine(c)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export function $hasBlockChild(node: ElementNode): boolean {
+  for (let c = node.getFirstChild(); c !== null; c = c.getNextSibling()) {
+    if (!$isInlineChild(c)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/** The group an item holds when it only is a nesting level. */
+export function $nestedGroupOf(
+  item: LexicalNode,
+  spec: GroupSpec,
+): ElementNode | null {
+  if (!spec.nested || !$isElementNode(item)) {
+    return null;
+  }
+  const first = item.getFirstChild();
+  return first !== null &&
+    first === item.getLastChild() &&
+    $isElementNode(first) &&
+    klassOf(first) === spec.klass &&
+    $isGroup(first)
+    ? first
+    : null;
+}
+
+export const $isInlineChild = (n: LexicalNode): boolean =>
+  $isTextNode(n) || $isLineBreakNode(n) || n.isInline();
+
+export function isShadowRootKlass(node: LexicalNode): boolean {
+  return $isElementNode(node) && node.isShadowRoot();
+}
+
+// ---------------------------------------------------------------------------
+// Values
+
+export const isPlainJSON = (v: unknown, depth = 0): boolean => {
+  if (v === null || typeof v === 'string' || typeof v === 'boolean') {
+    return true;
+  }
+  if (typeof v === 'number') {
+    return Number.isFinite(v);
+  }
+  if (depth > 32 || typeof v !== 'object') {
+    return false;
+  }
+  if (Array.isArray(v)) {
+    return v.every(x => isPlainJSON(x, depth + 1));
+  }
+  const proto = Object.getPrototypeOf(v);
+  if (proto !== Object.prototype && proto !== null) {
+    return false;
+  }
+  return Object.values(v as Attrs).every(x => isPlainJSON(x, depth + 1));
+};
+
+/**
+ * `v` as plain JSON, as JSON.stringify would write it (object members that
+ * are undefined are left out, array entries that are undefined become null),
+ * or undefined when it is not JSON (a class instance such as a nested
+ * editor, a function, a non-finite number, a cycle).
+ */
+export const toPlainJSON = (v: unknown, depth = 0): unknown => {
+  if (v === null || typeof v === 'string' || typeof v === 'boolean') {
+    return v;
+  }
+  if (typeof v === 'number') {
+    return Number.isFinite(v) ? v : undefined;
+  }
+  if (depth > 32 || typeof v !== 'object') {
+    return undefined;
+  }
+  if (Array.isArray(v)) {
+    const out: unknown[] = [];
+    for (const x of v) {
+      if (x === undefined) {
+        out.push(null);
+        continue;
+      }
+      const y = toPlainJSON(x, depth + 1);
+      if (y === undefined) {
+        return undefined;
+      }
+      out.push(y);
+    }
+    return out;
+  }
+  const proto = Object.getPrototypeOf(v);
+  if (proto !== Object.prototype && proto !== null) {
+    return undefined;
+  }
+  const out: Attrs = {};
+  for (const k of Object.keys(v as Attrs)) {
+    const x = (v as Attrs)[k];
+    if (x === undefined) {
+      continue;
+    }
+    const y = toPlainJSON(x, depth + 1);
+    if (y === undefined) {
+      return undefined;
+    }
+    out[k] = y;
+  }
+  return out;
+};
+
+export const isUnsafeKey = (key: string) =>
+  key === '__proto__' || key === 'constructor' || key === 'prototype';
+
+export const stableStringify = (value: unknown): string =>
+  JSON.stringify(value, (_k, v) =>
+    v !== null && typeof v === 'object' && !Array.isArray(v)
+      ? Object.fromEntries(
+          Object.keys(v)
+            .sort()
+            .map(k => [k, v[k]]),
+        )
+      : v,
+  );
+
+export const equalValue = (a: unknown, b: unknown): boolean =>
+  a === b ||
+  (typeof a === 'object' &&
+    typeof b === 'object' &&
+    a !== null &&
+    b !== null &&
+    stableStringify(a) === stableStringify(b));
+
+/**
+ * Format values are compared one level deep by Yjs, so a value that is not
+ * a primitive is stored as `{json: '<stable JSON>'}`.
+ */
+export const encodeFormatValue = (v: unknown): unknown =>
+  v === null || typeof v !== 'object' ? v : {json: stableStringify(v)};
+
+export const decodeFormatValue = (v: unknown): unknown => {
+  if (v !== null && typeof v === 'object') {
+    const json = (v as Attrs).json;
+    if (typeof json === 'string') {
+      try {
+        return JSON.parse(json);
+      } catch (_e) {
+        return null;
+      }
+    }
+  }
+  return v;
+};
+
+/** Format attributes of a line break: its NodeState. */
+export function $lineBreakAttrs(node: LexicalNode, wrapperAttrs: Attrs): Attrs {
+  const own: Attrs = {};
+  $stateAttrs(node, own);
+  return {...wrapperAttrs, ...encodeFormats(own)};
+}
+
+/** The NodeState a line break's format attributes give it. */
+export function lineBreakStateFromAttrs(encoded: Attrs): Attrs {
+  const state: Attrs = {};
+  for (const k of Object.keys(encoded).sort()) {
+    if (k.startsWith(STATE_PREFIX)) {
+      const f = k.slice(STATE_PREFIX.length);
+      if (!isUnsafeKey(f)) {
+        state[f] = decodeFormatValue(encoded[k]);
+      }
+    }
+  }
+  return state;
+}
+
+function encodeFormats(attrs: Attrs): Attrs {
+  for (const k in attrs) {
+    attrs[k] = encodeFormatValue(attrs[k]);
+  }
+  return attrs;
+}
+
+function putValue(attrs: Attrs, key: string, value: unknown, what: string) {
+  if (value === undefined) {
+    return;
+  }
+  const plain = toPlainJSON(value);
+  if (plain === undefined) {
+    noteOnce(
+      UNSYNCED_VALUE_WARNING,
+      `@lexical/y: ${what} is not plain JSON and is not synchronized (for example a nested editor instance; give it its own document).`,
+      {property: what},
+    );
+    return;
+  }
+  attrs[key] = plain;
+}
+
+/** NodeState entries as `s:<key>` attributes. */
+export function $stateAttrs(node: LexicalNode, out: Attrs, prefix = ''): void {
+  const state = node.__state;
+  if (!state) {
+    return;
+  }
+  const [unknown = {}, known] = state.getInternalState();
+  // As NodeState#toJSON: a known value replaces an unknown one of its key
+  // (read from JSON before the key's config was used), and a known value
+  // at its default removes it.
+  const knownKeys = new Set<string>();
+  for (const [config] of known) {
+    knownKeys.add(config.key);
+  }
+  for (const [k, v] of Object.entries(unknown)) {
+    if (!knownKeys.has(k)) {
+      putValue(out, prefix + STATE_PREFIX + k, v, `NodeState ${k}`);
+    }
+  }
+  for (const [config, v] of known) {
+    // A value reset to its default is not stored (as Lexical's JSON).
+    if (config.isEqual(v, config.defaultValue)) {
+      continue;
+    }
+    putValue(
+      out,
+      prefix + STATE_PREFIX + config.key,
+      config.unparse(v),
+      `NodeState ${config.key}`,
+    );
+  }
+}
+
+/**
+ * The compact JSON the node's serialization schema writes (the base
+ * LexicalNode.exportJSON, so an override does not change what is stored),
+ * without NodeState.
+ */
+export function $schemaJSON(node: LexicalNode): Attrs {
+  // ElementNode does not override exportJSON: this is LexicalNode's.
+  const json = ElementNode.prototype.exportJSON.call(node, true) as Attrs;
+  const state = node.__state ? node.__state.toJSON() : undefined;
+  if (state !== undefined) {
+    for (const key in state) {
+      delete json[key];
+    }
+  }
+  return json;
+}
+
+const STRUCTURAL_JSON_KEYS = new Set([
+  'type',
+  'version',
+  'children',
+  '$slots',
+  '$',
+]);
+
+/**
+ * Attributes of a node stored as its own Y.Node (a 'node' block, an inline
+ * decorator or element): the class's own exportJSON, which is complete by
+ * contract, split per key.
+ */
+export function $nodeAttrs(node: LexicalNode): Attrs {
+  const latest = node.getLatest();
+  // Compact: properties at their default are left out (parsing restores
+  // them); a hand-written exportJSON may ignore the flag, which is fine.
+  const json = latest.exportJSON(true) as unknown as Attrs;
+  const attrs: Attrs = {};
+  for (const key in json) {
+    if (!STRUCTURAL_JSON_KEYS.has(key)) {
+      putValue(
+        attrs,
+        FIELD_PREFIX + key,
+        json[key],
+        `${node.getType()}.${key}`,
+      );
+    }
+  }
+  const state = json.$ as Attrs | undefined;
+  if (state) {
+    for (const k in state) {
+      putValue(attrs, STATE_PREFIX + k, state[k], `NodeState ${k}`);
+    }
+  }
+  // An element's textFormat/textStyle are always stored (see $lineAttrs).
+  if ($isElementNode(latest)) {
+    const tf = latest.getTextFormat();
+    const ts = latest.getTextStyle();
+    if (tf !== 0) {
+      attrs[FIELD_PREFIX + 'textFormat'] = tf;
+    } else {
+      delete attrs[FIELD_PREFIX + 'textFormat'];
+    }
+    if (ts !== '') {
+      attrs[FIELD_PREFIX + 'textStyle'] = ts;
+    } else {
+      delete attrs[FIELD_PREFIX + 'textStyle'];
+    }
+  }
+  return attrs;
+}
+
+/** The serialized form of a node stored with {@link $nodeAttrs}. */
+export function nodeJSONFromAttrs(type: string, attrs: Attrs): Attrs {
+  const json: Attrs = {type, version: 1};
+  const state: Attrs = {};
+  let hasState = false;
+  // Sorted, so that every reader builds NodeState in the same key order.
+  for (const key of Object.keys(attrs).sort()) {
+    if (key.startsWith(FIELD_PREFIX)) {
+      const f = key.slice(FIELD_PREFIX.length);
+      if (!isUnsafeKey(f)) {
+        json[f] = attrs[key];
+      }
+    } else if (key.startsWith(STATE_PREFIX)) {
+      const f = key.slice(STATE_PREFIX.length);
+      if (!isUnsafeKey(f)) {
+        state[f] = attrs[key];
+        hasState = true;
+      }
+    }
+  }
+  if (hasState) {
+    json.$ = state;
+  }
+  return json;
+}
+
+// ---------------------------------------------------------------------------
+// Text
+
+let formatNames: string[] | undefined;
+const getFormatNames = (): string[] =>
+  formatNames || (formatNames = Object.keys(TEXT_TYPE_TO_FORMAT));
+
+/** Whether Lexical would merge this text node with an equal neighbour. */
+export const isMergeableText = (node: TextNode): boolean =>
+  node.isSimpleText() && !node.isUnmergeable();
+
+/**
+ * Formats of a text node's characters: its type (`t`, when not 'text'), one
+ * key per format bit (`f:bold`), its other JSON fields (`p:style`, ...), its
+ * NodeState (`s:<key>`), and for a node Lexical would not merge with an equal
+ * neighbour, a segment key (`k`) that keeps it apart.
+ */
+export function $textAttrs(node: TextNode, segment: string | null): Attrs {
+  const latest = node.getLatest();
+  const json = latest.exportJSON(true) as unknown as Attrs;
+  const attrs: Attrs = {};
+  if (latest.getType() !== 'text') {
+    attrs[TYPE_KEY] = latest.getType();
+  }
+  const format = latest.getFormat();
+  if (format !== 0) {
+    for (const name of getFormatNames()) {
+      if (format & TEXT_TYPE_TO_FORMAT[name]) {
+        attrs[TEXT_FORMAT_PREFIX + name] = true;
+      }
+    }
+  }
+  for (const key in json) {
+    if (key !== 'text' && key !== 'format' && !STRUCTURAL_JSON_KEYS.has(key)) {
+      putValue(attrs, FIELD_PREFIX + key, json[key], `text.${key}`);
+    }
+  }
+  const state = json.$ as Attrs | undefined;
+  if (state) {
+    for (const k in state) {
+      putValue(attrs, STATE_PREFIX + k, state[k], `NodeState ${k}`);
+    }
+  }
+  if (segment !== null) {
+    attrs[SEGMENT_KEY] = segment;
+  }
+  return encodeFormats(attrs);
+}
+
+export function textJSONFromAttrs(text: string, encoded: Attrs): Attrs {
+  const attrs: Attrs = {};
+  for (const k in encoded) {
+    attrs[k] = decodeFormatValue(encoded[k]);
+  }
+  const type =
+    typeof attrs[TYPE_KEY] === 'string' ? (attrs[TYPE_KEY] as string) : 'text';
+  const json: Attrs = {text, type, version: 1};
+  let format = 0;
+  const state: Attrs = {};
+  let hasState = false;
+  for (const key of Object.keys(attrs).sort()) {
+    if (key.startsWith(TEXT_FORMAT_PREFIX)) {
+      const bit = TEXT_TYPE_TO_FORMAT[key.slice(TEXT_FORMAT_PREFIX.length)];
+      if (bit && attrs[key] === true) {
+        format |= bit;
+      }
+    } else if (key.startsWith(FIELD_PREFIX)) {
+      const f = key.slice(FIELD_PREFIX.length);
+      if (!isUnsafeKey(f)) {
+        json[f] = attrs[key];
+      }
+    } else if (key.startsWith(STATE_PREFIX)) {
+      const f = key.slice(STATE_PREFIX.length);
+      if (!isUnsafeKey(f)) {
+        state[f] = attrs[key];
+        hasState = true;
+      }
+    }
+  }
+  json.format = format;
+  if (hasState) {
+    json.$ = state;
+  }
+  return json;
+}
+
+/** Text keys this binding owns (and so may change or remove). */
+export function isOwnedTextKey(
+  key: string,
+  isKnownWrapper: (type: string) => boolean,
+): boolean {
+  if (key.startsWith(WRAPPER_PREFIX)) {
+    return isKnownWrapper(key.slice(WRAPPER_PREFIX.length));
+  }
+  return (
+    key === TYPE_KEY ||
+    key === SEGMENT_KEY ||
+    key.startsWith(TEXT_FORMAT_PREFIX) ||
+    key.startsWith(FIELD_PREFIX) ||
+    key.startsWith(STATE_PREFIX)
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Wrappers
+
+/**
+ * The format of one wrapper: one key, `w:<type>`, whose value is a flat
+ * object of its schema fields and NodeState (`s:<key>`); a value that is not
+ * a primitive is a JSON string, since Yjs compares format values one level
+ * deep. One key keeps a link at two format items: concurrent changes to two
+ * fields of one wrapper do not merge (the last one wins).
+ */
+/**
+ * The key of a wrapper value that tells apart two adjacent wrappers with
+ * equal fields (two links to the same URL), which would otherwise read as
+ * one.
+ */
+export const INSTANCE_KEY = '#';
+
+export function $wrapperAttrs(
+  node: ElementNode,
+  out: Attrs,
+  instance: string | null = null,
+): void {
+  const spec = getWrapperSpec(klassOf(node))!;
+  const own: Attrs = {};
+  const json = $schemaJSON(node.getLatest());
+  for (const f of spec.fields) {
+    putValue(own, f, json[f], `${node.getType()}.${f}`);
+  }
+  $stateAttrs(node.getLatest(), own);
+  $putTextFields(node.getLatest(), own);
+  for (const k in own) {
+    const v = own[k];
+    if (v !== null && typeof v === 'object') {
+      own[k] = '\u0000' + stableStringify(v);
+    }
+  }
+  if (instance !== null) {
+    own[INSTANCE_KEY] = instance;
+  }
+  // The innermost wrapper of a type wins.
+  out[WRAPPER_PREFIX + node.getType()] = own;
+}
+
+export type WrapperValue = {
+  readonly type: string;
+  readonly sig: string;
+  readonly json: Attrs;
+  readonly instance: string | null;
+};
+
+/** Wrapper values in a format map, sorted by type. */
+export function wrappersFromAttrs(
+  attrs: Attrs,
+  isKnownWrapper: (type: string) => boolean,
+): WrapperValue[] {
+  const result: WrapperValue[] = [];
+  for (const key in attrs) {
+    if (!key.startsWith(WRAPPER_PREFIX)) {
+      continue;
+    }
+    const type = key.slice(WRAPPER_PREFIX.length);
+    const value = attrs[key];
+    if (!isKnownWrapper(type) || value === null || typeof value !== 'object') {
+      continue;
+    }
+    const json: Attrs = {type, version: 1};
+    const state: Attrs = {};
+    let hasState = false;
+    let instance: string | null = null;
+    for (const f of Object.keys(value as Attrs).sort()) {
+      let v = (value as Attrs)[f];
+      if (f === INSTANCE_KEY) {
+        instance = typeof v === 'string' ? v : null;
+        continue;
+      }
+      if (typeof v === 'string' && v.startsWith('\u0000')) {
+        try {
+          v = JSON.parse(v.slice(1));
+        } catch (_e) {
+          continue;
+        }
+      }
+      if (f.startsWith(STATE_PREFIX)) {
+        const k = f.slice(STATE_PREFIX.length);
+        if (!isUnsafeKey(k)) {
+          state[k] = v;
+          hasState = true;
+        }
+      } else if (!isUnsafeKey(f)) {
+        json[f] = v;
+      }
+    }
+    if (hasState) {
+      json.$ = state;
+    }
+    result.push({
+      instance,
+      json,
+      sig:
+        type +
+        '\u0000' +
+        stableStringify(json) +
+        (instance === null ? '' : '\u0000' + instance),
+      type,
+    });
+  }
+  result.sort((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0));
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Lines
+
+/** Fields of a line stored on its marker (schema minus derived). */
+export function $lineAttrs(
+  line: ElementNode,
+  derived: ReadonlySet<string> | null,
+): Attrs {
+  const latest = line.getLatest();
+  // The most common type is left out: a marker without one is a paragraph.
+  const attrs: Attrs =
+    latest.getType() === 'paragraph' ? {} : {[TYPE_KEY]: latest.getType()};
+  const spec = getLineSpec(klassOf(latest))!;
+  const json = $schemaJSON(latest);
+  for (const f of spec.fields) {
+    if (derived === null || !derived.has(f)) {
+      putValue(attrs, FIELD_PREFIX + f, json[f], `${latest.getType()}.${f}`);
+    }
+  }
+  // Lexical serializes an element's textFormat/textStyle only while it has
+  // no text (otherwise a reconcile derives them from the text), but keeps
+  // them: every peer must hold the same values, so they are always stored.
+  if (
+    spec.fields.has('textFormat') &&
+    (derived === null || !derived.has('textFormat'))
+  ) {
+    const tf = latest.getTextFormat();
+    if (tf !== 0) {
+      attrs[FIELD_PREFIX + 'textFormat'] = tf;
+    } else {
+      delete attrs[FIELD_PREFIX + 'textFormat'];
+    }
+  }
+  if (
+    spec.fields.has('textStyle') &&
+    (derived === null || !derived.has('textStyle'))
+  ) {
+    const ts = latest.getTextStyle();
+    if (ts !== '') {
+      attrs[FIELD_PREFIX + 'textStyle'] = ts;
+    } else {
+      delete attrs[FIELD_PREFIX + 'textStyle'];
+    }
+  }
+  $stateAttrs(latest, attrs);
+  return attrs;
+}
+
+/**
+ * The synchronized fields of a group: its schema fields (key fields and the
+ * others, such as alignment) except derived ones, and its NodeState under
+ * `$`. Adjacent groups with different fields are different groups, so all of
+ * them identify a group (an item carries its group's fields).
+ */
+/**
+ * An element's textFormat/textStyle, which Lexical serializes only while
+ * the element has no text: every peer must hold the same values, so groups
+ * and wrapper items always carry them (as lines do).
+ */
+function $putTextFields(node: ElementNode, out: Attrs): void {
+  const tf = node.getTextFormat();
+  if (tf !== 0) {
+    out.textFormat = tf;
+  } else {
+    delete out.textFormat;
+  }
+  const ts = node.getTextStyle();
+  if (ts !== '') {
+    out.textStyle = ts;
+  } else {
+    delete out.textStyle;
+  }
+}
+
+/** Set the textFormat/textStyle a group or wrapper item's fields record. */
+export function $setTextFields(node: ElementNode, fields: Attrs): void {
+  const tf = typeof fields.textFormat === 'number' ? fields.textFormat : 0;
+  if (node.getTextFormat() !== tf) {
+    node.setTextFormat(tf);
+  }
+  const ts = typeof fields.textStyle === 'string' ? fields.textStyle : '';
+  if (node.getTextStyle() !== ts) {
+    node.setTextStyle(ts);
+  }
+}
+
+export function $groupFields(group: ElementNode, spec: GroupSpec): Attrs {
+  const latest = group.getLatest();
+  const json = $schemaJSON(latest);
+  const out: Attrs = {};
+  for (const f of Object.keys(json).sort()) {
+    if (
+      STRUCTURAL_JSON_KEYS.has(f) ||
+      spec.derived.has(f) ||
+      toPlainJSON(json[f]) === undefined
+    ) {
+      continue;
+    }
+    out[f] = toPlainJSON(json[f]);
+  }
+  $putTextFields(latest, out);
+  const st: Attrs = {};
+  $stateAttrs(latest, st);
+  const state: Attrs = {};
+  for (const k of Object.keys(st).sort()) {
+    state[k.slice(STATE_PREFIX.length)] = st[k];
+  }
+  if (Object.keys(state).length > 0) {
+    out.$ = state;
+  }
+  return out;
+}
+
+/**
+ * The key of the fields of a nested level's wrapper item (the item that
+ * holds a nested group) inside an OUTER_KEY entry.
+ */
+export const WRAPPER_FIELDS_KEY = '@';
+
+/** The synchronized fields of a nested level's wrapper item. */
+export function $levelItemFields(item: ElementNode, spec: GroupSpec): Attrs {
+  const latest = item.getLatest();
+  const json = $schemaJSON(latest);
+  const out: Attrs = {};
+  for (const f of Object.keys(json).sort()) {
+    if (
+      STRUCTURAL_JSON_KEYS.has(f) ||
+      spec.derived.has(f) ||
+      toPlainJSON(json[f]) === undefined
+    ) {
+      continue;
+    }
+    out[f] = toPlainJSON(json[f]);
+  }
+  $putTextFields(latest, out);
+  const st: Attrs = {};
+  $stateAttrs(latest, st);
+  if (Object.keys(st).length > 0) {
+    const state: Attrs = {};
+    for (const k of Object.keys(st).sort()) {
+      state[k.slice(STATE_PREFIX.length)] = st[k];
+    }
+    out.$ = state;
+  }
+  return out;
+}
+
+export function $groupKeyAttrs(group: ElementNode, spec: GroupSpec): Attrs {
+  const attrs: Attrs = {[GROUP_KEY]: group.getType()};
+  const fields = $groupFields(group, spec);
+  for (const f in fields) {
+    attrs[GROUP_FIELD_PREFIX + f] = fields[f];
+  }
+  return attrs;
+}
+
+export type NodeKeySet = ReadonlySet<NodeKey>;

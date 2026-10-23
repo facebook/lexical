@@ -1885,6 +1885,25 @@ declare export function $insertNodeToNearestRootAtCaret<T extends LexicalNode>(
 ): NodeCaret<CaretDirection>;
 
 /**
+ * LexicalWarning
+ */
+export type LexicalWarningCode =
+  | '@lexical/y/unsupported-layout'
+  | '@lexical/y/unknown-node-types'
+  | '@lexical/y/storage-mismatch'
+  | '@lexical/y/self-check'
+  | '@lexical/y/recovered-read'
+  | '@lexical/y/recovered-write'
+  | '@lexical/y/nested-fallback'
+  | '@lexical/y/unsynced-value'
+  | string;
+declare export class LexicalWarning extends Error {
+  readonly code: LexicalWarningCode;
+  readonly data?: unknown;
+  constructor(code: LexicalWarningCode, message: string, data?: unknown): void;
+}
+
+/**
  * LexicalUpdateTags
  */
 declare export var COLLABORATION_TAG: 'collaboration';
@@ -1894,6 +1913,7 @@ declare export var HISTORY_MERGE_TAG: 'history-merge';
 declare export var HISTORY_PUSH_TAG: 'history-push';
 declare export var PASTE_TAG: 'paste';
 declare export var SKIP_COLLAB_TAG: 'skip-collab';
+declare export var SKIP_COMPOSITION_MERGE_TAG: 'skip-composition-merge';
 declare export var SKIP_DOM_SELECTION_TAG: 'skip-dom-selection';
 declare export var SKIP_SCROLL_INTO_VIEW_TAG: 'skip-scroll-into-view';
 export type UpdateTag =
@@ -1904,6 +1924,7 @@ export type UpdateTag =
   | typeof HISTORY_PUSH_TAG
   | typeof PASTE_TAG
   | typeof SKIP_COLLAB_TAG
+  | typeof SKIP_COMPOSITION_MERGE_TAG
   | typeof SKIP_DOM_SELECTION_TAG
   | typeof SKIP_SCROLL_INTO_VIEW_TAG
   | string;

@@ -16,6 +16,7 @@ import {
 } from '.';
 import {nodeStatesAreEquivalent} from './LexicalNodeState';
 import {getActiveEditor} from './LexicalUpdates';
+import {SKIP_COMPOSITION_MERGE_TAG} from './LexicalUpdateTags';
 import {$isEmptyCompositionTarget} from './LexicalUtils';
 
 function $canSimpleTextNodesBeMerged(
@@ -62,6 +63,32 @@ export function $normalizeTextNode(textNode: TextNode): void {
     return;
   }
 
+  // An update tagged SKIP_COMPOSITION_MERGE_TAG (a collaborator's change, as
+  // @lexical/y tags it) never merges text into or out of the node being
+  // composed: merging rewrites its DOM text node, and the browser's
+  // composition range would take in the merged text. Once such a merge was
+  // held back, later updates of the same composition hold it back too (each
+  // composition step marks the composed node dirty). The nodes merge when the
+  // composition ends. Without the tag (every other editor, including the
+  // @lexical/yjs bindings) text merges as before.
+  const editor = getActiveEditor();
+  const compositionKey = editor._compositionKey;
+  const holdComposition =
+    compositionKey !== null &&
+    (editor._compositionMergeHeld === compositionKey ||
+      editor._updateTags.has(SKIP_COMPOSITION_MERGE_TAG));
+  const $holdsMerge = (node1: TextNode, node2: TextNode) => {
+    if (
+      holdComposition &&
+      (node1.__key === compositionKey || node2.__key === compositionKey) &&
+      $canSimpleTextNodesBeMerged(node1, node2)
+    ) {
+      editor._compositionMergeHeld = compositionKey;
+      return true;
+    }
+    return false;
+  };
+
   // Backward
   let previousNode;
 
@@ -76,6 +103,8 @@ export function $normalizeTextNode(textNode: TextNode): void {
     }
     if (previousNode.__text === '') {
       previousNode.remove();
+    } else if ($holdsMerge(previousNode, node)) {
+      break;
     } else if ($canSimpleTextNodesBeMerged(previousNode, node)) {
       node = $mergeTextNodes(previousNode, node);
       break;
@@ -98,6 +127,8 @@ export function $normalizeTextNode(textNode: TextNode): void {
     }
     if (nextNode.__text === '') {
       nextNode.remove();
+    } else if ($holdsMerge(node, nextNode)) {
+      break;
     } else if ($canSimpleTextNodesBeMerged(node, nextNode)) {
       node = $mergeTextNodes(node, nextNode);
       break;

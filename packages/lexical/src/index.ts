@@ -478,6 +478,7 @@ export {
   toggleTextFormatType,
   unmountSlotContainer,
 } from './LexicalUtils';
+export {LexicalWarning, type LexicalWarningCode} from './LexicalWarning';
 export {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 export type {
@@ -527,6 +528,7 @@ export {
   HISTORY_PUSH_TAG,
   PASTE_TAG,
   SKIP_COLLAB_TAG,
+  SKIP_COMPOSITION_MERGE_TAG,
   SKIP_DOM_SELECTION_TAG,
   SKIP_SCROLL_INTO_VIEW_TAG,
   SKIP_SELECTION_FOCUS_TAG,

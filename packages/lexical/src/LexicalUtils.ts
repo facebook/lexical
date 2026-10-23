@@ -606,6 +606,7 @@ export function $setCompositionKey(compositionKey: null | NodeKey): void {
   const previousCompositionKey = editor._compositionKey;
   if (compositionKey !== previousCompositionKey) {
     editor._compositionKey = compositionKey;
+    editor._compositionMergeHeld = null;
     if (previousCompositionKey !== null) {
       const node = $getNodeByKey(previousCompositionKey);
       if (node !== null) {

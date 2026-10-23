@@ -715,8 +715,8 @@ function $markTableDirty(node: LexicalNode): void {
  * GFM can: a cell's blocks and line breaks as lines separated by `<br>`, a
  * merged cell with empty cells where it spans, block decorators in a cell
  * after the table, and as a column's alignment, that of the first cell from
- * the top that starts in the column and is aligned (a cell has the alignment
- * of its first block, or else its own). Add
+ * the top that starts in the column and has a format (its first block's, or
+ * else its own), none for one GFM can't express. Add
  * {@link MdastStrictTableExtension} to keep tables in the editor to what GFM
  * holds.
  *

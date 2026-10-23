@@ -479,6 +479,7 @@ export {
   toggleTextFormatType,
   unmountSlotContainer,
 } from './LexicalUtils';
+export {LexicalWarning} from './LexicalWarning';
 export {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 export type {
@@ -523,6 +524,7 @@ export {
   COMPOSITION_END_TAG,
   COMPOSITION_START_TAG,
   CUT_TAG,
+  DEFER_COMPOSITION_MERGE_TAG,
   HISTORIC_TAG,
   HISTORY_MERGE_TAG,
   HISTORY_PUSH_TAG,

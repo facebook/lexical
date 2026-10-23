@@ -1,0 +1,26 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+// Checked by `pnpm run flow` (not shipped): the public calls a Flow
+// consumer makes type check.
+
+import type {Doc} from '@y/y';
+
+import {createEditor} from 'lexical';
+import {describeStorage, YBinding} from '@lexical/y';
+
+declare const doc: Doc;
+
+const editor = createEditor();
+const binding = new YBinding(editor, doc);
+describeStorage(editor);
+describeStorage(editor, binding);
+describeStorage(editor, {pins: binding.pins});
+// $FlowExpectedError[incompatible-type]
+describeStorage(editor, {pins: 1});

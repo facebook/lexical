@@ -1223,8 +1223,10 @@ describe('NodeStructureExtension', () => {
         ),
       ]);
     }, true);
+    // The nested list then moves into an item of its own (a list item
+    // holding a nested list holds nothing else).
     expect(rootShape(editor)).toEqual([
-      ['list', ['listitem', 'a', ['list', ['listitem', 'b']]]],
+      ['list', ['listitem', 'a'], ['listitem', ['list', ['listitem', 'b']]]],
     ]);
   });
 
@@ -2204,11 +2206,8 @@ describe('formatting, list seams, orphan list items and the root', () => {
         [
           [
             'list',
-            [
-              'listitem',
-              ['mark:c1', 'x'],
-              ['list', ['listitem', ['mark:c1', 'y']]],
-            ],
+            ['listitem', ['mark:c1', 'x']],
+            ['listitem', ['list', ['listitem', ['mark:c1', 'y']]]],
           ],
         ],
       ],
@@ -2301,6 +2300,9 @@ describe('formatting, list seams, orphan list items and the root', () => {
   });
 
   test('lists that merge keep what follows or precedes a nested list in an item at the seam', () => {
+    // That content moves into an item of its own (a list item holding a
+    // nested list holds nothing else), so the wrapper items that then meet
+    // join their nested lists.
     // Removing what separated them.
     {
       using editor = buildEditor();
@@ -2315,8 +2317,8 @@ describe('formatting, list seams, orphan list items and the root', () => {
       expect(rootShape(editor)).toEqual([
         [
           'list',
-          ['listitem', ['list', ['listitem', 'a']]],
-          ['listitem', ['list', ['listitem', 'b']], 'tail'],
+          ['listitem', ['list', ['listitem', 'a'], ['listitem', 'b']]],
+          ['listitem', 'tail'],
         ],
       ]);
     }
@@ -2327,7 +2329,8 @@ describe('formatting, list seams, orphan list items and the root', () => {
       expect(rootShape(editor)).toEqual([
         [
           'list',
-          ['listitem', ['list', ['listitem', 'a']], 'x'],
+          ['listitem', ['list', ['listitem', 'a']]],
+          ['listitem', 'x'],
           ['listitem', ['list', ['listitem', 'b']]],
         ],
       ]);
@@ -2344,8 +2347,11 @@ describe('formatting, list seams, orphan list items and the root', () => {
       expect(annotated(editor)).toEqual([
         [
           'list',
-          ['listitem', ['list', ['listitem', ['link:https://a', 'a']]]],
-          ['listitem', ['list', ['listitem', 'b']], 'tail'],
+          [
+            'listitem',
+            ['list', ['listitem', ['link:https://a', 'a']], ['listitem', 'b']],
+          ],
+          ['listitem', 'tail'],
         ],
       ]);
     }

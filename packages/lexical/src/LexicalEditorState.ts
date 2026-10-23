@@ -137,6 +137,42 @@ export interface EditorStateReadOptions {
 }
 
 /**
+ * An entry of EditorState#_textEdits, one change of a text node's text:
+ * - `splice`: the node, the offset, the number of characters deleted there,
+ *   the text inserted there, and the node's text before;
+ * - `split`: the node split, its parts in order (the first is the node
+ *   itself unless it was segmented), where each starts in its text, and its
+ *   text before;
+ * - `merge`: the node kept, the node merged into it, whether that node was
+ *   before it, and the texts of both before;
+ * - `set`: any other change (the text set whole, offsets unknown): the
+ *   node, and its text before and after;
+ * - `attach`: a node inserted into an element's children: the node, the
+ *   element, its previous and next siblings there (null at an end), and its
+ *   text when it is a text node;
+ * - `detach`: a node removed from an element's children: the node and the
+ *   element;
+ * - `delete`: a node the selection removes with what it holds (before its
+ *   `detach`): the node.
+ * @internal
+ */
+export type TextEditRecord =
+  | readonly ['splice', NodeKey, number, number, string, string]
+  | readonly ['split', NodeKey, readonly NodeKey[], readonly number[], string]
+  | readonly ['merge', NodeKey, NodeKey, boolean, string, string]
+  | readonly ['set', NodeKey, string, string]
+  | readonly [
+      'attach',
+      NodeKey,
+      NodeKey,
+      NodeKey | null,
+      NodeKey | null,
+      string | null,
+    ]
+  | readonly ['detach', NodeKey, NodeKey]
+  | readonly ['delete', NodeKey];
+
+/**
  * Type guard that returns true if the argument is an EditorState
  */
 export function $isEditorState(x: unknown): x is EditorState {
@@ -153,6 +189,33 @@ export class EditorState {
    * @internal
    */
   _movedNodes: null | WeakMap<NodeMap, Set<NodeKey>>;
+  /**
+   * Text nodes a split made during the update (see TextNode#splitText),
+   * keyed by the previous node map like `_movedNodes`: for each, the node it
+   * was split from and the offset in that node's text where it starts (a
+   * part of such a part counts from the node the first split cut). Recorded
+   * only while the editor records moves (`_recordNodeMoves`): the Yjs 14
+   * binding uses it to keep the characters of the part that Lexical's
+   * normalization merged into another node.
+   * @internal
+   */
+  _splitNodes: null | WeakMap<NodeMap, Map<NodeKey, [NodeKey, number]>>;
+  /**
+   * The changes of text nodes' text during the update, in order (see
+   * TextEditRecord), keyed by the previous node map like `_movedNodes`:
+   * TextNode#spliceText with its exact offsets, as the selection's text
+   * insertion and removal make them (and the nodes it removes whole);
+   * splits and merges of text nodes;
+   * and any other setTextContent, with the text before and after; and
+   * every node inserted into or removed from an element's children, where
+   * (so that a node swapped for another, as transforms do, is seen where it
+   * was). Recorded only while the editor records moves (`_recordNodeMoves`):
+   * the Yjs 14 binding writes these edits rather than a diff of the old and
+   * new text, which cannot tell where an insert or delete next to equal text
+   * was made.
+   * @internal
+   */
+  _textEdits: null | WeakMap<NodeMap, TextEditRecord[]>;
   _selection: null | BaseSelection;
   _flushSync: boolean;
   _readOnly: boolean;
@@ -173,6 +236,8 @@ export class EditorState {
   ) {
     this._nodeMap = nodeMap;
     this._movedNodes = null;
+    this._splitNodes = null;
+    this._textEdits = null;
     this._selection = selection || null;
     this._flushSync = false;
     this._readOnly = false;

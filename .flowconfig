@@ -161,6 +161,7 @@ module.name_mapper='^@lexical/table$' -> '<PROJECT_ROOT>/packages/lexical-table/
 module.name_mapper='^@lexical/tailwind$' -> '<PROJECT_ROOT>/packages/lexical-tailwind/flow/LexicalTailwind.js.flow'
 module.name_mapper='^@lexical/text$' -> '<PROJECT_ROOT>/packages/lexical-text/flow/LexicalText.js.flow'
 module.name_mapper='^@lexical/utils$' -> '<PROJECT_ROOT>/packages/lexical-utils/flow/LexicalUtils.js.flow'
+module.name_mapper='^@lexical/y$' -> '<PROJECT_ROOT>/packages/lexical-y/flow/LexicalY.js.flow'
 module.name_mapper='^@lexical/yjs$' -> '<PROJECT_ROOT>/packages/lexical-yjs/flow/LexicalYjs.js.flow'
 ;; [generated-end update-flowconfig]
 
@@ -170,6 +171,7 @@ munge_underscores=false
 .*/flow-typed/.*
 
 [libs]
+./libdefs/y.js
 ./libdefs/yjs.js
 ./flow-typed
 

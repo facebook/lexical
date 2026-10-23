@@ -358,6 +358,7 @@
       "@lexical/tailwind": ["./packages/lexical-tailwind/src/index.ts"],
       "@lexical/text": ["./packages/lexical-text/src/index.ts"],
       "@lexical/utils": ["./packages/lexical-utils/src/index.ts"],
+      "@lexical/y": ["./packages/lexical-y/src/index.ts"],
       "@lexical/yjs": ["./packages/lexical-yjs/src/index.ts"],
       "lexical/src": ["./packages/lexical/src"],
       "lexical/src/__tests__/utils": [
@@ -443,6 +444,11 @@
       "@lexical/text/src/*": ["./packages/lexical-text/src/*"],
       "@lexical/utils/src": ["./packages/lexical-utils/src"],
       "@lexical/utils/src/*": ["./packages/lexical-utils/src/*"],
+      "@lexical/y/src": ["./packages/lexical-y/src"],
+      "@lexical/y/src/__tests__/utils": [
+        "./packages/lexical-y/src/__tests__/utils/harness.ts"
+      ],
+      "@lexical/y/src/*": ["./packages/lexical-y/src/*"],
       "@lexical/yjs/src": ["./packages/lexical-yjs/src"],
       "@lexical/yjs/src/*": ["./packages/lexical-yjs/src/*"]
     }

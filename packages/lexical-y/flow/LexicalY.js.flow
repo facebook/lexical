@@ -1,0 +1,105 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+import type {LexicalEditor, LexicalExtension, PointType} from 'lexical';
+import type {Doc, Node as YNode, UndoManager} from '@y/y';
+import type {ReadonlySignal} from '@lexical/extension';
+
+/**
+ * @lexical/y: EXPERIMENTAL Yjs 14 binding (block-marker layout).
+ */
+
+declare export var DEFAULT_ROOT_NAME: string;
+declare export var LAYOUT_VERSION: number;
+
+export type YBindingStatus = 'pending' | 'active' | 'readonly';
+
+export type ClientIDRange = 'uint53' | 'uint32';
+
+declare export var UNSUPPORTED_LAYOUT_WARNING: '@lexical/y/unsupported-layout';
+declare export var UNKNOWN_NODE_TYPES_WARNING: '@lexical/y/unknown-node-types';
+declare export var STORAGE_MISMATCH_WARNING: '@lexical/y/storage-mismatch';
+declare export var SELF_CHECK_WARNING: '@lexical/y/self-check';
+declare export var RECOVERED_READ_WARNING: '@lexical/y/recovered-read';
+declare export var RECOVERED_WRITE_WARNING: '@lexical/y/recovered-write';
+declare export var NESTED_FALLBACK_WARNING: '@lexical/y/nested-fallback';
+declare export var UNSYNCED_VALUE_WARNING: '@lexical/y/unsynced-value';
+declare export var UNSUPPORTED_SLOTS_WARNING: '@lexical/y/unsupported-slots';
+declare export var UNSUPPORTED_CONFIG_WARNING: '@lexical/y/unsupported-config';
+export type YWarningCode =
+  | typeof UNSUPPORTED_LAYOUT_WARNING
+  | typeof UNKNOWN_NODE_TYPES_WARNING
+  | typeof STORAGE_MISMATCH_WARNING
+  | typeof SELF_CHECK_WARNING
+  | typeof RECOVERED_READ_WARNING
+  | typeof RECOVERED_WRITE_WARNING
+  | typeof NESTED_FALLBACK_WARNING
+  | typeof UNSYNCED_VALUE_WARNING
+  | typeof UNSUPPORTED_SLOTS_WARNING
+  | typeof UNSUPPORTED_CONFIG_WARNING;
+
+export type YBindingOptions = {
+  root?: YNode,
+  captureTimeout?: number | null,
+  onStatus?: (status: YBindingStatus) => void,
+  selfCheck?: boolean,
+  selfCheckSample?: number,
+  convert?: boolean,
+  clientIDRange?: ClientIDRange,
+};
+
+export type YCursor = {anchor: unknown, focus: unknown};
+
+declare export class YBinding {
+  get editor(): LexicalEditor;
+  get doc(): Doc;
+  get root(): YNode;
+  get status(): YBindingStatus;
+  get pins(): ReadonlyMap<
+    string,
+    {readonly kind: StorageKind, readonly by?: ReadonlyArray<string>},
+  >;
+  get undoManager(): UndoManager | null;
+  constructor(editor: LexicalEditor, doc: Doc, options?: YBindingOptions): void;
+  start(): () => void;
+  dispose(): void;
+  initialize(): void;
+  undo(): boolean;
+  redo(): boolean;
+  getCursor(): YCursor | null;
+  $resolveCursor(cursor: YCursor): {anchor: PointType, focus: PointType} | null;
+}
+
+export type StorageKind = 'line' | 'format' | 'group' | 'nested';
+
+declare export function describeStorage(
+  editor: LexicalEditor,
+  // An interface, so that a YBinding (a class instance) is accepted too.
+  binding?: interface {
+    readonly pins: ReadonlyMap<string, {readonly kind: StorageKind, ...}>,
+  },
+): {[type: string]: StorageKind | 'text'};
+
+export type YCollabConfig = {
+  doc: Doc | null,
+  root: YNode | null,
+  synced: boolean,
+  captureTimeout: number | null,
+  clientIDRange: ClientIDRange,
+  selfCheck: boolean | null,
+  selfCheckSample: number | null,
+  convert: boolean,
+};
+
+declare export var YCollabExtension: LexicalExtension<
+  YCollabConfig,
+  '@lexical/y/Collab',
+  {binding: YBinding, status: ReadonlySignal<YBindingStatus>},
+  unknown,
+>;

@@ -513,6 +513,10 @@ export interface CreateEditorArgs {
    * route them to telemetry at warn severity without raising an error alarm.
    * Defaults to a handler that throws in development (so the condition is
    * impossible to miss) and only `console.warn`s in production.
+   *
+   * Packages that report a condition with a stable code pass a
+   * `LexicalWarning`: check `error instanceof LexicalWarning` to read its
+   * `code` and `data`.
    */
   onWarn?: ErrorHandler;
   parentEditor?: LexicalEditor;
@@ -1177,6 +1181,8 @@ export class LexicalEditor {
   /**
    * @internal Enabled by the v1 Yjs binding to distinguish moved nodes from
    * shifted siblings. Once enabled, persists for the lifetime of this editor.
+   * Text splits and edits are recorded too (see EditorState#_splitNodes
+   * and EditorState#_textEdits).
    */
   _recordNodeMoves: boolean;
   /** @internal */
@@ -1189,6 +1195,12 @@ export class LexicalEditor {
   _pendingEditorState: null | EditorState;
   /** @internal */
   _compositionKey: null | NodeKey;
+  /**
+   * @internal The composition key for which an update tagged
+   * DEFER_COMPOSITION_MERGE_TAG held back a text merge; merges stay held back
+   * until the composition key changes.
+   */
+  _compositionMergeHeld: null | NodeKey;
   /** @internal */
   _deferred: (() => void)[];
   /** @internal */
@@ -1281,6 +1293,7 @@ export class LexicalEditor {
     this._pendingEditorState = null;
     // Used to help co-ordinate selection and events
     this._compositionKey = null;
+    this._compositionMergeHeld = null;
     this._deferred = [];
     // Used during reconciliation
     this._keyToDOMMap = new GenMap();

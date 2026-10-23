@@ -206,6 +206,8 @@ export interface QuoteNode {
 export class QuoteNode extends ElementNode {
   $config() {
     return this.config('quote', {
+      // A shadow root quote (opt-in state) holds blocks instead.
+      children: 'inline',
       extends: ElementNode,
       generated: GENERATED_QUOTE,
       importDOM: {
@@ -364,6 +366,7 @@ export class HeadingNode extends ElementNode {
 
   $config() {
     return this.config('heading', {
+      children: 'inline',
       extends: ElementNode,
       generated: GENERATED_HEADING,
       importDOM: {

@@ -395,6 +395,22 @@ describe('MdastTableExtension', () => {
     });
   });
 
+  it('keeps the spaces at the edges of a cell', () => {
+    const markdown = table(
+      '| a                  |',
+      '| ------------------ |',
+      '| &#x20; x<br> &#x9; |',
+    );
+    using editor = createEditor(false);
+    editor.update(() => $convertFromMarkdownString(markdown), {
+      discrete: true,
+    });
+    editor.read(() => {
+      expect($cells()[1][0].getTextContent()).toBe('  x\n \t');
+      expect($convertToMarkdownString()).toBe(markdown);
+    });
+  });
+
   it('writes the empty lines at the edges of a cell', () => {
     expect(
       convert(

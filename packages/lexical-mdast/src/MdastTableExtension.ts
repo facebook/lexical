@@ -50,6 +50,7 @@ import {
   defineExtension,
   type ElementFormatType,
   FORMAT_ELEMENT_COMMAND,
+  INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   type LexicalNode,
   mergeRegister,
@@ -330,11 +331,12 @@ const cellLine = (value: string) =>
 /**
  * `gfmTableToMarkdown`, with the content of each cell written as one line:
  * as it would be outside a table, with a line break written as `<br>`,
- * line endings as spaces, and each pipe GFM would end the cell at escaped
- * (one after an even run of backslashes, as GFM reads a backslash and a
- * pipe in a cell as a pipe before anything else). That covers raw HTML,
- * code and autolinks, which `gfmTableToMarkdown` writes as their handlers
- * do (percent-encoding a pipe in an autolink) or splits the cell in.
+ * line endings as spaces, a space or tab at either edge (which GFM trims)
+ * encoded, and each pipe GFM would end the cell at escaped (one after an
+ * even run of backslashes, as GFM reads a backslash and a pipe in a cell
+ * as a pipe before anything else). That covers raw HTML, code and
+ * autolinks, which `gfmTableToMarkdown` writes as their handlers do
+ * (percent-encoding a pipe in an autolink) or splits the cell in.
  *
  * @__NO_SIDE_EFFECTS__
  */
@@ -359,6 +361,7 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
               {...info, after: ' ', before: ' '},
             )
             .replace(/\r?\n|\r/g, ' ')
+            .replace(/^[\t ]|[\t ]$/g, space => `&#x${space === ' ' ? 20 : 9};`)
             .replace(/(\\*)\|/g, (pipe, slashes: string) =>
               slashes.length % 2 ? pipe : `${slashes}\\|`,
             ),
@@ -528,6 +531,9 @@ function $formatColumns(format: ElementFormatType): boolean {
       cell.is(anchor) || cell.is(focus) ? [column] : [],
     ),
   );
+  if (columns.length === 0) {
+    return false;
+  }
   const from = Math.min(...columns);
   const to = Math.max(...columns);
   if (gfmAlign(format) || format === '') {
@@ -636,7 +642,10 @@ export const MdastStrictTableExtension = defineExtension({
           }
           const cell = $findCellNode(selection.anchor.getNode());
           if (cell && cell.is($findCellNode(selection.focus.getNode()))) {
-            selection.insertLineBreak();
+            // A line break, through its command where something handles it.
+            if (!editor.dispatchCommand(INSERT_LINE_BREAK_COMMAND, false)) {
+              selection.insertLineBreak();
+            }
             return true;
           }
           return false;

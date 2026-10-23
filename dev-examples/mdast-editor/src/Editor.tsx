@@ -149,6 +149,7 @@ const theme = {
   tableCellHeader: 'bg-zinc-100 font-semibold dark:bg-zinc-800',
   tableCellSelected: 'bg-blue-100 dark:bg-blue-900/40',
   tableScrollableWrapper: 'overflow-x-auto',
+  tableSelection: 'table-selection',
   text: {
     bold: 'font-bold',
     code: 'rounded bg-zinc-200/70 px-1 py-0.5 font-mono text-[0.9em] dark:bg-zinc-700/60',

@@ -99,14 +99,20 @@ function mapPhrasing(
 
 /**
  * The alignment of each column: that of its cell in the first row with an
- * aligned cell (the header row, unless a row was inserted above it).
+ * aligned cell (the header row, unless a row was inserted above it). With
+ * `blocks`, a cell with no alignment of its own has that of its first
+ * block, which aligning the text in it sets.
  */
-function $columnAlign(grid: GridCell[][]): AlignType[] {
-  const row =
-    grid.find(cells =>
-      cells.some(({cell}) => gfmAlign(cell.getFormatType())),
-    ) || [];
-  return row.map(({cell}) => gfmAlign(cell.getFormatType()));
+function $columnAlign(grid: GridCell[][], blocks = false): AlignType[] {
+  const $align = (cell: TableCellNode) => {
+    const block = cell.getFirstChild();
+    return (
+      gfmAlign(cell.getFormatType()) ||
+      (blocks && $isElementNode(block) ? gfmAlign(block.getFormatType()) : null)
+    );
+  };
+  const row = grid.find(cells => cells.some(({cell}) => $align(cell))) || [];
+  return row.map(({cell}) => $align(cell));
 }
 
 /** A cell at a row and column of a table, which a merged cell spans. */
@@ -314,7 +320,10 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     }
     const cells = grid[rowIndex];
     const lines = cells.map(({cell}) => $linesOf(cell));
-    if (cells.length > 0 && !lines.some(cellLines => cellLines.length > 0)) {
+    if (
+      cells.length > 0 &&
+      !cells.some(({origin}, column) => origin && lines[column].length > 0)
+    ) {
       return;
     }
     children.push({
@@ -342,7 +351,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   }
   // GFM aligns columns, by the alignment of the first row with an aligned
   // cell (the header row, unless a row was inserted above it).
-  const align = $columnAlign(grid);
+  const align = $columnAlign(grid, true);
   return [
     {
       align: Array.from({length: width}, (_, column) => align[column] || null),
@@ -581,7 +590,9 @@ function $formatColumns(format: ElementFormatType): boolean {
       reached.set(cellTable.getKey(), cells.add(cell.getKey()));
     }
   }
-  const aligns = gfmAlign(format) !== null || format === '';
+  if (gfmAlign(format) === null && format !== '') {
+    return inOneTable;
+  }
   reached.forEach((cells, key) => {
     const {grid} = $tableGrid($getNodeByKeyOrThrow<TableNode>(key));
     let from = Infinity;
@@ -594,19 +605,13 @@ function $formatColumns(format: ElementFormatType): boolean {
         }
       }),
     );
-    if (aligns) {
-      grid.forEach(row =>
-        row.forEach(({cell}, column) => {
-          if (
-            column >= from &&
-            column <= to &&
-            cell.getFormatType() !== format
-          ) {
-            cell.setFormat(format);
-          }
-        }),
-      );
-    }
+    grid.forEach(row =>
+      row.forEach(({cell}, column) => {
+        if (column >= from && column <= to && cell.getFormatType() !== format) {
+          cell.setFormat(format);
+        }
+      }),
+    );
   });
   // A selection that leaves a table, or goes from one table to another,
   // reaches blocks outside them, which are formatted as usual.

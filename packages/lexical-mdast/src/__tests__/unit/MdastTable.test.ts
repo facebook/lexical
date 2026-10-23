@@ -284,6 +284,44 @@ describe('MdastTableExtension', () => {
     );
   });
 
+  it('writes the alignment of the text in a cell as its column’s', () => {
+    expect(
+      convert(
+        table('| a | b |', '| - | - |', '| 1 | 2 |'),
+        () => {
+          $assertNodeType(
+            $cells()[0][1].getFirstChild(),
+            $isElementNode,
+          ).setFormat('center');
+        },
+        false,
+      ),
+    ).toBe(table('| a |  b  |', '| - | :-: |', '| 1 |  2  |'));
+  });
+
+  it('skips a row where a selection reaches only a block decorator', () => {
+    using editor = createEditor(false);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(
+          table('| a | b |', '| - | - |', '| 1 | 2 |', '| 3 | 4 |'),
+        );
+        const [, [one], [three, four]] = $cells();
+        three.remove();
+        one.setRowSpan(2);
+        four.getFirstChildOrThrow().insertBefore($createHorizontalRuleNode());
+        const selection = one.getAllTextNodes()[0].select(0, 0);
+        selection.focus.set(four.getKey(), 1, 'element');
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertSelectionToMarkdownString()).toBe(
+        [table('| 1 | 2 |', '| - | - |'), '***'].join('\n\n'),
+      );
+    });
+  });
+
   it('writes a merged cell with empty cells where it spans', () => {
     expect(
       convert(

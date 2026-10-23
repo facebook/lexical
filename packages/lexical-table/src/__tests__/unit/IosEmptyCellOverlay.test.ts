@@ -10,15 +10,13 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {$generateHtmlFromNodes} from '@lexical/html';
 import {
   $createTableNodeWithDimensions,
-  $isTableCellNode,
-  $isTableRowNode,
   type TableCellNode,
   TableExtension,
 } from '@lexical/table';
 import {
   $createParagraphNode,
   $createTextNode,
-  $getNodeByKey,
+  $getNearestNodeFromDOMNode,
   $getRoot,
   $getSelection,
   $isRangeSelection,
@@ -37,17 +35,11 @@ vi.mock('lexical/src/environment', async importOriginal => ({
 
 const OVERLAY = '[data-lexical-table-empty-cell-overlay]';
 
-/**
- * On iOS a double tap in an empty cell makes WebKit select back to the
- * nearest preceding word, outside the table, and paints that selection before
- * the page is notified (#9347). After a touch tap in an empty cell, the cell is
- * briefly covered by an unmanaged, non-editable overlay so the second tap
- * never lands on editable text.
- */
+// After a touch tap in an empty cell, the cell is briefly covered so the
+// second tap of a double tap never lands on editable text (#9347).
 describe('iOS empty table cell overlay', () => {
   let container: HTMLDivElement;
   let editor: LexicalEditorWithDispose;
-  let cellKeys: string[];
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -62,20 +54,21 @@ describe('iOS empty table cell overlay', () => {
       }),
     );
     editor.setRootElement(container);
-    cellKeys = [];
     editor.update(
       () => {
-        const before = $createParagraphNode().append($createTextNode('before'));
-        const table = $createTableNodeWithDimensions(1, 2, false);
-        $getRoot().clear().append(before, table);
-        for (const row of table.getChildren()) {
-          if ($isTableRowNode(row)) {
-            for (const cell of row.getChildren()) {
-              cellKeys.push(cell.getKey());
-            }
-          }
-        }
-        $getNodeByKey<TableCellNode>(cellKeys[1])!
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append($createTextNode('before')),
+            $createTableNodeWithDimensions(1, 2, false),
+          );
+      },
+      {discrete: true},
+    );
+    // Cell 0 stays empty; cell 1 has text.
+    editor.update(
+      () => {
+        $cell(1)
           .getFirstChildOrThrow<ElementNode>()
           .append($createTextNode('word'));
       },
@@ -90,9 +83,7 @@ describe('iOS empty table cell overlay', () => {
   });
 
   function cellDOM(index: number): HTMLElement {
-    const dom = editor.getElementByKey(cellKeys[index]);
-    expect(dom).not.toBe(null);
-    return dom!;
+    return container.querySelectorAll('td')[index];
   }
 
   function overlayOf(index: number): HTMLElement | null {
@@ -100,114 +91,109 @@ describe('iOS empty table cell overlay', () => {
   }
 
   function $cell(index: number): TableCellNode {
-    const cell = $getNodeByKey(cellKeys[index]);
-    expect($isTableCellNode(cell)).toBe(true);
-    return cell as TableCellNode;
+    return $getNearestNodeFromDOMNode(cellDOM(index)) as TableCellNode;
   }
 
-  /** jsdom has no PointerEvent constructor, so pointerType is defined here. */
   function pointer(
     target: Element,
     type: string,
     pointerType = 'touch',
     clientX = 0,
-  ) {
-    const event = new MouseEvent(type, {
+  ): PointerEvent {
+    const event = new PointerEvent(type, {
       bubbles: true,
       cancelable: true,
       clientX,
+      pointerType,
     });
-    Object.defineProperty(event, 'pointerType', {value: pointerType});
     target.dispatchEvent(event);
     return event;
   }
 
-  function tapCell(index: number, pointerType = 'touch'): void {
-    const paragraph = cellDOM(index).querySelector('p')!;
-    pointer(paragraph, 'pointerdown', pointerType);
-    pointer(paragraph, 'pointerup', pointerType);
+  function paragraphOf(index: number): HTMLElement {
+    return cellDOM(index).querySelector('p')!;
   }
 
-  test('no cell is covered until it is tapped', () => {
-    expect(container.querySelectorAll(OVERLAY)).toHaveLength(0);
-  });
+  function tapCell(index: number, pointerType = 'touch'): void {
+    pointer(paragraphOf(index), 'pointerdown', pointerType);
+    pointer(paragraphOf(index), 'pointerup', pointerType);
+  }
 
-  test('a touch tap in an empty cell covers it for the double-tap window', () => {
+  test('a tap covers an empty cell for the double-tap window', () => {
+    expect(container.querySelectorAll(OVERLAY)).toHaveLength(0);
+    const position = cellDOM(0).style.position;
     tapCell(0);
-    const overlay = overlayOf(0);
-    expect(overlay).not.toBe(null);
-    expect(overlay!.getAttribute('contenteditable')).toBe('false');
-    expect(isDOMUnmanaged(overlay!)).toBe(true);
+    const overlay = overlayOf(0)!;
+    expect(overlay.getAttribute('contenteditable')).toBe('false');
+    expect(isDOMUnmanaged(overlay)).toBe(true);
     expect(cellDOM(0).lastElementChild).toBe(overlay);
+    expect(cellDOM(0).style.position).toBe('relative');
     vi.advanceTimersByTime(500);
     // Uncovered again, so a later long press reaches editable content.
     expect(overlayOf(0)).toBe(null);
+    expect(cellDOM(0).style.position).toBe(position);
   });
 
-  test('restores the cell position when the overlay goes away', () => {
-    const cell = cellDOM(0);
-    const before = cell.style.position;
-    tapCell(0);
-    expect(overlayOf(0)).not.toBe(null);
-    expect(cell.style.position).toBe('relative');
-    vi.advanceTimersByTime(500);
+  test('the cell holding the caret is covered on pointerdown', () => {
+    // A touch elsewhere waits for pointerup.
+    pointer(paragraphOf(0), 'pointerdown');
     expect(overlayOf(0)).toBe(null);
-    expect(cell.style.position).toBe(before);
-  });
-
-  test('a touch on the cell holding the caret covers it on pointerdown', () => {
     // iOS holds back this tap's pointerup until the next tap has started.
-    const paragraph = cellDOM(0).querySelector('p')!;
-    document.getSelection()!.collapse(paragraph, 0);
-    pointer(paragraph, 'pointerdown');
-    expect(overlayOf(0)).not.toBe(null);
+    document.getSelection()!.collapse(paragraphOf(0), 0);
+    pointer(paragraphOf(0), 'pointerdown');
+    const overlay = overlayOf(0);
+    expect(overlay).not.toBe(null);
+    // The same tap's pointerup keeps that overlay rather than rebuilding it.
+    pointer(paragraphOf(0), 'pointerup');
+    expect(overlayOf(0)).toBe(overlay);
   });
 
-  test('a touch elsewhere waits for pointerup before covering', () => {
-    const paragraph = cellDOM(0).querySelector('p')!;
-    pointer(paragraph, 'pointerdown');
+  test.each([
+    [
+      'a drag',
+      () => {
+        pointer(paragraphOf(0), 'pointerdown', 'touch', 0);
+        pointer(paragraphOf(0), 'pointerup', 'touch', 80);
+      },
+    ],
+    [
+      'a long press',
+      () => {
+        pointer(paragraphOf(0), 'pointerdown');
+        vi.advanceTimersByTime(700);
+        pointer(paragraphOf(0), 'pointerup');
+      },
+    ],
+    [
+      'a touch iOS takes over',
+      () => {
+        pointer(paragraphOf(0), 'pointerdown');
+        pointer(paragraphOf(0), 'pointercancel');
+        const touchEnd = new Event('touchend', {
+          bubbles: true,
+          cancelable: true,
+        });
+        // Lexical's own iOS touchend listener reads changedTouches.
+        Object.defineProperty(touchEnd, 'changedTouches', {value: []});
+        paragraphOf(0).dispatchEvent(touchEnd);
+      },
+    ],
+    ['a mouse click', () => tapCell(0, 'mouse')],
+    [
+      'a tap while read-only',
+      () => {
+        editor.setEditable(false);
+        tapCell(0);
+      },
+    ],
+  ])('leaves the cell uncovered after %s', (_, act) => {
+    act();
     expect(overlayOf(0)).toBe(null);
   });
 
-  test('a drag that ends in pointerup leaves the start cell uncovered', () => {
-    const paragraph = cellDOM(0).querySelector('p')!;
-    pointer(paragraph, 'pointerdown', 'touch', 0);
-    pointer(paragraph, 'pointerup', 'touch', 80);
-    expect(overlayOf(0)).toBe(null);
-  });
-
-  test('a long press that ends in pointerup leaves the cell uncovered', () => {
-    const paragraph = cellDOM(0).querySelector('p')!;
-    pointer(paragraph, 'pointerdown');
-    vi.advanceTimersByTime(700);
-    pointer(paragraph, 'pointerup');
-    expect(overlayOf(0)).toBe(null);
-  });
-
-  test('a long press that iOS takes over leaves the cell uncovered', () => {
-    const paragraph = cellDOM(0).querySelector('p')!;
-    pointer(paragraph, 'pointerdown');
-    // iOS cancels the pointer when its own gesture (text selection) starts;
-    // only touchend follows.
-    pointer(paragraph, 'pointercancel');
-    const touchEnd = new Event('touchend', {bubbles: true, cancelable: true});
-    // Lexical's own iOS touchend listener reads changedTouches.
-    Object.defineProperty(touchEnd, 'changedTouches', {value: []});
-    paragraph.dispatchEvent(touchEnd);
-    expect(overlayOf(0)).toBe(null);
-  });
-
-  test('taps that should not be covered', () => {
+  test('a tap in a cell with text, or in another cell, uncovers', () => {
     tapCell(1);
     expect(overlayOf(1)).toBe(null);
-    tapCell(0, 'mouse');
-    expect(overlayOf(0)).toBe(null);
-    editor.setEditable(false);
-    tapCell(0);
-    expect(overlayOf(0)).toBe(null);
-  });
-
-  test('only the most recently tapped cell is covered', () => {
     editor.update(
       () => {
         $cell(1).getFirstChildOrThrow<ElementNode>().clear();
@@ -220,12 +206,11 @@ describe('iOS empty table cell overlay', () => {
     expect(overlayOf(1)).not.toBe(null);
   });
 
-  test('a second tap on the overlay places the caret in its cell', () => {
+  test('a tap on the overlay keeps focus and places the caret in its cell', () => {
     tapCell(0);
     const overlay = overlayOf(0)!;
-    const down = pointer(overlay, 'pointerdown');
     // Not letting the tap blur the editor keeps the iOS keyboard up.
-    expect(down.defaultPrevented).toBe(true);
+    expect(pointer(overlay, 'pointerdown').defaultPrevented).toBe(true);
     pointer(overlay, 'pointerup');
     overlay.dispatchEvent(
       new MouseEvent('click', {bubbles: true, cancelable: true, detail: 2}),
@@ -233,15 +218,15 @@ describe('iOS empty table cell overlay', () => {
     expect(document.activeElement).toBe(container);
     editor.read(() => {
       const selection = $getSelection();
-      expect($isRangeSelection(selection)).toBe(true);
-      if ($isRangeSelection(selection)) {
-        expect(selection.isCollapsed()).toBe(true);
-        expect($cell(0).isParentOf(selection.anchor.getNode())).toBe(true);
-      }
+      expect(
+        $isRangeSelection(selection) &&
+          selection.isCollapsed() &&
+          $cell(0).isParentOf(selection.anchor.getNode()),
+      ).toBe(true);
     });
   });
 
-  test('keeps managed children before the overlay and drops it once the cell has text', () => {
+  test('stays after managed children, out of exported HTML, and goes once the cell has text', () => {
     tapCell(0);
     editor.update(
       () => {
@@ -252,6 +237,9 @@ describe('iOS empty table cell overlay', () => {
     expect(Array.from(cellDOM(0).children).map(child => child.tagName)).toEqual(
       ['P', 'P', 'DIV'],
     );
+    const html = editor.read(() => $generateHtmlFromNodes(editor));
+    expect(html).not.toContain('data-lexical-table-empty-cell-overlay');
+    expect(html).toMatch(/<td[^>]*>\s*<p/);
     editor.update(
       () => {
         $cell(0)
@@ -261,12 +249,5 @@ describe('iOS empty table cell overlay', () => {
       {discrete: true},
     );
     expect(overlayOf(0)).toBe(null);
-  });
-
-  test('is left out of exported HTML', () => {
-    tapCell(0);
-    const html = editor.read(() => $generateHtmlFromNodes(editor));
-    expect(html).not.toContain('data-lexical-table-empty-cell-overlay');
-    expect(html).toMatch(/<td[^>]*>\s*<p/);
   });
 });

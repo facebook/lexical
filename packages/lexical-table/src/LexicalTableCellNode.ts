@@ -46,15 +46,6 @@ import {GENERATED_TABLECELL} from './LexicalTableGeneratedJSON';
 export const EMPTY_CELL_OVERLAY_ATTRIBUTE =
   'data-lexical-table-empty-cell-overlay';
 
-// The unmanaged overlay an empty cell carries on iOS (see
-// `registerIOSEmptyCellOverlays`), or null.
-function getEmptyCellOverlay(cellDOM: HTMLElement): HTMLElement | null {
-  const last = cellDOM.lastElementChild;
-  return isHTMLElement(last) && last.hasAttribute(EMPTY_CELL_OVERLAY_ATTRIBUTE)
-    ? last
-    : null;
-}
-
 // Declared as bindings and collected into the exported object, rather than
 // written as literals inside it, so that the schema below can name one without
 // a module-scope property read. Such a read is a side effect to esbuild and
@@ -217,10 +208,12 @@ export class TableCellNode extends ElementNode {
 
   getDOMSlot(element: HTMLElement): ElementDOMSlot<HTMLElement> {
     const slot = super.getDOMSlot(element);
-    // Keep the cell's children before the overlay, so DOM child offsets
-    // still match the node's children.
-    const overlay = getEmptyCellOverlay(element);
-    return overlay === null ? slot : slot.withBefore(overlay);
+    // Keep the cell's children before the iOS empty cell overlay, so DOM child
+    // offsets still match the node's children.
+    const last = element.lastElementChild;
+    return last !== null && last.hasAttribute(EMPTY_CELL_OVERLAY_ATTRIBUTE)
+      ? slot.withBefore(last)
+      : slot;
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {

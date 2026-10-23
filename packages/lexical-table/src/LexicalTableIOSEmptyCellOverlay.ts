@@ -13,7 +13,9 @@ import {
   getDOMSelection,
   isHTMLElement,
   type LexicalEditor,
+  mergeRegister,
   type NodeKey,
+  registerEventListeners,
   setDOMUnmanaged,
 } from 'lexical';
 
@@ -24,30 +26,16 @@ import {
 } from './LexicalTableCellNode';
 import {$isCellEmpty} from './LexicalTableUtils';
 
-/**
- * How long a tapped empty cell stays covered. iOS treats a second tap within
- * roughly 350ms as a double tap; the margin covers slower taps.
- */
+// iOS treats a second tap within about 350ms as a double tap.
 const DOUBLE_TAP_WINDOW_MS = 500;
-
-/**
- * A touch that stays down longer than this is a long press, not the first tap
- * of a double tap.
- */
+// A touch held longer is a long press, not the first tap of a double tap.
 const TAP_MAX_MS = 500;
 
 /**
- * On iOS, double tapping an empty table cell makes WebKit select back to the
- * nearest preceding word, which lies outside the table. The selection and its
- * highlight are produced by the OS before the page hears of it, so nothing in
- * the page can cancel or hide them (#9347).
- *
- * After a touch tap lands in an empty cell, that cell is covered for a short
- * window by an unmanaged, non-editable overlay. A second tap in the window
- * lands on the overlay instead of editable text, so iOS does not start a word
- * selection; the overlay places the caret in the cell instead. Outside the
- * window the cell is uncovered, so a long press there still starts the native
- * text selection gesture.
+ * A double tap in an empty cell makes iOS select back to the previous word,
+ * outside the table, before the page can react (#9347). After a tap, the cell
+ * is briefly covered by a non-editable overlay so the second tap lands on it
+ * instead; it is uncovered otherwise so long press still works.
  */
 export function registerIOSEmptyCellOverlays(
   editor: LexicalEditor,
@@ -61,10 +49,8 @@ export function registerIOSEmptyCellOverlays(
       return;
     }
     let current: null | {
-      cellDOM: HTMLElement;
       cellKey: NodeKey;
       overlay: HTMLElement;
-      // The inline position to restore, or null when it was not changed.
       restorePosition: null | string;
       timer: number;
     } = null;
@@ -72,8 +58,9 @@ export function registerIOSEmptyCellOverlays(
     const clear = () => {
       if (current !== null) {
         view.clearTimeout(current.timer);
-        if (current.restorePosition !== null) {
-          current.cellDOM.style.position = current.restorePosition;
+        const cellDOM = current.overlay.parentElement;
+        if (cellDOM !== null && current.restorePosition !== null) {
+          cellDOM.style.position = current.restorePosition;
         }
         current.overlay.remove();
         current = null;
@@ -83,42 +70,21 @@ export function registerIOSEmptyCellOverlays(
     const isOverlayEvent = (event: Event): boolean =>
       current !== null && getComposedEventTarget(event) === current.overlay;
 
-    const onPointerDown = (event: PointerEvent) => {
-      touchStart =
-        event.pointerType === 'touch'
-          ? {time: Date.now(), x: event.clientX, y: event.clientY}
-          : null;
-      if (isOverlayEvent(event)) {
-        // The overlay is not editable; letting the tap through would blur
-        // the editor and drop the keyboard before the caret is placed.
-        event.preventDefault();
-        return;
-      }
-      // A tap on the cell that already holds the caret gets no pointerup
-      // until iOS knows whether a second tap follows, so cover it now.
-      const domSelection = getDOMSelection(view);
+    const cellOf = (event: Event): HTMLElement | null => {
       const target = getComposedEventTarget(event);
-      const cellDOM = isHTMLElement(target) ? target.closest('td,th') : null;
-      if (
-        touchStart !== null &&
-        cellDOM !== null &&
-        domSelection !== null &&
-        domSelection.isCollapsed &&
-        cellDOM.contains(domSelection.anchorNode)
-      ) {
-        coverTappedCell(event);
-      }
-    };
-
-    const coverTappedCell = (event: Event) => {
-      if (!editor.isEditable() || isOverlayEvent(event)) {
-        return;
-      }
-      const target = getComposedEventTarget(event);
-      const cellDOM = isHTMLElement(target)
+      return isHTMLElement(target)
         ? target.closest<HTMLElement>('td,th')
         : null;
-      if (cellDOM === null || !rootElement.contains(cellDOM)) {
+    };
+
+    const coverCell = (cellDOM: HTMLElement) => {
+      if (!editor.isEditable() || !rootElement.contains(cellDOM)) {
+        return;
+      }
+      // Already covered by this tap's pointerdown: only restart the window.
+      if (current !== null && current.overlay.parentElement === cellDOM) {
+        view.clearTimeout(current.timer);
+        current.timer = view.setTimeout(clear, DOUBLE_TAP_WINDOW_MS);
         return;
       }
       const cellKey = editor.read('latest', () => {
@@ -139,10 +105,8 @@ export function registerIOSEmptyCellOverlays(
         '-webkit-user-select:none;user-select:none;' +
         '-webkit-touch-callout:none;touch-action:manipulation';
       setDOMUnmanaged(overlay);
-      // The overlay is absolutely positioned to cover the cell; a statically
-      // positioned cell would let it cover the nearest positioned ancestor.
-      // Undone with the overlay: a cell left positioned keeps a long press
-      // drag from moving the caret into the next cell.
+      // The overlay needs a positioned cell to cover it; restored with the
+      // overlay so the cell is left as its theme styled it.
       let restorePosition: null | string = null;
       if (view.getComputedStyle(cellDOM).position === 'static') {
         restorePosition = cellDOM.style.position;
@@ -150,7 +114,6 @@ export function registerIOSEmptyCellOverlays(
       }
       cellDOM.append(overlay);
       current = {
-        cellDOM,
         cellKey,
         overlay,
         restorePosition,
@@ -158,19 +121,47 @@ export function registerIOSEmptyCellOverlays(
       };
     };
 
-    // Cover only after a tap. A drag or a long press also ends in pointerup
-    // (or in pointercancel when iOS takes the touch over), and covering the
-    // cell after one would interfere with the selection it made.
+    const onPointerDown = (event: PointerEvent) => {
+      touchStart =
+        event.pointerType === 'touch'
+          ? {time: Date.now(), x: event.clientX, y: event.clientY}
+          : null;
+      if (isOverlayEvent(event)) {
+        // The overlay is not editable; letting the tap through would blur
+        // the editor and drop the keyboard before the caret is placed.
+        event.preventDefault();
+        return;
+      }
+      // A tap on the cell that already holds the caret gets no pointerup
+      // until iOS knows whether a second tap follows, so cover it now.
+      const cellDOM = cellOf(event);
+      const domSelection = getDOMSelection(view);
+      if (
+        touchStart !== null &&
+        cellDOM !== null &&
+        domSelection !== null &&
+        domSelection.isCollapsed &&
+        cellDOM.contains(domSelection.anchorNode)
+      ) {
+        coverCell(cellDOM);
+      }
+    };
+
+    // Only after a tap: covering after a drag or long press would end the
+    // selection it made.
     const onPointerUp = (event: PointerEvent) => {
       const start = touchStart;
       touchStart = null;
+      const cellDOM = cellOf(event);
       if (
         start !== null &&
+        cellDOM !== null &&
+        !isOverlayEvent(event) &&
         Date.now() - start.time <= TAP_MAX_MS &&
         Math.abs(event.clientX - start.x) <= TAP_SLOP &&
         Math.abs(event.clientY - start.y) <= TAP_SLOP
       ) {
-        coverTappedCell(event);
+        coverCell(cellDOM);
       }
     };
 
@@ -189,14 +180,15 @@ export function registerIOSEmptyCellOverlays(
       });
     };
 
-    // Capture, so this runs before the table and root handlers.
-    rootElement.addEventListener('pointerdown', onPointerDown, true);
-    rootElement.addEventListener('pointerup', onPointerUp, true);
-    rootElement.addEventListener('click', onClick, true);
-    // Typing within the window: the cell is no longer empty, so the overlay
-    // must not keep covering its text.
-    const removeUpdateListener = editor.registerUpdateListener(
-      ({dirtyElements}) => {
+    return mergeRegister(
+      // Capture, so this runs before the table and root handlers.
+      registerEventListeners(
+        rootElement,
+        {click: onClick, pointerdown: onPointerDown, pointerup: onPointerUp},
+        true,
+      ),
+      // The overlay must not cover text typed within the window.
+      editor.registerUpdateListener(({dirtyElements}) => {
         if (current === null || !dirtyElements.has(current.cellKey)) {
           return;
         }
@@ -208,14 +200,8 @@ export function registerIOSEmptyCellOverlays(
         if (!isEmpty) {
           clear();
         }
-      },
+      }),
+      clear,
     );
-    return () => {
-      clear();
-      removeUpdateListener();
-      rootElement.removeEventListener('pointerdown', onPointerDown, true);
-      rootElement.removeEventListener('pointerup', onPointerUp, true);
-      rootElement.removeEventListener('click', onClick, true);
-    };
   });
 }

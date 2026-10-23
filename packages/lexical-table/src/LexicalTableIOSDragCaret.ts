@@ -10,6 +10,9 @@ import {
   getComposedEventTarget,
   isHTMLElement,
   type LexicalEditor,
+  mergeRegister,
+  registerEventListener,
+  registerEventListeners,
 } from 'lexical';
 
 /**
@@ -61,17 +64,19 @@ export function registerIOSTableDragCaretHiding(
 
     // Passive, so a touch scroll starting in the editor does not wait on it.
     const options = {capture: true, passive: true};
-    rootElement.addEventListener('touchstart', onTouchStart, options);
-    // On the window, since the finger can be lifted outside the editor.
-    view.addEventListener('touchend', onTouchEnd, options);
-    view.addEventListener('touchcancel', onTouchEnd, options);
-    return () => {
-      rootElement.removeEventListener('touchstart', onTouchStart, true);
-      view.removeEventListener('touchend', onTouchEnd, true);
-      view.removeEventListener('touchcancel', onTouchEnd, true);
-      if (restoreCaretColor !== null) {
-        rootElement.style.caretColor = restoreCaretColor;
-      }
-    };
+    return mergeRegister(
+      registerEventListener(rootElement, 'touchstart', onTouchStart, options),
+      // On the window, since the finger can be lifted outside the editor.
+      registerEventListeners(
+        view,
+        {touchcancel: onTouchEnd, touchend: onTouchEnd},
+        options,
+      ),
+      () => {
+        if (restoreCaretColor !== null) {
+          rootElement.style.caretColor = restoreCaretColor;
+        }
+      },
+    );
   });
 }

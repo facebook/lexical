@@ -953,10 +953,6 @@ const htmlBlockToMarkdown: ToMarkdownExtension = {
     htmlBlock: ((node: HtmlBlock, _parent, state, info) => {
       const tracker = state.createTracker(info);
       const segments = node.value.split(PLACEHOLDER_SPLIT_RE);
-      // A GFM table cell holds one line (MdastTableExtension escapes the raw
-      // HTML of one), so the Markdown children of one have their line
-      // endings written as spaces.
-      const inCell = state.stack.includes('tableCell');
       let value = '';
       for (let i = 0; i < segments.length; i++) {
         if (i % 2 === 0) {
@@ -969,13 +965,12 @@ const htmlBlockToMarkdown: ToMarkdownExtension = {
         if (child !== undefined) {
           // The before/after characters drive the escaping of the embedded
           // Markdown's edges; they are whatever raw HTML surrounds it.
-          const markdown = state.handle(child, node, state, {
-            ...tracker.current(),
-            after: (segments[i + 1] || '\n')[0],
-            before: value === '' ? '\n' : value[value.length - 1],
-          });
           value += tracker.move(
-            inCell ? markdown.replace(/\r?\n|\r/g, ' ') : markdown,
+            state.handle(child, node, state, {
+              ...tracker.current(),
+              after: (segments[i + 1] || '\n')[0],
+              before: value === '' ? '\n' : value[value.length - 1],
+            }),
           );
         }
       }

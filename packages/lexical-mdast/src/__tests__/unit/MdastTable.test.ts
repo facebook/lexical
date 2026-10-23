@@ -184,7 +184,7 @@ describe('MdastTableExtension', () => {
     });
   });
 
-  it('reads the pipes in a cell as GFM does', () => {
+  it('reads and writes the pipes in a cell as GFM does', () => {
     using editor = createEditor(false);
     editor.update(
       () =>
@@ -200,6 +200,14 @@ describe('MdastTableExtension', () => {
     editor.read(() => {
       expect($cells()[1][0].getTextContent()).toBe(
         'a|b c|d <span title="e|f"> http://g|h i',
+      );
+      // Raw HTML imports as text without MdastHtmlExtension.
+      expect($convertToMarkdownString()).toBe(
+        table(
+          '| a                                                        |',
+          '| -------------------------------------------------------- |',
+          '| a\\|b `c\\|d` \\<span title="e\\|f"> <http://g\\|h> [i](j\\|k) |',
+        ),
       );
     });
   });
@@ -368,8 +376,8 @@ describe('MdastTableExtension', () => {
       ]);
       expect($convertToMarkdownString()).toBe(markdown);
     });
-    // A pipe after an odd run of backslashes, which a cell can't hold, is
-    // still escaped.
+    // A pipe after an odd run of backslashes, which a cell can't hold, isn't
+    // where GFM ends the cell, so it's written as it is.
     editor.update(
       () => {
         $cells()[1][0].getAllTextNodes()[0].setTextContent('<i title="\\|">');
@@ -379,9 +387,9 @@ describe('MdastTableExtension', () => {
     editor.read(() => {
       expect($convertToMarkdownString()).toBe(
         table(
-          '| a                |',
-          '| ---------------- |',
-          '| <i title="\\\\\\|"> |',
+          '| a              |',
+          '| -------------- |',
+          '| <i title="\\|"> |',
         ),
       );
     });

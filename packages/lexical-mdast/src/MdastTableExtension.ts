@@ -56,10 +56,9 @@ import {
   ParagraphNode,
 } from 'lexical';
 import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
-import {toString as mdastToString} from 'mdast-util-to-string';
 import {gfmTable} from 'micromark-extension-gfm-table';
 
-import {$append, escapeCellPipes, inlineMarker} from './handlers';
+import {$append, inlineMarker} from './handlers';
 import {MdastExtension} from './MdastExtension';
 
 /** An inline HTML `<br>` tag, the line break a GFM cell can hold. */
@@ -256,7 +255,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   // spans, and every row as wide as the widest. Block decorators, which a
   // cell can't hold, are written after the table.
   const [rows, grid] = $tableGrid(node);
-  const width = Math.max(0, ...grid.map(cells => cells.length));
+  const width = grid.reduce((max, cells) => Math.max(max, cells.length), 0);
   const children: TableRow[] = [];
   const decorators: LexicalNode[] = [];
   rows.forEach((row, rowIndex) => {
@@ -309,35 +308,19 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   ];
 };
 
-/**
- * Writes what a GFM cell, which holds one line and ends at a pipe that
- * isn't escaped, can't hold as it is: a line break as `<br>`, and raw HTML
- * and autolink literals with their pipes escaped.
- */
-const toCellLine = (node: MdastNode): MdastNode[] | undefined =>
-  node.type === 'break'
-    ? [{type: 'html', value: '<br>'}]
-    : node.type === 'link' &&
-        node.title == null &&
-        node.data &&
-        node.data.mdastLinkStyle === 'literal'
-      ? [{type: 'html', value: escapeCellPipes(mdastToString(node))}]
-      : 'value' in node && (node.type === 'html' || node.type === 'htmlBlock')
-        ? [
-            {
-              ...node,
-              value: escapeCellPipes(node.value),
-              ...('children' in node && {
-                children: mapPhrasing(node.children, toCellLine),
-              }),
-            } as MdastNode,
-          ]
-        : undefined;
+/** A node of Markdown that the table handler writes as it is. */
+const CELL_LINE = 'lexicalTableCellLine';
+const cellLine = (value: string) =>
+  ({type: CELL_LINE, value}) as unknown as PhrasingContent;
 
 /**
- * `gfmTableToMarkdown`, with the content of each cell written as one line.
- * Its table handler writes the cells itself, so the cells are rewritten
- * before it.
+ * `gfmTableToMarkdown`, with the content of each cell written as one line:
+ * as it would be outside a table, with a line break written as `<br>`,
+ * line endings as spaces, and each pipe GFM would end the cell at escaped
+ * (one after an even run of backslashes, as GFM reads a backslash and a
+ * pipe in a cell as a pipe before anything else). That covers raw HTML,
+ * code and autolinks, which `gfmTableToMarkdown` writes as their handlers
+ * do (percent-encoding a pipe in an autolink) or splits the cell in.
  *
  * @__NO_SIDE_EFFECTS__
  */
@@ -345,27 +328,40 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
   const extension = gfmTableToMarkdown();
   const handlers = extension.handlers || {};
   const handleTable = handlers.table as Handle;
+  const table: Handle = (node: Table, parent, state, info) => {
+    const exit = state.enter('phrasing');
+    const children = node.children.map(row => ({
+      ...row,
+      children: row.children.map(cell => {
+        const line = cellLine(
+          state
+            .containerPhrasing(
+              {
+                ...cell,
+                children: mapPhrasing(cell.children, child =>
+                  child.type === 'break' ? [cellLine('<br>')] : undefined,
+                ),
+              },
+              {...info, after: ' ', before: ' '},
+            )
+            .replace(/\r?\n|\r/g, ' ')
+            .replace(/(\\*)\|/g, (pipe, slashes: string) =>
+              slashes.length % 2 ? pipe : `${slashes}\\|`,
+            ),
+        );
+        return {...cell, children: [line]};
+      }),
+    }));
+    exit();
+    return handleTable({...node, children}, parent, state, info);
+  };
   return {
     ...extension,
     handlers: {
       ...handlers,
-      table: (node: Table, parent, state, info) =>
-        handleTable(
-          {
-            ...node,
-            children: node.children.map(row => ({
-              ...row,
-              children: row.children.map(cell => ({
-                ...cell,
-                children: mapPhrasing(cell.children, toCellLine),
-              })),
-            })),
-          },
-          parent,
-          state,
-          info,
-        ),
-    },
+      [CELL_LINE]: (node: {value: string}) => node.value,
+      table,
+    } as typeof handlers,
   };
 }
 
@@ -377,8 +373,10 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
 function $normalizeTable(table: TableNode): void {
   // Merged cells are split, and the cells split off keep their format. A
   // row span past the last row (or of 0, the rest of the rows) is cut to it
-  // first, as the split can't fill it, and a column span of 0 is 1.
+  // first, as the split can't fill it, and a column span of 0 is 1 (as the
+  // grid reads them).
   let [, grid] = $tableGrid(table);
+  let split = false;
   grid.forEach((cells, rowIndex) =>
     cells.forEach(({cell, origin}) => {
       if (origin) {
@@ -391,11 +389,14 @@ function $normalizeTable(table: TableNode): void {
         }
         if (cell.getColSpan() > 1 || cell.getRowSpan() > 1) {
           $unmergeCellNode(cell);
+          split = true;
         }
       }
     }),
   );
-  [, grid] = $tableGrid(table);
+  if (split) {
+    [, grid] = $tableGrid(table);
+  }
   // A column's alignment is the first its cells have (its header cell's,
   // unless a row was inserted above it); other formats, of the table or a
   // block in a cell, are cleared.
@@ -513,15 +514,12 @@ function $formatColumns(format: ElementFormatType): boolean {
       cell.is(anchor) || cell.is(focus) ? [column] : [],
     ),
   );
-  const align = gfmAlign(format);
-  if (align || format === '') {
+  const from = Math.min(...columns);
+  const to = Math.max(...columns);
+  if (gfmAlign(format) || format === '') {
     grid.forEach(cells =>
       cells.forEach(({cell}, column) => {
-        if (
-          column >= Math.min(...columns) &&
-          column <= Math.max(...columns) &&
-          cell.getFormatType() !== format
-        ) {
+        if (column >= from && column <= to && cell.getFormatType() !== format) {
           cell.setFormat(format);
         }
       }),

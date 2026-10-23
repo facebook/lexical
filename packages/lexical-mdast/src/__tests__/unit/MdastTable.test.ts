@@ -23,6 +23,7 @@ import {
   $isTableCellNode,
   $isTableNode,
   $isTableRowNode,
+  type SerializedTableCellNode,
   TableCellHeaderStates,
   type TableCellNode,
   type TableNode,
@@ -46,6 +47,7 @@ import {
   FORMAT_ELEMENT_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   IS_BOLD,
+  type SerializedElementNode,
   TextNode,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
@@ -320,6 +322,25 @@ describe('MdastTableExtension', () => {
         [table('| 1 | 2 |', '| - | - |'), '***'].join('\n\n'),
       );
     });
+  });
+
+  it('writes a column unaligned when the text in its cell is', () => {
+    expect(
+      convert(
+        table('| a | b |', '| :-: | - |', '| 1 | 2 |'),
+        () => {
+          $assertNodeType(
+            $cells()[0][0].getFirstChild(),
+            $isElementNode,
+          ).setFormat('start');
+          $assertNodeType(
+            $cells()[1][0].getFirstChild(),
+            $isElementNode,
+          ).setFormat('start');
+        },
+        false,
+      ),
+    ).toBe(table('| a | b |', '| - | - |', '| 1 | 2 |'));
   });
 
   it('writes the alignment of the text in a cell over the cell’s', () => {
@@ -640,6 +661,41 @@ describe('MdastTableExtension', () => {
     });
   });
 
+  it('writes a table a selection leaves or holds whole', () => {
+    using editor = createEditor(false);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(
+          ['before', table('| a |', '| - |'), 'after'].join('\n\n'),
+        );
+        $getRoot().select(0, $getRoot().getChildrenSize());
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertSelectionToMarkdownString()).toBe(
+        ['before', table('| a |', '| - |'), 'after'].join('\n\n'),
+      );
+    });
+    editor.update(
+      () => {
+        const [before] = $getRoot().getAllTextNodes();
+        const selection = before.select(2, 2);
+        const tableNode = $assertNodeType(
+          $getRoot().getChildAtIndex(1),
+          $isTableNode,
+        );
+        selection.focus.set($cells(tableNode)[0][0].getKey(), 1, 'element');
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertSelectionToMarkdownString()).toBe(
+        ['fore', table('| a |', '| - |')].join('\n\n'),
+      );
+    });
+  });
+
   it('exports only the columns a table selection spans', () => {
     using editor = createEditor(false);
     editor.update(
@@ -786,6 +842,26 @@ describe('MdastStrictTableExtension', () => {
         one.setColSpan(2);
       }),
     ).toBe(table('|  a  |   |', '| :-: | - |', '|  1  |   |'));
+  });
+
+  it('splits a merged cell loaded with a span past the last row', () => {
+    using editor = createEditor(true);
+    editor.update(
+      () =>
+        $convertFromMarkdownString(table('| a |', '| - |', '| 1 |', '| 2 |')),
+      {discrete: true},
+    );
+    const json = editor.getEditorState().toJSON();
+    const [header] = (json.root.children[0] as SerializedElementNode)
+      .children as SerializedElementNode[];
+    (header.children[0] as SerializedTableCellNode).rowSpan = 4;
+    editor.setEditorState(editor.parseEditorState(json));
+    editor.update(() => $table().markDirty(), {discrete: true});
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(
+        table('| a |   |', '| - | - |', '|   | 1 |', '|   | 2 |'),
+      );
+    });
   });
 
   it('aligns the column of a node selection in a cell', () => {

@@ -110,11 +110,6 @@ type TableAction = (typeof TABLE_ACTIONS)[number]['value'];
 function applyTableAction(editor: LexicalEditor, action: TableAction): void {
   editor.update(() => {
     const selection = $getSelection();
-    if (!$isRangeSelection(selection) && !$isTableSelection(selection)) {
-      return;
-    }
-    const anchorCell = $findCellNode(selection.anchor.getNode());
-    const focusCell = $findCellNode(selection.focus.getNode());
     if (
       action === 'left' ||
       action === 'center' ||
@@ -123,11 +118,16 @@ function applyTableAction(editor: LexicalEditor, action: TableAction): void {
     ) {
       // MdastStrictTableExtension aligns the columns of the cells the
       // selection reaches.
-      if (anchorCell || focusCell) {
+      if (selection && selection.getNodes().some(node => $findCellNode(node))) {
         editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, action);
       }
       return;
     }
+    if (!$isRangeSelection(selection) && !$isTableSelection(selection)) {
+      return;
+    }
+    const anchorCell = $findCellNode(selection.anchor.getNode());
+    const focusCell = $findCellNode(selection.focus.getNode());
     // Rows and columns change only for a selection within one table.
     if (
       !anchorCell ||

@@ -98,8 +98,9 @@ function mapPhrasing(
 /**
  * The alignment of each column: that of the first cell from the top that
  * starts in it and has one (its header cell's, unless a row was inserted
- * above it). A cell has the alignment of its first block, which aligning
- * the text in it (or pasting an aligned table) sets, or else its own.
+ * above it). A cell has the alignment of its first block's format, if the
+ * block has one (aligning the text in it, or pasting an aligned table, sets
+ * it), or else of its own.
  */
 function $columnAlign(grid: GridCell[][]): AlignType[] {
   const align: AlignType[] = [];
@@ -109,8 +110,10 @@ function $columnAlign(grid: GridCell[][]): AlignType[] {
       align[column] =
         align[column] ||
         (origin
-          ? ($isElementNode(block) && gfmAlign(block.getFormatType())) ||
-            gfmAlign(cell.getFormatType())
+          ? gfmAlign(
+              ($isElementNode(block) && block.getFormatType()) ||
+                cell.getFormatType(),
+            )
           : null);
     }),
   );
@@ -372,12 +375,16 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
         ? [{type: 'break'}, ...ctx.exportInline(line)]
         : ctx.exportInline(line),
     );
-  // A selection export that reaches one cell writes its content, as
-  // copying text in a cell does.
+  // A selection export that starts and ends in the one cell it reaches
+  // writes its content, as copying text in a cell does.
+  const selection = $getRenderContextValue(RenderContextMarkdownSelection);
   const [onlyCell] = reachedCells;
   if (
     reachedCells.size === 1 &&
-    $getRenderContextValue(RenderContextMarkdownSelection) !== null
+    ($isRangeSelection(selection) || $isTableSelection(selection)) &&
+    [selection.anchor, selection.focus].every(point =>
+      onlyCell.is($findCellNode(point.getNode())),
+    )
   ) {
     return [
       {children: $content($linesOf(onlyCell)), type: 'paragraph'},
@@ -508,7 +515,8 @@ function $normalizeTable(table: TableNode): void {
       }
     }),
   );
-  merged.forEach($unmergeCellNode);
+  // A cell whose span was set is a newer version of it.
+  merged.forEach(cell => $unmergeCellNode(cell.getLatest()));
   const split = merged.length > 0;
   if (split) {
     ({grid} = $tableGrid(table));

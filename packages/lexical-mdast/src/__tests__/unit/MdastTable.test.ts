@@ -322,6 +322,21 @@ describe('MdastTableExtension', () => {
     });
   });
 
+  it('writes the alignment of the text in a cell over the cell’s', () => {
+    expect(
+      convert(
+        table('| a |', '| :-: |', '| 1 |'),
+        () => {
+          $assertNodeType(
+            $cells()[0][0].getFirstChild(),
+            $isElementNode,
+          ).setFormat('right');
+        },
+        false,
+      ),
+    ).toBe(table('|  a |', '| -: |', '|  1 |'));
+  });
+
   it('writes a row a merged cell spans with an empty cell', () => {
     expect(
       convert(
@@ -849,11 +864,15 @@ describe('MdastStrictTableExtension', () => {
       },
       {discrete: true},
     );
-    // Left for the blocks between the tables.
-    expect(editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center')).toBe(
-      false,
-    );
+    editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
     editor.read(() => {
+      // The blocks between the tables are formatted as rich text does.
+      expect(
+        $assertNodeType(
+          $getRoot().getChildAtIndex(1),
+          $isParagraphNode,
+        ).getFormatType(),
+      ).toBe('center');
       expect($convertToMarkdownString()).toBe(
         [
           table('|  a  |', '| :-: |', '|  1  |'),
@@ -874,6 +893,36 @@ describe('MdastStrictTableExtension', () => {
         }
       }),
     ).toBe(table('| a |  b  |', '| - | :-: |', '| 1 |  2  |'));
+  });
+
+  it('keeps column alignment for justify from outside the table', () => {
+    using editor = createEditor(true);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(
+          ['before', table('| a | b |', '| :-: | :-: |', '| 1 | 2 |')].join(
+            '\n\n',
+          ),
+        );
+        const selection = $getRoot()
+          .getFirstChildOrThrow<ElementNode>()
+          .select(0, 0);
+        const [text] = $cells(
+          $assertNodeType($getRoot().getChildAtIndex(1), $isTableNode),
+        )[0][0].getAllTextNodes();
+        selection.focus.set(text.getKey(), 1, 'text');
+      },
+      {discrete: true},
+    );
+    editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(
+        [
+          'before',
+          table('|  a  |  b  |', '| :-: | :-: |', '|  1  |  2  |'),
+        ].join('\n\n'),
+      );
+    });
   });
 
   it('ignores the alignment of a block in a cell', () => {

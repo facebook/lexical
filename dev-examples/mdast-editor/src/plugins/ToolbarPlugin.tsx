@@ -109,7 +109,11 @@ type TableAction = (typeof TABLE_ACTIONS)[number]['value'];
 function applyTableAction(editor: LexicalEditor, action: TableAction): void {
   editor.update(() => {
     const selection = $getSelection();
-    if (!$isRangeSelection(selection) && !$isTableSelection(selection)) {
+    if (
+      (!$isRangeSelection(selection) && !$isTableSelection(selection)) ||
+      (!$findCellNode(selection.anchor.getNode()) &&
+        !$findCellNode(selection.focus.getNode()))
+    ) {
       return;
     }
     if (

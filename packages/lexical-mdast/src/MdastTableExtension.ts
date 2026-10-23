@@ -40,6 +40,7 @@ import {
 import {
   $createLineBreakNode,
   $createParagraphNode,
+  $findMatchingParent,
   $getNodeByKeyOrThrow,
   $getSelection,
   $isElementNode,
@@ -100,15 +101,15 @@ function mapPhrasing(
 /**
  * The alignment of each column: that of its cell in the first row with an
  * aligned cell (the header row, unless a row was inserted above it). A cell
- * with no alignment of its own has that of its first block, which aligning
- * the text in it (or pasting an aligned table) sets.
+ * has the alignment of its first block, which aligning the text in it (or
+ * pasting an aligned table) sets, or else its own.
  */
 function $columnAlign(grid: GridCell[][]): AlignType[] {
   const $align = (cell: TableCellNode) => {
     const block = cell.getFirstChild();
     return (
-      gfmAlign(cell.getFormatType()) ||
-      ($isElementNode(block) ? gfmAlign(block.getFormatType()) : null)
+      ($isElementNode(block) && gfmAlign(block.getFormatType())) ||
+      gfmAlign(cell.getFormatType())
     );
   };
   const row = grid.find(cells => cells.some(({cell}) => $align(cell))) || [];
@@ -561,7 +562,8 @@ function $normalizeTable(table: TableNode): void {
 /**
  * Aligns the columns of the cells the selection reaches in each table (from
  * the first to the last), for an alignment GFM has, and ignores any other:
- * GFM aligns columns, not cells or blocks.
+ * GFM aligns columns, not cells or blocks. A selection that reaches no cell
+ * is left to rich text.
  */
 function $formatColumns(format: ElementFormatType): boolean {
   const selection = $getSelection();
@@ -575,9 +577,6 @@ function $formatColumns(format: ElementFormatType): boolean {
   const table = anchorCell && $findTableNode(anchorCell);
   const inOneTable =
     table !== null && focusCell !== null && table === $findTableNode(focusCell);
-  if (gfmAlign(format) === null && format !== '') {
-    return inOneTable;
-  }
   const reached = new Map<string, Set<string>>();
   for (const cell of inOneTable
     ? [anchorCell, focusCell]
@@ -591,6 +590,25 @@ function $formatColumns(format: ElementFormatType): boolean {
       const cells = reached.get(cellTable.getKey()) || new Set();
       reached.set(cellTable.getKey(), cells.add(cell.getKey()));
     }
+  }
+  if (reached.size === 0) {
+    return false;
+  }
+  // Blocks outside the tables the selection reaches are formatted as rich
+  // text formats them.
+  if (!inOneTable) {
+    for (const node of selection.getNodes()) {
+      const block = $findMatchingParent(
+        node,
+        parent => $isElementNode(parent) && !parent.isInline(),
+      );
+      if ($isElementNode(block) && !$findTableNode(block)) {
+        block.setFormat(format);
+      }
+    }
+  }
+  if (gfmAlign(format) === null && format !== '') {
+    return true;
   }
   reached.forEach((cells, key) => {
     const {grid} = $tableGrid($getNodeByKeyOrThrow<TableNode>(key));
@@ -612,9 +630,7 @@ function $formatColumns(format: ElementFormatType): boolean {
       }),
     );
   });
-  // A selection that leaves a table, or goes from one table to another,
-  // reaches blocks outside them, which are formatted as usual.
-  return inOneTable;
+  return true;
 }
 
 /** Normalizes the table a changed cell is in. */

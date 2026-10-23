@@ -36,7 +36,13 @@ import {
   STATE_PREFIX,
   WRAPPER_PREFIX,
 } from './Schema';
-import {type CS, EMPTY_FORMATS, prevLiveEnd, State} from './State';
+import {
+  type CS,
+  EMPTY_FORMATS,
+  lineStart,
+  startItemAfter,
+  State,
+} from './State';
 
 /**
  * Development self-check of a local write: every line the write touched is
@@ -117,14 +123,14 @@ export function $checkWrite(writer: Writer): string[] {
     }
     const want = new Atoms();
     $pushInline(want, nodes, writer.$ctx());
-    const left = prevLiveEnd(end);
+    const {left, zone} = lineStart(writer.state, end);
     const have = new Atoms();
     readAtoms(
-      left === null ? unit.cs.y._start : left.right,
+      startItemAfter(writer.state.zonesOf(unit.cs.y), unit.cs.y, left, zone),
       end,
       unit.start || EMPTY_FORMATS,
       have,
-      writer.state.hidden,
+      writer.state.view(unit.cs.y, zone),
     );
     if (want.text !== have.text && want.text !== $shownText(writer, have)) {
       problems.push(

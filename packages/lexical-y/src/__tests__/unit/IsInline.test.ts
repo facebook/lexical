@@ -283,8 +283,20 @@ describe('@lexical/y when an instance is not what its class declares', () => {
         t.peers,
         'paragraph("a ") / test_toggle_tag("link") / paragraph(" b")',
       );
-      expect(stored(t.a)).toContain('b:test_toggle_tag');
+      // Lifted in place: the node written into the paragraph is kept where
+      // it is and marked a unit of the root (layout 2), not copied.
+      expect(stored(t.a)).toContain('i:test_toggle_tag');
       expect(stored(t.a)).not.toContain('w:test_toggle_tag');
+      expect(
+        t.a.binding.root
+          .toArray()
+          .filter(
+            (c): c is Y.Node =>
+              c instanceof Y.Node && c.name === 'i:test_toggle_tag',
+          )
+          .map(c => c.getAttr('u')),
+      ).toEqual([1]);
+      expect(t.a.binding.root.getAttr('lexical-y')).toBe(2);
       const $lifted = () => $getRoot().getChildAtIndex<ToggleTagNode>(1)!;
       expect(t.b.read(() => $lifted().isInline())).toBe(false);
       if (flipBack) {

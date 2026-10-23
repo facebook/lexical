@@ -244,6 +244,11 @@ block-beta
 _A table: the table, its rows and its cells are nodes of their own, and each
 cell holds a sequence._
 
+Moving blocks within a container keeps their characters where they are and
+adds a move record that shows them in their new place, so what a collaborator
+types in them at the same time moves with them (see
+[Wire format](#wire-format)).
+
 Custom nodes follow the same rules, from the
 [node structure](/docs/serialization/#node-structure) their class declares: a
 block that declares `children: 'inline'` is stored like a paragraph, an
@@ -252,9 +257,90 @@ and anything else as a node of its own. Properties a class keeps outside its
 `$config` schema and NodeState are not synchronized (the binding warns).
 `describeStorage(editor)` lists how each node type is stored. The first write
 of a type records its kind, so a later client whose class declares something
-else keeps the recorded kind or opens read only. The stored names are
-specified in the
-[package README](https://github.com/facebook/lexical/tree/main/packages/lexical-y#wire-format-layout-1).
+else keeps the recorded kind or opens read only.
+
+## Wire format
+
+The diagrams below use the stored names. The package README specifies them
+exactly:
+[layout 1](https://github.com/facebook/lexical/tree/main/packages/lexical-y#wire-format-layout-1)
+and
+[layout 2](https://github.com/facebook/lexical/tree/main/packages/lexical-y#wire-format-layout-2).
+
+**Layout 1.** A marker holds the line's type in `t` (left out for a
+paragraph), its fields as `p:<field>` and its NodeState as `s:<key>`. A link
+is a `w:link` format over its characters, and a node of its own is a
+`b:<type>` child that holds its own sequence. The root also records the
+layout and, per type, the storage kind its first write chose.
+
+```mermaid
+block-beta
+  columns 8
+  l0["Root"] r1["lexical-y: 1"] r2["k:heading: line"] r3["k:paragraph: line"] r4["k:link: format|url,…"]:2 r5["k:callout: nested"]:2
+  l1["Sequence"] s1("Title") m1["¶<br/>t: heading<br/>p:tag: h2"] s2("Read the ") s3("docs<br/>w:link: {url: …}") m2["¶<br/>s:color: red"]
+  block:cb:2
+    columns 2
+    n1["b:callout<br/>c: b, p:tone: info"]:2
+    n2("Note") n3["¶"]
+  end
+  style l0 fill:none,stroke:none
+  style l1 fill:none,stroke:none
+```
+
+_A heading, a paragraph with a link and a NodeState value, and a custom
+container (`callout`) that holds a paragraph, in layout 1._
+
+**Layout 2** adds move records. A record `↷` sits where its range shows: `s`
+is the item right before the range, `e` the range's last item and `p` its
+priority (the highest wins). Items typed into the range later belong to it.
+
+```mermaid
+block-beta
+  columns 8
+  l1["Stored"] rec["↷<br/>s: ¶ of Two<br/>e: ¶ of Three<br/>p: 1"] s1("One") m1["¶"] s2("Two") m2["¶"] s3("Three") m3["¶"]
+  l2["Editor"] x("Three") y("One") z("Two") space:4
+  style l1 fill:none,stroke:none
+  style l2 fill:none,stroke:none
+  style rec stroke-dasharray:4 4
+  style s3 stroke-dasharray:4 4
+  style m3 stroke-dasharray:4 4
+  style x stroke-dasharray:4 4
+```
+
+_"Three" moved to the top of a layout 2 document (`lexical-y: 2`): its
+characters stay last in the stored order, and the record (dashed) shows them
+first in the editor._
+
+A join record (`j: 1`) shows its range inline, at its own position. Joining
+"One" into the moved "Three" (Backspace) deletes One's marker and writes a
+join record at the end of "Three", so neither line's characters are copied.
+
+```mermaid
+block-beta
+  columns 9
+  l1["Stored"] rec["↷<br/>Three"] s1("One") m1["deleted ¶"] s2("Two") m2["¶"] s3("Three") j["↷ join<br/>s: ↷<br/>e: deleted ¶<br/>j: 1"] m3["¶"]
+  l2["Editor"] x("ThreeOne"):2 y("Two") space:5
+  style l1 fill:none,stroke:none
+  style l2 fill:none,stroke:none
+  style j stroke-dasharray:4 4
+  style s1 stroke-dasharray:4 4
+  style m1 stroke-dasharray:4 4
+```
+
+_The join record (dashed) shows "One" after "Three", in one line._
+
+**Upgrade.** A document starts at layout 1 and is upgraded in place, lazily,
+by the first client that writes a move. Nothing else is rewritten. Documents
+that never see a move stay at layout 1, and older clients keep editing them.
+
+```mermaid
+block-beta
+  columns 5
+  a["Layout 1 room<br/>lexical-y: 1<br/>every client edits"] arr1<["&nbsp;"]>(right) b["First move<br/>writes lexical-y: 2<br/>undo never reverts it"] arr2<["&nbsp;"]>(right) c["Layout 2<br/>new clients edit<br/>old clients read only"]
+```
+
+_The number never goes back down. A block a repair lifts out of a paragraph
+upgrades the document too._
 
 ## What changes when you turn on collaboration
 
@@ -384,12 +470,23 @@ doc.clientID = crypto.getRandomValues(new Uint32Array(1))[0] || 1;
 Every client converges to the same document, but some concurrent edits do
 not merge as a user might expect:
 
-- **Moves.** Moving a block is a delete and a re-insert, so text a
-  collaborator types into the moved block at the same time is lost or lands
-  at its old position, and two collaborators moving the same block at once
-  can duplicate it. Lexical operations that move content (turning a
-  paragraph into a list inside a container, indenting list items that hold
-  blocks) behave the same way.
+- **Moves.** Moving blocks within one container (dragging a paragraph,
+  moving a list item, reordering table rows) keeps their content: what a
+  collaborator types in them at the same time stays with them, and two
+  collaborators moving the same block show it once. Moving a block into
+  another container (into a table cell or a collapsible) is a delete and a
+  re-insert: text typed into it at the same time lands at its old position,
+  or is lost when that position is gone (a collaborator removed or moved the
+  container it was in), and two collaborators moving the same block show it
+  twice when either moves it into another container. Lexical operations that
+  put a block inside a list item (turning a paragraph into a list inside a
+  container, indenting list items that hold blocks) behave the same way. The
+  first move in a document (or the first block a repair lifts out of a
+  paragraph) marks it with layout version 2, which clients of an older
+  `@lexical/y` open read only.
+- **Joins.** Joining a moved line with the line it now follows keeps both
+  lines' content, but a join combined with other edits in the same update is
+  a copy, so a collaborator's concurrent edits there can show twice.
 - **Delete wins.** Text typed into a container that a collaborator deletes at
   the same time is deleted with it, and so is a block moved into it.
 - **Last writer wins** for the fields of one link (URL and target change
@@ -404,8 +501,6 @@ not merge as a user might expect:
   ragged table after a row insert and a column insert, two equal lists side
   by side). Every client repairs them the same way. Text typed into a list
   that is merged away before the merge reaches its author is lost.
-  A repair is written as a move, so two clients that repair the same block
-  from different states can both apply it and show the block twice.
 - **Initial content with random values.** Clients that initialize an empty
   document at once write it once only when their content is identical. An
   extension that gives new blocks random ids makes it differ, so the content
@@ -413,11 +508,12 @@ not merge as a user might expect:
   the initial blocks fixed ids.
 - **Undo** keeps a container whole once another client has put content in
   it. Undoing a removal restores the text as new content: a block a
-  collaborator moved out of the removed range at the same time shows twice
-  (the original next to the moved copy), and when two
+  collaborator moved out of the removed range into another container at the
+  same time shows twice (the original next to the moved copy), and when two
   collaborators remove the same text and both undo, it shows twice.
-- **Large lists.** A structural edit in a list costs time proportional to
-  the list on every client.
+- **Large lists and moves.** A structural edit in a list costs time proportional to
+  the list on every client, and a format change in a container that
+  holds moved blocks is read in full by the receiving clients.
 
 ## Upgrading from `@lexical/yjs`
 

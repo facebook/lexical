@@ -30,9 +30,15 @@
 // block moves on, the move limit below makes @lexical/y worse than v2 on
 // about 0.5% of seeds, while the absolute check still holds.
 //
-// Not checked here (documented limits): block moves (a move is a delete and
-// a reinsert, so a concurrent edit of the moved block can duplicate or lose
-// it), and text typed inside a container a peer removed (delete wins).
+// Block moves (move records) run in their own seeds below, checked for
+// divergence, exceptions, fragments, self-check warnings and fresh readers;
+// lost or duplicated text is not asserted there: moves into another
+// container are still a delete and a reinsert, and joins across a move
+// boundary copy text (documented limits). Longer runs:
+// FUZZ_MOVE_SEEDS=2000 FUZZ_MOVE_GC_SEEDS=500 (FUZZ_SEED_START applies).
+//
+// Not checked here (documented limits): text typed inside a container a
+// peer removed, or in a block moved into one (delete wins).
 
 import {describe, expect, test} from 'vitest';
 
@@ -112,6 +118,32 @@ function runSeeds(from: number, to: number, gc: boolean): string[] {
   return found;
 }
 
+const MOVE_SEEDS = Number(process.env.FUZZ_MOVE_SEEDS ?? 200);
+const MOVE_GC_SEEDS = Number(process.env.FUZZ_MOVE_GC_SEEDS ?? 50);
+
+/** Findings other than lost or duplicated text, with block moves on. */
+function runMoveSeeds(from: number, to: number, gc: boolean): string[] {
+  const prev = process.env.FUZZ_GC;
+  process.env.FUZZ_GC = gc ? '1' : '';
+  const found: string[] = [];
+  try {
+    for (let seed = from; seed < to; seed++) {
+      const res = runScript(genScript(seed, {moves: true}));
+      const sigs = res.failures
+        .map(f => f.sig)
+        .filter(
+          s => !allowed(s) && !s.startsWith('loss') && !s.startsWith('dup'),
+        );
+      if (sigs.length > 0) {
+        found.push(`seed ${seed}${gc ? ' (gc)' : ''}: ${sigs.join(', ')}`);
+      }
+    }
+  } finally {
+    process.env.FUZZ_GC = prev;
+  }
+  return found;
+}
+
 function chunks(start: number, count: number): [number, number][] {
   const out: [number, number][] = [];
   for (let s = start; s < start + count; s += CHUNK) {
@@ -179,5 +211,31 @@ if (process.env.FUZZ_DIFF === '1') {
       },
       600_000,
     );
+  });
+  describe('@lexical/y fuzz with block moves', () => {
+    test.each(chunks(START, MOVE_SEEDS))(
+      'seeds %i..%i',
+      (from, to) => {
+        expect(runMoveSeeds(from, to, false)).toEqual([]);
+      },
+      600_000,
+    );
+    test.each(chunks(START, MOVE_GC_SEEDS))(
+      'gc seeds %i..%i',
+      (from, to) => {
+        expect(runMoveSeeds(from, to, true)).toEqual([]);
+      },
+      600_000,
+    );
+    // Seeds of longer runs that once failed: text that no marker ends,
+    // followed by a joined line whose range holds a block a peer inserted.
+    test.each([21560, 21777])('seed %i', seed => {
+      expect(runMoveSeeds(seed, seed + 1, false)).toEqual([]);
+    });
+    // A comment over a line joined with a line of two ranges (one join
+    // record per piece, the first ending in text), then an undo.
+    test('seed 11956', () => {
+      expect(runMoveSeeds(11956, 11957, false)).toEqual([]);
+    });
   });
 }

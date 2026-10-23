@@ -6,8 +6,6 @@
  *
  */
 
-import type {Hidden} from './Hidden';
-
 import {
   ContentFormat,
   ContentString,
@@ -33,7 +31,7 @@ import {
   type TextNode,
 } from 'lexical';
 
-import {Cursor, equalFormatValue, type Formats, isLiveContent} from './Cursor';
+import {Cursor, equalFormatValue, type Formats} from './Cursor';
 import {
   $pushInline,
   Atoms,
@@ -44,6 +42,24 @@ import {
   readAtoms,
   type Run,
 } from './Inline';
+import {
+  enterZone,
+  formatsAfterItem,
+  idRef,
+  isInlineRecordItem,
+  isMoveItem,
+  MOVE,
+  MOVE_END_KEY,
+  MOVE_INLINE_KEY,
+  MOVE_ORIGIN_KEY,
+  MOVE_PRIORITY_KEY,
+  MOVE_START_KEY,
+  type Shown,
+  stepZone,
+  type Zone,
+  Zones,
+  ZoneView,
+} from './Moves';
 import {
   $groupFields,
   $groupKeyAttrs,
@@ -76,17 +92,24 @@ import {
   STATE_PREFIX,
   storedTypeOf,
   TYPE_KEY,
+  UNIT_KEY,
   WRAPPER_FIELDS_KEY,
   WRAPPER_PREFIX,
 } from './Schema';
 import {
   type CS,
   EMPTY_FORMATS,
+  isBlockNodeItem,
   isEndItem,
   isPartKey,
+  lineStart,
   nameOf,
+  nextZoneEnd,
+  physicalStarts,
+  prevBoundary,
   prevLiveEnd,
   type Roles,
+  startItemAfter,
   type State,
   typeOf,
   type Unit,
@@ -176,6 +199,48 @@ function $lineChildren(d: Desired): LexicalNode[] {
   return d.part ?? (d.node as ElementNode).getChildren();
 }
 
+/**
+ * A join across ranges (see MOVE_INLINE_KEY): line `p` (anchor `k`) keeps
+ * its first `keep` atoms and shows the next line `t` (old index `ti`) from
+ * atom `from` on, through an inline record.
+ */
+type Join = {
+  k: number;
+  p: Unit;
+  t: Unit;
+  ti: number;
+  keep: number;
+  pLength: number;
+  from: number;
+  /** The start (exclusive) of the inline record's range: `t`'s start. */
+  s: Item | null;
+  /**
+   * When `t` is not one range (see Writer#unitPieces): one inline record
+   * per piece, in order.
+   */
+  pieces?: {s: Item | null; e: Item; items: Item[]}[];
+};
+
+/** What a zoned structure write passes to each gap's write. */
+type MoveContext = {
+  movedOf: Map<number, number>;
+  groupOf: Map<
+    number,
+    {
+      s: Item | null;
+      e: Item;
+      p: number;
+      replaces: Item | null;
+      record: Item | null;
+    }
+  >;
+  contentLater: [Unit, Desired][];
+  slotAfterItem: (
+    z: Zone,
+    item: Item | null,
+  ) => {zone: Zone; left: Item | null};
+};
+
 export type WritePlan = {
   structural: Set<NodeKey>;
   inline: Set<NodeKey>;
@@ -188,6 +253,8 @@ export type WritePlan = {
    * rewrites these rather than the neighbours they passed.
    */
   moved?: ReadonlySet<NodeKey> | null;
+  /** A follow-up write that every client makes (list refresh, repair). */
+  followUp?: boolean;
 };
 
 export class Writer {
@@ -216,6 +283,16 @@ export class Writer {
   /** Containers where a group item's marker attributes were written. */
   readonly groupWrites = new Set<CS>();
   private readonly isKnownWrapper: (type: string) => boolean;
+  /** Ownership used while a container's structure is written (moves). */
+  private readonly zoneOverride = new Map<YNode, Zones>();
+  /** The zone the current unit-level write is in. */
+  private zone: Zone = null;
+  /** Whether this write wrote a move record. */
+  wroteRecord = false;
+  /** Whether this write lifted a block in place (UNIT_KEY, layout 2). */
+  wroteUnitMark = false;
+  /** Containers written with move records (checked against a read). */
+  zonedWrites = new Set<CS>();
   constructor(
     readonly state: State,
     readonly roles: Roles,
@@ -1116,7 +1193,7 @@ export class Writer {
   // Structure
 
   private $writeStructure(cs: CS, container: ElementNode): void {
-    const desired = this.$desiredUnits(container);
+    const desired = this.$liftInPlace(cs, container);
     const old = cs.units;
     const oldIndex = new Map<NodeKey, number>();
     old.forEach((u, i) => {
@@ -1139,7 +1216,7 @@ export class Writer {
         (d.kind === 'node' &&
           o.kind === 'node' &&
           o.end !== null &&
-          nameOf(o.end).startsWith(BLOCK_PREFIX) &&
+          isBlockNodeItem(o.end) &&
           storedTypeOf(typeOf(o.end)) === d.node!.getType())
       ) {
         matches.push([di, oi]);
@@ -1180,11 +1257,25 @@ export class Writer {
       matches.forEach(([di]) => {
         const d = desired[di];
         if ((d.key !== null && moved.has(d.key)) || moved.has(d.first)) {
-          weightOf.set(di, weightOf.get(di)! - 0.5);
+          // With move records, what the user moved is the unit that gets
+          // the record (its neighbours stay where they are).
+          weightOf.set(
+            di,
+            this.state.moves
+              ? weightOf.get(di)! / (big * 4)
+              : weightOf.get(di)! - 0.5,
+          );
         }
       });
     }
     const anchors = longestIncreasing(matches, ([di]) => weightOf.get(di)!);
+    if (
+      this.state.zonesOf(cs.y) !== null ||
+      this.hasRecordMoves(old, matches, anchors)
+    ) {
+      this.$writeStructureZoned(cs, desired, old, matches, anchors);
+      return;
+    }
     const n = anchors.length;
     // Changed line anchors join a neighbouring gap (the following one first)
     // so that a split or join diffs their characters with it.
@@ -1285,11 +1376,1545 @@ export class Writer {
   }
 
   /**
+   * Blocks lifted out of the line they were written in (a block a client
+   * wrote inside a paragraph without the normalization, which then split the
+   * paragraph around it) keep their shared node where it is: the node is
+   * marked a unit of the container (UNIT_KEY), which splits the line's
+   * content around it, and the line parts get the markers the editor's
+   * split gave them. Nothing is copied: a peer typing in the block, or next
+   * to it, keeps its text, and peers lifting the same block at once write
+   * the same attribute and markers (one copy under a content-derived client
+   * id, see YBinding#normalizeShared). Handles the shapes Lexical's
+   * normalization leaves ($liftOut): the block first (it goes before the
+   * line), last (after it), the only child (it replaces the line) or in the
+   * middle (the line is split, the rest in a copy). Anything else is written
+   * as before. Returns the desired units.
+   */
+  private $liftInPlace(cs: CS, container: ElementNode): Desired[] {
+    const state = this.state;
+    this.$adoptLifted(cs, container);
+    const zones = this.zonesFor(cs.y);
+    const initial = this.$desiredUnits(container);
+    // Only a block the editor shows in this container whose shared node is
+    // still an inline node of a line can be lifted (most writes have none).
+    if (
+      !initial.some(d => {
+        if (d.kind !== 'node' || d.key === null) {
+          return false;
+        }
+        const y = state.yByKey.get(d.key);
+        const it = y === undefined ? null : y._item;
+        return (
+          it !== null &&
+          !it.deleted &&
+          it.parent === cs.y &&
+          nameOf(it).startsWith(INLINE_PREFIX) &&
+          !isBlockNodeItem(it)
+        );
+      })
+    ) {
+      return initial;
+    }
+    // The lines the editor still shows in this container (no node lookup
+    // per unit: a container can hold many lines).
+    const shown = new Set<NodeKey>();
+    for (const d of initial) {
+      if (d.key !== null && d.part === undefined) {
+        shown.add(d.key);
+      }
+    }
+    // Per line: the stored inline nodes in it that the editor now shows as
+    // blocks of this container.
+    const byLine = new Map<Unit, {span: Item[]; lifted: Item[]}>();
+    const keys: NodeKey[] = [];
+    for (const u of cs.units) {
+      if (
+        (!(u.kind === 'line' && u.end !== null && !u.end.deleted) &&
+          !(u.kind === 'implicit' && zones === null)) ||
+        u.key === null
+      ) {
+        continue;
+      }
+      // Only lines whose content this write changes (a lifted block leaves
+      // its line) or that the editor removed (a block replaced its line).
+      if (
+        shown.has(u.key) &&
+        !this.plan.lines.has(u.key) &&
+        !this.plan.structural.has(u.key)
+      ) {
+        continue;
+      }
+      const span = this.lineSpan(cs, u, zones);
+      if (span === null) {
+        continue;
+      }
+      const lifted: Item[] = [];
+      for (const it of span) {
+        if (
+          it.deleted ||
+          !(it.content instanceof ContentType) ||
+          !nameOf(it).startsWith(INLINE_PREFIX) ||
+          isBlockNodeItem(it)
+        ) {
+          continue;
+        }
+        const key = state.keyByY.get(it.content.type as YNode);
+        const node = key === undefined ? null : $getNodeByKey(key);
+        const parent = node === null ? null : node.getParent();
+        if (
+          node !== null &&
+          parent !== null &&
+          parent.is(container) &&
+          !$isInlineChild(node)
+        ) {
+          lifted.push(it);
+          keys.push(key!);
+        }
+      }
+      if (lifted.length > 0) {
+        byLine.set(u, {lifted, span});
+      }
+    }
+    if (byLine.size === 0) {
+      return initial;
+    }
+    for (const key of keys) {
+      this.roles.keepAsNode(key, true);
+    }
+    let desired = this.$desiredUnits(container);
+    const failed: Item[] = [];
+    let any = false;
+    byLine.forEach(({span, lifted}, u) => {
+      if (this.$liftLine(cs, u, span, lifted, desired)) {
+        any = true;
+      } else {
+        failed.push(...lifted);
+      }
+    });
+    if (failed.length > 0) {
+      for (const it of failed) {
+        this.roles.keepAsNode(
+          state.keyByY.get((it.content as ContentType).type as YNode)!,
+          false,
+        );
+      }
+      desired = this.$desiredUnits(container);
+    }
+    if (any) {
+      this.wroteUnitMark = true;
+      this.$recomputeStarts(cs);
+    }
+    return desired;
+  }
+
+  /**
+   * A block lifted in place (UNIT_KEY) that Lexical replaced by a new node of
+   * its type holding its children (Enter at the start of a heading replaces
+   * the heading): the new node keeps the shared node and its content, as an
+   * inline node replaced in place does, instead of copying it.
+   */
+  private $adoptLifted(cs: CS, container: ElementNode): void {
+    const state = this.state;
+    const prevMap = this.prevState._nodeMap;
+    for (const u of cs.units) {
+      if (
+        u.kind !== 'node' ||
+        u.end === null ||
+        u.end.deleted ||
+        u.key === null ||
+        !nameOf(u.end).startsWith(INLINE_PREFIX) ||
+        !isBlockNodeItem(u.end)
+      ) {
+        continue;
+      }
+      const current = $getNodeByKey(u.key);
+      const prev = prevMap.get(u.key);
+      if ((current !== null && current.isAttached()) || !$isElementNode(prev)) {
+        continue;
+      }
+      const children = new Set<NodeKey>();
+      for (let k = prev.__first; k !== null; ) {
+        children.add(k);
+        const c = prevMap.get(k);
+        k = c === undefined ? null : c.__next;
+      }
+      let holder: ElementNode | null = null;
+      for (const k of children) {
+        const c = $getNodeByKey(k);
+        if (c !== null && c.isAttached()) {
+          holder = c.getParent();
+          break;
+        }
+      }
+      const y = typeOf(u.end);
+      if (
+        holder === null ||
+        !holder.getParentOrThrow().is(container) ||
+        holder.getType() !== storedTypeOf(y) ||
+        state.yByKey.has(holder.getKey()) ||
+        cs.units.some(x => x.key === holder!.getKey()) ||
+        !holder.getChildren().every(c => children.has(c.getKey()))
+      ) {
+        continue;
+      }
+      const key = holder.getKey();
+      state.yByKey.delete(u.key);
+      state.csByKey.delete(u.key);
+      state.mapNode(key, y);
+      u.key = key;
+      u.first = key;
+      u.last = key;
+      this.roles.keepAsNode(key, true);
+      this.$writeNodeAttrs(y, holder);
+      const ics = state.containers.get(y);
+      if (ics !== undefined && ics.kind === 'i') {
+        this.written.add(key);
+        this.$writeInline(ics, holder);
+      }
+    }
+  }
+
+  /**
+   * The items of line `u` in order, when they are all its zone's and hold
+   * no move record (null otherwise: no lift in place there).
+   */
+  private lineSpan(cs: CS, u: Unit, zones: Zones | null): Item[] | null {
+    if (u.end === null) {
+      // Text no marker ends (containers without records only).
+      const idx = cs.units.indexOf(u);
+      const stop = unitStop(cs.units, idx, null);
+      const out: Item[] = [];
+      for (
+        let p = this.firstAfter(cs.y, unitLeft(cs.units, idx, null));
+        p !== null && p !== stop;
+        p = p.right
+      ) {
+        if (isMoveItem(p) || (!p.deleted && isEndItem(p))) {
+          return null;
+        }
+        out.push(p);
+      }
+      return out;
+    }
+    const {left, zone} = lineStart(zones, u.end!);
+    if ((zone ?? null) !== (u.zone ?? null)) {
+      return null;
+    }
+    const out: Item[] = [];
+    for (
+      let p = left === null ? cs.y._start : left.right;
+      p !== null && p !== u.end;
+      p = p.right
+    ) {
+      if (zones !== null && zones.ownerOf(p) !== zone) {
+        continue;
+      }
+      if (isMoveItem(p) || (!p.deleted && isEndItem(p))) {
+        return null;
+      }
+      out.push(p);
+    }
+    return out;
+  }
+
+  private firstAfter(y: YNode, left: Item | null): Item | null {
+    return left === null ? y._start : left.right;
+  }
+
+  /**
+   * Lift the blocks `lifted` out of line `u` in place (see $liftInPlace),
+   * when the editor's units there are exactly what that gives: the line's
+   * content split around the blocks, each non-empty part a line. False
+   * (nothing written) otherwise.
+   */
+  private $liftLine(
+    cs: CS,
+    u: Unit,
+    span: Item[],
+    lifted: Item[],
+    desired: Desired[],
+  ): boolean {
+    const state = this.state;
+    const content = (p: Item) =>
+      !p.deleted &&
+      p.countable &&
+      !(p.content instanceof ContentFormat) &&
+      !isMoveItem(p);
+    // Parts: the content before each block, and after the last one.
+    const nonEmpty: boolean[] = [];
+    let from = 0;
+    for (const it of lifted) {
+      const at = span.indexOf(it);
+      nonEmpty.push(span.slice(from, at).some(content));
+      from = at + 1;
+    }
+    nonEmpty.push(span.slice(from).some(content));
+    const keyOf = (it: Item) =>
+      state.keyByY.get((it.content as ContentType).type as YNode)!;
+    // The units the editor must show there: [part] block [part] block ...
+    const pattern: (NodeKey | null)[] = [];
+    lifted.forEach((it, k) => {
+      if (nonEmpty[k]) {
+        pattern.push(null);
+      }
+      pattern.push(keyOf(it));
+    });
+    if (nonEmpty[lifted.length]) {
+      pattern.push(null);
+    }
+    const first = desired.findIndex(d => d.key === keyOf(lifted[0]));
+    if (first < 0) {
+      return false;
+    }
+    const start = first - (nonEmpty[0] ? 1 : 0);
+    if (start < 0 || start + pattern.length > desired.length) {
+      return false;
+    }
+    const others = new Set(
+      cs.units.filter(x => x !== u && x.key !== null).map(x => x.key),
+    );
+    const lines: Desired[] = [];
+    for (let j = 0; j < pattern.length; j++) {
+      const d = desired[start + j];
+      const want = pattern[j];
+      if (want === null) {
+        if (d.kind !== 'line' || d.key === null || others.has(d.key)) {
+          return false;
+        }
+        lines.push(d);
+      } else if (d.kind !== 'node' || d.key !== want) {
+        return false;
+      }
+    }
+    // Write: the blocks become units where they are; each part before a
+    // block gets a marker right before that block; the line's own marker
+    // ends the last part, or goes when that part is empty.
+    const units: Unit[] = [];
+    const oldEnd = u.end;
+    state.dropUnit(u);
+    let li = 0;
+    const lineUnit = (end: Item | null): Unit => {
+      const d = lines[li++];
+      if (end !== null) {
+        this.$writeMarker(end, this.$marker(d));
+      }
+      const unit: Unit =
+        units.length === 0 && li === 1
+          ? u
+          : {
+              cs,
+              end,
+              first: null,
+              key: null,
+              kind: 'line',
+              last: null,
+              sig: '',
+              start: null,
+            };
+      unit.end = end;
+      unit.key = d.key;
+      unit.first = d.first;
+      unit.last = d.last;
+      unit.kind = end === null ? 'implicit' : 'line';
+      unit.zone = u.zone;
+      return unit;
+    };
+    lifted.forEach((it, k) => {
+      if (nonEmpty[k]) {
+        const c = new Cursor(this.tr, cs.y, it.left, EMPTY_FORMATS);
+        units.push(lineUnit(c.insertPlain(new ContentType(new YNode(MARKER)))));
+      }
+      typeOf(it).setAttr(UNIT_KEY, 1);
+      const key = keyOf(it);
+      units.push({
+        cs,
+        end: it,
+        first: key,
+        key,
+        kind: 'node',
+        last: key,
+        sig: '',
+        start: null,
+        zone: u.zone,
+      });
+    });
+    if (nonEmpty[lifted.length]) {
+      units.push(lineUnit(oldEnd));
+    } else if (oldEnd !== null) {
+      oldEnd.delete(this.tr);
+    }
+    for (const x of units) {
+      state.setUnit(x);
+    }
+    const i = cs.units.indexOf(u);
+    cs.units = [...cs.units.slice(0, i), ...units, ...cs.units.slice(i + 1)];
+    return true;
+  }
+
+  /**
+   * Whether this write moves units that can keep their items (a move record
+   * shows them at the new place): matched units that are not kept in
+   * place and end with an item.
+   */
+  private hasRecordMoves(
+    old: Unit[],
+    matches: [number, number][],
+    anchors: [number, number][],
+  ): boolean {
+    // Every matched unit kept in place: nothing moves (the common case).
+    if (!this.state.moves || matches.length === anchors.length) {
+      return false;
+    }
+    const kept = new Set(anchors.map(a => a[1]));
+    return matches.some(
+      ([, oi]) =>
+        !kept.has(oi) &&
+        old[oi].end !== null &&
+        !old[oi].end!.deleted &&
+        old[oi].kind !== 'implicit',
+    );
+  }
+
+  /**
+   * The structure write of a container whose units can show elsewhere than
+   * their items (it holds move records, or this write moves units): units
+   * that moved keep their items and get a move record at their new place;
+   * the rest is written as in `$writeStructure`, each gap inside one zone.
+   */
+  private $writeStructureZoned(
+    cs: CS,
+    desired: Desired[],
+    old: Unit[],
+    matches: [number, number][],
+    anchorsIn: [number, number][],
+  ): void {
+    let anchors = anchorsIn;
+    this.zonedWrites.add(cs);
+    const state = this.state;
+    const y = cs.y;
+    this.$normalizeRecords(y);
+    const wz = new Zones(state.doc, y);
+    this.zoneOverride.set(y, wz);
+    const zoneOfUnit = (u: Unit): Zone => u.zone ?? null;
+    // Where new units go right after a unit (in the new order): after its
+    // end in its zone, or, after the last unit of a record's range, after
+    // the record (never past the end of a range).
+    const slotAfterItem = (
+      z: Zone,
+      item: Item | null,
+    ): {zone: Zone; left: Item | null} => {
+      let zone = z;
+      let left = item;
+      for (let guard = 0; guard < 64; guard++) {
+        // Skip the items right after `left` that show elsewhere (a range of
+        // another record that starts at `left`): an item inserted right
+        // after a range's start is inside that range.
+        for (
+          let p = left === null ? y._start : left.right;
+          p !== null;
+          p = p.right
+        ) {
+          if (wz.ownerOf(p) === zone) {
+            break;
+          }
+          if (zone !== null && !wz.inRange(zone, p)) {
+            break;
+          }
+          left = p;
+        }
+        if (zone === null) {
+          break;
+        }
+        const r = wz.rec(zone);
+        if (r === undefined || left !== r.e) {
+          break;
+        }
+        left = zone;
+        zone = wz.ownerOf(zone);
+      }
+      return {left, zone};
+    };
+    // Records that show units (directly or through records they show). An
+    // active record that shows nothing lost its range to another record:
+    // this write deletes it, and `$normalizeRecords` leaves it where it is,
+    // possibly between a line's characters.
+    const showsUnits = new Set<Item>();
+    for (const u of old) {
+      for (
+        let z: Zone = zoneOfUnit(u), guard = 0;
+        z !== null && !showsUnits.has(z) && guard < 64;
+        guard++
+      ) {
+        showsUnits.add(z);
+        z = wz.ownerOf(z);
+      }
+    }
+    // A unit whose items are not contiguous in its zone (a line joined
+    // across another zone's range) cannot be one range: it is written again
+    // at its new place, as without records.
+    const contiguous = (u: Unit): boolean => {
+      const z = zoneOfUnit(u);
+      if (lineStart(wz, u.end!).zone !== z) {
+        // It starts inside a range an inline record shows (a line split
+        // after a join): not one range of its zone.
+        return false;
+      }
+      let sawForeign = false;
+      // A record that shows units before the line, left between its
+      // characters (moved by a peer at the same time as a removal of the
+      // line before it): the range would start at it and leave out the
+      // line's characters before it.
+      let sawRecord = false;
+      for (let p = u.end!.left; p !== null; p = p.left) {
+        if (wz.ownerOf(p) !== z) {
+          if (z !== null && !wz.inRange(z, p)) {
+            return true;
+          }
+          sawForeign = true;
+          continue;
+        }
+        if (!p.deleted && isEndItem(p)) {
+          return true;
+        }
+        if (
+          !p.deleted &&
+          isMoveItem(p) &&
+          !isInlineRecordItem(p) &&
+          (showsUnits.has(p) || !wz.isActive(p))
+        ) {
+          sawRecord = true;
+          continue;
+        }
+        if (
+          (sawForeign || sawRecord) &&
+          !p.deleted &&
+          p.countable &&
+          !isMoveItem(p)
+        ) {
+          return false;
+        }
+      }
+      return true;
+    };
+    // Where new units go after an anchor when no old unit of the gap marks
+    // the place. Right after the anchor (slotAfterItem) only when that is a
+    // line boundary: a record showing the anchor can lie between a line's
+    // characters (a peer moved the block while another joined the lines
+    // around the record, or removed the line before it), and units written
+    // there would split that line. Otherwise right before the next anchor's
+    // line, unless the anchor shows through a record inside that line (then
+    // nothing can go between them): the anchor, when it is one range, is
+    // then moved instead (written again with a record where it shows), so
+    // that the new units go after its new record.
+    const boundaryAt = (zone: Zone, left: Item | null): boolean => {
+      if (zone !== null && isInlineRecordItem(zone)) {
+        return false;
+      }
+      for (let p = left; p !== null; p = p.left) {
+        if (wz.ownerOf(p) !== zone) {
+          if (zone !== null && !wz.inRange(zone, p)) {
+            return true;
+          }
+          continue;
+        }
+        if (
+          p.deleted ||
+          !p.countable ||
+          (isMoveItem(p) && !isInlineRecordItem(p))
+        ) {
+          continue;
+        }
+        return isEndItem(p);
+      }
+      return true;
+    };
+    // The end item of the line a record's item shows in (through the inline
+    // records it is inside).
+    const lineOfRecord = (r: Item): Item | null => {
+      let it = r;
+      for (let guard = 0; guard < 64; guard++) {
+        const owner = wz.ownerOf(it);
+        if (owner === null || !isInlineRecordItem(owner)) {
+          break;
+        }
+        it = owner;
+      }
+      return nextZoneEnd(wz, it);
+    };
+    const slotBefore = (oi: number): {zone: Zone; left: Item | null} => {
+      const zone = unitStartOf(old, oi, wz).zone;
+      return {left: afterRecords(wz, zone, y, unitLeft(old, oi, wz)), zone};
+    };
+    const gapSlots = new Map<string, {zone: Zone; left: Item | null}>();
+    const matchedOld = new Set(matches.map(m => m[1]));
+    const matchedNew = new Set(matches.map(m => m[0]));
+    anchors = anchors.filter(([di, oi], k) => {
+      const u = old[oi];
+      const next = k + 1 < anchors.length ? anchors[k + 1] : null;
+      const nextDi = next === null ? desired.length : next[0];
+      const nextOi = next === null ? old.length : next[1];
+      if (
+        u.end === null ||
+        u.end.deleted ||
+        u.kind === 'implicit' ||
+        nextDi === di + 1 ||
+        // Only new units (moved ones find their place with their records).
+        !desired
+          .slice(di + 1, nextDi)
+          .some((_, j) => !matchedNew.has(di + 1 + j)) ||
+        // A changed anchor (a split) is written with the gap's content.
+        (desired[di].kind === 'line' && this.$changed(desired[di])) ||
+        (next !== null &&
+          desired[nextDi].kind === 'line' &&
+          this.$changed(desired[nextDi])) ||
+        // An old unit left in the gap marks the place.
+        old.slice(oi + 1, nextOi).some((_, j) => !matchedOld.has(oi + 1 + j))
+      ) {
+        return true;
+      }
+      const slot = slotAfterItem(zoneOfUnit(u), u.end);
+      if (boundaryAt(slot.zone, slot.left)) {
+        return true;
+      }
+      if (next !== null) {
+        const before = slotBefore(nextOi);
+        const nextEnd = old[nextOi].end;
+        let inside = false;
+        for (
+          let z: Zone = zoneOfUnit(u), guard = 0;
+          z !== null && guard < 64;
+          z = wz.ownerOf(z), guard++
+        ) {
+          if (
+            nextEnd !== null &&
+            lineOfRecord(z) === nextEnd &&
+            wz.order(z) > (before.left === null ? -1 : wz.order(before.left))
+          ) {
+            inside = true;
+            break;
+          }
+        }
+        if (!inside && boundaryAt(before.zone, before.left)) {
+          gapSlots.set(oi + ':' + nextOi, before);
+          return true;
+        }
+      }
+      // Only a unit that is one range is moved this way (a line that spans
+      // ranges keeps its place: its pieces would be written again).
+      return !contiguous(u);
+    });
+    const anchorNew = new Set(anchors.map(a => a[0]));
+    const movedOf = new Map<number, number>();
+    // Moved units that are not one range (a line that starts inside a range
+    // an inline record shows, a line split after a join, or whose items
+    // another zone's items interrupt): their pieces (see unitPieces).
+    const piecesOf = new Map<number, ReturnType<Writer['unitPieces']>>();
+    if (state.moves) {
+      for (const [di, oi] of matches) {
+        const u = old[oi];
+        if (
+          anchorNew.has(di) ||
+          u.end === null ||
+          u.end.deleted ||
+          u.kind === 'implicit'
+        ) {
+          continue;
+        }
+        if (contiguous(u)) {
+          movedOf.set(di, oi);
+        } else if (u.kind === 'line') {
+          const pieces = this.unitPieces(wz, u);
+          if (pieces !== null) {
+            movedOf.set(di, oi);
+            piecesOf.set(oi, pieces);
+          }
+        }
+      }
+    }
+    const movedOld = new Set(movedOf.values());
+    // The item right before a unit's items in its zone, with no item of
+    // another zone in between (a new range must not hold another one). A
+    // record this write deletes is no boundary: stopping there would leave
+    // the line's characters before it out of the range.
+    const rangeStart = (u: Unit): Item | null => {
+      const z = zoneOfUnit(u);
+      for (let p = u.end!.left; p !== null; p = p.left) {
+        if (wz.ownerOf(p) !== z) {
+          return p;
+        }
+        if (
+          !p.deleted &&
+          (isEndItem(p) ||
+            (isMoveItem(p) &&
+              !isInlineRecordItem(p) &&
+              (showsUnits.has(p) || !wz.isActive(p))))
+        ) {
+          return p;
+        }
+      }
+      return null;
+    };
+    // Moved units, grouped into ranges: consecutive in the new order and in
+    // the old one, of one zone, and adjacent in the sequence.
+    type Group = {
+      ois: number[];
+      s: Item | null;
+      e: Item;
+      p: number;
+      replaces: Item | null;
+      record: Item | null;
+    };
+    const groupOf = new Map<number, Group>();
+    let current: Group | null = null;
+    let prevDi = -2;
+    for (let di = 0; di < desired.length; di++) {
+      const oi = movedOf.get(di);
+      if (oi === undefined) {
+        current = null;
+        continue;
+      }
+      const u = old[oi];
+      const pieces = piecesOf.get(oi);
+      const s =
+        pieces !== undefined && pieces !== null
+          ? pieces[pieces.length - 1].s
+          : rangeStart(u);
+      if (
+        pieces === undefined &&
+        current !== null &&
+        prevDi === di - 1 &&
+        current.ois[current.ois.length - 1] === oi - 1 &&
+        zoneOfUnit(old[oi - 1]) === zoneOfUnit(u) &&
+        s === current.e
+      ) {
+        current.ois.push(oi);
+        current.e = u.end!;
+      } else {
+        current = {e: u.end!, ois: [oi], p: 0, record: null, replaces: null, s};
+      }
+      groupOf.set(di, current);
+      prevDi = di;
+    }
+    const groups = [...new Set(groupOf.values())];
+    for (const g of groups) {
+      const z = zoneOfUnit(old[g.ois[0]]);
+      const r = wz.rec(z);
+      if (r !== undefined && !g.ois.some(oi => piecesOf.has(oi))) {
+        // The whole range of a record moves on: the new record takes over
+        // its range (anything a peer added in it moves too).
+        const live = old.filter(u => zoneOfUnit(u) === z);
+        // Only when the record still owns everything in its range and shows
+        // nothing but these units: items of it that show with another record
+        // (a peer moved them concurrently) must not move along with the new
+        // record, and a record inside the range (units a peer moved into
+        // it) would leave the new record inside its own range.
+        let ownsRange = true;
+        for (let p = r.s === null ? y._start : r.s.right; p !== null; ) {
+          if (!p.deleted && (wz.ownerOf(p) !== z || isMoveItem(p))) {
+            ownsRange = false;
+            break;
+          }
+          if (p === r.e) {
+            break;
+          }
+          p = p.right;
+        }
+        if (live.length === g.ois.length && ownsRange) {
+          g.s = r.s;
+          g.e = r.e;
+          g.replaces = z;
+        }
+      }
+      g.p = wz.priorityOver(g.ois.map(oi => old[oi].end!));
+    }
+    // The pieces of a moved unit before its last one: an inline record of
+    // each at the start of the last piece, so that the unit's record (over
+    // the last piece) shows the whole unit, in order, and every piece keeps
+    // its items.
+    piecesOf.forEach(pieces => {
+      const last = pieces![pieces!.length - 1];
+      const c = new Cursor(this.tr, y, last.s, EMPTY_FORMATS);
+      for (const pc of pieces!.slice(0, -1)) {
+        const ry = this.newRecordNode();
+        const item = c.insertPlain(new ContentType(ry));
+        ry.setAttr(MOVE_START_KEY, pc.s === null ? null : idRef(pc.s));
+        ry.setAttr(MOVE_END_KEY, idRef(pc.e));
+        ry.setAttr(MOVE_PRIORITY_KEY, wz.priorityOver(pc.items));
+        ry.setAttr(MOVE_INLINE_KEY, 1);
+        wz.addPending(pc.s, pc.e, item, true);
+      }
+    });
+    for (const g of groups) {
+      wz.addPending(g.s, g.e, old[g.ois[0]].end!);
+    }
+
+    // Joins across ranges: a changed line whose content is now its own
+    // (or the start of it) followed by the next old line's (or the end of
+    // it), where that line is removed and lives in another zone. Its text
+    // keeps its items: an inline record shows them at the end of the first
+    // line (see MOVE_INLINE_KEY), so two peers making the same join show
+    // the text once.
+    const joinOf =
+      this.plan.followUp === true || !state.moves
+        ? new Map<number, Join>()
+        : this.$findJoins(
+            wz,
+            desired,
+            old,
+            matches,
+            anchors,
+            movedOld,
+            contiguous,
+            rangeStart,
+          );
+    const joinedOld = new Set<number>();
+    joinOf.forEach(j => joinedOld.add(j.ti));
+
+    // Gaps between anchors; a changed anchor joins a neighbouring gap of its
+    // own zone (a split or join keeps its characters).
+    const n = anchors.length;
+    const gapOld = (k: number): number[] => {
+      const po = k > 0 ? anchors[k - 1][1] : -1;
+      const no = k < n ? anchors[k][1] : old.length;
+      const out: number[] = [];
+      for (let i = po + 1; i < no; i++) {
+        if (!movedOld.has(i) && !joinedOld.has(i)) {
+          out.push(i);
+        }
+      }
+      return out;
+    };
+    const gapNew = (k: number): number[] => {
+      const pd = k > 0 ? anchors[k - 1][0] : -1;
+      const nd = k < n ? anchors[k][0] : desired.length;
+      const out: number[] = [];
+      for (let i = pd + 1; i < nd; i++) {
+        out.push(i);
+      }
+      return out;
+    };
+    const gapZoneOk = (k: number, z: Zone): boolean =>
+      gapOld(k).every(oi => zoneOfUnit(old[oi]) === z) &&
+      gapNew(k).every(di => !movedOf.has(di));
+    const gapNonEmpty = (k: number) =>
+      gapOld(k).length > 0 || gapNew(k).length > 0;
+    // Text no marker ends (left by concurrent edits) is ended by the
+    // client that edits it, not by every client that writes the container
+    // (each would add its own marker).
+    const changed = (k: number) => {
+      const [di] = anchors[k];
+      const d = desired[di];
+      return d.kind === 'line' && this.$changed(d);
+    };
+    const attach: ('alone' | 'next' | 'prev')[] = [];
+    for (let k = 0; k < n; k++) {
+      const z = zoneOfUnit(old[anchors[k][1]]);
+      attach.push(
+        !changed(k) || joinOf.has(k)
+          ? 'alone'
+          : gapNonEmpty(k + 1) && gapZoneOk(k + 1, z)
+            ? 'next'
+            : gapNonEmpty(k) &&
+                gapZoneOk(k, z) &&
+                (k === 0 ||
+                  attach[k - 1] !== 'next' ||
+                  zoneOfUnit(old[anchors[k - 1][1]]) === z)
+              ? 'prev'
+              : 'alone',
+      );
+    }
+    const newUnits: Unit[] = [];
+    const used = new Set<Unit>();
+    const contentLater: [Unit, Desired][] = [];
+    const prevZone = this.zone;
+    try {
+      for (let k = 0; k <= n; k++) {
+        const oldSeg: number[] = [];
+        const newSeg: number[] = [];
+        if (k > 0 && attach[k - 1] === 'next') {
+          oldSeg.push(anchors[k - 1][1]);
+          newSeg.push(anchors[k - 1][0]);
+        }
+        oldSeg.push(...gapOld(k));
+        newSeg.push(...gapNew(k));
+        if (k < n && attach[k] === 'prev') {
+          oldSeg.push(anchors[k][1]);
+          newSeg.push(anchors[k][0]);
+        }
+        if (oldSeg.length > 0 || newSeg.length > 0) {
+          // The zone of the gap: its first old unit's, or where new units go
+          // after the anchor before it.
+          let zone: Zone;
+          let left: Item | null;
+          const primary: number[] = [];
+          if (oldSeg.length > 0) {
+            zone = zoneOfUnit(old[oldSeg[0]]);
+            for (const oi of oldSeg) {
+              if (
+                zoneOfUnit(old[oi]) === zone &&
+                primary.length === oldSeg.indexOf(oi)
+              ) {
+                primary.push(oi);
+              }
+            }
+            // After the records showing before the gap's first unit (its
+            // walk starts in the zone its line starts in).
+            const startZone = unitStartOf(old, oldSeg[0], wz).zone;
+            this.zone = startZone;
+            left = afterRecords(wz, startZone, y, unitLeft(old, oldSeg[0], wz));
+            zone = startZone;
+          } else {
+            const po = k > 0 ? anchors[k - 1][1] : -1;
+            if (po < 0) {
+              zone = null;
+              left = null;
+            } else {
+              const a = old[po];
+              let end = a.end;
+              if (end === null) {
+                // Text no marker ends: after its last item (before the
+                // node that follows it), or after its zone's record.
+                const stop = unitStop(old, po, wz);
+                const z = zoneOfUnit(a);
+                const r = wz.rec(z);
+                if (
+                  stop === null ||
+                  (r !== undefined && !wz.inRange(z!, stop))
+                ) {
+                  end = r !== undefined ? r.e : lastItem(y);
+                } else {
+                  end = stop.left;
+                }
+              }
+              const nextOi = k < n ? anchors[k][1] : old.length;
+              const preset = gapSlots.get(po + ':' + nextOi);
+              ({zone, left} =
+                preset !== undefined
+                  ? preset
+                  : slotAfterItem(zoneOfUnit(a), end));
+            }
+          }
+          // Old units of other zones in the gap: deleted where they are.
+          for (const oi of oldSeg) {
+            if (!primary.includes(oi)) {
+              this.$deleteUnit(old, oi);
+            }
+          }
+          this.zone = zone;
+          this.$writeSegment(
+            cs,
+            old,
+            primary,
+            desired,
+            newSeg,
+            left,
+            newUnits,
+            used,
+            {contentLater, groupOf, movedOf, slotAfterItem},
+          );
+        }
+        if (k < n && attach[k] === 'alone') {
+          const [di, oi] = anchors[k];
+          const d = desired[di];
+          const u = old[oi];
+          used.add(u);
+          const join = joinOf.get(k);
+          if (join !== undefined) {
+            // Written after every gap (see $writeJoin).
+            if (u.sig !== d.sig) {
+              this.$writeMarker(u.end!, this.$marker(d));
+            }
+            this.touched.push({d, unit: u});
+          } else if (d.kind === 'line') {
+            if (this.$changed(d)) {
+              this.$writeLineAlone(u, d);
+            } else if (
+              u.end !== null &&
+              (u.sig !== d.sig || this.plan.lines.has(d.key!))
+            ) {
+              this.$writeMarker(u.end, this.$marker(d));
+              u.sig = d.sig;
+              this.touched.push({d, unit: u});
+            }
+          }
+          u.first = d.first;
+          u.last = d.last;
+          u.sig = d.sig;
+          newUnits.push(u);
+        }
+      }
+      joinOf.forEach(j => this.$writeJoin(wz, j));
+    } finally {
+      this.zone = prevZone;
+      this.zoneOverride.delete(y);
+    }
+    // Records left showing nothing go away.
+    const showing = new Set<Item>();
+    const markShowing = (from: Zone) => {
+      // A record shows its units, and the records shown inside its range.
+      for (
+        let z: Zone = from, guard = 0;
+        z !== null && !showing.has(z) && guard < 64;
+        guard++
+      ) {
+        showing.add(z);
+        z = wz.ownerOf(z);
+      }
+    };
+    for (const u of newUnits) {
+      markShowing(u.zone ?? null);
+    }
+    // An inline record shows its range's text inside a line: it shows
+    // something while live content of its range is its own.
+    for (const r of wz.active) {
+      if (r.inline === true && !showing.has(r.item) && !r.item.deleted) {
+        for (let p = r.s === null ? y._start : r.s.right; p !== null; ) {
+          if (
+            !p.deleted &&
+            p.countable &&
+            !isMoveItem(p) &&
+            wz.ownerOf(p) === r.item
+          ) {
+            markShowing(r.item);
+            break;
+          }
+          if (p === r.e) {
+            break;
+          }
+          p = p.right;
+        }
+      }
+    }
+    for (const r of wz.active) {
+      if (r.p !== Infinity && !showing.has(r.item) && !r.item.deleted) {
+        r.item.delete(this.tr);
+      }
+    }
+    for (const u of old) {
+      if (!used.has(u)) {
+        state.dropUnit(u);
+      }
+    }
+    for (const u of newUnits) {
+      state.setUnit(u);
+    }
+    cs.units = newUnits;
+    state.noteMoves(y);
+    // A unit's zone is the zone of its end item (a write can end a line in
+    // a range shown inline, an Enter after a join).
+    const nz = state.zonesOf(y);
+    for (const u of newUnits) {
+      if (u.end !== null && !u.end.deleted) {
+        const z = nz === null ? null : nz.ownerOf(u.end);
+        if (z !== null || u.zone !== undefined) {
+          u.zone = z;
+        }
+      }
+    }
+    this.$zonedStarts(cs);
+    // Moved lines whose content changed too: written in their new zone.
+    for (const [u, d] of contentLater) {
+      this.$writeLineAlone(u, d);
+    }
+  }
+
+  /**
+   * The joins of a zoned structure write (see Join): an anchor line whose
+   * content changed into its own old content (or a start of it) followed by
+   * the next old line's (or an end of it), where that next line is removed,
+   * is in another zone and is one range of its zone.
+   */
+  private $findJoins(
+    wz: Zones,
+    desired: Desired[],
+    old: Unit[],
+    matches: [number, number][],
+    anchors: [number, number][],
+    movedOld: Set<number>,
+    contiguous: (u: Unit) => boolean,
+    rangeStart: (u: Unit) => Item | null,
+  ): Map<number, Join> {
+    const out = new Map<number, Join>();
+    const matched = new Set(matches.map(m => m[1]));
+    const n = anchors.length;
+    for (let k = 0; k < n; k++) {
+      const [di, oi] = anchors[k];
+      const d = desired[di];
+      const p = old[oi];
+      const ti = oi + 1;
+      const t = old[ti];
+      if (
+        d.kind !== 'line' ||
+        p.kind !== 'line' ||
+        p.end === null ||
+        p.end.deleted ||
+        !this.plan.lines.has(d.key!) ||
+        !this.$contentChanged(d.key!) ||
+        t === undefined ||
+        (k + 1 < n && anchors[k + 1][1] <= ti) ||
+        matched.has(ti) ||
+        movedOld.has(ti) ||
+        t.kind !== 'line' ||
+        t.end === null ||
+        t.end.deleted ||
+        (t.zone ?? null) === (p.zone ?? null)
+      ) {
+        continue;
+      }
+      // A second line that is not one range is joined with one inline
+      // record per piece.
+      const pieces = contiguous(t) ? null : this.unitPieces(wz, t);
+      if (!contiguous(t) && pieces === null) {
+        continue;
+      }
+      const a = this.$oldLineAtoms(wz, p);
+      const b = this.$oldLineAtoms(wz, t);
+      // Where each joined character comes from (the text node it was in):
+      // the second line's text must be recognized as such, never built from
+      // characters of the first line that happen to be equal.
+      const fromP = this.oldOrigins([p]);
+      const fromT = this.oldOrigins([t]);
+      if (fromP === null || fromT === null) {
+        continue;
+      }
+      this.setOriginOrder(this.oldOrigins([p, t]));
+      const want = new Atoms();
+      $pushInline(want, (d.node as ElementNode).getChildren(), this.$ctx(true));
+      const tKeys = new Set(fromT.map(o => o[2]).filter(key => key !== ''));
+      const split = joinSplit(
+        a,
+        b,
+        want,
+        this.state,
+        keysAt(want.origins, want.length),
+        tKeys,
+      );
+      if (
+        split !== null &&
+        (pieces === null
+          ? !this.joinMakesLoop(wz, p, t, rangeStart(t))
+          : !pieces.some(pc => this.joinMakesLoop(wz, p, t, pc.s, pc.e)))
+      ) {
+        out.set(k, {
+          from: split.from,
+          k,
+          keep: split.keep,
+          p,
+          pLength: a.length,
+          pieces: pieces ?? undefined,
+          s: rangeStart(t),
+          t,
+          ti,
+        });
+      }
+    }
+    return out;
+  }
+
+  /**
+   * Whether an inline record of `t`'s range, written at the end of `p`,
+   * would be inside its own range through the records that show it, or
+   * would put a record already inside that range inside its own range (it
+   * would then show nothing, and neither would what it showed): such a
+   * join is written as before (the second line's text is copied).
+   */
+  private joinMakesLoop(
+    wz: Zones,
+    p: Unit,
+    t: Unit,
+    s: Item | null,
+    e: Item = t.end!,
+  ): boolean {
+    const sOrd = s === null ? -1 : wz.order(s);
+    const eOrd = wz.order(e);
+    if ((s !== null && sOrd < 0) || eOrd < 0) {
+      return true;
+    }
+    const inT = (it: Item) => {
+      const k = wz.order(it);
+      return k > sOrd && k <= eOrd;
+    };
+    // Where the record shows: at the end of `p`, and where the records
+    // showing that zone show.
+    const where: Item[] = [p.end!];
+    for (
+      let z = wz.ownerOf(p.end!), guard = 0;
+      z !== null && guard < 64;
+      z = wz.ownerOf(z), guard++
+    ) {
+      where.push(z);
+    }
+    if (where.some(inT)) {
+      return true;
+    }
+    for (const r of wz.active) {
+      if (r.p === Infinity || !inT(r.item)) {
+        continue;
+      }
+      if (
+        where.some(it => {
+          const k = wz.order(it);
+          return k > r.sOrd && k <= r.eOrd;
+        })
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * The pieces of unit `u` that a move or join must carry with records of
+   * their own, in the order its walk shows them: maximal runs of items of
+   * one zone, physically adjacent, that the walk reaches without entering
+   * an inline record of the unit itself (what the walk shows through such a
+   * record moves with the record). The last piece holds the unit's end.
+   * One piece: the unit is one range. Null when its end is reached through
+   * an inline record of the unit (not handled: written as before).
+   */
+  private unitPieces(
+    wz: Zones,
+    u: Unit,
+  ): {s: Item | null; e: Item; zone: Zone; items: Item[]}[] | null {
+    const y = u.cs.y;
+    const end = u.end!;
+    const {left, zone} = lineStart(wz, end);
+    const view = new ZoneView(wz, zone, null);
+    type Piece = {s: Item | null; e: Item; zone: Zone; items: Item[]};
+    const pieces: Piece[] = [];
+    // The last piece of each zone in walk order (a walk that leaves an
+    // inline range goes on right after the record's item).
+    const lastOf = new Map<Zone, Piece>();
+    // Inline records the walk entered and has not left yet.
+    const open: Item[] = [];
+    // Inline records the walk entered and left: what it showed through
+    // them moves with their item, which is part of the piece around it.
+    const covered = new Set<Item>();
+    let cur: Piece | null = null;
+    let prevZone: Zone = zone;
+    const extend = (z: Zone, it: Item): Piece => {
+      const last = lastOf.get(z);
+      if (last !== undefined && last.e === it.left) {
+        last.e = it;
+        last.items.push(it);
+        return last;
+      }
+      const pc: Piece = {e: it, items: [it], s: it.left, zone: z};
+      pieces.push(pc);
+      lastOf.set(z, pc);
+      return pc;
+    };
+    const visit = (it: Item) => {
+      const z = view.zone;
+      if (z !== prevZone) {
+        if (
+          z !== null &&
+          wz.inlineRec(z) !== null &&
+          wz.ownerOf(z) === prevZone
+        ) {
+          open.push(z);
+        } else if (open.length > 0 && open[open.length - 1] === prevZone) {
+          // Left the inline record `prevZone`: its item belongs to the
+          // piece of the zone it is in.
+          const r = open.pop()!;
+          covered.add(r);
+          extend(z, r);
+        }
+        cur = null;
+      }
+      if (
+        wz.ownerOf(it) !== z ||
+        (!it.deleted && isMoveItem(it) && !isInlineRecordItem(it))
+      ) {
+        // Another zone's item, or a record showing units before the line
+        // (not part of the line): a piece ends.
+        cur = null;
+      } else if (cur !== null && (cur as Piece).e === it.left) {
+        (cur as Piece).e = it;
+        (cur as Piece).items.push(it);
+      } else {
+        cur = extend(z, it);
+      }
+      prevZone = z;
+    };
+    let guard = 0;
+    for (
+      let p: Item | null =
+        left === null
+          ? enterZone(view, y, y._start, end)
+          : stepZone(view, y, left, end);
+      p !== null && guard < 100000;
+      p = stepZone(view, y, p, end), guard++
+    ) {
+      visit(p);
+    }
+    if (view.zone !== wz.ownerOf(end)) {
+      return null;
+    }
+    visit(end);
+    // Ranges the walk entered and never left (the line ends inside them)
+    // move piece by piece: their record stays.
+    const own = pieces.filter(pc => pc.zone === null || !covered.has(pc.zone));
+    if (own.length === 0 || own[own.length - 1].e !== end) {
+      return null;
+    }
+    return own;
+  }
+
+  /** The atoms of an old line's content (without its marker). */
+  private $oldLineAtoms(zones: Zones, u: Unit): Atoms {
+    const {left, zone} = lineStart(zones, u.end!);
+    const out = new Atoms();
+    readAtoms(
+      startItemAfter(zones, u.cs.y, left, zone),
+      u.end,
+      u.start || EMPTY_FORMATS,
+      out,
+      new ZoneView(zones, zone, this.state.hidden),
+    );
+    return out;
+  }
+
+  /**
+   * Write a join across ranges: delete the end of the first line and the
+   * start of the second one that the join removed, insert an inline record
+   * of the second line's range right after what is left of the first line,
+   * and delete the second line's marker. The second line's text keeps its
+   * items (a peer typing in it keeps typing in the joined line).
+   */
+  private $writeJoin(wz: Zones, j: Join): void {
+    const y = j.p.cs.y;
+    const prevZone = this.zone;
+    try {
+      const tEnd = j.t.end!;
+      if (j.from > 0) {
+        const ts = lineStart(wz, tEnd);
+        this.zone = ts.zone;
+        this.cursor(y, ts.left, j.t.start || EMPTY_FORMATS).delete(j.from);
+      }
+      const ps = lineStart(wz, j.p.end!);
+      this.zone = ps.zone;
+      if (j.keep < j.pLength) {
+        const c = this.cursor(y, ps.left, j.p.start || EMPTY_FORMATS);
+        c.advance(j.keep);
+        c.delete(j.pLength - j.keep);
+      }
+      const c = this.cursor(y, ps.left, j.p.start || EMPTY_FORMATS);
+      if (j.keep === 0) {
+        c.skipRecords();
+      }
+      c.advance(j.keep);
+      c.skipNonContent();
+      const ranges =
+        j.pieces === undefined ? [{e: tEnd, items: [tEnd], s: j.s}] : j.pieces;
+      for (const range of ranges) {
+        const ry = this.newRecordNode();
+        c.insertPlain(new ContentType(ry));
+        ry.setAttr(MOVE_START_KEY, range.s === null ? null : idRef(range.s));
+        ry.setAttr(MOVE_END_KEY, idRef(range.e));
+        ry.setAttr(MOVE_PRIORITY_KEY, wz.priorityOver(range.items));
+        ry.setAttr(MOVE_INLINE_KEY, 1);
+      }
+      tEnd.delete(this.tr);
+    } finally {
+      this.zone = prevZone;
+    }
+  }
+
+  /**
+   * Text that no marker ended showed the records after some of its text
+   * after it; now that a marker ends it, those records (inside the line)
+   * would show before it: they are written again right after the marker.
+   */
+  private $keepRecordsAfter(y: YNode, _left: Item | null, end: Item): void {
+    const zones = this.zonesFor(y);
+    if (zones === null) {
+      return;
+    }
+    const zone = zones.ownerOf(end);
+    const moved: Item[] = [];
+    let content = false;
+    // The line's walk (it can start in another zone, and show inline ranges
+    // in its place): the records it passes after some content.
+    const start = lineStart(zones, end);
+    const view = new ZoneView(zones, start.zone, null);
+    for (
+      let p: Item | null =
+        start.left === null
+          ? enterZone(view, y, y._start, end)
+          : stepZone(view, y, start.left, end);
+      p !== null;
+      p = stepZone(view, y, p, end)
+    ) {
+      if (zones.ownerOf(p) !== view.zone || p.deleted || !p.countable) {
+        continue;
+      }
+      if (isMoveItem(p)) {
+        if (content) {
+          moved.push(p);
+        }
+      } else {
+        content = true;
+      }
+    }
+    let after: Item = end;
+    const prevZone = this.zone;
+    this.zone = zone;
+    for (const r of moved) {
+      const ry = this.newRecordNode();
+      after = this.cursor(y, after, EMPTY_FORMATS).insertPlain(
+        new ContentType(ry),
+      );
+      copyRecordAttrs(r, ry);
+      r.delete(this.tr);
+      const cs = this.state.containers.get(y);
+      if (cs !== undefined) {
+        for (const u of cs.units) {
+          if (u.zone === r) {
+            u.zone = after;
+          }
+        }
+      }
+    }
+    this.zone = prevZone;
+    if (moved.length > 0) {
+      this.state.noteMoves(y);
+    }
+  }
+
+  /**
+   * A record shows its units before the line its item is in. A concurrent
+   * join (or typing at the line start) can leave the record between that
+   * line's characters, where nothing can be inserted between the record's
+   * units and the line: such records are written again at the start of the
+   * line (same range and priority), which shows the same.
+   */
+  private $normalizeRecords(y: YNode): void {
+    const zones = this.state.zonesOf(y);
+    if (zones === null || this.plan.followUp === true) {
+      return;
+    }
+    const renamed = new Map<Item, Item>();
+    // In document order, so records keep their order among themselves.
+    const recs = [...zones.active].sort(
+      (a, b) => zones.order(a.item) - zones.order(b.item),
+    );
+    // Records that show nothing (they lost to another record of the same
+    // range) are not written again (they are removed with the write).
+    const cs0 = this.state.containers.get(y);
+    const showing = new Set<Item>();
+    if (cs0 !== undefined) {
+      for (const u of cs0.units) {
+        for (
+          let z: Zone = u.zone ?? null, guard = 0;
+          z !== null && !showing.has(z) && guard < 64;
+          guard++
+        ) {
+          showing.add(z);
+          z = zones.ownerOf(z);
+        }
+      }
+    }
+    for (const r of recs) {
+      if (!showing.has(r.item) || r.inline === true) {
+        // (An inline record belongs inside its line.)
+        continue;
+      }
+      const z = zones.ownerOf(r.item);
+      let content = false;
+      let boundary: Item | null = null;
+      for (let p = r.item.left; p !== null; p = p.left) {
+        if (zones.ownerOf(p) !== z) {
+          if (z !== null && !zones.inRange(z, p)) {
+            boundary = p;
+            break;
+          }
+          continue;
+        }
+        if (!p.deleted && isEndItem(p)) {
+          boundary = p;
+          break;
+        }
+        if (
+          !p.deleted &&
+          p.countable &&
+          (!isMoveItem(p) || zones.entersAt(z, p) !== null)
+        ) {
+          content = true;
+        }
+      }
+      if (!content) {
+        continue;
+      }
+      // Only inside a line (text no marker ends, before a block node or at
+      // the end, shows the record after it: nothing to do).
+      const next = nextZoneEnd(zones, r.item);
+      if (next === null || isBlockNodeItem(next)) {
+        continue;
+      }
+      // After the records already at the line's start.
+      let at = boundary;
+      for (
+        let p: Item | null = boundary === null ? y._start : boundary.right;
+        p !== null && p !== r.item;
+        p = p.right
+      ) {
+        if (zones.ownerOf(p) !== z || p.deleted || !p.countable) {
+          continue;
+        }
+        if (isMoveItem(p) && zones.entersAt(z, p) === null) {
+          at = p;
+          continue;
+        }
+        break;
+      }
+      // Only when the same records stay active: a record moved out of (or
+      // into) another record's range can change which records show
+      // anything (two records inside each other's ranges), and so what the
+      // document shows.
+      if (
+        !zones.sameActiveWith(
+          r.item,
+          (at === null ? -1 : zones.order(at)) + 0.5,
+        )
+      ) {
+        continue;
+      }
+      const prevZone = this.zone;
+      this.zone = z;
+      const ry = this.newRecordNode();
+      const item = this.cursor(y, at, EMPTY_FORMATS).insertPlain(
+        new ContentType(ry),
+      );
+      this.zone = prevZone;
+      copyRecordAttrs(r.item, ry);
+      r.item.delete(this.tr);
+      renamed.set(r.item, item);
+    }
+    if (renamed.size > 0) {
+      this.state.noteMoves(y);
+      const cs = this.state.containers.get(y);
+      if (cs !== undefined) {
+        for (const u of cs.units) {
+          const z = u.zone ? renamed.get(u.zone) : undefined;
+          if (z !== undefined) {
+            u.zone = z;
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * Set every unit's start formats (the formats in effect where it starts)
    * from the shared items: deletes and inserts start from them, and a stale
    * value would leave a format open or close one early.
    */
   private $recomputeStarts(cs: CS): void {
+    if (this.zonesFor(cs.y) !== null) {
+      this.$zonedStarts(cs);
+      return;
+    }
     const formats = new Map<string, unknown>();
     let it: Item | null = cs.y._start;
     for (const u of cs.units) {
@@ -1314,8 +2939,19 @@ export class Writer {
     }
   }
 
+  /** Start formats of every unit of a container holding moves. */
+  private $zonedStarts(cs: CS): void {
+    for (const [u, f] of physicalStarts(this.state, cs)) {
+      u.start = f.size > 0 ? f : null;
+    }
+  }
+
   /** After a line's own write, the start formats of the units after it. */
   private $fixStartsAfter(u: Unit): void {
+    if (this.zonesFor(u.cs.y) !== null) {
+      this.$zonedStarts(u.cs);
+      return;
+    }
     let unit: Unit | undefined = u;
     // Stops where the next unit's start already agrees (usually at once).
     while (unit !== undefined) {
@@ -1425,11 +3061,24 @@ export class Writer {
       }
       return;
     }
-    const left = unitLeft(old, idx);
-    const stop = unitStop(old, idx);
-    const startItem = left === null ? u.cs.y._start : left.right;
+    const zones = this.zonesFor(u.cs.y);
+    const left = unitLeft(old, idx, zones);
+    const stop = unitStop(old, idx, zones);
+    const zone = zones === null ? null : unitStartOf(old, idx, zones).zone;
+    const startItem = startItemAfter(zones, u.cs.y, left, zone);
+    const prevZone = this.zone;
+    this.zone = zone;
     const cursor = this.cursor(u.cs.y, left, u.start || EMPTY_FORMATS);
-    cursor.delete(countLive(startItem, stop, this.state.hidden));
+    // With moves, a line ends where its walk passes its end item (`last`).
+    cursor.delete(
+      countLive(
+        startItem,
+        zones !== null && u.end !== null ? null : stop,
+        this.viewFor(u.cs.y),
+        u.end,
+      ),
+    );
+    this.zone = prevZone;
   }
 
   private $writeSegment(
@@ -1441,7 +3090,9 @@ export class Writer {
     left: Item | null,
     newUnits: Unit[],
     used: Set<Unit>,
+    mv: MoveContext | null = null,
   ): Item | null {
+    const zones = this.zonesFor(cs.y);
     const remaining: number[] = [];
     for (const oi of oldSeg) {
       const u = old[oi];
@@ -1456,17 +3107,19 @@ export class Writer {
       // not re-inserted. A removed line diffs to a deletion.
       remaining.push(oi);
     }
-    const lines = newSeg.filter(di => desired[di].kind !== 'node');
+    const lines = newSeg.filter(
+      di => desired[di].kind !== 'node' && !(mv !== null && mv.movedOf.has(di)),
+    );
     const startFormats =
-      remaining.length > 0
+      remaining.length > 0 && zones === null
         ? old[remaining[0]].start || EMPTY_FORMATS
         : this.formatsAfter(left);
-    const startItem = left === null ? cs.y._start : left.right;
+    const startItem = startItemAfter(zones, cs.y, left, this.zone);
     const lineItems = new Map<number, Item>();
     if (remaining.length > 0 || lines.length > 0) {
       const oldStop =
         remaining.length > 0
-          ? unitStop(old, remaining[remaining.length - 1])
+          ? unitStop(old, remaining[remaining.length - 1], zones)
           : startItem;
       const atoms = new Atoms();
       const oldOrigins = this.oldOrigins(remaining.map(oi => old[oi]));
@@ -1506,19 +3159,18 @@ export class Writer {
         atoms,
         ctx.cursorAt,
         oldOrigins,
+        this.zone !== null && !openTail,
+        remaining.length > 0 ? old[remaining[remaining.length - 1]].end : null,
       );
       if (openTail) {
         const c = this.cursor(cs.y, left, startFormats);
         c.advance(atoms.length);
         const lastD = desired[lines[lines.length - 1]];
-        items.set(
-          atoms.length,
-          c.insertPlain(
-            new ContentType(
-              new YNode(lastD.kind === 'line' ? MARKER : RUN_END),
-            ),
-          ),
+        const tailEnd = c.insertPlain(
+          new ContentType(new YNode(lastD.kind === 'line' ? MARKER : RUN_END)),
         );
+        items.set(atoms.length, tailEnd);
+        this.$keepRecordsAfter(cs.y, left, tailEnd);
       }
       lines.forEach((di, i) => lineItems.set(di, items.get(markerAt[i])!));
     }
@@ -1531,15 +3183,69 @@ export class Writer {
       }
     }
     let after = left;
+    const gapZone = this.zone;
+    let afterZone = gapZone;
     for (const di of newSeg) {
       const d = desired[di];
+      const moi = mv === null ? undefined : mv.movedOf.get(di);
+      if (mv !== null && moi !== undefined) {
+        // A moved unit keeps its items: one record per moved range shows
+        // them here.
+        const mu = old[moi];
+        const g = mv.groupOf.get(di)!;
+        if (g.record === null) {
+          const slot = mv.slotAfterItem(afterZone, after);
+          this.zone = slot.zone;
+          const ry = this.newRecordNode();
+          g.record = this.cursor(cs.y, slot.left, EMPTY_FORMATS).insertPlain(
+            new ContentType(ry),
+          );
+          this.zone = gapZone;
+          ry.setAttr(MOVE_START_KEY, g.s === null ? null : idRef(g.s));
+          ry.setAttr(MOVE_END_KEY, idRef(g.e));
+          ry.setAttr(MOVE_PRIORITY_KEY, g.p);
+          if (g.replaces !== null && !g.replaces.deleted) {
+            g.replaces.delete(this.tr);
+          }
+          after = g.record;
+          afterZone = slot.zone;
+        }
+        this.state.dropUnit(mu);
+        mu.zone = g.record;
+        if (d.kind === 'line') {
+          if (mu.kind === 'line' && this.$changed(d)) {
+            mv.contentLater.push([mu, d]);
+          } else if (mu.sig !== d.sig || this.plan.lines.has(d.key!)) {
+            this.$writeMarker(mu.end!, this.$marker(d));
+            this.touched.push({d, unit: mu});
+          }
+        }
+        mu.first = d.first;
+        mu.last = d.last;
+        mu.sig = d.sig;
+        if (d.sig !== '') {
+          this.$refreshGroupsOf(d.node!);
+        }
+        used.add(mu);
+        newUnits.push(mu);
+        continue;
+      }
       let end: Item;
       if (d.kind === 'node') {
-        const cursor = this.cursor(cs.y, after, EMPTY_FORMATS);
+        let slotLeft = after;
+        if (mv !== null) {
+          const slot = mv.slotAfterItem(afterZone, after);
+          this.zone = slot.zone;
+          slotLeft = slot.left;
+          afterZone = slot.zone;
+        }
+        const cursor = this.cursor(cs.y, slotLeft, EMPTY_FORMATS);
+        this.zone = gapZone;
         const y = new YNode(BLOCK_PREFIX + d.node!.getType());
         end = cursor.insertPlain(new ContentType(y));
         this.$fillNode(y, d.node!);
       } else {
+        afterZone = gapZone;
         end = lineItems.get(di)!;
         if (d.kind === 'line') {
           this.$writeMarker(end, this.$marker(d));
@@ -1563,6 +3269,9 @@ export class Writer {
           start: startFormats.size > 0 ? startFormats : null,
         };
       }
+      if (u.zone !== undefined || afterZone !== null) {
+        u.zone = d.kind === 'node' ? afterZone : gapZone;
+      }
       u.first = d.first;
       u.last = d.last;
       u.sig = d.sig;
@@ -1576,6 +3285,10 @@ export class Writer {
         this.touched.push({d, unit: u});
       }
       after = end;
+    }
+    if (zones !== null || mv !== null) {
+      // Start formats are recomputed for the whole container afterwards.
+      return after;
     }
     // Formats in effect at each unit start (a format can span a marker).
     if (lines.length > 0) {
@@ -1651,10 +3364,35 @@ export class Writer {
     return after;
   }
 
+  /**
+   * A new move record's node. The binding then marks the document with
+   * the layout that has move records, outside the undo history (clients
+   * that do not know it go read only).
+   */
+  private newRecordNode(): YNode {
+    this.wroteRecord = true;
+    return new YNode(MOVE);
+  }
+
+  /** Ownership of the items of `y` for this write (null: no moves). */
+  private zonesFor(y: YNode): Zones | null {
+    return this.zoneOverride.get(y) ?? this.state.zonesOf(y);
+  }
+
+  /** What writes of the current zone in `y` see. */
+  private viewFor(y: YNode): Shown | null {
+    const zones = this.zonesFor(y);
+    return zones === null
+      ? this.state.hidden
+      : new ZoneView(zones, this.zone, this.state.hidden);
+  }
+
   /** A write cursor after `left` that skips content the editor hides. */
   private cursor(y: YNode, left: Item | null, formats: Formats): Cursor {
     const c = new Cursor(this.tr, y, left, new Map(formats));
-    c.hidden = this.state.hidden;
+    c.hidden = this.viewFor(y);
+    // A walk never stands after the last item of an inline range.
+    c.settle();
     return c;
   }
 
@@ -1662,6 +3400,9 @@ export class Writer {
   private formatsAfter(item: Item | null): Formats {
     if (item === null) {
       return EMPTY_FORMATS;
+    }
+    if (this.zonesFor(item.parent as YNode) !== null) {
+      return formatsAfterItem(item.parent as YNode, item);
     }
     const unit = this.state.unitByEnd.get(item);
     const start = prevLiveEnd(item);
@@ -1677,19 +3418,35 @@ export class Writer {
 
   /** Rewrite one line (its content and marker) on its own. */
   $writeLineAlone(u: Unit, d: Desired): void {
+    const prevZone = this.zone;
+    const zones = this.zonesFor(u.cs.y);
+    // A line's walk starts in the zone its line starts in (see lineStart).
+    this.zone =
+      zones === null
+        ? (u.zone ?? null)
+        : unitStartOf(u.cs.units, u.cs.units.indexOf(u), zones).zone;
+    try {
+      this.$writeLineAloneInZone(u, d);
+    } finally {
+      this.zone = prevZone;
+    }
+  }
+
+  private $writeLineAloneInZone(u: Unit, d: Desired): void {
     if (this.$writeTextEdit(u, d)) {
       return;
     }
     const old = u.cs.units;
+    const zones = this.zonesFor(u.cs.y);
     let left: Item | null;
     let stop: Item | null;
     if (u.end !== null) {
-      left = prevLiveEnd(u.end);
+      left = prevBoundary(zones, u.end);
       stop = u.end.right;
     } else {
       const idx = old.indexOf(u);
-      left = unitLeft(old, idx);
-      stop = unitStop(old, idx);
+      left = unitLeft(old, idx, zones);
+      stop = unitStop(old, idx, zones);
     }
     const atoms = new Atoms();
     const oldOrigins = this.oldOrigins([u]);
@@ -1714,6 +3471,7 @@ export class Writer {
       const c = this.cursor(u.cs.y, left, u.start || EMPTY_FORMATS);
       c.advance(at);
       end = c.insertPlain(new ContentType(new YNode(MARKER)));
+      this.$keepRecordsAfter(u.cs.y, left, end);
     } else {
       atoms.pushSpecial({kind: 'marker', ref: d}, null);
       const items = this.$writeSeq(
@@ -1724,6 +3482,8 @@ export class Writer {
         atoms,
         ctx.cursorAt,
         oldOrigins,
+        false,
+        u.end,
       );
       end = items.get(at)!;
     }
@@ -1753,6 +3513,12 @@ export class Writer {
       u.end.deleted ||
       d.part !== undefined
     ) {
+      return false;
+    }
+    // With moves, a line can be written alone after text from another
+    // zone was merged into it (a join with a moved line): the full write
+    // tells such text apart (it has no old characters here).
+    if (this.plan.removedText.size > 0 && this.zonesFor(u.cs.y) !== null) {
       return false;
     }
     const line = d.node as ElementNode;
@@ -1830,7 +3596,7 @@ export class Writer {
     const del = oldText.length - prefix - suffix;
     const ins = newText.slice(prefix, newText.length - suffix);
     if (del > 0 || ins.length > 0) {
-      const left = prevLiveEnd(u.end);
+      const left = prevBoundary(this.zonesFor(u.cs.y), u.end);
       const c = this.cursor(u.cs.y, left, u.start || EMPTY_FORMATS);
       c.advance(offset + prefix);
       if (del > 0) {
@@ -1869,10 +3635,23 @@ export class Writer {
     atoms: Atoms,
     cursorAt: number,
     oldOrigins: [number, number, string][] | null = null,
+    pinLast = false,
+    oldLast: Item | null = null,
   ): Map<number, Item> {
-    const startItem = left === null ? y._start : left.right;
+    const zones = this.zonesFor(y);
+    const startItem = startItemAfter(zones, y, left, this.zone);
     const old = new Atoms();
-    readAtoms(startItem, oldStop, startFormats, old, this.state.hidden);
+    // With moves, old content ends where its walk passes `oldLast` (the
+    // last unit's end item), not at a physical item.
+    readAtoms(
+      startItem,
+      zones !== null && oldLast !== null ? null : oldStop,
+      startFormats,
+      old,
+      this.viewFor(y),
+      Infinity,
+      oldLast,
+    );
     const state = this.state;
     // Types of the new inline nodes (those without a shared node yet): a
     // replaced node of one of these types is kept by the new node of its own
@@ -1985,6 +3764,21 @@ export class Writer {
         }
       }
     }
+    // Inside a moved range, the old last end item (the range's end) stays
+    // last: nothing may be inserted after it, which would be outside the
+    // range.
+    if (
+      pinLast &&
+      suffix === 0 &&
+      old.length > 0 &&
+      atoms.length > 0 &&
+      old.specials.has(old.length - 1) &&
+      atoms.specials.has(atoms.length - 1) &&
+      matchSpecial(old.length - 1, atoms.length - 1)
+    ) {
+      prefix = Math.min(prefix, old.length - 1, atoms.length - 1);
+      suffix = 1;
+    }
     const items = new Map<number, Item>();
     for (let i = 0; i < prefix; i++) {
       const it = old.items.get(i);
@@ -2011,6 +3805,11 @@ export class Writer {
       }
     }
     const cursor = this.cursor(y, left, startFormats);
+    if (prefix === 0 && old.length > 0) {
+      // Content written at the start of existing content goes after the
+      // move records there (they show before it).
+      cursor.skipRecords();
+    }
     cursor.advance(prefix);
     const del = old.length - prefix - suffix;
     if (del > 0) {
@@ -2098,7 +3897,7 @@ export class Writer {
       startFormats,
       atoms.length,
       actual,
-      this.state.hidden,
+      this.viewFor(y),
     );
     const ops: {start: number; end: number; formats: Attrs; sig: string}[] = [];
     // A line break carries wrapper formats and its own NodeState; a child
@@ -2468,6 +4267,61 @@ function wrapperOnly(attrs: Attrs): Attrs {
   return out;
 }
 
+/** A record written again keeps its range, priority and rank. */
+function copyRecordAttrs(from: Item, to: YNode): void {
+  const old = (from.content as ContentType).type as YNode;
+  to.setAttr(MOVE_START_KEY, old.getAttr(MOVE_START_KEY) ?? null);
+  to.setAttr(MOVE_END_KEY, old.getAttr(MOVE_END_KEY));
+  to.setAttr(MOVE_PRIORITY_KEY, old.getAttr(MOVE_PRIORITY_KEY));
+  to.setAttr(
+    MOVE_ORIGIN_KEY,
+    old.getAttr(MOVE_ORIGIN_KEY) ?? [from.id.client, from.id.clock],
+  );
+  if (old.getAttr(MOVE_INLINE_KEY) === 1) {
+    to.setAttr(MOVE_INLINE_KEY, 1);
+  }
+}
+
+function lastItem(y: YNode): Item | null {
+  let last: Item | null = null;
+  for (let it = y._start; it !== null; it = it.right) {
+    last = it;
+  }
+  return last;
+}
+
+/**
+ * The last move record of `zone` right after `left` (before the zone's next
+ * content), or `left`: the records there show before the unit that follows,
+ * so a rewrite of that unit starts after them.
+ */
+function afterRecords(
+  zones: Zones,
+  zone: Zone,
+  y: YNode,
+  left: Item | null,
+): Item | null {
+  let last = left;
+  for (let p = left === null ? y._start : left.right; p !== null; p = p.right) {
+    if (zones.ownerOf(p) !== zone) {
+      if (zone !== null && !zones.inRange(zone, p)) {
+        break;
+      }
+      continue;
+    }
+    if (p.deleted || !p.countable) {
+      continue;
+    }
+    if (isMoveItem(p) && zones.entersAt(zone, p) === null) {
+      // (An inline record shows text in its place: content.)
+      last = p;
+      continue;
+    }
+    break;
+  }
+  return last;
+}
+
 /** The live end item before an old unit (after earlier deletions too). */
 /** The signature of a group item: what decides its place in the groups. */
 /** The signature of a group item's group: its key and its outer keys. */
@@ -2481,23 +4335,120 @@ export function groupSig(type: string, gsig: string, level: number): string {
 }
 
 /** The live end item before an old unit (after earlier deletions too). */
-export function unitLeft(units: Unit[], idx: number): Item | null {
+export function unitLeft(
+  units: Unit[],
+  idx: number,
+  zones: Zones | null = null,
+): Item | null {
+  return unitStartOf(units, idx, zones).left;
+}
+
+/**
+ * Where an old unit's content starts: the item it starts after and the zone
+ * a walk from there starts in (see `lineStart`).
+ */
+export function unitStartOf(
+  units: Unit[],
+  idx: number,
+  zones: Zones | null,
+): {left: Item | null; zone: Zone} {
   const u = units[idx];
   if (u.end !== null) {
-    return prevLiveEnd(u.end);
+    return lineStart(zones, u.end);
+  }
+  const zone = u.zone ?? null;
+  if (zones !== null) {
+    // Text no marker ends: after the previous unit of its zone, or of an
+    // inline range shown in its zone (the text goes on there after the
+    // range's last line, a line split after a join).
+    for (let k = idx - 1; k >= 0; k--) {
+      const p = units[k];
+      if (p.end === null) {
+        continue;
+      }
+      const pz = p.zone ?? null;
+      if (pz === zone || shownInline(zones, pz, zone)) {
+        if (p.end.deleted) {
+          return {left: prevBoundary(zones, p.end), zone: pz};
+        }
+        // After the last item of an inline range: after its record.
+        let left: Item = p.end;
+        let z: Zone = pz;
+        for (
+          let r = zones.inlineRec(z), guard = 0;
+          r !== null && r.e === left && guard < 64;
+          r = zones.inlineRec(z), guard++
+        ) {
+          left = r.item;
+          z = zones.ownerOf(r.item);
+        }
+        return {left, zone: z};
+      }
+    }
+    const r = zones.rec(zone);
+    return {left: r === undefined ? null : r.s, zone};
   }
   let e = idx > 0 ? units[idx - 1].end : null;
   while (e !== null && e.deleted) {
     e = prevLiveEnd(e);
   }
-  return e;
+  return {left: e, zone: null};
+}
+
+/** Whether `inner` is an inline range shown (through inline ranges) in `zone`. */
+function shownInline(zones: Zones, inner: Zone, zone: Zone): boolean {
+  for (let z = inner, guard = 0; z !== null && guard < 64; guard++) {
+    if (zones.inlineRec(z) === null) {
+      return false;
+    }
+    z = zones.ownerOf(z);
+    if (z === zone) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /** The item right after an old unit (exclusive stop), or null. */
-export function unitStop(units: Unit[], idx: number): Item | null {
+export function unitStop(
+  units: Unit[],
+  idx: number,
+  zones: Zones | null = null,
+): Item | null {
   const u = units[idx];
   if (u.end !== null) {
     return u.end.right;
+  }
+  if (zones !== null) {
+    // Text no marker ends: up to the next end item its walk reaches (a
+    // block node), or the end of its zone's range.
+    const {left, zone} = unitStartOf(units, idx, zones);
+    const y = u.cs.y;
+    const view = new ZoneView(zones, zone, null);
+    for (
+      let it =
+        left === null
+          ? enterZone(view, y, y._start)
+          : stepZone(view, y, left, null);
+      it !== null;
+      it = stepZone(view, y, it, null)
+    ) {
+      const z = view.zone;
+      if (zones.ownerOf(it) !== z) {
+        if (
+          z !== null &&
+          zones.inlineRec(z) === null &&
+          !zones.inRange(z, it)
+        ) {
+          return it;
+        }
+        continue;
+      }
+      if (!it.deleted && isEndItem(it)) {
+        return it;
+      }
+    }
+    return null;
   }
   const next = units[idx + 1];
   return next !== undefined && next.end !== null && next.kind === 'node'
@@ -2511,17 +4462,9 @@ function readAtomsLimited(
   formats: Formats,
   limit: number,
   out: Atoms,
-  hidden: Hidden | null,
+  hidden: Shown | null,
 ): void {
-  let stop: Item | null = start;
-  let n = 0;
-  while (stop !== null && n < limit) {
-    if (isLiveContent(stop)) {
-      n += hidden === null ? stop.length : hidden.shownLength(stop);
-    }
-    stop = stop.right;
-  }
-  readAtoms(start, stop, formats, out, hidden);
+  readAtoms(start, null, formats, out, hidden, limit);
 }
 
 /** Longest strictly increasing subsequence on the second coordinate. */
@@ -2625,4 +4568,86 @@ function applyFormat(formats: Map<string, unknown>, f: ContentFormat): void {
   } else {
     formats.set(f.key, f.value);
   }
+}
+
+/** Per atom, the signature of its formats ('' without). */
+function atomFormatSigs(atoms: Atoms): string[] {
+  const out = new Array<string>(atoms.length).fill('');
+  for (const run of atoms.runs) {
+    const sig = stableStringify(run.attrs);
+    for (let i = run.start; i < run.end; i++) {
+      out[i] = sig;
+    }
+  }
+  return out;
+}
+
+/**
+ * How a joined line's atoms `want` split into a start of the first line's
+ * old atoms `a` (`keep` of them) and an end of the second line's `b` (from
+ * `from` on); null when they do not (other edits in the same update), or
+ * when nothing of the second line is left.
+ */
+function joinSplit(
+  a: Atoms,
+  b: Atoms,
+  want: Atoms,
+  state: State,
+  origin: (string | undefined)[],
+  tKeys: Set<string>,
+): {keep: number; from: number} | null {
+  const sigA = atomFormatSigs(a);
+  const sigB = atomFormatSigs(b);
+  const sigW = atomFormatSigs(want);
+  const same = (x: Atoms, sx: string[], i: number, j: number): boolean => {
+    const xs = x.specials.get(i);
+    const ws = want.specials.get(j);
+    if (xs !== undefined || ws !== undefined) {
+      if (
+        xs === undefined ||
+        ws === undefined ||
+        xs.kind !== 'oldNode' ||
+        ws.kind !== 'inline' ||
+        !xs.name.startsWith(INLINE_PREFIX) ||
+        state.keyByY.get(typeOf(xs.item)) !== ws.key
+      ) {
+        return false;
+      }
+    } else if (x.text.charCodeAt(i) !== want.text.charCodeAt(j)) {
+      return false;
+    }
+    return sx[i] === sigW[j];
+  };
+  let lcp = 0;
+  while (lcp < a.length && lcp < want.length && same(a, sigA, lcp, lcp)) {
+    lcp++;
+  }
+  // The second line's text starts with the first character that comes
+  // from one of its text nodes; every later character does too.
+  let firstT = -1;
+  for (let i = 0; i < want.length; i++) {
+    const k = origin[i];
+    if (k !== undefined && tKeys.has(k)) {
+      if (firstT < 0) {
+        firstT = i;
+      }
+    } else if (firstT >= 0 && k !== undefined) {
+      return null;
+    }
+  }
+  if (firstT < 0 || firstT > lcp) {
+    return null;
+  }
+  const keep = firstT;
+  const rest = want.length - keep;
+  if (rest === 0 || rest > b.length) {
+    return null;
+  }
+  const from = b.length - rest;
+  for (let t = 0; t < rest; t++) {
+    if (!same(b, sigB, from + t, keep + t)) {
+      return null;
+    }
+  }
+  return {from, keep};
 }

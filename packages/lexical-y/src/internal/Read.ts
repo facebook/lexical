@@ -33,6 +33,17 @@ import {
 } from 'lexical';
 
 import {type Formats} from './Cursor';
+import {type MovePlan, moveReadStats, planMoveRead} from './MoveRead';
+import {
+  enterZone,
+  formatsAfterItem,
+  isMoveItem,
+  type Rec,
+  stepZone,
+  type Zone,
+  Zones,
+  ZoneView,
+} from './Moves';
 import {
   $groupFields,
   $levelItemFields,
@@ -44,7 +55,6 @@ import {
   $textAttrs,
   $wrapperAttrs,
   type Attrs,
-  BLOCK_PREFIX,
   decodeFormatValue,
   FIELD_PREFIX,
   getContainerGroupSpec,
@@ -55,6 +65,7 @@ import {
   GROUP_KEY,
   type GroupSpec,
   INLINE_PREFIX,
+  isBlockNodeType,
   isUnsafeKey,
   KIND_KEY,
   klassOf,
@@ -77,23 +88,45 @@ import {storedTypeOf} from './Schema';
 import {
   type CS,
   EMPTY_FORMATS,
+  isBlockNodeItem,
   isEndItem,
   type Kind,
+  lineStart,
   nameOf,
-  prevLiveEnd,
+  nextZoneEnd,
+  physicalStarts,
+  prevBoundary,
+  startItemAfter,
   type State,
   typeOf,
   type Unit,
   type UnitKind,
 } from './State';
-import {groupKeySig, groupSig as writerGroupSig} from './Write';
+import {
+  groupKeySig,
+  groupSig as writerGroupSig,
+  longestIncreasing,
+} from './Write';
 
-type Parsed = {
+export type Parsed = {
   kind: UnitKind;
   end: Item | null;
   startItem: Item | null;
   stop: Item | null;
   start: Formats;
+  /** The move record whose range holds the unit's end (null: none). */
+  zone: Zone;
+  /** The zone a walk of the unit's content starts in (see `lineStart`). */
+  startZone: Zone;
+};
+
+/** The zone a parse walks, and how to find a record's start formats. */
+export type ParseZone = {
+  zones: Zones;
+  zone: Zone;
+  startOf: (rec: Rec) => Formats;
+  /** Formats right after `it` (a record's start or a record). */
+  formatsAfter: (it: Item) => Formats;
 };
 
 type Piece =
@@ -129,18 +162,117 @@ type Pool = {
   lines: Set<NodeKey>;
 };
 
-/** Parse the units of a block container between two items. */
+/**
+ * Parse the units of a block container between two items. With moves, only
+ * the units of one zone are parsed (other zones' content is skipped, formats
+ * stay positional), and an active move record is replaced by the units of
+ * its range.
+ */
 export function parseRange(
   start: Item | null,
   stop: Item | null,
   formats: Formats,
+  pz: ParseZone | null = null,
+  last: Item | null = null,
 ): {parsed: Parsed[]; after: Formats} {
   const parsed: Parsed[] = [];
   const current = new Map(formats);
+  // Units share a copy of `current` until a format item changes it (start
+  // formats are never changed in place).
+  let snap: Formats | null = null;
+  const snapshot = (): Formats => {
+    if (snap === null) {
+      snap = current.size > 0 ? new Map(current) : EMPTY_FORMATS;
+    }
+    return snap;
+  };
+  const zone = pz === null ? null : pz.zone;
   let unitStart = start;
-  let unitFormats = new Map(current);
+  let unitFormats = snapshot();
   let pending = false;
-  for (let it = start; it !== null && it !== stop; it = it.right) {
+  // Move records seen since the last unit: their units show before the unit
+  // the records are in (a record is not a boundary of the text around it,
+  // so text typed next to it concurrently stays in its line).
+  let records: Item[] = [];
+  // Records after text that no marker ends (before a block node, or at the
+  // end): they show after that text (the writer puts a record right after
+  // such text to show it there).
+  let after: Item[] = [];
+  const flushRecords = (list: Item[] = records) => {
+    if (list.length === 0 || pz === null) {
+      return;
+    }
+    for (const it of list) {
+      const rec = pz.zones.rec(it);
+      if (rec === undefined) {
+        continue;
+      }
+      const sub = parseRange(
+        rec.s === null ? (it.parent as YNode)._start : rec.s.right,
+        rec.e.right,
+        pz.startOf(rec),
+        {...pz, zone: it},
+        rec.e,
+      );
+      for (const p of sub.parsed) {
+        parsed.push(p);
+      }
+    }
+  };
+  // With moves, the walk enters the ranges that inline records of the zone
+  // show in their place (a line can continue there).
+  const walk = pz === null ? null : new ZoneView(pz.zones, pz.zone, null);
+  const y = start === null ? null : (start.parent as YNode);
+  let unitZone: Zone = zone;
+  let startPending = false;
+  let prev: Item | null = null;
+  for (
+    let it =
+      start === stop
+        ? null
+        : walk === null
+          ? start
+          : enterZone(walk, y!, start, stop);
+    it !== null && (walk !== null || it !== stop);
+    prev = it,
+      it =
+        walk === null
+          ? it === last
+            ? null
+            : it.right
+          : stepZone(
+              walk,
+              y!,
+              it,
+              last === null ? stop : null,
+              last,
+              last === null ? undefined : zone,
+            )
+  ) {
+    const wz = walk === null ? null : walk.zone;
+    if (walk !== null && (prev === null ? it !== start : it !== prev.right)) {
+      // A jump into or out of an inline range: positional formats.
+      const f = it.left === null ? EMPTY_FORMATS : pz!.formatsAfter(it.left);
+      current.clear();
+      f.forEach((v, k) => current.set(k, v));
+      snap = null;
+    }
+    if (
+      startPending &&
+      // A unit starts at its zone's first item after the previous end: the
+      // walk can pass other zones' items first (an item of an inline range
+      // it shows later, which can be the item that ends the unit).
+      (it.deleted || pz!.zones.ownerOf(it) === wz || isMoveItem(it))
+    ) {
+      unitStart = it;
+      unitZone = wz;
+      unitFormats = new Map(current);
+      startPending = false;
+    } else if (prev === null) {
+      unitStart = it;
+      unitZone = wz;
+      unitFormats = new Map(current);
+    }
     if (it.deleted) {
       continue;
     }
@@ -151,55 +283,84 @@ export function parseRange(
       } else {
         current.set(content.key, content.value);
       }
+      snap = null;
       continue;
     }
     if (!it.countable) {
       continue;
     }
+    if (pz !== null && pz.zones.ownerOf(it) !== wz) {
+      continue;
+    }
+    if (isMoveItem(it)) {
+      (pending ? after : records).push(it);
+      continue;
+    }
     if (isEndItem(it)) {
-      const name = nameOf(it);
-      if (name.startsWith(BLOCK_PREFIX)) {
+      if (isBlockNodeItem(it)) {
+        flushRecords();
         if (pending) {
           parsed.push({
             end: null,
             kind: 'implicit',
             start: unitFormats,
             startItem: unitStart,
+            startZone: unitZone,
             stop: it,
+            // Text no marker ends belongs to the zone its walk starts in
+            // (it can run into an inline range shown in its line).
+            zone: unitZone,
           });
         }
+        flushRecords(after);
+        records = [];
+        after = [];
         parsed.push({
           end: it,
           kind: 'node',
           start: unitFormats,
           startItem: it,
+          startZone: wz,
           stop: it.right,
+          zone: wz,
         });
       } else {
+        flushRecords();
+        flushRecords(after);
+        records = [];
+        after = [];
         parsed.push({
           end: it,
-          kind: name === MARKER ? 'line' : 'run',
+          kind: nameOf(it) === MARKER ? 'line' : 'run',
           start: unitFormats,
           startItem: unitStart,
+          startZone: unitZone,
           stop: it,
+          zone: wz,
         });
       }
       unitStart = it.right;
+      unitZone = wz;
       unitFormats = new Map(current);
+      startPending = walk !== null;
       pending = false;
     } else {
       pending = true;
     }
   }
+  flushRecords();
   if (pending) {
     parsed.push({
       end: null,
       kind: 'implicit',
       start: unitFormats,
       startItem: unitStart,
+      startZone: unitZone,
       stop,
+      zone: walk === null ? zone : unitZone,
     });
   }
+  flushRecords(after);
   return {after: current, parsed};
 }
 
@@ -207,6 +368,8 @@ export class Reader {
   private readonly isKnownWrapper: (type: string) => boolean;
   /** Item -> unit cache for one read. */
   private located = new Map<Item, Unit | null>();
+  /** Inline ranges whose showing line one read already read again. */
+  private inlineReads = new Set<Rec>();
   /** Formats in effect after the content last read by $pieces. */
   private lastFormats: Formats = EMPTY_FORMATS;
   readonly fresh = new Set<YNode>();
@@ -232,10 +395,102 @@ export class Reader {
   }
 
   // -------------------------------------------------------------------------
+  // Moves
+
+  /** How to parse the native zone of `cs` (null: it holds no moves). */
+  /**
+   * Whether the units of `cs` show what a read of its shared content shows
+   * (after a write with move records: deleting a record can make another
+   * one show, or show elsewhere, where the editor did not change).
+   */
+  matchesShared(cs: CS): boolean {
+    if (cs.kind !== 'b' || (cs.y._item !== null && cs.y._item.deleted)) {
+      return true;
+    }
+    const {parsed} = parseRange(cs.y._start, null, EMPTY_FORMATS, this.pz(cs));
+    if (parsed.length !== cs.units.length) {
+      return false;
+    }
+    for (let k = 0; k < parsed.length; k++) {
+      const p = parsed[k];
+      const u = cs.units[k];
+      if (
+        p.end !== u.end ||
+        (p.zone ?? null) !== (u.zone ?? null) ||
+        p.kind !== u.kind
+      ) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private pz(cs: CS): ParseZone | null {
+    const zones = this.state.zonesOf(cs.y);
+    if (zones === null) {
+      return null;
+    }
+    // The formats in effect after each active record's start and after
+    // each record (where walks jump), from one walk of the container
+    // (formats are positional).
+    let table: Map<Item, Formats> | null = null;
+    const formatsAfter = (item: Item): Formats => {
+      if (table === null) {
+        table = new Map();
+        const wanted = new Set<Item>();
+        for (const r of zones.active) {
+          if (r.s !== null) {
+            wanted.add(r.s);
+          }
+          wanted.add(r.item);
+        }
+        const formats = new Map<string, unknown>();
+        for (
+          let it = cs.y._start;
+          it !== null && wanted.size > table.size;
+          it = it.right
+        ) {
+          if (!it.deleted && it.content instanceof ContentFormat) {
+            const {key, value} = it.content;
+            if (value === null) {
+              formats.delete(key);
+            } else {
+              formats.set(key, value);
+            }
+          }
+          if (wanted.has(it)) {
+            table.set(it, new Map(formats));
+          }
+        }
+      }
+      return table.get(item) ?? formatsAfterItem(cs.y, item);
+    };
+    return {
+      formatsAfter,
+      startOf: rec => (rec.s === null ? EMPTY_FORMATS : formatsAfter(rec.s)),
+      zone: null,
+      zones,
+    };
+  }
+
+  /** The view of a unit's zone (null: its container holds no moves). */
+  private zv(cs: CS, zone: Zone | undefined): ZoneView | null {
+    const zones = this.state.zonesOf(cs.y);
+    return zones === null ? null : new ZoneView(zones, zone ?? null, null);
+  }
+
+  // -------------------------------------------------------------------------
   // Entry points
 
   /** Read a whole container into its Lexical node. */
-  $readFull(cs: CS, el: ElementNode): void {
+  $readFull(
+    cs: CS,
+    el: ElementNode,
+    affected: ReadonlySet<Unit> | null = null,
+  ): void {
+    if (cs.kind === 'b' && !this.state.hasMoves(cs.y) && holdsMove(cs.y)) {
+      this.state.noteMoves(cs.y);
+    }
     this.fresh.add(cs.y);
     this.rebuilt.add(cs);
     if (
@@ -256,9 +511,9 @@ export class Reader {
       cs.units = [];
       return;
     }
-    const {parsed} = parseRange(cs.y._start, null, EMPTY_FORMATS);
+    const {parsed} = parseRange(cs.y._start, null, EMPTY_FORMATS, this.pz(cs));
     const old = cs.units;
-    const {units, tops} = this.$materialize(cs, el, parsed, old);
+    const {units, tops} = this.$materialize(cs, el, parsed, old, affected);
     this.$setChildren(el, tops);
     this.$commitUnits(cs, 0, old.length, units, old);
   }
@@ -270,6 +525,7 @@ export class Reader {
   ): void {
     const state = this.state;
     this.located = new Map();
+    this.inlineReads = new Set();
     const markerUnits = new Map<CS, Set<Unit>>();
     const fullReads = new Set<CS>();
     for (const [y, keys] of attrKeys) {
@@ -385,10 +641,7 @@ export class Reader {
       );
       return;
     }
-    let end: Item | null = item;
-    while (end !== null && (end.deleted || !isEndItem(end))) {
-      end = end.right;
-    }
+    const end: Item | null = nextZoneEnd(this.state, item);
     const unit = end === null ? undefined : this.state.unitByEnd.get(end);
     if (unit === undefined) {
       return;
@@ -413,7 +666,30 @@ export class Reader {
     const passed: Item[] = [];
     let result: Unit | null = null;
     let found = false;
-    for (let p: Item | null = item; p !== null; p = p.right) {
+    const zones = this.state.zonesOf(cs.y);
+    // With moves: a walk of the item's zone (leaving inline ranges).
+    const view =
+      zones === null ? null : new ZoneView(zones, zones.ownerOf(item), null);
+    for (
+      let p: Item | null = item;
+      p !== null;
+      p = view === null ? p.right : stepZone(view, cs.y, p, null)
+    ) {
+      const zone = view === null ? null : view.zone;
+      if (zones !== null && zones.ownerOf(p) !== zone) {
+        if (zone !== null && !zones.inRange(zone, p)) {
+          // Past the end of the range: text no marker of the range ends.
+          flags.structural = true;
+          break;
+        }
+        continue;
+      }
+      const inline = zones === null ? null : zones.inlineRec(zone);
+      if (inline !== null && p.deleted && p !== item && inline.e === p) {
+        // The end of an inline range (a join's deleted marker): the line
+        // goes on after the record.
+        continue;
+      }
       const cached = this.located.get(p);
       if (cached !== undefined) {
         result = cached;
@@ -459,6 +735,17 @@ export class Reader {
     const flags = {structural: false, tail: false};
     const affected = new Set<Unit>();
     const composingItems: Item[] = [];
+    // A move record added or removed changes where units show: they are
+    // read where ownership changed (see MoveRead), else the container is
+    // read again (typing inside moved units stays an in-place read).
+    if (items.some(it => isMoveItem(it)) || this.state.takeUnresolved(cs.y)) {
+      if (this.$readMoves(cs, el, items, attrUnits)) {
+        return;
+      }
+      this.state.noteMoves(cs.y);
+      this.$readFull(cs, el);
+      return;
+    }
 
     for (const it of items) {
       if (isEndItem(it) && !this.state.unitByEnd.has(it) && it.deleted) {
@@ -492,8 +779,21 @@ export class Reader {
       }
     }
     if (formatUnits.length > 0) {
-      for (const u of recomputeUnitStarts(cs, formatUnits)) {
-        affected.add(u);
+      if (this.state.zonesOf(cs.y) !== null) {
+        // Units are not in document order: recompute every start
+        // (positional formats) and read the units whose start changed.
+        const starts = physicalStarts(this.state, cs);
+        for (const u of cs.units) {
+          const f = starts.get(u);
+          if (f !== undefined && !sameFormats(u.start || EMPTY_FORMATS, f)) {
+            u.start = f.size > 0 ? f : null;
+            affected.add(u);
+          }
+        }
+      } else {
+        for (const u of recomputeUnitStarts(cs, formatUnits)) {
+          affected.add(u);
+        }
       }
     }
     if (
@@ -512,6 +812,14 @@ export class Reader {
       if (affected.size === 0) {
         return;
       }
+    }
+    if ((flags.structural || flags.tail) && this.state.zonesOf(cs.y) !== null) {
+      // Units can show elsewhere than their items: read where the walks of
+      // the edited zones change (see MoveRead), or the whole container.
+      if (!this.$readMoves(cs, el, items, attrUnits)) {
+        this.$readFull(cs, el);
+      }
+      return;
     }
     if (!flags.structural && !flags.tail) {
       const rest = new Set<Unit>();
@@ -627,6 +935,277 @@ export class Reader {
     }
   }
 
+  /**
+   * Read a change of move records only where ownership changed (see
+   * MoveRead). False: the container must be read in full.
+   */
+  private $readMoves(
+    cs: CS,
+    el: ElementNode,
+    items: Item[],
+    attrUnits: Set<Unit> | undefined,
+  ): boolean {
+    const state = this.state;
+    if (cs.kind !== 'b') {
+      moveReadStats.full++;
+      moveReadStats.reasons.inline = (moveReadStats.reasons.inline ?? 0) + 1;
+      return false;
+    }
+    const had = state.hasMoves(cs.y);
+    const cached = state.peekZones(cs.y);
+    if (had && cached === undefined) {
+      moveReadStats.full++;
+      moveReadStats.reasons['no-before'] =
+        (moveReadStats.reasons['no-before'] ?? 0) + 1;
+      return false;
+    }
+    const before = had ? cached! : null;
+    state.noteMoves(cs.y);
+    // (Records left but none active: zonesOf has just cached the fresh
+    // ownership; no record left: a fresh index.)
+    const after =
+      state.zonesOf(cs.y) ??
+      state.peekZones(cs.y) ??
+      new Zones(state.doc, cs.y);
+    const plan = planMoveRead(
+      state,
+      cs,
+      before,
+      after,
+      items.filter(it => isMoveItem(it)),
+      attrUnits,
+      items.filter(it => !isMoveItem(it)),
+    );
+    if (typeof plan === 'string') {
+      return false;
+    }
+    if (!this.$applyMovePlan(cs, el, plan)) {
+      moveReadStats.incremental--;
+      moveReadStats.full++;
+      moveReadStats.reasons['region-kind'] =
+        (moveReadStats.reasons['region-kind'] ?? 0) + 1;
+      return false;
+    }
+    return true;
+  }
+
+  /** Put the units of a move plan in place (false: nothing was changed). */
+  private $applyMovePlan(cs: CS, el: ElementNode, plan: MovePlan): boolean {
+    const state = this.state;
+    const list = plan.units;
+    const n = list.length;
+    const isUnit = (e: Unit | Parsed): e is Unit => 'cs' in e;
+    // Regions to materialize: runs of changed positions, and the places of
+    // windows that show nothing now, widened over neighbouring group items
+    // (groups next to a change are built again).
+    const intervals: [number, number][] = [];
+    const sorted = [...plan.changed].sort((a, b) => a - b);
+    for (const k of sorted) {
+      const last = intervals[intervals.length - 1];
+      if (last !== undefined && last[1] === k) {
+        last[1] = k + 1;
+      } else {
+        intervals.push([k, k + 1]);
+      }
+    }
+    for (const g of plan.gaps) {
+      intervals.push([g, g]);
+    }
+    const groupItem = (k: number) => {
+      const e = list[k];
+      return isUnit(e) && !plan.changed.has(k) && e.sig !== '';
+    };
+    for (const iv of intervals) {
+      while (iv[0] > 0 && groupItem(iv[0] - 1)) {
+        iv[0]--;
+      }
+      while (iv[1] < n && groupItem(iv[1])) {
+        iv[1]++;
+      }
+    }
+    intervals.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    const regions: [number, number][] = [];
+    for (const iv of intervals) {
+      if (iv[0] === iv[1]) {
+        continue;
+      }
+      const last = regions[regions.length - 1];
+      if (last !== undefined && iv[0] <= last[1]) {
+        last[1] = Math.max(last[1], iv[1]);
+      } else {
+        regions.push([iv[0], iv[1]]);
+      }
+    }
+    // Kept units that would be read again need their items' bounds: lines
+    // and nodes only (else read in full; nothing was changed yet).
+    for (const [a, b] of regions) {
+      for (let k = a; k < b; k++) {
+        const e = list[k];
+        if (isUnit(e) && (e.kind === 'run' || e.kind === 'implicit')) {
+          return false;
+        }
+      }
+    }
+    this.fresh.add(cs.y);
+    this.rebuilt.add(cs);
+    const present = new Set<Unit>();
+    for (const e of list) {
+      if (isUnit(e)) {
+        present.add(e);
+      }
+    }
+    const removed = plan.replaced.filter(u => !present.has(u));
+    // Old units in the regions, and old units of entries read again (their
+    // nodes are reused).
+    // (Text no marker ends keeps the nodes of such text read before.)
+    const implicit = removed.filter(u => u.end === null);
+    const regionOld: Unit[][] = regions.map(([a, b]) => {
+      const out: Unit[] = [];
+      for (let k = a; k < b; k++) {
+        const e = list[k];
+        if (isUnit(e)) {
+          out.push(e);
+        } else if (e.end !== null) {
+          const u = state.unitByEnd.get(e.end);
+          if (u !== undefined && u.cs === cs && !present.has(u)) {
+            out.push(u);
+          }
+        } else if (implicit.length > 0) {
+          out.push(implicit.shift()!);
+        }
+      }
+      return out;
+    });
+    if (this.composingKey !== null) {
+      const touched = [...removed, ...regionOld.flat()];
+      if (touched.some(u => u.key === this.composingKey)) {
+        this.composingRead = true;
+      }
+    }
+    // The Lexical children the old units covered.
+    const oldTops: LexicalNode[] = [];
+    const seen = new Set<NodeKey>();
+    const collectTops = (u: Unit) => {
+      if (u.first === null || u.last === null || seen.has(u.first)) {
+        return;
+      }
+      const first = $getNodeByKey(u.first);
+      const parent = first === null ? null : first.getParent();
+      if (first === null || parent === null || !parent.is(el)) {
+        return;
+      }
+      for (
+        let t: LexicalNode | null = first;
+        t !== null;
+        t = t.getNextSibling()
+      ) {
+        if (!seen.has(t.getKey())) {
+          seen.add(t.getKey());
+          oldTops.push(t);
+        }
+        if (t.getKey() === u.last) {
+          break;
+        }
+      }
+    };
+    for (const u of removed) {
+      collectTops(u);
+    }
+    for (const us of regionOld) {
+      for (const u of us) {
+        collectTops(u);
+      }
+    }
+    const pool = $newPool([...removed, ...regionOld.flat()]);
+    const keep = new Set<NodeKey>();
+    const newUnits: Unit[] = [];
+    regions.forEach(([a, b], r) => {
+      const parsed: Parsed[] = [];
+      const clean = new Set<Unit>();
+      for (let k = a; k < b; k++) {
+        const e = list[k];
+        if (isUnit(e)) {
+          clean.add(e);
+          const zone = plan.moved.has(e)
+            ? plan.moved.get(e)!
+            : (e.zone ?? null);
+          const bound = e.end === null ? null : prevBoundary(state, e.end);
+          parsed.push({
+            end: e.end,
+            kind: e.kind,
+            start: e.start || EMPTY_FORMATS,
+            startItem: bound === null ? cs.y._start : bound.right,
+            startZone: zone,
+            stop: e.end,
+            zone,
+          });
+        } else {
+          parsed.push(e);
+        }
+      }
+      const {units, tops} = this.$materialize(
+        cs,
+        el,
+        parsed,
+        regionOld[r],
+        null,
+        null,
+        clean,
+        pool,
+      );
+      // Where the region's nodes go: after the last node shown before it.
+      let cursor: LexicalNode | null = null;
+      for (let k = a - 1; k >= 0 && cursor === null; k--) {
+        const u = list[k] as Unit;
+        if (u.last !== null) {
+          const t = $getNodeByKey(u.last);
+          const parent = t === null ? null : t.getParent();
+          if (t !== null && parent !== null && parent.is(el)) {
+            cursor = t;
+          }
+        }
+      }
+      for (const t of tops) {
+        keep.add(t.getKey());
+        if (cursor === null) {
+          const firstChild = el.getFirstChild();
+          if (firstChild === null) {
+            el.append(t);
+          } else if (!firstChild.is(t)) {
+            firstChild.insertBefore(t);
+          }
+        } else {
+          const next = cursor.getNextSibling();
+          if (next === null || !next.is(t)) {
+            cursor.insertAfter(t);
+          }
+        }
+        cursor = t;
+      }
+      for (let k = a; k < b; k++) {
+        list[k] = units[k - a];
+        newUnits.push(units[k - a]);
+      }
+    });
+    for (const t of oldTops) {
+      const parent = t.getParent();
+      if (!keep.has(t.getKey()) && parent !== null && parent.is(el)) {
+        t.remove(true);
+      }
+    }
+    for (const u of removed) {
+      state.dropUnit(u);
+    }
+    for (const u of newUnits) {
+      state.setUnit(u);
+    }
+    cs.units = list as Unit[];
+    if (this.$containerGroupSpec(cs) !== null) {
+      state.refresh.add(cs.key);
+    }
+    return true;
+  }
+
   private $readRegion(
     cs: CS,
     el: ElementNode,
@@ -634,6 +1213,10 @@ export class Reader {
     j: number,
     affected: ReadonlySet<Unit> | null = null,
   ): void {
+    if (this.state.zonesOf(cs.y) !== null || cs.units.some(u => u.zone)) {
+      this.$readFull(cs, el);
+      return;
+    }
     const units = cs.units;
     i = Math.min(i, units.length);
     j = Math.max(i, Math.min(j, units.length));
@@ -847,6 +1430,32 @@ export class Reader {
     }
   }
 
+  /**
+   * Recompute the start formats of every unit of a container holding moves
+   * from the shared items (positional formats), and read again the units
+   * whose start changed.
+   */
+  private $fixZonedStarts(cs: CS): void {
+    const starts = physicalStarts(this.state, cs);
+    const changed: Unit[] = [];
+    for (const u of cs.units) {
+      const f = starts.get(u);
+      if (f !== undefined && !sameFormats(u.start || EMPTY_FORMATS, f)) {
+        u.start = f.size > 0 ? f : null;
+        changed.push(u);
+      }
+    }
+    for (const u of changed) {
+      if (u.kind !== 'line' || !this.$readLineInPlace(u)) {
+        const el = $getNodeByKey(cs.key);
+        if ($isElementNode(el)) {
+          this.$readFull(cs, el);
+        }
+        return;
+      }
+    }
+  }
+
   private $readLineInPlace(u: Unit): boolean {
     if (u.key !== null && u.key === this.composingKey) {
       this.composingRead = true;
@@ -869,18 +1478,64 @@ export class Reader {
       this.$derivedFor(u.cs, group),
       this.attrChanged.has(u),
     );
-    const left = prevLiveEnd(u.end);
+    const zones = this.state.zonesOf(u.cs.y);
+    const {left, zone: startZone} = lineStart(this.state, u.end);
     this.$setChildren(
       line,
       this.$readInline(
-        left === null ? u.cs.y._start : left.right,
+        startItemAfter(zones, u.cs.y, left, startZone),
         u.end,
         u.start || EMPTY_FORMATS,
         line,
+        undefined,
+        this.zv(u.cs, startZone),
       ),
     );
     // A format that now reaches past the marker changes the next unit.
     const after = this.lastFormats;
+    if (zones !== null) {
+      // The units that start right after its marker (the next one of its
+      // zone, and the first unit of a range that starts there) start with
+      // the formats after it. When one of them disagrees, every start of
+      // the container is recomputed (formats are positional) and the units
+      // whose start changed are read again.
+      const nextEnd = nextZoneEnd(this.state, u.end);
+      const next =
+        nextEnd === null ? undefined : this.state.unitByEnd.get(nextEnd);
+      let stale =
+        next !== undefined && !sameFormats(next.start || EMPTY_FORMATS, after);
+      if (!stale) {
+        for (const r of zones.active) {
+          if (r.s === u.end) {
+            const first = u.cs.units.find(x => x.zone === r.item);
+            if (
+              first !== undefined &&
+              !sameFormats(first.start || EMPTY_FORMATS, after)
+            ) {
+              stale = true;
+            }
+          }
+        }
+      }
+      if (stale) {
+        this.$fixZonedStarts(u.cs);
+      }
+      // A range shown inline that starts right after the marker takes its
+      // formats from there: the line showing it is read again.
+      for (const r of zones.active) {
+        if (r.inline === true && r.s === u.end && !this.inlineReads.has(r)) {
+          const e = nextZoneEnd(zones, r.item, zones.ownerOf(r.item));
+          const shower = e === null ? undefined : this.state.unitByEnd.get(e);
+          if (shower !== undefined && shower !== u && shower.kind === 'line') {
+            this.inlineReads.add(r);
+            if (!this.$readLineInPlace(shower)) {
+              return false;
+            }
+          }
+        }
+      }
+      return true;
+    }
     let nextEnd: Item | null = u.end.right;
     while (nextEnd !== null && (nextEnd.deleted || !isEndItem(nextEnd))) {
       nextEnd = nextEnd.right;
@@ -992,6 +1647,8 @@ export class Reader {
     old: Unit[],
     affected: ReadonlySet<Unit> | null = null,
     left: Item | null = null,
+    clean: ReadonlySet<Unit> | null = null,
+    sharedPool: Pool | null = null,
   ): {units: Unit[]; tops: LexicalNode[]} {
     const state = this.state;
     // The end before each old unit, to tell a line whose range did not change.
@@ -1024,17 +1681,7 @@ export class Reader {
         }
       }
     }
-    const pool: Pool = {groups: new Map(), levels: [], lines: new Set()};
-    const seenTops = new Set<NodeKey>();
-    for (const u of old) {
-      if (u.sig !== '' && u.first !== null && !seenTops.has(u.first)) {
-        seenTops.add(u.first);
-        const top = $getNodeByKey(u.first);
-        if ($isElementNode(top)) {
-          collectPool(top, pool);
-        }
-      }
-    }
+    const pool: Pool = sharedPool ?? $newPool(old);
     type Entry = {unit: Unit; nodes: LexicalNode[]; group: GroupItem | null};
     const entries: Entry[] = [];
     for (const p of parsed) {
@@ -1059,6 +1706,7 @@ export class Reader {
         unit.key = node === null ? null : node.getKey();
         unit.first = unit.last = unit.key;
         unit.sig = '';
+        unit.zone = p.zone;
         // Its start formats (a format can span a block node: the following
         // units' reads start from this value).
         unit.start = p.start.size > 0 ? p.start : null;
@@ -1087,6 +1735,7 @@ export class Reader {
           p.start,
           null,
           poolNodes,
+          this.zv(cs, p.startZone),
         );
         const unit: Unit = prevUnit || {
           cs,
@@ -1100,6 +1749,7 @@ export class Reader {
         };
         unit.kind = 'run';
         unit.start = p.start.size > 0 ? p.start : null;
+        unit.zone = p.zone;
         entries.push({group: null, nodes, unit});
         parsedPrevEnd = p.end;
         continue;
@@ -1135,15 +1785,18 @@ export class Reader {
       // node, attributes and content.
       const untouched =
         merged === null &&
-        affected !== null &&
         prevUnit !== undefined &&
         p.end !== null &&
         prevUnit.end === p.end &&
-        prevEnd.get(prevUnit) === parsedPrevEnd &&
-        !affected.has(prevUnit) &&
         $isElementNode(existing) &&
         existing.getType() === attrs[TYPE_KEY] &&
-        sameFormats(prevUnit.start || EMPTY_FORMATS, p.start);
+        // Its content is known not to have changed (it only moved).
+        ((clean !== null && clean.has(prevUnit)) ||
+          (affected !== null &&
+            (prevUnit.zone ?? null) === p.zone &&
+            prevEnd.get(prevUnit) === parsedPrevEnd &&
+            !affected.has(prevUnit) &&
+            sameFormats(prevUnit.start || EMPTY_FORMATS, p.start)));
       const line = untouched
         ? (existing as ElementNode)
         : this.$lineFromMarker(
@@ -1169,6 +1822,7 @@ export class Reader {
               : $isElementNode(existing) && !existing.is(line)
                 ? existing.getChildren()
                 : undefined,
+            this.zv(cs, p.startZone),
           ),
         );
       }
@@ -1185,6 +1839,7 @@ export class Reader {
       unit.kind = p.kind;
       unit.end = p.end;
       unit.key = line.getKey();
+      unit.zone = p.zone;
       unit.start = p.start.size > 0 ? p.start : null;
       unit.sig = groupSig(attrs, ginfo);
       unit.first = unit.last = unit.key;
@@ -1637,9 +2292,10 @@ export class Reader {
     start: Item | null,
     stop: Item | null,
     formats: Formats,
+    zv: ZoneView | null = null,
   ): Piece[] {
     const pieces: Piece[] = [];
-    const current = new Map(formats);
+    let current = new Map(formats);
     let tattrs: Attrs | null = null;
     let tsig = '';
     let wrappers: WrapperValue[] = [];
@@ -1657,7 +2313,24 @@ export class Reader {
         wrappers = wrappersFromAttrs(all, this.isKnownWrapper);
       }
     };
-    for (let it = start; it !== null && it !== stop; it = it.right) {
+    // With moves, the walk enters the ranges inline records show in place.
+    const walk = zv === null ? null : zv.copy();
+    const y = start === null ? null : (start.parent as YNode);
+    let prev: Item | null = null;
+    for (
+      let it =
+        start === stop
+          ? null
+          : walk === null
+            ? start
+            : enterZone(walk, y!, start, stop);
+      it !== null && (walk !== null || it !== stop);
+      prev = it, it = walk === null ? it.right : stepZone(walk, y!, it, stop)
+    ) {
+      if (walk !== null && (prev === null ? it !== start : it !== prev.right)) {
+        current = formatsAfterItem(y!, it.left);
+        tattrs = null;
+      }
       if (it.deleted) {
         continue;
       }
@@ -1671,7 +2344,7 @@ export class Reader {
         tattrs = null;
         continue;
       }
-      if (!it.countable) {
+      if (!it.countable || (walk !== null && walk.foreign(it))) {
         continue;
       }
       snapshot();
@@ -1703,7 +2376,7 @@ export class Reader {
         });
       } else if (content instanceof ContentType) {
         const name = (content.type.name as string) || '';
-        if (name.startsWith(INLINE_PREFIX)) {
+        if (name.startsWith(INLINE_PREFIX) && !isBlockNodeType(content.type)) {
           pieces.push({kind: 'node', wrappers, y: content.type});
         }
       }
@@ -1722,6 +2395,7 @@ export class Reader {
     formats: Formats,
     el: ElementNode | null,
     extraPool?: LexicalNode[],
+    zv: ZoneView | null = null,
   ): LexicalNode[] {
     const state = this.state;
     const texts: TextNode[] = [];
@@ -1789,7 +2463,7 @@ export class Reader {
       }
       return null;
     };
-    const pieces = this.$pieces(start, stop, formats);
+    const pieces = this.$pieces(start, stop, formats, zv);
     // The node being composed (IME) keeps its key and its text: content a
     // remote change puts next to it (a join) goes into nodes of its own, so
     // the browser's composition stays in its DOM text node (Lexical does not
@@ -2038,6 +2712,44 @@ export class Reader {
       }
     }
     const removeCount = prev.length - left - right;
+    if (middle.length === removeCount && middle.length >= 64) {
+      // A reorder of many children (a long move shown by a record): move
+      // only the children out of order rather than splice them all.
+      const pos = new Map<NodeKey, number>();
+      for (let k = left; k < prev.length - right; k++) {
+        pos.set(prev[k].getKey(), k - left);
+      }
+      const pairs: [number, number][] = [];
+      let permutation = true;
+      middle.forEach((c, i) => {
+        const p = pos.get(c.getKey());
+        if (p === undefined) {
+          permutation = false;
+        } else {
+          pairs.push([i, p]);
+        }
+      });
+      if (permutation) {
+        const keep = new Set(longestIncreasing(pairs).map(([i]) => i));
+        let before: LexicalNode | null = left > 0 ? prev[left - 1] : null;
+        middle.forEach((c, i) => {
+          if (!keep.has(i)) {
+            if (before === null) {
+              const first = el.getFirstChild();
+              if (first === null) {
+                el.append(c);
+              } else if (!first.is(c)) {
+                first.insertBefore(c);
+              }
+            } else {
+              before.insertAfter(c);
+            }
+          }
+          before = c;
+        });
+        return;
+      }
+    }
     writable.splice(left, removeCount, middle);
   }
 
@@ -2345,6 +3057,22 @@ function lineJSON(
   return json;
 }
 
+/** Group and level nodes of the tops of `units`, to reuse. */
+function $newPool(units: Unit[]): Pool {
+  const pool: Pool = {groups: new Map(), levels: [], lines: new Set()};
+  const seenTops = new Set<NodeKey>();
+  for (const u of units) {
+    if (u.sig !== '' && u.first !== null && !seenTops.has(u.first)) {
+      seenTops.add(u.first);
+      const top = $getNodeByKey(u.first);
+      if ($isElementNode(top)) {
+        collectPool(top, pool);
+      }
+    }
+  }
+  return pool;
+}
+
 function collectPool(node: ElementNode, pool: Pool): void {
   const type = node.getType();
   const spec = getGroupSpec(klassOf(node));
@@ -2388,6 +3116,16 @@ function sameFormats(a: Formats, b: Formats): boolean {
     }
   }
   return true;
+}
+
+/** Whether a container holds a live move record. */
+function holdsMove(y: YNode): boolean {
+  for (let it = y._start; it !== null; it = it.right) {
+    if (!it.deleted && isMoveItem(it)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export function isDeleted(y: YNode): boolean {

@@ -42,6 +42,7 @@ import {
 } from '@y/y';
 
 import {Cursor, type Formats, isLiveContent} from './Cursor';
+import {isMoveItem} from './Moves';
 import {
   BLOCK_PREFIX,
   FIELD_PREFIX,
@@ -272,6 +273,10 @@ export function findListMerges(
 ): Repair[] {
   const out: Repair[] = [];
   const live = liveItems(container);
+  // Units that moved (move records) show elsewhere than their items:
+  // adjacency in the sequence is not adjacency on screen (checked once a
+  // merge is found: most containers have none).
+  let moved: boolean | null = null;
   // From the end, so that a run of three merges into the first.
   for (let k = live.length - 1; k > 0; k--) {
     const a = live[k - 1];
@@ -287,6 +292,12 @@ export function findListMerges(
     const ka = keyOf(typeOf(a));
     if (ka === null || ka !== keyOf(typeOf(b))) {
       continue;
+    }
+    if (moved === null) {
+      moved = live.some(isMoveItem);
+    }
+    if (moved) {
+      return [];
     }
     out.push(listMerge(a, b));
     k--;
@@ -370,7 +381,21 @@ function isEmptyPad(cell: YNode): boolean {
 
 /** The repair of a ragged table, or null when every row has one width. */
 export function tableRepair(table: YNode): Repair | null {
-  const rows = liveItems(table).filter(it => nameOf(it) === ROW);
+  const all = liveItems(table);
+  const rows = all.filter(it => nameOf(it) === ROW);
+  // Moved rows show in another order than their items: row spans cannot
+  // be followed in item order (a table with moved rows and row spans is
+  // left as it is).
+  if (
+    all.some(isMoveItem) &&
+    rows.some(row =>
+      liveItems(typeOf(row)).some(
+        it => nameOf(it) === CELL && span(typeOf(it), 'rowSpan') > 1,
+      ),
+    )
+  ) {
+    return null;
+  }
   const widths = rows.map(() => 0);
   const carried = rows.map(() => 0);
   const padTail = rows.map(() => 0);

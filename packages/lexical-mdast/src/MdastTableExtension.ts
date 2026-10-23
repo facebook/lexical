@@ -204,11 +204,16 @@ function $cellLines(cell: TableCellNode): {
   return {blocks, decorators, lines, owners};
 }
 
+/**
+ * Unescapes a pipe GFM reads as escaped before anything else, which
+ * micromark leaves escaped in raw HTML and in autolinks.
+ */
+function unescapePipes(value: string): string {
+  return value.replace(/\\\|/g, '|');
+}
+
 const $importTable: MdastImportHandler<Table> = (node, ctx) => {
   const align = node.align || [];
-  // A pipe GFM reads as escaped before anything else, which micromark
-  // leaves escaped in raw HTML and in autolinks.
-  const unescapePipes = (value: string) => value.replace(/\\\|/g, '|');
   const replace = (child: MdastNode): MdastNode[] | undefined => {
     if (child.type === 'html' || child.type === 'htmlInline') {
       if (BR_RE.test(child.value)) {

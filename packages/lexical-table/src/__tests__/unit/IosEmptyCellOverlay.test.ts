@@ -190,9 +190,10 @@ describe('iOS empty table cell overlay', () => {
     // iOS cancels the pointer when its own gesture (text selection) starts;
     // only touchend follows.
     pointer(paragraph, 'pointercancel');
-    paragraph.dispatchEvent(
-      new Event('touchend', {bubbles: true, cancelable: true}),
-    );
+    const touchEnd = new Event('touchend', {bubbles: true, cancelable: true});
+    // Lexical's own iOS touchend listener reads changedTouches.
+    Object.defineProperty(touchEnd, 'changedTouches', {value: []});
+    paragraph.dispatchEvent(touchEnd);
     expect(overlayOf(0)).toBe(null);
   });
 

@@ -65,6 +65,8 @@ describe('iOS table drag caret hiding', () => {
   function touch(target: EventTarget, type: string, remaining = 0): void {
     const event = new Event(type, {bubbles: true, cancelable: true});
     Object.defineProperty(event, 'touches', {value: {length: remaining}});
+    // Lexical's own iOS touchend listener reads changedTouches.
+    Object.defineProperty(event, 'changedTouches', {value: []});
     target.dispatchEvent(event);
   }
 

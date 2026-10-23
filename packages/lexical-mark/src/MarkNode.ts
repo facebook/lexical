@@ -68,6 +68,7 @@ export class MarkNode extends ElementNode {
     return this.config('mark', {
       extends: ElementNode,
       generated: GENERATED_MARK,
+      inline: true,
       json: markNodeSchema,
     });
   }

@@ -1966,6 +1966,7 @@ declare export class StateConfig<K extends string, V> {
   readonly isEqual: (a: V, b: V) => boolean;
   readonly defaultValue: V;
   readonly resetOnCopyNode: boolean;
+  readonly derived: boolean;
   readonly schema?: AnySerializationSchema;
   constructor(key: K, stateValueConfig: StateValueConfig<V>): this;
 }
@@ -1975,6 +1976,7 @@ export type StateValueConfig<V> = {
   unparse?: (parsed: V) => unknown;
   isEqual?: (a: V, b: V) => boolean;
   resetOnCopyNode?: boolean;
+  derived?: boolean;
 }
 
 export type Parse<T> = (value: unknown) => T;
@@ -1983,6 +1985,7 @@ export type Parse<T> = (value: unknown) => T;
 // `defaultValue` off a schema rather than only calling it.
 export type SerializationSchema<T> = Parse<T> & {
   readonly defaultValue: T,
+  readonly derived?: true,
   readonly meta: SerializationSchemaMeta,
   readonly getter?: SchemaGetterAccessor,
   readonly setter?: SchemaSetterAccessor,
@@ -2168,6 +2171,7 @@ export type SchemaGetterField = {
   readonly getterTable?: {readonly [key: string]: unknown},
   readonly setterTable?: empty,
   readonly when?: string,
+  readonly derived?: boolean,
 };
 export type SchemaSetterField = {
   ...SchemaFieldBase,
@@ -2195,6 +2199,7 @@ export type SchemaAccessor = string | SchemaField | null;
 export type SchemaAccessors = {
   readonly getter?: SchemaGetterAccessor,
   readonly setter?: SchemaSetterAccessor,
+  readonly derived?: boolean,
 };
 declare export function isSchemaField<T extends SchemaFieldBase>(
   accessor: string | T | null | void,
@@ -2302,8 +2307,51 @@ export interface StaticNodeConfigValue<
   readonly generated?: GeneratedJSONFactory;
   readonly stateConfigs?: ReadonlyArray<RequiredNodeStateConfig>;
   readonly slots?: ReadonlyArray<string>;
+  readonly inline?: boolean;
+  readonly children?: NodeChildrenConfig;
+  readonly mergeAdjacent?: MergeAdjacentConfig | false;
   readonly extends?: Class<LexicalNode>;
 }
+
+export type NodeChildrenConfig =
+  | 'inline'
+  | 'block'
+  | ReadonlyArray<'inline' | Class<LexicalNode>>;
+
+export type MergeAdjacentConfig = {
+  readonly by: ReadonlyArray<string | AnyStateConfig>,
+};
+
+export type DeclaredNodeStructure = {
+  readonly inline?: boolean,
+  readonly children?: NodeChildrenConfig,
+  readonly mergeAdjacent?: MergeAdjacentConfig,
+  readonly derived: ReadonlySet<string>,
+  readonly declaredBy: {
+    readonly inline?: Class<LexicalNode>,
+    readonly children?: Class<LexicalNode>,
+    readonly mergeAdjacent?: Class<LexicalNode>,
+  },
+};
+
+declare export function getDeclaredNodeStructure(
+  klass: Class<LexicalNode>,
+): DeclaredNodeStructure;
+/** @internal For Lexical's importers; not public API. */
+declare export function isNodeStructureEnforced(
+  editor: LexicalEditor,
+  klass: Class<LexicalNode>,
+): boolean;
+/** @internal For NodeStructureExtension and @lexical/y; not public API. */
+declare export function $normalizeNodeStructure(
+  node: LexicalNode,
+  mergeAdjacent?: boolean,
+): void;
+/** @internal For @lexical/y; not public API. */
+declare export function $needsNodeStructureNormalization(
+  node: ElementNode,
+  mergeAdjacent?: boolean,
+): boolean;
 
 /**
  * This is the type of LexicalNode.$config() that can be

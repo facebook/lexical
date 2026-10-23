@@ -10,6 +10,7 @@ import {
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
   HorizontalRuleExtension,
+  NodeStructureExtension,
 } from '@lexical/extension';
 import {DOMImportExtension} from '@lexical/html';
 import {
@@ -24,6 +25,7 @@ import {JSDOM} from 'jsdom';
 import {
   $getEditor,
   $getRoot,
+  $isElementNode,
   defineExtension,
   type LexicalEditor,
   type LexicalNode,
@@ -422,6 +424,47 @@ describe('ListItemNode block flattening', () => {
         'text',
       ]);
     });
+  });
+
+  test('with NodeStructureExtension, no line break is left next to a block decorator', () => {
+    // The normalization splits the list around the rule; a line break next
+    // to it would be left at the edge of each half as an empty line.
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          HorizontalRuleExtension,
+          ListExtension,
+          NodeStructureExtension,
+        ],
+        name: 'list-hr-structure-host',
+      }),
+    );
+    const shapeOf = (node: LexicalNode): unknown =>
+      $isListNode(node)
+        ? [
+            node.getStart(),
+            ...node
+              .getChildren()
+              .map(item =>
+                $isElementNode(item)
+                  ? item.getChildren().map(c => c.getType())
+                  : item.getType(),
+              ),
+          ]
+        : node.getType();
+    importInto(editor, '<ol><li>x</li><li>a<hr />b</li><li>y</li></ol>');
+    expect(editor.read(() => $getRoot().getChildren().map(shapeOf))).toEqual([
+      [1, ['text'], ['text']],
+      'horizontalrule',
+      // "b" continues item 2; "y" keeps 3.
+      [2, ['text'], ['text']],
+    ]);
+    importInto(editor, '<ul><li>a<p>b</p><hr /><p>c</p>d</li></ul>');
+    expect(editor.read(() => $getRoot().getChildren().map(shapeOf))).toEqual([
+      [1, ['text', 'linebreak', 'text']],
+      'horizontalrule',
+      [1, ['text', 'linebreak', 'text']],
+    ]);
   });
 
   test('preserves a nested list instead of flattening it', () => {

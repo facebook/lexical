@@ -36,12 +36,13 @@ import {
   withField,
 } from 'lexical';
 
-import {$createListItemNode, $isListItemNode, type ListItemNode} from '.';
+import {$createListItemNode, $isListItemNode} from '.';
 import {
   mergeNextSiblingListIfSameType,
   updateChildrenListItemValue,
 } from './formatList';
 import {GENERATED_LIST} from './LexicalListGeneratedJSON';
+import {ListItemNode} from './LexicalListItemNode';
 import {$getListDepth} from './utils';
 
 export type SerializedListNode = Spread<
@@ -111,8 +112,10 @@ export class ListNode extends ElementNode {
         mergeNextSiblingListIfSameType(node);
         updateChildrenListItemValue(node);
       },
+      children: [ListItemNode],
       extends: ElementNode,
       generated: GENERATED_LIST,
+
       importDOM: buildImportMap({
         ol: () => ({
           conversion: $convertListNode,
@@ -123,7 +126,10 @@ export class ListNode extends ElementNode {
           priority: 0,
         }),
       }),
+
       json: listNodeSchema,
+      // What mergeNextSiblingListIfSameType compares (start is not).
+      mergeAdjacent: {by: ['listType']},
     });
   }
 

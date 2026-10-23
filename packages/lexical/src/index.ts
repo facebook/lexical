@@ -223,6 +223,8 @@ export type {
   LexicalNode,
   LexicalParseJSON,
   LexicalUpdateJSON,
+  MergeAdjacentConfig,
+  NodeChildrenConfig,
   NodeKey,
   NodeMap,
   ParsableSerializedNode,
@@ -359,6 +361,13 @@ export {
   $setSlot,
   getDeclaredSlots,
 } from './LexicalSlot';
+export type {DeclaredNodeStructure} from './LexicalStructure';
+export {
+  $needsNodeStructureNormalization,
+  $normalizeNodeStructure,
+  getDeclaredNodeStructure,
+  isNodeStructureEnforced,
+} from './LexicalStructure';
 export {
   $assumeActiveEditor,
   $flushSyncAfterUpdate,

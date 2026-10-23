@@ -123,15 +123,25 @@ export class LinkNode extends ElementNode {
 
   $config() {
     return this.config('link', {
+      children: 'inline',
       extends: ElementNode,
+
       generated: GENERATED_LINK,
+
       importDOM: {
         a: () => ({
           conversion: $convertAnchorElement,
           priority: 1,
         }),
       },
+
+      inline: true,
+
       json: linkNodeSchema,
+      // What shouldMergeAdjacentLink compares. The method stays the
+      // authority: $linkNodeTransform calls it, and a subclass that overrides
+      // it is merged by that transform, never by the declaration.
+      mergeAdjacent: {by: ['url', 'target', 'rel', 'title']},
     });
   }
 
@@ -538,8 +548,12 @@ export class AutoLinkNode extends LinkNode {
   $config() {
     return this.config('autolink', {
       extends: LinkNode,
+
       generated: GENERATED_AUTOLINK,
+
       json: autoLinkNodeSchema,
+      // Adjacent autolinks never merge (see shouldMergeAdjacentLink).
+      mergeAdjacent: false,
     });
   }
 

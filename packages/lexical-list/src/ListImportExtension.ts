@@ -17,10 +17,13 @@ import {
 } from '@lexical/html';
 import {
   $createLineBreakNode,
+  $getEditor,
   $isElementNode,
   $isParagraphNode,
   $setDirectionFromDOM,
   $setFormatFromDOM,
+  isNodeStructureEnforced,
+  type Klass,
   type LexicalNode,
 } from 'lexical';
 
@@ -148,8 +151,17 @@ function $liftFormatFromSingleParagraph(
  * as-is. A nested `ListNode` is the one deliberate exception — it is a valid
  * list-item child that {@link $normalizeListChildren} lifts into a sibling,
  * so it is preserved here rather than unwrapped.
+ *
+ * When the editor enforces the list item's declared structure
+ * (`NodeStructureExtension`), a childless block decorator (`<hr>`) cannot
+ * stay in the item: the normalization splits the list around it. No line
+ * break is then put next to it (`<li>a<hr>b</li>` → `a`, the decorator,
+ * `b`), since one would be left at the edge of each half as an empty line.
  */
-function $flattenListItemBlocks(children: LexicalNode[]): LexicalNode[] {
+function $flattenListItemBlocks(
+  listItemNode: ListItemNode,
+  children: LexicalNode[],
+): LexicalNode[] {
   const $isBoundary = (node: LexicalNode): boolean =>
     $isBlockLevel(node) && !$isListNode(node);
   if (!children.some($isBoundary)) {
@@ -157,31 +169,44 @@ function $flattenListItemBlocks(children: LexicalNode[]): LexicalNode[] {
   }
   // Partition into segments — each maximal run of inline siblings, and each
   // boundary's own content — then join the segments with a single line break.
-  const segments: LexicalNode[][] = [];
+  const segments: {nodes: LexicalNode[]; lifted: boolean}[] = [];
   let inlineRun: LexicalNode[] = [];
   const flushInlineRun = () => {
     if (inlineRun.length > 0) {
-      segments.push(inlineRun);
+      segments.push({lifted: false, nodes: inlineRun});
       inlineRun = [];
     }
   };
+  const lifts = isNodeStructureEnforced(
+    $getEditor(),
+    listItemNode.constructor as Klass<LexicalNode>,
+  );
   for (const child of children) {
     if ($isBoundary(child)) {
       flushInlineRun();
       // Unwrap a block ElementNode to its inline content; a childless block
       // DecoratorNode stands on its own line.
-      segments.push($isElementNode(child) ? child.getChildren() : [child]);
+      segments.push(
+        $isElementNode(child)
+          ? {lifted: false, nodes: child.getChildren()}
+          : {lifted: lifts, nodes: [child]},
+      );
     } else {
       inlineRun.push(child);
     }
   }
   flushInlineRun();
   const out: LexicalNode[] = [];
-  for (const segment of segments) {
-    if (out.length > 0) {
+  for (let i = 0; i < segments.length; i++) {
+    if (
+      i > 0 &&
+      out.length > 0 &&
+      !segments[i - 1].lifted &&
+      !segments[i].lifted
+    ) {
       out.push($createLineBreakNode());
     }
-    out.push(...segment);
+    out.push(...segments[i].nodes);
   }
   return out;
 }
@@ -206,6 +231,7 @@ const ListItemRule = defineImportRule({
         // flattening, otherwise the paragraph would already be unwrapped and
         // its alignment lost.
         $flattenListItemBlocks(
+          node,
           $liftFormatFromSingleParagraph(node, ctx.$importChildren(el)),
         ),
       ),
@@ -235,6 +261,7 @@ function $buildChecklistItem(
       0,
       0,
       $flattenListItemBlocks(
+        node,
         $liftFormatFromSingleParagraph(node, ctx.$importChildren(el)),
       ),
     ),

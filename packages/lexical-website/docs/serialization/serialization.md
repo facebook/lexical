@@ -546,6 +546,114 @@ holds current versions. This matters only for a node reference you kept across
 a mutation and then exported by hand.
 
 
+### Node structure: `inline`, `children`, `mergeAdjacent`, `derived` {#node-structure}
+
+:::warning Experimental
+
+These keys and `NodeStructureExtension` are experimental.
+
+:::
+
+`$config()` can also state facts about a node's structure: whether it is
+inline, what it may hold, and when two adjacent siblings are the same thing.
+They do not change serialization. On their own they change nothing at
+runtime: the opt-in
+[`NodeStructureExtension`](/docs/api/modules/lexical_extension#nodestructureextension)
+enforces them, and tools such as collaboration bindings read them with
+[`getDeclaredNodeStructure`](/docs/api/modules/lexical#getdeclarednodestructure).
+
+```ts
+import {ElementNode, nodeSchema, stringValue, withField} from 'lexical';
+
+const mentionSchema = nodeSchema<MentionNode>()({
+  userId: withField(stringValue(), {field: '__userId'}),
+});
+
+class MentionNode extends ElementNode {
+  __userId = '';
+
+  $config() {
+    return this.config('mention', {
+      children: 'inline',
+      extends: ElementNode,
+      inline: true,
+      json: mentionSchema,
+      // Two adjacent mentions of the same user become one.
+      mergeAdjacent: {by: ['userId']},
+    });
+  }
+}
+```
+
+- `inline: boolean`: whether an `ElementNode` of the class is inline. A
+  class that declares it and does not write its own `isInline()` gets one
+  that returns it.
+- `children`: what the class may hold. `'inline'` (inline content, like a
+  paragraph), `'block'` (blocks, like a table cell), or a list of `'inline'`
+  and classes (a list holds list items; a list item holds inline content and
+  lists). With the extension, inline content in a node that holds blocks is
+  wrapped in a paragraph, and a child a list does not allow is wrapped in the
+  first listed class. Inside a block that holds inline content (a quote, a
+  list item), a plain paragraph becomes lines of that block: its content is
+  joined to its neighbours with line breaks, so a quote holding two
+  paragraphs stays one quote, as markdown and HTML import it. Any other block
+  (a heading, a code block, a nested quote, a table, a horizontal rule) is
+  lifted out and the node is split around it, so the block keeps its type. A
+  horizontal rule in an ordered list item splits the list, and the items
+  after it keep their numbers.
+- `mergeAdjacent: {by}`: adjacent siblings of the class whose named schema
+  fields (or `StateConfig`s) are equal are the same thing; a collaboration
+  binding stores them as one run. NodeState counts only when named. With the
+  extension they are merged, for the class that declares it. A class whose
+  `$config()` declares a transform that merges (`ListNode`) keeps merging
+  there, and a subclass that inherits the declaration is merged by its own
+  code, so a merge method it overrides (`LinkNode`'s
+  `shouldMergeAdjacentLink`, which compares what `by` names) stays the
+  authority. `false` turns off a declaration an ancestor made
+  (`AutoLinkNode`).
+- `derived: true` on a field (`withField(schema, {derived: true, field})` or
+  `withAccessors(schema, {derived: true})`) or a state
+  (`createState(key, {derived: true, parse})`): Lexical recomputes the value
+  (a list item's `value` and `indent`), so `mergeAdjacent` cannot name it and
+  tools neither store nor compare it. It is still serialized.
+
+To enforce the declarations, add the extension:
+
+```ts
+import {
+  buildEditorFromExtensions,
+  NodeStructureExtension,
+} from '@lexical/extension';
+import {RichTextExtension} from '@lexical/rich-text';
+
+const editor = buildEditorFromExtensions({
+  dependencies: [RichTextExtension, NodeStructureExtension],
+  name: 'my-editor',
+});
+```
+
+Its repairs run as transforms on dirty nodes, in the same update, and only
+move content, never delete it. Shadow roots always hold blocks whatever
+their class declares, `isInline()` stays per instance for classes that
+compute it, and classes that declare nothing are never touched. The
+`OverflowNode` the character limit wraps around overflowing text stays in
+its paragraph, although its `isInline()` is false. For an editor built
+without extensions, `registerNodeStructure(editor)` registers the same
+transforms.
+
+Each key is inherited by subclasses that do not declare it. In development,
+the keys a class declares in its own `$config()` are checked when an editor
+is created: `by` must name known, non-derived values, a declared `inline`
+must agree with an overridden `isInline()`, and a merging class that lists
+child classes must list classes that hold inline content. Inherited
+declarations are never refused: where a subclass contradicts one (a
+`LinkNode` subclass whose `isInline()` returns `false`, or a `mergeAdjacent`
+whose `by` does not fit it), the key reads as undeclared for that subclass.
+
+Tools read the declarations with
+[`getDeclaredNodeStructure(klass)`](/docs/api/modules/lexical#getdeclarednodestructure),
+which also lists the fields a class declares `derived`.
+
 ### Versioning & Breaking Changes
 
 Serialized documents outlive the code that wrote them, so avoid breaking

@@ -5089,11 +5089,61 @@ function buildNodeClassRecord(klass: Klass<LexicalNode>): NodeClassRecord {
     // stores them on every subclass instance, so its clone has to carry them
     // too.
     injectSynthesizedAfterCloneFrom(klass);
+    injectDeclaredIsInline(klass, ownNodeConfig);
   } catch (error) {
     NODE_CLASS_CACHE.delete(klass);
     throw error;
   }
   return record;
+}
+
+function synthesizedIsInlineTrue(): boolean {
+  return true;
+}
+function synthesizedIsInlineFalse(): boolean {
+  return false;
+}
+
+/**
+ * Whether `isInline` (an `isInline` method found on a prototype) was
+ * synthesized from a `$config({inline})` declaration.
+ *
+ * @internal
+ */
+export function isSynthesizedIsInline(isInline: unknown): boolean {
+  return (
+    isInline === synthesizedIsInlineTrue ||
+    isInline === synthesizedIsInlineFalse
+  );
+}
+
+/**
+ * A class that declares `$config({inline})` and does not write its own
+ * `isInline()` gets one returning the declaration, so classes that declare
+ * nothing run exactly the code they ran before (ElementNode.isInline is
+ * unchanged).
+ */
+function injectDeclaredIsInline(
+  klass: Klass<LexicalNode>,
+  ownNodeConfig:
+    | undefined
+    | StaticNodeConfigValue<LexicalNode, string | symbol>,
+): void {
+  if (
+    !ownNodeConfig ||
+    ownNodeConfig.inline === undefined ||
+    !hasOwnKey(klass.prototype as unknown as object, PROTOTYPE_CONFIG_METHOD) ||
+    Object.prototype.hasOwnProperty.call(klass.prototype, 'isInline')
+  ) {
+    return;
+  }
+  Object.defineProperty(klass.prototype, 'isInline', {
+    configurable: true,
+    value: ownNodeConfig.inline
+      ? synthesizedIsInlineTrue
+      : synthesizedIsInlineFalse,
+    writable: true,
+  });
 }
 
 /**

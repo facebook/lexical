@@ -404,6 +404,15 @@ export interface StateValueConfig<V> {
    * value to the default.
    */
   resetOnCopyNode?: boolean;
+  /**
+   * @experimental
+   *
+   * `true` when Lexical recomputes this value from the document (it is
+   * derived, like a list item's number), so tools that copy or compare a
+   * node's data (a collaboration binding, `mergeAdjacent`) must neither
+   * store nor compare it. It is still serialized to JSON as usual.
+   */
+  derived?: boolean;
 }
 
 /**
@@ -433,6 +442,8 @@ export class StateConfig<K extends string | symbol, V> {
    */
   readonly defaultValue: V;
   readonly resetOnCopyNode: boolean;
+  /** @experimental See {@link StateValueConfig.derived}. */
+  readonly derived: boolean;
   /**
    * The {@link SerializationSchema} for this state's value, present when its
    * `parse` is a schema (e.g. `createState('mode', {parse: enumValue([...])})`).
@@ -443,6 +454,7 @@ export class StateConfig<K extends string | symbol, V> {
   readonly schema?: AnySerializationSchema;
   constructor(key: K, stateValueConfig: StateValueConfig<V>) {
     this.key = key;
+    this.derived = stateValueConfig.derived === true;
     // Binding below strips a schema's own properties from this.parse, so
     // resolve it first and keep the original when it carries introspectable
     // metadata.

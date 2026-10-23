@@ -15,7 +15,7 @@ import type {
 } from './types';
 import type {ListItemNode, ListNode, ListType} from '@lexical/list';
 import type {HeadingTagType} from '@lexical/rich-text';
-import type {ElementNode, LexicalNode, LineBreakNode} from 'lexical';
+import type {ElementNode, Klass, LexicalNode, LineBreakNode} from 'lexical';
 import type {
   Blockquote,
   Break,
@@ -53,6 +53,7 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
+  $getEditor,
   $getState,
   $isDecoratorNode,
   $isElementNode,
@@ -64,6 +65,7 @@ import {
   IS_CODE,
   IS_ITALIC,
   IS_STRIKETHROUGH,
+  isNodeStructureEnforced,
 } from 'lexical';
 
 import {
@@ -107,6 +109,24 @@ export function $prepend<T extends ElementNode>(
  */
 export function $isBlockLevelNode(node: LexicalNode): boolean {
   return ($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline();
+}
+
+/**
+ * Whether a paragraph boundary is written after `last` (the last node
+ * imported into the inline container `container`): always after inline
+ * content. After a nested block only when the editor does not enforce the
+ * container's declared structure; when it does (`NodeStructureExtension`),
+ * the block is lifted out of the container and a break there would be left
+ * at the start of the rest as an empty line.
+ */
+function $breakAfter(container: ElementNode, last: LexicalNode): boolean {
+  return (
+    !$isBlockLevelNode(last) ||
+    !isNodeStructureEnforced(
+      $getEditor(),
+      container.constructor as Klass<LexicalNode>,
+    )
+  );
 }
 
 /** A `LineBreakNode` marking a paragraph boundary inside a container. */
@@ -179,7 +199,10 @@ export const $importBlockquote: MdastImportHandler<Blockquote> = (
   const children: LexicalNode[] = [];
   for (const child of node.children) {
     if (child.type === 'paragraph') {
-      if (children.length > 0) {
+      if (
+        children.length > 0 &&
+        $breakAfter(quote, children[children.length - 1])
+      ) {
         children.push($createParagraphBreakNode());
       }
       children.push(...ctx.importChildren(child));
@@ -299,7 +322,8 @@ export const $importListItem: MdastImportHandler<ListItem> = (node, ctx) => {
       // child is the nested ListNode, appended as a sibling of this item.
       extraItems.push($append($createListItemNode(), ctx.importNode(child)));
     } else if (child.type === 'paragraph') {
-      if (item.getChildrenSize() > 0) {
+      const last = item.getLastChild();
+      if (last !== null && $breakAfter(item, last)) {
         $append(item, [$createParagraphBreakNode()]);
       }
       $append(item, ctx.importChildren(child));

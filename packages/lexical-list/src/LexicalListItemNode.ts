@@ -52,9 +52,10 @@ import {
   withField,
 } from 'lexical';
 
-import {$createListNode, $isListNode, type ListNode, type ListType} from './';
+import {$createListNode, $isListNode, type ListType} from './';
 import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
 import {GENERATED_LISTITEM} from './LexicalListGeneratedJSON';
+import {ListNode} from './LexicalListNode';
 import {$getNewListStart, $isNestedListNode} from './utils';
 
 export type SerializedListItemNode = Spread<
@@ -84,13 +85,19 @@ const listItemNodeSchema = nodeSchema<ListItemNode>()({
   // `clamp`, because the plain bounds fall back to the *default* for a value
   // outside them, which would read an over-deep item as indent 0 instead of as
   // deeply nested.
-  indent: numberValue(0, {
-    clamp: true,
-    integer: true,
-    max: MAX_LIST_ITEM_INDENT,
-    min: 0,
-  }),
+  // Derived: getIndent() computes it from the nesting (setIndent restructures).
+  indent: withAccessors(
+    numberValue(0, {
+      clamp: true,
+      integer: true,
+      max: MAX_LIST_ITEM_INDENT,
+      min: 0,
+    }),
+    {derived: true},
+  ),
+  // Derived: the list renumbers its items.
   value: withField(numberValue(1), {
+    derived: true,
     field: '__value',
   }),
 });
@@ -182,6 +189,7 @@ export class ListItemNode extends ElementNode {
           }
         }
       },
+      children: ['inline', ListNode],
       extends: ElementNode,
       generated: GENERATED_LISTITEM,
       importDOM: buildImportMap({

@@ -40,6 +40,7 @@ import {
 import {DOMSlot} from './LexicalDOMSlot';
 import {
   $updateStateFromJSON,
+  type AnyStateConfig,
   type NodeState,
   type NodeStateJSON,
   type Prettify,
@@ -125,6 +126,27 @@ export type SerializedLexicalNode = {
    */
   $slots?: Record<string, SerializedLexicalNode>;
 };
+
+/**
+ * @experimental node-structure
+ *
+ * What an element may hold; see {@link StaticNodeConfigValue.children}.
+ */
+export type NodeChildrenConfig =
+  | 'inline'
+  | 'block'
+  | readonly ('inline' | Klass<LexicalNode>)[];
+
+/**
+ * @experimental node-structure
+ *
+ * When adjacent siblings merge; see
+ * {@link StaticNodeConfigValue.mergeAdjacent}.
+ */
+export interface MergeAdjacentConfig {
+  /** Schema field names of the class, or NodeState configs. */
+  readonly by: readonly (string | AnyStateConfig)[];
+}
 
 /**
  * EXPERIMENTAL
@@ -224,6 +246,60 @@ export interface StaticNodeConfigValue<
    * concurrency instead of racing on attribute creation.
    */
   readonly slots?: readonly string[];
+  /**
+   * @experimental node-structure
+   *
+   * Whether an {@link ElementNode} of this class is inline (it sits among
+   * text, like a link) rather than a block. {@link ElementNode.isInline}
+   * returns it unless the class overrides `isInline()`, in which case the two
+   * must agree (checked when the editor is created, in development). Inherited
+   * by subclasses that do not declare it.
+   */
+  readonly inline?: boolean;
+  /**
+   * @experimental node-structure
+   *
+   * What an {@link ElementNode} of this class may hold:
+   *
+   * - `'inline'`: inline content only (text, line breaks, inline elements and
+   *   decorators), like a paragraph. A plain paragraph child becomes lines of
+   *   the node (its content joined to its neighbours with line breaks, as
+   *   importers build a quote or list item from several paragraphs). Any
+   *   other block child is lifted out: the node is split around it, so the
+   *   block keeps its type and becomes a sibling between the two halves.
+   * - `'block'`: blocks only, like a table cell. Consecutive inline children
+   *   are wrapped in a paragraph.
+   * - a list of `'inline'` and classes: only those (a class allows its
+   *   subclasses). A child that is not allowed is wrapped in the first listed
+   *   class when the list names no `'inline'` (as a list wraps stray content
+   *   in a list item); otherwise block children are handled as for
+   *   `'inline'`.
+   *
+   * The opt-in `NodeStructureExtension` enforces it with a normalization
+   * pass over dirty nodes in the same update, which only moves content and
+   * never deletes it; without the extension it changes nothing. A shadow root
+   * instance (`isShadowRoot()` is true) always holds blocks. Inherited by
+   * subclasses that do not declare it.
+   */
+  readonly children?: NodeChildrenConfig;
+  /**
+   * @experimental node-structure
+   *
+   * Adjacent siblings of this class are the same thing when the values `by`
+   * names are equal: schema fields of the class or {@link StateConfig}s
+   * (NodeState counts only when named; a derived value cannot be named).
+   * Tools read it (a collaboration binding stores such siblings as one run).
+   * The same normalization pass merges them (the second one's children are
+   * appended to the first, and the first one's values win) for the class
+   * that declares it, unless that class merges in a transform its own
+   * `$config()` declares (a list), which keeps doing so. A subclass that
+   * inherits the declaration is merged by its own code, so a merge method
+   * it overrides (`shouldMergeAdjacentLink`) stays the authority. `false`
+   * turns off a declaration an ancestor made. Inherited by subclasses that
+   * do not declare it; two siblings merge only when they are of the same
+   * class.
+   */
+  readonly mergeAdjacent?: MergeAdjacentConfig | false;
   /**
    * The exact superclass of the node. Always name it.
    *

@@ -14,7 +14,6 @@ import type {
 } from 'mdast-util-to-markdown';
 
 import {configExtension} from '@lexical/extension';
-import {$getRenderContextValue} from '@lexical/html';
 import {
   $createTableCellNode,
   $createTableNode,
@@ -57,7 +56,6 @@ import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
 import {gfmTable} from 'micromark-extension-gfm-table';
 
 import {$append, $isBlockLevelNode, inlineMarker} from './handlers';
-import {RenderContextMarkdownSelection} from './MdastExport';
 import {MdastExtension} from './MdastExtension';
 
 /** An inline HTML `<br>` tag, the line break a GFM cell can hold. */
@@ -301,12 +299,12 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     return null;
   }
   // A selection export that starts and ends in one cell of the table (or
-  // selects nodes in it), and reaches no other, writes the cell's nodes as
-  // they are, as copying in a cell does.
-  const selection = $getRenderContextValue(RenderContextMarkdownSelection);
+  // selects nodes in it) writes the cell's nodes as they are, as copying in
+  // a cell does; a table selection of cells writes a table.
+  const {selection} = ctx;
   const ends = $isNodeSelection(selection)
     ? selection.getNodes()
-    : $isRangeSelection(selection) || $isTableSelection(selection)
+    : $isRangeSelection(selection)
       ? [selection.anchor.getNode(), selection.focus.getNode()]
       : [];
   const endCell =
@@ -316,9 +314,12 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
           cell => $isTableCellNode(cell) && node.is($findTableNode(cell)),
         )
       : null;
-  const inEndCell =
+  if (
     $isTableCellNode(endCell) &&
-    ends.every(end => endCell.is(end) || endCell.isParentOf(end));
+    ends.every(end => endCell.is(end) || endCell.isParentOf(end))
+  ) {
+    return ctx.exportBlocks(endCell);
+  }
   // A merged cell is written where it starts, with empty cells where it
   // spans, and every row as wide as the widest. Block decorators, which a
   // cell can't hold, are written after the table.
@@ -376,16 +377,6 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     });
     written.push({cells, lines});
   });
-  if (
-    inEndCell &&
-    written.every(({cells, lines}) =>
-      cells.every(
-        ({cell}, column) => lines[column].length === 0 || endCell.is(cell),
-      ),
-    )
-  ) {
-    return ctx.exportBlocks(endCell);
-  }
   const exported = ctx.exportChildren(decorators);
   if (to < 0) {
     return exported;

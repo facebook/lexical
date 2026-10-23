@@ -443,6 +443,7 @@ function createNodeExporter(
     },
     exportInline: source => $exportInline(source),
     isIncluded: $isIncluded,
+    selection,
   };
 
   function $dispatch(

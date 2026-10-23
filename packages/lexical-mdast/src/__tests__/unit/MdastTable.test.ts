@@ -623,11 +623,10 @@ describe('MdastTableExtension', () => {
         name: '[root]',
       }),
     );
-    const markdown = table('| a | b |', '| - | - |', '| x | y |');
     editor.update(
       () => {
-        $convertFromMarkdownString(markdown);
-        $cells()[1][0].getAllTextNodes()[0].select(0, 1);
+        $convertFromMarkdownString(table('| x |', '| - |'));
+        $cells()[0][0].getAllTextNodes()[0].select(0, 1);
       },
       {discrete: true},
     );
@@ -635,6 +634,25 @@ describe('MdastTableExtension', () => {
       expect($convertSelectionToMarkdownString()).toBe('x');
     });
     expect(whole).toEqual(['table']);
+  });
+
+  it('writes a table selection of one cell as a table', () => {
+    using editor = createEditor(false);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(
+          table('| a | b |', '| - | -: |', '| 1 | 2 |'),
+        );
+        const [, [, two]] = $cells();
+        $setSelection($createTableSelectionFrom($table(), two, two));
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertSelectionToMarkdownString()).toBe(
+        table('|  2 |', '| -: |'),
+      );
+    });
   });
 
   it('writes a one-cell table a selection holds whole', () => {

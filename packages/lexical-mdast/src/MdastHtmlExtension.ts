@@ -312,8 +312,10 @@ function transformRawHtml(parent: Parent): void {
  * Markdown text inside the raw HTML                                          *
  * -------------------------------------------------------------------------- */
 
-// GitHub's `<details>` idiom embeds Markdown *text* directly between the raw
-// tags — most visibly the `<summary>` line — and expects it to render:
+// GitHub's `<details>` idiom puts Markdown *text* directly between the raw
+// tags — most visibly the `<summary>` line — and authors expect it to
+// render, although GFM leaves text in an HTML block raw until a blank line
+// ends the block:
 //
 //   <details><summary>
 //   This is the *summary* that shows when collapsed

@@ -74,7 +74,8 @@ Type \`[^another]\` to mint one.
 
 GFM tables round-trip as tables: the first row is the header, a line
 break in a cell is written as \`<br>\`, and a column is written with the
-alignment of its header cell's text (Table > Align in the header). What
+alignment of its header cell's text (Table > Align left, center or
+right in the header). What
 GFM can't hold, such as merged cells or another alignment in a body cell,
 is written as near as it allows:
 

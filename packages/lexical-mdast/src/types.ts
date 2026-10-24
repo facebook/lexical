@@ -167,7 +167,7 @@ export interface MdastExportContext {
    * The selection this export is limited to, or `null` for a
    * whole-document export (including one run during a selection export).
    */
-  selection: BaseSelection | null;
+  readonly selection: BaseSelection | null;
 }
 
 /**

@@ -118,20 +118,21 @@ info-string meta, setext vs ATX headings, hard-break style, soft line
 breaks, thematic break marker, `_` vs `*` emphasis (where strong and
 emphasis nest, `mdast-util-to-markdown` writes them with different markers,
 as in `**_both_**`), and link style
-(`[text](url)` vs `<autolink>` vs bare GFM literal). A table column's
-alignment is imported as the element format of the paragraph in each of
-its cells, and written from the text of its header cell (the format of
-the block holding the cell's first line, or of the nearest block around it
-with one outside any nested table, or else of the cell, where start and
-end count as none); a format GFM can't express leaves the column
-unaligned. Export is lossy where GFM has no form for a
-table's content: a cell's blocks and line breaks become lines separated by
-`<br>`, a merged cell is written where it starts with empty cells where it
-spans, and block decorators in a cell are written after the table.
-Normalization is never forced; nodes created in the editor defer to the
-document-level serialization options, which can be configured by
-contributing `mdast-util-to-markdown` options through
-`toMarkdownExtensions`.
+(`[text](url)` vs `<autolink>` vs bare GFM literal). Normalization is
+never forced; nodes created in the editor defer to the document-level
+serialization options, which can be configured by contributing
+`mdast-util-to-markdown` options through `toMarkdownExtensions`.
+
+GFM tables (`MdastTableExtension`) import a column's alignment as the
+element format of the paragraph in each of its cells, and write it from
+the text of the column's header cell (the format of the block holding the
+cell's first line, or of the nearest block around it with one outside any
+nested table, or else of the cell, where start and end count as none); a
+format GFM can't express leaves the column unaligned. Export is lossy
+where GFM has no form for a table's content: a cell's blocks and line
+breaks become lines separated by `<br>`, a merged cell is written where it
+starts with empty cells where it spans, block decorators in a cell are
+written after the table, and the alignment of a body cell is dropped.
 
 ## unified / remark interop
 

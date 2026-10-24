@@ -72,9 +72,10 @@ Type \`[^another]\` to mint one.
 
 ## Tables
 
-GFM tables keep to what Markdown can write: the first row is the header,
-Enter in a cell adds a \`<br>\` line break, and columns are aligned rather
-than cells (Table > Align column):
+GFM tables round-trip as tables: the first row is the header, a line
+break in a cell is written as \`<br>\`, and a column takes the alignment
+of its first aligned cell (Table > Align). What GFM can't hold, such as
+merged cells, is written as near as it allows:
 
 | Syntax    | Description           | Width |
 | --------- | --------------------- | ----: |

@@ -18,39 +18,26 @@ import {
   $createTableCellNode,
   $createTableNode,
   $createTableRowNode,
-  $findCellNode,
   $findTableNode,
   $isTableCellNode,
   $isTableNode,
   $isTableRowNode,
   $isTableSelection,
-  $unmergeCellNode,
   TableCellHeaderStates,
   TableCellNode,
-  TableExtension,
   TableNode,
   TableRowNode,
 } from '@lexical/table';
 import {
-  $createLineBreakNode,
   $createParagraphNode,
   $findMatchingParent,
-  $getSelection,
   $isElementNode,
   $isNodeSelection,
-  $isParagraphNode,
   $isRangeSelection,
-  COMMAND_PRIORITY_CRITICAL,
-  COMMAND_PRIORITY_LOW,
   defineExtension,
   type ElementFormatType,
   type ElementNode,
-  FORMAT_ELEMENT_COMMAND,
-  INSERT_LINE_BREAK_COMMAND,
-  INSERT_PARAGRAPH_COMMAND,
   type LexicalNode,
-  mergeRegister,
-  ParagraphNode,
 } from 'lexical';
 import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
 import {gfmTable} from 'micromark-extension-gfm-table';
@@ -124,7 +111,7 @@ function $cellFormat(
  */
 function $columnAlign(
   grid: GridCell[][],
-  $format: (cell: TableCellNode) => ElementFormatType = $cellFormat,
+  $format: (cell: TableCellNode) => ElementFormatType,
 ): AlignType[] {
   const align: AlignType[] = [];
   grid.forEach(cells =>
@@ -198,18 +185,16 @@ function $tableGrid(table: TableNode): {
 /**
  * The inline content of a cell as lines (at least one): those of each block
  * in it, a nested block's on lines of its own. Also returns the blocks with
- * no inline form (block decorators), the lines each block spans, and the
- * block (or the cell) each line is in.
+ * no inline form (block decorators), and the block (or the cell) each line
+ * is in.
  */
 function $cellLines(cell: TableCellNode): {
-  blocks: Map<string, [number, number]>;
   decorators: LexicalNode[];
   lines: LexicalNode[][];
   owners: ElementNode[];
 } {
   const lines: LexicalNode[][] = [];
   const owners: ElementNode[] = [];
-  const blocks = new Map<string, [number, number]>();
   const decorators: LexicalNode[] = [];
   let line: LexicalNode[] | undefined;
   const $visit = (node: LexicalNode, owner: ElementNode) => {
@@ -231,11 +216,8 @@ function $cellLines(cell: TableCellNode): {
         lines.push([]);
         owners.push(node);
       }
-      blocks.set(node.getKey(), [first, lines.length - 1]);
       line = undefined;
     } else {
-      // A block decorator spans no line, before the line after it.
-      blocks.set(node.getKey(), [lines.length, lines.length - 1]);
       decorators.push(node);
     }
   };
@@ -244,7 +226,7 @@ function $cellLines(cell: TableCellNode): {
     lines.push([]);
     owners.push(cell);
   }
-  return {blocks, decorators, lines, owners};
+  return {decorators, lines, owners};
 }
 
 /**
@@ -521,228 +503,6 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
 }
 
 /**
- * Keeps `table` to what a GFM table holds: a header row, then body rows,
- * of unmerged cells that each hold one unindented paragraph, and a column
- * alignment that each cell of the column has as its element format.
- */
-function $normalizeTable(table: TableNode): void {
-  // A column's alignment is read before merged cells are split (their
-  // copies keep their format, but only the column a cell starts in has its
-  // alignment); other formats, of the table or a block in a cell, are
-  // cleared.
-  let {grid} = $tableGrid(table);
-  const align = $columnAlign(grid);
-  // Merged cells are split, once every span is set as the grid reads it
-  // (the split can't fill a row span past the last row).
-  const merged: TableCellNode[] = [];
-  grid.forEach((cells, rowIndex) =>
-    cells.forEach(({cell, origin}) => {
-      if (origin) {
-        const [rowSpan, colSpan] = $cellSpans(cell, rowIndex, grid.length);
-        if (cell.getRowSpan() !== rowSpan) {
-          cell.setRowSpan(rowSpan);
-        }
-        if (cell.getColSpan() !== colSpan) {
-          cell.setColSpan(colSpan);
-        }
-        if (rowSpan > 1 || colSpan > 1) {
-          merged.push(cell);
-        }
-      }
-    }),
-  );
-  // A cell whose span was set is a newer version of it.
-  merged.forEach(cell => $unmergeCellNode(cell.getLatest()));
-  if (merged.length > 0) {
-    ({grid} = $tableGrid(table));
-  }
-  if (table.getFormatType() !== '') {
-    table.setFormat('');
-  }
-  let last: LexicalNode = table;
-  const selection = $getSelection();
-  const selectionPoints = $isRangeSelection(selection)
-    ? selection.getStartEndPoints()
-    : [];
-  grid.forEach((cells, rowIndex) =>
-    cells.forEach(({cell}, column) => {
-      const headerState =
-        rowIndex === 0
-          ? TableCellHeaderStates.ROW
-          : TableCellHeaderStates.NO_STATUS;
-      if (cell.getHeaderStyles() !== headerState) {
-        cell.setHeaderStyles(headerState);
-      }
-      const format = align[column] || '';
-      if (cell.getFormatType() !== format) {
-        cell.setFormat(format);
-      }
-      const children = cell.getChildren();
-      const paragraph = children[0];
-      // A block in the paragraph (raw HTML a DOM rule reads as one) moves
-      // out like any other.
-      if (
-        children.length === 1 &&
-        $isParagraphNode(paragraph) &&
-        !paragraph.getChildren().some($isBlockLevelNode)
-      ) {
-        if (paragraph.getFormatType() !== '') {
-          paragraph.setFormat('');
-        }
-        if (paragraph.getIndent() !== 0) {
-          paragraph.setIndent(0);
-        }
-        return;
-      }
-      // Each line of the cell, joined by line breaks. A selection point on
-      // a block being removed moves to the same place in its lines.
-      const {blocks, decorators, lines, owners} = $cellLines(cell);
-      const points = selectionPoints.filter(
-        point =>
-          point.type === 'element' &&
-          (point.key === cell.getKey() || blocks.has(point.key)),
-      );
-      const targets = points.map(point => {
-        const element = point.getNode();
-        return $isElementNode(element)
-          ? element.getChildAtIndex(point.offset)
-          : null;
-      });
-      // The paragraph takes the text format of the block the first line is
-      // in, the format text typed into an empty one gets.
-      const joined = $createParagraphNode()
-        .setTextFormat(owners[0].getTextFormat())
-        .setTextStyle(owners[0].getTextStyle());
-      const ends = lines.map((line, i) => {
-        if (i > 0) {
-          joined.append($createLineBreakNode());
-        }
-        const start = joined.getChildrenSize();
-        joined.append(...line);
-        return [start, joined.getChildrenSize()];
-      });
-      // Where the lines from the first of `span` start (the end, past the
-      // last line).
-      const startOf = ([first]: [number, number]) =>
-        first < ends.length ? ends[first][0] : ends[ends.length - 1][1];
-      points.forEach((point, i) => {
-        const target = targets[i];
-        const targetSpan = target && blocks.get(target.getKey());
-        const span = blocks.get(point.key) || [0, lines.length - 1];
-        point.set(
-          joined.getKey(),
-          target && joined.is(target.getParent())
-            ? target.getIndexWithinParent()
-            : targetSpan
-              ? startOf(targetSpan)
-              : // The end of the block's lines, or where they would be.
-                span[1] < span[0]
-                ? startOf(span)
-                : ends[span[1]][1],
-          'element',
-        );
-      });
-      // A block with no inline form moves out of the table.
-      for (const decorator of decorators) {
-        last = last.insertAfter(decorator);
-      }
-      cell.clear().append(joined);
-    }),
-  );
-}
-
-/**
- * Aligns the columns of the cells the selection reaches in each table (from
- * the first to the last), for an alignment GFM has, and ignores any other:
- * GFM aligns columns, not cells or blocks. A selection that reaches no cell
- * is left to rich text.
- */
-function $formatColumns(format: ElementFormatType): boolean {
-  const selection = $getSelection();
-  if (
-    !$isRangeSelection(selection) &&
-    !$isTableSelection(selection) &&
-    !$isNodeSelection(selection)
-  ) {
-    return false;
-  }
-  // The cells the selection reaches, by table: in a table it starts and
-  // ends in, its anchor and focus cells.
-  const [anchorCell, focusCell] = $isNodeSelection(selection)
-    ? [null, null]
-    : [
-        $findCellNode(selection.anchor.getNode()),
-        $findCellNode(selection.focus.getNode()),
-      ];
-  const table = anchorCell && $findTableNode(anchorCell);
-  const inOneTable =
-    table !== null && focusCell !== null && table.is($findTableNode(focusCell));
-  const nodes = inOneTable ? [] : selection.getNodes();
-  const reached = new Map<string, {cells: Set<string>; table: TableNode}>();
-  for (const cell of inOneTable
-    ? [anchorCell, focusCell]
-    : nodes.map($findCellNode)) {
-    const cellTable = cell && $findTableNode(cell);
-    if (cell && cellTable) {
-      const entry = reached.get(cellTable.getKey()) || {
-        cells: new Set(),
-        table: cellTable,
-      };
-      entry.cells.add(cell.getKey());
-      reached.set(cellTable.getKey(), entry);
-    }
-  }
-  if (reached.size === 0) {
-    return false;
-  }
-  // Blocks outside the tables the selection reaches are formatted as rich
-  // text formats them.
-  if (!inOneTable) {
-    for (const node of nodes) {
-      const block = $findMatchingParent(
-        node,
-        parent => $isElementNode(parent) && !parent.isInline(),
-      );
-      if ($isElementNode(block) && !$findTableNode(block)) {
-        block.setFormat(format);
-      }
-    }
-  }
-  if (gfmAlign(format) === null && format !== '') {
-    return true;
-  }
-  reached.forEach(({cells, table: reachedTable}) => {
-    const {grid} = $tableGrid(reachedTable);
-    let from = Infinity;
-    let to = -1;
-    grid.forEach(row =>
-      row.forEach(({cell}, column) => {
-        if (cells.has(cell.getKey())) {
-          from = Math.min(from, column);
-          to = Math.max(to, column);
-        }
-      }),
-    );
-    grid.forEach(row =>
-      row.forEach(({cell}, column) => {
-        if (column >= from && column <= to && cell.getFormatType() !== format) {
-          cell.setFormat(format);
-        }
-      }),
-    );
-  });
-  return true;
-}
-
-/** Normalizes the table a changed cell is in. */
-function $markTableDirty(node: LexicalNode): void {
-  const table = $findTableNode(node);
-  if (table) {
-    table.markDirty();
-  }
-}
-
-/**
  * GFM tables, mapped to `@lexical/table` nodes. Opt-in (not part of
  * {@link MdastCommonMarkExtension}) because it pulls in the `@lexical/table`
  * nodes it ships.
@@ -757,9 +517,7 @@ function $markTableDirty(node: LexicalNode): void {
  * the top that starts in the column and has a format (that of the block
  * its first line is in, or of a block around it outside any nested table,
  * or else its own, where start and end count as none), none for one GFM
- * can't express. Add
- * {@link MdastStrictTableExtension} to keep tables in the editor to what GFM
- * holds.
+ * can't express.
  *
  * @example
  * ```ts
@@ -788,67 +546,4 @@ export const MdastTableExtension = defineExtension({
   ],
   name: '@lexical/mdast/Table',
   nodes: [TableNode, TableRowNode, TableCellNode],
-});
-
-/**
- * Table editing kept to what a GFM table holds, so that the content of a
- * table reads back from Markdown as it is: {@link MdastTableExtension} with
- * `TableExtension`, configured without cell background colors. The first
- * row is the header row; a cell holds one paragraph of inline content,
- * whose line breaks are written as `<br>` (Enter in a cell inserts one);
- * and columns are aligned rather than cells: a column's alignment, read as
- * {@link MdastTableExtension} exports it, becomes the element format of
- * each of its cells.
- * `FORMAT_ELEMENT_COMMAND` in a table aligns the columns from the
- * selection's anchor cell to its focus cell (from the first cell it reaches
- * to the last in a table it leaves), and does nothing for an alignment GFM
- * has no form for (justify, start, end); the formats of
- * the table and of the blocks in cells are cleared. Blocks put into a cell
- * become lines of its paragraph, except block decorators, which move after
- * the table, and merged cells are split.
- *
- * @experimental
- */
-export const MdastStrictTableExtension = defineExtension({
-  dependencies: [
-    MdastTableExtension,
-    configExtension(TableExtension, {hasCellBackgroundColor: false}),
-  ],
-  name: '@lexical/mdast/StrictTable',
-  register: editor =>
-    mergeRegister(
-      editor.registerNodeTransform(TableNode, $normalizeTable),
-      editor.registerNodeTransform(TableCellNode, $markTableDirty),
-      editor.registerNodeTransform(ParagraphNode, node => {
-        if ($isTableCellNode(node.getParent())) {
-          $markTableDirty(node);
-        }
-      }),
-      editor.registerCommand(
-        INSERT_PARAGRAPH_COMMAND,
-        () => {
-          const selection = $getSelection();
-          if (!$isRangeSelection(selection)) {
-            return false;
-          }
-          const cell = $findCellNode(selection.anchor.getNode());
-          if (cell && cell.is($findCellNode(selection.focus.getNode()))) {
-            // A line break, through its command where something handles it.
-            if (!editor.dispatchCommand(INSERT_LINE_BREAK_COMMAND, false)) {
-              selection.insertLineBreak();
-            }
-            return true;
-          }
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-      // Ahead of TableExtension, which formats a table selection's cells
-      // and their blocks, or the table.
-      editor.registerCommand(
-        FORMAT_ELEMENT_COMMAND,
-        $formatColumns,
-        COMMAND_PRIORITY_CRITICAL,
-      ),
-    ),
 });

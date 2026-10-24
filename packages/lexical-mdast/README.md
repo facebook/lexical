@@ -64,7 +64,6 @@ Behavior and convenience bundles:
 | `MdastShadowRootQuoteExtension` | opt-in: blockquotes as block containers (full-fidelity nested content) |
 | `MdastHtmlExtension` | opt-in: raw HTML routed through the `@lexical/html` DOM import rules; HTML-encoded export via `$exportViaDOM` / `rawHtmlBlock` |
 | `MdastShortcutsExtension` | streaming keyboard shortcuts |
-| `MdastStrictTableExtension` | opt-in: table editing kept to what a GFM table holds (header row, one line per cell, column alignment) |
 
 Everything composes granularly and degrades gracefully: an editor with only
 the extensions it wants imports unsupported constructs as their content

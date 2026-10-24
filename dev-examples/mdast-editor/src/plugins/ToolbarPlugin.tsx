@@ -68,24 +68,7 @@ const INSERT_TYPES = [
 
 type InsertType = (typeof INSERT_TYPES)[number]['value'];
 
-/**
- * Whether the selection reaches a table cell: a GFM cell holds no blocks
- * (MdastStrictTableExtension would flatten them into lines).
- */
-function reachesCell(editor: LexicalEditor): boolean {
-  return editor.read(() => {
-    const selection = $getSelection();
-    return (
-      selection !== null &&
-      selection.getNodes().some(node => $findCellNode(node) !== null)
-    );
-  });
-}
-
 function applyInsert(editor: LexicalEditor, type: InsertType): void {
-  if ((type === 'details' || type === 'alert') && reachesCell(editor)) {
-    return;
-  }
   switch (type) {
     case 'kbd':
       editor.dispatchCommand(FORMAT_KBD_COMMAND);
@@ -112,17 +95,17 @@ const TABLE_ACTIONS = [
   {label: 'Insert column right', value: 'columnRight'},
   {label: 'Delete row', value: 'deleteRow'},
   {label: 'Delete column', value: 'deleteColumn'},
-  {label: 'Align column left', value: 'left'},
-  {label: 'Align column center', value: 'center'},
-  {label: 'Align column right', value: 'right'},
-  {label: 'Clear column alignment', value: ''},
+  {label: 'Align left', value: 'left'},
+  {label: 'Align center', value: 'center'},
+  {label: 'Align right', value: 'right'},
+  {label: 'Clear alignment', value: ''},
 ] as const;
 
 type TableAction = (typeof TABLE_ACTIONS)[number]['value'];
 
 /**
- * Edits the table the selection is in. MdastStrictTableExtension keeps the
- * first row the header row whatever rows are inserted or deleted.
+ * Edits the table the selection is in. Export writes a column with the
+ * alignment of its first aligned cell from the top.
  */
 function applyTableAction(editor: LexicalEditor, action: TableAction): void {
   editor.update(() => {
@@ -133,8 +116,6 @@ function applyTableAction(editor: LexicalEditor, action: TableAction): void {
       action === 'right' ||
       action === ''
     ) {
-      // MdastStrictTableExtension aligns the columns of the cells the
-      // selection reaches, here only in tables.
       if (
         selection &&
         selection.getNodes().every(node => $findTableNode(node))
@@ -172,9 +153,6 @@ function applyTableAction(editor: LexicalEditor, action: TableAction): void {
 }
 
 function applyBlockType(editor: LexicalEditor, type: BlockType): void {
-  if (type !== 'paragraph' && reachesCell(editor)) {
-    return;
-  }
   switch (type) {
     case 'paragraph':
       editor.dispatchCommand(REMOVE_LIST_COMMAND);

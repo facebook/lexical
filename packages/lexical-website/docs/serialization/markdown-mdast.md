@@ -121,9 +121,11 @@ alignment is written from the first cell from the top that starts in the
 column and has an element format (that of the block holding the cell's
 first line, or of the nearest block around it with one outside any nested
 table, or else of the cell, where start and end count as none); a format GFM can't express
-leaves the column unaligned. Normalization is never forced (unless you add
-`MdastStrictTableExtension`, which keeps tables in the editor to what a
-GFM table holds); nodes created in the editor defer to the
+leaves the column unaligned. Export is lossy where GFM has no form for a
+table's content: a cell's blocks and line breaks become lines separated by
+`<br>`, a merged cell is written where it starts with empty cells where it
+spans, and block decorators in a cell are written after the table.
+Normalization is never forced; nodes created in the editor defer to the
 document-level serialization options, which can be configured by
 contributing `mdast-util-to-markdown` options through
 `toMarkdownExtensions`.

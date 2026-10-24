@@ -127,7 +127,7 @@ interface GridCell {
 /**
  * The rows and columns `cell` spans from `rowIndex` in a table of
  * `rowCount` rows: a row span of 0 (as in HTML) or past the last row runs
- * to the last row, and a column span below 1 is 1.
+ * to the last row, and any other span below 1 is 1.
  */
 function $cellSpans(
   cell: TableCellNode,
@@ -136,7 +136,9 @@ function $cellSpans(
 ): [number, number] {
   const rowSpan = cell.getRowSpan();
   return [
-    rowSpan > 0 ? Math.min(rowSpan, rowCount - rowIndex) : rowCount - rowIndex,
+    rowSpan === 0
+      ? rowCount - rowIndex
+      : Math.min(Math.max(1, rowSpan), rowCount - rowIndex),
     Math.max(1, cell.getColSpan()),
   ];
 }

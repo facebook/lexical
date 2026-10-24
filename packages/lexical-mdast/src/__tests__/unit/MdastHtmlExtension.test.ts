@@ -68,8 +68,6 @@ import {
   RenderContextMarkdownExport,
 } from '../../index';
 
-const gfmTable = (...rows: string[]) => rows.join('\n');
-
 // Probes ImportContextMarkdown: the same markup imports differently from
 // Markdown vs. a direct DOM/HTML import.
 const CiteProbeRule = defineImportRule({
@@ -911,19 +909,16 @@ describe('MdastHtmlExtension', () => {
         name: '[root]',
       }),
     );
-    editor.update(
-      () => $convertFromMarkdownString(gfmTable('| a |', '| - |', '| <hr> |')),
-      {discrete: true},
-    );
+    editor.update(() => $convertFromMarkdownString('| a |\n| - |\n| <hr> |'), {
+      discrete: true,
+    });
     editor.read(() => {
       expect(
         $getRoot()
           .getChildren()
           .map(child => child.getType()),
       ).toEqual(['table', 'horizontalrule']);
-      expect($convertToMarkdownString()).toBe(
-        [gfmTable('| a |', '| - |', '|   |'), '***'].join('\n\n'),
-      );
+      expect($convertToMarkdownString()).toBe('| a |\n| - |\n|   |\n\n***');
     });
   });
 });

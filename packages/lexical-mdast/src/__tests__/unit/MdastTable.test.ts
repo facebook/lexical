@@ -1114,6 +1114,16 @@ describe('MdastStrictTableExtension', () => {
     ).toBe(table('|  a  |   |', '| :-: | - |', '|  1  |   |'));
   });
 
+  it('reads a negative row span as 1', () => {
+    expect(
+      convert(
+        table('| a | b |', '| - | - |', '| 1 | 2 |'),
+        () => $cells()[0][0].setRowSpan(-1),
+        false,
+      ),
+    ).toBe(table('| a | b |', '| - | - |', '| 1 | 2 |'));
+  });
+
   it('splits a merged cell loaded with a span past the last row', () => {
     using editor = createEditor(true);
     editor.update(

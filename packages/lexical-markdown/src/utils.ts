@@ -76,10 +76,21 @@ export function isEmptyParagraph(node: LexicalNode): boolean {
   );
 }
 
+// A decimal character reference has one to seven digits, and one that names
+// U+0000, a surrogate or a number past U+10FFFF reads as U+FFFD instead of
+// making `String.fromCodePoint` throw.
+// https://spec.commonmark.org/0.31.2/#decimal-numeric-character
+function decodeDecimalCharacterReference(_: string, digits: string): string {
+  const codePoint = Number(digits);
+  return codePoint === 0 ||
+    (codePoint >= 0xd800 && codePoint <= 0xdfff) ||
+    codePoint > 0x10ffff
+    ? '\uFFFD'
+    : String.fromCodePoint(codePoint);
+}
+
 export function unescapeText(value: string): string {
   return value
     .replace(/\\([!-/:-@[-`{-~])/g, '$1')
-    .replace(/&#(\d+);/g, (_, codePoint) =>
-      String.fromCodePoint(Number(codePoint)),
-    );
+    .replace(/&#(\d{1,7});/g, decodeDecimalCharacterReference);
 }

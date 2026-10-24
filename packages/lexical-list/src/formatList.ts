@@ -23,7 +23,7 @@ import {
   $isTextNode,
   $normalizeCaret,
   $setPointFromCaret,
-  type ElementNode,
+  ElementNode,
   type LexicalNode,
   type NodeKey,
   type ParagraphNode,
@@ -252,22 +252,15 @@ function $createListOrMerge(node: ElementNode, listType: ListType): ListNode {
  * @param list2 - The second list to be merged.
  */
 export function mergeLists(list1: ListNode, list2: ListNode): void {
-  const listItem1 = list1.getLastChild();
-  const listItem2 = list2.getFirstChild();
+  joinLists(list1, list2, false);
+}
 
-  if (
-    listItem1 &&
-    listItem2 &&
-    $isNestedListNode(listItem1) &&
-    $isNestedListNode(listItem2) &&
-    // A nested <ul> must not swallow a nested <ol>, same rule as
-    // mergeNextSiblingListIfSameType applies at the top level.
-    listItem1.getFirstChild().getListType() ===
-      listItem2.getFirstChild().getListType()
-  ) {
-    mergeLists(listItem1.getFirstChild(), listItem2.getFirstChild());
-    listItem2.remove();
-  }
+function joinLists(list1: ListNode, list2: ListNode, onlyChild: boolean): void {
+  mergeNestedListsAtSeam(
+    list1.getLastChild(),
+    list2.getFirstChild(),
+    onlyChild,
+  );
 
   const toMerge = list2.getChildren();
   if (toMerge.length > 0) {
@@ -275,6 +268,51 @@ export function mergeLists(list1: ListNode, list2: ListNode): void {
   }
 
   list2.remove();
+}
+
+/**
+ * Where two lists meet (`listItem1` the last item of the first, `listItem2`
+ * the first item of the second), join two items that only wrap nested lists
+ * of the same type into one.
+ *
+ * With `onlyChild` (the node structure normalization, `NodeStructureExtension`),
+ * an item counts as one that only wraps a nested list when that list is its
+ * only child. Without it, as `mergeLists` has always done, an item whose first
+ * child is a list counts too: what follows that list in the second item is
+ * then removed with it, and the second list's items go before what follows it
+ * in the first.
+ *
+ * @internal
+ */
+export function mergeNestedListsAtSeam(
+  listItem1: LexicalNode | null,
+  listItem2: LexicalNode | null,
+  onlyChild = false,
+): void {
+  if (
+    listItem1 &&
+    listItem2 &&
+    $isNestedListNode(listItem1) &&
+    $isNestedListNode(listItem2) &&
+    (!onlyChild ||
+      (listItem1.getChildrenSize() === 1 &&
+        listItem2.getChildrenSize() === 1)) &&
+    // A nested <ul> must not swallow a nested <ol>, same rule as
+    // mergeNextSiblingListIfSameType applies at the top level.
+    listItem1.getFirstChild().getListType() ===
+      listItem2.getFirstChild().getListType()
+  ) {
+    joinLists(listItem1.getFirstChild(), listItem2.getFirstChild(), onlyChild);
+    if (!onlyChild) {
+      listItem2.remove();
+      return;
+    }
+    // ElementNode's own remove. The normalization calls this once the second
+    // list's items are already in the first, so ListItemNode.remove would
+    // also join the item after this one, which mergeLists (joining at the
+    // seam before it moves them) never does.
+    ElementNode.prototype.remove.call(listItem2);
+  }
 }
 
 /**

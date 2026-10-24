@@ -142,14 +142,16 @@ for (const kind of ['Review', 'Card', 'PullQuote'] as const) {
       }
       const originalText = root.querySelector(config.selector)!.textContent;
       if (side === 'after') {
-        editor.update(
-          () => {
-            const last = $getRoot().getLastChild();
-            if ($isParagraphNode(last) && last.getTextContent() === '')
-              last.remove();
-          },
-          {discrete: true},
-        );
+        await act(async () => {
+          editor.update(
+            () => {
+              const last = $getRoot().getLastChild();
+              if ($isParagraphNode(last) && last.getTextContent() === '')
+                last.remove();
+            },
+            {discrete: true},
+          );
+        });
         await click(root, selector);
       }
       // A click can land on a later wrapped line. The precondition for
@@ -217,21 +219,25 @@ for (const kind of ['Review', 'PullQuote'] as const) {
         await typeText('Jane');
       }
       if (kind === 'Review' && direction === 'down') {
-        editor.update(() => $getRoot().getLastChildOrThrow().remove(), {
-          discrete: true,
+        await act(async () => {
+          editor.update(() => $getRoot().getLastChildOrThrow().remove(), {
+            discrete: true,
+          });
         });
       }
       const before = root.children.length;
       await click(root, direction === 'down' ? config.first : config.last);
       if (kind === 'PullQuote' && direction === 'down') {
         // The seeded quote wraps; use its actual end, as in the E2E case.
-        editor.update(
-          () => {
-            const slot = $getSlot($getRoot().getFirstChildOrThrow(), 'quote');
-            if ($isElementNode(slot)) slot.selectEnd();
-          },
-          {discrete: true},
-        );
+        await act(async () => {
+          editor.update(
+            () => {
+              const slot = $getSlot($getRoot().getFirstChildOrThrow(), 'quote');
+              if ($isElementNode(slot)) slot.selectEnd();
+            },
+            {discrete: true},
+          );
+        });
       } else {
         await press(
           direction === 'down'

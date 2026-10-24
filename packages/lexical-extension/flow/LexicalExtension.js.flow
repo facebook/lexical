@@ -9,6 +9,19 @@
 
 export type {AutoFocusConfig} from '@lexical/extension/AutoFocusExtension';
 export {AutoFocusExtension} from '@lexical/extension/AutoFocusExtension';
+export type {
+  BlockIdConfig,
+  BlockIdOutput,
+} from '@lexical/extension/BlockIdExtension';
+export {
+  $defaultIsIdentifiedBlock,
+  $getBlockById,
+  $getBlockId,
+  $isRootChildBlock,
+  BlockIdExtension,
+  blockIdState,
+  generateBlockId,
+} from '@lexical/extension/BlockIdExtension';
 export type {ClearEditorConfig} from '@lexical/extension/ClearEditorExtension';
 export {
   ClearEditorExtension,
@@ -83,6 +96,11 @@ export {NestedEditorExtension} from '@lexical/extension/NestedEditorExtension';
 export type {NodeSelectionDataSelectedConfig} from '@lexical/extension/NodeSelectionDataSelectedExtension';
 export {NodeSelectionDataSelectedExtension} from '@lexical/extension/NodeSelectionDataSelectedExtension';
 export {NodeSelectionExtension} from '@lexical/extension/NodeSelectionExtension';
+export type {NodeStructureConfig} from '@lexical/extension/NodeStructureExtension';
+export {
+  NodeStructureExtension,
+  registerNodeStructure,
+} from '@lexical/extension/NodeStructureExtension';
 export type {NormalizeInlineElementsConfig} from '@lexical/extension/NormalizeInlineElementsExtension';
 export {NormalizeInlineElementsExtension} from '@lexical/extension/NormalizeInlineElementsExtension';
 export type {

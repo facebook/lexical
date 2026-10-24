@@ -19,7 +19,7 @@
     "zip": "npm-run-all zip:chrome zip:firefox",
     "zip:chrome": "wxt zip -b chrome",
     "zip:firefox": "cp ./SOURCE_CODE_REVIEW.md ../.. && wxt zip -b firefox",
-    "publish": "wxt submit --chrome-zip .output/*-chrome.zip --firefox-zip .output/*-firefox.zip --firefox-sources-zip .output/*-sources.zip",
+    "publish": "wxt submit --chrome-api-version v2 --chrome-publish-type DEFAULT_PUBLISH --chrome-zip .output/*-chrome.zip --firefox-zip .output/*-firefox.zip --firefox-sources-zip .output/*-sources.zip",
     "bundle-analyzer:open": "wxt build --analyze --analyze-open",
     "compile": "tsc --noEmit",
     "postinstall": "wxt prepare"
@@ -46,7 +46,7 @@
     "@vitejs/plugin-react": "^6.1.1",
     "lexical": "workspace:*",
     "typescript": "^6.0.3",
-    "vite": "^8.3.1",
+    "vite": "^8.3.3",
     "wxt": "^0.21.4"
   },
   "sideEffects": false

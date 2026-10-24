@@ -46,46 +46,36 @@ BUILD_VERSION=0 pnpm run safari:archive
 PASSWORD="XXX" pnpm run safari:upload
 ```
 
-## Publishing flow
+## Publishing
 
-**Preconditions:**
+Production (`latest`) npm releases submit Chrome and Firefox extensions for review from the released commit, with build version `0`. Update store screenshots/videos before releases that change the UI.
 
-If new version of the extension contains big changes to it's UI or functionality, before proceeding, go to the web UI of every marketplace and update screenshots and preview videos.
+For extension-only releases or retries, run [Publish DevTools extension to stores](https://github.com/facebook/lexical/actions/workflows/devtools-extension-publish.yml) on the release tag. Increase "Build version" for repeated uploads of the same Lexical version (`<version>.<build_version>`), and wait for pending Chrome reviews to finish. Store submissions can fail independently; retry this workflow without republishing npm packages.
 
-**Chrome, Firefox:**
+Safari releases use the [manual archive/upload commands](#local-development).
 
-Go to the ["Publish DevTools extension to stores" GitHub action](https://github.com/facebook/lexical/actions/workflows/devtools-extension-publish.yml) and start it manually. Increase "Build version" in case publish happens more than once within single Lexical monorepo version.
+### Store credentials
 
-The published version is `<package.json version>.<build version>`, e.g. `0.52.0.1`. Two things to know before re-running the workflow:
+Enable the Chrome Web Store API in Google Cloud and [link a publishing service account](https://developer.chrome.com/docs/webstore/service-accounts) to the listing's publisher. Configure these repository settings:
 
-- "Build version" must be a plain integer (`0`, `1`, `2`, …). It is parsed with `parseInt`, so a value like `0.52.1` silently becomes `0` and you end up re-publishing the same version.
-- The two stores are submitted independently, so a run can succeed for one and fail for the other — Firefox rejects a version it already has with `409 Conflict: Version X already exists.`. Check which store is `✓` in the log before assuming nothing shipped; a re-run with a bumped build version then leaves the two stores one build number apart, which is harmless.
+| Setting | Type | Value |
+| --- | --- | --- |
+| `EXTENSION_CHROME_EXTENSION_ID` | Secret | Listing's extension ID |
+| `EXTENSION_CHROME_PUBLISHER_ID` | Variable | **Publisher > Settings** in the [Developer Dashboard](https://chrome.google.com/webstore/devconsole) |
+| `EXTENSION_CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL` | Variable | Service account's `client_email` |
+| `EXTENSION_CHROME_SERVICE_ACCOUNT_PRIVATE_KEY` | Secret | Decoded `private_key` PEM with actual newlines, not the full JSON key |
 
-## Requesting maintainer access to extension marketplaces
+Firefox requires repository secrets `EXTENSION_FIREFOX_EXTENSION_ID`, `EXTENSION_FIREFOX_JWT_ISSUER`, and `EXTENSION_FIREFOX_JWT_SECRET`.
 
-Marketplace governance is shared between Meta and [EPAM Open Source Office](https://www.epam.com/open-source). For account access, reach out on the [Lexical Discord](https://discord.gg/KmG4wQnnD9). The access request flow is the following:
+Confirm Chrome visibility and rollout in the Developer Dashboard. Visibility changes require one manual publish before API publishing. `wxt submit --dry-run` contacts Google.
 
-**Firefox:**
+### Marketplace access
 
-1. Create Mozilla account: https://accounts.firefox.com/settings
-2. Enable two factor authentication for this account.
-3. Go to https://addons.mozilla.org/en-US/firefox/users/edit and set a "Display Name" for your account.
-4. Email [Vladlen Fedosov](mailto:vladlen_fedosov@epam.com), [Sherry Wong](mailto:potatowagon@meta.com) and [Gerard Rovira](mailto:gerardrovira@meta.com) with the request to add you as a maintainer to Firefox Add-Ons for Lexical Developer Tools extension. Pls include: Mozilla account email; reasoning description.
-5. _[For Maintainer]_ Open [authors & license management page](https://addons.mozilla.org/en-US/developers/addon/lexical-developer-tools/ownership) and add new user email.
+Marketplace governance is shared between Meta and the [EPAM Open Source Office](https://www.epam.com/open-source). For account access, reach out on the [Lexical Discord](https://discord.gg/KmG4wQnnD9).
 
-**Chrome:**
+An admin can invite any Google account to a Chrome publisher, so the request flow is: enable [2-Step Verification](https://support.google.com/accounts/answer/185839) on your Google account, then ask a [publisher administrator](https://developer.chrome.com/docs/webstore/share-ownership) to invite you with the role you need — **Item Manager** to upload packages and update metadata, **Editor** to also change publisher settings, **Admin** to also manage members.
 
-Chrome no longer requires publisher members to share a domain name — the Chrome Web Store [dropped the distinction between individual and group publishers](https://developer.chrome.com/docs/webstore/share-ownership), and an admin can now invite any Google account to a publisher. So the request flow is:
-
-1. Make sure you have a Google account with [2-Step Verification](https://support.google.com/accounts/answer/185839) enabled — the Chrome Web Store requires it to publish or update an item.
-2. Ask on Discord to be added as a member of the publisher that owns Lexical Developer Tools. Pls include: Google account email; the role you need; reasoning description.
-3. _[For Maintainer]_ Open the publisher's **Settings → Members** page in the [Developer Dashboard](https://chrome.google.com/webstore/devconsole), choose "Invite member" and pick a role:
-   - **Item Manager** — update metadata and upload new packages. Enough for day-to-day releases.
-   - **Editor** — the above, plus publisher settings and trusted testers.
-   - **Admin** — the above, plus managing members and roles.
-4. Accept the invitation from the email Google sends.
-
-Use the publishing flow described above to release new versions; you only need dashboard access for listing changes such as screenshots, description and preview videos.
+For Firefox, enable two-factor authentication, set a display name, and provide your Mozilla account email to an [existing maintainer](https://addons.mozilla.org/en-US/developers/addon/lexical-developer-tools/ownership) — [Vladlen Fedosov](mailto:vladlen_fedosov@epam.com), [Sherry Wong](mailto:potatowagon@meta.com) or [Gerard Rovira](mailto:gerardrovira@meta.com).
 
 ## Design
 

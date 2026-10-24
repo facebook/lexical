@@ -203,7 +203,7 @@ test.describe('DraggableBlock', () => {
       page,
       await selectorBoundingBox(page, '.draggable-block-menu'),
       await selectorBoundingBox(page, 'p:has-text("After")'),
-      {positionEnd: 'end', positionStart: 'middle', slow: true},
+      {positionEnd: 'end', positionStart: 'middle'},
     );
 
     await expect(page.locator('.ContentEditable__root')).toBeFocused();

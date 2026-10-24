@@ -31,6 +31,9 @@
       "@lexical/extension/AutoFocusExtension": [
         "./packages/lexical-extension/src/AutoFocusExtension.ts"
       ],
+      "@lexical/extension/BlockIdExtension": [
+        "./packages/lexical-extension/src/BlockIdExtension.ts"
+      ],
       "@lexical/extension/ClearEditorExtension": [
         "./packages/lexical-extension/src/ClearEditorExtension.ts"
       ],
@@ -84,6 +87,9 @@
       ],
       "@lexical/extension/NodeSelectionExtension": [
         "./packages/lexical-extension/src/NodeSelectionExtension.ts"
+      ],
+      "@lexical/extension/NodeStructureExtension": [
+        "./packages/lexical-extension/src/NodeStructureExtension.ts"
       ],
       "@lexical/extension/NormalizeInlineElementsExtension": [
         "./packages/lexical-extension/src/NormalizeInlineElementsExtension.ts"

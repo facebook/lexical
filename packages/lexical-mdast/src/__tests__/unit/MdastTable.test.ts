@@ -742,6 +742,33 @@ describe('MdastTableExtension', () => {
     });
   });
 
+  it('writes a table selection of a nested table as that table', () => {
+    using editor = createEditor(false);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(table('| a |', '| - |', '| x |'));
+        const [cell] = $cells()[1];
+        const p = $createTableCellNode().append(
+          $createParagraphNode().append($createTextNode('p')),
+        );
+        const q = $createTableCellNode().append(
+          $createParagraphNode().append($createTextNode('q')),
+        );
+        const inner = $createTableNode().append(
+          $createTableRowNode().append(p, q),
+        );
+        cell.append(inner);
+        $setSelection($createTableSelectionFrom(inner, p, q));
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertSelectionToMarkdownString()).toBe(
+        table('| p | q |', '| - | - |'),
+      );
+    });
+  });
+
   it('imports a table with no rows as nothing', () => {
     using editor = createEditor(false);
     editor.update(

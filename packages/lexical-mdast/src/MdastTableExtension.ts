@@ -305,11 +305,13 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   }
   // A selection export that starts and ends in one cell of the table (or
   // selects nodes in it) writes the cell's nodes as they are, as copying in
-  // a cell does; a table selection of cells writes a table.
+  // a cell does; a table selection of its cells writes a table.
   const {selection} = ctx;
   const ends = $isNodeSelection(selection)
     ? selection.getNodes()
-    : $isRangeSelection(selection)
+    : $isRangeSelection(selection) ||
+        ($isTableSelection(selection) &&
+          !node.is($findTableNode(selection.anchor.getNode())))
       ? [selection.anchor.getNode(), selection.focus.getNode()]
       : [];
   const endCell =

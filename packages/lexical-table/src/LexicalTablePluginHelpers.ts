@@ -34,6 +34,7 @@ import {
   COMMAND_PRIORITY_LOW,
   type CommandPayloadType,
   type ElementNode,
+  IS_IOS,
   isDOMNode,
   type LexicalEditor,
   mergeRegister,
@@ -53,6 +54,8 @@ import {
   INSERT_TABLE_COMMAND,
   type InsertTableCommandPayload,
 } from './LexicalTableCommands';
+import {registerIOSTableDragCaretHiding} from './LexicalTableIOSDragCaret';
+import {registerIOSEmptyCellOverlays} from './LexicalTableIOSEmptyCellOverlay';
 import {$isTableNode, TableNode} from './LexicalTableNode';
 import {$getTableAndElementByKey, TableObservers} from './LexicalTableObserver';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
@@ -319,6 +322,8 @@ export function registerTableSelectionObserver(
 
   return mergeRegister(
     registerTableWindowHandlers(editor, tableObservers),
+    IS_IOS ? registerIOSEmptyCellOverlays(editor) : () => {},
+    IS_IOS ? registerIOSTableDragCaretHiding(editor) : () => {},
     // Register once so attaching/replacing a root cannot reorder HIGH listeners.
     editor.registerCommand(
       SELECTION_CHANGE_COMMAND,

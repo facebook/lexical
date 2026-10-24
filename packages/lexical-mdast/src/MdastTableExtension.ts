@@ -103,12 +103,14 @@ function $columnAlign(grid: GridCell[][]): AlignType[] {
   const align: AlignType[] = [];
   grid.forEach(cells =>
     cells.forEach(({cell, origin}, column) => {
-      const block = cell.getFirstChild();
-      const format =
-        ($isElementNode(block) && block.getFormatType()) ||
-        cell.getFormatType();
-      if (origin && format && align[column] === undefined) {
-        align[column] = gfmAlign(format);
+      if (origin && align[column] === undefined) {
+        const block = cell.getFirstChild();
+        const format =
+          ($isElementNode(block) && block.getFormatType()) ||
+          cell.getFormatType();
+        if (format) {
+          align[column] = gfmAlign(format);
+        }
       }
     }),
   );
@@ -303,9 +305,6 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   // selects nodes in it) writes the cell's nodes as they are, as copying in
   // a cell does; a table selection of cells writes a table.
   const {selection} = ctx;
-  if (selection && !ctx.isIncluded(node)) {
-    return [];
-  }
   const ends = $isNodeSelection(selection)
     ? selection.getNodes()
     : $isRangeSelection(selection)

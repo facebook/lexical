@@ -69,22 +69,21 @@ const INSERT_TYPES = [
 type InsertType = (typeof INSERT_TYPES)[number]['value'];
 
 /**
- * Whether the selection's focus, where blocks are inserted, is in a table
- * cell: a GFM cell holds no blocks (MdastStrictTableExtension would flatten
- * them into lines).
+ * Whether the selection reaches a table cell: a GFM cell holds no blocks
+ * (MdastStrictTableExtension would flatten them into lines).
  */
-function isFocusInCell(editor: LexicalEditor): boolean {
+function reachesCell(editor: LexicalEditor): boolean {
   return editor.read(() => {
     const selection = $getSelection();
     return (
-      ($isRangeSelection(selection) || $isTableSelection(selection)) &&
-      $findCellNode(selection.focus.getNode()) !== null
+      selection !== null &&
+      selection.getNodes().some(node => $findCellNode(node) !== null)
     );
   });
 }
 
 function applyInsert(editor: LexicalEditor, type: InsertType): void {
-  if ((type === 'details' || type === 'alert') && isFocusInCell(editor)) {
+  if ((type === 'details' || type === 'alert') && reachesCell(editor)) {
     return;
   }
   switch (type) {
@@ -173,7 +172,7 @@ function applyTableAction(editor: LexicalEditor, action: TableAction): void {
 }
 
 function applyBlockType(editor: LexicalEditor, type: BlockType): void {
-  if (type !== 'paragraph' && isFocusInCell(editor)) {
+  if (type !== 'paragraph' && reachesCell(editor)) {
     return;
   }
   switch (type) {

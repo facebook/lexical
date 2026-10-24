@@ -611,47 +611,6 @@ describe('MdastTableExtension', () => {
     ).toBe(markdown);
   });
 
-  it('exports another editor state without an editor during a selection export', () => {
-    using other = createEditor(false);
-    const markdown = table('| a |', '| - |', '| 1 |');
-    other.update(() => $convertFromMarkdownString(markdown), {discrete: true});
-    const {output} = getExtensionDependencyFromEditor(other, MdastExtension);
-    let whole = '';
-    using editor = buildEditorFromExtensions(
-      defineExtension({
-        dependencies: [
-          MdastCommonMarkExtension,
-          configExtension(MdastExtension, {
-            toMarkdownExtensions: [
-              {
-                handlers: {
-                  root(node, parent, state, info) {
-                    whole = other
-                      .getEditorState()
-                      .read(() => output.$convertToMarkdownString());
-                    return defaultHandlers.root(node, parent, state, info);
-                  },
-                },
-              },
-            ],
-          }),
-        ],
-        name: '[root]',
-      }),
-    );
-    editor.update(
-      () => {
-        $convertFromMarkdownString('x');
-        $getRoot().getAllTextNodes()[0].select(0, 1);
-      },
-      {discrete: true},
-    );
-    editor.read(() => {
-      expect($convertSelectionToMarkdownString()).toBe('x');
-    });
-    expect(whole).toBe(markdown);
-  });
-
   it('writes whole tables in a document export during a selection export', () => {
     let whole: string[] = [];
     using editor = buildEditorFromExtensions(

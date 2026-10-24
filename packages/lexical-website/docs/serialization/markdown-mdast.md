@@ -214,10 +214,10 @@ techniques in either registry:
   `RenderContextMarkdownSelection` carrying the selection — a
   contributed to-markdown handler that appends end-of-document data
   (like the dev example's footnote definitions) reads it with
-  `$getRenderContextValue` to scope its output to a clipboard copy. A
-  whole-document export a handler runs during a selection export sees
-  `null`. An export rule can also read the selection its own export is
-  limited to as `context.selection`, which needs no active editor.
+  `$getRenderContextValue` to scope its output to a clipboard copy. An
+  export rule can also read the selection its own export is limited to as
+  `context.selection` (`null` for a whole-document export, including one a
+  handler runs during a selection export), which needs no active editor.
 
 ## Comparison with @lexical/markdown
 

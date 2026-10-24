@@ -538,6 +538,7 @@ function exportTextFormat(
   const nextNode = getTextSibling(node, false);
 
   const applied = new Set();
+  const tagsToOpen: {format: TextFormatType; tag: string; span: number}[] = [];
 
   for (const transformer of textTransformers) {
     const format = transformer.format[0];
@@ -568,10 +569,23 @@ function exportTextFormat(
         !checkHasFormat(prevNode, format) ||
         !unclosedTags.find(element => element.tag === tag)
       ) {
-        unclosedTags.push({format, tag});
-        openingTags += tag;
+        tagsToOpen.push({
+          format,
+          tag,
+          span: getFormatSpan(node, format),
+        });
       }
     }
+  }
+
+  // When opening multiple formatting tags, sort so the format that continues furthest into
+  // subsequent text nodes is opened first (outermost). This ensures the format ending earliest
+  // is innermost on the unclosed stack and can close without unnecessarily closing the other.
+  tagsToOpen.sort((a, b) => b.span - a.span);
+
+  for (const {format, tag} of tagsToOpen) {
+    unclosedTags.push({format, tag});
+    openingTags += tag;
   }
 
   // close any tags in the same order they were applied, if necessary
@@ -658,4 +672,14 @@ function checkHasFormat(n: TextNode | null, f: TextFormatType): boolean {
     return false;
   }
   return true;
+}
+
+function getFormatSpan(node: TextNode, format: TextFormatType): number {
+  let count = 0;
+  let current: TextNode | null = getTextSibling(node, false);
+  while (current && hasFormat(current, format)) {
+    count++;
+    current = getTextSibling(current, false);
+  }
+  return count;
 }

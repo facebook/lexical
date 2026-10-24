@@ -345,7 +345,7 @@ describe('MdastTableExtension', () => {
     ).toBe(table('| a |', '| - |', '| 1 |', '|   |'));
   });
 
-  it('writes a merged cell with empty cells where it spans', () => {
+  it('writes a merged cell with empty cells where it spans, aligned as it is', () => {
     expect(
       convert(table('| a | b | c |', '| :- | - | - |', '| 1 | 2 | 3 |'), () => {
         const [[a, b], [one, two]] = $cells();
@@ -354,7 +354,7 @@ describe('MdastTableExtension', () => {
         two.remove();
         one.setColSpan(2);
       }),
-    ).toBe(table('| a  |   | c |', '| :- | - | - |', '| 1  |   | 3 |'));
+    ).toBe(table('| a  |    | c |', '| :- | :- | - |', '| 1  |    | 3 |'));
   });
 
   it('skips what isn’t a row or cell', () => {

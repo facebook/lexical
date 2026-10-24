@@ -377,13 +377,12 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   // The columns from the first a selection export reaches to the last.
   const columns = <T>(map: (column: number) => T) =>
     Array.from({length: to - from + 1}, (_, i) => map(from + i));
-  // A column has the alignment of the text in its header cell, as GFM
-  // writes it under that cell.
-  const align = (grid[0] || []).map(({cell, origin}) => {
+  // A column has the alignment of the text in its header cell (one a
+  // merged header cell spans, that cell's), as GFM writes it under that
+  // cell.
+  const align = (grid[0] || []).map(({cell}) => {
     const cached = cellsLines.get(cell);
-    return origin
-      ? gfmAlign($cellFormat(cell, cached ? cached.owner : undefined))
-      : null;
+    return gfmAlign($cellFormat(cell, cached ? cached.owner : undefined));
   });
   return [
     {
@@ -491,13 +490,16 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
  * Import reads a table as GFM does: the first row is the header row, each
  * row has the header row's cells, column alignment is set on the paragraph
  * of each cell of the column as its element format, `<br>` is a line break,
- * and an escaped pipe is a pipe in raw HTML and autolinks too. Export writes
+ * and an escaped pipe is a pipe in raw HTML, and in autolinks imported from
+ * Markdown source (an mdast tree without it can't tell an autolink from
+ * `[text](url)`). Export writes
  * any table as near as GFM allows: a cell's blocks and line breaks as lines
  * separated by `<br>`, a merged cell with empty cells where it spans, block
  * decorators in a cell after the table, and as a column's alignment, that
  * of the text in its header cell (the format of the block its first line is
  * in, or of a block around it outside any nested table, or else of the
- * cell, where start and end count as none), none for one GFM can't express.
+ * cell, where start and end count as none; a merged header cell's for each
+ * column it spans), none for one GFM can't express.
  * The alignment of other cells has no form in GFM.
  *
  * @example

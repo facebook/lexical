@@ -115,7 +115,9 @@ The literal syntax of each construct is preserved on the Lexical
 nodes with [NodeState](/docs/concepts/node-state): list bullet
 `-`/`*`/`+`, ordered delimiter `.`/`)`, code fence style and
 info-string meta, setext vs ATX headings, hard-break style, soft line
-breaks, thematic break marker, `_` vs `*` emphasis, and link style
+breaks, thematic break marker, `_` vs `*` emphasis (where strong and
+emphasis nest, `mdast-util-to-markdown` writes them with different markers,
+as in `**_both_**`), and link style
 (`[text](url)` vs `<autolink>` vs bare GFM literal). A table column's
 alignment is imported as the element format of the paragraph in each of
 its cells, and written from the text of its header cell (the format of

@@ -516,8 +516,7 @@ function $normalizeTable(table: TableNode): void {
   );
   // A cell whose span was set is a newer version of it.
   merged.forEach(cell => $unmergeCellNode(cell.getLatest()));
-  const split = merged.length > 0;
-  if (split) {
+  if (merged.length > 0) {
     ({grid} = $tableGrid(table));
   }
   if (table.getFormatType() !== '') {

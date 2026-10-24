@@ -40,7 +40,7 @@ and keeps the markdown on the right in sync as you type.
 - Wrap text in \`backticks\` for inline code
 - \`[text](url)\` for links
 - \`- \` or \`1. \` for lists, \`- [ ] \` / \`- [x] \` for check lists
-- \`> \` for a blockquote, \`\`\`\`\`js\`\`\` + Enter for a code block
+- \`> \` for a blockquote, \`\` \`\`\`js \`\` + Enter for a code block
 
 ## Round-trip fidelity
 

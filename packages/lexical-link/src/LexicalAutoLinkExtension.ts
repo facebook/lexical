@@ -87,8 +87,27 @@ export function createLinkMatcherWithRegExp(
   };
 }
 
-const URL_REGEX =
-  /((https?:\/\/(www\.)?)|(www\.))[-\p{L}\p{N}@:%._+~#=]{1,256}\.[\p{L}\p{N}]{1,6}(?:[-\p{L}\p{N}()@:%_+.~#?&//=]*[\p{L}\p{N}()@_~#?&//=])?/u;
+/** @__NO_SIDE_EFFECTS__ */
+function createUrlRegExp(): RegExp {
+  try {
+    // `\p{}` property escapes need ICU, which some embedded JS runtimes
+    // (e.g. NativeScript's V8) ship without. Build the Unicode-aware
+    // pattern via new RegExp — a regex literal would throw a SyntaxError
+    // at parse time, before any try/catch could run.
+    return new RegExp(
+      '((https?:\\/\\/(www\\.)?)|(www\\.))[-\\p{L}\\p{N}@:%._+~#=]{1,256}\\.[\\p{L}\\p{N}]{1,6}(?:[-\\p{L}\\p{N}()@:%_+.~#?&//=]*[\\p{L}\\p{N}()@_~#?&//=])?',
+      'u',
+    );
+  } catch {
+    // ASCII-only fallback for runtimes without Unicode property escapes.
+    return /((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9]{1,6}(?:[-a-zA-Z0-9()@:%_+.~#?&//=]*[a-zA-Z0-9()@_~#?&//=])?/;
+  }
+}
+
+// Built by a function declared side-effect free (so the build annotates
+// the call) rather than inline: a module-scope `new RegExp` or `try`
+// statement would pin this module into every bundle that imports it.
+const URL_REGEX = createUrlRegExp();
 
 const EMAIL_REGEX =
   /(([^<>()[\]\\.,;:\s@"]{1,64}(\.[^<>()[\]\\.,;:\s@"]{1,64}){0,63})|(".{1,255}"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]{1,63}\.){1,127}[a-zA-Z]{2,63}))/;

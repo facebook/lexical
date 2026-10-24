@@ -102,31 +102,6 @@ function $cellFormat(
   return format || formatOf(cell);
 }
 
-/**
- * The alignment of each column: that of the first cell from the top that
- * starts in it and has a format (its header cell's, unless a row was
- * inserted above it), none for a format GFM has no alignment for. A cell
- * has the format of its text (which aligning the text, or pasting an
- * aligned table, sets).
- */
-function $columnAlign(
-  grid: GridCell[][],
-  $format: (cell: TableCellNode) => ElementFormatType,
-): AlignType[] {
-  const align: AlignType[] = [];
-  grid.forEach(cells =>
-    cells.forEach(({cell, origin}, column) => {
-      if (origin && align[column] === undefined) {
-        const format = $format(cell);
-        if (format) {
-          align[column] = gfmAlign(format);
-        }
-      }
-    }),
-  );
-  return align;
-}
-
 /** A cell at a row and column of a table, which a merged cell spans. */
 interface GridCell {
   cell: TableCellNode;
@@ -285,10 +260,10 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
               rowIndex === 0
                 ? TableCellHeaderStates.ROW
                 : TableCellHeaderStates.NO_STATUS,
-            ).setFormat(align[column] || ''),
+            ),
             [
               $append(
-                $createParagraphNode(),
+                $createParagraphNode().setFormat(align[column] || ''),
                 cell
                   ? ctx.importChildren({
                       ...cell,
@@ -402,9 +377,13 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   // The columns from the first a selection export reaches to the last.
   const columns = <T>(map: (column: number) => T) =>
     Array.from({length: to - from + 1}, (_, i) => map(from + i));
-  const align = $columnAlign(grid, cell => {
+  // A column has the alignment of the text in its header cell, as GFM
+  // writes it under that cell.
+  const align = (grid[0] || []).map(({cell, origin}) => {
     const cached = cellsLines.get(cell);
-    return $cellFormat(cell, cached ? cached.owner : undefined);
+    return origin
+      ? gfmAlign($cellFormat(cell, cached ? cached.owner : undefined))
+      : null;
   });
   return [
     {
@@ -450,7 +429,9 @@ const cellLine = (value: string) =>
  * even run of backslashes, as GFM reads a backslash and a pipe in a cell
  * as a pipe before anything else). That covers raw HTML, code and
  * autolinks, which `gfmTableToMarkdown` writes as their handlers do
- * (percent-encoding a pipe in an autolink) or splits the cell in.
+ * (percent-encoding a pipe in an autolink) or splits the cell in. A
+ * backslash before a pipe in code or raw HTML has no form in a cell (GFM
+ * reads the pair as a pipe whatever is written), so it is lost.
  *
  * @__NO_SIDE_EFFECTS__
  */
@@ -508,16 +489,16 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
  * nodes it ships.
  *
  * Import reads a table as GFM does: the first row is the header row, each
- * row has the header row's cells, column alignment is set on each cell of
- * the column as its element format, `<br>` is a line break, and an escaped
- * pipe is a pipe in raw HTML and autolinks too. Export writes any table as
- * GFM can: a cell's blocks and line breaks as lines separated by `<br>`, a
- * merged cell with empty cells where it spans, block decorators in a cell
- * after the table, and as a column's alignment, that of the first cell from
- * the top that starts in the column and has a format (that of the block
- * its first line is in, or of a block around it outside any nested table,
- * or else its own, where start and end count as none), none for one GFM
- * can't express.
+ * row has the header row's cells, column alignment is set on the paragraph
+ * of each cell of the column as its element format, `<br>` is a line break,
+ * and an escaped pipe is a pipe in raw HTML and autolinks too. Export writes
+ * any table as near as GFM allows: a cell's blocks and line breaks as lines
+ * separated by `<br>`, a merged cell with empty cells where it spans, block
+ * decorators in a cell after the table, and as a column's alignment, that
+ * of the text in its header cell (the format of the block its first line is
+ * in, or of a block around it outside any nested table, or else of the
+ * cell, where start and end count as none), none for one GFM can't express.
+ * The alignment of other cells has no form in GFM.
  *
  * @example
  * ```ts

@@ -23,7 +23,6 @@ import {
   $createTableNode,
   $createTableRowNode,
   $createTableSelectionFrom,
-  $insertTableRowAtNode,
   $isTableCellNode,
   $isTableNode,
   $isTableRowNode,
@@ -117,7 +116,7 @@ describe('MdastTableExtension', () => {
     ).toBe(table('| a | b |', '| - | - |', '| 1 | 2 |', '| x |   |'));
   });
 
-  it('reads alignment into the cells of each column and writes it back', () => {
+  it('reads alignment into the paragraphs of each column and writes it back', () => {
     using editor = createEditor();
     const markdown = table(
       '| a | b |  c | d |',
@@ -129,12 +128,14 @@ describe('MdastTableExtension', () => {
     });
     editor.read(() => {
       for (const row of $cells()) {
-        expect(row.map(cell => cell.getFormatType())).toEqual([
-          'left',
-          'center',
-          'right',
-          '',
-        ]);
+        expect(
+          row.map(cell =>
+            $assertNodeType(
+              cell.getFirstChild(),
+              $isElementNode,
+            ).getFormatType(),
+          ),
+        ).toEqual(['left', 'center', 'right', '']);
       }
       expect($convertToMarkdownString()).toBe(
         table(
@@ -250,14 +251,17 @@ describe('MdastTableExtension', () => {
     ).toBe(table('| a |', '| - |', '| x |', '', '***'));
   });
 
-  it('writes the alignment of the first aligned row', () => {
+  it('writes the alignment of the header cell, not of the cells below it', () => {
     expect(
-      convert(table('| a | b |', '| :-: | -: |', '| 1 | 2 |'), () => {
-        $insertTableRowAtNode($cells()[0][0], false);
+      convert(table('| a | b |', '| - | -: |', '| 1 | 2 |'), () => {
+        const [[, b], [one, two]] = $cells();
+        $assertNodeType(one.getFirstChild(), $isElementNode).setFormat(
+          'center',
+        );
+        $assertNodeType(b.getFirstChild(), $isElementNode).setFormat('');
+        $assertNodeType(two.getFirstChild(), $isElementNode).setFormat('right');
       }),
-    ).toBe(
-      table('|     |    |', '| :-: | -: |', '|  a  |  b |', '|  1  |  2 |'),
-    );
+    ).toBe(table('| a | b |', '| - | - |', '| 1 | 2 |'));
   });
 
   it('writes the alignment of the text in a cell as its column’s', () => {
@@ -860,12 +864,12 @@ describe('MdastTableExtension', () => {
   it('reads alignment from the first item of a list in a cell', () => {
     expect(
       convert(table('| a |', '| - |', '| x |'), () => {
-        const [, [cell]] = $cells();
+        const [[cell]] = $cells();
         const item = $createListItemNode().append($createTextNode('y'));
         cell.clear().append($createListNode('bullet').append(item));
         item.setFormat('center');
       }),
-    ).toBe(table('|  a  |', '| :-: |', '|  y  |'));
+    ).toBe(table('|  y  |', '| :-: |', '|  x  |'));
   });
 
   it('reads alignment from a quote around the text in a cell', () => {
@@ -904,8 +908,9 @@ describe('MdastTableExtension', () => {
 
   it('reads a start format as none, and a quote around a nested table', () => {
     expect(
-      convert(table('| a | b |', '| :-: | - |', '| 1 | 2 |'), () => {
+      convert(table('| a | b |', '| - | - |', '| 1 | 2 |'), () => {
         const [[a, b]] = $cells();
+        a.setFormat('center');
         $assertNodeType(a.getFirstChild(), $isElementNode).setFormat('start');
         b.clear().append(
           $createQuoteNode()

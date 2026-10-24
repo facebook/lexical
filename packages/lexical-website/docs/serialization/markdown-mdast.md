@@ -117,11 +117,12 @@ nodes with [NodeState](/docs/concepts/node-state): list bullet
 info-string meta, setext vs ATX headings, hard-break style, soft line
 breaks, thematic break marker, `_` vs `*` emphasis, and link style
 (`[text](url)` vs `<autolink>` vs bare GFM literal). A table column's
-alignment is written from the first cell from the top that starts in the
-column and has an element format (that of the block holding the cell's
-first line, or of the nearest block around it with one outside any nested
-table, or else of the cell, where start and end count as none); a format GFM can't express
-leaves the column unaligned. Export is lossy where GFM has no form for a
+alignment is imported as the element format of the paragraph in each of
+its cells, and written from the text of its header cell (the format of
+the block holding the cell's first line, or of the nearest block around it
+with one outside any nested table, or else of the cell, where start and
+end count as none); a format GFM can't express leaves the column
+unaligned. Export is lossy where GFM has no form for a
 table's content: a cell's blocks and line breaks become lines separated by
 `<br>`, a merged cell is written where it starts with empty cells where it
 spans, and block decorators in a cell are written after the table.

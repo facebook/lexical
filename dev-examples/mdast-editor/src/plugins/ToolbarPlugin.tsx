@@ -83,7 +83,12 @@ function applyInsert(editor: LexicalEditor, type: InsertType): void {
       editor.dispatchCommand(INSERT_FOOTNOTE_COMMAND);
       return;
     case 'table':
-      editor.dispatchCommand(INSERT_TABLE_COMMAND, {columns: '2', rows: '2'});
+      // GFM has a header row, not a header column.
+      editor.dispatchCommand(INSERT_TABLE_COMMAND, {
+        columns: '2',
+        includeHeaders: {columns: false, rows: true},
+        rows: '2',
+      });
       return;
   }
 }
@@ -105,7 +110,7 @@ type TableAction = (typeof TABLE_ACTIONS)[number]['value'];
 
 /**
  * Edits the table the selection is in. Export writes a column with the
- * alignment of its first aligned cell from the top.
+ * alignment of the text in its header cell.
  */
 function applyTableAction(editor: LexicalEditor, action: TableAction): void {
   editor.update(() => {

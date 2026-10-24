@@ -74,8 +74,8 @@ Type \`[^another]\` to mint one.
 
 GFM tables round-trip as tables: the first row is the header, a line
 break in a cell is written as \`<br>\`, and a column takes the alignment
-of its first aligned cell (Table > Align). What GFM can't hold, such as
-merged cells, is written as near as it allows:
+of its header cell (Table > Align). What GFM can't hold, such as merged
+cells, is written as near as it allows:
 
 | Syntax    | Description           | Width |
 | --------- | --------------------- | ----: |
@@ -104,7 +104,7 @@ the Markdown inside them intact, GitHub-style — so GFM-style
 edited in a named slot:
 
 <details><summary>
-This is the *summary* that shows when collapsed
+This is the summary that shows when collapsed
 </summary>
 
 This is the *collapsed content* that's only visible when open

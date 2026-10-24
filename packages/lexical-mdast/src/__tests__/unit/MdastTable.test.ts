@@ -919,6 +919,21 @@ describe('MdastTableExtension', () => {
       );
     });
   });
+  it('reads alignment from the first item of a list in a cell', () => {
+    expect(
+      convert(
+        table('| a |', '| - |', '| x |'),
+        () => {
+          const [, [cell]] = $cells();
+          const item = $createListItemNode().append($createTextNode('y'));
+          cell.clear().append($createListNode('bullet').append(item));
+          item.setFormat('center');
+        },
+        false,
+      ),
+    ).toBe(table('|  a  |', '| :-: |', '|  y  |'));
+  });
+
   it('reads a negative row span as 1', () => {
     expect(
       convert(

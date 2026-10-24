@@ -93,14 +93,21 @@ function mapPhrasing(
   return (changed ? mapped : nodes) as PhrasingContent[];
 }
 
-/** The first block element in a cell (block decorators move out of it). */
-function $firstBlock(cell: TableCellNode): ElementNode | undefined {
-  return cell
-    .getChildren()
-    .find(
-      (child): child is ElementNode =>
-        $isElementNode(child) && !child.isInline(),
-    );
+/**
+ * The first block element in `parent` holding no block element (block
+ * decorators move out of a cell), as in the first item of a list.
+ */
+function $firstBlock(parent: ElementNode): ElementNode | undefined {
+  for (
+    let child = parent.getFirstChild();
+    child;
+    child = child.getNextSibling()
+  ) {
+    if ($isElementNode(child) && !child.isInline()) {
+      return $firstBlock(child) || child;
+    }
+  }
+  return undefined;
 }
 
 /**

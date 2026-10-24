@@ -17,10 +17,15 @@ import {
   $createTabNode,
   $getDocument,
   $getEditor,
+  $getState,
+  $getStateChange,
   $isLineBreakNode,
   $isTabNode,
   $isTextNode,
+  $setState,
   addClassNamesToElement,
+  booleanValue,
+  createState,
   type DOMConversionOutput,
   type DOMExportOutput,
   type EditorConfig,
@@ -39,6 +44,7 @@ import {
   type SerializedPartial,
   setDOMStyleFromCSS,
   type Spread,
+  type StateValueOrUpdater,
   stringValue,
   type TabNode,
   withAccessors,
@@ -59,6 +65,12 @@ export type SerializedCodeNode = Spread<
   {
     language: string | null | undefined;
     theme?: string | undefined;
+    /**
+     * Present (and `true`) only when the block soft wraps long lines, see
+     * {@link CodeNode.setWordWrap}. Left out otherwise, so the JSON of other
+     * code blocks is unchanged.
+     */
+    wordWrap?: boolean;
   },
   SerializedElementNode
 >;
@@ -95,6 +107,14 @@ function hasChildDOMNodeTag(node: Node, tagName: string) {
 const LANGUAGE_DATA_ATTRIBUTE = 'data-language';
 const HIGHLIGHT_LANGUAGE_DATA_ATTRIBUTE = 'data-highlight-language';
 const THEME_DATA_ATTRIBUTE = 'data-theme';
+const WORD_WRAP_DATA_ATTRIBUTE = 'data-lexical-code-word-wrap';
+
+/**
+ * Whether a code block soft wraps long lines. It is flat, so it serializes
+ * as a top level `wordWrap` key next to `language` and `theme`, and only
+ * while it is true.
+ */
+const codeWordWrapState = createState('wordWrap', {parse: booleanValue()});
 
 const noExtensionDeprecation = warnOnlyOnce(
   'Using CodeNode without CodeExtension is deprecated',
@@ -187,6 +207,7 @@ export class CodeNode extends ElementNode {
         },
       },
       json: codeNodeSchema,
+      stateConfigs: [{flat: true, stateConfig: codeWordWrapState}],
     });
   }
 
@@ -234,6 +255,10 @@ export class CodeNode extends ElementNode {
       element.setAttribute(THEME_DATA_ATTRIBUTE, theme);
     }
 
+    if (this.getWordWrap()) {
+      element.setAttribute(WORD_WRAP_DATA_ATTRIBUTE, 'true');
+    }
+
     const style = this.getStyle();
     if (style) {
       setDOMStyleFromCSS(element.style, style);
@@ -279,6 +304,17 @@ export class CodeNode extends ElementNode {
       dom.removeAttribute(THEME_DATA_ATTRIBUTE);
     }
 
+    // Only the attribute changes. Keep the <code> element, with its scroll
+    // position and line break wrappers, instead of recreating it.
+    const wordWrap = $getStateChange(this, prevNode, codeWordWrapState);
+    if (wordWrap !== null) {
+      if (wordWrap[0]) {
+        dom.setAttribute(WORD_WRAP_DATA_ATTRIBUTE, 'true');
+      } else {
+        dom.removeAttribute(WORD_WRAP_DATA_ATTRIBUTE);
+      }
+    }
+
     const style = this.__style;
     const prevStyle = prevNode.__style;
     if (style !== prevStyle) {
@@ -304,6 +340,10 @@ export class CodeNode extends ElementNode {
     const theme = this.getTheme();
     if (theme) {
       element.setAttribute(THEME_DATA_ATTRIBUTE, theme);
+    }
+
+    if (this.getWordWrap()) {
+      element.setAttribute(WORD_WRAP_DATA_ATTRIBUTE, 'true');
     }
 
     const style = this.getStyle();
@@ -428,6 +468,28 @@ export class CodeNode extends ElementNode {
   getTheme(): string | undefined {
     return this.getLatest().__theme;
   }
+
+  /**
+   * `true` when this code block soft wraps lines that are wider than it,
+   * instead of scrolling sideways. Wrapping is visual only: no LineBreakNode
+   * is added and the text is unchanged. The theme does the wrapping, with CSS
+   * on the `data-lexical-code-word-wrap` attribute (see the package README).
+   */
+  getWordWrap(): boolean {
+    return $getState(this, codeWordWrapState);
+  }
+
+  /**
+   * Turns soft wrapping of long lines on or off. With an updater function
+   * the node is only marked dirty when the value changes. This only sets the
+   * flag and the `data-lexical-code-word-wrap` attribute; the theme's CSS
+   * wraps the lines.
+   */
+  setWordWrap(
+    valueOrUpdater: StateValueOrUpdater<typeof codeWordWrapState>,
+  ): this {
+    return $setState(this, codeWordWrapState, valueOrUpdater);
+  }
 }
 
 export function $createCodeNode(
@@ -443,12 +505,25 @@ export function $isCodeNode(
   return node instanceof CodeNode;
 }
 
+/**
+ * @internal Creates the CodeNode for an imported <pre> or multi line <code>
+ * from the attributes exportDOM writes, so none are dropped on an HTML
+ * round trip. Shared with CodeImportExtension.
+ */
+export function $createCodeNodeFromDOM(element: HTMLElement): CodeNode {
+  const node = $createCodeNode(
+    element.getAttribute(LANGUAGE_DATA_ATTRIBUTE),
+    element.getAttribute(THEME_DATA_ATTRIBUTE),
+  );
+  const wordWrap = element.getAttribute(WORD_WRAP_DATA_ATTRIBUTE);
+  // Set only when on, so other code blocks don't allocate a NodeState.
+  return wordWrap !== null && wordWrap !== 'false'
+    ? node.setWordWrap(true)
+    : node;
+}
+
 function $convertPreElement(domNode: HTMLElement): DOMConversionOutput {
-  const language = domNode.getAttribute(LANGUAGE_DATA_ATTRIBUTE);
-  // exportDOM writes data-theme next to data-language, so read it back here
-  // too — otherwise the theme is dropped on every HTML round trip.
-  const theme = domNode.getAttribute(THEME_DATA_ATTRIBUTE);
-  return {node: $createCodeNode(language, theme)};
+  return {node: $createCodeNodeFromDOM(domNode)};
 }
 
 function $convertDivElement(domNode: Node): DOMConversionOutput {

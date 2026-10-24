@@ -573,11 +573,10 @@ function $normalizeTable(table: TableNode): void {
       });
       // The paragraph takes the text format of the cell's first block, the
       // format text typed into an empty one gets.
-      const block = cell.getFirstChild();
-      const joined = $isElementNode(block)
+      const joined = $isElementNode(paragraph)
         ? $createParagraphNode()
-            .setTextFormat(block.getTextFormat())
-            .setTextStyle(block.getTextStyle())
+            .setTextFormat(paragraph.getTextFormat())
+            .setTextStyle(paragraph.getTextStyle())
         : $createParagraphNode();
       const ends = lines.map((line, i) => {
         if (i > 0) {

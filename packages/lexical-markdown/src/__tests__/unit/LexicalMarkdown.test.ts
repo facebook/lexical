@@ -4149,6 +4149,191 @@ describe('link title round trip', () => {
   }
 });
 
+describe('emphasis next to Unicode punctuation and symbols', () => {
+  // CommonMark counts every character in the Unicode P (punctuation) and S
+  // (symbol) general categories as punctuation when it decides whether a
+  // delimiter run is left- or right-flanking, not only the ASCII ones.
+  // https://spec.commonmark.org/0.31.2/#unicode-punctuation-character
+  type Run = [text: string, format: string];
+
+  const EN_DASH = '\u2013'; // Pd
+  const LEFT_DOUBLE_QUOTE = '\u201C'; // Pi
+  const RIGHT_DOUBLE_QUOTE = '\u201D'; // Pf
+  const LOW_DOUBLE_QUOTE = '\u201E'; // Ps
+  const EURO_SIGN = '\u20AC'; // Sc
+  const LATIN_E_ACUTE = '\u00E9'; // Ll, a letter
+  const CYRILLIC_BE = '\u0431'; // Ll, a letter
+  const HERE_LINK = '[here](https://example.com)';
+
+  function importRuns(md: string): Run[] {
+    const editor = createTestEditor();
+    editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+      discrete: true,
+    });
+    return editor.read('latest', () =>
+      $getRoot()
+        .getAllTextNodes()
+        .map((node): Run => {
+          const formats = (['bold', 'italic'] as const).filter(format =>
+            node.hasFormat(format),
+          );
+          return [node.getTextContent(), formats.join(' ') || 'plain'];
+        }),
+    );
+  }
+
+  // Each expected result matches what micromark, a CommonMark parser, produces
+  // for the same input.
+  const CASES: [md: string, runs: Run[]][] = [
+    [
+      `See ${EN_DASH}**${HERE_LINK}** now.`,
+      [
+        [`See ${EN_DASH}`, 'plain'],
+        ['here', 'bold'],
+        [' now.', 'plain'],
+      ],
+    ],
+    [
+      `See ${LEFT_DOUBLE_QUOTE}**${HERE_LINK}**${RIGHT_DOUBLE_QUOTE} now.`,
+      [
+        [`See ${LEFT_DOUBLE_QUOTE}`, 'plain'],
+        ['here', 'bold'],
+        [`${RIGHT_DOUBLE_QUOTE} now.`, 'plain'],
+      ],
+    ],
+    [
+      `See ${LOW_DOUBLE_QUOTE}**${HERE_LINK}**${LEFT_DOUBLE_QUOTE} now.`,
+      [
+        [`See ${LOW_DOUBLE_QUOTE}`, 'plain'],
+        ['here', 'bold'],
+        [`${LEFT_DOUBLE_QUOTE} now.`, 'plain'],
+      ],
+    ],
+    [
+      `See ${EURO_SIGN}**${HERE_LINK}** now.`,
+      [
+        [`See ${EURO_SIGN}`, 'plain'],
+        ['here', 'bold'],
+        [' now.', 'plain'],
+      ],
+    ],
+    [
+      // Only the closing run touches a Unicode punctuation character.
+      `See **${HERE_LINK}**${EN_DASH}now.`,
+      [
+        ['See ', 'plain'],
+        ['here', 'bold'],
+        [`${EN_DASH}now.`, 'plain'],
+      ],
+    ],
+    [
+      `See ${EN_DASH}*${HERE_LINK}* now.`,
+      [
+        [`See ${EN_DASH}`, 'plain'],
+        ['here', 'italic'],
+        [' now.', 'plain'],
+      ],
+    ],
+    [
+      `See ${EN_DASH}_${HERE_LINK}_ now.`,
+      [
+        [`See ${EN_DASH}`, 'plain'],
+        ['here', 'italic'],
+        [' now.', 'plain'],
+      ],
+    ],
+    [
+      `See ${EN_DASH}__${HERE_LINK}__ now.`,
+      [
+        [`See ${EN_DASH}`, 'plain'],
+        ['here', 'bold'],
+        [' now.', 'plain'],
+      ],
+    ],
+    // Unchanged: ASCII punctuation and whitespace still work.
+    [
+      `See -**${HERE_LINK}** now.`,
+      [
+        ['See -', 'plain'],
+        ['here', 'bold'],
+        [' now.', 'plain'],
+      ],
+    ],
+    [
+      `See **${HERE_LINK}** now.`,
+      [
+        ['See ', 'plain'],
+        ['here', 'bold'],
+        [' now.', 'plain'],
+      ],
+    ],
+    // Unchanged: a delimiter run inside a word.
+    [
+      'a**b**',
+      [
+        ['a', 'plain'],
+        ['b', 'bold'],
+      ],
+    ],
+    [
+      '**a**b',
+      [
+        ['a', 'bold'],
+        ['b', 'plain'],
+      ],
+    ],
+    ['snake_case_word', [['snake_case_word', 'plain']]],
+    // Unchanged: a letter is not punctuation, whatever the script.
+    [
+      `${LATIN_E_ACUTE}**${HERE_LINK}**`,
+      [
+        [`${LATIN_E_ACUTE}**`, 'plain'],
+        ['here', 'plain'],
+        ['**', 'plain'],
+      ],
+    ],
+    [
+      `${CYRILLIC_BE}**${HERE_LINK}**`,
+      [
+        [`${CYRILLIC_BE}**`, 'plain'],
+        ['here', 'plain'],
+        ['**', 'plain'],
+      ],
+    ],
+  ];
+
+  for (const [md, runs] of CASES) {
+    it(`imports ${JSON.stringify(md)}`, () => {
+      expect(importRuns(md)).toEqual(runs);
+    });
+  }
+
+  // Importing the bold link as text used to leave the asterisks in the text,
+  // so the export escaped them. The exporter writes the bold inside the link.
+  const EXPORT_CASES: [md: string, exported: string][] = [
+    [
+      `See ${EN_DASH}**${HERE_LINK}** now.`,
+      `See ${EN_DASH}[**here**](https://example.com) now.`,
+    ],
+    [
+      `See ${LEFT_DOUBLE_QUOTE}**${HERE_LINK}**${RIGHT_DOUBLE_QUOTE} now.`,
+      `See ${LEFT_DOUBLE_QUOTE}[**here**](https://example.com)${RIGHT_DOUBLE_QUOTE} now.`,
+    ],
+  ];
+
+  for (const [md, exported] of EXPORT_CASES) {
+    it(`exports ${JSON.stringify(md)} without escaped asterisks`, () => {
+      const editor = createTestEditor();
+      editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+        discrete: true,
+      });
+      expect(
+        editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
+      ).toBe(exported);
+    });
+  }
+});
+
 describe('decimal character references that name no character', () => {
   // `String.fromCodePoint` throws on a number past U+10FFFF, so one of these
   // in the text or a link used to abort the whole import. CommonMark reads at

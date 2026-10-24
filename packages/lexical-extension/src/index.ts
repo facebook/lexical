@@ -78,6 +78,11 @@ export {
 } from './NodeSelectionDataSelectedExtension';
 export {NodeSelectionExtension} from './NodeSelectionExtension';
 export {
+  type NodeStructureConfig,
+  NodeStructureExtension,
+  registerNodeStructure,
+} from './NodeStructureExtension';
+export {
   type NormalizeInlineElementsConfig,
   NormalizeInlineElementsExtension,
 } from './NormalizeInlineElementsExtension';

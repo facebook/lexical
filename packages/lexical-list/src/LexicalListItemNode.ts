@@ -12,6 +12,7 @@ import {
   $copyNode,
   $createParagraphNode,
   $getDocument,
+  $getEditor,
   $getSelection,
   $getSiblingCaret,
   $insertNodeToNearestRootAtCaret,
@@ -32,6 +33,7 @@ import {
   type EditorThemeClasses,
   ElementNode,
   getStyleObjectFromCSS,
+  INTERNAL_isNodeStructureEnforced,
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
@@ -52,10 +54,47 @@ import {
   withField,
 } from 'lexical';
 
-import {$createListNode, $isListNode, type ListNode, type ListType} from './';
+import {$createListNode, $isListNode, type ListType} from './';
 import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
 import {GENERATED_LISTITEM} from './LexicalListGeneratedJSON';
+import {ListNode} from './LexicalListNode';
 import {$getNewListStart, $isNestedListNode} from './utils';
+
+/**
+ * For the selection's element points in `parent`, which holds the consecutive
+ * `items`: returns what puts each of them back once the items are moved into
+ * `list`, inserted in their place (a point before or after them stays so in
+ * `parent`; one between two of them goes to the end of the first).
+ */
+function $pointsAround(
+  parent: ElementNode,
+  items: readonly LexicalNode[],
+): null | ((list: ListNode) => void) {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection)) {
+    return null;
+  }
+  const parentKey = parent.getKey();
+  const first = items[0].getIndexWithinParent();
+  const saved = [selection.anchor, selection.focus]
+    .filter(point => point.type === 'element' && point.key === parentKey)
+    .map(point => ({offset: point.offset, point}));
+  if (saved.length === 0) {
+    return null;
+  }
+  return list => {
+    for (const {point, offset} of saved) {
+      if (offset <= first) {
+        point.set(parentKey, offset, 'element');
+      } else if (offset < first + items.length) {
+        const item = items[offset - first - 1] as ElementNode;
+        point.set(item.getKey(), item.getChildrenSize(), 'element');
+      } else {
+        point.set(parentKey, offset - items.length + 1, 'element');
+      }
+    }
+  };
+}
 
 export type SerializedListItemNode = Spread<
   {
@@ -84,13 +123,19 @@ const listItemNodeSchema = nodeSchema<ListItemNode>()({
   // `clamp`, because the plain bounds fall back to the *default* for a value
   // outside them, which would read an over-deep item as indent 0 instead of as
   // deeply nested.
-  indent: numberValue(0, {
-    clamp: true,
-    integer: true,
-    max: MAX_LIST_ITEM_INDENT,
-    min: 0,
-  }),
+  // Derived: getIndent() computes it from the nesting (setIndent restructures).
+  indent: withAccessors(
+    numberValue(0, {
+      clamp: true,
+      integer: true,
+      max: MAX_LIST_ITEM_INDENT,
+      min: 0,
+    }),
+    {derived: true},
+  ),
+  // Derived: the list renumbers its items.
   value: withField(numberValue(1), {
+    derived: true,
     field: '__value',
   }),
 });
@@ -168,9 +213,32 @@ export class ListItemNode extends ElementNode {
               children.push(origin);
             }
           }
+          // Where NodeStructureExtension enforces declared structure, it
+          // lifts the new list out of whatever may not hold it, the same way
+          // whichever node is dirty, and puts the selection back where it was
+          // in the content: an element point in the parent is moved with the
+          // items here (inserting the list shifts it, and moving the items
+          // out does not), so that it is still next to the same content.
+          const enforced = INTERNAL_isNodeStructureEnforced($getEditor());
+          const points = enforced ? $pointsAround(parent, children) : null;
           node.insertBefore(newParent);
           newParent.splice(0, 0, children);
-          if (!$isRootOrShadowRoot(parent)) {
+          if (points !== null) {
+            points(newParent);
+          }
+          if (enforced) {
+            // The ancestors' own transforms run on the result (a list that
+            // holds the parent renumbers its items, as the parent may now
+            // only wrap the new list), as after a repair of the normalization.
+            for (
+              let n: LexicalNode | null = parent;
+              n !== null && !$isRootOrShadowRoot(n);
+              n = n.getParent()
+            ) {
+              n.markDirty();
+            }
+          }
+          if (!$isRootOrShadowRoot(parent) && !enforced) {
             $insertNodeToNearestRootAtCaret(
               newParent,
               $rewindSiblingCaret($getSiblingCaret(newParent, 'next')),
@@ -182,6 +250,7 @@ export class ListItemNode extends ElementNode {
           }
         }
       },
+      children: ['inline', ListNode],
       extends: ElementNode,
       generated: GENERATED_LISTITEM,
       importDOM: buildImportMap({

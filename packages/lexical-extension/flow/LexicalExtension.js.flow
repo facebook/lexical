@@ -83,6 +83,11 @@ export {NestedEditorExtension} from '@lexical/extension/NestedEditorExtension';
 export type {NodeSelectionDataSelectedConfig} from '@lexical/extension/NodeSelectionDataSelectedExtension';
 export {NodeSelectionDataSelectedExtension} from '@lexical/extension/NodeSelectionDataSelectedExtension';
 export {NodeSelectionExtension} from '@lexical/extension/NodeSelectionExtension';
+export type {NodeStructureConfig} from '@lexical/extension/NodeStructureExtension';
+export {
+  NodeStructureExtension,
+  registerNodeStructure,
+} from '@lexical/extension/NodeStructureExtension';
 export type {NormalizeInlineElementsConfig} from '@lexical/extension/NormalizeInlineElementsExtension';
 export {NormalizeInlineElementsExtension} from '@lexical/extension/NormalizeInlineElementsExtension';
 export type {

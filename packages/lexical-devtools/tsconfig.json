@@ -90,6 +90,9 @@
       "@lexical/extension/NodeSelectionExtension": [
         "../lexical-extension/src/NodeSelectionExtension.ts"
       ],
+      "@lexical/extension/NodeStructureExtension": [
+        "../lexical-extension/src/NodeStructureExtension.ts"
+      ],
       "@lexical/extension/NormalizeInlineElementsExtension": [
         "../lexical-extension/src/NormalizeInlineElementsExtension.ts"
       ],

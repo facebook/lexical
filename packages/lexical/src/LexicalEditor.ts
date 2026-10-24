@@ -54,6 +54,7 @@ import {
 } from './LexicalNode';
 import {createSharedNodeState, type SharedNodeState} from './LexicalNodeState';
 import {$isCompactExport} from './LexicalSerializedExport';
+import {validateNodeStructure} from './LexicalStructure';
 import {
   $commitPendingUpdates,
   $fullReconcile,
@@ -1089,6 +1090,9 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
             );
           }
         }
+      }
+      if (__DEV__) {
+        validateNodeStructure(klass);
       }
       const type = klass.getType();
       const transforms = getTransformSetFromKlass(klass);

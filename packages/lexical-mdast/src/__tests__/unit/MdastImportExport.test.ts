@@ -12,6 +12,7 @@ import {
   buildEditorFromExtensions,
   configExtension,
   type LexicalEditorWithDispose,
+  NodeStructureExtension,
 } from '@lexical/extension';
 import {
   $getImportContextValue,
@@ -256,6 +257,43 @@ describe('@lexical/mdast import/export', () => {
         '**a`b`c**',
       );
     });
+  });
+
+  it('with NodeStructureExtension, leaves no break where a nested block is lifted out', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [MdastCommonMarkExtension, NodeStructureExtension],
+        name: '[root]',
+      }),
+    );
+    const shapeOf = (node: LexicalNode): unknown => {
+      if (!$isElementNode(node)) {
+        return $isTextNode(node) ? node.getTextContent() : node.getType();
+      }
+      const children = node.getChildren().map(shapeOf);
+      return $isListNode(node)
+        ? [`list ${node.getStart()}`, ...children]
+        : [node.getType(), ...children];
+    };
+    const shapes = (markdown: string) => {
+      editor.update(() => $convertFromMarkdownString(markdown), {
+        discrete: true,
+      });
+      return editor.read(() => $getRoot().getChildren().map(shapeOf));
+    };
+    expect(shapes('> a\n>\n> ```\n> c\n> ```\n>\n> b')).toEqual([
+      ['quote', 'a'],
+      ['code', 'c'],
+      ['quote', 'b'],
+    ]);
+    expect(shapes('1. x\n2. a\n\n   ---\n\n   b\n3. y')).toEqual([
+      ['list 1', ['listitem', 'x'], ['listitem', 'a']],
+      'horizontalrule',
+      // The second list continues the numbering.
+      ['list 3', ['listitem', 'b'], ['listitem', 'y']],
+    ]);
+    // Paragraphs of one quote stay one quote, as without the extension.
+    expect(shapes('> a\n>\n> b')).toEqual([['quote', 'a', 'linebreak', 'b']]);
   });
 
   it('round-trips an ordered list with a custom start', () => {

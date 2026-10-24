@@ -185,6 +185,16 @@ export interface SerializationSchema<T, Decls = never, In = T> {
   readonly [NAMES]?: Decls;
   /** The value returned for an out-of-domain input, i.e. `schema(undefined)`. */
   readonly defaultValue: T;
+  /**
+   * @experimental
+   *
+   * `true` when the node's own code recomputes the property from the
+   * document (declared with `withField(schema, {derived: true, field})` or
+   * `withAccessors(schema, {derived: true})`). It is serialized as usual, but
+   * tools that copy or compare a node's data can leave it out, and
+   * `mergeAdjacent` may not name it.
+   */
+  readonly derived?: true;
   /** An introspectable description of this schema's domain. */
   readonly meta: SerializationSchemaMeta;
   /**
@@ -432,6 +442,14 @@ export interface FieldOptions {
    * not written is simply absent.
    */
   readonly when?: string;
+  /**
+   * @experimental
+   *
+   * `true` when the node's own code recomputes this property from the
+   * document (a list item's `value` follows from its position in its list).
+   * See {@link SerializationSchema.derived}.
+   */
+  readonly derived?: boolean;
 }
 
 /**
@@ -452,6 +470,14 @@ export interface FieldOptions {
 export interface SchemaAccessors {
   readonly getter?: SchemaGetterAccessor;
   readonly setter?: SchemaSetterAccessor;
+  /**
+   * @experimental
+   *
+   * `true` when the node's own code recomputes the property from the
+   * document (a list item's `indent` follows from its nesting). See
+   * {@link SerializationSchema.derived}.
+   */
+  readonly derived?: boolean;
 }
 
 /**
@@ -3086,19 +3112,24 @@ export function withField<T, const F extends FieldOptions, In = T>(
   // The two accessor objects are built here rather than written by the
   // caller, so the names can only be recovered from `F` — which the return
   // type does. The runtime value is exactly what withAccessors produced.
-  return named('withField', schema, {
-    getter: {
-      field: field.field,
-      getterTable: field.getterTable,
-      method: field.getter,
-      when: field.when,
+  return named(
+    'withField',
+    schema,
+    {
+      getter: {
+        field: field.field,
+        getterTable: field.getterTable,
+        method: field.getter,
+        when: field.when,
+      },
+      setter: {
+        field: field.field,
+        method: field.setter,
+        setterTable: field.setterTable,
+      },
     },
-    setter: {
-      field: field.field,
-      method: field.setter,
-      setterTable: field.setterTable,
-    },
-  });
+    field.derived === true,
+  );
 }
 
 /**
@@ -3138,7 +3169,12 @@ export function withAccessors<T, const A extends SchemaAccessors, In = T>(
   schema: SerializationSchema<T, never, In>,
   accessors: A,
 ): SerializationSchema<T, AccessorNames<A, T>, In> {
-  return named('withAccessors', schema, accessors);
+  return named(
+    'withAccessors',
+    schema,
+    {getter: accessors.getter, setter: accessors.setter},
+    accessors.derived === true,
+  );
 }
 
 /**
@@ -3154,6 +3190,7 @@ function named<T, Decls, In>(
   combinator: string,
   schema: SerializationSchema<T, never, In>,
   accessors: SchemaAccessors,
+  derived: boolean = false,
 ): SerializationSchema<T, Decls, In> {
   undeclared(combinator, schema);
   // Not through `makeSchema`: that would claim the forwarded `accepts` as
@@ -3162,6 +3199,7 @@ function named<T, Decls, In>(
   return Object.assign((value: unknown) => schema(value), {
     accepts: schema.accepts,
     defaultValue: schema.defaultValue,
+    ...(derived ? {derived: true as const} : {}),
     getter: accessors.getter,
     isEqual: schema.isEqual,
     meta: schema.meta,

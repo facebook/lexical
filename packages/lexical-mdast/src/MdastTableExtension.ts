@@ -80,30 +80,21 @@ function mapPhrasing(
   return (changed ? mapped : nodes) as PhrasingContent[];
 }
 
-/** The block (or the cell) a cell's first line with content is in. */
-function textOwner({
-  lines,
-  owners,
-}: {
-  lines: LexicalNode[][];
-  owners: ElementNode[];
-}): ElementNode {
-  const first = lines.findIndex(line => line.length > 0);
-  return owners[first < 0 ? 0 : first];
-}
-
 /**
  * The format of the text in a cell: that of the block its first line with
  * content is in, or of the nearest block around it in the cell that has
  * one, or else the cell's. A start or end format (as pasted HTML often has)
  * is none.
  */
-function $cellFormat(
-  cell: TableCellNode,
-  owner: ElementNode = textOwner($cellLines(cell)),
-): ElementFormatType {
+function $cellFormat(cell: TableCellNode): ElementFormatType {
+  const {lines, owners} = $cellLines(cell);
+  const first = lines.findIndex(line => line.length > 0);
   let format: ElementFormatType = '';
-  for (let node = owner; !node.is(cell); node = node.getParentOrThrow()) {
+  for (
+    let node = owners[Math.max(first, 0)];
+    !node.is(cell);
+    node = node.getParentOrThrow()
+  ) {
     // Text in a nested table has that table's alignment, not this one's,
     // and the table's own format places it.
     format = $isTableNode(node) ? '' : format || node.getFormatType();
@@ -325,11 +316,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   // The lines of a cell, from the first line a selection export reaches to
   // the last (an empty one by its block); the block decorators it reaches
   // are collected.
-  // Also keeps the block each cell's text starts in, for its alignment.
-  const cellsLines = new Map<
-    TableCellNode,
-    {lines: LexicalNode[][]; owner: ElementNode}
-  >();
+  const cellsLines = new Map<TableCellNode, LexicalNode[][]>();
   const $linesOf = (cell: TableCellNode) => {
     let cached = cellsLines.get(cell);
     if (!cached) {
@@ -339,17 +326,14 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
           ? line.some(ctx.isIncluded)
           : ctx.isIncluded(cellLines.owners[i]),
       );
-      cached = {
-        lines: cellLines.lines.slice(
-          reached.indexOf(true),
-          reached.lastIndexOf(true) + 1,
-        ),
-        owner: textOwner(cellLines),
-      };
+      cached = cellLines.lines.slice(
+        reached.indexOf(true),
+        reached.lastIndexOf(true) + 1,
+      );
       cellsLines.set(cell, cached);
       decorators.push(...cellLines.decorators.filter(ctx.isIncluded));
     }
-    return cached.lines;
+    return cached;
   };
   const written: GridCell[][] = [];
   let from = Infinity;
@@ -394,13 +378,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
       // cell.
       align: columns(column => {
         const header = grid.length > 0 && grid[0][column];
-        if (!header) {
-          return null;
-        }
-        const cached = cellsLines.get(header.cell);
-        return gfmAlign(
-          $cellFormat(header.cell, cached ? cached.owner : undefined),
-        );
+        return header ? gfmAlign($cellFormat(header.cell)) : null;
       }),
       children: written.map(cells => ({
         children: columns(

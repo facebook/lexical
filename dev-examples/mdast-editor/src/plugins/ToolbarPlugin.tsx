@@ -115,31 +115,23 @@ type TableAction = (typeof TABLE_ACTIONS)[number]['value'];
 function applyTableAction(editor: LexicalEditor, action: TableAction): void {
   editor.update(() => {
     const selection = $getSelection();
-    if (
-      action === 'left' ||
-      action === 'center' ||
-      action === 'right' ||
-      action === ''
-    ) {
-      if (
-        selection &&
-        selection.getNodes().every(node => $findTableNode(node))
-      ) {
-        editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, action);
-      }
-      return;
-    }
     if (!$isRangeSelection(selection) && !$isTableSelection(selection)) {
       return;
     }
     const anchorCell = $findCellNode(selection.anchor.getNode());
     const focusCell = $findCellNode(selection.focus.getNode());
-    // Rows and columns change only for a selection within one table.
+    // Only a selection within one table.
     const table = anchorCell && $findTableNode(anchorCell);
     if (!table || !focusCell || !table.is($findTableNode(focusCell))) {
       return;
     }
     switch (action) {
+      case 'left':
+      case 'center':
+      case 'right':
+      case '':
+        editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, action);
+        return;
       case 'rowAbove':
       case 'rowBelow':
         $insertTableRowAtSelection(action === 'rowBelow');

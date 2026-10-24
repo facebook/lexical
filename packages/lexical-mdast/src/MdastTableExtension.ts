@@ -377,16 +377,21 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   // The columns from the first a selection export reaches to the last.
   const columns = <T>(map: (column: number) => T) =>
     Array.from({length: to - from + 1}, (_, i) => map(from + i));
-  // A column has the alignment of the text in its header cell (one a
-  // merged header cell spans, that cell's), as GFM writes it under that
-  // cell.
-  const align = (grid[0] || []).map(({cell}) => {
-    const cached = cellsLines.get(cell);
-    return gfmAlign($cellFormat(cell, cached ? cached.owner : undefined));
-  });
   return [
     {
-      align: columns(column => align[column] || null),
+      // A column has the alignment of the text in its header cell (one a
+      // merged header cell spans, that cell's), as GFM writes it under that
+      // cell.
+      align: columns(column => {
+        const header = grid.length > 0 && grid[0][column];
+        if (!header) {
+          return null;
+        }
+        const cached = cellsLines.get(header.cell);
+        return gfmAlign(
+          $cellFormat(header.cell, cached ? cached.owner : undefined),
+        );
+      }),
       children: written.map(cells => ({
         children: columns(
           (column): TableCell => ({

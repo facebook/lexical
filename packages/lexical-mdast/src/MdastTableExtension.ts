@@ -230,28 +230,6 @@ function unescapePipes(value: string): string {
   return value.replace(/\\\|/g, '|');
 }
 
-/**
- * The children of a cell for the nodes its content imports as: each run of
- * inline nodes in a paragraph (at least one), and a block (which a DOM rule
- * may read raw HTML as) on its own.
- */
-function $cellBlocks(nodes: LexicalNode[]): LexicalNode[] {
-  const blocks: LexicalNode[] = [];
-  let paragraph: ParagraphNode | undefined;
-  for (const node of nodes) {
-    if ($isBlockLevelNode(node)) {
-      blocks.push(node);
-      paragraph = undefined;
-    } else {
-      if (!paragraph) {
-        blocks.push((paragraph = $createParagraphNode()));
-      }
-      paragraph.append(node);
-    }
-  }
-  return blocks.length > 0 ? blocks : [$createParagraphNode()];
-}
-
 const $importTable: MdastImportHandler<Table> = (node, ctx) => {
   const align = node.align || [];
   const replace = (child: MdastNode): MdastNode[] | undefined => {
@@ -301,14 +279,17 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
                 ? TableCellHeaderStates.ROW
                 : TableCellHeaderStates.NO_STATUS,
             ).setFormat(align[column] || ''),
-            $cellBlocks(
-              cell
-                ? ctx.importChildren({
-                    ...cell,
-                    children: mapPhrasing(cell.children, replace),
-                  })
-                : [],
-            ),
+            [
+              $append(
+                $createParagraphNode(),
+                cell
+                  ? ctx.importChildren({
+                      ...cell,
+                      children: mapPhrasing(cell.children, replace),
+                    })
+                  : [],
+              ),
+            ],
           );
         }),
       ),
@@ -561,7 +542,13 @@ function $normalizeTable(table: TableNode): void {
       }
       const children = cell.getChildren();
       const paragraph = children[0];
-      if (children.length === 1 && $isParagraphNode(paragraph)) {
+      // A block in the paragraph (raw HTML a DOM rule reads as one) moves
+      // out like any other.
+      if (
+        children.length === 1 &&
+        $isParagraphNode(paragraph) &&
+        !paragraph.getChildren().some($isBlockLevelNode)
+      ) {
         if (paragraph.getFormatType() !== '') {
           paragraph.setFormat('');
         }

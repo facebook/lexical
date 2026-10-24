@@ -98,13 +98,16 @@ function mapPhrasing(
  * or of the nearest block around it in the cell that has one, or else the
  * cell's.
  */
-function $cellFormat(cell: TableCellNode): ElementFormatType {
-  let node = $cellLines(cell).owners[0];
-  while (!$isTableCellNode(node) && !node.getFormatType()) {
+function $cellFormat(
+  cell: TableCellNode,
+  owner: ElementNode = $cellLines(cell).owners[0],
+): ElementFormatType {
+  // Text in a nested table has that table's alignment, not this one's.
+  let node = cell.is($findCellNode(owner)) ? owner : cell;
+  while (!node.is(cell) && !node.getFormatType()) {
     node = node.getParentOrThrow();
   }
-  // A nested table's cell has its own column's.
-  return ($isTableCellNode(node) ? cell : node).getFormatType();
+  return node.getFormatType();
 }
 
 /**
@@ -114,12 +117,15 @@ function $cellFormat(cell: TableCellNode): ElementFormatType {
  * has the format of its text (which aligning the text, or pasting an
  * aligned table, sets).
  */
-function $columnAlign(grid: GridCell[][]): AlignType[] {
+function $columnAlign(
+  grid: GridCell[][],
+  $format: (cell: TableCellNode) => ElementFormatType = $cellFormat,
+): AlignType[] {
   const align: AlignType[] = [];
   grid.forEach(cells =>
     cells.forEach(({cell, origin}, column) => {
       if (origin && align[column] === undefined) {
-        const format = $cellFormat(cell);
+        const format = $format(cell);
         if (format) {
           align[column] = gfmAlign(format);
         }
@@ -348,10 +354,13 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   // the last (an empty one by its block); the block decorators it reaches
   // are collected.
   const cellsLines = new Map<TableCellNode, LexicalNode[][]>();
+  // The block each cell's first line is in, for its alignment.
+  const firstOwners = new Map<TableCellNode, ElementNode>();
   const $linesOf = (cell: TableCellNode) => {
     let lines = cellsLines.get(cell);
     if (!lines) {
       const cellLines = $cellLines(cell);
+      firstOwners.set(cell, cellLines.owners[0]);
       const reached = cellLines.lines.map((line, i) =>
         line.length > 0
           ? line.some(ctx.isIncluded)
@@ -402,7 +411,9 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   // The columns from the first a selection export reaches to the last.
   const columns = <T>(map: (column: number) => T) =>
     Array.from({length: to - from + 1}, (_, i) => map(from + i));
-  const align = $columnAlign(grid);
+  const align = $columnAlign(grid, cell =>
+    $cellFormat(cell, firstOwners.get(cell)),
+  );
   return [
     {
       align: columns(column => align[column] || null),

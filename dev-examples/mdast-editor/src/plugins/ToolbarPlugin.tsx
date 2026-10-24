@@ -69,6 +69,20 @@ const INSERT_TYPES = [
 type InsertType = (typeof INSERT_TYPES)[number]['value'];
 
 function applyInsert(editor: LexicalEditor, type: InsertType): void {
+  // A GFM table cell holds no blocks (MdastStrictTableExtension would
+  // flatten them into lines).
+  if (
+    (type === 'details' || type === 'alert' || type === 'table') &&
+    editor.read(() => {
+      const selection = $getSelection();
+      return (
+        $isRangeSelection(selection) &&
+        $findCellNode(selection.anchor.getNode()) !== null
+      );
+    })
+  ) {
+    return;
+  }
   switch (type) {
     case 'kbd':
       editor.dispatchCommand(FORMAT_KBD_COMMAND);

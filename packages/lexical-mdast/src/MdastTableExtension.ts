@@ -80,26 +80,36 @@ function mapPhrasing(
   return (changed ? mapped : nodes) as PhrasingContent[];
 }
 
+/** The block (or the cell) a cell's first line with content is in. */
+function textOwner({
+  lines,
+  owners,
+}: {
+  lines: LexicalNode[][];
+  owners: ElementNode[];
+}): ElementNode {
+  const first = lines.findIndex(line => line.length > 0);
+  return owners[first < 0 ? 0 : first];
+}
+
 /**
- * The format of the text in a cell: that of the block its first line is in,
- * or of the nearest block around it in the cell that has one, or else the
- * cell's. A start or end format (as pasted HTML often has) counts as none.
+ * The format of the text in a cell: that of the block its first line with
+ * content is in, or of the nearest block around it in the cell that has
+ * one, or else the cell's. A start or end format (as pasted HTML often has)
+ * is none.
  */
 function $cellFormat(
   cell: TableCellNode,
-  owner: ElementNode = $cellLines(cell).owners[0],
+  owner: ElementNode = textOwner($cellLines(cell)),
 ): ElementFormatType {
-  const formatOf = (node: ElementNode) => {
-    const format = node.getFormatType();
-    return format === 'start' || format === 'end' ? '' : format;
-  };
   let format: ElementFormatType = '';
   for (let node = owner; !node.is(cell); node = node.getParentOrThrow()) {
     // Text in a nested table has that table's alignment, not this one's,
     // and the table's own format places it.
-    format = $isTableNode(node) ? '' : format || formatOf(node);
+    format = $isTableNode(node) ? '' : format || node.getFormatType();
   }
-  return format || formatOf(cell);
+  format = format || cell.getFormatType();
+  return format === 'start' || format === 'end' ? '' : format;
 }
 
 /** A cell at a row and column of a table, which a merged cell spans. */
@@ -315,7 +325,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   // The lines of a cell, from the first line a selection export reaches to
   // the last (an empty one by its block); the block decorators it reaches
   // are collected.
-  // Also keeps the block each cell's first line is in, for its alignment.
+  // Also keeps the block each cell's text starts in, for its alignment.
   const cellsLines = new Map<
     TableCellNode,
     {lines: LexicalNode[][]; owner: ElementNode}
@@ -334,7 +344,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
           reached.indexOf(true),
           reached.lastIndexOf(true) + 1,
         ),
-        owner: cellLines.owners[0],
+        owner: textOwner(cellLines),
       };
       cellsLines.set(cell, cached);
       decorators.push(...cellLines.decorators.filter(ctx.isIncluded));
@@ -453,8 +463,19 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
             .containerPhrasing(
               {
                 ...cell,
+                // A line ending in text is written as the space it reads
+                // as, before the text is escaped for where it is.
                 children: mapPhrasing(cell.children, child =>
-                  child.type === 'break' ? [cellLine('<br>')] : undefined,
+                  child.type === 'break'
+                    ? [cellLine('<br>')]
+                    : child.type === 'text' && /[\r\n]/.test(child.value)
+                      ? [
+                          {
+                            ...child,
+                            value: child.value.replace(/\r?\n|\r/g, ' '),
+                          },
+                        ]
+                      : undefined,
                 ),
               },
               {...info, after: ' ', before: ' '},
@@ -501,10 +522,10 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
  * any table as near as GFM allows: a cell's blocks and line breaks as lines
  * separated by `<br>`, a merged cell with empty cells where it spans, block
  * decorators in a cell after the table, and as a column's alignment, that
- * of the text in its header cell (the format of the block its first line is
- * in, or of a block around it outside any nested table, or else of the
- * cell, where start and end count as none; a merged header cell's for each
- * column it spans), none for one GFM can't express.
+ * of the text in its header cell (the format of the block its first line
+ * with content is in, or of a block around it outside any nested table, or
+ * else of the cell, where start and end are none; a merged header cell's
+ * for each column it spans), none for one GFM can't express.
  * The alignment of other cells has no form in GFM.
  *
  * @example

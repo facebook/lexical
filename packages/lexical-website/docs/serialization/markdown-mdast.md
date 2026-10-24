@@ -126,8 +126,9 @@ serialization options, which can be configured by contributing
 GFM tables (`MdastTableExtension`) import a column's alignment as the
 element format of the paragraph in each of its cells, and write it from
 the text of the column's header cell (the format of the block holding the
-cell's first line, or of the nearest block around it with one outside any
-nested table, or else of the cell, where start and end count as none); a
+cell's first line with content, or of the nearest block around it with one
+outside any nested table, or else of the cell, where start and end are
+none); a
 format GFM can't express leaves the column unaligned. Export is lossy
 where GFM has no form for a table's content: a cell's blocks and line
 breaks become lines separated by `<br>`, a merged cell is written where it

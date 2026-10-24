@@ -357,6 +357,32 @@ describe('MdastTableExtension', () => {
     ).toBe(table('| a  |    | c |', '| :- | :- | - |', '| 1  |    | 3 |'));
   });
 
+  it('writes a line ending in a cell’s text as a space, unescaped', () => {
+    const markdown = table('| a         |', '| --------- |', '| a # b   c |');
+    expect(
+      convert(table('| a |', '| - |', '| x |'), () => {
+        $cells()[1][0].getAllTextNodes()[0].setTextContent('a\n# b \n c');
+      }),
+    ).toBe(markdown);
+    expect(convert(markdown)).toBe(markdown);
+  });
+
+  it('reads alignment from the first line with text in a header cell', () => {
+    expect(
+      convert(table('| a |', '| - |', '| x |'), () => {
+        const [[cell]] = $cells();
+        cell
+          .clear()
+          .append(
+            $createParagraphNode(),
+            $createParagraphNode()
+              .setFormat('center')
+              .append($createTextNode('H')),
+          );
+      }),
+    ).toBe(table('| <br>H |', '| :---: |', '|   x   |'));
+  });
+
   it('skips what isn’t a row or cell', () => {
     expect(
       convert(table('| a |', '| - |', '| 1 |'), () => {
@@ -906,7 +932,7 @@ describe('MdastTableExtension', () => {
     ).toBe(table('| p |', '| - |', '| x |'));
   });
 
-  it('reads a start format as none, and a quote around a nested table', () => {
+  it('reads a start format as none over the cell’s, and a quote around a nested table', () => {
     expect(
       convert(table('| a | b |', '| - | - |', '| 1 | 2 |'), () => {
         const [[a, b]] = $cells();
@@ -926,7 +952,7 @@ describe('MdastTableExtension', () => {
             ),
         );
       }),
-    ).toBe(table('|  a  |  p |', '| :-: | -: |', '|  1  |  2 |'));
+    ).toBe(table('| a |  p |', '| - | -: |', '| 1 |  2 |'));
   });
 
   it('reads no alignment from the format placing a nested table', () => {

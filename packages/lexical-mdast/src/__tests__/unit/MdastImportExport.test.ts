@@ -8,9 +8,14 @@
 
 // @vitest-environment node
 
+import type {Table} from 'mdast';
+
+import {$createCodeNode} from '@lexical/code-core';
 import {
+  $createHorizontalRuleNode,
   buildEditorFromExtensions,
   configExtension,
+  HorizontalRuleNode,
   type LexicalEditorWithDispose,
   NodeStructureExtension,
 } from '@lexical/extension';
@@ -28,7 +33,13 @@ import {
   $isHeadingNode,
   $isQuoteNode,
 } from '@lexical/rich-text';
-import {$isTableNode} from '@lexical/table';
+import {
+  $createTableCellNode,
+  $createTableRowNode,
+  $createTableSelectionFrom,
+  $isTableCellNode,
+  $isTableNode,
+} from '@lexical/table';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -41,6 +52,7 @@ import {
   $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
+  $setSelection,
   $setSelectionFromCaretRange,
   defineExtension,
   type ElementNode,
@@ -49,7 +61,14 @@ import {
   type TextNode,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
-import {defaultHandlers} from 'mdast-util-to-markdown';
+import {fromMarkdown} from 'mdast-util-from-markdown';
+import {gfmTableFromMarkdown} from 'mdast-util-gfm-table';
+import {
+  defaultHandlers,
+  type Handle,
+  type Handlers,
+} from 'mdast-util-to-markdown';
+import {gfmTable} from 'micromark-extension-gfm-table';
 import {assert, describe, expect, it} from 'vitest';
 
 import {
@@ -65,6 +84,10 @@ import {
   MdastCommonMarkExtension,
   MdastExtension,
   MdastHeadingExtension,
+  MdastHorizontalRuleExtension,
+  MdastHtmlExtension,
+  type MdastNode,
+  MdastRichTextExtension,
   MdastShadowRootQuoteExtension,
   MdastStrikethroughExtension,
   MdastTableExtension,
@@ -126,7 +149,6 @@ describe('@lexical/mdast import/export', () => {
       ['heading h3', '### Heading three'],
       ['bold', '**bold**'],
       ['italic', '*italic*'],
-      ['bold italic', '***both***'],
       ['inline code', '`code()`'],
       ['strikethrough (gfm)', '~~gone~~'],
       ['mixed inline', 'a **b** c *d* e `f`'],
@@ -548,7 +570,6 @@ describe('@lexical/mdast import/export', () => {
       ['two-space hard break', 'line one  \nline two'],
       ['underscore italic', '_em_'],
       ['underscore bold', '__strong__'],
-      ['underscore bold italic', '___both___'],
       ['underscore emphasis throughout', '_a_ and __b__ and _c_'],
       ['inline link whose text is its URL', '[https://a.dev](https://a.dev)'],
       ['setext h1', 'Title\n====='],
@@ -583,6 +604,15 @@ describe('@lexical/mdast import/export', () => {
       const out = importExport('_a_ and *b*');
       expect(importExport(out)).toBe(out); // and is stable
     });
+  });
+
+  it.each([
+    ['***both***', '**_both_**'],
+    ['___both___', '__*both*__'],
+  ])('writes bold italic %s as strong around emphasis', (markdown, out) => {
+    // mdast-util-to-markdown alternates the markers of nested attention.
+    expect(importExport(markdown)).toBe(out);
+    expect(importExport(out)).toBe(out);
   });
 
   it('round-trips autolink literals without normalizing to <...>', () => {
@@ -1102,6 +1132,153 @@ describe('@lexical/mdast import/export', () => {
   });
 
   describe('with MdastTableExtension', () => {
+    it('gives the cells a short row lacks its columns alignment', () => {
+      using editor = createEditor(true);
+      editor.update(
+        () => $convertFromMarkdownString('| a | b |\n| :-: | -: |\n| x |'),
+        {discrete: true},
+      );
+      expect(
+        editor.read(() =>
+          $assertNodeType($getRoot().getFirstChild(), $isTableNode)
+            .getChildren()
+            .map(row =>
+              $assertNodeType(row, $isElementNode)
+                .getChildren()
+                .map(cell =>
+                  $assertNodeType(cell, $isElementNode).getFormatType(),
+                ),
+            ),
+        ),
+      ).toEqual([
+        ['center', 'right'],
+        ['center', 'right'],
+      ]);
+    });
+
+    it('escapes the pipes of a nested table once when flattening it', () => {
+      using editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            MdastCommonMarkExtension,
+            MdastTableExtension,
+            MdastHorizontalRuleExtension,
+            configExtension(MdastExtension, {
+              exportRules: [
+                {
+                  $export: () => ({type: 'html', value: '<b>a|b</b>'}),
+                  type: HorizontalRuleNode,
+                },
+              ],
+            }),
+          ],
+          name: '[nested-table-pipes]',
+        }),
+      );
+      editor.update(
+        () => {
+          $convertFromMarkdownString(
+            '| x |\n| - |\n| y |\n\n| h |\n| - |\n| z |',
+          );
+          const [outer, inner] = $getRoot().getChildren<ElementNode>();
+          $assertNodeType(
+            inner.getLastChildOrThrow<ElementNode>().getFirstChild(),
+            $isElementNode,
+          )
+            .clear()
+            .append($createHorizontalRuleNode());
+          $assertNodeType(
+            outer.getLastChildOrThrow<ElementNode>().getFirstChild(),
+            $isElementNode,
+          )
+            .clear()
+            .append(inner);
+        },
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertToMarkdownString())).toBe(
+        '| x                |\n| ---------------- |\n| h<br><b>a\\|b</b> |',
+      );
+    });
+
+    it('keeps a <hr> in a cell of an editor with no rule as text', () => {
+      using editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [MdastRichTextExtension, MdastTableExtension],
+          name: '[table-no-rule]',
+        }),
+      );
+      editor.update(
+        () => $convertFromMarkdownString('| a |\n| - |\n| x<hr>y |'),
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertToMarkdownString())).toBe(
+        '| a       |\n| ------- |\n| x\\<hr>y |',
+      );
+    });
+
+    it('drops the cells of a row past the header, as GFM does', () => {
+      using editor = createEditor(true);
+      editor.update(
+        () => $convertFromMarkdownString('| h |\n| - |\n| a | b |'),
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertToMarkdownString())).toBe(
+        '| h |\n| - |\n| a |',
+      );
+    });
+
+    it('writes no alignment for a column whose paragraphs are justified', () => {
+      using editor = createEditor(true);
+      editor.update(
+        () => {
+          $convertFromMarkdownString('| a |\n| :-: |\n| b |');
+          for (const node of $getRoot().getAllTextNodes()) {
+            node.getParentOrThrow<ElementNode>().setFormat('justify');
+          }
+        },
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertToMarkdownString())).toBe(
+        '| a |\n| - |\n| b |',
+      );
+    });
+
+    it('moves the column alignment a v0.52 state kept on the table to its cells', () => {
+      using editor = createEditor(true);
+      editor.update(
+        () => $convertFromMarkdownString('| a | b |\n| - | - |\n| 1 | 2 |'),
+        {discrete: true},
+      );
+      const json = editor.getEditorState().toJSON();
+      json.root.children[0].$ = {mdastTableAlign: [null, 'right']};
+      editor.setEditorState(editor.parseEditorState(json));
+      // The alignment moves onto the cells, where editing changes it.
+      const table = editor.getEditorState().toJSON().root.children[0];
+      expect(table.$).toBeUndefined();
+      // A parsed state no update has run on reads it from the table.
+      expect(
+        editor
+          .parseEditorState(json)
+          .read(() => $convertToMarkdownString(), {editor}),
+      ).toBe('| a |  b |\n| - | -: |\n| 1 |  2 |');
+      expect(
+        editor.read(() =>
+          $assertNodeType($getRoot().getFirstChild(), $isTableNode)
+            .getAllTextNodes()
+            .map(node =>
+              node
+                .getParentOrThrow()
+                .getParentOrThrow<ElementNode>()
+                .getFormatType(),
+            ),
+        ),
+      ).toEqual(['', 'right', '', 'right']);
+      expect(editor.read(() => $convertToMarkdownString())).toBe(
+        '| a |  b |\n| - | -: |\n| 1 |  2 |',
+      );
+    });
+
     it('round-trips a GFM table', () => {
       const markdown = [
         '| a | b |',
@@ -1139,6 +1316,260 @@ describe('@lexical/mdast import/export', () => {
       expect(importExport(out, true)).toBe(out);
     });
 
+    function editColumns(
+      markdown: string,
+      $edit: (row: ElementNode) => void,
+    ): string {
+      using editor = createEditor(true);
+      editor.update(
+        () => {
+          $convertFromMarkdownString(markdown);
+          const table = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isTableNode,
+          );
+          for (const row of table.getChildren()) {
+            $edit($assertNodeType(row, $isElementNode));
+          }
+        },
+        {discrete: true},
+      );
+      return editor.read(() => $convertToMarkdownString());
+    }
+
+    it('keeps each column its alignment when a column is removed', () => {
+      expect(
+        editColumns('| a | b |\n| :- | -: |\n| 1 | 2 |', row =>
+          row.getFirstChildOrThrow().remove(),
+        ),
+      ).toBe('|  b |\n| -: |\n|  2 |');
+    });
+
+    it("renders column alignment as the cells' element format", () => {
+      using editor = createEditor(true);
+      editor.update(
+        () =>
+          $convertFromMarkdownString(
+            '| a | b | c |\n| :- | :-: | - |\n| 1 | 2 | 3 |',
+          ),
+        {discrete: true},
+      );
+      editor.read(() => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        expect(
+          table.getChildren().map(row =>
+            $assertNodeType(row, $isElementNode)
+              .getChildren()
+              .map(cell =>
+                $assertNodeType(cell, $isElementNode).getFormatType(),
+              ),
+          ),
+        ).toEqual([
+          ['left', 'center', ''],
+          ['left', 'center', ''],
+        ]);
+      });
+    });
+
+    it('exports alignment set on a cell or on all of its blocks', () => {
+      // A cell's own format (what FORMAT_ELEMENT_COMMAND sets on a table
+      // selection) or the format its paragraphs share (what it sets with
+      // the caret in one cell) aligns the cell.
+      expect(
+        editColumns('| a | b |\n| - | - |\n| 1 | 2 |', row => {
+          const [first, second] = row.getChildren();
+          $assertNodeType(first, $isElementNode).setFormat('right');
+          for (const child of $assertNodeType(
+            second,
+            $isElementNode,
+          ).getChildren()) {
+            $assertNodeType(child, $isElementNode).setFormat('center');
+          }
+        }),
+      ).toBe('|  a |  b  |\n| -: | :-: |\n|  1 |  2  |');
+    });
+
+    it("exports the alignment of a cell's blocks over its own", () => {
+      expect(
+        editColumns('| a |\n| :-: |\n| 1 |', row => {
+          for (const child of $assertNodeType(
+            row.getFirstChild(),
+            $isElementNode,
+          ).getChildren()) {
+            $assertNodeType(child, $isElementNode).setFormat('right');
+          }
+        }),
+      ).toBe('|  a |\n| -: |\n|  1 |');
+    });
+
+    it.each([
+      ['| a |\n| - |\n| 1 |\n| 2 |', [1], '| a |\n| - |\n| 1 |\n| 2 |'],
+      ['| a |\n| - |\n| 1 |', [1], '| a |\n| - |\n| 1 |'],
+      [
+        '| a |\n| - |\n| 1 |\n| 2 |',
+        [1, 2],
+        '|  a  |\n| :-: |\n|  1  |\n|  2  |',
+      ],
+    ])(
+      'aligns a column that most of its cells are aligned in: %j, rows %j',
+      (markdown, rows, expected) => {
+        // GFM aligns columns, not cells, so aligning one cell doesn't align
+        // the others in its column.
+        expect(
+          editColumns(markdown, row => {
+            if (rows.includes(row.getIndexWithinParent())) {
+              for (const child of $assertNodeType(
+                row.getFirstChild(),
+                $isElementNode,
+              ).getChildren()) {
+                $assertNodeType(child, $isElementNode).setFormat('center');
+              }
+            }
+          }),
+        ).toBe(expected);
+      },
+    );
+
+    it('keeps a column aligned when a row is inserted above the header', () => {
+      expect(
+        editColumns('| a |\n| :-: |\n| 1 |\n| 2 |', row => {
+          if (row.getIndexWithinParent() === 0) {
+            row.insertBefore(
+              $createTableRowNode().append(
+                $createTableCellNode().append(
+                  $createParagraphNode().append($createTextNode('x')),
+                ),
+              ),
+            );
+          }
+        }),
+      ).toBe('|  x  |\n| :-: |\n|  a  |\n|  1  |\n|  2  |');
+    });
+
+    it('keeps a column aligned when rows are inserted below the header', () => {
+      expect(
+        editColumns('| a |\n| :-: |\n| 1 |', row => {
+          if (row.getIndexWithinParent() === 1) {
+            for (const text of ['x', 'y', 'z']) {
+              row.insertBefore(
+                $createTableRowNode().append(
+                  $createTableCellNode().append(
+                    $createParagraphNode().append($createTextNode(text)),
+                  ),
+                ),
+              );
+            }
+          }
+        }),
+      ).toBe('|  a  |\n| :-: |\n|  x  |\n|  y  |\n|  z  |\n|  1  |');
+    });
+
+    it('aligns a column by its header cell alone', () => {
+      expect(
+        editColumns('| a |\n| - |\n| 1 |\n| 2 |', row => {
+          if (row.getIndexWithinParent() === 0) {
+            $assertNodeType(row.getFirstChild(), $isElementNode).setFormat(
+              'right',
+            );
+          }
+        }),
+      ).toBe('|  a |\n| -: |\n|  1 |\n|  2 |');
+    });
+
+    it('aligns a column by most of its cells over its header cell', () => {
+      expect(
+        editColumns('| a |\n| -: |\n| 1 |\n| 2 |', row => {
+          if (row.getIndexWithinParent() > 0) {
+            $assertNodeType(row.getFirstChild(), $isElementNode).setFormat(
+              'center',
+            );
+          }
+        }),
+      ).toBe('|  a  |\n| :-: |\n|  1  |\n|  2  |');
+    });
+
+    it('takes no header alignment from a selection without the header row', () => {
+      using editor = createEditor(true);
+      editor.update(
+        () => {
+          $convertFromMarkdownString('| a |\n| - |\n| 1 |\n| 2 |\n| 3 |');
+          const table = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isTableNode,
+          );
+          const [, first, , last] = table.getChildren();
+          const $cell = (row: LexicalNode) =>
+            $assertNodeType(
+              $assertNodeType(row, $isElementNode).getFirstChild(),
+              $isTableCellNode,
+            );
+          $cell(first).setFormat('right');
+          $setSelection(
+            $createTableSelectionFrom(table, $cell(first), $cell(last)),
+          );
+        },
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertSelectionToMarkdownString())).toBe(
+        '| 1 |\n| - |\n| 2 |\n| 3 |',
+      );
+    });
+
+    it("takes the header cell's alignment into a selection without it", () => {
+      using editor = createEditor(true);
+      editor.update(
+        () => {
+          $convertFromMarkdownString('| a |\n| :-: |\n| 1 |');
+          const table = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isTableNode,
+          );
+          const [header, row] = table.getChildren();
+          const $cell = (node: LexicalNode) =>
+            $assertNodeType(
+              $assertNodeType(node, $isElementNode).getFirstChild(),
+              $isTableCellNode,
+            );
+          for (const text of ['2', '3']) {
+            row.insertAfter(
+              $createTableRowNode().append(
+                $createTableCellNode().append(
+                  $createParagraphNode().append($createTextNode(text)),
+                ),
+              ),
+            );
+          }
+          $cell(row).setFormat('');
+          $setSelection(
+            $createTableSelectionFrom(
+              table,
+              $cell(row),
+              $cell(table.getLastChildOrThrow()),
+            ),
+          );
+          expect($cell(header).getFormatType()).toBe('center');
+        },
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertSelectionToMarkdownString())).toBe(
+        '|  1  |\n| :-: |\n|  3  |\n|  2  |',
+      );
+    });
+
+    it('gives an inserted column no alignment', () => {
+      expect(
+        editColumns('| a | b |\n| :- | -: |\n| 1 | 2 |', row =>
+          row
+            .getFirstChildOrThrow()
+            .insertBefore(
+              $createTableCellNode().append(
+                $createParagraphNode().append($createTextNode('x')),
+              ),
+            ),
+        ),
+      ).toBe('| x | a  |  b |\n| - | :- | -: |\n| x | 1  |  2 |');
+    });
+
     it('joins multi-paragraph cells instead of fusing their text', () => {
       using editor = createEditor(true);
       editor.update(
@@ -1157,7 +1588,370 @@ describe('@lexical/mdast import/export', () => {
         {discrete: true},
       );
       const out = editor.read(() => $convertToMarkdownString());
-      expect(out).toContain('| foo bar |');
+      expect(out).toContain('| foo<br>bar |');
+    });
+
+    function cellOf(markdown: string): string {
+      // The second row's first cell, as exported.
+      return markdown.split('\n')[2].replace(/^\| (.*?) *\|$/, '$1');
+    }
+
+    function exportCell(...$children: (() => LexicalNode)[]): string {
+      using editor = createEditor(true);
+      editor.update(
+        () => {
+          $convertFromMarkdownString('| a |\n| - |\n| x |');
+          const table = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isTableNode,
+          );
+          const lastRow = $assertNodeType(table.getLastChild(), $isElementNode);
+          const cell = $assertNodeType(lastRow.getFirstChild(), $isElementNode);
+          cell.clear().append(...$children.map($child => $child()));
+        },
+        {discrete: true},
+      );
+      return editor.read(() => $convertToMarkdownString());
+    }
+
+    const text = (value: string) => () =>
+      $createParagraphNode().append($createTextNode(value));
+
+    // https://github.com/facebook/lexical/issues/9323
+    it('writes line breaks in a cell as <br>, never a newline', () => {
+      const cases: [string, string][] = [
+        [
+          exportCell(() =>
+            $createParagraphNode().append(
+              $createTextNode('a'),
+              $createLineBreakNode(),
+              $createTextNode('b'),
+            ),
+          ),
+          'a<br>b',
+        ],
+        [exportCell(text('a'), text('b')), 'a<br>b'],
+        [exportCell(text('a'), text(''), text('b')), 'a<br><br>b'],
+        [exportCell(text('a\nb')), 'a<br>b'],
+        [
+          exportCell(() =>
+            $createListNode('bullet').append(
+              $createListItemNode().append($createTextNode('x')),
+              $createListItemNode().append($createTextNode('y')),
+            ),
+          ),
+          'x<br>y',
+        ],
+        [
+          exportCell(() =>
+            $createCodeNode().append(
+              $createTextNode('l1'),
+              $createLineBreakNode(),
+              $createTextNode('l2'),
+            ),
+          ),
+          '`l1`<br>`l2`',
+        ],
+        [
+          exportCell(() =>
+            $createParagraphNode().append(
+              $createTextNode('c1\nc2').toggleFormat('code'),
+            ),
+          ),
+          '`c1 c2`',
+        ],
+      ];
+      for (const [out, expected] of cases) {
+        expect(out.split('\n')).toHaveLength(3);
+        expect(cellOf(out)).toBe(expected);
+        expect(importExport(out, true)).toBe(out);
+      }
+    });
+
+    it('writes a horizontal rule in a cell as <hr> and reads it back', () => {
+      const out = exportCell(
+        text('a'),
+        () => $createHorizontalRuleNode(),
+        text('b'),
+      );
+      expect(cellOf(out)).toBe('a<hr>b');
+      using editor = createEditor(true);
+      editor.update(() => $convertFromMarkdownString(out), {discrete: true});
+      editor.read(() => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        const cell = $assertNodeType(
+          table.getLastChildOrThrow<ElementNode>().getFirstChild(),
+          $isElementNode,
+        );
+        expect(cell.getChildren().map(child => child.getType())).toEqual([
+          'paragraph',
+          'horizontalrule',
+          'paragraph',
+        ]);
+      });
+      expect(importExport(out, true)).toBe(out);
+    });
+
+    it('writes a rule inside a paragraph in a cell as <hr> and reads each back', () => {
+      const out = exportCell(() =>
+        $createParagraphNode().append(
+          $createTextNode('a'),
+          $createHorizontalRuleNode(),
+          $createHorizontalRuleNode(),
+          $createTextNode('b'),
+        ),
+      );
+      expect(cellOf(out)).toBe('a<hr><hr>b');
+      using editor = createEditor(true);
+      editor.update(() => $convertFromMarkdownString(out), {discrete: true});
+      editor.read(() => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        const cell = $assertNodeType(
+          table.getLastChildOrThrow<ElementNode>().getFirstChild(),
+          $isElementNode,
+        );
+        expect(cell.getChildren().map(child => child.getType())).toEqual([
+          'paragraph',
+          'horizontalrule',
+          'horizontalrule',
+          'paragraph',
+        ]);
+      });
+    });
+
+    it('writes no <br> beside a rule that ends or starts a paragraph in a cell', () => {
+      const out = exportCell(
+        () =>
+          $createParagraphNode().append(
+            $createTextNode('a'),
+            $createHorizontalRuleNode(),
+          ),
+        () =>
+          $createParagraphNode().append(
+            $createHorizontalRuleNode(),
+            $createTextNode('b'),
+          ),
+      );
+      expect(cellOf(out)).toBe('a<hr><hr>b');
+    });
+
+    it('trims the whitespace an <hr> in a cell was written with', () => {
+      const markdown = '| a |\n| - |\n| a <hr> b |';
+      using editor = createEditor(true);
+      editor.update(() => $convertFromMarkdownString(markdown), {
+        discrete: true,
+      });
+      expect(editor.read(() => $convertToMarkdownString()).split('\n')[2]).toBe(
+        '| a<hr>b |',
+      );
+    });
+
+    it('reads <br> in a cell as a paragraph boundary, with attributes too', () => {
+      using editor = createEditor(true);
+      editor.update(
+        () => {
+          $convertFromMarkdownString(
+            '| a |\n| - |\n| x <br/> y<BR class="c" /><br>**z<br>w** |',
+          );
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        const lastRow = $assertNodeType(table.getLastChild(), $isElementNode);
+        const cell = $assertNodeType(lastRow.getFirstChild(), $isElementNode);
+        expect(cell.getChildren().map(p => p.getTextContent())).toEqual([
+          'x',
+          'y',
+          '',
+          'z\nw',
+        ]);
+      });
+      expect(
+        cellOf(
+          importExport(
+            '| a |\n| - |\n| x <br/> y<BR class="c" /><br>**z<br>w** |',
+            true,
+          ),
+        ),
+      ).toBe('x<br>y<br><br>**z<br>w**');
+    });
+
+    it.each([
+      '**a<br>b**',
+      '*x <br> y*',
+      '~~a<br>*b<br>c*~~',
+      '**a<br><br>b**',
+    ])('keeps a <br> in formatting a line break in %j', cell => {
+      const markdown = `| a |\n| - |\n| ${cell} |`;
+      expect(cellOf(importExport(markdown, true))).toBe(cell);
+    });
+
+    it('keeps phrasing a block exports to at the top level of a cell', () => {
+      using editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            MdastCommonMarkExtension,
+            MdastTableExtension,
+            configExtension(MdastExtension, {
+              exportRules: [
+                {
+                  $export: () => ({alt: 'a', type: 'image', url: 'u'}),
+                  type: HorizontalRuleNode,
+                },
+              ],
+            }),
+          ],
+          name: '[root]',
+        }),
+      );
+      editor.update(
+        () => {
+          $convertFromMarkdownString('| a |\n| - |\n| b |');
+          const table = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isTableNode,
+          );
+          const cell = $assertNodeType(
+            table.getLastChildOrThrow<ElementNode>().getFirstChild(),
+            $isElementNode,
+          );
+          cell
+            .clear()
+            .append(
+              $createHorizontalRuleNode(),
+              $createHorizontalRuleNode(),
+              $createParagraphNode().append($createTextNode('b')),
+              $createHorizontalRuleNode(),
+            );
+        },
+        {discrete: true},
+      );
+      // Phrasing after a block's line starts a line of its own.
+      expect(editor.read(() => $convertToMarkdownString())).toContain(
+        '| ![a](u)![a](u)<br>b<br>![a](u) |',
+      );
+    });
+
+    it.each<[object, string]>([
+      [{type: 'inlineMath', value: 'a|b'}, '$a\\|b$'],
+      [{type: 'inlineCode', value: 'a|b'}, '`a\\|b`'],
+      // A line end in code reads as a space in HTML too.
+      [{type: 'inlineCode', value: 'a\nb'}, '`a b`'],
+      [
+        {type: 'html', value: '<!-- a|b --><b title="a|b">x|y</b>'},
+        '<!-- a\\|b --><b title="a\\|b">x\\|y</b>',
+      ],
+    ])('writes %j in a cell as it is', (exported, written) => {
+      expect(exportCellOf(exported, true)).toContain(`| ${written} |`);
+    });
+
+    it.each<[object, string]>([
+      // A line end, which a cell has no form for.
+      [{type: 'inlineMath', value: 'a\n+ b|c'}, '$a + b\\|c$'],
+      [{type: 'html', value: '<pre>a\nb</pre>'}, '<pre>a b</pre>'],
+      // A pipe after a backslash, which micromark reads otherwise.
+      [{type: 'inlineMath', value: '\\|x\\|'}, '$\\\\\\|x\\\\\\|$'],
+      [{type: 'inlineCode', value: 'a\\|b'}, '`a\\\\\\|b`'],
+      [{type: 'html', value: '<i>a\\|b</i>'}, '<i>a\\\\\\|b</i>'],
+      // A block that a cell holds as phrasing.
+      [{type: 'math', value: 'a|b'}, '$a\\|b$'],
+    ])('writes %j as HTML, or else on its row', (exported, written) => {
+      const markdown = exportCellOf(exported);
+      expect(markdown).toContain(`| ${written} |`);
+      const [table] = fromMarkdown(markdown, {
+        extensions: [gfmTable()],
+        mdastExtensions: [gfmTableFromMarkdown()],
+      }).children as Table[];
+      expect(table.children.map(row => row.children.length)).toEqual([1, 1]);
+      expect(exportCellOf(exported, true)).toMatch(/^<table>\n/);
+    });
+
+    /** The Markdown of a table whose cell holds what a node exports. */
+    function exportCellOf(exported: object, html = false): string {
+      using editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            MdastCommonMarkExtension,
+            MdastTableExtension,
+            ...(html ? [MdastHtmlExtension] : []),
+            configExtension(MdastExtension, {
+              exportRules: [
+                {
+                  $export: () =>
+                    ({...exported, name: 'abbr'}) as unknown as MdastNode,
+                  type: HorizontalRuleNode,
+                },
+              ],
+              toMarkdownExtensions: [
+                {
+                  handlers: {
+                    inlineMath: ((node: {value: string}) =>
+                      `$${node.value}$`) as Handle,
+                    math: ((node: {value: string}) =>
+                      `$$\n${node.value}\n$$`) as Handle,
+                  } as Partial<Handlers>,
+                },
+              ],
+            }),
+          ],
+          name: '[root]',
+        }),
+      );
+      editor.update(
+        () => {
+          $convertFromMarkdownString('| a |\n| - |\n| b |');
+          const table = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isTableNode,
+          );
+          const cell = $assertNodeType(
+            table.getLastChildOrThrow<ElementNode>().getFirstChild(),
+            $isElementNode,
+          );
+          cell.clear().append($createHorizontalRuleNode());
+        },
+        {discrete: true},
+      );
+      return editor.read(() => $convertToMarkdownString());
+    }
+
+    it('writes long runs in a cell in linear time', () => {
+      const spaces = ' '.repeat(1e5);
+      const html = `<span>a${spaces}b</span>`;
+      expect(exportCellOf({type: 'html', value: html}, true)).toContain(html);
+      const slashes = '\\'.repeat(1e5);
+      expect(
+        exportCellOf({type: 'inlineCode', value: slashes + 'a'}),
+      ).toContain(slashes + 'a');
+    });
+
+    it('reads long runs of spaces in a cell in linear time', () => {
+      const spaces = ' '.repeat(1e5);
+      using editor = createEditor(true);
+      editor.update(
+        () =>
+          $convertFromMarkdownString(`| a |\n| - |\n| a<br>b${spaces}c<br>d |`),
+        {discrete: true},
+      );
+      editor.read(() => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        expect(table.getLastChildOrThrow().getTextContent()).toContain(
+          `b${spaces}c`,
+        );
+      });
+    });
+
+    it('keeps spaces written as references at the edges of a cell', () => {
+      using editor = createEditor(true);
+      editor.update(
+        () => $convertFromMarkdownString('| a |\n| - |\n| &#32;&#32;b&#32; |'),
+        {discrete: true},
+      );
+      editor.read(() => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        expect(table.getLastChildOrThrow().getTextContent()).toBe('  b ');
+      });
     });
   });
 

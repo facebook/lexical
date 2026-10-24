@@ -96,6 +96,24 @@ describe('TableImportExtension', () => {
     });
   });
 
+  test('a header cell takes its text-align as its format, but start', () => {
+    using editor = buildEditor();
+    importInto(
+      editor,
+      '<table><tr><th style="text-align: center">H</th><th style="text-align: start">I</th></tr><tr><td style="text-align: right">B</td><td>C</td></tr></table>',
+    );
+    editor.read(() => {
+      expect(
+        $rows($rootTable()).map(row =>
+          $cells(row).map(cell => cell.getFormatType()),
+        ),
+      ).toEqual([
+        ['center', ''],
+        ['', ''],
+      ]);
+    });
+  });
+
   test('<th scope="col"> → header cell', () => {
     using editor = buildEditor();
     importInto(editor, '<table><tr><th scope="col">H</th></tr></table>');

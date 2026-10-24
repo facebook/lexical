@@ -9,12 +9,22 @@
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {
   $createTableCellNode,
+  $createTableNode,
+  $createTableRowNode,
   $isTableCellNode,
   type SerializedTableCellNode,
   TableCellHeaderStates,
   TableCellNode,
+  type TableNode,
+  type TableRowNode,
 } from '@lexical/table';
-import {$createTextNode, $getRoot, type DOMConversionOutput} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  type DOMConversionOutput,
+  type ParagraphNode,
+} from 'lexical';
 import {
   $runDOMConversion,
   expectHtmlToBeEqual,
@@ -152,6 +162,56 @@ describe('LexicalTableCellNode tests', () => {
         ).toBe(
           `<td style="vertical-align: ${validVerticalAlign};" class="${editorConfig.theme.tableCell}"></td>`,
         );
+      });
+    });
+
+    test('TableCellNode.exportDOM writes its format as text-align, which importDOM reads', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        $getRoot()
+          .clear()
+          .append(
+            $createTableNode().append(
+              $createTableRowNode().append(
+                $createTableCellNode(TableCellHeaderStates.ROW)
+                  .setFormat('center')
+                  .append($createParagraphNode()),
+                $createTableCellNode(TableCellHeaderStates.ROW).append(
+                  $createParagraphNode(),
+                ),
+              ),
+              $createTableRowNode().append(
+                $createTableCellNode()
+                  .setFormat('right')
+                  .append($createParagraphNode().append($createTextNode('b'))),
+              ),
+            ),
+          );
+      });
+      const exported = editor.read(() => $generateHtmlFromNodes(editor));
+      expect(exported).toContain('text-align: center');
+      await editor.update(() => {
+        const dom = new DOMParser().parseFromString(exported, 'text/html');
+        $getRoot()
+          .clear()
+          .append(...$generateNodesFromDOM(editor, dom));
+      });
+      editor.read(() => {
+        const table = $getRoot().getFirstChildOrThrow<TableNode>();
+        expect(
+          table
+            .getFirstChildOrThrow<TableRowNode>()
+            .getChildren<TableCellNode>()
+            .map(cell => cell.getFormatType()),
+        ).toEqual(['center', '']);
+        // A body cell's alignment comes back on its paragraphs.
+        expect(
+          table
+            .getLastChildOrThrow<TableRowNode>()
+            .getFirstChildOrThrow<TableCellNode>()
+            .getFirstChildOrThrow<ParagraphNode>()
+            .getFormatType(),
+        ).toBe('right');
       });
     });
 

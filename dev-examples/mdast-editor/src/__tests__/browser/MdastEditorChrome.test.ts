@@ -16,28 +16,37 @@ import {
 } from '@lexical/mdast';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
+  $createNodeSelection,
+  $createParagraphNode,
   $createRangeSelection,
   $getRoot,
   $getSelection,
+  $getSlot,
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
   $setSelection,
   defineExtension,
+  type ElementNode,
+  HISTORY_MERGE_TAG,
+  INSERT_PARAGRAPH_COMMAND,
   type LexicalEditor,
 } from 'lexical';
-import {describe, expect, onTestFinished, test, vi} from 'vitest';
+import {assert, describe, expect, onTestFinished, test, vi} from 'vitest';
+import {userEvent} from 'vitest/browser';
 
 import {
   INSERT_ALERT_COMMAND,
   MdastAlertExtension,
 } from '../../extensions/MdastAlertExtension';
 import {
+  $createCollapsibleNode,
   INSERT_COLLAPSIBLE_COMMAND,
   MdastCollapsibleExtension,
 } from '../../extensions/MdastCollapsibleExtension';
 import {
   $isFootnoteDefinitionNode,
+  FOOTNOTES_SLOT,
   INSERT_FOOTNOTE_COMMAND,
   MdastFootnoteExtension,
 } from '../../extensions/MdastFootnoteExtension';
@@ -252,6 +261,137 @@ describe('footnotes', () => {
     expect(markdownOf(editor)).toBe(
       'body[^a] text\n\ntrailing paragraph\n\n[^a]: the note',
     );
+  });
+
+  test('deleting everything else clears the footnotes', () => {
+    const {editor, root} = mountEditor('body[^a] text\n\n[^a]: the note');
+    editor.update(
+      () => {
+        $getRoot().clear().append($createParagraphNode()).selectEnd();
+      },
+      {discrete: true},
+    );
+    expect(root.querySelector('.footnote-def')).toBeNull();
+    expect(markdownOf(editor)).toBe('');
+  });
+
+  test('deleting everything else clears the footnotes a slot refers to', () => {
+    const {editor, root} = mountEditor('body[^a] text\n\n[^a]: the note');
+    editor.update(
+      () => {
+        // The reference moves into a collapsible's summary slot.
+        const paragraph = $getRoot().getFirstChildOrThrow<ElementNode>();
+        const collapsible = $createCollapsibleNode();
+        const summary = $getSlot(collapsible, 'summary');
+        assert($isElementNode(summary));
+        summary.append(...paragraph.getChildren());
+        paragraph.replace(collapsible);
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        $getRoot().clear().append($createParagraphNode()).selectEnd();
+      },
+      {discrete: true},
+    );
+    expect(root.querySelector('.footnote-def')).toBeNull();
+  });
+
+  test.each(['body[^a] text', '# body[^a]\n\ntext'])(
+    'selecting the body of %j and pressing Backspace clears the footnotes',
+    async body => {
+      const {editor, root} = mountEditor(`${body}\n\n[^a]: the note`);
+      root.focus();
+      editor.update(
+        () => {
+          const first = $getRoot().getFirstChildOrThrow<ElementNode>();
+          const last = $getRoot().getLastChildOrThrow<ElementNode>();
+          const selection = first.select(0, 0);
+          selection.focus.set(last.getKey(), last.getChildrenSize(), 'element');
+        },
+        {discrete: true},
+      );
+      await userEvent.keyboard('{Backspace}');
+      expect(root.querySelector('.footnote-def')).toBeNull();
+      expect(markdownOf(editor)).toBe('');
+    },
+  );
+
+  test.each([
+    'a caret in a definition',
+    'a caret on the section',
+    'a node in a definition',
+  ])('the footnotes stay while being edited, with %s', selected => {
+    const {editor} = mountEditor('body[^a] text\n\n[^a]: the note');
+    let sectionKey = '';
+    editor.update(
+      () => {
+        const footnotes = $getSlot($getRoot(), FOOTNOTES_SLOT);
+        assert($isElementNode(footnotes));
+        sectionKey = footnotes.getKey();
+        $getRoot().clear().append($createParagraphNode());
+        const note = footnotes.getLastDescendant();
+        assert($isTextNode(note));
+        if (selected === 'a caret in a definition') {
+          note.selectEnd();
+        } else if (selected === 'a caret on the section') {
+          footnotes.select(0, 0);
+        } else {
+          const selection = $createNodeSelection();
+          selection.add(note.getParentOrThrow().getKey());
+          $setSelection(selection);
+        }
+      },
+      {discrete: true},
+    );
+    // The empty body paragraph serializes as leading blank lines.
+    expect(markdownOf(editor).trim()).toBe('[^a]: the note');
+    if (selected === 'a caret on the section') {
+      editor.read(() => {
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        expect([selection.anchor.type, selection.anchor.key]).toEqual([
+          'element',
+          sectionKey,
+        ]);
+      });
+    }
+  });
+
+  test('a Markdown pane sync keeps definitions with no body', () => {
+    const {editor} = mountEditor('');
+    editor.update(() => $convertFromMarkdownString('[^a]: the note'), {
+      discrete: true,
+      tag: HISTORY_MERGE_TAG,
+    });
+    expect(markdownOf(editor)).toBe('[^a]: the note');
+  });
+
+  test('typing in an already-empty body keeps definitions', () => {
+    const {editor} = mountEditor('');
+    editor.update(() => $convertFromMarkdownString('[^a]: saved note'), {
+      discrete: true,
+      tag: HISTORY_MERGE_TAG,
+    });
+    editor.update(() => $getRoot().selectEnd(), {discrete: true});
+    editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+    expect(markdownOf(editor).trim()).toBe('[^a]: saved note');
+  });
+
+  test('typing and erasing in an empty body keeps definitions', () => {
+    const {editor} = mountEditor('');
+    editor.update(() => $convertFromMarkdownString('[^a]: saved note'), {
+      discrete: true,
+      tag: HISTORY_MERGE_TAG,
+    });
+    editor.update(() => $getRoot().selectEnd().insertText('a'), {
+      discrete: true,
+    });
+    editor.update(() => $getRoot().selectEnd().deleteCharacter(true), {
+      discrete: true,
+    });
+    expect(markdownOf(editor).trim()).toBe('[^a]: saved note');
   });
 
   test('removing the last definition drops the section and its refs', async () => {

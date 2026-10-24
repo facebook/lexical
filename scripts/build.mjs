@@ -177,6 +177,9 @@ const thirdPartyExternals = [
         // that pins the whole signals runtime into any bundle importing
         // anything from @lexical/extension.
         '@preact/signals-core',
+        // @lexical/markdown decodes named character references with it; its
+        // browser condition reads them through the DOM instead of a table.
+        'decode-named-character-reference',
         // @lexical/mdast delegates parsing/serialization to the
         // micromark/mdast ecosystem. Keep those (declared) dependencies
         // external in the npm build so consumer bundlers resolve them with

@@ -14,6 +14,7 @@ import {
   $isLineBreakNode,
   $isTextNode,
   $setDirectionFromDOM,
+  $setFormatFromDOM,
   addClassNamesToElement,
   type DOMConversionOutput,
   type DOMExportOutput,
@@ -221,7 +222,7 @@ export class TableCellNode extends ElementNode {
       element.style.width = `${this.getWidth() || COLUMN_WIDTH}px`;
 
       element.style.verticalAlign = this.getVerticalAlign() || 'top';
-      element.style.textAlign = 'start';
+      element.style.textAlign = this.getFormatType() || 'start';
       if (this.__backgroundColor === null && this.hasHeader()) {
         element.style.backgroundColor = '#f2f3f5';
       }
@@ -419,6 +420,11 @@ export function $convertTableCellNodeElement(
   const verticalAlign = domNode_.style.verticalAlign;
   if (isValidVerticalAlign(verticalAlign)) {
     tableCellNode.__verticalAlign = verticalAlign;
+  }
+  // A `<td>` passes its alignment to its paragraphs, and export writes
+  // `start` for none.
+  if (nodeName === 'th' && domNode_.style.textAlign !== 'start') {
+    $setFormatFromDOM(tableCellNode, domNode_);
   }
   $setDirectionFromDOM(tableCellNode, domNode_);
 

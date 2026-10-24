@@ -22,6 +22,7 @@ import {
   $isInlineElementOrDecoratorNode,
   $isLineBreakNode,
   $isTextNode,
+  $setFormatFromDOM,
   IS_BOLD,
   IS_ITALIC,
   IS_STRIKETHROUGH,
@@ -224,6 +225,11 @@ const TableCellRule = defineImportRule({
     const verticalAlign = el.style.verticalAlign;
     if (isValidVerticalAlign(verticalAlign)) {
       cell.__verticalAlign = verticalAlign;
+    }
+    // A `<td>` passes its alignment to its paragraphs, and export writes
+    // `start` for none.
+    if (isHeader && el.style.textAlign !== 'start') {
+      $setFormatFromDOM(cell, el);
     }
     // Propagate the cell's bold/italic/underline/strikethrough as
     // format bits, and the cell's `color` as a parsed-style record.

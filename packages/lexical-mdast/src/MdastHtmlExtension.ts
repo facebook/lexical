@@ -802,7 +802,7 @@ export const $exportViaDOM: MdastExportHandler = (node, ctx) => {
   const editor = $getEditor();
   const markKinds: ('flow' | 'phrasing')[] = [];
   const substitutions: (PhrasingContent[] | {flow: BlockContent[]})[] = [];
-  const mark = (kind: 'flow' | 'phrasing'): HTMLTemplateElement => {
+  const $mark = (kind: 'flow' | 'phrasing'): HTMLTemplateElement => {
     const marker = $getDocument().createElement('template');
     marker.setAttribute(EXPORT_MARK_ATTR, String(markKinds.length));
     markKinds.push(kind);
@@ -837,7 +837,7 @@ export const $exportViaDOM: MdastExportHandler = (node, ctx) => {
           ($isElementNode(child) || $isDecoratorNode(child)) &&
           !child.isInline(),
       );
-      const marker = mark(flow ? 'flow' : 'phrasing');
+      const marker = $mark(flow ? 'flow' : 'phrasing');
       // Serialize the resolved list, not node.getChildren(): a
       // $getChildNodes override replaces the children for export by
       // contract, so the Markdown embedding must follow it like the HTML
@@ -880,7 +880,7 @@ export const $exportViaDOM: MdastExportHandler = (node, ctx) => {
       }
       wrapper.removeAttribute('data-lexical-slot');
       const flow = $isElementNode(slot) && slot.isShadowRoot();
-      const marker = mark(flow ? 'flow' : 'phrasing');
+      const marker = $mark(flow ? 'flow' : 'phrasing');
       substitutions.push(
         flow
           ? {flow: ctx.exportChildren(slot) as BlockContent[]}

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "tsc": "tsc",
     "preview": "vite preview",
     "size": "node ./size/measure.mjs"
   },
@@ -24,10 +25,11 @@
     "@lexical/react": "workspace:*",
     "@lexical/rich-text": "workspace:*",
     "@lexical/selection": "workspace:*",
+    "@lexical/table": "workspace:*",
     "@lexical/utils": "workspace:*",
     "lexical": "workspace:*",
     "mdast-util-gfm-footnote": "^2.1.0",
-    "mdast-util-to-markdown": "^2.1.2",
+    "mdast-util-to-markdown": "^2.2.0",
     "micromark-extension-gfm-footnote": "^2.1.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"

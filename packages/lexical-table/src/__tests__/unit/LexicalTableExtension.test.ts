@@ -51,7 +51,9 @@ import {
   describe,
   expect,
   it,
+  onTestFinished,
   test,
+  vi,
 } from 'vitest';
 
 describe('TableExtension', () => {
@@ -68,6 +70,59 @@ describe('TableExtension', () => {
   });
   afterEach(() => {
     editor.dispose();
+  });
+
+  it('warns of a missing tableScrollableWrapper once it renders a table', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
+    using unthemed = buildEditorFromExtensions(TableExtension);
+    const {hasHorizontalScroll} = getExtensionDependencyFromEditor(
+      unthemed,
+      TableExtension,
+    ).output;
+    hasHorizontalScroll.value = false;
+    hasHorizontalScroll.value = true;
+    unthemed.setRootElement(document.createElement('div'));
+    expect(warn).not.toHaveBeenCalled();
+    for (let i = 0; i < 2; i++) {
+      unthemed.update(
+        () => {
+          $getRoot().selectEnd();
+          unthemed.dispatchCommand(INSERT_TABLE_COMMAND, {
+            columns: '1',
+            rows: '1',
+          });
+        },
+        {discrete: true},
+      );
+    }
+    expect(warn.mock.calls).toEqual([
+      [
+        'TableNode: hasHorizontalScroll is active but theme.tableScrollableWrapper is not defined.',
+      ],
+    ]);
+  });
+
+  it('does not warn of a missing tableScrollableWrapper once scrolling is off', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
+    using unthemed = buildEditorFromExtensions(TableExtension);
+    getExtensionDependencyFromEditor(
+      unthemed,
+      TableExtension,
+    ).output.hasHorizontalScroll.value = false;
+    unthemed.setRootElement(document.createElement('div'));
+    unthemed.update(
+      () => {
+        $getRoot().selectEnd();
+        unthemed.dispatchCommand(INSERT_TABLE_COMMAND, {
+          columns: '1',
+          rows: '1',
+        });
+      },
+      {discrete: true},
+    );
+    expect(warn).not.toHaveBeenCalled();
   });
 
   it('Creates a table with INSERT_TABLE_COMMAND', () => {

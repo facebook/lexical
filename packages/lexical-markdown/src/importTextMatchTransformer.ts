@@ -8,7 +8,9 @@
 import type {TextMatchTransformer} from './MarkdownTransformers';
 import type {TextNode} from 'lexical';
 
-export function findOutermostTextMatchTransformer(
+import {isEscaped} from './utils';
+
+export function $findOutermostTextMatchTransformer(
   textNode_: TextNode,
   textMatchTransformers: TextMatchTransformer[],
 ): {
@@ -28,7 +30,10 @@ export function findOutermostTextMatchTransformer(
     if (!transformer.replace || !transformer.importRegExp) {
       continue;
     }
-    const match = textNode.getTextContent().match(transformer.importRegExp);
+    const match = matchUnescaped(
+      textNode.getTextContent(),
+      transformer.importRegExp,
+    );
 
     if (!match) {
       continue;
@@ -74,18 +79,19 @@ export function findOutermostTextMatchTransformer(
   };
 }
 
-export function importFoundTextMatchTransformer(
+export function $importFoundTextMatchTransformer(
   textNode: TextNode,
   startIndex: number,
   endIndex: number,
   transformer: TextMatchTransformer,
   match: RegExpMatchArray,
 ): {
+  // The text the transformer was given, which it may have left in place.
   matchedNode: TextNode;
   transformedNode?: TextNode;
   nodeBefore: TextNode | undefined; // If split
   nodeAfter: TextNode | undefined; // If split
-} | null {
+} {
   let transformedNode, nodeAfter, nodeBefore;
 
   if (startIndex === 0) {
@@ -97,10 +103,8 @@ export function importFoundTextMatchTransformer(
     );
   }
 
-  if (!transformer.replace) {
-    return null;
-  }
-  const potentialTransformedNode = transformer.replace(transformedNode, match);
+  // $findOutermostTextMatchTransformer only finds transformers that replace.
+  const potentialTransformedNode = transformer.replace!(transformedNode, match);
 
   return {
     matchedNode: transformedNode,
@@ -108,4 +112,28 @@ export function importFoundTextMatchTransformer(
     nodeBefore,
     transformedNode: potentialTransformedNode || undefined,
   };
+}
+
+// A global copy of each importRegExp, to search from a position.
+const GLOBAL_REGEXPS = new WeakMap<RegExp, RegExp>();
+
+/**
+ * The first match of `regExp` in `text` that no backslash escapes: one that
+ * starts with ASCII punctuation after an odd run of backslashes is literal
+ * text in CommonMark, as in `\[a](u)`.
+ */
+function matchUnescaped(text: string, regExp: RegExp): RegExpExecArray | null {
+  let search = GLOBAL_REGEXPS.get(regExp);
+  if (!search) {
+    search = new RegExp(regExp.source, regExp.flags.replace(/[gy]/g, '') + 'g');
+    GLOBAL_REGEXPS.set(regExp, search);
+  }
+  search.lastIndex = 0;
+  for (let match; (match = search.exec(text)); ) {
+    if (!isEscaped(text, match.index) || !/^[!-/:-@[-`{-~]/.test(match[0])) {
+      return match;
+    }
+    search.lastIndex = match.index + 1;
+  }
+  return null;
 }

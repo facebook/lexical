@@ -14,6 +14,7 @@ import type {
   Transformer,
 } from './MarkdownTransformers';
 
+import {decodeNamedCharacterReference} from 'decode-named-character-reference';
 import {$isParagraphNode, $isTextNode, type LexicalNode} from 'lexical';
 
 export function indexBy<T>(
@@ -62,7 +63,7 @@ export const PUNCTUATION = /[!"#$%&'()*+,\-./:;<=>?@[\]^_`{|}~]/;
 
 const MARKDOWN_EMPTY_LINE_REG_EXP = /^\s{0,3}$/;
 
-export function isEmptyParagraph(node: LexicalNode): boolean {
+export function $isEmptyParagraph(node: LexicalNode): boolean {
   if (!$isParagraphNode(node)) {
     return false;
   }
@@ -76,12 +77,21 @@ export function isEmptyParagraph(node: LexicalNode): boolean {
   );
 }
 
-// A decimal character reference has one to seven digits, and one that names
-// U+0000, a surrogate or a number past U+10FFFF reads as U+FFFD instead of
-// making `String.fromCodePoint` throw.
-// https://spec.commonmark.org/0.31.2/#decimal-numeric-character
-function decodeDecimalCharacterReference(_: string, digits: string): string {
-  const codePoint = Number(digits);
+// A numeric character reference has one to seven decimal or one to six hex
+// digits, and one that names U+0000, a surrogate or a number past U+10FFFF
+// reads as U+FFFD instead of making `String.fromCodePoint` throw. A named
+// one is read only when it is an HTML entity name.
+// https://spec.commonmark.org/0.31.2/#entity-and-numeric-character-references
+function decodeCharacterReference(
+  match: string,
+  digits: string | undefined,
+  hex: string | undefined,
+  name: string | undefined,
+): string {
+  if (name !== undefined) {
+    return decodeNamedCharacterReference(name) || match;
+  }
+  const codePoint = digits !== undefined ? Number(digits) : parseInt(hex!, 16);
   return codePoint === 0 ||
     (codePoint >= 0xd800 && codePoint <= 0xdfff) ||
     codePoint > 0x10ffff
@@ -89,8 +99,39 @@ function decodeDecimalCharacterReference(_: string, digits: string): string {
     : String.fromCodePoint(codePoint);
 }
 
+/**
+ * Whether `&` and then `reference` (`#65;`, `amp;`, matched as one of the
+ * forms `unescapeText` reads) is read as a character reference.
+ */
+export function isCharacterReference(reference: string): boolean {
+  return (
+    reference[0] === '#' ||
+    decodeNamedCharacterReference(reference.slice(0, -1)) !== false
+  );
+}
+
 export function unescapeText(value: string): string {
-  return value
-    .replace(/\\([!-/:-@[-`{-~])/g, '$1')
-    .replace(/&#(\d{1,7});/g, decodeDecimalCharacterReference);
+  // One pass, so an escaped `\&#35;` stays the text `&#35;`.
+  return value.replace(
+    /\\([!-/:-@[-`{-~])|&(?:#(\d{1,7})|#[xX]([\da-fA-F]{1,6})|([a-zA-Z][\da-zA-Z]{0,31}));/g,
+    (
+      match,
+      escaped: string | undefined,
+      digits: string | undefined,
+      hex: string | undefined,
+      name: string | undefined,
+    ) => escaped ?? decodeCharacterReference(match, digits, hex, name),
+  );
+}
+
+/**
+ * Whether the character at `index` in `text` follows an odd run of
+ * backslashes, which escapes it.
+ */
+export function isEscaped(text: string, index: number): boolean {
+  let start = index;
+  while (start > 0 && text[start - 1] === '\\') {
+    start--;
+  }
+  return (index - start) % 2 === 1;
 }

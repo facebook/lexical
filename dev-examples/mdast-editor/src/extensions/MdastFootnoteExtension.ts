@@ -33,12 +33,14 @@ import {
   RenderContextMarkdownSelection,
   type RootContent,
 } from '@lexical/mdast';
-import {mergeRegister} from '@lexical/utils';
+import {$dfsWithSlotsIterator, mergeRegister} from '@lexical/utils';
 import {
   $addUpdateTag,
   $create,
   $createParagraphNode,
+  $findMatchingParent,
   $getDocument,
+  $getEditor,
   $getNodeByKey,
   $getRoot,
   $getSelection,
@@ -46,6 +48,7 @@ import {
   $getSlotHost,
   $getState,
   $getStateChange,
+  $hasUpdateTag,
   $isDecoratorNode,
   $isElementNode,
   $isParagraphNode,
@@ -72,6 +75,7 @@ import {
   type ElementDOMSlot,
   ElementNode,
   HISTORIC_TAG,
+  HISTORY_MERGE_TAG,
   isExactShortcutMatch,
   isHTMLElement,
   KEY_DOWN_COMMAND,
@@ -240,7 +244,7 @@ function selectReference(
  * marked unmanaged so the reconciler and the mutation observer leave it
  * alone inside the managed content DOM.
  */
-function renderBacklinks(
+function $renderBacklinks(
   editor: LexicalEditor,
   definition: FootnoteDefinitionNode,
   host: HTMLElement,
@@ -344,7 +348,7 @@ export function registerFootnoteAnchors(editor: LexicalEditor): () => void {
           continue;
         }
         if (host !== null && count > 0) {
-          renderBacklinks(editor, definition, host, count);
+          $renderBacklinks(editor, definition, host, count);
         }
       }
     });
@@ -720,6 +724,77 @@ export function $clearFootnotes(): void {
   const root = $getRoot();
   if ($isFootnotesNode($getSlot(root, FOOTNOTES_SLOT))) {
     $removeSlot(root, FOOTNOTES_SLOT);
+  }
+}
+
+/** Whether everything outside the footnotes section is empty paragraphs. */
+function $isBodyEmpty(root: RootNode): boolean {
+  // Stops at the first block with content, which is usually the first.
+  for (
+    let child = root.getFirstChild();
+    child;
+    child = child.getNextSibling()
+  ) {
+    if (!$isParagraphNode(child) || !child.isEmpty()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Whether the body (the root's children and their slots, not the root's
+ * footnotes) has a reference.
+ */
+function $bodyHasRef(): boolean {
+  return $getRoot()
+    .getChildren()
+    .some(child => {
+      for (const {node} of $dfsWithSlotsIterator(child)) {
+        if ($isFootnoteRefNode(node)) {
+          return true;
+        }
+      }
+      return false;
+    });
+}
+
+/**
+ * A RootNode transform: once everything outside the footnotes section has
+ * been deleted (select-all and Backspace, cut, ...), the section goes too,
+ * since a definition with no reference to it doesn't render in GFM and the
+ * empty editor would otherwise still show stale notes.
+ *
+ * Only a deletion that took references with it clears, so a note written
+ * before any reference to it (in the Markdown pane, or in an empty body that
+ * was then typed in and erased) stays. Also left alone: the Markdown pane's
+ * sync (tagged history-merge), and an editor whose selection is in the
+ * footnotes section (a caret in a definition or on the section itself, or
+ * a selected node in a definition), which is being edited.
+ */
+function $clearFootnotesOfEmptyDocument(root: RootNode): void {
+  if (
+    $hasUpdateTag(HISTORY_MERGE_TAG) ||
+    !$isFootnotesNode($getSlot(root, FOOTNOTES_SLOT)) ||
+    !$isBodyEmpty(root)
+  ) {
+    return;
+  }
+  const selection = $getSelection();
+  // Lexical clamps a range to its anchor's slot frame, so the anchor tells
+  // whether the range is in the section.
+  const selected = $isRangeSelection(selection)
+    ? [selection.anchor.getNode()]
+    : selection
+      ? selection.getNodes()
+      : [];
+  // The previous state is walked last, and only for an edit outside the
+  // section.
+  if (
+    !selected.some(node => $findMatchingParent(node, $isFootnotesNode)) &&
+    $getEditor().read('latest', $bodyHasRef)
+  ) {
+    $clearFootnotes();
   }
 }
 
@@ -1155,6 +1230,7 @@ export const MdastFootnoteExtension = defineExtension({
     mergeRegister(
       registerFootnoteShortcut(editor),
       registerFootnoteAnchors(editor),
+      editor.registerNodeTransform(RootNode, $clearFootnotesOfEmptyDocument),
       editor.registerCommand(
         KEY_DOWN_COMMAND,
         event => {

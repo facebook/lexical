@@ -50,8 +50,8 @@ import {toString as mdastToString} from 'mdast-util-to-string';
 
 import {
   $exportLineBreak,
+  $exportText,
   $isBlockLevelNode,
-  exportText,
   phrasingFromTextRuns,
   TEXT_FORMAT_MASK,
   type TextRun,
@@ -348,10 +348,10 @@ function createNodeExporter(
    * accumulator supersedes to merge adjacent runs) must not be swallowed —
    * this keeps replaced/custom text nodes dispatching to their handlers.
    */
-  function mayAccumulate(child: LexicalNode): boolean {
+  function $mayAccumulate(child: LexicalNode): boolean {
     const handlers = exportHandlers.get(child.getType());
     const handler = handlers && handlers[0];
-    return handler === undefined || handler === exportText;
+    return handler === undefined || handler === $exportText;
   }
 
   /**
@@ -462,7 +462,7 @@ function createNodeExporter(
     }
     // Fallbacks keep unknown nodes from disappearing entirely; text and line
     // breaks reuse the core handlers so their behavior can't drift.
-    const asText = exportText(node);
+    const asText = $exportText(node);
     if (asText !== null) {
       return [asText];
     }
@@ -490,7 +490,7 @@ function createNodeExporter(
       if (target === null) {
         continue;
       }
-      if (!(mayAccumulate(target) && runs.push(target))) {
+      if (!($mayAccumulate(target) && runs.push(target))) {
         if ($isTextNode(target)) {
           runs.appendExported($dispatch(target), result);
           continue;
@@ -543,7 +543,7 @@ function createNodeExporter(
           runs.flushInto(inline);
           inline.push(asBreak);
         }
-      } else if (mayAccumulate(target) && runs.push(target)) {
+      } else if ($mayAccumulate(target) && runs.push(target)) {
         continue;
       } else if ($isTextNode(target)) {
         runs.appendExported($dispatch(target), inline);
@@ -588,7 +588,7 @@ function $dominantInlineMarkers(node: ElementNode): {
 } {
   let emphasis: '*' | '_' | undefined;
   let strong: '*' | '_' | undefined;
-  const visit = (element: ElementNode): void => {
+  const $visit = (element: ElementNode): void => {
     for (const child of element.getChildren()) {
       if ($isTextNode(child)) {
         if (emphasis === undefined && child.hasFormat('italic')) {
@@ -604,14 +604,14 @@ function $dominantInlineMarkers(node: ElementNode): {
           }
         }
       } else if ($isElementNode(child)) {
-        visit(child);
+        $visit(child);
       }
       if (emphasis !== undefined && strong !== undefined) {
         return;
       }
     }
   };
-  visit(node);
+  $visit(node);
   return {emphasis, strong};
 }
 

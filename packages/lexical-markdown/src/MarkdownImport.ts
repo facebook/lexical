@@ -6,6 +6,7 @@
  *
  */
 
+import {$isCodeNode} from '@lexical/code-core';
 import {$isListItemNode, $isListNode, type ListItemNode} from '@lexical/list';
 import {$isQuoteNode} from '@lexical/rich-text';
 import {
@@ -16,14 +17,17 @@ import {
   $isElementNode,
   $isParagraphNode,
   $isTabNode,
+  $isTextNode,
   type ElementNode,
   type LexicalNode,
   type TextNode,
 } from 'lexical';
 
-import {importTextTransformers} from './importTextTransformers';
+import {$importTextTransformers} from './importTextTransformers';
 import {
   $createMarkdownLineBreakNode,
+  $extractMarkdownHardLineBreakMarker,
+  $splitMarkdownHardLineBreakMarker,
   type ElementTransformer,
   type MultilineElementTransformer,
   type TextFormatTransformer,
@@ -31,7 +35,7 @@ import {
   type Transformer,
   withListIndentColumns,
 } from './MarkdownTransformers';
-import {isEmptyParagraph, transformersByType} from './utils';
+import {$isEmptyParagraph, transformersByType} from './utils';
 
 export type TextFormatTransformersIndex = Readonly<{
   fullMatchRegExpByTag: Readonly<Record<string, RegExp>>;
@@ -53,7 +57,8 @@ export function $importMarkdownNodes(
   const textFormatTransformersIndex = createTextFormatTransformersIndex(
     byType.textFormat,
   );
-  const lines = markdownString.split('\n');
+  // Each CommonMark line ending, CRLF and a lone CR too.
+  const lines = markdownString.split(/\r\n?|\n/);
   const linesLength = lines.length;
 
   // A list line is measured against the column its parent item's content
@@ -91,13 +96,16 @@ export function $importMarkdownNodes(
   for (const child of children) {
     if (
       !shouldPreserveNewLines &&
-      isEmptyParagraph(child) &&
+      $isEmptyParagraph(child) &&
       container.getChildrenSize() > 1
     ) {
       child.remove();
       continue;
     }
     if ($isElementNode(child)) {
+      if (!shouldPreserveNewLines) {
+        $trimBlockEnd(child);
+      }
       for (const textNode of child.getAllTextNodes()) {
         $normalizeMarkdownTextNode(textNode);
       }
@@ -238,14 +246,30 @@ function $importBlocks(
     const match = lineText.match(regExp);
 
     if (match) {
-      textNode.setTextContent(lineText.slice(match[0].length));
+      const rest = lineText.slice(match[0].length);
+      textNode.setTextContent(rest);
       if (replace(elementNode, [textNode], match, true) !== false) {
         break;
+      }
+      // A transform that cancels without touching the line gives it back
+      // whole. One that changed the text or moved it is left as it was
+      // before this restore, so the next transform that matches still
+      // starts from its own cut of the line.
+      if (
+        elementNode.is(textNode.getParent()) &&
+        textNode.getTextContent() === rest
+      ) {
+        textNode.setTextContent(lineText);
       }
     }
   }
 
-  importTextTransformers(
+  // The parent test, unlike isAttached(), also holds in a tree not attached
+  // to the root.
+  if (textNode.getParent() !== null) {
+    $splitMarkdownHardLineBreakMarker(textNode);
+  }
+  $importTextTransformers(
     textNode,
     textFormatTransformersIndex,
     textMatchTransformers,
@@ -274,13 +298,49 @@ function $importBlocks(
       }
 
       if (targetNode != null && targetNode.getTextContentSize() > 0) {
-        targetNode.splice(targetNode.getChildrenSize(), 0, [
+        // CommonMark strips the indent of a paragraph's continuation line.
+        const first = elementNode.getFirstChild();
+        if ($isTextNode(first) && !first.hasFormat('code')) {
+          first.setTextContent(first.getTextContent().replace(/^[ \t]+/, ''));
+        }
+        targetNode.append(
           $createMarkdownLineBreakNode(targetNode),
           ...elementNode.getChildren(),
-        ]);
+        );
         elementNode.remove();
       }
     }
+  }
+}
+
+/**
+ * Strips the spaces and tabs a block of inline content and each such block
+ * in it end with, which CommonMark drops, a two-space hard line break marker
+ * that no line joined included. Code takes its text as it is.
+ */
+function $trimBlockEnd(block: ElementNode): void {
+  if ($isCodeNode(block)) {
+    return;
+  }
+  if ($extractMarkdownHardLineBreakMarker(block) === '\\') {
+    // A backslash that ends a block is text.
+    block.append($createTextNode('\\'));
+    return;
+  }
+  const last = block.getLastChild();
+  if ($isElementNode(last) && !last.isInline()) {
+    for (const child of block.getChildren()) {
+      if ($isElementNode(child)) {
+        $trimBlockEnd(child);
+      }
+    }
+  } else if ($isTextNode(last) && !last.hasFormat('code')) {
+    const text = last.getTextContent();
+    let end = text.length;
+    while (end > 0 && (text[end - 1] === ' ' || text[end - 1] === '\t')) {
+      end--;
+    }
+    last.setTextContent(text.slice(0, end));
   }
 }
 

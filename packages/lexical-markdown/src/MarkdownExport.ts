@@ -6,6 +6,7 @@
  *
  */
 
+import {$isAutoLinkNode, $isLinkNode} from '@lexical/link';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
   $getRoot,
@@ -31,7 +32,11 @@ import {
   type TextMatchTransformer,
   type Transformer,
 } from './MarkdownTransformers';
-import {isEmptyParagraph, transformersByType} from './utils';
+import {
+  $isEmptyParagraph,
+  isCharacterReference,
+  transformersByType,
+} from './utils';
 
 /**
  * Renders string from markdown. The selection is moved to the start after the operation.
@@ -76,8 +81,8 @@ export function createMarkdownExport(
           // separate consecutive group of texts with a line break: eg. ["hello", "world"] -> ["hello", "/nworld"]
           isNewlineDelimited &&
             i > 0 &&
-            !isEmptyParagraph(child) &&
-            !isEmptyParagraph(children[i - 1])
+            !$isEmptyParagraph(child) &&
+            !$isEmptyParagraph(children[i - 1])
             ? '\n'.concat(result)
             : result,
         );
@@ -133,8 +138,8 @@ export function createSelectionMarkdownExport(
         output.push(
           isNewlineDelimited &&
             previousExported !== null &&
-            !isEmptyParagraph(child) &&
-            !isEmptyParagraph(previousExported)
+            !$isEmptyParagraph(child) &&
+            !$isEmptyParagraph(previousExported)
             ? '\n'.concat(markdown)
             : markdown,
         );
@@ -259,7 +264,7 @@ function $exportChildrenForSelection(
             textNode,
             'clone',
           );
-          return exportTextFormat(
+          return $exportTextFormat(
             textNode,
             slicedNode.getTextContent(),
             textFormatTransformers,
@@ -297,7 +302,7 @@ function $exportChildrenForSelection(
       if (childIncluded) {
         const target = $sliceSelectedTextNodeContent(selection, child, 'clone');
         output.push(
-          exportTextFormat(
+          $exportTextFormat(
             child,
             target.getTextContent(),
             textFormatTransformers,
@@ -427,7 +432,7 @@ function $exportChildren(
             shouldPreserveNewLines,
           ),
         (textNode, textContent) =>
-          exportTextFormat(
+          $exportTextFormat(
             textNode,
             textContent,
             textTransformersIndex,
@@ -447,7 +452,7 @@ function $exportChildren(
       output.push($exportLineBreak(child));
     } else if ($isTextNode(child)) {
       output.push(
-        exportTextFormat(
+        $exportTextFormat(
           child,
           child.getTextContent(),
           textTransformersIndex,
@@ -480,7 +485,7 @@ function $exportLineBreak(node: LineBreakNode): string {
   return $getState(node, hardLineBreakState) + '\n';
 }
 
-function exportTextFormat(
+function $exportTextFormat(
   node: TextNode,
   textContent: string,
   textTransformers: TextFormatTransformer[],
@@ -503,6 +508,43 @@ function exportTextFormat(
     output = shouldPreserveNewLines
       ? output.replace(/([*_`~])/g, '\\$1')
       : output.replace(/([*_`~\\])/g, '\\$1');
+    // When backslashes are kept as they are, the ones right before an escape
+    // added below are escaped too, or the last would escape the escape.
+    const escape = (backslashes: string, char: string) =>
+      (shouldPreserveNewLines
+        ? backslashes.replace(/\\/g, '\\\\')
+        : backslashes) +
+      '\\' +
+      char;
+    // Each bracket in a link's text, where one would close or open the link,
+    // and elsewhere a `]` before a `(`, where text would read as a link. Each
+    // run of backslashes is read once, which keeps a long run linear.
+    const link = $getInlineAncestor(node, $isLinkNode);
+    output = output.replace(
+      link && !$isAutoLinkNode(link)
+        ? /(\\*)([[\]])|\\+/g
+        : /(\\*)(\](?=\())|\\+/g,
+      (found, backslashes: string, bracket: string | undefined) =>
+        bracket === undefined ? found : escape(backslashes, bracket),
+    );
+    // A `!` before a link would make it an image.
+    if (output.endsWith('!') && $startsWithLink($getNextInline(node))) {
+      const start = output.length - 1;
+      let end = start;
+      while (end > 0 && output[end - 1] === '\\') {
+        end--;
+      }
+      output = output.slice(0, end) + escape(output.slice(end, start), '!');
+    }
+    // Text that reads as a character reference keeps its `&` (`\&#65;`,
+    // `\&amp;`).
+    output = output.replace(
+      /(\\*)&(#\d{1,7};|#x[\da-f]{1,6};|[a-z][\da-z]{0,31};)|\\+/gi,
+      (found, backslashes: string, reference: string | undefined) =>
+        reference === undefined || !isCharacterReference(reference)
+          ? found
+          : escape(backslashes, '&') + reference,
+    );
   }
 
   let leadingSpace: string;
@@ -521,10 +563,11 @@ function exportTextFormat(
   } else {
     // Extract leading and trailing whitespaces.
     // CommonMark flanking rules require formatting tags to be adjacent to non-whitespace characters.
-    const match = output.match(/^(\s*)(.*?)(\s*)$/s) || ['', '', output, ''];
-    leadingSpace = match[1];
-    trimmedOutput = match[2];
-    trailingSpace = match[3];
+    // `trim` drops what `\s` matches, in linear time, which a regex for the
+    // three parts is not on a long run of spaces inside.
+    trimmedOutput = output.trim();
+    leadingSpace = output.slice(0, output.length - output.trimStart().length);
+    trailingSpace = output.slice(leadingSpace.length + trimmedOutput.length);
     isWhitespaceOnly = trimmedOutput === '';
   }
 
@@ -534,8 +577,8 @@ function exportTextFormat(
   let closingTagsBefore = '';
   let closingTagsAfter = '';
 
-  const prevNode = getTextSibling(node, true);
-  const nextNode = getTextSibling(node, false);
+  const prevNode = $getTextSibling(node, true);
+  const nextNode = $getTextSibling(node, false);
 
   const applied = new Set();
 
@@ -557,7 +600,7 @@ function exportTextFormat(
     // whitespace-only nodes, so this guard only affects sliced content.
     if (
       !isWhitespaceOnly &&
-      checkHasFormat(node, format) &&
+      $checkHasFormat(node, format) &&
       !applied.has(format)
     ) {
       applied.add(format);
@@ -565,7 +608,7 @@ function exportTextFormat(
       // append the tag to openingTags, if it's not applied to the previous nodes,
       // or the nodes before that (which would result in an unclosed tag)
       if (
-        !checkHasFormat(prevNode, format) ||
+        !$checkHasFormat(prevNode, format) ||
         !unclosedTags.find(element => element.tag === tag)
       ) {
         unclosedTags.push({format, tag});
@@ -576,8 +619,8 @@ function exportTextFormat(
 
   // close any tags in the same order they were applied, if necessary
   for (let i = 0; i < unclosedTags.length; i++) {
-    const nodeHasFormat = hasFormat(node, unclosedTags[i].format);
-    const nextNodeHasFormat = hasFormat(nextNode, unclosedTags[i].format);
+    const nodeHasFormat = $hasFormat(node, unclosedTags[i].format);
+    const nextNodeHasFormat = $hasFormat(nextNode, unclosedTags[i].format);
 
     // prevent adding closing tag if next sibling will do it
     if (nodeHasFormat && nextNodeHasFormat) {
@@ -630,7 +673,7 @@ function exportTextFormat(
   );
 }
 
-function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
+function $getTextSibling(node: TextNode, backward: boolean): TextNode | null {
   const sibling = backward ? node.getPreviousSibling() : node.getNextSibling();
 
   if ($isTextNode(sibling)) {
@@ -640,15 +683,15 @@ function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
   return null;
 }
 
-function hasFormat(
+function $hasFormat(
   node: LexicalNode | null | undefined,
   format: TextFormatType,
 ): boolean {
   return $isTextNode(node) && node.hasFormat(format);
 }
 
-function checkHasFormat(n: TextNode | null, f: TextFormatType): boolean {
-  if (!hasFormat(n, f)) {
+function $checkHasFormat(n: TextNode | null, f: TextFormatType): boolean {
+  if (!$hasFormat(n, f)) {
     return false;
   }
   if (f === 'code') {
@@ -658,4 +701,43 @@ function checkHasFormat(n: TextNode | null, f: TextFormatType): boolean {
     return false;
   }
   return true;
+}
+
+/**
+ * The nearest ancestor of `node`, within its block, that passes `predicate`.
+ */
+function $getInlineAncestor<T extends LexicalNode>(
+  node: LexicalNode,
+  predicate: (candidate: LexicalNode | null) => candidate is T,
+): T | null {
+  for (let parent = node.getParent(); parent; parent = parent.getParent()) {
+    if (predicate(parent)) {
+      return parent;
+    }
+    if (!parent.isInline()) {
+      return null;
+    }
+  }
+  return null;
+}
+
+/** The inline node that follows `node` in its block, out of any wrapper. */
+function $getNextInline(node: LexicalNode): LexicalNode | null {
+  let current: LexicalNode = node;
+  while (!current.getNextSibling()) {
+    const parent = current.getParent();
+    if (!parent || !parent.isInline()) {
+      return null;
+    }
+    current = parent;
+  }
+  return current.getNextSibling();
+}
+
+/** Whether `node` is a link or an inline wrapper that starts with one. */
+function $startsWithLink(node: LexicalNode | null): boolean {
+  while ($isElementNode(node) && node.isInline() && !$isLinkNode(node)) {
+    node = node.getFirstChild();
+  }
+  return $isLinkNode(node);
 }

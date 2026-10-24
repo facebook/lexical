@@ -164,6 +164,18 @@ export default defineConfig({
         },
       },
       {
+        extends: true,
+        test: {
+          // Randomized checks against other implementations, too slow for
+          // every CI run: `pnpm run test-conformance`.
+          environment: 'jsdom',
+          include: ['packages/**/__tests__/conformance/**/*.test.ts'],
+          name: 'conformance',
+          pool: unitPool,
+          setupFiles: ['./vitest.setup.mts', './vitest.setup.node.mts'],
+        },
+      },
+      {
         define: {
           // https://react.dev/blog/2022/03/08/react-18-upgrade-guide#configuring-your-testing-environment
           IS_REACT_ACT_ENVIRONMENT: true,

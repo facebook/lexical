@@ -36,7 +36,6 @@ import {
   $createTextNode,
   $findMatchingParent,
   $getState,
-  $isLineBreakNode,
   $isTextNode,
   $setState,
   type BaseSelection,
@@ -49,7 +48,12 @@ import {
   type TextNode,
 } from 'lexical';
 
-import {isEmptyParagraph, unescapeText} from './utils';
+import {
+  $isEmptyParagraph,
+  isCharacterReference,
+  isEscaped,
+  unescapeText,
+} from './utils';
 
 export type Transformer =
   | ElementTransformer
@@ -326,60 +330,39 @@ export function parseMarkdownHardLineBreak(
     // escaped. `foo\\` is an escaped backslash — a literal `\` followed by an
     // ordinary (soft) line ending — so only an odd-length run counts.
     // https://spec.commonmark.org/0.31.2/#backslash-escapes
-    let backslashes = 0;
-    for (let i = line.length - 1; i >= 0 && line[i] === '\\'; i--) {
-      backslashes++;
-    }
-    return backslashes % 2 === 1 ? [line.slice(0, -1), '\\'] : null;
+    return isEscaped(line, line.length) ? [line.slice(0, -1), '\\'] : null;
   }
 
   const spaces = line.match(/^(.*?\S)( {2,})$/);
   return spaces ? [spaces[1], spaces[2]] : null;
 }
 
-function hasNonWhitespaceContentOnLine(
-  children: LexicalNode[],
-  endIndex: number,
-): boolean {
-  for (let i = endIndex - 1; i >= 0; i--) {
-    if ($isLineBreakNode(children[i])) {
-      return false;
-    }
-    if (/\S/.test(children[i].getTextContent())) {
-      return true;
-    }
+// The text nodes that hold the marker a line ends with, which is a hard line
+// break if the next line joins its paragraph and text if it doesn't.
+const hardLineBreakMarkers = new WeakSet<TextNode>();
+
+/**
+ * Sets the hard line break marker `textNode`, a line as written, ends with
+ * apart in a node of its own, before its escapes are read: once they are,
+ * an escaped backslash (`\\`) would read as one.
+ */
+export function $splitMarkdownHardLineBreakMarker(textNode: TextNode): void {
+  const hardLineBreak = parseMarkdownHardLineBreak(textNode.getTextContent());
+  if (hardLineBreak !== null && !textNode.hasFormat('code')) {
+    const marker = $createTextNode(hardLineBreak[1]);
+    hardLineBreakMarkers.add(marker);
+    textNode.setTextContent(hardLineBreak[0]).insertAfter(marker);
   }
-  return false;
 }
 
-function $extractMarkdownHardLineBreakMarker(
+export function $extractMarkdownHardLineBreakMarker(
   previousNode: ElementNode,
 ): MarkdownHardLineBreak | null {
-  const children = previousNode.getChildren();
-  const lastChildIndex = children.length - 1;
-  const lastChild = children[lastChildIndex];
-
-  if (!$isTextNode(lastChild)) {
-    return null;
+  const lastChild = previousNode.getLastChild();
+  if ($isTextNode(lastChild) && hardLineBreakMarkers.has(lastChild)) {
+    lastChild.remove();
+    return lastChild.getTextContent();
   }
-
-  const lastText = lastChild.getTextContent();
-  const hardLineBreak = parseMarkdownHardLineBreak(lastText);
-
-  if (hardLineBreak !== null) {
-    const [text, marker] = hardLineBreak;
-    lastChild.setTextContent(text);
-    return marker;
-  }
-
-  if (
-    /^ {2,}$/.test(lastText) &&
-    hasNonWhitespaceContentOnLine(children, lastChildIndex)
-  ) {
-    lastChild.setTextContent('');
-    return lastText;
-  }
-
   return null;
 }
 
@@ -621,7 +604,7 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
     let precedingBlock = previousNode;
     if (columns !== null) {
       if (importJoinsLooseLists) {
-        while (precedingBlock !== null && isEmptyParagraph(precedingBlock)) {
+        while (precedingBlock !== null && $isEmptyParagraph(precedingBlock)) {
           precedingBlock = precedingBlock.getPreviousSibling();
         }
       }
@@ -831,10 +814,10 @@ export const QUOTE: ElementTransformer = {
     if (isImport) {
       const previousNode = parentNode.getPreviousSibling();
       if ($isQuoteNode(previousNode)) {
-        previousNode.splice(previousNode.getChildrenSize(), 0, [
+        previousNode.append(
           $createMarkdownLineBreakNode(previousNode),
           ...children,
-        ]);
+        );
         parentNode.remove();
         return;
       }
@@ -1090,15 +1073,21 @@ export function getCodeSpanDelimiter(content: string): {
   fence: string;
   padded: string;
 } {
-  const backtickRuns = content.match(/`+/g);
-  const longestRun = backtickRuns
-    ? Math.max(...backtickRuns.map(run => run.length))
-    : 0;
+  // A loop, as one argument per run would overflow the stack.
+  let longestRun = 0;
+  for (const [run] of content.matchAll(/`+/g)) {
+    longestRun = Math.max(longestRun, run.length);
+  }
   const fence = '`'.repeat(longestRun + 1);
   const needsPadding =
     content.length === 0 ||
     content.includes('`') ||
-    (/^\s/.test(content) && /\s$/.test(content));
+    // A reader turns line endings into spaces, then strips one space
+    // (U+0020 only) from each end of a span that has something other than
+    // spaces, so only such a span needs padding.
+    (/^[ \r\n]/.test(content) &&
+      /[ \r\n]$/.test(content) &&
+      /[^ \r\n]/.test(content));
   const padded = needsPadding ? ` ${content} ` : content;
   return {fence, padded};
 }
@@ -1154,16 +1143,17 @@ export const ITALIC_UNDERSCORE: TextFormatTransformer = {
   type: 'text-format',
 };
 
-// `unescapeText` decodes a numeric character reference and a CommonMark reader
-// decodes the named ones too, so an `&` that begins one cannot be written raw
-// in a link destination or the URL comes back as the character it names. It
-// goes out as `&#38;` instead, which both of them read back as a single `&`.
+// `unescapeText` decodes a character reference as a CommonMark reader does,
+// so an `&` that begins one cannot be written raw in a link destination or
+// the URL comes back as the character it names. It goes out as `&#38;`
+// instead, which both of them read back as a single `&`.
 // An `&` that begins nothing is an ordinary character and stays as it is, so a
 // query string keeps the separators it was written with.
 function escapeCharacterReferences(value: string): string {
   return value.replace(
-    /&(?=#\d+;|#[Xx][\dA-Fa-f]+;|[A-Za-z][\dA-Za-z]*;)/g,
-    '&#38;',
+    /&(#\d{1,7};|#[Xx][\dA-Fa-f]{1,6};|[A-Za-z][\dA-Za-z]{0,31};)/g,
+    (found, reference: string) =>
+      isCharacterReference(reference) ? '&#38;' + reference : found,
   );
 }
 
@@ -1247,7 +1237,7 @@ export const LINK: TextMatchTransformer = {
   // are characters, which costs a quadratic walk of every run that never
   // reaches the closing parenthesis.
   importRegExp:
-    /(?:\[(.+?)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:[^"]*\\")*[^"]*)"|'((?:[^']*\\')*[^']*)'|\(((?:\\.|[^()\\])*)\)))?\s*)?\))/,
+    /(?:\[((?:\\.|[^\\\n])+?)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:[^"]*\\")*[^"]*)"|'((?:[^']*\\')*[^']*)'|\(((?:\\.|[^()\\])*)\)))?\s*)?\))/,
   regExp:
     /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:[^"]*\\")*[^"]*)"|'((?:[^']*\\')*[^']*)'|\(((?:\\.|[^()\\])*)\)))?\s*)?\))$/,
   replace: (textNode, match) => {
@@ -1274,29 +1264,42 @@ export const LINK: TextMatchTransformer = {
     const linkTitle =
       rawLinkTitle != null ? unescapeText(rawLinkTitle) : undefined;
     const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
-    const openBracketAmount = linkText.split('[').length - 1;
-    const closeBracketAmount = linkText.split(']').length - 1;
-    let parsedLinkText = linkText;
-    let outsideLinkText = '';
-    if (openBracketAmount < closeBracketAmount) {
-      return;
-    } else if (openBracketAmount > closeBracketAmount) {
-      const linkTextParts = linkText.split('[');
-      outsideLinkText = '[' + linkTextParts[0];
-      parsedLinkText = linkTextParts.slice(1).join('[');
+    // The link's text starts after the last `[` that no `]` after it
+    // closes, as CommonMark matches brackets, and what is before it stays
+    // text. An escaped bracket is text, and an inner `]` that closes the
+    // first `[` leaves no link.
+    let depth = 0;
+    let opener = -1;
+    for (let i = linkText.length - 1; i >= 0 && opener < 0; i--) {
+      const bracket = linkText[i];
+      if ((bracket !== '[' && bracket !== ']') || isEscaped(linkText, i)) {
+        continue;
+      }
+      if (bracket === ']') {
+        depth++;
+      } else if (depth) {
+        depth--;
+      } else {
+        opener = i;
+      }
     }
-    // Both new nodes stand in for the TextNode being replaced, so the text
-    // left outside the link carries its inline format just like the link's own
-    // text node does. Read the format before the replace below detaches it.
+    if (opener < 0 && depth) {
+      return;
+    }
+    const parsedLinkText = linkText.slice(opener + 1);
+    const outsideLinkText = opener < 0 ? '' : '[' + linkText.slice(0, opener);
+    // The link's text stands in for the TextNode being replaced, so it carries
+    // its inline format. Read the format before the replace below detaches it.
     const format = textNode.getFormat();
     const linkTextNode = $createTextNode(parsedLinkText);
     linkTextNode.setFormat(format);
     linkNode.append(linkTextNode);
-    textNode.replace(linkNode);
-
-    if (outsideLinkText) {
-      linkNode.insertBefore($createTextNode(outsideLinkText).setFormat(format));
-    }
+    // The text outside the link stays in the matched node, which the
+    // importer goes on to read.
+    (outsideLinkText
+      ? textNode.splitText(outsideLinkText.length)[1]
+      : textNode
+    ).replace(linkNode);
     return linkTextNode;
   },
   trigger: ')',
@@ -1357,7 +1360,8 @@ export function normalizeMarkdown(
   input: string,
   shouldMergeAdjacentLines = false,
 ): string {
-  const lines = input.split('\n');
+  // Each CommonMark line ending, CRLF and a lone CR too.
+  const lines = input.split(/\r\n?|\n/);
   let codeBlockFenceLength = 0;
   const sanitizedLines: string[] = [];
 
@@ -1413,8 +1417,9 @@ export function normalizeMarkdown(
       ORDERED_LIST_REGEX.test(line) ||
       UNORDERED_LIST_REGEX.test(line) ||
       CHECK_LIST_REGEX.test(line) ||
-      TABLE_ROW_REG_EXP.test(line) ||
-      isTableRowDivider(line) ||
+      // A table row may be indented by up to three spaces.
+      TABLE_ROW_REG_EXP.test(line.replace(/^ {1,3}/, '')) ||
+      isTableRowDivider(line.replace(/^ {1,3}/, '')) ||
       lastLineHasHardLineBreak ||
       !shouldMergeAdjacentLines ||
       TAG_START_REGEX.test(line) ||

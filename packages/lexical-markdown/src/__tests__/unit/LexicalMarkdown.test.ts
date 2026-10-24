@@ -829,6 +829,7 @@ describe('Markdown', () => {
     {
       html: '<p><span style="white-space: pre-wrap;">[foo </span><a href="/uri"><span style="white-space: pre-wrap;">bar</span></a><span style="white-space: pre-wrap;">](/uri)</span></p>',
       md: '[foo [bar](/uri)](/uri)',
+      mdAfterExport: '[foo [bar](/uri)\\](/uri)',
     },
     {
       // https://spec.commonmark.org/0.31.2/#link-destination allows a balanced
@@ -949,18 +950,74 @@ describe('Markdown', () => {
     {
       html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">[h]ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">h[e]llo</span></a></p>',
       md: '[[h]ello](https://lexical.dev)[h[e]llo](https://lexical.dev)',
+      mdAfterExport:
+        '[\\[h\\]ello](https://lexical.dev)[h\\[e\\]llo](https://lexical.dev)',
     },
     {
       html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">h[e[ll]]o</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
       md: '[h[e[ll]]o](https://lexical.dev)[world](https://lexical.dev)',
+      mdAfterExport:
+        '[h\\[e\\[ll\\]\\]o](https://lexical.dev)[world](https://lexical.dev)',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">[hello]](https://lexical.dev)</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
       md: '[hello]](https://lexical.dev)[world](https://lexical.dev)',
+      mdAfterExport:
+        '[hello]\\](https://lexical.dev)[world](https://lexical.dev)',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">[h</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
       md: '[h[ello](https://lexical.dev)[world](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[a*b </span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">c</span></a></p>',
+      md: '[a\\*b [c](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[</span><b><strong style="white-space: pre-wrap;">a</strong></b><span style="white-space: pre-wrap;"> </span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">c</span></a></p>',
+      md: '[**a** [c](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[a] </span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">b</span></a></p>',
+      md: '[a] [b](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[a [b </span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">c</span></a></p>',
+      md: '[a [b [c](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[a]] </span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">b</span></a></p>',
+      md: '[a]] [b](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[a](https://lexical.dev)</span></p>',
+      md: '\\[a](https://lexical.dev)',
+      mdAfterExport: '[a\\](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[a](https://lexical.dev)</span></p>',
+      md: '[a\\](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">[a </span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">b</span></a></p>',
+      md: '\\[a [b](https://lexical.dev)',
+      mdAfterExport: '[a [b](https://lexical.dev)',
+    },
+    {
+      html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">a](b)</span></a></p>',
+      md: '[a\\](b)](https://lexical.dev)',
+    },
+    {
+      html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">a]</span></a></p>',
+      md: '[a\\]](https://lexical.dev)',
+    },
+    {
+      html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">[a</span></a></p>',
+      md: '[\\[a](https://lexical.dev)',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">a!</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">x</span></a></p>',
+      md: 'a\\![x](https://lexical.dev)',
     },
     {
       html: '<p><i><em style="white-space: pre-wrap;">[h</em></i><a href="https://lexical.dev"><i><em style="white-space: pre-wrap;">ello</em></i></a></p>',
@@ -970,6 +1027,7 @@ describe('Markdown', () => {
     {
       html: '<p><span style="white-space: pre-wrap;">[](https://lexical.dev)</span></p>',
       md: '[](https://lexical.dev)',
+      mdAfterExport: '[\\](https://lexical.dev)',
     },
     {
       html: '<p><a href="https://lexical.dev"><b><strong style="white-space: pre-wrap;">link</strong></b></a><b><strong style="white-space: pre-wrap;">text</strong></b></p>',
@@ -1053,7 +1111,7 @@ describe('Markdown', () => {
       skipExport: true,
     },
     {
-      html: '<p><span style="white-space: pre-wrap;">foo</span><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;"> </span><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">bar</span><br><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">baz</span></p>',
+      html: '<p><span style="white-space: pre-wrap;">foo</span><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;"> </span><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">bar</span><br><span style="white-space: pre-wrap;">baz</span></p>',
       md: 'foo\t \tbar\n\tbaz',
       skipExport: true,
     },
@@ -1250,6 +1308,46 @@ describe('Markdown', () => {
 
     expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
       '<p><span style="white-space: pre-wrap;"># </span></p>',
+    );
+  });
+
+  it('keeps the whole line when an element transformer cancels its import', () => {
+    const CANCELED_HEADING: ElementTransformer = {
+      dependencies: [HeadingNode],
+      export: () => null,
+      regExp: /^#\s/,
+      replace: () => false,
+      type: 'element',
+    };
+    const editor = createTestEditor({nodes: [HeadingNode]});
+    editor.update(
+      () => $convertFromMarkdownString('# kept', [CANCELED_HEADING]),
+      {discrete: true},
+    );
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('# kept');
+  });
+
+  it('keeps the text an element transformer changed before cancelling', () => {
+    const REWRITING_CANCEL: ElementTransformer = {
+      dependencies: [HeadingNode],
+      export: () => null,
+      regExp: /^#\s/,
+      replace: (_parentNode, children) => {
+        const [text] = children;
+        if ($isTextNode(text)) {
+          text.setTextContent('rewritten ' + text.getTextContent());
+        }
+        return false;
+      },
+      type: 'element',
+    };
+    const editor = createTestEditor({nodes: [HeadingNode]});
+    editor.update(
+      () => $convertFromMarkdownString('# kept', [REWRITING_CANCEL]),
+      {discrete: true},
+    );
+    expect(editor.read(() => $getRoot().getTextContent())).toBe(
+      'rewritten kept',
     );
   });
 
@@ -2582,7 +2680,7 @@ describe('markdown whitespace import (default mode)', () => {
     ).toBe(md);
   }
 
-  it('preserves trailing whitespace on a standalone paragraph line (default mode)', () => {
+  it('drops trailing whitespace on a standalone paragraph line (default mode), as CommonMark does', () => {
     // A paragraph with trailing spaces, separated by an empty line from the next.
     const md = 'hello world   \n\nnext paragraph';
     const editor = createTestEditor();
@@ -2603,7 +2701,7 @@ describe('markdown whitespace import (default mode)', () => {
           HIGHLIGHT_TEXT_MATCH_IMPORT,
         ]),
       ),
-    ).toBe(md);
+    ).toBe('hello world\n\nnext paragraph');
   });
 
   it('preserves leading whitespace on a standalone paragraph line (default mode)', () => {
@@ -4048,6 +4146,11 @@ describe('link destination round trip', () => {
     // An `&` that begins no reference is ordinary, so a query string keeps the
     // separators it was written with.
     ['https://example.com/?a=1&b=2', '[x](https://example.com/?a=1&b=2)'],
+    // Nor do a name that is no HTML entity and a number that is too long.
+    [
+      'https://example.com/?a&nosuch;&#12345678;',
+      '[x](https://example.com/?a&nosuch;&#12345678;)',
+    ],
     [
       'https://example.com/?a=1&b=2;c=3',
       '[x](https://example.com/?a=1&b=2;c=3)',
@@ -4149,7 +4252,7 @@ describe('link title round trip', () => {
   }
 });
 
-describe('decimal character references that name no character', () => {
+describe('character references', () => {
   // `String.fromCodePoint` throws on a number past U+10FFFF, so one of these
   // in the text or a link used to abort the whole import. CommonMark reads at
   // most seven digits, and replaces U+0000 and an invalid code point with
@@ -4163,6 +4266,10 @@ describe('decimal character references that name no character', () => {
     ['a&#12345678;b', 'a&#12345678;b'],
     ['a&#1114111;b', 'a\u{10FFFF}b'],
     ['a&#35;b', 'a#b'],
+    // Hex and named references are read too, and a name that is no HTML
+    // entity stays text.
+    ['a&#x23;b&#X10FFFF;&#x110000;', 'a#b\u{10FFFF}\uFFFD'],
+    ['a&amp;b&copy;&nosuch;&amp', 'a&b\u00a9&nosuch;&amp'],
   ];
 
   for (const [md, text] of TEXT_CASES) {

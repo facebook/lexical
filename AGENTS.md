@@ -38,6 +38,7 @@ For E2E testing workflow:
 - `pnpm run prettier:fix` - Auto-fix formatting issues
 - `pnpm run flow` - Run a full foreground Flow check (does not reuse a server)
 - `pnpm run tsc` - Run TypeScript compiler
+- `pnpm run tsc-dev-examples` - Type-check each `dev-examples/*` app with its own tsconfig (the root `tsc` doesn't cover them)
 - `pnpm run ci-check` - Run all checks (TypeScript, Flow, Prettier, ESLint)
 
 **Never commit changes to `scripts/error-codes/codes.json`.**
@@ -167,6 +168,8 @@ Lexical is built around several key architectural concepts that work together:
 - Node transforms and command handlers (which have implicit update context)
 
 This is similar to React hooks' restrictions but enforces synchronous context instead of call order.
+
+Name every function you write that needs that context with the `$` prefix too, including private helpers and closures: any function that calls a `$` function (a `$is*` type guard included), a method of a node (`node.getTextContent()`, `node.hasFormat()`, ...), or a callback that does either (an import/export context's methods), since node methods read the active editor state. `@lexical/rules-of-lexical` only flags calls to `$` functions other than `$is*` guards, so lint does not catch a helper that reaches the state only through node methods, guards, or such callbacks. A function that takes the context itself (it calls `editor.update()` or `editor.read()`, or registers a listener) and a factory that only returns such a function keep plain names.
 
 **Double-Buffering Updates** - When `editor.update()` is called:
 1. Current EditorState is cloned as work-in-progress

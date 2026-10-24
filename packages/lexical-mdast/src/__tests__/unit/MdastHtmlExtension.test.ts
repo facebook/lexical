@@ -62,10 +62,13 @@ import {
   MdastExtension,
   MdastHtmlExtension,
   MdastShadowRootQuoteExtension,
+  MdastStrictTableExtension,
   MdastStrikethroughExtension,
   rawHtmlBlock,
   RenderContextMarkdownExport,
 } from '../../index';
+
+const gfmTable = (...rows: string[]) => rows.join('\n');
 
 // Probes ImportContextMarkdown: the same markup imports differently from
 // Markdown vs. a direct DOM/HTML import.
@@ -892,6 +895,34 @@ describe('MdastHtmlExtension', () => {
       // the sibling outside it sees the default.
       expect(editor.read(() => $getRoot().getTextContent())).toBe(
         'a saw:from-emphasis b saw:default',
+      );
+    });
+  });
+
+  it('moves a block raw HTML imports as in a cell out of the table', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          MdastCommonMarkExtension,
+          MdastExtension,
+          MdastHtmlExtension,
+          MdastStrictTableExtension,
+        ],
+        name: '[root]',
+      }),
+    );
+    editor.update(
+      () => $convertFromMarkdownString(gfmTable('| a |', '| - |', '| <hr> |')),
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect(
+        $getRoot()
+          .getChildren()
+          .map(child => child.getType()),
+      ).toEqual(['table', 'horizontalrule']);
+      expect($convertToMarkdownString()).toBe(
+        [gfmTable('| a |', '| - |', '|   |'), '***'].join('\n\n'),
       );
     });
   });

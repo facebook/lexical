@@ -1020,6 +1020,29 @@ describe('MdastStrictTableExtension', () => {
     ).toBe([table('| a | b |', '| - | - |', '| 1 | 2 |'), '***'].join('\n\n'));
   });
 
+  it('writes the row of a cell of only block decorators a selection ends in', () => {
+    using editor = createEditor(false);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(
+          table('| a | b |', '| - | - |', '| 1 | 2 |', '| 3 | 4 |'),
+        );
+        const [, [one], [three, four]] = $cells();
+        three.remove();
+        one.setRowSpan(2);
+        four.clear().append($createHorizontalRuleNode());
+        const selection = one.getAllTextNodes()[0].select(0, 0);
+        selection.focus.set(four.getKey(), 1, 'element');
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertSelectionToMarkdownString()).toBe(
+        [table('| 1 | 2 |', '| - | - |', '|   |   |'), '***'].join('\n\n'),
+      );
+    });
+  });
+
   it('copies a column of cells holding only block decorators', () => {
     using editor = createEditor(false);
     editor.update(

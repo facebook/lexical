@@ -230,6 +230,28 @@ function unescapePipes(value: string): string {
   return value.replace(/\\\|/g, '|');
 }
 
+/**
+ * The children of a cell for the nodes its content imports as: each run of
+ * inline nodes in a paragraph (at least one), and a block (which a DOM rule
+ * may read raw HTML as) on its own.
+ */
+function $cellBlocks(nodes: LexicalNode[]): LexicalNode[] {
+  const blocks: LexicalNode[] = [];
+  let paragraph: ParagraphNode | undefined;
+  for (const node of nodes) {
+    if ($isBlockLevelNode(node)) {
+      blocks.push(node);
+      paragraph = undefined;
+    } else {
+      if (!paragraph) {
+        blocks.push((paragraph = $createParagraphNode()));
+      }
+      paragraph.append(node);
+    }
+  }
+  return blocks.length > 0 ? blocks : [$createParagraphNode()];
+}
+
 const $importTable: MdastImportHandler<Table> = (node, ctx) => {
   const align = node.align || [];
   const replace = (child: MdastNode): MdastNode[] | undefined => {
@@ -279,17 +301,14 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
                 ? TableCellHeaderStates.ROW
                 : TableCellHeaderStates.NO_STATUS,
             ).setFormat(align[column] || ''),
-            [
-              $append(
-                $createParagraphNode(),
-                cell
-                  ? ctx.importChildren({
-                      ...cell,
-                      children: mapPhrasing(cell.children, replace),
-                    })
-                  : [],
-              ),
-            ],
+            $cellBlocks(
+              cell
+                ? ctx.importChildren({
+                    ...cell,
+                    children: mapPhrasing(cell.children, replace),
+                  })
+                : [],
+            ),
           );
         }),
       ),
@@ -350,7 +369,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     }
     return lines;
   };
-  const written: {cells: GridCell[]; lines: LexicalNode[][][]}[] = [];
+  const written: GridCell[][] = [];
   let from = Infinity;
   let to = -1;
   rows.forEach((row, rowIndex) => {
@@ -361,24 +380,23 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
       return;
     }
     const cells = grid[rowIndex];
-    const lines = cells.map(({cell}) => $linesOf(cell));
     // The cells that start in the row, if any, else those spanning it.
     const own = cells.some(({origin}) => origin);
     if (
       cells.length > 0 &&
       !cells.some(
-        ({origin}, column) => (origin || !own) && lines[column].length > 0,
+        ({cell, origin}) => (origin || !own) && $linesOf(cell).length > 0,
       )
     ) {
       return;
     }
-    lines.forEach((cellLines, column) => {
-      if (cellLines.length > 0) {
+    cells.forEach(({cell}, column) => {
+      if ($linesOf(cell).length > 0) {
         from = Math.min(from, column);
         to = Math.max(to, column);
       }
     });
-    written.push({cells, lines});
+    written.push(cells);
   });
   const exported = ctx.exportChildren(decorators);
   if (to < 0) {
@@ -391,17 +409,18 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   return [
     {
       align: columns(column => align[column] || null),
-      children: written.map(({cells, lines}) => ({
+      children: written.map(cells => ({
         children: columns(
           (column): TableCell => ({
             children:
               cells[column] && cells[column].origin
                 ? // The lines of the cell, separated by breaks (which the
                   // cell writer below writes as `<br>`).
-                  lines[column].flatMap((line, i): PhrasingContent[] =>
-                    i > 0
-                      ? [{type: 'break'}, ...ctx.exportInline(line)]
-                      : ctx.exportInline(line),
+                  $linesOf(cells[column].cell).flatMap(
+                    (line, i): PhrasingContent[] =>
+                      i > 0
+                        ? [{type: 'break'}, ...ctx.exportInline(line)]
+                        : ctx.exportInline(line),
                   )
                 : [],
             type: 'tableCell',

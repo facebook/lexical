@@ -411,6 +411,13 @@ function updatePublicPackage(pkg) {
   // Whitelist what ships to npm. The package root is the publish root, so
   // we no longer need a separate `npm/` copy step.
   packageJson.files = [...PUBLIC_FILES_FIELD];
+  if (pkg.getNpmName() === 'lexical') {
+    // Every app that uses Lexical installs `lexical`, so the full release
+    // history ships with it (node_modules/lexical/CHANGELOG.md) for people
+    // and tools upgrading from any version. prepare-release copies the
+    // root CHANGELOG.md into the package; the copy is not committed.
+    packageJson.files.push('CHANGELOG.md');
+  }
   ensureLicense(pkg);
 }
 

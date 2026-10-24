@@ -934,6 +934,23 @@ describe('MdastTableExtension', () => {
     ).toBe(table('|  a  |', '| :-: |', '|  y  |'));
   });
 
+  it('reads alignment from a quote around the text in a cell', () => {
+    expect(
+      convert(
+        table('| a |', '| - |', '| x |'),
+        () => {
+          const [[cell]] = $cells();
+          cell.clear().append(
+            $createQuoteNode()
+              .setFormat('center')
+              .append($createParagraphNode().append($createTextNode('a'))),
+          );
+        },
+        false,
+      ),
+    ).toBe(table('|  a  |', '| :-: |', '|  x  |'));
+  });
+
   it('reads a negative row span as 1', () => {
     expect(
       convert(

@@ -94,36 +94,32 @@ function mapPhrasing(
 }
 
 /**
- * The first block element in `parent` holding no block element (block
- * decorators move out of a cell), as in the first item of a list.
+ * The format of the text in a cell: that of the block its first line is in,
+ * or of the nearest block around it in the cell that has one, or else the
+ * cell's.
  */
-function $firstBlock(parent: ElementNode): ElementNode | undefined {
-  for (
-    let child = parent.getFirstChild();
-    child;
-    child = child.getNextSibling()
-  ) {
-    if ($isElementNode(child) && !child.isInline()) {
-      return $firstBlock(child) || child;
-    }
+function $cellFormat(cell: TableCellNode): ElementFormatType {
+  let node = $cellLines(cell).owners[0];
+  while (!$isTableCellNode(node) && !node.getFormatType()) {
+    node = node.getParentOrThrow();
   }
-  return undefined;
+  // A nested table's cell has its own column's.
+  return ($isTableCellNode(node) ? cell : node).getFormatType();
 }
 
 /**
  * The alignment of each column: that of the first cell from the top that
  * starts in it and has a format (its header cell's, unless a row was
  * inserted above it), none for a format GFM has no alignment for. A cell
- * has its first block's format, if the block has one (aligning the text in
- * it, or pasting an aligned table, sets it), or else its own.
+ * has the format of its text (which aligning the text, or pasting an
+ * aligned table, sets).
  */
 function $columnAlign(grid: GridCell[][]): AlignType[] {
   const align: AlignType[] = [];
   grid.forEach(cells =>
     cells.forEach(({cell, origin}, column) => {
       if (origin && align[column] === undefined) {
-        const block = $firstBlock(cell);
-        const format = (block && block.getFormatType()) || cell.getFormatType();
+        const format = $cellFormat(cell);
         if (format) {
           align[column] = gfmAlign(format);
         }
@@ -198,14 +194,14 @@ function $cellLines(cell: TableCellNode): {
   blocks: Map<string, [number, number]>;
   decorators: LexicalNode[];
   lines: LexicalNode[][];
-  owners: LexicalNode[];
+  owners: ElementNode[];
 } {
   const lines: LexicalNode[][] = [];
-  const owners: LexicalNode[] = [];
+  const owners: ElementNode[] = [];
   const blocks = new Map<string, [number, number]>();
   const decorators: LexicalNode[] = [];
   let line: LexicalNode[] | undefined;
-  const $visit = (node: LexicalNode, owner: LexicalNode) => {
+  const $visit = (node: LexicalNode, owner: ElementNode) => {
     if (!$isBlockLevelNode(node)) {
       if (!line) {
         lines.push((line = []));
@@ -579,7 +575,7 @@ function $normalizeTable(table: TableNode): void {
       }
       // Each line of the cell, joined by line breaks. A selection point on
       // a block being removed moves to the same place in its lines.
-      const {blocks, decorators, lines} = $cellLines(cell);
+      const {blocks, decorators, lines, owners} = $cellLines(cell);
       const points = selectionPoints.filter(
         point =>
           point.type === 'element' &&
@@ -591,14 +587,11 @@ function $normalizeTable(table: TableNode): void {
           ? element.getChildAtIndex(point.offset)
           : null;
       });
-      // The paragraph takes the text format of the cell's first block, the
-      // format text typed into an empty one gets.
-      const block = $firstBlock(cell);
-      const joined = block
-        ? $createParagraphNode()
-            .setTextFormat(block.getTextFormat())
-            .setTextStyle(block.getTextStyle())
-        : $createParagraphNode();
+      // The paragraph takes the text format of the block the first line is
+      // in, the format text typed into an empty one gets.
+      const joined = $createParagraphNode()
+        .setTextFormat(owners[0].getTextFormat())
+        .setTextStyle(owners[0].getTextStyle());
       const ends = lines.map((line, i) => {
         if (i > 0) {
           joined.append($createLineBreakNode());
@@ -740,8 +733,9 @@ function $markTableDirty(node: LexicalNode): void {
  * GFM can: a cell's blocks and line breaks as lines separated by `<br>`, a
  * merged cell with empty cells where it spans, block decorators in a cell
  * after the table, and as a column's alignment, that of the first cell from
- * the top that starts in the column and has a format (its first block's, or
- * else its own), none for one GFM can't express. Add
+ * the top that starts in the column and has a format (that of the block
+ * its first line is in, or of a block around it, or else its own), none for
+ * one GFM can't express. Add
  * {@link MdastStrictTableExtension} to keep tables in the editor to what GFM
  * holds.
  *

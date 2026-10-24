@@ -71,11 +71,11 @@ Confirm Chrome visibility and rollout in the Developer Dashboard. Visibility cha
 
 ### Marketplace access
 
-Marketplace governance is shared between Meta and the [EPAM Open Source Office](https://www.epam.com/open-source). For account access, reach out on the [Lexical Discord](https://discord.gg/KmG4wQnnD9).
+Marketplace governance is shared between Meta and the [EPAM Open Source Office](https://www.epam.com/open-source).
 
-An admin can invite any Google account to a Chrome publisher, so the request flow is: enable [2-Step Verification](https://support.google.com/accounts/answer/185839) on your Google account, then ask a [publisher administrator](https://developer.chrome.com/docs/webstore/share-ownership) to invite you with the role you need — **Item Manager** to upload packages and update metadata, **Editor** to also change publisher settings, **Admin** to also manage members.
+An admin can invite any Google account to a Chrome publisher, so the request flow is: enable [2-Step Verification](https://support.google.com/accounts/answer/185839) on your Google account, then ping in the [Lexical Discord](https://discord.gg/KmG4wQnnD9) to ask to be added.
 
-For Firefox, enable two-factor authentication, set a display name, and provide your Mozilla account email to an [existing maintainer](https://addons.mozilla.org/en-US/developers/addon/lexical-developer-tools/ownership) — [Vladlen Fedosov](mailto:vladlen_fedosov@epam.com), [Sherry Wong](mailto:potatowagon@meta.com) or [Gerard Rovira](mailto:gerardrovira@meta.com).
+For Firefox, enable two-factor authentication, set a display name, then ping in the [Lexical Discord](https://discord.gg/KmG4wQnnD9) to ask to be added.
 
 ## Design
 

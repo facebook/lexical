@@ -99,6 +99,7 @@ const sidebars = {
         'extensions/signals',
         'extensions/peer-dependencies',
         'extensions/included-extensions',
+        'extensions/block-ids',
         'extensions/design',
         'extensions/faq',
       ],
@@ -135,6 +136,7 @@ const sidebars = {
       items: [
         'collaboration/react',
         'collaboration/comments',
+        'collaboration/block-ids',
         'collaboration/faq',
       ],
       label: 'Collaboration',

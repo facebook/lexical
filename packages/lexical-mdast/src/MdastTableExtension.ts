@@ -44,6 +44,7 @@ import {
   COMMAND_PRIORITY_LOW,
   defineExtension,
   type ElementFormatType,
+  type ElementNode,
   FORMAT_ELEMENT_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
@@ -92,6 +93,16 @@ function mapPhrasing(
   return (changed ? mapped : nodes) as PhrasingContent[];
 }
 
+/** The first block element in a cell (block decorators move out of it). */
+function $firstBlock(cell: TableCellNode): ElementNode | undefined {
+  return cell
+    .getChildren()
+    .find(
+      (child): child is ElementNode =>
+        $isElementNode(child) && !child.isInline(),
+    );
+}
+
 /**
  * The alignment of each column: that of the first cell from the top that
  * starts in it and has a format (its header cell's, unless a row was
@@ -104,10 +115,8 @@ function $columnAlign(grid: GridCell[][]): AlignType[] {
   grid.forEach(cells =>
     cells.forEach(({cell, origin}, column) => {
       if (origin && align[column] === undefined) {
-        const block = cell.getFirstChild();
-        const format =
-          ($isElementNode(block) && block.getFormatType()) ||
-          cell.getFormatType();
+        const block = $firstBlock(cell);
+        const format = (block && block.getFormatType()) || cell.getFormatType();
         if (format) {
           align[column] = gfmAlign(format);
         }
@@ -577,10 +586,11 @@ function $normalizeTable(table: TableNode): void {
       });
       // The paragraph takes the text format of the cell's first block, the
       // format text typed into an empty one gets.
-      const joined = $isElementNode(paragraph)
+      const block = $firstBlock(cell);
+      const joined = block
         ? $createParagraphNode()
-            .setTextFormat(paragraph.getTextFormat())
-            .setTextStyle(paragraph.getTextStyle())
+            .setTextFormat(block.getTextFormat())
+            .setTextStyle(block.getTextStyle())
         : $createParagraphNode();
       const ends = lines.map((line, i) => {
         if (i > 0) {

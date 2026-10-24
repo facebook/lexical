@@ -919,6 +919,15 @@ describe('MdastTableExtension', () => {
       );
     });
   });
+  it('reads a negative row span as 1', () => {
+    expect(
+      convert(
+        table('| a | b |', '| - | - |', '| 1 | 2 |'),
+        () => $cells()[0][0].setRowSpan(-1),
+        false,
+      ),
+    ).toBe(table('| a | b |', '| - | - |', '| 1 | 2 |'));
+  });
 });
 
 describe('MdastStrictTableExtension', () => {
@@ -1105,6 +1114,32 @@ describe('MdastStrictTableExtension', () => {
     ).toBe([table('|   |', '| - |'), '***'].join('\n\n'));
   });
 
+  it('reads alignment and text format from the first block element in a cell', () => {
+    using editor = createEditor(true);
+    editor.update(
+      () => {
+        $convertFromMarkdownString(table('| a |', '| - |', '| x |'));
+        const [header] = $cells()[0];
+        const paragraph = $assertNodeType(
+          header.getFirstChild(),
+          $isElementNode,
+        );
+        paragraph.setFormat('right').setTextFormat(IS_BOLD);
+        paragraph.insertBefore($createHorizontalRuleNode());
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(
+        [table('|  a |', '| -: |', '|  x |'), '***'].join('\n\n'),
+      );
+      const [header] = $cells()[0];
+      expect(
+        $assertNodeType(header.getFirstChild(), $isElementNode).getTextFormat(),
+      ).toBe(IS_BOLD);
+    });
+  });
+
   it('moves a caret on a block of only block decorators in a cell', () => {
     using editor = createEditor(true);
     editor.update(
@@ -1139,16 +1174,6 @@ describe('MdastStrictTableExtension', () => {
         one.setColSpan(2);
       }),
     ).toBe(table('|  a  |   |', '| :-: | - |', '|  1  |   |'));
-  });
-
-  it('reads a negative row span as 1', () => {
-    expect(
-      convert(
-        table('| a | b |', '| - | - |', '| 1 | 2 |'),
-        () => $cells()[0][0].setRowSpan(-1),
-        false,
-      ),
-    ).toBe(table('| a | b |', '| - | - |', '| 1 | 2 |'));
   });
 
   it('splits a merged cell loaded with a span past the last row', () => {

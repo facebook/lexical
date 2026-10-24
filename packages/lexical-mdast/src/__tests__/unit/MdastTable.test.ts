@@ -351,11 +351,11 @@ describe('MdastTableExtension', () => {
           $assertNodeType(
             $cells()[0][0].getFirstChild(),
             $isElementNode,
-          ).setFormat('start');
+          ).setFormat('justify');
           $assertNodeType(
             $cells()[1][0].getFirstChild(),
             $isElementNode,
-          ).setFormat('start');
+          ).setFormat('justify');
         },
         false,
       ),
@@ -974,6 +974,32 @@ describe('MdastTableExtension', () => {
         false,
       ),
     ).toBe(table('| p |', '| - |', '| x |'));
+  });
+
+  it('reads a start format as none, and a quote around a nested table', () => {
+    expect(
+      convert(
+        table('| a | b |', '| :-: | - |', '| 1 | 2 |'),
+        () => {
+          const [[a, b]] = $cells();
+          $assertNodeType(a.getFirstChild(), $isElementNode).setFormat('start');
+          b.clear().append(
+            $createQuoteNode()
+              .setFormat('right')
+              .append(
+                $createTableNode().append(
+                  $createTableRowNode().append(
+                    $createTableCellNode().append(
+                      $createParagraphNode().append($createTextNode('p')),
+                    ),
+                  ),
+                ),
+              ),
+          );
+        },
+        false,
+      ),
+    ).toBe(table('|  a  |  p |', '| :-: | -: |', '|  1  |  2 |'));
   });
 
   it('reads a negative row span as 1', () => {

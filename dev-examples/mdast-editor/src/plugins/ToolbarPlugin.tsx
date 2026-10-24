@@ -70,14 +70,14 @@ type InsertType = (typeof INSERT_TYPES)[number]['value'];
 
 function applyInsert(editor: LexicalEditor, type: InsertType): void {
   // A GFM table cell holds no blocks (MdastStrictTableExtension would
-  // flatten them into lines).
+  // flatten them into lines); these insert at the selection's focus.
   if (
-    (type === 'details' || type === 'alert' || type === 'table') &&
+    (type === 'details' || type === 'alert') &&
     editor.read(() => {
       const selection = $getSelection();
       return (
-        $isRangeSelection(selection) &&
-        $findCellNode(selection.anchor.getNode()) !== null
+        ($isRangeSelection(selection) || $isTableSelection(selection)) &&
+        $findCellNode(selection.focus.getNode()) !== null
       );
     })
   ) {

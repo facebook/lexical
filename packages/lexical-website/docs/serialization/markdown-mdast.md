@@ -120,7 +120,8 @@ breaks, thematic break marker, `_` vs `*` emphasis, and link style
 alignment is written from the first cell from the top that starts in the
 column and has an element format (that of the block holding the cell's
 first line, or of the nearest block around it with one, or else of the
-cell); a format GFM can't express leaves the column unaligned. Normalization is never forced (unless you add
+cell, where start and end count as none); a format GFM can't express
+leaves the column unaligned. Normalization is never forced (unless you add
 `MdastStrictTableExtension`, which keeps tables in the editor to what a
 GFM table holds); nodes created in the editor defer to the
 document-level serialization options, which can be configured by

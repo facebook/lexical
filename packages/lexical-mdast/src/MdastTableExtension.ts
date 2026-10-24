@@ -96,18 +96,22 @@ function mapPhrasing(
 /**
  * The format of the text in a cell: that of the block its first line is in,
  * or of the nearest block around it in the cell that has one, or else the
- * cell's.
+ * cell's. A start or end format (as pasted HTML often has) counts as none.
  */
 function $cellFormat(
   cell: TableCellNode,
   owner: ElementNode = $cellLines(cell).owners[0],
 ): ElementFormatType {
-  // Text in a nested table has that table's alignment, not this one's.
-  let node = cell.is($findCellNode(owner)) ? owner : cell;
-  while (!node.is(cell) && !node.getFormatType()) {
-    node = node.getParentOrThrow();
+  const formatOf = (node: ElementNode) => {
+    const format = node.getFormatType();
+    return format === 'start' || format === 'end' ? '' : format;
+  };
+  let format: ElementFormatType = '';
+  for (let node = owner; !node.is(cell); node = node.getParentOrThrow()) {
+    // Text in a nested table has that table's alignment, not this one's.
+    format = $isTableCellNode(node) ? '' : format || formatOf(node);
   }
-  return node.getFormatType();
+  return format || formatOf(cell);
 }
 
 /**
@@ -353,27 +357,31 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   // The lines of a cell, from the first line a selection export reaches to
   // the last (an empty one by its block); the block decorators it reaches
   // are collected.
-  const cellsLines = new Map<TableCellNode, LexicalNode[][]>();
-  // The block each cell's first line is in, for its alignment.
-  const firstOwners = new Map<TableCellNode, ElementNode>();
+  // Also keeps the block each cell's first line is in, for its alignment.
+  const cellsLines = new Map<
+    TableCellNode,
+    {lines: LexicalNode[][]; owner: ElementNode}
+  >();
   const $linesOf = (cell: TableCellNode) => {
-    let lines = cellsLines.get(cell);
-    if (!lines) {
+    let cached = cellsLines.get(cell);
+    if (!cached) {
       const cellLines = $cellLines(cell);
-      firstOwners.set(cell, cellLines.owners[0]);
       const reached = cellLines.lines.map((line, i) =>
         line.length > 0
           ? line.some(ctx.isIncluded)
           : ctx.isIncluded(cellLines.owners[i]),
       );
-      lines = cellLines.lines.slice(
-        reached.indexOf(true),
-        reached.lastIndexOf(true) + 1,
-      );
-      cellsLines.set(cell, lines);
+      cached = {
+        lines: cellLines.lines.slice(
+          reached.indexOf(true),
+          reached.lastIndexOf(true) + 1,
+        ),
+        owner: cellLines.owners[0],
+      };
+      cellsLines.set(cell, cached);
       decorators.push(...cellLines.decorators.filter(ctx.isIncluded));
     }
-    return lines;
+    return cached.lines;
   };
   const written: GridCell[][] = [];
   let from = Infinity;
@@ -412,7 +420,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   const columns = <T>(map: (column: number) => T) =>
     Array.from({length: to - from + 1}, (_, i) => map(from + i));
   const align = $columnAlign(grid, cell =>
-    $cellFormat(cell, firstOwners.get(cell)),
+    $cellFormat(cell, (cellsLines.get(cell) || {owner: undefined}).owner),
   );
   return [
     {

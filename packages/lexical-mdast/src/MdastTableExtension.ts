@@ -108,8 +108,9 @@ function $cellFormat(
   };
   let format: ElementFormatType = '';
   for (let node = owner; !node.is(cell); node = node.getParentOrThrow()) {
-    // Text in a nested table has that table's alignment, not this one's.
-    format = $isTableCellNode(node) ? '' : format || formatOf(node);
+    // Text in a nested table has that table's alignment, not this one's,
+    // and the table's own format places it.
+    format = $isTableNode(node) ? '' : format || formatOf(node);
   }
   return format || formatOf(cell);
 }
@@ -419,9 +420,10 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   // The columns from the first a selection export reaches to the last.
   const columns = <T>(map: (column: number) => T) =>
     Array.from({length: to - from + 1}, (_, i) => map(from + i));
-  const align = $columnAlign(grid, cell =>
-    $cellFormat(cell, (cellsLines.get(cell) || {owner: undefined}).owner),
-  );
+  const align = $columnAlign(grid, cell => {
+    const cached = cellsLines.get(cell);
+    return $cellFormat(cell, cached ? cached.owner : undefined);
+  });
   return [
     {
       align: columns(column => align[column] || null),
@@ -753,8 +755,9 @@ function $markTableDirty(node: LexicalNode): void {
  * merged cell with empty cells where it spans, block decorators in a cell
  * after the table, and as a column's alignment, that of the first cell from
  * the top that starts in the column and has a format (that of the block
- * its first line is in, or of a block around it, or else its own), none for
- * one GFM can't express. Add
+ * its first line is in, or of a block around it outside any nested table,
+ * or else its own, where start and end count as none), none for one GFM
+ * can't express. Add
  * {@link MdastStrictTableExtension} to keep tables in the editor to what GFM
  * holds.
  *

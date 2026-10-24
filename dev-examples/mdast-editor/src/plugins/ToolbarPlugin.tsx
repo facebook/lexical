@@ -68,19 +68,23 @@ const INSERT_TYPES = [
 
 type InsertType = (typeof INSERT_TYPES)[number]['value'];
 
+/**
+ * Whether the selection's focus, where blocks are inserted, is in a table
+ * cell: a GFM cell holds no blocks (MdastStrictTableExtension would flatten
+ * them into lines).
+ */
+function isFocusInCell(editor: LexicalEditor): boolean {
+  return editor.read(() => {
+    const selection = $getSelection();
+    return (
+      ($isRangeSelection(selection) || $isTableSelection(selection)) &&
+      $findCellNode(selection.focus.getNode()) !== null
+    );
+  });
+}
+
 function applyInsert(editor: LexicalEditor, type: InsertType): void {
-  // A GFM table cell holds no blocks (MdastStrictTableExtension would
-  // flatten them into lines); these insert at the selection's focus.
-  if (
-    (type === 'details' || type === 'alert') &&
-    editor.read(() => {
-      const selection = $getSelection();
-      return (
-        ($isRangeSelection(selection) || $isTableSelection(selection)) &&
-        $findCellNode(selection.focus.getNode()) !== null
-      );
-    })
-  ) {
+  if ((type === 'details' || type === 'alert') && isFocusInCell(editor)) {
     return;
   }
   switch (type) {
@@ -169,6 +173,9 @@ function applyTableAction(editor: LexicalEditor, action: TableAction): void {
 }
 
 function applyBlockType(editor: LexicalEditor, type: BlockType): void {
+  if (type !== 'paragraph' && isFocusInCell(editor)) {
+    return;
+  }
   switch (type) {
     case 'paragraph':
       editor.dispatchCommand(REMOVE_LIST_COMMAND);

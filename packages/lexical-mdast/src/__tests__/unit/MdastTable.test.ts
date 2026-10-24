@@ -1002,6 +1002,29 @@ describe('MdastTableExtension', () => {
     ).toBe(table('|  a  |  p |', '| :-: | -: |', '|  1  |  2 |'));
   });
 
+  it('reads no alignment from the format placing a nested table', () => {
+    expect(
+      convert(
+        table('| a |', '| - |', '| x |'),
+        () => {
+          const [[cell]] = $cells();
+          cell.clear().append(
+            $createTableNode()
+              .setFormat('center')
+              .append(
+                $createTableRowNode().append(
+                  $createTableCellNode().append(
+                    $createParagraphNode().append($createTextNode('p')),
+                  ),
+                ),
+              ),
+          );
+        },
+        false,
+      ),
+    ).toBe(table('| p |', '| - |', '| x |'));
+  });
+
   it('reads a negative row span as 1', () => {
     expect(
       convert(

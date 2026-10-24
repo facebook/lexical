@@ -636,6 +636,9 @@ export const RenderContextMarkdownSelection = createRenderState(
   (): BaseSelection | null => null,
 );
 
+/** The selection exports running, for whole-document exports run in one. */
+let selectionExports = 0;
+
 export function createMdastExport(compiled: CompiledMdast): {
   $exportToMdast: (node?: ElementNode) => Root;
   $exportToMarkdown: (node?: ElementNode) => string;
@@ -682,8 +685,8 @@ export function createMdastExport(compiled: CompiledMdast): {
   };
 
   // A whole-document export is one even when a handler runs it during a
-  // selection export, which needs no active editor otherwise.
-  let selectionExports = 0;
+  // selection export (of any editor), which needs no active editor
+  // otherwise.
   const $asDocument = <T>(f: () => T): T =>
     selectionExports > 0
       ? $withRenderContext([

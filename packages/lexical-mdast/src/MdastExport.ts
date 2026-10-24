@@ -7,7 +7,12 @@
  */
 
 import type {CompiledMdast, MdastExportContext, MdastNode} from './types';
-import type {BaseSelection, ElementNode, LexicalNode} from 'lexical';
+import type {
+  BaseSelection,
+  ElementNode,
+  LexicalEditor,
+  LexicalNode,
+} from 'lexical';
 import type {
   BlockContent,
   Break,
@@ -33,6 +38,7 @@ import {
 } from '@lexical/html';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
+  $getEditor,
   $getRoot,
   $getSelection,
   $getState,
@@ -636,8 +642,11 @@ export const RenderContextMarkdownSelection = createRenderState(
   (): BaseSelection | null => null,
 );
 
-/** The selection exports running, for whole-document exports run in one. */
-let selectionExports = 0;
+/**
+ * The editors of the selection exports running, for whole-document exports
+ * run in one.
+ */
+const selectionEditors: LexicalEditor[] = [];
 
 export function createMdastExport(compiled: CompiledMdast): {
   $exportToMdast: (node?: ElementNode) => Root;
@@ -685,13 +694,13 @@ export function createMdastExport(compiled: CompiledMdast): {
   };
 
   // A whole-document export is one even when a handler runs it during a
-  // selection export (of any editor), which needs no active editor
-  // otherwise.
+  // selection export; it needs no active editor itself.
   const $asDocument = <T>(f: () => T): T =>
-    selectionExports > 0
-      ? $withRenderContext([
-          contextValue(RenderContextMarkdownSelection, null),
-        ])(f)
+    selectionEditors.length > 0
+      ? $withRenderContext(
+          [contextValue(RenderContextMarkdownSelection, null)],
+          selectionEditors[selectionEditors.length - 1],
+        )(f)
       : f();
 
   const $exportToMdast = (node?: ElementNode): Root =>
@@ -718,18 +727,20 @@ export function createMdastExport(compiled: CompiledMdast): {
     // serialization — runs under a render context carrying the selection,
     // so export rules and contributed to-markdown handlers can scope their
     // output to a selection export.
-    selectionExports++;
+    const editor = $getEditor();
+    selectionEditors.push(editor);
     try {
-      return $withRenderContext([
-        contextValue(RenderContextMarkdownSelection, selection),
-      ])(() =>
+      return $withRenderContext(
+        [contextValue(RenderContextMarkdownSelection, selection)],
+        editor,
+      )(() =>
         $serialize(
           $toMdast(root, createNodeExporter(compiled, selection)),
           root,
         ),
       );
     } finally {
-      selectionExports--;
+      selectionEditors.pop();
     }
   };
 

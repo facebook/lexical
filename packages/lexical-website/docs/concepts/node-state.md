@@ -319,6 +319,56 @@ source, it is only parsed once the first time it is read.
 Values that do not come from external sources are not parsed, and
 values that are not used are never parsed.
 
+## Set-valued state
+
+For state that is a small set of strings, such as the ids of the comments on
+a piece of text or a few tags, use `arraySetValue` (experimental) with an
+item schema:
+
+```ts
+import {$getState, $setState, arraySetValue, createState, stringValue} from 'lexical';
+
+const tagsState = createState('tags', {parse: arraySetValue(stringValue())});
+//    ^? StateConfig<'tags', readonly string[]>
+
+$setState(node, tagsState, ['b', 'a', 'a']);
+$getState(node, tagsState); // ['a', 'b']
+```
+
+The value is an array used as a set: it is sorted (by UTF-16 code unit) and
+has no duplicates, so its order does not matter. Parsing drops duplicates
+and entries the item schema does not accept, and a value written with
+`$setState` is put into the same form, so `['b', 'a', 'a']` is stored, read
+back and compared as `['a', 'b']`. Two values are equal when they have the
+same members, the empty array is the default (and so is left out of the
+JSON), and the JSON is the same sorted array (`"$": {"tags": ["a", "b"]}`),
+so equal sets always serialize identically.
+
+The value is frozen, so changing it in place (`push`, `sort`, assigning an
+index) throws in strict mode code, which includes every ES module. To change
+it, write a new array with `$setState`:
+
+```ts
+$setState(node, tagsState, (prev) => [...prev, 'c']);
+$setState(node, tagsState, (prev) => prev.filter((tag) => tag !== 'a'));
+```
+
+It is meant for small sets. A large set does not belong in NodeState: every
+change builds and stores a new copy of the whole array.
+
+Declare the state in the node's `$config` `stateConfigs` so that JSON is
+parsed, and so written back canonical, when it is loaded; like any
+NodeState, a value that is neither declared nor read is written back as it
+was read. `arraySetValue` must be the whole value of a `createState`; it
+cannot be nested in another schema or used for a node property. The item
+schema must produce strings; one that declines some strings in its
+`accepts` (a hand-written schema) makes parsing drop them, which is how a
+set can admit only well-formed members.
+
+The schema says the state is a set: `stateConfig.schema?.meta.kind === 'set'`
+(with `meta.item`) marks the value as a set whose members are independent,
+so code that stores or merges values can treat each member separately.
+
 ## Capabilities
 
 Current:

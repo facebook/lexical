@@ -267,6 +267,7 @@ export {
   aliasedValue,
   aliasTableOf,
   type AnySerializationSchema,
+  arraySetValue,
   arrayValue,
   booleanValue,
   type ComposedSchemaFields,

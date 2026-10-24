@@ -132,7 +132,11 @@ const sidebars = {
       type: 'category',
     },
     {
-      items: ['collaboration/react', 'collaboration/faq'],
+      items: [
+        'collaboration/react',
+        'collaboration/comments',
+        'collaboration/faq',
+      ],
       label: 'Collaboration',
       type: 'category',
     },

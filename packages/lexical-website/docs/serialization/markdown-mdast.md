@@ -118,8 +118,8 @@ info-string meta, setext vs ATX headings, hard-break style, soft line
 breaks, thematic break marker, `_` vs `*` emphasis, and link style
 (`[text](url)` vs `<autolink>` vs bare GFM literal). Export rewrites as
 little as it can: text both bold and italic is written as emphasis around
-strong, so that `***both***` round-trips (`**_both_**` comes back as
-`_**both**_`), and GFM tables are written as below. Nodes created in the
+strong (`**_both_**` comes back as `_**both**_`), and GFM tables are
+written as below. Nodes created in the
 editor defer to the document-level
 serialization options, which can be configured by contributing
 `mdast-util-to-markdown` options through `toMarkdownExtensions`.

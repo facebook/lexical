@@ -31,6 +31,7 @@ import {
   type TableRowNode,
 } from '@lexical/table';
 import {
+  $createLineBreakNode,
   $createNodeSelection,
   $createParagraphNode,
   $createTextNode,
@@ -379,12 +380,15 @@ describe('MdastTableExtension', () => {
           .clear()
           .append(
             $createParagraphNode(),
+            $createParagraphNode().append($createLineBreakNode()),
             $createParagraphNode()
               .setFormat('center')
               .append($createTextNode('H')),
           );
       }),
-    ).toBe(table('| <br>H |', '| :---: |', '|   x   |'));
+    ).toBe(
+      table('| <br><br><br>H |', '| :-----------: |', '|       x       |'),
+    );
   });
 
   it('skips what isn’t a row or cell', () => {

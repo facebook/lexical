@@ -52,8 +52,7 @@ and resumes normal persistence.
 
 The legacy example's `MarkdownExtension.ts` is ~240 lines; the equivalent
 [`MdastEditorExtension.ts`](./src/extensions/MdastEditorExtension.ts) here is
-example plumbing only (the preview signal, two toolbar commands, and
-`TableExtension` for table editing), because
+example plumbing only (the preview signal and two toolbar commands), because
 `@lexical/mdast` ships extension-ready:
 
 - **No transformer list to curate.** Depending on `MdastShortcutsExtension`

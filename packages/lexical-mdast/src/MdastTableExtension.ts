@@ -32,6 +32,7 @@ import {
   $createParagraphNode,
   $findMatchingParent,
   $isElementNode,
+  $isLineBreakNode,
   $isNodeSelection,
   $isRangeSelection,
   defineExtension,
@@ -92,7 +93,9 @@ function mapPhrasing(
  */
 function $cellFormat(cell: TableCellNode): ElementFormatType {
   const {lines, owners} = $cellLines(cell);
-  const first = lines.findIndex(line => line.length > 0);
+  const first = lines.findIndex(line =>
+    line.some(node => !$isLineBreakNode(node)),
+  );
   let format: ElementFormatType = '';
   for (
     let node = owners[Math.max(first, 0)];

@@ -69,7 +69,8 @@ example plumbing only (the preview signal and two toolbar commands), because
 
 It also does more: blockquotes, links, strikethrough, thematic breaks,
 fenced code blocks, and GFM tables (edited with `TableExtension` and the
-toolbar's Table menu) round-trip out of the box (the legacy example's default
+toolbar's Table menu, and written as near as GFM allows where a table holds
+more than it can, such as merged cells) round-trip out of the box (the legacy example's default
 set covered headings, lists, and inline formatting), and the code blocks
 are syntax-highlighted by adding `CodeShikiExtension` — highlighting
 composes with the Markdown machinery without any extra wiring.

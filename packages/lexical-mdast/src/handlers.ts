@@ -620,7 +620,8 @@ export const $exportList: MdastExportHandler = (node, ctx) => {
  * Wraps a plain string in the mdast phrasing nodes implied by a Lexical text
  * format bitmask (code span innermost, then strong, emphasis, strikethrough:
  * emphasis around strong is how CommonMark reads `***x***`, which
- * mdast-util-to-markdown writes back as `***x***`).
+ * mdast-util-to-markdown writes back as `***x***` when both markers are
+ * `*`).
  * The emphasis/strong *delimiter* (`*` vs `_`) is a document-level to-markdown
  * option (see the exporter) rather than per-node, because mixing delimiters in
  * one document desyncs to-markdown's character escaping.

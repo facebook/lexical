@@ -185,7 +185,9 @@ Markdown passes raw HTML through — GitHub-style `<details>` blocks, inline
 `MdastHtmlExtension` routes it through the editor's `@lexical/html`
 `DOMImportExtension` rules instead, so **any HTML the editor can already
 import works from Markdown**, and Markdown *inside* the construct keeps
-working in both directions, the way it does on GitHub:
+working in both directions: the blocks after a blank line, as on GitHub,
+and also text between the tags, such as the summary line below, which GFM
+itself leaves raw:
 
 ```md
 <details><summary>

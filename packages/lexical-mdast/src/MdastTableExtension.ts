@@ -87,8 +87,8 @@ function mapPhrasing(
  * The format of the text in a cell: that of the block its first line with
  * content is in, or of the nearest block around it in the cell that has
  * one, or else the cell's. Blocks in a nested table count for nothing (the
- * nested table has its own alignment), and a start or end format (as
- * pasted HTML often has) is none.
+ * nested table has its own alignment). A start or end format (as pasted
+ * HTML often has) takes no GFM alignment.
  */
 function $cellFormat(cell: TableCellNode): ElementFormatType {
   const {lines, owners} = $cellLines(cell);
@@ -103,8 +103,7 @@ function $cellFormat(cell: TableCellNode): ElementFormatType {
     // and the table's own format places it.
     format = $isTableNode(node) ? '' : format || node.getFormatType();
   }
-  format = format || cell.getFormatType();
-  return format === 'start' || format === 'end' ? '' : format;
+  return format || cell.getFormatType();
 }
 
 /** A cell at a row and column of a table, which a merged cell spans. */

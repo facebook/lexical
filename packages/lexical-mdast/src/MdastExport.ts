@@ -617,17 +617,13 @@ function $dominantInlineMarkers(node: ElementNode): {
 }
 
 /**
- * Creates a reusable exporter that converts the Lexical tree rooted at the
- * supplied element (or the editor root) — or just the selected content —
- * into a Markdown string.
- */
-/**
  * Render context state carrying the {@link BaseSelection} being serialized
  * during a selection export (`$convertSelectionToMarkdownString`); `null`
- * during whole-document exports. The export runs synchronously inside the
- * editor read, so registered export rules and contributed to-markdown
- * handlers can read it with `$getRenderContextValue` — e.g. a `root`
- * handler that appends end-of-document data (footnote definitions,
+ * outside one. It stays set for any export a handler runs inside a selection
+ * export, where `context.selection` is `null`. The export runs synchronously
+ * inside the editor read, so registered export rules and contributed
+ * to-markdown handlers can read it with `$getRenderContextValue` — e.g. a
+ * `root` handler that appends end-of-document data (footnote definitions,
  * comments) can emit everything for a document export but only the
  * selection-referenced subset for a clipboard copy.
  */
@@ -636,6 +632,11 @@ export const RenderContextMarkdownSelection = createRenderState(
   (): BaseSelection | null => null,
 );
 
+/**
+ * Creates a reusable exporter that converts the Lexical tree rooted at the
+ * supplied element (or the editor root) — or just the selected content —
+ * into a Markdown string.
+ */
 export function createMdastExport(compiled: CompiledMdast): {
   $exportToMdast: (node?: ElementNode) => Root;
   $exportToMarkdown: (node?: ElementNode) => string;

@@ -67,11 +67,10 @@ Behavior and convenience bundles:
 
 Everything composes granularly and degrades gracefully: an editor with only
 the extensions it wants imports unsupported constructs as their content
-(a heading becomes a paragraph of its text; without `MdastTableExtension`,
-which brings the GFM table grammar, a table is read as plain CommonMark), and
-the typing shortcuts — driven by the
-same registry — only fire for constructs the editor can represent (`> `
-stays literal without `MdastBlockquoteExtension`).
+(without `MdastTableExtension`, which brings the GFM table grammar, a table
+is read as plain CommonMark), and the typing shortcuts — driven by the same
+registry — only fire for constructs the editor can represent (`> ` stays
+literal without `MdastBlockquoteExtension`).
 
 `MdastExtension` owns the shared configuration and exposes both import and
 export. Feature extensions depend on it automatically.

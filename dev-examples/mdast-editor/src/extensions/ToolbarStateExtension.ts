@@ -10,8 +10,12 @@ import {computed, EditorStateExtension} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {$isListNode} from '@lexical/list';
 import {$isHeadingNode} from '@lexical/rich-text';
-import {$findMatchingParent} from '@lexical/utils';
-import {$getSelection, $isRangeSelection, defineExtension} from 'lexical';
+import {
+  $findMatchingParent,
+  $getSelection,
+  $isRangeSelection,
+  defineExtension,
+} from 'lexical';
 
 import {MdastEditorExtension} from './MdastEditorExtension';
 

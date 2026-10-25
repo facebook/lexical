@@ -86,11 +86,10 @@ grammar — see the
 [full list](/docs/extensions/included-extensions) or the
 [package README](/docs/packages/lexical-mdast). Granular
 configurations degrade gracefully: unsupported constructs import as
-their content (a heading becomes a paragraph of its text; without
-`MdastTableExtension`, which brings the GFM table grammar, a table is read
-as plain CommonMark), and typing shortcuts
-only fire for constructs the editor can represent (`> ` stays literal
-without `MdastBlockquoteExtension`).
+their content (without `MdastTableExtension`, which brings the GFM
+table grammar, a table is read as plain CommonMark), and typing
+shortcuts only fire for constructs the editor can represent (`> `
+stays literal without `MdastBlockquoteExtension`).
 
 ## Import and export share one extension
 
@@ -113,18 +112,19 @@ Returning `[]` omits the node in either direction.
 
 ## Round-trips are minimally different
 
-The literal syntax of each construct is preserved on the Lexical
-nodes with [NodeState](/docs/concepts/node-state): list bullet
-`-`/`*`/`+`, ordered delimiter `.`/`)`, code fence style and
-info-string meta, setext vs ATX headings, hard-break style, soft line
-breaks, thematic break marker, `_` vs `*` emphasis, and link style
-(`[text](url)` vs `<autolink>` vs bare GFM literal). Export rewrites as
-little as it can: text both bold and italic is written as emphasis around
-strong (`**_both_**` comes back as `_**both**_`), and GFM tables are
-padded so their columns line up and written as below. Nodes created in the
-editor defer to the document-level
-serialization options, which can be configured by contributing
-`mdast-util-to-markdown` options through `toMarkdownExtensions`.
+The literal syntax of each construct is preserved on the Lexical nodes
+with [NodeState](/docs/concepts/node-state): list bullet `-`/`*`/`+`,
+ordered delimiter `.`/`)`, code fence style and info-string meta,
+setext vs ATX headings, hard-break style, soft line breaks, thematic
+break marker, `_` vs `*` emphasis (one marker for the whole document),
+and link style (`[text](url)` vs `<autolink>` vs bare GFM literal).
+Round-trips are close but not exact; some forms are normalized, such
+as text both bold and italic, written as emphasis around strong
+(`**_both_**` comes back as `_**both**_`), and GFM tables, padded so
+their columns line up and written as below. Nodes created in the
+editor defer to the document-level serialization options, which can be
+configured by contributing `mdast-util-to-markdown` options through
+`toMarkdownExtensions`.
 
 GFM tables (`MdastTableExtension`) import a column's alignment as the
 element format of the paragraph in each of its cells, and write it from

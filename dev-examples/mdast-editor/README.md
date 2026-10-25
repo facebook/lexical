@@ -55,8 +55,8 @@ The legacy example's `MarkdownExtension.ts` is ~240 lines; the equivalent
 example plumbing only (the preview signal and two toolbar commands), because
 `@lexical/mdast` ships extension-ready:
 
-- **No transformer list to curate.** Depending on `MdastShortcutsExtension`
-  pulls in the CommonMark + GFM grammar and every node it needs.
+- **No transformer list to curate.** Depending on `MdastCommonMarkExtension`
+  and `MdastGfmExtension` pulls in their grammar and every node they need.
 - **No `registerMarkdownShortcuts` call.** The extension registers the
   streaming shortcuts itself, driven by the same micromark grammar as
   document import.

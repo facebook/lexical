@@ -13,7 +13,7 @@ import {$isHeadingNode} from '@lexical/rich-text';
 import {
   $findMatchingParent,
   $getSelection,
-  $isElementNode,
+  $isBlockElementNode,
   $isRangeSelection,
   defineExtension,
 } from 'lexical';
@@ -52,7 +52,7 @@ function $readSelectionState(): ToolbarSelectionState {
   // reports its own type and a paragraph in a cell in a list is a paragraph.
   const anchor = $findMatchingParent(
     selection.anchor.getNode(),
-    node => $isElementNode(node) && !node.isInline(),
+    $isBlockElementNode,
   );
   const block = $isListItemNode(anchor) ? anchor.getParent() : anchor;
   let blockType: BlockType = 'paragraph';

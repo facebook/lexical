@@ -57,6 +57,10 @@ export class OverflowNode extends ElementNode {
   excludeFromCopy(): boolean {
     return true;
   }
+
+  isInline(): true {
+    return true;
+  }
 }
 
 export function $createOverflowNode(): OverflowNode {

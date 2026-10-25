@@ -8,15 +8,9 @@
 
 import {computed, EditorStateExtension} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
-import {$isListItemNode, $isListNode} from '@lexical/list';
+import {$isListNode} from '@lexical/list';
 import {$isHeadingNode} from '@lexical/rich-text';
-import {
-  $findMatchingParent,
-  $getSelection,
-  $isBlockElementNode,
-  $isRangeSelection,
-  defineExtension,
-} from 'lexical';
+import {$getSelection, $isRangeSelection, defineExtension} from 'lexical';
 
 import {MdastEditorExtension} from './MdastEditorExtension';
 
@@ -48,21 +42,18 @@ function $readSelectionState(): ToolbarSelectionState {
   if (!$isRangeSelection(selection)) {
     return DEFAULT_SELECTION_STATE;
   }
-  // The block the caret is in (a list item's is its list), so a nested list
-  // reports its own type and a paragraph in a cell in a list is a paragraph.
-  const anchor = $findMatchingParent(
-    selection.anchor.getNode(),
-    $isBlockElementNode,
-  );
-  const block = $isListItemNode(anchor) ? anchor.getParent() : anchor;
+  const anchorNode = selection.anchor.getNode();
+  // Deleting all content can leave the selection on the root, which has no
+  // top-level element. Keep the paragraph default and the selection's formats.
+  const topLevelElement = anchorNode.getTopLevelElement();
   let blockType: BlockType = 'paragraph';
-  if ($isHeadingNode(block)) {
-    const tag = block.getTag();
+  if ($isHeadingNode(topLevelElement)) {
+    const tag = topLevelElement.getTag();
     if (tag === 'h1' || tag === 'h2' || tag === 'h3') {
       blockType = tag;
     }
-  } else if ($isListNode(block)) {
-    blockType = block.getListType();
+  } else if ($isListNode(topLevelElement)) {
+    blockType = topLevelElement.getListType();
   }
   return {
     blockType,

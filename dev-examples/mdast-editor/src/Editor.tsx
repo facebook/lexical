@@ -123,8 +123,7 @@ const editor = buildEditorFromExtensions({
 [^1]: The reference is an inline node; this definition body is editable
     in the section below.
 
-[^details]: Definitions hold *block* content, so lists and code work here.
-`;
+[^details]: Definitions hold *block* content, so lists and code work here.`;
 
 const theme = {
   code: 'my-2 block rounded-md bg-zinc-100 p-3 font-mono text-sm whitespace-pre dark:bg-zinc-900',
@@ -152,7 +151,7 @@ const theme = {
     'my-2 border-l-4 border-solid border-zinc-300 pl-3 text-zinc-600 dark:border-zinc-600 dark:text-zinc-300',
   table: 'my-2 border-collapse',
   tableCell:
-    'min-w-16 border border-solid border-zinc-300 px-2 py-1 align-top dark:border-zinc-600',
+    'min-w-16 border border-solid border-zinc-300 px-2 py-1 text-start align-top dark:border-zinc-600',
   tableCellHeader: 'bg-zinc-100 font-semibold dark:bg-zinc-800',
   // Over tableCellHeader's background.
   tableCellSelected: 'bg-blue-100! dark:bg-blue-900/40!',

@@ -140,6 +140,8 @@ breaks become lines separated by `<br>` (whatever spelling of the tag,
 such as `<br/>` or `</br>`, was read), a merged cell is written where it
 starts with empty cells where it spans, block decorators in a cell are
 written after the table, and the alignment of a body cell is dropped.
+Editing tables in the editor also takes `TableExtension` from
+`@lexical/table`.
 
 ## unified / remark interop
 

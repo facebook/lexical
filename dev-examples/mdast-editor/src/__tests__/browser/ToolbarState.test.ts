@@ -12,16 +12,12 @@ import {
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
 import {$convertFromMarkdownString} from '@lexical/mdast';
-import {$createHeadingNode} from '@lexical/rich-text';
-import {$isTableCellNode, $isTableNode} from '@lexical/table';
 import {
   $createRangeSelection,
-  $createTextNode,
   $getRoot,
   $getSelection,
   $isRangeSelection,
   $setSelection,
-  type ElementNode,
 } from 'lexical';
 import {assert, expect, onTestFinished, test, vi} from 'vitest';
 import {userEvent} from 'vitest/browser';
@@ -122,35 +118,3 @@ test.each(['', '\n\n[^a]: Footnote'])(
     );
   },
 );
-
-test('reads the block type of a heading in a table cell', () => {
-  const {editor, toolbar} = mountEditor('| a |\n| - |\n| b |');
-  editor.update(
-    () => {
-      const table = $getRoot().getFirstChildOrThrow();
-      assert($isTableNode(table));
-      const cell = table
-        .getLastChildOrThrow<ElementNode>()
-        .getFirstChildOrThrow();
-      assert($isTableCellNode(cell));
-      cell
-        .getFirstChildOrThrow()
-        .replace($createHeadingNode('h2').append($createTextNode('b')))
-        .selectEnd();
-    },
-    {discrete: true},
-  );
-  expect(toolbar.blockType.value).toBe('h2');
-});
-
-test('reads the type of the nearest list', () => {
-  const {editor, toolbar} = mountEditor('- a\n  1. b');
-  editor.update(() => $getRoot().selectEnd(), {discrete: true});
-  expect(toolbar.blockType.value).toBe('number');
-});
-
-test('reads a paragraph in a table cell in a list as a paragraph', () => {
-  const {editor, toolbar} = mountEditor('- | a |\n  | - |\n  | 1 |');
-  editor.update(() => $getRoot().selectEnd(), {discrete: true});
-  expect(toolbar.blockType.value).toBe('paragraph');
-});

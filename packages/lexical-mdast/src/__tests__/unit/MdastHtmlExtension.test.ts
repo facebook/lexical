@@ -942,11 +942,15 @@ describe('MdastHtmlExtension', () => {
             .append($createTextNode('title')),
         );
         header.getFirstChildOrThrow<ElementNode>().clear().append(callout);
-        // An empty slot is no line.
+        // A slot with no content is no line, however deep its blocks.
         const empty = $create(CalloutNode).append(
           $createParagraphNode().append($createTextNode('x')),
         );
-        $setSlot(empty, 'title', $createParagraphNode());
+        $setSlot(
+          empty,
+          'title',
+          $create(CalloutNode).append($createParagraphNode()),
+        );
         table
           .getLastChildOrThrow<ElementNode>()
           .getFirstChildOrThrow<ElementNode>()

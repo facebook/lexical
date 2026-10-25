@@ -84,24 +84,19 @@ function mapPhrasing(
   return (changed ? mapped : nodes) as PhrasingContent[];
 }
 
+/** The host the node is in a named slot of, or else its parent. */
+function $slotHostOrParent(node: LexicalNode): LexicalNode | null {
+  return $getSlotHost(node) || node.getParent();
+}
+
 /** The cell of `table` that `node` is in, through named slots too. */
 function $cellIn(node: LexicalNode, table: TableNode): TableCellNode | null {
-  for (
-    let n: LexicalNode | null = node;
-    n;
-    n = $getSlotHost(n) || n.getParent()
-  ) {
+  for (let n: LexicalNode | null = node; n; n = $slotHostOrParent(n)) {
     if ($isTableCellNode(n) && table.is($findTableNode(n))) {
       return n;
     }
   }
   return null;
-}
-
-/** The host a slotted block is in, or else its parent. */
-function $slotHostOrParent(node: ElementNode): ElementNode {
-  const host = $getSlotHost(node);
-  return $isElementNode(host) ? host : node.getParentOrThrow();
 }
 
 /**
@@ -118,13 +113,15 @@ function $cellFormat(cell: TableCellNode): ElementFormatType {
   );
   let format: ElementFormatType = '';
   for (
-    let node = owners[Math.max(first, 0)];
-    !node.is(cell);
+    let node: LexicalNode | null = owners[Math.max(first, 0)];
+    node && !node.is(cell);
     node = $slotHostOrParent(node)
   ) {
     // Text in a nested table has that table's alignment, not this one's,
     // and the table's own format places it.
-    format = $isTableNode(node) ? '' : format || node.getFormatType();
+    format = $isTableNode(node)
+      ? ''
+      : format || ($isElementNode(node) ? node.getFormatType() : '');
   }
   return format || cell.getFormatType();
 }
@@ -212,15 +209,7 @@ function $cellLines(cell: TableCellNode): {
     if ($isElementNode(node)) {
       const first = lines.length;
       const firstDecorator = decorators.length;
-      // Named slots first, as they come first in a host's DOM; an empty one
-      // is no line.
-      for (const slot of $slotNodes(node)) {
-        if (!($isElementNode(slot) && slot.isEmpty())) {
-          $visit(slot, node);
-          line = undefined;
-        }
-      }
-      node.getChildren().forEach(child => $visit(child, node));
+      $visitContent(node);
       // An empty block is an empty line; one of block decorators is none.
       if (lines.length === first && decorators.length === firstDecorator) {
         lines.push([]);
@@ -231,7 +220,20 @@ function $cellLines(cell: TableCellNode): {
       decorators.push(node);
     }
   };
-  cell.getChildren().forEach(child => $visit(child, cell));
+  // A block's named slots come first (in the order they were filled), and
+  // a slot with no content is no line.
+  const $visitContent = (node: ElementNode) => {
+    for (const slot of $slotNodes(node)) {
+      const start = lines.length;
+      $visit(slot, node);
+      line = undefined;
+      if (lines.slice(start).every(slotLine => slotLine.length === 0)) {
+        lines.length = owners.length = start;
+      }
+    }
+    node.getChildren().forEach(child => $visit(child, node));
+  };
+  $visitContent(cell);
   if (lines.length === 0) {
     lines.push([]);
     owners.push(cell);

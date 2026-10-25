@@ -104,7 +104,7 @@ export function $prepend<T extends ElementNode>(
   return element.splice(0, 0, nodes);
 }
 
-/** The nodes in the named slots of `node`, in slot order. */
+/** The nodes in the named slots of `node`, in `$getSlotNames` order. */
 export function $slotNodes(node: LexicalNode): LexicalNode[] {
   return $isSlotHost(node)
     ? $getSlotNames(node).flatMap(name => {

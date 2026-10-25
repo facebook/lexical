@@ -152,7 +152,11 @@ describe('MdastTableExtension', () => {
     editor.update(
       () =>
         $convertFromMarkdownString(
-          table('| a |', '| - |', '| x<br>y **p<BR/>q** <br class="c">z |'),
+          table(
+            '| a |',
+            '| - |',
+            '| x<br>y **p<BR/>q** <br class="c">z</br>w |',
+          ),
         ),
       {discrete: true},
     );
@@ -168,12 +172,12 @@ describe('MdastTableExtension', () => {
             $isLineBreakNode(child) ? '\n' : child.getTextContent(),
           )
           .join(''),
-      ).toBe('x\ny p\nq \nz');
+      ).toBe('x\ny p\nq \nz\nw');
       expect($convertToMarkdownString()).toBe(
         table(
-          '| a                           |',
-          '| --------------------------- |',
-          '| x<br>y **p**<br>**q** <br>z |',
+          '| a                                |',
+          '| -------------------------------- |',
+          '| x<br>y **p**<br>**q** <br>z<br>w |',
         ),
       );
     });

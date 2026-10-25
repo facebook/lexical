@@ -45,8 +45,11 @@ import {gfmTable} from 'micromark-extension-gfm-table';
 import {$append, $isBlockLevelNode, inlineMarker} from './handlers';
 import {MdastExtension} from './MdastExtension';
 
-/** An inline HTML `<br>` tag, the line break a GFM cell can hold. */
-const BR_RE = /^<br[\s/>]/i;
+/**
+ * An inline HTML `<br>` tag (or `</br>`, which HTML reads as one), the line
+ * break a GFM cell can hold.
+ */
+const BR_RE = /^<\/?br[\s/>]/i;
 
 /** The column alignment GFM writes for an element format. */
 function gfmAlign(format: ElementFormatType): AlignType {
@@ -83,8 +86,9 @@ function mapPhrasing(
 /**
  * The format of the text in a cell: that of the block its first line with
  * content is in, or of the nearest block around it in the cell that has
- * one, or else the cell's. A start or end format (as pasted HTML often has)
- * is none.
+ * one, or else the cell's. Blocks in a nested table count for nothing (the
+ * nested table has its own alignment), and a start or end format (as
+ * pasted HTML often has) is none.
  */
 function $cellFormat(cell: TableCellNode): ElementFormatType {
   const {lines, owners} = $cellLines(cell);
@@ -501,9 +505,10 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
  * separated by `<br>`, a merged cell with empty cells where it spans, block
  * decorators in a cell after the table, and as a column's alignment, that
  * of the text in its header cell (the format of the block its first line
- * with content is in, or of a block around it outside any nested table, or
- * else of the cell, where start and end are none; a merged header cell's
- * for each column it spans), none for one GFM can't express.
+ * with content is in, or of the nearest block around it with one, or else
+ * of the cell, where blocks in a nested table count for nothing and start
+ * and end are none; a merged header cell's for each column it spans), none
+ * for one GFM can't express.
  * The alignment of other cells has no form in GFM.
  *
  * @example

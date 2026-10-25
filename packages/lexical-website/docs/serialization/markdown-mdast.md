@@ -116,12 +116,11 @@ nodes with [NodeState](/docs/concepts/node-state): list bullet
 `-`/`*`/`+`, ordered delimiter `.`/`)`, code fence style and
 info-string meta, setext vs ATX headings, hard-break style, soft line
 breaks, thematic break marker, `_` vs `*` emphasis, and link style
-(`[text](url)` vs `<autolink>` vs bare GFM literal). Normalization is
-kept to what the output needs: text both bold and italic is written as
-emphasis around strong (`**_both_**` comes back as `_**both**_`),
-`mdast-util-to-markdown` encodes a letter next to emphasis inside a word
-as a character reference, and GFM tables are written as below; nodes
-created in the editor defer to the document-level
+(`[text](url)` vs `<autolink>` vs bare GFM literal). Export rewrites as
+little as it can: text both bold and italic is written as emphasis around
+strong, so that `***both***` round-trips (`**_both_**` comes back as
+`_**both**_`), and GFM tables are written as below. Nodes created in the
+editor defer to the document-level
 serialization options, which can be configured by contributing
 `mdast-util-to-markdown` options through `toMarkdownExtensions`.
 

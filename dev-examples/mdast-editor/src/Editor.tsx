@@ -70,8 +70,8 @@ Type \`[^another]\` to mint one.
 GFM tables round-trip as tables: the first row is the header, a line
 break in a cell is written as \`<br>\`, and a column is written with the
 alignment of its header cell's text (Table > Align left, center or
-right in the header). Merged cells are written as near as GFM allows,
-and a body cell's own alignment is dropped:
+right in the header). Merged cells (from a pasted HTML table) are written
+as near as GFM allows, and a body cell's own alignment is dropped:
 
 | Syntax    | Description           | Width |
 | --------- | --------------------- | ----: |

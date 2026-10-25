@@ -8,11 +8,12 @@
 
 import {computed, EditorStateExtension} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
-import {$isListNode} from '@lexical/list';
+import {$isListItemNode, $isListNode} from '@lexical/list';
 import {$isHeadingNode} from '@lexical/rich-text';
 import {
   $findMatchingParent,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   defineExtension,
 } from 'lexical';
@@ -47,11 +48,13 @@ function $readSelectionState(): ToolbarSelectionState {
   if (!$isRangeSelection(selection)) {
     return DEFAULT_SELECTION_STATE;
   }
-  // The nearest heading or list, so a nested list reports its own type.
-  const block = $findMatchingParent(
+  // The block the caret is in (a list item's is its list), so a nested list
+  // reports its own type and a paragraph in a cell in a list is a paragraph.
+  const anchor = $findMatchingParent(
     selection.anchor.getNode(),
-    node => $isHeadingNode(node) || $isListNode(node),
+    node => $isElementNode(node) && !node.isInline(),
   );
+  const block = $isListItemNode(anchor) ? anchor.getParent() : anchor;
   let blockType: BlockType = 'paragraph';
   if ($isHeadingNode(block)) {
     const tag = block.getTag();

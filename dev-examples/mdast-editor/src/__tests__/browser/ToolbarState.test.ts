@@ -148,3 +148,9 @@ test('reads the type of the nearest list', () => {
   editor.update(() => $getRoot().selectEnd(), {discrete: true});
   expect(toolbar.blockType.value).toBe('number');
 });
+
+test('reads a paragraph in a table cell in a list as a paragraph', () => {
+  const {editor, toolbar} = mountEditor('- | a |\n  | - |\n  | 1 |');
+  editor.update(() => $getRoot().selectEnd(), {discrete: true});
+  expect(toolbar.blockType.value).toBe('paragraph');
+});

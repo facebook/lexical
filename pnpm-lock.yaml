@@ -1247,6 +1247,9 @@ importers:
       '@lexical/utils':
         specifier: workspace:*
         version: link:../lexical-utils
+      '@lexical/y':
+        specifier: workspace:*
+        version: link:../lexical-y
       '@lexical/yjs':
         specifier: workspace:*
         version: link:../lexical-yjs
@@ -1256,6 +1259,12 @@ importers:
       '@vercel/speed-insights':
         specifier: ^2.0.0
         version: 2.0.0(react@19.2.5)
+      '@y/websocket':
+        specifier: 4.0.0-rc.2
+        version: 4.0.0-rc.2(@y/y@14.0.0-rc.29)
+      '@y/y':
+        specifier: 14.0.0-rc.29
+        version: 14.0.0-rc.29
       date-fns:
         specifier: ^4.4.0
         version: 4.4.0
@@ -1311,6 +1320,12 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^6.1.1
         version: 6.1.1(vite@8.3.3(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.0))
+      '@y/protocols':
+        specifier: 1.0.6-rc.1
+        version: 1.0.6-rc.1(@y/y@14.0.0-rc.29)
+      lib0:
+        specifier: 1.0.0-rc.36
+        version: 1.0.0-rc.36
       rollup-plugin-copy:
         specifier: ^3.5.0
         version: 3.5.0
@@ -1323,6 +1338,9 @@ importers:
       vite-plugin-static-copy:
         specifier: ^4.1.1
         version: 4.1.1(vite@8.3.3(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.0))
+      ws:
+        specifier: ^8.20.0
+        version: 8.21.3
 
   packages/lexical-react:
     dependencies:
@@ -6431,6 +6449,18 @@ packages:
 
   '@xtuc/long@4.2.2':
     resolution: {integrity: sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==}
+
+  '@y/protocols@1.0.6-rc.1':
+    resolution: {integrity: sha512-e/qs7hXcLk/SeNitxMXv2ymozyWFTULwbJEi7cAf/K/iXw9nGwGXHrR5TNluQ/bMwOX1cwuUT0hjEojkfH0gsA==}
+    engines: {node: '>=16.0.0', npm: '>=8.0.0'}
+    peerDependencies:
+      '@y/y': '*'
+
+  '@y/websocket@4.0.0-rc.2':
+    resolution: {integrity: sha512-QhF3ehjAvrlTMwR16dKVLdFrq+8+rhfndvqHjx+83BpxRvgTuseg0ckq4hQ6tuEFA31VRos2x+cm9fyxlix7Nw==}
+    engines: {node: '>=16.0.0', npm: '>=8.0.0'}
+    peerDependencies:
+      '@y/y': '*'
 
   '@y/y@14.0.0-rc.29':
     resolution: {integrity: sha512-A4W9Bnrfj7N7IgampoaMSygJlzShLkWZ2uqKjx92tsEqGnbjpfr7jFP1i3zQ37h3L1cXIeipr9QDneUrZHuDjA==}
@@ -13024,18 +13054,6 @@ packages:
       utf-8-validate:
         optional: true
 
-  ws@8.20.0:
-    resolution: {integrity: sha512-sAt8BhgNbzCtgGbt2OxmpuryO63ZoDk/sqaB/znQm94T4fCEsy/yV+7CdC1kJhOU9lboAEU7R3kquuycDoibVA==}
-    engines: {node: '>=10.0.0'}
-    peerDependencies:
-      bufferutil: ^4.0.1
-      utf-8-validate: '>=5.0.2'
-    peerDependenciesMeta:
-      bufferutil:
-        optional: true
-      utf-8-validate:
-        optional: true
-
   ws@8.21.3:
     resolution: {integrity: sha512-201TZ/kPWxoPr/OKWjquZR1SWKXcvxdH+e1xrx89b3YbmzLMFCLfnaG1HFIgWzJOEWZ7MvpK++odZufgYR50Rw==}
     engines: {node: '>=10.0.0'}
@@ -19620,6 +19638,17 @@ snapshots:
   '@xtuc/ieee754@1.2.0': {}
 
   '@xtuc/long@4.2.2': {}
+
+  '@y/protocols@1.0.6-rc.1(@y/y@14.0.0-rc.29)':
+    dependencies:
+      '@y/y': 14.0.0-rc.29
+      lib0: 1.0.0-rc.36
+
+  '@y/websocket@4.0.0-rc.2(@y/y@14.0.0-rc.29)':
+    dependencies:
+      '@y/protocols': 1.0.6-rc.1(@y/y@14.0.0-rc.29)
+      '@y/y': 14.0.0-rc.29
+      lib0: 1.0.0-rc.36
 
   '@y/y@14.0.0-rc.29':
     dependencies:
@@ -27480,7 +27509,7 @@ snapshots:
       sockjs: 0.3.24
       spdy: 4.0.2(supports-color@10.2.2)
       webpack-dev-middleware: 7.4.5(webpack@5.111.1(@swc/core@1.16.1(@swc/helpers@0.5.21))(@swc/html@1.16.1)(clean-css@5.3.3)(cssnano@6.1.2(postcss@8.5.15))(csso@5.0.5)(esbuild@0.28.2)(html-minifier-terser@7.2.0)(lightningcss@1.33.0)(postcss@8.5.15)(svgo@3.3.2))
-      ws: 8.20.0
+      ws: 8.21.3
     optionalDependencies:
       webpack: 5.111.1(@swc/core@1.16.1(@swc/helpers@0.5.21))(@swc/html@1.16.1)(clean-css@5.3.3)(cssnano@6.1.2(postcss@8.5.15))(csso@5.0.5)(esbuild@0.28.2)(html-minifier-terser@7.2.0)(lightningcss@1.33.0)(postcss@8.5.15)(svgo@3.3.2)
     transitivePeerDependencies:
@@ -27518,7 +27547,7 @@ snapshots:
       sockjs: 0.3.24
       spdy: 4.0.2(supports-color@10.2.2)
       webpack-dev-middleware: 7.4.5(webpack@5.111.1(@swc/core@1.16.1(@swc/helpers@0.5.21))(esbuild@0.28.2))
-      ws: 8.20.0
+      ws: 8.21.3
     optionalDependencies:
       webpack: 5.111.1(@swc/core@1.16.1(@swc/helpers@0.5.21))(clean-css@5.3.3)(cssnano@6.1.2(postcss@8.5.15))(esbuild@0.28.2)(html-minifier-terser@7.2.0)(postcss@8.5.15)
     transitivePeerDependencies:
@@ -27851,8 +27880,6 @@ snapshots:
     optional: true
 
   ws@7.5.10: {}
-
-  ws@8.20.0: {}
 
   ws@8.21.3: {}
 

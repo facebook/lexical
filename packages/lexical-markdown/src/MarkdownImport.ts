@@ -9,15 +9,19 @@
 import {$isListItemNode, $isListNode, type ListItemNode} from '@lexical/list';
 import {$isQuoteNode} from '@lexical/rich-text';
 import {
+  $createLineBreakNode,
   $createParagraphNode,
   $createTabNode,
   $createTextNode,
   $findMatchingParent,
   $isElementNode,
+  $isLineBreakNode,
   $isParagraphNode,
   $isTabNode,
+  $isTextNode,
   type ElementNode,
   type LexicalNode,
+  type LineBreakNode,
   type TextNode,
 } from 'lexical';
 
@@ -55,6 +59,10 @@ export function $importMarkdownNodes(
   );
   const lines = markdownString.split('\n');
   const linesLength = lines.length;
+  // The raw text node of every line imported as a block. Inline markdown is
+  // parsed only once all lines are in place, because emphasis and code spans
+  // may continue across the line break between two lines of a paragraph.
+  const rawLineNodes: TextNode[] = [];
 
   // A list line is measured against the column its parent item's content
   // starts at, which only the line that opened that level knows. Blank lines
@@ -80,12 +88,17 @@ export function $importMarkdownNodes(
         lineText,
         container,
         byType.element,
-        textFormatTransformersIndex,
-        byType.textMatch,
         shouldPreserveNewLines,
+        rawLineNodes,
       );
     }
   });
+
+  $importInlineMarkdown(
+    rawLineNodes,
+    textFormatTransformersIndex,
+    byType.textMatch,
+  );
 
   const children = container.getChildren();
   for (const child of children) {
@@ -225,11 +238,11 @@ function $importBlocks(
   lineText: string,
   rootNode: ElementNode,
   elementTransformers: ElementTransformer[],
-  textFormatTransformersIndex: TextFormatTransformersIndex,
-  textMatchTransformers: TextMatchTransformer[],
   shouldPreserveNewLines: boolean,
+  rawLineNodes: TextNode[],
 ) {
   const textNode = $createTextNode(lineText);
+  rawLineNodes.push(textNode);
   const elementNode = $createParagraphNode();
   elementNode.append(textNode);
   rootNode.append(elementNode);
@@ -244,12 +257,6 @@ function $importBlocks(
       }
     }
   }
-
-  importTextTransformers(
-    textNode,
-    textFormatTransformersIndex,
-    textMatchTransformers,
-  );
 
   // If no transformer found and we left with original paragraph node
   // can check if its content can be appended to the previous node
@@ -282,6 +289,139 @@ function $importBlocks(
       }
     }
   }
+}
+
+/**
+ * Parses the inline markdown (emphasis, code spans, links, ...) of the text
+ * nodes created by `$importBlocks`.
+ *
+ * Lines that were merged into one block are separated by LineBreakNodes. A
+ * run of such lines is parsed as a single string, so that a delimiter can be
+ * closed on a later line than the one that opened it (CommonMark treats the
+ * line ending as ordinary whitespace inside emphasis and code spans), and is
+ * split back into text and LineBreakNodes afterwards.
+ */
+function $importInlineMarkdown(
+  rawLineNodes: TextNode[],
+  textFormatTransformersIndex: TextFormatTransformersIndex,
+  textMatchTransformers: TextMatchTransformer[],
+): void {
+  const rawKeys = new Set(rawLineNodes.map(node => node.getKey()));
+  const handled = new Set<string>();
+
+  for (const textNode of rawLineNodes) {
+    const key = textNode.getKey();
+    if (handled.has(key) || textNode.getParent() === null) {
+      continue;
+    }
+    handled.add(key);
+
+    // Collect the lines that continue this one: raw text nodes joined by
+    // LineBreakNodes.
+    const lineNodes: TextNode[] = [textNode];
+    const lineBreaks: LineBreakNode[] = [];
+    for (;;) {
+      const lineBreak = lineNodes[lineNodes.length - 1].getNextSibling();
+      const next = lineBreak && lineBreak.getNextSibling();
+      if (
+        !$isLineBreakNode(lineBreak) ||
+        !$isTextNode(next) ||
+        !rawKeys.has(next.getKey())
+      ) {
+        break;
+      }
+      handled.add(next.getKey());
+      lineBreaks.push(lineBreak);
+      lineNodes.push(next);
+    }
+
+    if (lineNodes.length === 1) {
+      importTextTransformers(
+        textNode,
+        textFormatTransformersIndex,
+        textMatchTransformers,
+      );
+      continue;
+    }
+
+    const parent = textNode.getParentOrThrow();
+    const previousAnchor = textNode.getPreviousSibling();
+    const nextAnchor = lineNodes[lineNodes.length - 1].getNextSibling();
+
+    const joinedNode = $createTextNode(
+      lineNodes.map(node => node.getTextContent()).join('\n'),
+    );
+    textNode.replace(joinedNode);
+    for (const node of lineNodes) {
+      if (node !== textNode) {
+        node.remove();
+      }
+    }
+    for (const lineBreak of lineBreaks) {
+      lineBreak.remove();
+    }
+
+    importTextTransformers(
+      joinedNode,
+      textFormatTransformersIndex,
+      textMatchTransformers,
+    );
+
+    // Whatever the transformers produced sits between the two anchors. The
+    // original LineBreakNodes are reused, in order, so that the hard line
+    // break marker each one carries (trailing spaces or a backslash) is kept.
+    const remainingLineBreaks = lineBreaks.slice();
+    for (
+      let node = previousAnchor
+        ? previousAnchor.getNextSibling()
+        : parent.getFirstChild();
+      node !== null && !node.is(nextAnchor);
+    ) {
+      const following: LexicalNode | null = node.getNextSibling();
+      $splitAtNewlines(node, remainingLineBreaks);
+      node = following;
+    }
+  }
+}
+
+// Replaces each "\n" in the text below `node` with a LineBreakNode.
+function $splitAtNewlines(
+  node: LexicalNode,
+  lineBreaks: LineBreakNode[],
+): void {
+  if ($isElementNode(node)) {
+    for (const child of node.getChildren()) {
+      $splitAtNewlines(child, lineBreaks);
+    }
+    return;
+  }
+  if (!$isTextNode(node) || $isTabNode(node)) {
+    return;
+  }
+  const text = node.getTextContent();
+  if (!text.includes('\n')) {
+    return;
+  }
+  const format = node.getFormat();
+  const style = node.getStyle();
+  const nodes: LexicalNode[] = [];
+  const pushText = (value: string) => {
+    if (value !== '') {
+      nodes.push($createTextNode(value).setFormat(format).setStyle(style));
+    }
+  };
+  let start = 0;
+  for (
+    let index = text.indexOf('\n');
+    index !== -1;
+    index = text.indexOf('\n', start)
+  ) {
+    pushText(text.slice(start, index));
+    nodes.push(lineBreaks.shift() || $createLineBreakNode());
+    start = index + 1;
+  }
+  pushText(text.slice(start));
+  node.getParentOrThrow().splice(node.getIndexWithinParent(), 1, nodes);
 }
 
 // Look in node for '\t' and create a TabNode for each occurrence. The

@@ -10,6 +10,8 @@ import type {NodeKey} from 'lexical';
 
 import {type Item} from '@y/y';
 
+import {isMoveItem, type Shown} from './Moves';
+
 /*
  * Remote content not yet shown in the editor.
  *
@@ -21,7 +23,7 @@ import {type Item} from '@y/y';
  * when the composition ends. Items can be split or merged by Yjs, so this
  * works on id ranges, not items.
  */
-export class Hidden {
+export class Hidden implements Shown {
   /** Sorted, merged [start, end) clock ranges per client. */
   private readonly ranges = new Map<number, [number, number][]>();
   constructor(readonly ownerKey: NodeKey) {}
@@ -132,8 +134,8 @@ export class Hidden {
 }
 
 /** The length of an item the editor shows (live content only). */
-export function shownLength(item: Item, hidden: Hidden | null): number {
-  if (item.deleted || !item.countable) {
+export function shownLength(item: Item, hidden: Shown | null): number {
+  if (item.deleted || !item.countable || isMoveItem(item)) {
     return 0;
   }
   return hidden === null ? item.length : hidden.shownLength(item);

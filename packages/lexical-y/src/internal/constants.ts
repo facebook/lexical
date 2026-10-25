@@ -25,7 +25,16 @@ export const DEFAULT_ROOT_NAME = 'lexical-y';
  * is read is a new version.
  */
 export const LAYOUT_PREFIX = 'lexical-y:';
-/** @experimental The layout version this binding reads and writes. */
-export const LAYOUT_VERSION = 1;
+/**
+ * @experimental The newest layout version this binding reads and writes.
+ * A document records version 1; the first move record or lifted block
+ * written into it also records 2 (clients that only know version 1 then go
+ * read only instead of misreading them).
+ */
+export const LAYOUT_VERSION = 2;
+/** The version a new document records. */
+export const BASE_LAYOUT_VERSION = 1;
+/** The version of a document holding move records or lifted blocks. */
+export const MOVES_LAYOUT_VERSION = 2;
 /** The roots of the Yjs 13 bindings' layouts. */
 export const LEGACY_ROOTS: readonly string[] = ['root', 'root-v2'];

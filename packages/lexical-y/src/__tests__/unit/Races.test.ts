@@ -233,7 +233,63 @@ const CASES: Case[] = [
     expected: 'paragraph("Second.") / paragraph("Revenue grew by 4% in Q3.")',
     id: 'move ‖ type',
     init: () => $getRoot().append($p(P), $p('Second.')),
-    limit: 'a move is a delete and reinsert: the typing lands in a neighbour',
+  },
+  {
+    a: () => $selectIn([0], 5).insertText(' text'),
+    b: () => $block([1]).insertAfter($block([0])),
+    expected: 'paragraph("Revenue grew 4% in Q3.") / paragraph("Short text.")',
+    id: 'move ‖ type in the moved block (the smaller one)',
+    init: () => $getRoot().append($p('Short.'), $p(P)),
+  },
+  {
+    a: () => $selectIn([0], 3).insertText('!'),
+    b: () => $block([4]).insertAfter($block([0])),
+    expected:
+      'paragraph("two") / paragraph("three") / paragraph("four") / paragraph("five") / paragraph("one!")',
+    id: 'long move ‖ type in the moved block',
+    init: () =>
+      $getRoot().append(
+        $p('one'),
+        $p('two'),
+        $p('three'),
+        $p('four'),
+        $p('five'),
+      ),
+  },
+  {
+    a: () => $selectIn([0, 2], 5).insertText('!'),
+    b: () => {
+      const list = $block([0]);
+      list.getChildAtIndex(0)!.insertBefore(list.getChildAtIndex(2)!);
+    },
+    expected:
+      'list[bullet](listitem("three!") listitem("one") listitem("two"))',
+    id: 'list item moved up ‖ type in it',
+    init: $initList,
+  },
+  {
+    a: () => $setBlocksType($selectIn([0], 0), () => $createHeadingNode('h1')),
+    b: () => $block([1]).insertAfter($block([0])),
+    expected: 'paragraph("Second.") / heading[h1]("Short.")',
+    id: 'move ‖ retype the moved block',
+    init: () => $getRoot().append($p('Short.'), $p('Second.')),
+  },
+  {
+    expected: t =>
+      expect(tableText(t.a)).toBe(
+        'table[["","",""],["","",""],["x","",""]] / paragraph()',
+      ),
+    id: 'table row moved ‖ type in it',
+    init: $initTable,
+    run: async t => {
+      t.offline();
+      t.a.update(() => {
+        const table = $getRoot().getChildren().find($isTableNode)!;
+        table.getChildAtIndex(2)!.insertAfter(table.getChildAtIndex(0)!);
+      });
+      t.b.update(() => $typeInCell(0, 0, 'x'));
+      await t.sync();
+    },
   },
   {
     a: () => $block([2]).insertAfter($block([0])),

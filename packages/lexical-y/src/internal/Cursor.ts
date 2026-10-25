@@ -6,8 +6,6 @@
  *
  */
 
-import type {Hidden} from './Hidden';
-
 import invariant from '@lexical/internal/invariant';
 import {
   ContentFormat,
@@ -20,6 +18,14 @@ import {
   type Transaction,
 } from '@y/y';
 
+import {
+  formatsAfterItem,
+  isMoveItem,
+  type Rec,
+  type Shown,
+  viewZone,
+  type ZoneView,
+} from './Moves';
 import {decodeFormatValue, MARKER, SEGMENT_KEY, TYPE_KEY} from './Schema';
 
 /*
@@ -86,8 +92,12 @@ export class Cursor {
   left: Item | null;
   right: Item | null;
   formats: Formats;
-  /** Remote content the editor does not show yet: not counted, not deleted. */
-  hidden: Hidden | null = null;
+  /**
+   * Content the editor does not show (remote content while composing, and
+   * the content of other zones when the container holds moves): not
+   * counted, not deleted.
+   */
+  hidden: Shown | null = null;
   constructor(
     readonly tr: Transaction,
     readonly parent: YNode,
@@ -103,9 +113,29 @@ export class Cursor {
     }
   }
 
-  /** Step over `right`, tracking formats. */
+  /** Whether the cursor entered or left an inline range (see `forward`). */
+  jumped = false;
+
+  /**
+   * Step over `right`, tracking formats. With moves, stepping onto an inline
+   * record (a join) enters its range: the cursor goes on at the range's
+   * start, in the record's zone; stepping over the range's last item leaves
+   * it: the cursor goes on right after the record. An insert is never put
+   * after a range's last item (it would be outside the range). Formats are
+   * positional: after a jump they are the formats physically there.
+   */
   forward(): void {
     const item = this.right!;
+    const view = viewZone(this.hidden);
+    const r = view === null ? null : this.entersAt(view, item);
+    if (r !== null) {
+      view!.zone = r.item;
+      this.left = r.s;
+      this.right = r.s === null ? this.parent._start : r.s.right;
+      this.formats = formatsAfterItem(this.parent, r.s);
+      this.jumped = true;
+      return;
+    }
     if (!item.deleted && isFormat(item)) {
       const {key, value} = item.content as ContentFormat;
       if (value === null) {
@@ -116,11 +146,106 @@ export class Cursor {
     }
     this.left = item;
     this.right = item.right;
+    if (view !== null) {
+      this.settle();
+    }
+  }
+
+  private entersAt(view: ZoneView, item: Item): Rec | null {
+    return isMoveItem(item) ? view.zones.entersAt(view.zone, item) : null;
+  }
+
+  /** Leave the inline ranges whose last item is `left` (see `forward`). */
+  settle(): void {
+    const view = viewZone(this.hidden);
+    if (view === null) {
+      return;
+    }
+    for (let guard = 0; this.left !== null && guard < 64; guard++) {
+      const r = view.zones.inlineRec(view.zone);
+      if (r === null || this.left !== r.e) {
+        return;
+      }
+      view.zone = view.zones.ownerOf(r.item);
+      this.left = r.item;
+      this.right = r.item.right;
+      this.formats = formatsAfterItem(this.parent, r.item);
+      this.jumped = true;
+    }
+  }
+
+  /**
+   * Whether stepping over `right` keeps the cursor inside its zone's range:
+   * past the range's last item, an insert would be outside the range. Nor
+   * does it enter an inline range (only content counting does).
+   */
+  private mayPass(): boolean {
+    const view = viewZone(this.hidden);
+    return (
+      view === null ||
+      (this.right !== view.zoneEnd() &&
+        (this.right === null || this.entersAt(view, this.right) === null))
+    );
+  }
+
+  /** At a place where `forward` enters or leaves an inline range. */
+  private atJump(): boolean {
+    const view = viewZone(this.hidden);
+    if (view === null || this.right === null) {
+      return false;
+    }
+    if (this.entersAt(view, this.right) !== null) {
+      return true;
+    }
+    // Past the range's last item the walk leaves the range: a last item that
+    // is content (a piece of a line, see Writer#unitPieces) is passed first.
+    const r = view.zones.inlineRec(view.zone);
+    return r !== null && this.right === r.e && !isLiveContent(r.e);
+  }
+
+  /**
+   * Step over the move records right after the cursor (with any deleted,
+   * format or other zones' items among them): a record shows its units
+   * before the line its item is in, so content written at the start of that
+   * line goes after the records.
+   */
+  skipRecords(): void {
+    const view = viewZone(this.hidden);
+    let last: Item | null = null;
+    for (let p = this.right; p !== null; p = p.right) {
+      const foreign = view !== null && view.foreign(p);
+      if (
+        !foreign &&
+        !p.deleted &&
+        isMoveItem(p) &&
+        (view === null || view.zones.entersAt(view.zone, p) === null)
+      ) {
+        last = p;
+        continue;
+      }
+      if (p.deleted || !p.countable || foreign) {
+        if (view !== null && p === view.zoneEnd()) {
+          break;
+        }
+        continue;
+      }
+      break;
+    }
+    if (last === null) {
+      return;
+    }
+    while (this.right !== null && this.left !== last) {
+      this.forward();
+    }
   }
 
   /** Step over format items and deleted items (never over live content). */
   skipNonContent(): void {
-    while (this.right !== null && !isLiveContent(this.right)) {
+    while (
+      this.right !== null &&
+      !isLiveContent(this.right) &&
+      this.mayPass()
+    ) {
       this.forward();
     }
   }
@@ -130,7 +255,7 @@ export class Cursor {
    * or all shown, and answer whether it is shown.
    */
   private counts(item: Item): boolean {
-    if (!isLiveContent(item)) {
+    if (!isLiveContent(item) || isMoveItem(item)) {
       return false;
     }
     const hidden = this.hidden;
@@ -183,7 +308,33 @@ export class Cursor {
     invariant(n <= 0, '@lexical/y: cursor advanced past the end');
   }
 
-  private newItem(content: ContentFormat | ContentString | ContentType): Item {
+  /**
+   * Inserting right before another zone's items would put the new item in
+   * that zone's range (its start is the item on the left): step over them,
+   * so that the insert lands after the range, in this cursor's zone. Never
+   * past the end of the cursor's own zone.
+   */
+  private hopForeign(): void {
+    const view = viewZone(this.hidden);
+    if (view === null) {
+      return;
+    }
+    while (
+      this.right !== null &&
+      view.foreign(this.right) &&
+      !view.outside(this.right)
+    ) {
+      this.forward();
+    }
+  }
+
+  private newItem(
+    content: ContentFormat | ContentString | ContentType,
+    hop = true,
+  ): Item {
+    if (hop) {
+      this.hopForeign();
+    }
     const doc = this.tr.doc;
     const client = doc.clientID;
     const left = this.left;
@@ -203,7 +354,7 @@ export class Cursor {
   }
 
   private minimizeFormatChanges(formats: Record<string, unknown>): void {
-    while (this.right !== null) {
+    while (this.right !== null && this.mayPass()) {
       const r = this.right;
       if (r.deleted) {
         // a deleted item has no length: step over it
@@ -240,9 +391,12 @@ export class Cursor {
     return negated;
   }
 
-  private insertNegatedFormats(negated: Formats): void {
+  private insertNegatedFormats(negated: Formats, hop = true): void {
+    const view = viewZone(this.hidden);
     while (
       this.right !== null &&
+      (view === null || !view.foreign(this.right)) &&
+      this.mayPass() &&
       (this.right.deleted ||
         (isFormat(this.right) &&
           equalFormatValue(
@@ -255,8 +409,15 @@ export class Cursor {
       }
       this.forward();
     }
+    // Before another zone's items, restore right here (never inside or
+    // after their range).
+    const atForeign =
+      view !== null && this.right !== null && view.foreign(this.right);
     for (const [key, val] of negated) {
-      this.right = this.newItem(new ContentFormat(key, val as object));
+      this.right = this.newItem(
+        new ContentFormat(key, val as object),
+        hop && !atForeign,
+      );
       this.forward();
     }
   }
@@ -292,7 +453,27 @@ export class Cursor {
         f[key] = null;
       }
     });
-    this.minimizeFormatChanges(f);
+    // Settle the insert position before comparing formats: stepping over
+    // deleted or matching format items can reach another zone's items, and
+    // hopping over them passes their format items (formats are positional).
+    const view = viewZone(this.hidden);
+    for (let guard = 0; guard < 64; guard++) {
+      this.hopForeign();
+      this.minimizeFormatChanges(f);
+      if (
+        view === null ||
+        this.right === null ||
+        !view.foreign(this.right) ||
+        view.outside(this.right)
+      ) {
+        break;
+      }
+    }
+    this.formats.forEach((_v, key) => {
+      if (!(key in f)) {
+        f[key] = null;
+      }
+    });
     const negated = this.insertFormats(f);
     const item = this.newItem(content);
     this.right = item;
@@ -319,6 +500,7 @@ export class Cursor {
   delete(n: number): void {
     const start = this.right;
     const startFormats = new Map(this.formats);
+    this.jumped = false;
     while (n > 0 && this.right !== null) {
       const item = this.right;
       if (this.counts(item)) {
@@ -330,7 +512,12 @@ export class Cursor {
       }
       this.forward();
     }
-    if (start !== null) {
+    if (start !== null && this.jumped) {
+      // The deletion entered or left an inline range: formats are
+      // positional, take them where the cursor is.
+      this.cleanupFormattingGap(start, startFormats);
+      this.formats = formatsAfterItem(this.parent, this.left);
+    } else if (start !== null) {
       this.cleanupFormattingGap(start, startFormats);
       // The cleanup can remove format items the cursor already passed:
       // recompute the formats in effect at the cursor.
@@ -398,15 +585,49 @@ export class Cursor {
 
   /** Apply `formats` to the next `n` content units. */
   format(n: number, formats: Record<string, unknown>): void {
+    const view = viewZone(this.hidden);
+    for (;;) {
+      n = this.formatRun(n, formats);
+      if (n <= 0 || view === null) {
+        return;
+      }
+      // Another zone's items: they keep their formats. Step over them and
+      // format the rest after them. At an inline range's start or end, the
+      // formats were restored before it: go on in or after the range.
+      const before = this.right;
+      if (this.atJump()) {
+        this.forward();
+        continue;
+      }
+      this.hopForeign();
+      if (this.right === null || this.right === before) {
+        return;
+      }
+    }
+  }
+
+  /**
+   * Format up to `n` units, stopping before another zone's items (their
+   * formats are not this write's): returns the units left.
+   */
+  private formatRun(n: number, formats: Record<string, unknown>): number {
+    const view = viewZone(this.hidden);
+    const foreign = (r: Item) => view !== null && view.foreign(r);
     this.minimizeFormatChanges(formats);
     const negated = this.insertFormats(formats);
-
+    let stopped = false;
     loop: while (
       this.right !== null &&
       (n > 0 ||
-        (negated.size > 0 && (this.right.deleted || isFormat(this.right))))
+        (negated.size > 0 &&
+          (this.right.deleted || isFormat(this.right)) &&
+          this.mayPass()))
     ) {
       const r = this.right;
+      if (foreign(r) || this.atJump()) {
+        stopped = true;
+        break;
+      }
       if (!r.deleted) {
         if (isFormat(r)) {
           const {key, value} = r.content as ContentFormat;
@@ -429,10 +650,30 @@ export class Cursor {
             getItemCleanStart(this.tr, createID(r.id.client, r.id.clock + n));
           }
           n -= Math.min(n, r.length);
+          const rec = view === null ? null : view.zones.inlineRec(view.zone);
+          if (rec !== null && rec.e === r) {
+            // The last item of an inline range is content (a piece of a
+            // line): the formats are restored right after it, physically,
+            // before the walk leaves the range.
+            this.left = r;
+            this.right = r.right;
+            this.insertNegatedFormats(negated, true);
+            // Leave the range: on after its record (see settle).
+            view!.zone = view!.zones.ownerOf(rec.item);
+            this.left = rec.item;
+            this.right = rec.item.right;
+            this.formats = formatsAfterItem(this.parent, rec.item);
+            this.jumped = true;
+            this.settle();
+            return n;
+          }
         }
       }
       this.forward();
     }
-    this.insertNegatedFormats(negated);
+    // At another zone's items, the formats are restored right here (the
+    // start of that range): what the range shows keeps its own formats.
+    this.insertNegatedFormats(negated, !stopped);
+    return stopped ? n : 0;
   }
 }

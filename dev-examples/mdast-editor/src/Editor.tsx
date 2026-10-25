@@ -112,7 +112,11 @@ This is the *collapsed content* that's only visible when open
 \`\`\`ts
 const editor = buildEditorFromExtensions({
   name: 'editor',
-  dependencies: [MdastShortcutsExtension],
+  dependencies: [
+    MdastCommonMarkExtension,
+    MdastGfmExtension,
+    MdastShortcutsExtension,
+  ],
 });
 \`\`\`
 

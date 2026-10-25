@@ -762,12 +762,13 @@ const $exportFootnoteRef: MdastExportHandler<FootnoteRefNode> = node => {
     type: 'footnoteReference',
   };
   // The format bitmask re-wraps in phrasing containers, nesting in the same
-  // order as the core text serialization (emphasis innermost).
-  if (node.hasFormat('italic')) {
-    content = {children: [content], type: 'emphasis'};
-  }
+  // order as the core text serialization (emphasis around strong), so the
+  // ref merges with formatted text next to it.
   if (node.hasFormat('bold')) {
     content = {children: [content], type: 'strong'};
+  }
+  if (node.hasFormat('italic')) {
+    content = {children: [content], type: 'emphasis'};
   }
   if (node.hasFormat('strikethrough')) {
     content = {children: [content], type: 'delete'};

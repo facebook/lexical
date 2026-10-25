@@ -10,6 +10,7 @@ import {computed, EditorStateExtension} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {$isListNode} from '@lexical/list';
 import {$isHeadingNode} from '@lexical/rich-text';
+import {$findMatchingParent} from '@lexical/utils';
 import {$getSelection, $isRangeSelection, defineExtension} from 'lexical';
 
 import {MdastEditorExtension} from './MdastEditorExtension';
@@ -42,18 +43,20 @@ function $readSelectionState(): ToolbarSelectionState {
   if (!$isRangeSelection(selection)) {
     return DEFAULT_SELECTION_STATE;
   }
-  const anchorNode = selection.anchor.getNode();
-  // Deleting all content can leave the selection on the root, which has no
-  // top-level element. Keep the paragraph default and the selection's formats.
-  const topLevelElement = anchorNode.getTopLevelElement();
+  // The nearest heading or list, so a block in a table cell reports its own
+  // type rather than the table's.
+  const block = $findMatchingParent(
+    selection.anchor.getNode(),
+    node => $isHeadingNode(node) || $isListNode(node),
+  );
   let blockType: BlockType = 'paragraph';
-  if ($isHeadingNode(topLevelElement)) {
-    const tag = topLevelElement.getTag();
+  if ($isHeadingNode(block)) {
+    const tag = block.getTag();
     if (tag === 'h1' || tag === 'h2' || tag === 'h3') {
       blockType = tag;
     }
-  } else if ($isListNode(topLevelElement)) {
-    blockType = topLevelElement.getListType();
+  } else if ($isListNode(block)) {
+    blockType = block.getListType();
   }
   return {
     blockType,

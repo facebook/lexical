@@ -994,7 +994,8 @@ const htmlBlockToMarkdown: ToMarkdownExtension = {
  *   Markdown work, and unclosed tags stay literal text,
  * - the import rules parse the HTML with `DOMParser` and hand it to
  *   `$generateNodesFromDOM`, substituting the pre-imported Markdown —
- *   including the Markdown text embedded between block tags, GitHub-style —
+ *   including the Markdown text embedded between block tags, which GFM
+ *   itself leaves raw —
  *   back in via placeholder elements that inherit the surrounding
  *   formatting context (`<strong>`, `style="color: …"`).
  *

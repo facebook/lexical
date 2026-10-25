@@ -36,10 +36,13 @@ import {$dfsWithSlotsIterator} from '@lexical/utils';
 import {
   $getRoot,
   $getSelection,
+  $getSlot,
+  $getSlotNames,
   $getState,
   $isElementNode,
   $isLineBreakNode,
   $isRangeSelection,
+  $isSlotHost,
   $isTextNode,
   IS_BOLD,
   IS_CODE,
@@ -380,15 +383,16 @@ function createNodeExporter(
    * {@link MdastExportContext.isIncluded}.
    */
   function $isIncluded(node: LexicalNode): boolean {
-    if (selection === null) {
-      return true;
-    }
-    for (const visited of $dfsWithSlotsIterator(node)) {
-      if (visited.node.isSelected(selection)) {
-        return true;
-      }
-    }
-    return false;
+    return (
+      selection === null ||
+      node.isSelected(selection) ||
+      ($isElementNode(node) && node.getChildren().some($isIncluded)) ||
+      ($isSlotHost(node) &&
+        $getSlotNames(node).some(name => {
+          const slot = $getSlot(node, name);
+          return slot !== null && $isIncluded(slot);
+        }))
+    );
   }
 
   /**
@@ -651,11 +655,12 @@ export function createMdastExport(compiled: CompiledMdast): {
   });
 
   const $serialize = (tree: Root, root: ElementNode): string => {
-    // Emphasis/strong delimiters are document-level; the delimiter recorded on
-    // import wins, otherwise contributed toMarkdownExtensions (and the '-'
-    // bullet baseline) decide. Defaults ride as the FIRST extension so that
-    // contributed extensions can override them; the syntax extension runs last
-    // so its handlers reproduce the per-node syntax captured on import.
+    // Emphasis/strong delimiters are document-level: `_` when one was
+    // recorded on import, unless contributed toMarkdownExtensions set them.
+    // Defaults (with the '-' bullet baseline) ride as the FIRST extension so
+    // that contributed extensions can override them; the syntax extension
+    // runs last so its handlers reproduce the per-node syntax captured on
+    // import.
     const {emphasis, strong} = $dominantInlineMarkers(root);
     const defaults: ToMarkdownExtension = {bullet: '-'};
     if (emphasis) {

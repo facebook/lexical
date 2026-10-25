@@ -691,7 +691,20 @@ not merge as a user might expect:
   wrapping a range (an autolink made as its last character is typed) moves
   the text into it, written there anew: concurrent typing in that range
   stays outside, and a collaborator's concurrent delete of a character there
-  does not apply to the moved text.
+  does not apply to the moved text. Store comments as NodeState instead,
+  with [`MarkStateExtension`](./comments.md).
+- **Set-valued NodeState** (`arraySetValue`, which `MarkStateExtension` uses)
+  merges per member on text, line breaks and nodes stored as their own Yjs
+  node (such as decorators), so two collaborators commenting on the same
+  words both keep their comment. On a line such as a paragraph or heading, a
+  list item, a list or a link the set is one value, and concurrent changes
+  to it keep one writer's set. The state needs no registration: a client
+  that has not used it yet holds the members as one unknown value, which
+  its first `$getState` reads, and writes them back one per member. Do not
+  name another state with a set's key followed by U+001F (`'tags\u001fx'`
+  next to a set `'tags'`): that is the name the binding stores the set's
+  member `x` under, so it refuses such a state, even one without a value,
+  whenever it writes it or the set.
 - **Named slots.** A slot holds one node: two collaborators setting the same
   slot at once keep one writer's node, and text typed in a slot that a
   collaborator replaces or removes at the same time is lost (as with delete
@@ -777,10 +790,6 @@ not merge as a user might expect:
   collaborators remove the same text and both undo, it shows twice.
 - **Large lists.** A structural edit in a list costs time proportional to
   the list on every client.
-- **NodeState sets.** A NodeState value that is a set (declared with
-  `arraySetValue`, as `MarkStateExtension` stores mark ids) is one value per
-  text run: two clients changing the set of the same text at once keep one
-  writer's set.
 - **NodeState key order.** Other clients (and any later reader) get a node's
   NodeState with its keys in sorted order, which every client builds the
   same way, not in the order the author's editor exported them (a Yjs map

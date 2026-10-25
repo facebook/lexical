@@ -41,9 +41,11 @@ import {
   getWrapperSpec,
   INLINE_PREFIX,
   isOwnedTextKey,
+  isSetStateConfig,
   MARKER,
   RUN_END,
   SEGMENT_KEY,
+  SET_MEMBER_SEPARATOR,
   stableStringify,
   STATE_PREFIX,
   TEXT_FORMAT_PREFIX,
@@ -453,6 +455,33 @@ function firstDifference(a: unknown, b: unknown, path: string): string | null {
 }
 
 /**
+ * Make the set-valued StateConfigs known to `from` (registered by an
+ * extension, or used there) known to `to` too, so that `to` joins the
+ * per-member entries it reads into sets the way `from` does. A StateConfig
+ * whose key contains the member separator is shared too: the reader keeps
+ * an entry of that name as an ordinary key only when it knows a StateConfig
+ * for it (see joinSetMembers).
+ */
+function shareSetStateConfigs(from: LexicalEditor, to: LexicalEditor): void {
+  for (const [type, info] of from._nodes) {
+    const target = to._nodes.get(type);
+    if (target === undefined) {
+      continue;
+    }
+    const {sharedConfigMap} = target.sharedNodeState;
+    for (const stateConfig of info.sharedNodeState.sharedConfigMap.values()) {
+      if (
+        (isSetStateConfig(stateConfig) ||
+          stateConfig.key.includes(SET_MEMBER_SEPARATOR)) &&
+        !sharedConfigMap.has(stateConfig.key)
+      ) {
+        sharedConfigMap.set(stateConfig.key, stateConfig);
+      }
+    }
+  }
+}
+
+/**
  * Development self-check of a whole container: a fresh reader (a new editor
  * with the same nodes) reads the container's shared content, and the result
  * must equal the editor's container (node types, fields, NodeState, list
@@ -610,7 +639,8 @@ function groupTypesOf(state: State): Set<string> {
  * A new editor with the bound editor's nodes, for a fresh read. Built the
  * way the bound editor was: a node class whose constructor builds a nested
  * editor from extensions (NestedEditorExtension, an image caption) needs the
- * editor it is created in to come from LexicalBuilder.
+ * editor it is created in to come from LexicalBuilder. It knows the bound
+ * editor's set-valued StateConfigs (see shareSetStateConfigs).
  */
 function freshEditorFor(state: State): {
   editor: LexicalEditor;
@@ -628,12 +658,16 @@ function freshEditorFor(state: State): {
       nodes: () => nodes,
       onError,
     });
+    shareSetStateConfigs(state.editor, built);
     return {dispose: () => built.dispose(), editor: built};
   }
-  return {
-    dispose: null,
-    editor: createEditor({namespace: '@lexical/y self-check', nodes, onError}),
-  };
+  const editor = createEditor({
+    namespace: '@lexical/y self-check',
+    nodes,
+    onError,
+  });
+  shareSetStateConfigs(state.editor, editor);
+  return {dispose: null, editor};
 }
 
 /**
@@ -783,6 +817,8 @@ export function $followUpDifference(
     followUpEditors.set(state.editor, fresh);
   }
   const editor = fresh;
+  // A set-valued state first used after the editor was cached.
+  shareSetStateConfigs(state.editor, editor);
   try {
     editor.update(
       () => {

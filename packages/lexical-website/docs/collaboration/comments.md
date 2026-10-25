@@ -26,7 +26,8 @@ inserted exactly at the edge of a run stays outside it, as with `MarkNode`
 ## When to use `MarkStateExtension`
 
 Prefer it when marks overlap or when the document is edited collaboratively
-with the Yjs v2 binding (`CollaborationPluginV2__EXPERIMENTAL`).
+with the Yjs v2 binding (`CollaborationPluginV2__EXPERIMENTAL`) or the
+[Yjs 14 binding](./y.md) (`@lexical/y`).
 
 - **Overlap.** Text covered by two comments is a single TextNode carrying
   both ids. With `MarkNode`, overlapping comments become sibling wrappers
@@ -223,6 +224,13 @@ ids of a leaf as one value, so:
   drop the marks on it or extend them over neighboring text. Typing exactly
   at the edge of a mark while a peer edits follows the order Yjs gives the
   two edits. Peers always converge on the same document.
+
+The experimental [Yjs 14 binding](./y.md) (`@lexical/y`) stores each id
+separately on text, line breaks and nodes stored as their own Yjs node, so
+there concurrent additions and removals of different ids all apply: two
+collaborators commenting on the same words both keep their comment, and a
+comment resolved while another is added stays resolved. Ids on a line such as a paragraph or
+heading, a list item, a list or a link are still one value there.
 
 :::caution v1 collaboration
 

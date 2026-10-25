@@ -227,6 +227,8 @@ export class Peer {
     clientID: number,
     readonly net: Network,
     readonly nodes: Klass<LexicalNode>[] = NODES,
+    /** Runs on the editor before the binding starts. */
+    readonly prepare?: (editor: LexicalEditor) => void,
   ) {
     this.doc = new Y.Doc({gc: false});
     this.doc.clientID = clientID;
@@ -247,6 +249,9 @@ export class Peer {
     });
     this.editor = bound.editor;
     this.binding = bound.binding;
+    if (prepare) {
+      prepare(this.editor);
+    }
     this.stop = bound.start();
     this.doc.on('update', (update: Uint8Array, origin: unknown) => {
       if (origin === this.net) {
@@ -347,6 +352,7 @@ export async function setup(
     ids?: number[];
     delivery?: Delivery;
     nodes?: Klass<LexicalNode>[];
+    prepare?: (editor: LexicalEditor) => void;
   } = {},
 ): Promise<Setup> {
   const net: Network = {
@@ -356,7 +362,9 @@ export async function setup(
     queue: [],
   };
   const ids = options.ids ?? [1, 2];
-  const peers = ids.map(id => new Peer(id, net, options.nodes));
+  const peers = ids.map(
+    id => new Peer(id, net, options.nodes, options.prepare),
+  );
   const [a] = peers;
   a.update(() => {
     $getRoot().clear();
@@ -432,7 +440,7 @@ export async function freshReader(
     pumping: false,
     queue: [],
   };
-  const peer = new Peer(99, net, nodes || from.nodes);
+  const peer = new Peer(99, net, nodes || from.nodes, from.prepare);
   Y.applyUpdate(peer.doc, Y.encodeStateAsUpdate(from.doc), 'load');
   peer.binding.initialize();
   await flush();

@@ -13,7 +13,12 @@ import {$getRoot} from 'lexical';
 import {describe, expect, test} from 'vitest';
 
 import {expectConverged, type Peer, setup} from '../utils/harness';
-import {$initDoc, scriptedSession, SIZE_OPS} from '../utils/sizeOps';
+import {
+  $initDoc,
+  prepareMarkState,
+  scriptedSession,
+  SIZE_OPS,
+} from '../utils/sizeOps';
 
 // Bytes added to the document per operation: deterministic (gc off, pinned
 // client ids in the range of Yjs' random ids, so references cost what they
@@ -51,6 +56,8 @@ function emitted(peer: Peer, fn: () => void): number {
 const BUDGETS: Record<string, [number, number, number]> = {
   'Backspace join': [13, 32, 13],
   'Enter mid line': [32, 13, 31],
+  'add a comment (MarkStateExtension)': [90, 13, 84],
+  'add an overlapping comment (MarkStateExtension)': [90, 13, 84],
   'bold a range': [71, 13, 67],
   'delete a container (table)': [15, 622, 13],
   'heading toggle': [55, 13, 44],
@@ -61,6 +68,7 @@ const BUDGETS: Record<string, [number, number, number]> = {
   'outdent list item': [32, 67, 32],
   'paste 1k chars': [1129, 15, 1130],
   'quote toggle': [32, 13, 29],
+  'remove a comment (MarkStateExtension)': [14, 146, 13],
   'reset a NodeState key on a range': [13, 74, 13],
   'set a NodeState key on a range': [77, 13, 74],
   'table row delete': [15, 210, 13],
@@ -86,7 +94,7 @@ const SESSION_BYTES_PER_EDIT = 24.3;
 describe('@lexical/y bytes per operation', () => {
   for (const op of SIZE_OPS) {
     test(op.name, async () => {
-      const t = await setup($initDoc, {ids: IDS});
+      const t = await setup($initDoc, {ids: IDS, prepare: prepareMarkState});
       if (op.prepare) {
         t.a.update(op.prepare);
         await t.sync();

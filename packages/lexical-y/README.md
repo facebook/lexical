@@ -159,6 +159,20 @@ below.
   telling apart two adjacent wrappers with equal fields.
 - **Line breaks** are the character `\n` in the text, with their NodeState
   as text formats (`s:<key>`).
+- **Set-valued NodeState** (an `arraySetValue` state, whose schema has
+  `meta.kind === 'set'`): on text, line breaks and nodes stored as their
+  own `Y.Node`, one `s:<key>\u001f<member>` = `true` entry per member
+  instead of one `s:<key>` value (`s:\u001f<member>` for a state whose key
+  is empty). A reader joins the entries back into one array, unless it
+  knows a state of the entry's own name, or a state of the set's key that
+  is not a set. For a state it does not know yet, the array is an unknown
+  NodeState value, which the state's first use reads and which is written
+  back one entry per member. A set whose key contains U+001F is stored as
+  one value. Any other StateConfig whose key starts with a set-valued
+  state's key and U+001F would be the name of a member entry, so the
+  binding refuses it whenever it writes it or the set, even without a
+  value (an invariant in development; in production a warning, and the set
+  is stored as one value).
 - **Values:** primitives are stored as they are. Other JSON values (objects
   and arrays) are stored three ways, by where they sit:
   - in node and marker attributes (`p:`, `s:`, `g:`, `o`): the JSON value

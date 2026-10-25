@@ -120,8 +120,8 @@ and
 selected content (defaulting to the current selection): unselected
 blocks and list items are skipped and partially selected text is
 sliced to the selected range. A GFM table writes the rows and columns a
-selection reaches, or a selection within one cell as that cell's blocks,
-as copying in a cell does.
+selection reaches, or a text or node selection within one cell as that
+cell's blocks, as copying in a cell does.
 
 ### unified / remark interop
 

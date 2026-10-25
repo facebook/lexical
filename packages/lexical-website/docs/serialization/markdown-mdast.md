@@ -128,12 +128,12 @@ options, which can be configured by contributing
 
 GFM tables (`MdastTableExtension`) import a column's alignment as the
 element format of the paragraph in each of its cells, and write it from
-the text of the column's header cell (the format of the block holding the
-cell's first line with content, or of the nearest block around it with
-one, or else of the cell, where blocks in a nested table count for nothing
-and start and end are none); a
-format GFM can't express leaves the column unaligned. Export is lossy
-where GFM has no form for a table's content: a cell's blocks and line
+the text of the column's header cell (the format of the block holding
+the cell's first line with content, or of the nearest block around it
+with one, or else of the cell, where blocks in a nested table count for
+nothing and start and end are none); a format GFM can't express leaves
+the column unaligned. Export is lossy where GFM has no form for a
+table's content: a cell's blocks (a block's named slots first) and line
 breaks become lines separated by `<br>` (whatever spelling of the tag,
 such as `<br/>` or `</br>`, was read), a merged cell is written where it
 starts with empty cells where it spans, block decorators in a cell are

@@ -30,9 +30,7 @@ import {
 } from '@lexical/table';
 import {
   $createParagraphNode,
-  $getSlot,
   $getSlotHost,
-  $getSlotNames,
   $isElementNode,
   $isLineBreakNode,
   $isNodeSelection,
@@ -45,7 +43,7 @@ import {
 import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
 import {gfmTable} from 'micromark-extension-gfm-table';
 
-import {$append, $isBlockLevelNode, inlineMarker} from './handlers';
+import {$append, $isBlockLevelNode, $slotNodes, inlineMarker} from './handlers';
 import {MdastExtension} from './MdastExtension';
 
 /**
@@ -216,9 +214,8 @@ function $cellLines(cell: TableCellNode): {
       const firstDecorator = decorators.length;
       // Named slots first, as they come first in a host's DOM; an empty one
       // is no line.
-      for (const name of $getSlotNames(node)) {
-        const slot = $getSlot(node, name);
-        if (slot && !($isElementNode(slot) && slot.isEmpty())) {
+      for (const slot of $slotNodes(node)) {
+        if (!($isElementNode(slot) && slot.isEmpty())) {
           $visit(slot, node);
           line = undefined;
         }
@@ -341,22 +338,17 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   // cell can't hold, are written after the table.
   const {grid, rows} = $tableGrid(node);
   const decorators: LexicalNode[] = [];
-  // The lines of a cell, from the first line a selection export reaches to
-  // the last (an empty one by its block); the block decorators it reaches
-  // are collected.
+  // The lines of a cell a selection export reaches (an empty one by its
+  // block); the block decorators it reaches are collected.
   const cellsLines = new Map<TableCellNode, LexicalNode[][]>();
   const $linesOf = (cell: TableCellNode) => {
     let cached = cellsLines.get(cell);
     if (!cached) {
       const cellLines = $cellLines(cell);
-      const reached = cellLines.lines.map((line, i) =>
+      cached = cellLines.lines.filter((line, i) =>
         line.length > 0
           ? line.some(ctx.isIncluded)
           : ctx.isIncluded(cellLines.owners[i]),
-      );
-      cached = cellLines.lines.slice(
-        reached.indexOf(true),
-        reached.lastIndexOf(true) + 1,
       );
       cellsLines.set(cell, cached);
       decorators.push(...cellLines.decorators.filter(ctx.isIncluded));
@@ -525,8 +517,8 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
  * and an escaped pipe is a pipe in raw HTML, and in autolinks imported from
  * Markdown source (an mdast tree without it can't tell an autolink from
  * `[text](url)`). Export writes
- * any table as near as GFM allows: a cell's blocks and line breaks as lines
- * separated by `<br>`, a merged cell with empty cells where it spans, block
+ * any table as near as GFM allows: a cell's blocks (a block's named slots
+ * first) and line breaks as lines separated by `<br>`, a merged cell with empty cells where it spans, block
  * decorators in a cell after the table, and as a column's alignment, that
  * of the text in its header cell (the format of the block its first line
  * with content is in, or of the nearest block around it with one, or else

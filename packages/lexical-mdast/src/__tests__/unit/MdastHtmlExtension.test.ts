@@ -998,4 +998,40 @@ describe('MdastHtmlExtension', () => {
       );
     });
   });
+
+  it('writes no line for a named slot a selection of a cell does not reach', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [MdastExtension, MdastTableExtension],
+        name: '[root]',
+        nodes: [CalloutNode],
+      }),
+    );
+    editor.update(
+      () => {
+        $convertFromMarkdownString('before\n\n| a |\n| - |\n| x |\n\nafter');
+        const callout = $create(CalloutNode).append(
+          $createParagraphNode().append($createTextNode('body')),
+        );
+        $setSlot(
+          callout,
+          'title',
+          $createParagraphNode().append($createTextNode('title')),
+        );
+        $getRoot()
+          .getChildAtIndex<ElementNode>(1)!
+          .getLastChildOrThrow<ElementNode>()
+          .getFirstChildOrThrow<ElementNode>()
+          .append(callout);
+        $getRoot().select(0, $getRoot().getChildrenSize());
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      // Text in a slot is not in a range selection around its host.
+      expect($convertSelectionToMarkdownString()).toBe(
+        'before\n\n| a         |\n| --------- |\n| x<br>body |\n\nafter',
+      );
+    });
+  });
 });

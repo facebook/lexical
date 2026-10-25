@@ -35,8 +35,6 @@ import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
   $getRoot,
   $getSelection,
-  $getSlot,
-  $getSlotNames,
   $getState,
   $isElementNode,
   $isLineBreakNode,
@@ -53,6 +51,7 @@ import {toString as mdastToString} from 'mdast-util-to-string';
 import {
   $exportLineBreak,
   $isBlockLevelNode,
+  $slotNodes,
   exportText,
   phrasingFromTextRuns,
   TEXT_FORMAT_MASK,
@@ -391,10 +390,7 @@ function createNodeExporter(
         }
       }
     }
-    return $getSlotNames(node).some(name => {
-      const slot = $getSlot(node, name);
-      return slot !== null && $isIncluded(slot);
-    });
+    return $slotNodes(node).some($isIncluded);
   }
 
   /**

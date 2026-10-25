@@ -18,6 +18,7 @@ import type {
   LexicalNode,
   StateConfig,
 } from 'lexical';
+import type {Signal} from '@lexical/extension';
 
 // ContextRecord types
 
@@ -163,6 +164,25 @@ declare export var DOMRenderExtension: LexicalExtension<
   '@lexical/html/DOM',
   DOMRenderExtensionOutput,
   void,
+>;
+
+// BlockIdHTMLExtension
+
+declare export var BLOCK_ID_ATTRIBUTE: 'data-block-id';
+
+export type BlockIdHTMLConfig = {
+  export: boolean,
+  import: boolean,
+};
+
+declare export var BlockIdHTMLExtension: LexicalExtension<
+  BlockIdHTMLConfig,
+  '@lexical/html/BlockIdHTML',
+  {
+    export: Signal<boolean>,
+    import: Signal<boolean>,
+  },
+  unknown,
 >;
 
 // RenderContext

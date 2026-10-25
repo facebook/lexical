@@ -49,6 +49,7 @@ export const PURE_FACTORY_FUNCTIONS = [
   // The combinators that build a node's serialization schema at module
   // scope, nested inside each other and inside createState.
   'aliasedValue',
+  'arraySetValue',
   'arrayValue',
   'booleanValue',
   'configExtension',

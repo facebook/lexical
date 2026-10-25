@@ -43,8 +43,7 @@ function $readSelectionState(): ToolbarSelectionState {
   if (!$isRangeSelection(selection)) {
     return DEFAULT_SELECTION_STATE;
   }
-  // The nearest heading or list, so a block in a table cell reports its own
-  // type rather than the table's.
+  // The nearest heading or list, so a nested list reports its own type.
   const block = $findMatchingParent(
     selection.anchor.getNode(),
     node => $isHeadingNode(node) || $isListNode(node),

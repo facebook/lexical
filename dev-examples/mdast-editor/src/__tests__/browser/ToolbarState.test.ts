@@ -12,10 +12,14 @@ import {
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
 import {$convertFromMarkdownString} from '@lexical/mdast';
+import {$createHeadingNode} from '@lexical/rich-text';
+import {$isTableNode} from '@lexical/table';
 import {
   $createRangeSelection,
+  $createTextNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   $setSelection,
 } from 'lexical';
@@ -118,3 +122,27 @@ test.each(['', '\n\n[^a]: Footnote'])(
     );
   },
 );
+
+test('reads the block type of a heading in a table cell', () => {
+  const {editor, toolbar} = mountEditor('| a |\n| - |\n| b |');
+  editor.update(
+    () => {
+      const table = $getRoot().getFirstChildOrThrow();
+      assert($isTableNode(table));
+      const block = table.getLastChildOrThrow().getFirstChildOrThrow();
+      assert($isElementNode(block));
+      block
+        .getFirstChildOrThrow()
+        .replace($createHeadingNode('h2').append($createTextNode('b')))
+        .selectEnd();
+    },
+    {discrete: true},
+  );
+  expect(toolbar.blockType.value).toBe('h2');
+});
+
+test('reads the type of the nearest list', () => {
+  const {editor, toolbar} = mountEditor('- a\n  1. b');
+  editor.update(() => $getRoot().selectEnd(), {discrete: true});
+  expect(toolbar.blockType.value).toBe('number');
+});

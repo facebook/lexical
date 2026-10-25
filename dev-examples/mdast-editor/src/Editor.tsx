@@ -44,8 +44,8 @@ and keeps the markdown on the right in sync as you type.
 
 ## Round-trip fidelity
 
-The original syntax is preserved on the nodes, so what you paste is what
-you export — bullet styles, code fences, setext headings, hard breaks:
+The original syntax is preserved on the nodes, so most of what you paste
+comes back as written — bullet styles, code fences, setext headings, hard breaks:
 
 > Blockquotes survive round-trips,
 > including *inline formatting*.

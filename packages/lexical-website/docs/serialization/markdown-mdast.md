@@ -116,10 +116,10 @@ nodes with [NodeState](/docs/concepts/node-state): list bullet
 `-`/`*`/`+`, ordered delimiter `.`/`)`, code fence style and
 info-string meta, setext vs ATX headings, hard-break style, soft line
 breaks, thematic break marker, `_` vs `*` emphasis, and link style
-(`[text](url)` vs `<autolink>` vs bare GFM literal). Text that is both bold
-and italic is written as emphasis around strong (`***both***`), so
-`**_both_**` comes back as `_**both**_`. Normalization is
-never forced; nodes created in the editor defer to the document-level
+(`[text](url)` vs `<autolink>` vs bare GFM literal). Normalization is
+never forced, except that text both bold and italic is written as
+emphasis around strong (`**_both_**` comes back as `_**both**_`); nodes
+created in the editor defer to the document-level
 serialization options, which can be configured by contributing
 `mdast-util-to-markdown` options through `toMarkdownExtensions`.
 

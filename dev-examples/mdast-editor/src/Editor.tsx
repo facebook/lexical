@@ -100,12 +100,13 @@ to pick another type or convert back to a blockquote:
 ## Collapsible sections
 
 Raw HTML blocks import through the editor's HTML import rules — with
-the Markdown inside them intact, GitHub-style — so GFM-style
+the Markdown blocks inside them intact, GitHub-style, and Markdown in the
+text between the tags too, which GitHub leaves raw — so GFM-style
 \`<details>\` blocks map to a collapsible node whose summary line is
 edited in a named slot:
 
 <details><summary>
-This is the summary that shows when collapsed
+This is the *summary* that shows when collapsed
 </summary>
 
 This is the *collapsed content* that's only visible when open

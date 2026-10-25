@@ -460,6 +460,8 @@ describe('footnotes', () => {
       'no refs here\n\n[^orphan]: kept anyway',
       'no refs here\n\n[^orphan]: kept anyway',
     ],
+    // An emphasis marker used only in a definition sets the document's.
+    ['x[^1]\n\n[^1]: _b_', 'x[^1]\n\n[^1]: _b_'],
     // A bold italic ref merges with the bold italic text around it.
     ['***x[^a] y***\n\n[^a]: n', '***x[^a] y***\n\n[^a]: n'],
     ['**a *b[^a]***\n\n[^a]: n', '**a *b[^a]***\n\n[^a]: n'],

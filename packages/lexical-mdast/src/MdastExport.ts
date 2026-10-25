@@ -577,9 +577,9 @@ function createNodeExporter(
 }
 
 /**
- * Picks the document-level emphasis and strong delimiters from the first
- * italic / bold text node that recorded a known delimiter on import, scanning
- * the tree rooted at `node`. Mixing delimiters within one document is not
+ * Picks `_` as the document-level emphasis or strong delimiter when an italic
+ * or bold text node in the tree rooted at `node` (named slots included)
+ * recorded it on import. Mixing delimiters within one document is not
  * supported by to-markdown's escaping, so a single choice is made per
  * document; nodes with no recorded delimiter (created in the editor) are
  * skipped so they cannot mask the document's authored style.
@@ -590,8 +590,11 @@ function $dominantInlineMarkers(node: ElementNode): {
 } {
   let emphasis: '*' | '_' | undefined;
   let strong: '*' | '_' | undefined;
-  const visit = (element: ElementNode): void => {
-    for (const child of element.getChildren()) {
+  const visit = (parent: LexicalNode): void => {
+    for (const child of [
+      ...$slotNodes(parent),
+      ...($isElementNode(parent) ? parent.getChildren() : []),
+    ]) {
       if ($isTextNode(child)) {
         if (emphasis === undefined && child.hasFormat('italic')) {
           const marker = $getState(child, emphasisMarkerState);
@@ -605,7 +608,7 @@ function $dominantInlineMarkers(node: ElementNode): {
             strong = '_';
           }
         }
-      } else if ($isElementNode(child)) {
+      } else {
         visit(child);
       }
       if (emphasis !== undefined && strong !== undefined) {

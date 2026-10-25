@@ -386,9 +386,8 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     });
     written.push(cells);
   });
-  const exported = ctx.exportChildren(decorators);
   if (to < 0) {
-    return exported;
+    return ctx.exportChildren(decorators);
   }
   // The columns from the first a selection export reaches to the last.
   const columns = <T>(map: (column: number) => T) =>
@@ -423,7 +422,8 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
       })),
       type: 'table',
     },
-    ...exported,
+    // Exported after the cells, in document order.
+    ...ctx.exportChildren(decorators),
   ];
 };
 

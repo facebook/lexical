@@ -60,7 +60,6 @@ import {
   $isElementNode,
   $isLineBreakNode,
   $isParagraphNode,
-  $isSlotHost,
   $isTextNode,
   $setState,
   IS_BOLD,
@@ -106,12 +105,10 @@ export function $prepend<T extends ElementNode>(
 
 /** The nodes in the named slots of `node`, in `$getSlotNames` order. */
 export function $slotNodes(node: LexicalNode): LexicalNode[] {
-  return $isSlotHost(node)
-    ? $getSlotNames(node).flatMap(name => {
-        const slot = $getSlot(node, name);
-        return slot ? [slot] : [];
-      })
-    : [];
+  return $getSlotNames(node).flatMap(name => {
+    const slot = $getSlot(node, name);
+    return slot ? [slot] : [];
+  });
 }
 
 /**

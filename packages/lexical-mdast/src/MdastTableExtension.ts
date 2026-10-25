@@ -30,9 +30,7 @@ import {
 } from '@lexical/table';
 import {
   $createParagraphNode,
-  $getSlot,
   $getSlotHost,
-  $getSlotNames,
   $isElementNode,
   $isLineBreakNode,
   $isNodeSelection,
@@ -45,7 +43,7 @@ import {
 import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
 import {gfmTable} from 'micromark-extension-gfm-table';
 
-import {$append, $isBlockLevelNode, inlineMarker} from './handlers';
+import {$append, $isBlockLevelNode, $slotNodes, inlineMarker} from './handlers';
 import {MdastExtension} from './MdastExtension';
 
 /**
@@ -84,14 +82,6 @@ function mapPhrasing(
     return result;
   });
   return (changed ? mapped : nodes) as PhrasingContent[];
-}
-
-/** The nodes in the named slots of `node`, in `$getSlotNames` order. */
-function $slotNodes(node: LexicalNode): LexicalNode[] {
-  return $getSlotNames(node).flatMap(name => {
-    const slot = $getSlot(node, name);
-    return slot ? [slot] : [];
-  });
 }
 
 /** The host the node is in a named slot of, or else its parent. */

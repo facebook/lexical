@@ -809,13 +809,23 @@ interface PhrasingLike {
 
 const INVERTIBLE = new Set(['emphasis', 'strong']);
 
+/** Whether `node` is a wrapper of `type` with nothing but its children. */
+function isBareWrapper(node: PhrasingLike, type: string): boolean {
+  return (
+    node.type === type &&
+    node.children !== undefined &&
+    Object.keys(node).every(key => key === 'type' || key === 'children')
+  );
+}
+
 function swapsTo(node: PhrasingLike, type: string): PhrasingLike | null {
   const {children} = node;
   return INVERTIBLE.has(node.type) &&
     INVERTIBLE.has(type) &&
+    isBareWrapper(node, node.type) &&
     children !== undefined &&
     children.length > 0 &&
-    children.every(child => child.type === type && child.children)
+    children.every(child => isBareWrapper(child, type))
     ? {
         children: [
           {

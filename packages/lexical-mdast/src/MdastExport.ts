@@ -36,8 +36,6 @@ import {$dfsWithSlotsIterator} from '@lexical/utils';
 import {
   $getRoot,
   $getSelection,
-  $getSlot,
-  $getSlotNames,
   $getState,
   $isElementNode,
   $isLineBreakNode,
@@ -55,6 +53,7 @@ import {toString as mdastToString} from 'mdast-util-to-string';
 import {
   $exportLineBreak,
   $isBlockLevelNode,
+  $slotNodes,
   exportText,
   phrasingFromTextRuns,
   TEXT_FORMAT_MASK,
@@ -387,11 +386,7 @@ function createNodeExporter(
       selection === null ||
       node.isSelected(selection) ||
       ($isElementNode(node) && node.getChildren().some($isIncluded)) ||
-      ($isSlotHost(node) &&
-        $getSlotNames(node).some(name => {
-          const slot = $getSlot(node, name);
-          return slot !== null && $isIncluded(slot);
-        }))
+      ($isSlotHost(node) && $slotNodes(node).some($isIncluded))
     );
   }
 

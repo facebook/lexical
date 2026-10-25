@@ -13,13 +13,12 @@ import {
 } from '@lexical/extension';
 import {$convertFromMarkdownString} from '@lexical/mdast';
 import {$createHeadingNode} from '@lexical/rich-text';
-import {$isTableNode} from '@lexical/table';
+import {$isTableCellNode, $isTableNode} from '@lexical/table';
 import {
   $createRangeSelection,
   $createTextNode,
   $getRoot,
   $getSelection,
-  $isElementNode,
   $isRangeSelection,
   $setSelection,
   type ElementNode,
@@ -130,11 +129,11 @@ test('reads the block type of a heading in a table cell', () => {
     () => {
       const table = $getRoot().getFirstChildOrThrow();
       assert($isTableNode(table));
-      const block = table
+      const cell = table
         .getLastChildOrThrow<ElementNode>()
         .getFirstChildOrThrow();
-      assert($isElementNode(block));
-      block
+      assert($isTableCellNode(cell));
+      cell
         .getFirstChildOrThrow()
         .replace($createHeadingNode('h2').append($createTextNode('b')))
         .selectEnd();

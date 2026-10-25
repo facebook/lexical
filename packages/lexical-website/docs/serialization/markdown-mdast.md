@@ -118,7 +118,8 @@ info-string meta, setext vs ATX headings, hard-break style, soft line
 breaks, thematic break marker, `_` vs `*` emphasis, and link style
 (`[text](url)` vs `<autolink>` vs bare GFM literal). Normalization is
 never forced, except that text both bold and italic is written as
-emphasis around strong (`**_both_**` comes back as `_**both**_`); nodes
+emphasis around strong (`**_both_**` comes back as `_**both**_`), and in
+GFM tables as below; nodes
 created in the editor defer to the document-level
 serialization options, which can be configured by contributing
 `mdast-util-to-markdown` options through `toMarkdownExtensions`.
@@ -131,7 +132,8 @@ one, or else of the cell, where blocks in a nested table count for nothing
 and start and end are none); a
 format GFM can't express leaves the column unaligned. Export is lossy
 where GFM has no form for a table's content: a cell's blocks and line
-breaks become lines separated by `<br>`, a merged cell is written where it
+breaks become lines separated by `<br>` (whatever spelling of the tag,
+such as `<br/>` or `</br>`, was read), a merged cell is written where it
 starts with empty cells where it spans, block decorators in a cell are
 written after the table, and the alignment of a body cell is dropped.
 

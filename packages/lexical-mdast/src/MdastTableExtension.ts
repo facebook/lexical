@@ -228,11 +228,11 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
     }
     // An autolink, `<…>` or literal, rather than `[text](url)`, which reads
     // its escapes as text does. Its text is its URL, as written.
-    const marker =
+    if (
       child.type === 'link' &&
       child.url.includes('\\|') &&
-      inlineMarker(ctx, child);
-    if (child.type === 'link' && marker && marker !== '[') {
+      (inlineMarker(ctx, child) || '[') !== '['
+    ) {
       return [
         {
           ...child,

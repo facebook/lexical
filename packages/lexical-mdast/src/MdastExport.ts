@@ -153,7 +153,8 @@ const syntaxToMarkdown = (
   handlers: {
     break(node: Break, parent, state, info) {
       // Delegate first: the default handler substitutes a space when a real
-      // EOL is unsafe in the current construct (headings, table cells). Only
+      // EOL is unsafe in the current construct (headings; the table writer
+      // writes a break in a cell as `<br>` before it gets here). Only
       // when it chose the hard-break form does the preserved marker apply:
       // trailing-space markers are reproduced, and the empty marker means the
       // break is SOFT (a source newline or editor line break) and serializes

@@ -40,7 +40,7 @@ and keeps the markdown on the right in sync as you type.
 - Wrap text in \`backticks\` for inline code
 - \`[text](url)\` for links
 - \`- \` or \`1. \` for lists, \`- [ ] \` / \`- [x] \` for check lists
-- \`> \` for a blockquote, \`\` \`\`\`js \`\` + Enter for a code block
+- \`> \` for a blockquote, \` \`\`\`js \` + Enter for a code block
 
 ## Round-trip fidelity
 
@@ -57,11 +57,6 @@ Custom inline nodes ride the same mechanism — press <kbd>Ctrl</kbd>+<kbd>C</kb
 Footnotes[^1] live in a \`footnotes\` slot on the RootNode — outside the
 document's children — and serialize to the end of the Markdown[^details].
 Type \`[^another]\` to mint one.
-
-[^1]: The reference is an inline node; this definition body is editable
-    in the section below.
-
-[^details]: Definitions hold *block* content, so lists and code work here.
 
 1. Ordered list item one
 2. Ordered list item two
@@ -94,8 +89,8 @@ to pick another type or convert back to a blockquote:
 > Useful information that users should know, even when skimming.
 
 > [!WARNING]
-> Critical content demanding immediate attention — with *inline
-> formatting* and other **Markdown** intact.
+> Critical content demanding immediate attention — with
+> *inline formatting* and other **Markdown** intact.
 
 ## Collapsible sections
 
@@ -120,6 +115,11 @@ const editor = buildEditorFromExtensions({
   dependencies: [MdastShortcutsExtension],
 });
 \`\`\`
+
+[^1]: The reference is an inline node; this definition body is editable
+    in the section below.
+
+[^details]: Definitions hold *block* content, so lists and code work here.
 `;
 
 const theme = {

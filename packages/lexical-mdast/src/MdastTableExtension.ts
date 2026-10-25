@@ -513,10 +513,11 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
  * nodes it ships.
  *
  * Import reads a table as GFM does: the first row is the header row, each row
- * has the header row's cells, column alignment is set on the paragraph of each
- * cell of the column as its element format, `<br>` is a line break, and an
- * escaped pipe is a pipe in raw HTML, and in autolinks imported from Markdown
- * source (an mdast tree without it can't tell an autolink from `[text](url)`).
+ * has the header row's cells, and an escaped pipe is a pipe in raw HTML, and in
+ * autolinks imported from Markdown source (an mdast tree without it can't tell
+ * an autolink from `[text](url)`). Column alignment is set on the paragraph of
+ * each cell of the column as its element format, and a raw HTML `<br>` in a
+ * cell, which export writes for a line break, is read as one.
  * Export writes any table as near as GFM allows: a cell's blocks (a block's
  * named slots first) and line breaks as lines separated by `<br>`, a merged
  * cell with empty cells where it spans, block decorators in a cell after the

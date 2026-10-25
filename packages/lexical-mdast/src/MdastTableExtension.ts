@@ -87,6 +87,12 @@ function mapPhrasing(
   return (changed ? mapped : nodes) as PhrasingContent[];
 }
 
+/** The host a slotted block is in, or else its parent. */
+function $slotHostOrParent(node: ElementNode): ElementNode {
+  const host = $getSlotHost(node);
+  return $isElementNode(host) ? host : node.getParentOrThrow();
+}
+
 /**
  * The format of the text in a cell: that of the block its first line with
  * content is in, or of the nearest block around it in the cell that has
@@ -94,11 +100,6 @@ function mapPhrasing(
  * nested table has its own alignment). A start or end format (as pasted
  * HTML often has) takes no GFM alignment.
  */
-function $slotHostOrParent(node: ElementNode): ElementNode {
-  const host = $getSlotHost(node);
-  return $isElementNode(host) ? host : node.getParentOrThrow();
-}
-
 function $cellFormat(cell: TableCellNode): ElementFormatType {
   const {lines, owners} = $cellLines(cell);
   const first = lines.findIndex(line =>
@@ -200,10 +201,11 @@ function $cellLines(cell: TableCellNode): {
     if ($isElementNode(node)) {
       const first = lines.length;
       const firstDecorator = decorators.length;
-      // Named slots first, as they come first in a host's DOM.
+      // Named slots first, as they come first in a host's DOM; an empty one
+      // is no line.
       for (const name of $getSlotNames(node)) {
         const slot = $getSlot(node, name);
-        if (slot) {
+        if (slot && !($isElementNode(slot) && slot.isEmpty())) {
           $visit(slot, node);
           line = undefined;
         }

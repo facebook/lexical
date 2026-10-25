@@ -941,12 +941,21 @@ describe('MdastHtmlExtension', () => {
             .append($createTextNode('title')),
         );
         header.getFirstChildOrThrow<ElementNode>().clear().append(callout);
+        // An empty slot is no line.
+        const empty = $create(CalloutNode).append(
+          $createParagraphNode().append($createTextNode('x')),
+        );
+        $setSlot(empty, 'title', $createParagraphNode());
+        table
+          .getLastChildOrThrow<ElementNode>()
+          .getFirstChildOrThrow<ElementNode>()
+          .append(empty);
       },
       {discrete: true},
     );
     editor.read(() => {
       expect($convertToMarkdownString()).toBe(
-        '| title<br>body |\n| :-----------: |\n|       b       |',
+        '| title<br>body |\n| :-----------: |\n|     b<br>x    |',
       );
     });
   });

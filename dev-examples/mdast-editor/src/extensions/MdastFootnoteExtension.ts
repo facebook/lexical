@@ -904,8 +904,9 @@ function groupLeaves(leaves: readonly FormattedLeaf[]): PhrasingLike[] {
 }
 
 /**
- * Regroups the phrasing around each formatted ref, and leaves the rest as
- * the text export grouped it.
+ * Regroups the phrasing of each node holding a formatted ref, all of it,
+ * as groupLeaves mirrors core's text grouping; other phrasing stays as the
+ * text export grouped it.
  */
 function mergeAdjacentPhrasing(node: PhrasingLike): void {
   if (node.children === undefined) {

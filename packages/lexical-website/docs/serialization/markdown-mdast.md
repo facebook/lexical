@@ -115,9 +115,9 @@ The literal syntax of each construct is preserved on the Lexical
 nodes with [NodeState](/docs/concepts/node-state): list bullet
 `-`/`*`/`+`, ordered delimiter `.`/`)`, code fence style and
 info-string meta, setext vs ATX headings, hard-break style, soft line
-breaks, thematic break marker, `_` vs `*` emphasis (where strong and
-emphasis nest, `mdast-util-to-markdown` writes them with different markers,
-as in `**_both_**`), and link style
+breaks, thematic break marker, `_` vs `*` emphasis (except for strong
+directly around emphasis, which `mdast-util-to-markdown` always writes
+with different markers, as in `**_both_**`), and link style
 (`[text](url)` vs `<autolink>` vs bare GFM literal). Normalization is
 never forced; nodes created in the editor defer to the document-level
 serialization options, which can be configured by contributing
@@ -163,8 +163,9 @@ inline `<kbd>` runs — and by default it imports as literal text. The
 opt-in `MdastHtmlExtension` routes it through the editor's
 [`DOMImportExtension`](/docs/serialization/dom-import) rules instead,
 so any HTML the editor can already import works from Markdown, and
-Markdown *inside* the construct keeps working in both directions, the
-way it does on GitHub:
+Markdown *inside* the construct keeps working in both directions: the
+blocks after a blank line, as on GitHub, and also text between the tags,
+such as the summary line below, which GFM itself leaves raw:
 
 ```md
 <details><summary>

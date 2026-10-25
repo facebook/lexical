@@ -75,9 +75,8 @@ Type \`[^another]\` to mint one.
 GFM tables round-trip as tables: the first row is the header, a line
 break in a cell is written as \`<br>\`, and a column is written with the
 alignment of its header cell's text (Table > Align left, center or
-right in the header). What
-GFM can't hold, such as merged cells or another alignment in a body cell,
-is written as near as it allows:
+right in the header). Merged cells are written as near as GFM allows,
+and a body cell's own alignment is dropped:
 
 | Syntax    | Description           | Width |
 | --------- | --------------------- | ----: |
@@ -150,7 +149,8 @@ const theme = {
   tableCell:
     'min-w-16 border border-solid border-zinc-300 px-2 py-1 align-top dark:border-zinc-600',
   tableCellHeader: 'bg-zinc-100 font-semibold dark:bg-zinc-800',
-  tableCellSelected: 'bg-blue-100 dark:bg-blue-900/40',
+  // Over tableCellHeader's background.
+  tableCellSelected: 'bg-blue-100! dark:bg-blue-900/40!',
   tableScrollableWrapper: 'overflow-x-auto',
   tableSelection: 'table-selection',
   text: {

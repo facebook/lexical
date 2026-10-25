@@ -1,0 +1,78 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+import type {
+  AnyLexicalExtensionArgument,
+  CreateEditorArgs,
+  LexicalWarning,
+} from 'lexical';
+import type {Doc} from '@y/y';
+import type {ClientIDRange, YWarningCode} from '@lexical/y';
+
+/**
+ * @lexical/y/headless: EXPERIMENTAL server-side edits, seeds and reads of
+ * @lexical/y documents.
+ */
+
+declare export var EDITOR_WARNING: '@lexical/y/editor-warning';
+declare export var FOLLOW_UPS_EXHAUSTED_WARNING: '@lexical/y/follow-ups-exhausted';
+export type YHeadlessWarningCode =
+  | YWarningCode
+  | typeof EDITOR_WARNING
+  | typeof FOLLOW_UPS_EXHAUSTED_WARNING;
+
+export type HeadlessYConfig = {
+  extensions?: ReadonlyArray<AnyLexicalExtensionArgument>,
+  nodes?: CreateEditorArgs['nodes'],
+  root?: string,
+  clientIDRange?: ClientIDRange,
+  onWarn?: (warning: LexicalWarning) => void,
+  selfCheck?: boolean,
+};
+
+export type YHeadlessErrorCode =
+  | 'not-initialized'
+  | 'read-only'
+  | 'foreign-roots'
+  | 'ignored-tag';
+
+declare export class YHeadlessError extends Error {
+  readonly code: YHeadlessErrorCode;
+  constructor(code: YHeadlessErrorCode, message: string): void;
+}
+
+export type EditYStateResult = {
+  update: Uint8Array | null,
+  state: Uint8Array,
+  warnings: Array<LexicalWarning>,
+};
+
+export type EditYStateOptions = {
+  allowedRoots?: Iterable<string>,
+  transact?: (doc: Doc) => void,
+  tag?: string | Array<string>,
+};
+
+declare export function seedYState(
+  config: HeadlessYConfig,
+  $build: () => void,
+): Uint8Array;
+
+declare export function editYState(
+  state: Uint8Array,
+  config: HeadlessYConfig,
+  $edit: () => void,
+  options?: EditYStateOptions,
+): EditYStateResult;
+
+declare export function readYState<T>(
+  state: Uint8Array,
+  config: HeadlessYConfig,
+  $read: () => T,
+): T;

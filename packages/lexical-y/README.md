@@ -47,6 +47,8 @@ binding.initialize();
 
 - [Yjs 14 (`@lexical/y`)](https://lexical.dev/docs/collaboration/y): setup,
   options, servers, limits and upgrading from `@lexical/yjs`.
+- [Server-side editing](https://lexical.dev/docs/collaboration/y-server):
+  `@lexical/y/headless` (`seedYState`, `editYState`, `readYState`).
 - [API reference](https://lexical.dev/docs/api/modules/lexical_y)
 
 ## Servers

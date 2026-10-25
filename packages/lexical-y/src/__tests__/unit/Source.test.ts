@@ -13,6 +13,7 @@ import * as path from 'node:path';
 import {expect, test} from 'vitest';
 
 import * as mainEntry from '../..';
+import * as headlessEntry from '../../headless';
 
 // Bundlers replace only process.env.NODE_ENV: any other process.env read in
 // shipped source throws "process is not defined" in a browser.
@@ -42,12 +43,17 @@ test('shipped source reads no process.env but NODE_ENV', () => {
 
 // Old clients (@lexical/yjs) write other roots, so servers need no API of
 // their own: the package has no server entry, and the two constants a
-// server may want come from the main entry.
+// server may want come from the main entry. `@lexical/y/headless` is plain
+// functions, plus its warning codes.
 test('public entries', () => {
   const pkg = JSON.parse(
     fs.readFileSync(path.resolve(__dirname, '../../../package.json'), 'utf8'),
   ) as {exports: Record<string, unknown>};
-  expect(Object.keys(pkg.exports).sort()).toEqual(['.']);
+  expect(Object.keys(pkg.exports).sort()).toEqual([
+    '.',
+    './headless',
+    './headless.js',
+  ]);
   expect(mainEntry.DEFAULT_ROOT_NAME).toBe('lexical-y');
   expect(typeof mainEntry.LAYOUT_VERSION).toBe('number');
   expect(Object.keys(mainEntry).sort()).toEqual([
@@ -66,5 +72,13 @@ test('public entries', () => {
     'YBinding',
     'YCollabExtension',
     'describeStorage',
+  ]);
+  expect(Object.keys(headlessEntry).sort()).toEqual([
+    'EDITOR_WARNING',
+    'FOLLOW_UPS_EXHAUSTED_WARNING',
+    'YHeadlessError',
+    'editYState',
+    'readYState',
+    'seedYState',
   ]);
 });

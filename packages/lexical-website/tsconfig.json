@@ -364,6 +364,7 @@
       "@lexical/text": ["../lexical-text/src/index.ts"],
       "@lexical/utils": ["../lexical-utils/src/index.ts"],
       "@lexical/y": ["../lexical-y/src/index.ts"],
+      "@lexical/y/headless": ["../lexical-y/src/headless.ts"],
       "@lexical/yjs": ["../lexical-yjs/src/index.ts"]
     }
   },

@@ -162,6 +162,7 @@ module.name_mapper='^@lexical/tailwind$' -> '<PROJECT_ROOT>/packages/lexical-tai
 module.name_mapper='^@lexical/text$' -> '<PROJECT_ROOT>/packages/lexical-text/flow/LexicalText.js.flow'
 module.name_mapper='^@lexical/utils$' -> '<PROJECT_ROOT>/packages/lexical-utils/flow/LexicalUtils.js.flow'
 module.name_mapper='^@lexical/y$' -> '<PROJECT_ROOT>/packages/lexical-y/flow/LexicalY.js.flow'
+module.name_mapper='^@lexical/y/headless$' -> '<PROJECT_ROOT>/packages/lexical-y/flow/LexicalYHeadless.js.flow'
 module.name_mapper='^@lexical/yjs$' -> '<PROJECT_ROOT>/packages/lexical-yjs/flow/LexicalYjs.js.flow'
 ;; [generated-end update-flowconfig]
 

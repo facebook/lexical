@@ -14,8 +14,8 @@ import {describe, expect, test} from 'vitest';
 import * as Y13 from 'yjs';
 
 import {YBinding} from '../..';
+import {inspectUpdateRoots} from '../../internal/UpdateRoots';
 import {$p, $selectIn, NODES, setup} from '../utils/harness';
-import {inspectUpdateRoots} from '../utils/UpdateRoots';
 
 describe('@lexical/y on a server', () => {
   test('updates of upgraded clients write only to the layout root', async () => {

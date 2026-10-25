@@ -86,7 +86,9 @@ grammar — see the
 [full list](/docs/extensions/included-extensions) or the
 [package README](/docs/packages/lexical-mdast). Granular
 configurations degrade gracefully: unsupported constructs import as
-their content (a table becomes its cell text), and typing shortcuts
+their content (a heading becomes a paragraph of its text; a GFM table,
+whose grammar comes with `MdastTableExtension`, stays its literal source),
+and typing shortcuts
 only fire for constructs the editor can represent (`> ` stays literal
 without `MdastBlockquoteExtension`).
 

@@ -129,12 +129,12 @@ const VOID_TAGS = new Set([
 ]);
 
 const COMMENT_RE = /<!--[\s\S]*?-->/g;
-// A tag token: closing slash, name, attributes (after whitespace, as in
-// CommonMark, so an autolink such as `<https://a.b>` is no tag; quote-aware
+// A tag token, unless it is a CommonMark URI or email autolink
+// (`<https://a.b>`, `<a@b.c>`): closing slash, name, attributes (quote-aware
 // so a `>` inside a quoted attribute value doesn't end the tag),
 // self-closing slash.
 const TAG_RE =
-  /<(\/?)([a-zA-Z][a-zA-Z0-9-]*)((?:\s(?:[^"'>]|"[^"]*"|'[^']*')*?)?)(\/?)>/g;
+  /<(?![a-zA-Z][a-zA-Z0-9+.-]{1,31}:[^\s<>]*>|[^\s<>@/]+@[^\s<>@]+>)(\/?)([a-zA-Z][a-zA-Z0-9-]*)((?:[^"'>]|"[^"]*"|'[^']*')*?)(\/?)>/g;
 
 /** Net element nesting change across one raw html value. */
 function tagBalanceDelta(value: string): number {

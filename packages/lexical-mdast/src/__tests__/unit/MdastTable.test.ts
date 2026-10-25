@@ -381,13 +381,18 @@ describe('MdastTableExtension', () => {
           .append(
             $createParagraphNode(),
             $createParagraphNode().append($createLineBreakNode()),
+            $createParagraphNode().append($createTextNode(' ')),
             $createParagraphNode()
               .setFormat('center')
               .append($createTextNode('H')),
           );
       }),
     ).toBe(
-      table('| <br><br><br>H |', '| :-----------: |', '|       x       |'),
+      table(
+        '| <br><br><br> <br>H |',
+        '| :----------------: |',
+        '|          x         |',
+      ),
     );
   });
 

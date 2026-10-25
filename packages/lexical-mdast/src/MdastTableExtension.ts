@@ -35,6 +35,7 @@ import {
   $isLineBreakNode,
   $isNodeSelection,
   $isRangeSelection,
+  $isTextNode,
   defineExtension,
   type ElementFormatType,
   type ElementNode,
@@ -109,7 +110,11 @@ function $cellIn(node: LexicalNode, table: TableNode): TableCellNode | null {
 function $cellFormat(cell: TableCellNode): ElementFormatType {
   const {lines, owners} = $cellLines(cell);
   const first = lines.findIndex(line =>
-    line.some(node => !$isLineBreakNode(node)),
+    line.some(
+      node =>
+        !$isLineBreakNode(node) &&
+        !($isTextNode(node) && node.getTextContent().trim() === ''),
+    ),
   );
   let format: ElementFormatType = '';
   for (

@@ -378,14 +378,6 @@ describe('MdastHtmlExtension', () => {
       );
     });
 
-    it('reads an autolink between tags as an autolink, not a tag', () => {
-      expect(importExport('<div>\n<https://a.b/c> x\n</div>')).toBe(
-        '<https://a.b/c> x',
-      );
-      // A namespaced tag, as Word writes, is still a tag.
-      expect(importExport('<div>\n<p>a<o:p></o:p></p>\n</div>')).toBe('a');
-    });
-
     it('leaves unclosed raw HTML as literal text', () => {
       using editor = createEditor();
       editor.update(

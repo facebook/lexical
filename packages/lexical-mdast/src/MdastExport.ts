@@ -32,6 +32,7 @@ import {
   createRenderState,
 } from '@lexical/html';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
+import {$dfsWithSlotsIterator} from '@lexical/utils';
 import {
   $getRoot,
   $getSelection,
@@ -39,7 +40,6 @@ import {
   $isElementNode,
   $isLineBreakNode,
   $isRangeSelection,
-  $isSlotHost,
   $isTextNode,
   IS_BOLD,
   IS_CODE,
@@ -52,7 +52,6 @@ import {toString as mdastToString} from 'mdast-util-to-string';
 import {
   $exportLineBreak,
   $isBlockLevelNode,
-  $slotNodes,
   exportText,
   phrasingFromTextRuns,
   TEXT_FORMAT_MASK,
@@ -381,17 +380,15 @@ function createNodeExporter(
    * {@link MdastExportContext.isIncluded}.
    */
   function $isIncluded(node: LexicalNode): boolean {
-    if (selection === null || node.isSelected(selection)) {
+    if (selection === null) {
       return true;
     }
-    if ($isElementNode(node)) {
-      for (const child of node.getChildren()) {
-        if ($isIncluded(child)) {
-          return true;
-        }
+    for (const visited of $dfsWithSlotsIterator(node)) {
+      if (visited.node.isSelected(selection)) {
+        return true;
       }
     }
-    return $slotNodes(node).some($isIncluded);
+    return false;
   }
 
   /**
@@ -591,8 +588,7 @@ function $dominantInlineMarkers(node: ElementNode): {
 } {
   let emphasis: '*' | '_' | undefined;
   let strong: '*' | '_' | undefined;
-  // Whether both are found, which ends the scan.
-  const $visit = (child: LexicalNode): boolean => {
+  for (const {node: child} of $dfsWithSlotsIterator(node)) {
     if ($isTextNode(child)) {
       if (emphasis === undefined && child.hasFormat('italic')) {
         const marker = $getState(child, emphasisMarkerState);
@@ -606,14 +602,11 @@ function $dominantInlineMarkers(node: ElementNode): {
           strong = '_';
         }
       }
-      return emphasis !== undefined && strong !== undefined;
+      if (emphasis !== undefined && strong !== undefined) {
+        break;
+      }
     }
-    return (
-      ($isSlotHost(child) && $slotNodes(child).some($visit)) ||
-      ($isElementNode(child) && child.getChildren().some($visit))
-    );
-  };
-  $visit(node);
+  }
   return {emphasis, strong};
 }
 

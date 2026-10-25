@@ -21,7 +21,7 @@ import {expect, onTestFinished, test} from 'vitest';
 import {userEvent} from 'vitest/browser';
 
 import {MdastEditorExtension} from '../../extensions/MdastEditorExtension';
-import {applyTableAction} from '../../plugins/ToolbarPlugin';
+import {applyTableAction} from '../../plugins/tableActions';
 
 function $selectText(text: string, offset = 0) {
   $getRoot()

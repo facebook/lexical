@@ -53,8 +53,6 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
-  $getSlot,
-  $getSlotNames,
   $getState,
   $isDecoratorNode,
   $isElementNode,
@@ -101,14 +99,6 @@ export function $prepend<T extends ElementNode>(
   nodes: LexicalNode[],
 ): T {
   return element.splice(0, 0, nodes);
-}
-
-/** The nodes in the named slots of `node`, in `$getSlotNames` order. */
-export function $slotNodes(node: LexicalNode): LexicalNode[] {
-  return $getSlotNames(node).flatMap(name => {
-    const slot = $getSlot(node, name);
-    return slot ? [slot] : [];
-  });
 }
 
 /**

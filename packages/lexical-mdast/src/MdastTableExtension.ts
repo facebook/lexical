@@ -30,7 +30,9 @@ import {
 } from '@lexical/table';
 import {
   $createParagraphNode,
+  $getSlot,
   $getSlotHost,
+  $getSlotNames,
   $isElementNode,
   $isLineBreakNode,
   $isNodeSelection,
@@ -43,7 +45,7 @@ import {
 import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
 import {gfmTable} from 'micromark-extension-gfm-table';
 
-import {$append, $isBlockLevelNode, $slotNodes, inlineMarker} from './handlers';
+import {$append, $isBlockLevelNode, inlineMarker} from './handlers';
 import {MdastExtension} from './MdastExtension';
 
 /**
@@ -82,6 +84,14 @@ function mapPhrasing(
     return result;
   });
   return (changed ? mapped : nodes) as PhrasingContent[];
+}
+
+/** The nodes in the named slots of `node`, in `$getSlotNames` order. */
+function $slotNodes(node: LexicalNode): LexicalNode[] {
+  return $getSlotNames(node).flatMap(name => {
+    const slot = $getSlot(node, name);
+    return slot ? [slot] : [];
+  });
 }
 
 /** The host the node is in a named slot of, or else its parent. */
@@ -220,8 +230,8 @@ function $cellLines(cell: TableCellNode): {
       decorators.push(node);
     }
   };
-  // A block's named slots come first (in the order they were filled), and
-  // a slot with no content is no line.
+  // A block's named slots come first (declared ones in declaration order,
+  // as lexical keeps them), and a slot with no content is no line.
   const $visitContent = (node: ElementNode) => {
     for (const slot of $slotNodes(node)) {
       const start = lines.length;

@@ -4102,6 +4102,11 @@ describe('link title round trip', () => {
   // in one survives only if it goes out as a reference of its own.
   // https://spec.commonmark.org/0.31.2/#link-title
   const CASES: [title: string, md: string][] = [
+    ['a\nb', '[x](/uri "a&#10;b")'],
+    ['a\rb', '[x](/uri "a&#13;b")'],
+    ['a\r\nb', '[x](/uri "a&#13;&#10;b")'],
+    ['a\n\nb', '[x](/uri "a&#10;&#10;b")'],
+    ['a&#10;\nb', '[x](/uri "a&#38;#10;&#10;b")'],
     ['a&#10;b', '[x](/uri "a&#38;#10;b")'],
     ['a&amp;b', '[x](/uri "a&#38;amp;b")'],
     ['a&b', '[x](/uri "a&b")'],

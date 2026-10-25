@@ -1183,7 +1183,10 @@ export const LINK: TextMatchTransformer = {
     // A title is read back through `unescapeText` as well, so a character
     // reference in it needs the same treatment the destination gets below.
     if (title != null) {
-      title = escapeCharacterReferences(title).replace(/([\\"])/g, '\\$1');
+      title = escapeCharacterReferences(title)
+        .replace(/([\\"])/g, '\\$1')
+        .replace(/\r/g, '&#13;')
+        .replace(/\n/g, '&#10;');
     }
 
     // A raw destination cannot hold whitespace, so a URL that has any is

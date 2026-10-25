@@ -119,12 +119,12 @@ setext vs ATX headings, hard-break style, soft line breaks, thematic
 break marker, `_` vs `*` emphasis (one marker for the whole document),
 and link style (`[text](url)` vs `<autolink>` vs bare GFM literal).
 Round-trips are close but not exact; some forms are normalized, such
-as text both bold and italic, written as emphasis around strong
-(`**_both_**` comes back as `_**both**_`), and GFM tables, padded so
-their columns line up and written as below. Nodes created in the
-editor defer to the document-level serialization options, which can be
-configured by contributing `mdast-util-to-markdown` options through
-`toMarkdownExtensions`.
+as a run of text both bold and italic on its own, written as emphasis
+around strong (`**_both_**` comes back as `_**both**_`), and GFM
+tables, padded so their columns line up and written as below. Nodes
+created in the editor defer to the document-level serialization
+options, which can be configured by contributing
+`mdast-util-to-markdown` options through `toMarkdownExtensions`.
 
 GFM tables (`MdastTableExtension`) import a column's alignment as the
 element format of the paragraph in each of its cells, and write it from

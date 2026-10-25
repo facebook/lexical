@@ -119,8 +119,8 @@ export const MdastEditorExtension = defineExtension({
   },
   dependencies: [
     // The grammar is granular: CommonMark and GFM are separate bundles,
-    // export is split from import (the live preview serializes, so opt
-    // in), and the typing shortcuts follow whatever grammar is present.
+    // MdastExtension holds import and export, and the typing shortcuts
+    // follow whatever grammar is present.
     MdastCommonMarkExtension,
     MdastGfmExtension,
     MdastExtension,

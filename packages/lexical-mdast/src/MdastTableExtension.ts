@@ -31,6 +31,9 @@ import {
 import {
   $createParagraphNode,
   $findMatchingParent,
+  $getSlot,
+  $getSlotHost,
+  $getSlotNames,
   $isElementNode,
   $isLineBreakNode,
   $isNodeSelection,
@@ -91,6 +94,11 @@ function mapPhrasing(
  * nested table has its own alignment). A start or end format (as pasted
  * HTML often has) takes no GFM alignment.
  */
+function $slotHostOrParent(node: ElementNode): ElementNode {
+  const host = $getSlotHost(node);
+  return $isElementNode(host) ? host : node.getParentOrThrow();
+}
+
 function $cellFormat(cell: TableCellNode): ElementFormatType {
   const {lines, owners} = $cellLines(cell);
   const first = lines.findIndex(line =>
@@ -100,7 +108,7 @@ function $cellFormat(cell: TableCellNode): ElementFormatType {
   for (
     let node = owners[Math.max(first, 0)];
     !node.is(cell);
-    node = node.getParentOrThrow()
+    node = $slotHostOrParent(node)
   ) {
     // Text in a nested table has that table's alignment, not this one's,
     // and the table's own format places it.
@@ -192,6 +200,14 @@ function $cellLines(cell: TableCellNode): {
     if ($isElementNode(node)) {
       const first = lines.length;
       const firstDecorator = decorators.length;
+      // Named slots first, as they come first in a host's DOM.
+      for (const name of $getSlotNames(node)) {
+        const slot = $getSlot(node, name);
+        if (slot) {
+          $visit(slot, node);
+          line = undefined;
+        }
+      }
       node.getChildren().forEach(child => $visit(child, node));
       // An empty block is an empty line; one of block decorators is none.
       if (lines.length === first && decorators.length === firstDecorator) {

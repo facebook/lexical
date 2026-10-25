@@ -916,4 +916,38 @@ describe('MdastHtmlExtension', () => {
       expect($convertToMarkdownString()).toBe('| a |\n| - |\n|   |\n\n***');
     });
   });
+
+  it('writes the named slots of a block in a cell as lines', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [MdastExtension, MdastTableExtension],
+        name: '[root]',
+        nodes: [CalloutNode],
+      }),
+    );
+    editor.update(
+      () => {
+        $convertFromMarkdownString('| a |\n| - |\n| b |');
+        const table = $getRoot().getFirstChildOrThrow<ElementNode>();
+        const header = table.getFirstChildOrThrow<ElementNode>();
+        const callout = $create(CalloutNode).append(
+          $createParagraphNode().append($createTextNode('body')),
+        );
+        $setSlot(
+          callout,
+          'title',
+          $createParagraphNode()
+            .setFormat('center')
+            .append($createTextNode('title')),
+        );
+        header.getFirstChildOrThrow<ElementNode>().clear().append(callout);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(
+        '| title<br>body |\n| :-----------: |\n|       b       |',
+      );
+    });
+  });
 });

@@ -17,6 +17,7 @@ import {
 import {
   $createLineBreakNode,
   $createParagraphNode,
+  $getEditor,
   $getNodeByKey,
   $getSelection,
   $getWritableNodeState,
@@ -65,8 +66,11 @@ import {
   type GroupSpec,
   INLINE_PREFIX,
   isUnsafeKey,
+  joinSetMembers,
+  joinSetMembersInJSON,
   KIND_KEY,
   klassOf,
+  learnedSetKeys,
   LEVEL_KEY,
   lineBreakStateFromAttrs,
   MARKER,
@@ -1820,7 +1824,8 @@ export class Reader {
     };
     const holes: string[] = [];
     const differs =
-      owned($nodeAttrs(node, holes)) !== owned(attrs) || holes.length > 0;
+      owned($nodeAttrs(node, holes, false)) !== owned(attrs) ||
+      holes.length > 0;
     if (differs) {
       $applyStoredAttrs(node, attrs);
       if (
@@ -1843,7 +1848,10 @@ export class Reader {
       return;
     }
     const attrs = y.getAttrs() as Attrs;
-    const json = nodeJSONFromAttrs(type, attrs);
+    const json = joinSetMembersInJSON(
+      nodeJSONFromAttrs(type, attrs),
+      this.state.editor,
+    );
     if ($isElementNode(node)) {
       json.children = [];
     }
@@ -1897,7 +1905,10 @@ export class Reader {
       return null;
     }
     const attrs = y.getAttrs() as Attrs;
-    const json = nodeJSONFromAttrs(type, attrs);
+    const json = joinSetMembersInJSON(
+      nodeJSONFromAttrs(type, attrs),
+      this.state.editor,
+    );
     const isElement = typeof attrs[KIND_KEY] === 'string';
     if (isElement) {
       json.children = [];
@@ -2206,6 +2217,7 @@ export class Reader {
           state.unknownTypes.add(json.type as string);
           json = {...json, type: 'text'};
         }
+        json = joinSetMembersInJSON(json, state.editor);
         const segment =
           typeof piece.tattrs[SEGMENT_KEY] === 'string'
             ? (piece.tattrs[SEGMENT_KEY] as string)
@@ -2218,7 +2230,8 @@ export class Reader {
           node = takeText(json.type as string, segment);
         }
         if (node !== null) {
-          const currentSig = stableStringify($textAttrs(node, segment));
+          // A comparison, not a write (see $splitSetMembers' `strict`).
+          const currentSig = stableStringify($textAttrs(node, segment, false));
           // NodeState kept with another class's configuration (see
           // $foreignFlatKeys): built again as its own class reads it.
           const foreign = $foreignFlatKeys(node) !== null;
@@ -2245,11 +2258,19 @@ export class Reader {
         let br = brs.shift() || $createLineBreakNode();
         const brState = lineBreakStateFromAttrs(piece.tattrs);
         if (
-          stableStringify(lineBreakStateFromAttrs($lineBreakAttrs(br, {}))) !==
-          stableStringify(brState)
+          stableStringify(
+            lineBreakStateFromAttrs($lineBreakAttrs(br, {}, false)),
+          ) !== stableStringify(brState)
         ) {
           br = br.getWritable();
-          $getWritableNodeState(br).updateFromJSON(brState);
+          const info = state.editor._nodes.get(br.getType());
+          $getWritableNodeState(br).updateFromJSON(
+            joinSetMembers(
+              brState,
+              info && info.sharedNodeState.sharedConfigMap,
+              info && learnedSetKeys(info.sharedNodeState),
+            ),
+          );
         }
         push(br);
       } else {
@@ -2435,7 +2456,10 @@ type GroupItemInfo = {
  * reader shows them.
  */
 export function $applyStoredAttrs(node: LexicalNode, attrs: Attrs): void {
-  const json = nodeJSONFromAttrs(node.getType(), attrs);
+  const json = joinSetMembersInJSON(
+    nodeJSONFromAttrs(node.getType(), attrs),
+    $getEditor(),
+  );
   if ($isElementNode(node)) {
     // Always stored (see $nodeAttrs): absent means the default.
     json.textFormat = json.textFormat ?? 0;

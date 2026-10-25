@@ -72,7 +72,12 @@ import {
 import {ARGUMENTS_CHUNK, pushAll, spliceAll} from './Arrays';
 import {$unsettledAfterWrite} from './BlockIds';
 import {type ClientIDRange, constrainClientID} from './ClientID';
-import {DEFAULT_ROOT_NAME, LEGACY_ROOTS} from './constants';
+import {
+  BASE_LAYOUT_VERSION,
+  DEFAULT_ROOT_NAME,
+  LEGACY_ROOTS,
+  SET_MEMBERS_LAYOUT_VERSION,
+} from './constants';
 import {isFormatCloser, markFormatCloser} from './Cursor';
 import {$canonicalizeGroup, $switchesWrapper} from './Groups';
 import {Hidden, shownLength} from './Hidden';
@@ -85,6 +90,7 @@ import {
   deriveStorageKind,
   getGroupSpec,
   identityOf,
+  isSetMemberEntryName,
   LAYOUT_PREFIX,
   LAYOUT_VERSION,
   MARKER,
@@ -343,6 +349,62 @@ function newestLayout(root: YNode): number | null {
     }
   }
   return version;
+}
+
+/**
+ * Whether `tr` wrote a member entry of a set-valued NodeState: a text format
+ * or a node attribute named `s:<key>\u001f…` set to true (see
+ * SET_MEMBERS_LAYOUT_VERSION).
+ */
+function wroteSetMember(tr: Transaction): boolean {
+  let found = false;
+  iterateStructsByIdSet(tr, tr.insertSet, s => {
+    if (found || !(s instanceof Item) || s.deleted) {
+      return;
+    }
+    const content = s.content;
+    if (content instanceof ContentFormat) {
+      found = content.value === true && isSetMemberEntryName(content.key);
+    } else if (
+      typeof s.parentSub === 'string' &&
+      isSetMemberEntryName(s.parentSub)
+    ) {
+      found = content.getContent()[0] === true;
+    }
+  });
+  return found;
+}
+
+/**
+ * Record layout `version` on `root` (see LAYOUT_PREFIX), unless it is
+ * recorded already: in the transaction that wrote the first content that
+ * needs it, so that no client receives one without the other. The record
+ * only grows: undo never deletes it (see YBinding#isKeptByUndo).
+ */
+function recordLayout(root: YNode, version: number): void {
+  const key = LAYOUT_PREFIX + version;
+  if (root.getAttr(key) !== true) {
+    root.setAttr(key, true);
+  }
+}
+
+/**
+ * Record layout SET_MEMBERS_LAYOUT_VERSION on `root` when `tr` wrote a member
+ * entry of a set-valued NodeState (see wroteSetMember), unless the document
+ * records it already (then `tr` is not scanned).
+ *
+ * Invariant: called in a `finally` inside every transaction that writes
+ * content. Why: Yjs commits and sends what a transaction wrote even when its
+ * callback throws, so a write that fails part way must carry the version
+ * too; the recovery's rewrite is a later transaction, which may never come.
+ */
+function recordSetMembersLayout(root: YNode, tr: Transaction): void {
+  if (
+    root.getAttr(LAYOUT_PREFIX + SET_MEMBERS_LAYOUT_VERSION) !== true &&
+    wroteSetMember(tr)
+  ) {
+    recordLayout(root, SET_MEMBERS_LAYOUT_VERSION);
+  }
 }
 
 /**
@@ -908,7 +970,8 @@ export class YBinding {
 
   /**
    * Write the layout record and the editor's content into an empty root, the
-   * record first (see LAYOUT_PREFIX).
+   * record first (see LAYOUT_PREFIX), and layout 2 when the content holds a
+   * member entry of a set (see recordSetMembersLayout).
    */
   private $writeInitial(
     state: State,
@@ -916,22 +979,27 @@ export class YBinding {
     tr: Transaction,
     editorState: EditorState,
   ): void {
-    root.setAttr(LAYOUT_PREFIX + LAYOUT_VERSION, true);
-    // Every element type of the initial content (into `root`, which may be
-    // a scratch document's: this._pins is filled when the real one is read).
-    this.recordPins(root, editorState, null, new Map());
-    editorState.read(() => {
-      const roles = new Roles(state);
-      const cs = state.newCS(root, 'root', 'b');
-      const writer = new Writer(state, roles, tr, editorState, {
-        attrs: new Set(),
-        inline: new Set(),
-        lines: new Set(),
-        removedText: new Map(),
-        structural: new Set(['root']),
+    root.setAttr(LAYOUT_PREFIX + BASE_LAYOUT_VERSION, true);
+    try {
+      // Every element type of the initial content (into `root`, which may
+      // be a scratch document's: this._pins is filled when the real one is
+      // read).
+      this.recordPins(root, editorState, null, new Map());
+      editorState.read(() => {
+        const roles = new Roles(state);
+        const cs = state.newCS(root, 'root', 'b');
+        const writer = new Writer(state, roles, tr, editorState, {
+          attrs: new Set(),
+          inline: new Set(),
+          lines: new Set(),
+          removedText: new Map(),
+          structural: new Set(['root']),
+        });
+        writer.$writeContainer(cs, $getRoot());
       });
-      writer.$writeContainer(cs, $getRoot());
-    });
+    } finally {
+      recordSetMembersLayout(root, tr);
+    }
   }
 
   private clientIDRange(): ClientIDRange {
@@ -1001,7 +1069,7 @@ export class YBinding {
     }
     return write(
       initClientID(
-        LAYOUT_VERSION + '\u0000' + 'r:' + rootName + '\u0000' + content,
+        BASE_LAYOUT_VERSION + '\u0000' + 'r:' + rootName + '\u0000' + content,
         this.clientIDRange(),
       ),
     );
@@ -1196,6 +1264,22 @@ export class YBinding {
       this.setStatus('active');
     }
     this.readAll(cursor, kept, deep);
+  }
+
+  /**
+   * Whether the binding is active and reads the layout the document records
+   * now: a peer that recorded a version this binding reads (the first
+   * member entry of a set records 2) changes nothing it reads or writes, so
+   * the document is not read again.
+   */
+  private readsRecordedLayout(): boolean {
+    if (this._status !== 'active') {
+      return false;
+    }
+    const version = recordedLayout(this._root);
+    return (
+      version !== null && !Number.isNaN(version) && version <= LAYOUT_VERSION
+    );
   }
 
   /** Self-check of containers a remote change rebuilt (see checkContainer). */
@@ -1581,7 +1665,10 @@ export class YBinding {
         return;
       }
       if (type === this._root) {
-        if ([...keys].some(k => k.startsWith(LAYOUT_PREFIX))) {
+        if (
+          [...keys].some(k => k.startsWith(LAYOUT_PREFIX)) &&
+          !this.readsRecordedLayout()
+        ) {
           this.evaluate();
         } else if ([...keys].some(k => k.startsWith(PIN_PREFIX))) {
           this.loadPins();
@@ -2617,9 +2704,17 @@ export class YBinding {
     let writer: Writer | null = null;
     try {
       this._doc.transact(tr => {
-        writer = new Writer(state, roles, tr, prevEditorState, plan);
-        writer.followUp = commit.followUp;
-        writer.$run();
+        try {
+          writer = new Writer(state, roles, tr, prevEditorState, plan);
+          writer.followUp = commit.followUp;
+          writer.$run();
+        } finally {
+          // In the same transaction as the first member entry of a set, even
+          // when the write throws part way: clients that only read layout 1
+          // never get one without the version that tells them they cannot
+          // read it.
+          recordSetMembersLayout(this._root, tr);
+        }
       }, origin);
       if (!commit.followUp) {
         this._doc.transact(() => {
@@ -2643,27 +2738,31 @@ export class YBinding {
       );
       try {
         this._doc.transact(tr => {
-          const all: WritePlan = {
-            attrs: new Set(state.yByKey.keys()),
-            inline: new Set(),
-            lines: new Set(state.unitByKey.keys()),
-            removedText: plan.removedText,
-            structural: new Set(),
-          };
-          for (const [key, cs] of state.csByKey) {
-            (cs.kind === 'b' ? all.structural : all.inline).add(key);
+          try {
+            const all: WritePlan = {
+              attrs: new Set(state.yByKey.keys()),
+              inline: new Set(),
+              lines: new Set(state.unitByKey.keys()),
+              removedText: plan.removedText,
+              structural: new Set(),
+            };
+            for (const [key, cs] of state.csByKey) {
+              (cs.kind === 'b' ? all.structural : all.inline).add(key);
+            }
+            const rewriter = new Writer(
+              state,
+              new Roles(state),
+              tr,
+              prevEditorState,
+              all,
+            );
+            rewriter.rewriteAll = true;
+            rewriter.followUp = commit.followUp;
+            rewriter.$run();
+            this.noteRefused(rewriter, commit.naming);
+          } finally {
+            recordSetMembersLayout(this._root, tr);
           }
-          const rewriter = new Writer(
-            state,
-            new Roles(state),
-            tr,
-            prevEditorState,
-            all,
-          );
-          rewriter.rewriteAll = true;
-          rewriter.followUp = commit.followUp;
-          rewriter.$run();
-          this.noteRefused(rewriter, commit.naming);
         }, origin);
       } catch (e2) {
         this._editor._onError(e2 instanceof Error ? e2 : new Error(String(e2)));
@@ -3619,6 +3718,14 @@ export class YBinding {
         }
       }
       return false;
+    }
+    // The layout record only grows.
+    if (
+      item.parent === this._root &&
+      typeof item.parentSub === 'string' &&
+      item.parentSub.startsWith(LAYOUT_PREFIX)
+    ) {
+      return true;
     }
     // A container this undo also restores elsewhere was moved (deleted and
     // written again): keeping the new copy would duplicate it.

@@ -26,7 +26,8 @@ inserted exactly at the edge of a run stays outside it, as with `MarkNode`
 ## When to use `MarkStateExtension`
 
 Prefer it when marks overlap or when the document is edited collaboratively
-with the Yjs v2 binding (`CollaborationPluginV2__EXPERIMENTAL`).
+with the Yjs v2 binding (`CollaborationPluginV2__EXPERIMENTAL`) or the
+[Yjs 14 binding](./y.md) (`@lexical/y`).
 
 - **Overlap.** Text covered by two comments is a single TextNode carrying
   both ids. With `MarkNode`, overlapping comments become sibling wrappers
@@ -83,7 +84,8 @@ editor.update(() => {
     $addMarkID(threadId, selection);
   }
 });
-// Remove the id everywhere (or pass a selection to remove it from a range)
+// Remove the id everywhere (or pass a selection to remove it from a range).
+// To resolve a thread, see Resolving comments below.
 editor.update(() => $removeMarkID(threadId));
 // The ids at the caret, for example to open the matching thread
 editor.read(() => $getMarkIDsAtSelection());
@@ -114,6 +116,26 @@ editor.read(() => $getMarkIDsAtSelection());
   other applications through the clipboard. Set `exportIDsToHTML: true` to
   write `data-lexical-mark-ids`; HTML imported through the
   [DOM import pipeline](/docs/serialization/dom-import) reads it back.
+
+### Resolving comments
+
+Resolve a comment in your own data rather than in the document: keep its id
+on the text, mark its thread resolved in the store that holds your threads,
+and ignore resolved ids wherever you show comments (the highlight, the
+thread that opens at the caret, a list of comments). To leave resolved ids
+out of what the editor renders (the `mark` and `markOverlap` theme classes
+and `data-lexical-mark-ids`), see the `MarkStateExtension` option for it.
+Resolving then writes nothing to the document, and reopening a thread is
+free: its id never left the text.
+
+You can instead remove the id with `$removeMarkID(threadId)` when the thread
+is resolved. Reopening the thread then means adding its id again over its
+range, which your app has to remember. With the [Yjs 14 binding](./y.md)
+(`@lexical/y`), which stores each id separately, each removal leaves one
+small live format item in the document (about 30 bytes with a short id) that
+collaboration cannot safely clean up, so the document grows with every
+comment resolved this way (see "Removed set members" in its
+[Limits](./y.md#limits)).
 
 ### Inserted text
 
@@ -217,12 +239,22 @@ ids of a leaf as one value, so:
   either without `c2` (the addition is lost) or with both `c1` and `c2` (the
   removal is lost, so the resolved `c1` reappears).
   Keep the state of each thread (open or resolved) in your own store, and
-  ignore the ids of resolved threads when you render or list comments.
+  ignore the ids of resolved threads when you render or list comments (see
+  [Resolving comments](#resolving-comments)).
 - A collaborator's concurrent structural change to the same text, such as
   wrapping it in a link or merging its paragraph into the previous one, can
   drop the marks on it or extend them over neighboring text. Typing exactly
   at the edge of a mark while a peer edits follows the order Yjs gives the
   two edits. Peers always converge on the same document.
+
+The experimental [Yjs 14 binding](./y.md) (`@lexical/y`) stores each id
+separately on text, line breaks and nodes stored as their own Yjs node, so
+there concurrent additions and removals of different ids all apply: two
+collaborators commenting on the same words both keep their comment, and a
+comment resolved while another is added stays resolved. Ids on a line such as a paragraph or
+heading, a list item, a list or a link are still one value there. Each id
+removed there leaves one small format item behind (see
+[Resolving comments](#resolving-comments)).
 
 :::caution v1 collaboration
 

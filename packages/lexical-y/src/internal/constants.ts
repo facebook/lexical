@@ -18,14 +18,27 @@ export const DEFAULT_ROOT_NAME = 'lexical-y';
 /**
  * Prefix of the root attributes that record the layout versions a document
  * needs (internal): `lexical-y:<version>` = true, one per version. The record
- * only grows: a writer records a version in the same transaction as, and
- * before, the first content that needs it, and the binding never deletes
- * one. A reader takes the highest version recorded, so two clients that
- * upgrade a document at once agree on it. Any change to how a stored shape
- * is read is a new version.
+ * only grows: a writer records a version in the same transaction as the
+ * first content that needs it (a new document's version 1 before its
+ * content), so no client receives that content without it, and the binding
+ * never deletes one. A reader takes the highest version recorded, so two
+ * clients that upgrade a document at once agree on it. Any change to how a
+ * stored shape is read is a new version.
  */
 export const LAYOUT_PREFIX = 'lexical-y:';
-/** @experimental The layout version this binding reads and writes. */
-export const LAYOUT_VERSION = 1;
+/**
+ * @experimental The newest layout version this binding reads and writes.
+ * A new document records version 1; the first member entry of a set-valued
+ * NodeState written into a document also records 2 (clients that only read
+ * version 1 then open it read only instead of missing the members).
+ */
+export const LAYOUT_VERSION = 2;
+/** The version a new document records. */
+export const BASE_LAYOUT_VERSION = 1;
+/**
+ * The version of a document holding member entries of set-valued NodeState
+ * (`s:<key>\u001f<member>` = true).
+ */
+export const SET_MEMBERS_LAYOUT_VERSION = 2;
 /** The roots of the Yjs 13 bindings' layouts. */
 export const LEGACY_ROOTS: readonly string[] = ['root', 'root-v2'];

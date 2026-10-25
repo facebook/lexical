@@ -762,8 +762,8 @@ const $exportFootnoteRef: MdastExportHandler<FootnoteRefNode> = node => {
     type: 'footnoteReference',
   };
   // The format bitmask re-wraps in phrasing containers, nesting in the same
-  // order as the core text serialization (emphasis around strong), so the
-  // ref merges with formatted text next to it.
+  // order as the core text serialization of a lone run (emphasis around
+  // strong); mergeAdjacentPhrasing folds it into the text around it.
   if (node.hasFormat('bold')) {
     content = {children: [content], type: 'strong'};
   }
@@ -796,17 +796,35 @@ const $exportFootnoteDefinition: MdastExportHandler<FootnoteDefinitionNode> = (
 // so `**x**` + `**[^a]**` would sit side by side and serialize as the
 // broken `**x****[^a]**` / `*em**[^a]*` shapes. Folding adjacent same-type
 // wrappers back together before serialization keeps the emitted Markdown
-// re-parseable (`**x[^a]**`).
+// re-parseable (`**x[^a]**`). The text runs choose which of strong and
+// emphasis goes outside by what the neighbouring runs share, so a wrapper
+// holding only the other one is first turned inside out to match.
 const MERGEABLE_PHRASING = new Set(['delete', 'emphasis', 'strong']);
 
-function mergeAdjacentPhrasing(node: {children?: unknown[]}): void {
-  const children = (node.children ?? []) as {
-    type: string;
-    children?: unknown[];
-  }[];
+interface PhrasingLike {
+  type: string;
+  children?: PhrasingLike[];
+}
+
+function swapsTo(node: PhrasingLike, type: string): PhrasingLike | null {
+  const child =
+    node.children !== undefined && node.children.length === 1
+      ? node.children[0]
+      : null;
+  return child !== null &&
+    child.type === type &&
+    child.children !== undefined &&
+    (type === 'emphasis' || type === 'strong') &&
+    (node.type === 'emphasis' || node.type === 'strong')
+    ? {children: [{children: child.children, type: node.type}], type}
+    : null;
+}
+
+function mergeAdjacentPhrasing(node: PhrasingLike): void {
+  const children = node.children ?? [];
   for (let i = children.length - 1; i > 0; i--) {
-    const prev = children[i - 1];
-    const current = children[i];
+    const prev = swapsTo(children[i - 1], children[i].type) ?? children[i - 1];
+    const current = swapsTo(children[i], prev.type) ?? children[i];
     if (
       MERGEABLE_PHRASING.has(current.type) &&
       prev.type === current.type &&
@@ -814,7 +832,7 @@ function mergeAdjacentPhrasing(node: {children?: unknown[]}): void {
       current.children !== undefined
     ) {
       prev.children.push(...current.children);
-      children.splice(i, 1);
+      children.splice(i - 1, 2, prev);
     }
   }
   children.forEach(mergeAdjacentPhrasing);

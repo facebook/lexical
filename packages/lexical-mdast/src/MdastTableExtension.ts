@@ -515,13 +515,15 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
  *
  * @example
  * ```ts
- * import {MdastShortcutsExtension, MdastTableExtension} from '@lexical/mdast';
+ * import {MdastTableExtension} from '@lexical/mdast';
  * import {buildEditorFromExtensions} from '@lexical/extension';
+ * import {TableExtension} from '@lexical/table';
  * import {defineExtension} from 'lexical';
  *
  * const editor = buildEditorFromExtensions(
  *   defineExtension({
- *     dependencies: [MdastShortcutsExtension, MdastTableExtension],
+ *     // TableExtension adds table editing: commands and table selection.
+ *     dependencies: [MdastTableExtension, TableExtension],
  *     name: '[root]',
  *   }),
  * );

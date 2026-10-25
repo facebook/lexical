@@ -22,6 +22,7 @@ import {
   $isElementNode,
   $isRangeSelection,
   $setSelection,
+  type ElementNode,
 } from 'lexical';
 import {assert, expect, onTestFinished, test, vi} from 'vitest';
 import {userEvent} from 'vitest/browser';
@@ -129,7 +130,9 @@ test('reads the block type of a heading in a table cell', () => {
     () => {
       const table = $getRoot().getFirstChildOrThrow();
       assert($isTableNode(table));
-      const block = table.getLastChildOrThrow().getFirstChildOrThrow();
+      const block = table
+        .getLastChildOrThrow<ElementNode>()
+        .getFirstChildOrThrow();
       assert($isElementNode(block));
       block
         .getFirstChildOrThrow()

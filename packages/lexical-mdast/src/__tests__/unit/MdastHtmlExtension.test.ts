@@ -54,6 +54,7 @@ import {describe, expect, it} from 'vitest';
 
 import {
   $convertFromMarkdownString,
+  $convertSelectionToMarkdownString,
   $convertToMarkdownString,
   $exportViaDOM,
   ImportContextMarkdown,
@@ -956,6 +957,44 @@ describe('MdastHtmlExtension', () => {
     editor.read(() => {
       expect($convertToMarkdownString()).toBe(
         '| title<br>body |\n| :-----------: |\n|     b<br>x    |',
+      );
+    });
+  });
+
+  it('writes a selection in a named slot of a block in a cell as copied in the cell', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          MdastExtension,
+          MdastHtmlExtension,
+          MdastTableExtension,
+          configExtension(MdastExtension, {
+            exportRules: [{$export: $exportViaDOM, type: 'x-callout'}],
+          }),
+        ],
+        name: '[root]',
+        nodes: [CalloutNode],
+      }),
+    );
+    editor.update(
+      () => {
+        $convertFromMarkdownString('| a |\n| - |\n| b |');
+        const title = $createTextNode('title');
+        const callout = $create(CalloutNode).append($createParagraphNode());
+        $setSlot(callout, 'title', $createParagraphNode().append(title));
+        $getRoot()
+          .getFirstChildOrThrow<ElementNode>()
+          .getLastChildOrThrow<ElementNode>()
+          .getFirstChildOrThrow<ElementNode>()
+          .append(callout);
+        title.select(1, 4);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      // As copied from a callout outside a table.
+      expect($convertSelectionToMarkdownString()).toBe(
+        '<x-callout open>\n<header>\nitl\n</header>\n\n\n\n</x-callout>',
       );
     });
   });

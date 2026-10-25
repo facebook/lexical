@@ -30,7 +30,6 @@ import {
 } from '@lexical/table';
 import {
   $createParagraphNode,
-  $findMatchingParent,
   $getSlot,
   $getSlotHost,
   $getSlotNames,
@@ -85,6 +84,20 @@ function mapPhrasing(
     return result;
   });
   return (changed ? mapped : nodes) as PhrasingContent[];
+}
+
+/** The cell of `table` that `node` is in, through named slots too. */
+function $cellIn(node: LexicalNode, table: TableNode): TableCellNode | null {
+  for (
+    let n: LexicalNode | null = node;
+    n;
+    n = $getSlotHost(n) || n.getParent()
+  ) {
+    if ($isTableCellNode(n) && table.is($findTableNode(n))) {
+      return n;
+    }
+  }
+  return null;
 }
 
 /** The host a slotted block is in, or else its parent. */
@@ -319,17 +332,8 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
           !node.is($findTableNode(selection.anchor.getNode())))
       ? [selection.anchor.getNode(), selection.focus.getNode()]
       : [];
-  const endCell =
-    ends.length > 0
-      ? $findMatchingParent(
-          ends[0],
-          cell => $isTableCellNode(cell) && node.is($findTableNode(cell)),
-        )
-      : null;
-  if (
-    $isTableCellNode(endCell) &&
-    ends.every(end => endCell.is(end) || endCell.isParentOf(end))
-  ) {
+  const endCell = ends.length > 0 ? $cellIn(ends[0], node) : null;
+  if (endCell && ends.every(end => endCell.is($cellIn(end, node)))) {
     return ctx.exportBlocks(endCell);
   }
   // A merged cell is written where it starts, with empty cells where it

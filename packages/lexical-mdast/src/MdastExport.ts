@@ -35,6 +35,8 @@ import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
   $getRoot,
   $getSelection,
+  $getSlot,
+  $getSlotNames,
   $getState,
   $isElementNode,
   $isLineBreakNode,
@@ -375,7 +377,7 @@ function createNodeExporter(
   }
 
   /**
-   * Whether `node` or any descendant is selected. See
+   * Whether `node` or any descendant (named slots included) is selected. See
    * {@link MdastExportContext.isIncluded}.
    */
   function $isIncluded(node: LexicalNode): boolean {
@@ -389,7 +391,10 @@ function createNodeExporter(
         }
       }
     }
-    return false;
+    return $getSlotNames(node).some(name => {
+      const slot = $getSlot(node, name);
+      return slot !== null && $isIncluded(slot);
+    });
   }
 
   /**

@@ -49,6 +49,11 @@ import {
   RenderContextRoot,
 } from './RenderContext';
 
+export {
+  BLOCK_ID_ATTRIBUTE,
+  type BlockIdHTMLConfig,
+  BlockIdHTMLExtension,
+} from './BlockIdHTMLExtension';
 export {contextUpdater, contextValue} from './ContextRecord';
 export {domOverride} from './domOverride';
 export {DOMRenderExtension} from './DOMRenderExtension';

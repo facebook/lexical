@@ -147,6 +147,7 @@ export class TableCellNode extends ElementNode {
 
   $config() {
     return this.config('tablecell', {
+      children: 'block',
       extends: ElementNode,
       generated: GENERATED_TABLECELL,
       importDOM: {

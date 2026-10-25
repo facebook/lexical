@@ -60,9 +60,9 @@ function gfmAlign(format: ElementFormatType): AlignType {
 }
 
 /**
- * `nodes` with each node `replace` returns an array for swapped for it, and
- * the children of every node mapped in turn: a copy where anything changed,
- * else `nodes` itself.
+ * Replaces each node for which `replace` returns an array with that array,
+ * maps the children of every node the same way, and returns `nodes` itself
+ * when nothing changed.
  */
 function mapPhrasing(
   nodes: readonly MdastNode[],
@@ -513,21 +513,20 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
  * {@link MdastCommonMarkExtension}) because it pulls in the `@lexical/table`
  * nodes it ships.
  *
- * Import reads a table as GFM does: the first row is the header row, each
- * row has the header row's cells, column alignment is set on the paragraph
- * of each cell of the column as its element format, `<br>` is a line break,
- * and an escaped pipe is a pipe in raw HTML, and in autolinks imported from
- * Markdown source (an mdast tree without it can't tell an autolink from
- * `[text](url)`). Export writes
- * any table as near as GFM allows: a cell's blocks (a block's named slots
- * first) and line breaks as lines separated by `<br>`, a merged cell with empty cells where it spans, block
- * decorators in a cell after the table, and as a column's alignment, that
- * of the text in its header cell (the format of the block its first line
- * with content is in, or of the nearest block around it with one, or else
- * of the cell, where blocks in a nested table count for nothing and start
- * and end are none; a merged header cell's for each column it spans), none
- * for one GFM can't express.
- * The alignment of other cells has no form in GFM.
+ * Import reads a table as GFM does: the first row is the header row, each row
+ * has the header row's cells, column alignment is set on the paragraph of each
+ * cell of the column as its element format, `<br>` is a line break, and an
+ * escaped pipe is a pipe in raw HTML, and in autolinks imported from Markdown
+ * source (an mdast tree without it can't tell an autolink from `[text](url)`).
+ * Export writes any table as near as GFM allows: a cell's blocks (a block's
+ * named slots first) and line breaks as lines separated by `<br>`, a merged
+ * cell with empty cells where it spans, block decorators in a cell after the
+ * table, and as a column's alignment, that of the text in its header cell (the
+ * format of the block its first line with content is in, or of the nearest
+ * block around it with one, or else of the cell, where blocks in a nested table
+ * count for nothing and start and end are none; a merged header cell's for each
+ * column it spans), none for one GFM can't express. The alignment of other
+ * cells has no form in GFM.
  *
  * @example
  * ```ts

@@ -112,7 +112,10 @@ type TableAction = (typeof TABLE_ACTIONS)[number]['value'];
  * Edits the table the selection is in. Export writes a column with the
  * alignment of the text in its header cell.
  */
-function applyTableAction(editor: LexicalEditor, action: TableAction): void {
+export function applyTableAction(
+  editor: LexicalEditor,
+  action: TableAction,
+): void {
   editor.update(() => {
     const selection = $getSelection();
     if (!$isRangeSelection(selection) && !$isTableSelection(selection)) {

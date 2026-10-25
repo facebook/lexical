@@ -11,11 +11,24 @@ import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
 } from '@lexical/mdast';
-import {$getRoot, defineExtension} from 'lexical';
+import {
+  $createRangeSelection,
+  $getRoot,
+  $setSelection,
+  defineExtension,
+} from 'lexical';
 import {expect, onTestFinished, test} from 'vitest';
 import {userEvent} from 'vitest/browser';
 
 import {MdastEditorExtension} from '../../extensions/MdastEditorExtension';
+import {applyTableAction} from '../../plugins/ToolbarPlugin';
+
+function $selectText(text: string, offset = 0) {
+  $getRoot()
+    .getAllTextNodes()
+    .find(node => node.getTextContent() === text)!
+    .select(offset, offset);
+}
 
 function mountEditor(markdown: string) {
   const root = document.createElement('div');
@@ -57,3 +70,32 @@ test.each(['{Enter}', '{Shift>}{Enter}{/Shift}'])(
     );
   },
 );
+
+test('Table > Align center in a header cell aligns the column', () => {
+  const editor = mountEditor('| a | b |\n| - | - |\n| 1 | 2 |');
+  editor.update(() => $selectText('a'), {discrete: true});
+  applyTableAction(editor, 'center');
+  expect(editor.read(() => $convertToMarkdownString())).toBe(
+    '|  a  | b |\n| :-: | - |\n|  1  | 2 |',
+  );
+});
+
+test('Table menu actions need a selection within one table', () => {
+  const markdown = '| a |\n| - |\n| 1 |\n\n| b |\n| - |\n| 2 |';
+  const editor = mountEditor(markdown);
+  editor.update(
+    () => {
+      const selection = $createRangeSelection();
+      const texts = $getRoot().getAllTextNodes();
+      const a = texts.find(node => node.getTextContent() === 'a')!;
+      const b = texts.find(node => node.getTextContent() === 'b')!;
+      selection.anchor.set(a.getKey(), 0, 'text');
+      selection.focus.set(b.getKey(), 1, 'text');
+      $setSelection(selection);
+    },
+    {discrete: true},
+  );
+  applyTableAction(editor, 'center');
+  applyTableAction(editor, 'rowBelow');
+  expect(editor.read(() => $convertToMarkdownString())).toBe(markdown);
+});

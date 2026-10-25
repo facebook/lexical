@@ -827,25 +827,24 @@ function formattedLeaves(
 }
 
 /**
- * Wraps the leaves as phrasingFromTextRuns nests text runs: strikethrough
- * outermost, then whichever of emphasis and strong spans the longer run
- * (emphasis on a tie).
+ * Wraps the leaves (none struck) in emphasis and strong as
+ * phrasingFromTextRuns does text runs: whichever spans the longer run goes
+ * outside, emphasis on a tie.
  */
-function groupLeaves(leaves: readonly FormattedLeaf[]): PhrasingLike[] {
+function groupEmphasis(leaves: readonly FormattedLeaf[]): PhrasingLike[] {
   const out: PhrasingLike[] = [];
   for (let i = 0; i < leaves.length; ) {
-    const has = (at: number, type: string) => leaves[at].formats.includes(type);
     let wrapper: string | null = null;
     let end = i + 1;
-    for (const type of WRAPPERS) {
-      if (!has(i, type)) {
-        continue;
-      }
-      let typeEnd = i + 1;
-      while (typeEnd < leaves.length && has(typeEnd, type)) {
+    for (const type of ['emphasis', 'strong']) {
+      let typeEnd = i;
+      while (
+        typeEnd < leaves.length &&
+        leaves[typeEnd].formats.includes(type)
+      ) {
         typeEnd++;
       }
-      if (wrapper === null || (wrapper !== 'delete' && typeEnd > end)) {
+      if (typeEnd > i && (wrapper === null || typeEnd > end)) {
         wrapper = type;
         end = typeEnd;
       }
@@ -856,12 +855,7 @@ function groupLeaves(leaves: readonly FormattedLeaf[]): PhrasingLike[] {
     } else {
       const type = wrapper;
       out.push({
-        children: groupLeaves(
-          leaves.slice(i, end).map(leaf => ({
-            formats: leaf.formats.filter(format => format !== type),
-            node: leaf.node,
-          })),
-        ),
+        children: groupEmphasis(without(leaves.slice(i, end), type)),
         type,
       });
       i = end;
@@ -870,16 +864,62 @@ function groupLeaves(leaves: readonly FormattedLeaf[]): PhrasingLike[] {
   return out;
 }
 
+function without(
+  leaves: readonly FormattedLeaf[],
+  type: string,
+): FormattedLeaf[] {
+  return leaves.map(({formats, node}) => ({
+    formats: formats.filter(format => format !== type),
+    node,
+  }));
+}
+
+/**
+ * Wraps the leaves as phrasingFromTextRuns does text runs: each run of
+ * struck leaves in one strikethrough, outermost, then emphasis and strong.
+ */
+function groupLeaves(leaves: readonly FormattedLeaf[]): PhrasingLike[] {
+  const out: PhrasingLike[] = [];
+  for (let i = 0; i < leaves.length; ) {
+    const struck = leaves[i].formats.includes('delete');
+    let end = i + 1;
+    while (
+      end < leaves.length &&
+      leaves[end].formats.includes('delete') === struck
+    ) {
+      end++;
+    }
+    const segment = leaves.slice(i, end);
+    if (struck) {
+      out.push({
+        children: groupEmphasis(without(segment, 'delete')),
+        type: 'delete',
+      });
+    } else {
+      out.push(...groupEmphasis(segment));
+    }
+    i = end;
+  }
+  return out;
+}
+
+/**
+ * Regroups the phrasing around each formatted ref, and leaves the rest as
+ * the text export grouped it.
+ */
 function mergeAdjacentPhrasing(node: PhrasingLike): void {
   if (node.children === undefined) {
     return;
   }
-  node.children.forEach(mergeAdjacentPhrasing);
-  if (node.children.some(child => WRAPPERS.includes(child.type))) {
-    node.children = groupLeaves(
-      node.children.flatMap(child => formattedLeaves(child)),
-    );
+  const leaves = node.children.flatMap(child => formattedLeaves(child));
+  if (
+    leaves.some(
+      leaf => leaf.formats.length > 0 && leaf.node.type === 'footnoteReference',
+    )
+  ) {
+    node.children = groupLeaves(leaves);
   }
+  leaves.forEach(leaf => mergeAdjacentPhrasing(leaf.node));
 }
 
 /** Every footnoteReference identifier in an mdast (sub)tree. */

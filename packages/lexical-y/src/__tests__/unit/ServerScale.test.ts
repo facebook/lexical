@@ -13,9 +13,9 @@ import {$getRoot, createEditor} from 'lexical';
 import {describe, expect, test} from 'vitest';
 import * as Y13 from 'yjs';
 
+import {inspectUpdateRoots} from '../../internal/UpdateRoots';
 import {$p, NODES} from '../utils/harness';
 import {writeEditorToYDoc} from '../utils/headless';
-import {inspectUpdateRoots} from '../utils/UpdateRoots';
 
 function bigDoc(n: number): Y.Doc {
   const editor = createEditor({

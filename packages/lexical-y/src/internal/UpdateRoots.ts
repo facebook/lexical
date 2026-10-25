@@ -13,12 +13,19 @@ import {
   findRootTypeKey,
   Item,
   Node as YNode,
+  Skip,
 } from '@y/y';
 
 type ID = {client: number; clock: number};
 
 /** The result of {@link inspectUpdateRoots}. */
 export type UpdateRoots = {
+  /**
+   * The client ids the update's structs are written under (items and
+   * garbage collected ranges; deletions of other clients' items are not
+   * counted).
+   */
+  clients: Set<number>;
   /** Root names the update writes to (inserts and deletes). */
   roots: Set<string>;
   /**
@@ -58,8 +65,12 @@ function findStruct<T extends {id: ID; length: number}>(
  */
 export function inspectUpdateRoots(update: Uint8Array, doc?: Doc): UpdateRoots {
   const {structs, ds} = decodeUpdate(update);
+  const clients = new Set<number>();
   const byClient = new Map<number, Item[]>();
   for (const s of structs) {
+    if (!(s instanceof Skip)) {
+      clients.add(s.id.client);
+    }
     if (s instanceof Item) {
       let list = byClient.get(s.id.client);
       if (list === undefined) {
@@ -168,7 +179,7 @@ export function inspectUpdateRoots(update: Uint8Array, doc?: Doc): UpdateRoots {
       }
     }
   });
-  return {roots, unresolved};
+  return {clients, roots, unresolved};
 }
 
 function rootOfType(type: YNode): string | null {

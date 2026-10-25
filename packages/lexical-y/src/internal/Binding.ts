@@ -3169,6 +3169,22 @@ export class YBinding {
     return false;
   }
 
+  /**
+   * @internal Run the binding's own updates that wait for the editor to be
+   * idle (see runPending) now, instead of in a microtask: for the headless
+   * helpers, which commit the editor's pending updates themselves and
+   * encode the document right after an edit. Returns whether any of them
+   * still waits (the editor is not idle: a listener queued an update).
+   * `private` to the type only, so that the published declarations do not
+   * offer it; the headless helpers reach it through `BindingInternals`.
+   */
+  private flushPending(): boolean {
+    return this.guard(() => {
+      this.runPending();
+      return this.pending.size > 0;
+    });
+  }
+
   /** Whether no update is running, queued or pending. */
   private isIdle(): boolean {
     const editor = this._editor;

@@ -13,6 +13,7 @@ import * as path from 'node:path';
 import {expect, test} from 'vitest';
 
 import * as mainEntry from '../..';
+import * as headlessEntry from '../../headless';
 
 // Bundlers replace only process.env.NODE_ENV: any other process.env read in
 // shipped source throws "process is not defined" in a browser.
@@ -42,12 +43,19 @@ test('shipped source reads no process.env but NODE_ENV', () => {
 
 // Old clients (@lexical/yjs) write other roots, so servers need no API of
 // their own: the package has no server entry, and the two constants a
-// server may want come from the main entry.
+// server may want come from the main entry. `@lexical/y/headless` is plain
+// functions (`createYWriter` makes the writer `editYState` requires;
+// `createYDoc` the document a relay loads a state into), plus its warning
+// codes.
 test('public entries', () => {
   const pkg = JSON.parse(
     fs.readFileSync(path.resolve(__dirname, '../../../package.json'), 'utf8'),
   ) as {exports: Record<string, unknown>};
-  expect(Object.keys(pkg.exports).sort()).toEqual(['.']);
+  expect(Object.keys(pkg.exports).sort()).toEqual([
+    '.',
+    './headless',
+    './headless.js',
+  ]);
   expect(mainEntry.DEFAULT_ROOT_NAME).toBe('lexical-y');
   expect(typeof mainEntry.LAYOUT_VERSION).toBe('number');
   expect(Object.keys(mainEntry).sort()).toEqual([
@@ -68,4 +76,23 @@ test('public entries', () => {
     'describeStorage',
     'isYWarning',
   ]);
+  expect(Object.keys(headlessEntry).sort()).toEqual([
+    'EDITOR_WARNING',
+    'FOLLOW_UPS_EXHAUSTED_WARNING',
+    'WRITER_NEW_CLIENT_ID_WARNING',
+    'YHeadlessError',
+    'createYDoc',
+    'createYWriter',
+    'editYState',
+    'readYState',
+    'seedYState',
+  ]);
+});
+
+// The headless helpers' hook into the binding is not part of its published
+// type (`private` to the type only, so the declarations do not offer it).
+test('YBinding does not offer flushPending', () => {
+  type Offered = 'flushPending' extends keyof mainEntry.YBinding ? true : false;
+  const offered: Offered = false;
+  expect(offered).toBe(false);
 });

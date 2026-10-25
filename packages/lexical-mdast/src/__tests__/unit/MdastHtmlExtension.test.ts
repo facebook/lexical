@@ -378,6 +378,12 @@ describe('MdastHtmlExtension', () => {
       );
     });
 
+    it('reads an autolink between tags as an autolink, not a tag', () => {
+      expect(importExport('<div>\n<https://a.b/c> x\n</div>')).toBe(
+        '<https://a.b/c> x',
+      );
+    });
+
     it('leaves unclosed raw HTML as literal text', () => {
       using editor = createEditor();
       editor.update(

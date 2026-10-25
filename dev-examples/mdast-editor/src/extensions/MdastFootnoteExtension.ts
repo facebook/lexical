@@ -798,7 +798,8 @@ const $exportFootnoteDefinition: MdastExportHandler<FootnoteDefinitionNode> = (
 // wrappers back together before serialization keeps the emitted Markdown
 // re-parseable (`**x[^a]**`). The text runs choose which of strong and
 // emphasis goes outside by what the neighbouring runs share, so a wrapper
-// holding only the other one is first turned inside out to match.
+// holding only wrappers of the other one is first turned inside out to
+// match.
 const MERGEABLE_PHRASING = new Set(['delete', 'emphasis', 'strong']);
 
 interface PhrasingLike {
@@ -806,17 +807,24 @@ interface PhrasingLike {
   children?: PhrasingLike[];
 }
 
+const INVERTIBLE = new Set(['emphasis', 'strong']);
+
 function swapsTo(node: PhrasingLike, type: string): PhrasingLike | null {
-  const child =
-    node.children !== undefined && node.children.length === 1
-      ? node.children[0]
-      : null;
-  return child !== null &&
-    child.type === type &&
-    child.children !== undefined &&
-    (type === 'emphasis' || type === 'strong') &&
-    (node.type === 'emphasis' || node.type === 'strong')
-    ? {children: [{children: child.children, type: node.type}], type}
+  const {children} = node;
+  return INVERTIBLE.has(node.type) &&
+    INVERTIBLE.has(type) &&
+    children !== undefined &&
+    children.length > 0 &&
+    children.every(child => child.type === type && child.children)
+    ? {
+        children: [
+          {
+            children: children.flatMap(child => child.children || []),
+            type: node.type,
+          },
+        ],
+        type,
+      }
     : null;
 }
 

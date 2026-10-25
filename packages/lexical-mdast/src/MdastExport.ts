@@ -39,6 +39,7 @@ import {
   $isElementNode,
   $isLineBreakNode,
   $isRangeSelection,
+  $isSlotHost,
   $isTextNode,
   IS_BOLD,
   IS_CODE,
@@ -590,33 +591,29 @@ function $dominantInlineMarkers(node: ElementNode): {
 } {
   let emphasis: '*' | '_' | undefined;
   let strong: '*' | '_' | undefined;
-  const visit = (parent: LexicalNode): void => {
-    for (const child of [
-      ...$slotNodes(parent),
-      ...($isElementNode(parent) ? parent.getChildren() : []),
-    ]) {
-      if ($isTextNode(child)) {
-        if (emphasis === undefined && child.hasFormat('italic')) {
-          const marker = $getState(child, emphasisMarkerState);
-          if (marker === '_') {
-            emphasis = '_';
-          }
+  // Whether both are found, which ends the scan.
+  const $visit = (child: LexicalNode): boolean => {
+    if ($isTextNode(child)) {
+      if (emphasis === undefined && child.hasFormat('italic')) {
+        const marker = $getState(child, emphasisMarkerState);
+        if (marker === '_') {
+          emphasis = '_';
         }
-        if (strong === undefined && child.hasFormat('bold')) {
-          const marker = $getState(child, strongMarkerState);
-          if (marker === '_') {
-            strong = '_';
-          }
+      }
+      if (strong === undefined && child.hasFormat('bold')) {
+        const marker = $getState(child, strongMarkerState);
+        if (marker === '_') {
+          strong = '_';
         }
-      } else {
-        visit(child);
       }
-      if (emphasis !== undefined && strong !== undefined) {
-        return;
-      }
+      return emphasis !== undefined && strong !== undefined;
     }
+    return (
+      ($isSlotHost(child) && $slotNodes(child).some($visit)) ||
+      ($isElementNode(child) && child.getChildren().some($visit))
+    );
   };
-  visit(node);
+  $visit(node);
   return {emphasis, strong};
 }
 

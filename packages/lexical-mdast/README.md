@@ -225,7 +225,10 @@ The **body** blocks
   (`$convertSelectionToMarkdownString`) run under
   `RenderContextMarkdownSelection` carrying the selection, so a
   contributed to-markdown handler that appends end-of-document data can
-  scope its output to a clipboard copy.
+  scope its output to a clipboard copy. An export rule reads the selection
+  its own export is limited to as `context.selection` (`null` for a
+  whole-document export, including one a handler runs during a selection
+  export), which needs no active editor.
 
 A complete HTML-encoded construct is one DOM import rule (which then also
 serves HTML paste) plus one export rule:

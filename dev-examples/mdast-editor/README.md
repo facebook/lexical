@@ -67,8 +67,9 @@ example plumbing only (the preview signal and two toolbar commands), because
   `mergeAdjacentNewlines` don't exist; micromark parses CommonMark as-is
   and the original syntax is preserved on the nodes via `NodeState`.
 
-It also does more: blockquotes, links, strikethrough, thematic breaks, and
-fenced code blocks round-trip out of the box (the legacy example's default
+It also does more: blockquotes, links, strikethrough, thematic breaks,
+fenced code blocks, and GFM tables (edited with `TableExtension` and the
+toolbar's Table menu) round-trip out of the box (the legacy example's default
 set covered headings, lists, and inline formatting), and the code blocks
 are syntax-highlighted by adding `CodeShikiExtension` — highlighting
 composes with the Markdown machinery without any extra wiring.

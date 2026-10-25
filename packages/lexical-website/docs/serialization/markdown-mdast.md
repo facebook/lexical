@@ -117,13 +117,13 @@ with [NodeState](/docs/concepts/node-state): list bullet `-`/`*`/`+`,
 ordered delimiter `.`/`)`, code fence style and info-string meta,
 setext vs ATX headings, hard-break style, soft line breaks, thematic
 break marker, `*` vs `_` emphasis and strong markers (one of each for
-the whole document, `_` if any was used, unless `toMarkdownExtensions`
-sets them), and link style (`[text](url)` vs `<autolink>` vs bare GFM
-literal). Round-trips are close but not exact; some forms are
-normalized, such as a run of text both bold and italic on its own,
-written as emphasis around strong (`**_both_**` comes back as
-`_**both**_`), and GFM tables, padded so their columns line up and
-written as below. Nodes created in the editor defer to the
+the whole document, `_` if any was used outside raw HTML, unless
+`toMarkdownExtensions` sets them), and link style (`[text](url)` vs
+`<autolink>` vs bare GFM literal). Round-trips are close but not
+exact; some forms are normalized, such as a run of text both bold and
+italic on its own, written as emphasis around strong (`**_both_**`
+comes back as `_**both**_`), and GFM tables, padded so their columns
+line up and written as below. Nodes created in the editor defer to the
 document-level serialization options, which can be configured by
 contributing `mdast-util-to-markdown` options through
 `toMarkdownExtensions`.

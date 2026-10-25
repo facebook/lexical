@@ -763,7 +763,7 @@ const $exportFootnoteRef: MdastExportHandler<FootnoteRefNode> = node => {
   };
   // The format bitmask re-wraps in phrasing containers, nesting in the same
   // order as the core text serialization of a lone run (emphasis around
-  // strong); mergeAdjacentPhrasing folds it into the text around it.
+  // strong); mergeAdjacentPhrasing regroups it with the text around it.
   if (node.hasFormat('bold')) {
     content = {children: [content], type: 'strong'};
   }
@@ -791,67 +791,95 @@ const $exportFootnoteDefinition: MdastExportHandler<FootnoteDefinitionNode> = (
   type: 'footnoteDefinition',
 });
 
-// The registry's text-run accumulator merges adjacent same-format TEXT into
-// one delimiter pair, but a formatted ref exports through its own handler,
-// so `**x**` + `**[^a]**` would sit side by side and serialize as the
-// broken `**x****[^a]**` / `*em**[^a]*` shapes. Folding adjacent same-type
-// wrappers back together before serialization keeps the emitted Markdown
-// re-parseable (`**x[^a]**`). The text runs choose which of strong and
-// emphasis goes outside by what the neighbouring runs share, so a wrapper
-// holding only wrappers of the other one is first turned inside out to
-// match.
-const MERGEABLE_PHRASING = new Set(['delete', 'emphasis', 'strong']);
-
+// The registry's text-run accumulator groups adjacent formatted TEXT into
+// shared delimiter pairs, but a formatted ref exports through its own
+// handler, so `**x**` + `**[^a]**` would sit side by side and serialize as
+// the broken `**x****[^a]**` / `*em**[^a]*` shapes. Regrouping each run of
+// phrasing before serialization, refs included, the way the accumulator
+// groups text keeps the emitted Markdown re-parseable (`**x[^a]**`).
 interface PhrasingLike {
   type: string;
   children?: PhrasingLike[];
 }
 
-const INVERTIBLE = new Set(['emphasis', 'strong']);
+const WRAPPERS = ['delete', 'emphasis', 'strong'];
 
-/** Whether `node` has children and nothing else but its type. */
-function isBare(node: PhrasingLike): boolean {
-  return (
-    node.children !== undefined &&
-    Object.keys(node).every(key => key === 'type' || key === 'children')
-  );
+interface FormattedLeaf {
+  formats: readonly string[];
+  node: PhrasingLike;
 }
 
-function swapsTo(node: PhrasingLike, type: string): PhrasingLike | null {
-  const children = node.children || [];
-  return INVERTIBLE.has(node.type) &&
-    INVERTIBLE.has(type) &&
-    isBare(node) &&
-    children.length > 0 &&
-    children.every(child => child.type === type && isBare(child))
-    ? {
-        children: [
-          {
-            children: children.flatMap(child => child.children || []),
-            type: node.type,
-          },
-        ],
-        type,
+/**
+ * The leaves under `node`'s formatting wrappers (ones holding nothing but
+ * their children), each with the wrappers around it.
+ */
+function formattedLeaves(
+  node: PhrasingLike,
+  formats: readonly string[] = [],
+): FormattedLeaf[] {
+  return WRAPPERS.includes(node.type) &&
+    node.children !== undefined &&
+    Object.keys(node).every(key => key === 'type' || key === 'children')
+    ? node.children.flatMap(child =>
+        formattedLeaves(child, [...formats, node.type]),
+      )
+    : [{formats, node}];
+}
+
+/**
+ * Wraps the leaves as phrasingFromTextRuns nests text runs: strikethrough
+ * outermost, then whichever of emphasis and strong spans the longer run
+ * (emphasis on a tie).
+ */
+function groupLeaves(leaves: readonly FormattedLeaf[]): PhrasingLike[] {
+  const out: PhrasingLike[] = [];
+  for (let i = 0; i < leaves.length; ) {
+    const has = (at: number, type: string) => leaves[at].formats.includes(type);
+    let wrapper: string | null = null;
+    let end = i + 1;
+    for (const type of WRAPPERS) {
+      if (!has(i, type)) {
+        continue;
       }
-    : null;
+      let typeEnd = i + 1;
+      while (typeEnd < leaves.length && has(typeEnd, type)) {
+        typeEnd++;
+      }
+      if (wrapper === null || (wrapper !== 'delete' && typeEnd > end)) {
+        wrapper = type;
+        end = typeEnd;
+      }
+    }
+    if (wrapper === null) {
+      out.push(leaves[i].node);
+      i++;
+    } else {
+      const type = wrapper;
+      out.push({
+        children: groupLeaves(
+          leaves.slice(i, end).map(leaf => ({
+            formats: leaf.formats.filter(format => format !== type),
+            node: leaf.node,
+          })),
+        ),
+        type,
+      });
+      i = end;
+    }
+  }
+  return out;
 }
 
 function mergeAdjacentPhrasing(node: PhrasingLike): void {
-  const children = node.children ?? [];
-  for (let i = children.length - 1; i > 0; i--) {
-    const prev = swapsTo(children[i - 1], children[i].type) ?? children[i - 1];
-    const current = swapsTo(children[i], prev.type) ?? children[i];
-    if (
-      MERGEABLE_PHRASING.has(current.type) &&
-      prev.type === current.type &&
-      prev.children !== undefined &&
-      current.children !== undefined
-    ) {
-      prev.children.push(...current.children);
-      children.splice(i - 1, 2, prev);
-    }
+  if (node.children === undefined) {
+    return;
   }
-  children.forEach(mergeAdjacentPhrasing);
+  node.children.forEach(mergeAdjacentPhrasing);
+  if (node.children.some(child => WRAPPERS.includes(child.type))) {
+    node.children = groupLeaves(
+      node.children.flatMap(child => formattedLeaves(child)),
+    );
+  }
 }
 
 /** Every footnoteReference identifier in an mdast (sub)tree. */

@@ -327,8 +327,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   const ends = $isNodeSelection(selection)
     ? selection.getNodes()
     : $isRangeSelection(selection) ||
-        ($isTableSelection(selection) &&
-          !node.is($findTableNode(selection.anchor.getNode())))
+        ($isTableSelection(selection) && selection.tableKey !== node.getKey())
       ? [selection.anchor.getNode(), selection.focus.getNode()]
       : [];
   const endCell = ends.length > 0 ? $cellIn(ends[0], node) : null;

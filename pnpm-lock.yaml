@@ -1082,6 +1082,9 @@ importers:
       mdast-util-gfm-task-list-item:
         specifier: ^2.0.0
         version: 2.0.0(supports-color@10.2.2)
+      mdast-util-phrasing:
+        specifier: ^4.1.0
+        version: 4.1.0
       mdast-util-to-markdown:
         specifier: ^2.2.0
         version: 2.2.0

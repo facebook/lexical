@@ -50,6 +50,7 @@ import {
   type LexicalNode,
   type TextNode,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {describe, expect, it} from 'vitest';
 
 import {
@@ -918,10 +919,30 @@ describe('MdastHtmlExtension', () => {
     });
   });
 
-  it('writes the named slots of a block in a cell as lines', () => {
+  it('writes a block in a cell as its export rule does', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
-        dependencies: [MdastExtension, MdastTableExtension],
+        dependencies: [
+          MdastExtension,
+          MdastTableExtension,
+          configExtension(MdastExtension, {
+            exportRules: [
+              {
+                // The rule writes the title slot, then the body.
+                $export: (node, ctx) => [
+                  {
+                    children: ctx.exportInline(
+                      $assertNodeType($getSlot(node, 'title'), $isElementNode),
+                    ),
+                    type: 'paragraph',
+                  },
+                  ...ctx.exportBlocks($assertNodeType(node, $isElementNode)),
+                ],
+                type: 'x-callout',
+              },
+            ],
+          }),
+        ],
         name: '[root]',
         nodes: [CalloutNode],
       }),
@@ -929,38 +950,26 @@ describe('MdastHtmlExtension', () => {
     editor.update(
       () => {
         $convertFromMarkdownString('| a |\n| - |\n| b |');
-        const table = $getRoot().getFirstChildOrThrow<ElementNode>();
-        const header = table.getFirstChildOrThrow<ElementNode>();
         const callout = $create(CalloutNode).append(
           $createParagraphNode().append($createTextNode('body')),
         );
         $setSlot(
           callout,
           'title',
-          $createParagraphNode()
-            .setFormat('center')
-            .append($createTextNode('title')),
+          $createParagraphNode().append($createTextNode('title')),
         );
-        header.getFirstChildOrThrow<ElementNode>().clear().append(callout);
-        // A slot with no content is no line, however deep its blocks.
-        const empty = $create(CalloutNode).append(
-          $createParagraphNode().append($createTextNode('x')),
-        );
-        $setSlot(
-          empty,
-          'title',
-          $create(CalloutNode).append($createParagraphNode()),
-        );
-        table
-          .getLastChildOrThrow<ElementNode>()
+        $getRoot()
           .getFirstChildOrThrow<ElementNode>()
-          .append(empty);
+          .getFirstChildOrThrow<ElementNode>()
+          .getFirstChildOrThrow<ElementNode>()
+          .clear()
+          .append(callout);
       },
       {discrete: true},
     );
     editor.read(() => {
       expect($convertToMarkdownString()).toBe(
-        '| title<br>body |\n| :-----------: |\n|     b<br>x    |',
+        '| title<br>body |\n| ------------- |\n| b             |',
       );
     });
   });

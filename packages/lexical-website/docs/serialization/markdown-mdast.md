@@ -110,7 +110,7 @@ After the last handler, `next()` uses the generic fallback. Returning `null`
 uses the default export directly, or omits the node and its children on import.
 Returning `[]` omits the node in either direction.
 
-## Round-trips are minimally different
+## Round-trips are close, not exact
 
 The literal syntax of each construct is preserved on the Lexical nodes
 with [NodeState](/docs/concepts/node-state): list bullet `-`/`*`/`+`,
@@ -131,15 +131,17 @@ options, which can be configured by contributing
 GFM tables (`MdastTableExtension`) import a column's alignment as the
 element format of the paragraph in each of its cells, and write it from
 the text of the column's header cell (the format of the block holding
-the cell's first line with content, or of the nearest block around it
-with one, or else of the cell, where blocks in a nested table count for
-nothing and start and end are none); a format GFM can't express leaves
-the column unaligned. Export is lossy where GFM has no form for a
-table's content: a cell's blocks (a block's named slots first) and line
-breaks become lines separated by `<br>` (whatever spelling of the tag,
-such as `<br/>` or `</br>`, was read), a merged cell is written where it
-starts with empty cells where it spans, block decorators in a cell are
-written after the table, and the alignment of a body cell is dropped.
+the cell's first text, or of the nearest block around it with one, or
+else of the cell, where blocks in a nested table count for nothing and
+start and end are none); a format GFM can't express leaves the column
+unaligned. Export is lossy where GFM has no form for a table's content:
+the content of a cell is exported by its export rules, and the blocks
+that come out (and their line breaks) become lines separated by `<br>`
+(whatever spelling of the tag, such as `<br/>` or `</br>`, was read),
+with a code block's lines as inline code. A merged cell is written
+where it starts with empty cells where it spans, blocks with no inline
+form (such as a horizontal rule) are written after the table, and the
+alignment of a body cell is dropped.
 Editing tables in the editor also takes `TableExtension` from
 `@lexical/table`.
 

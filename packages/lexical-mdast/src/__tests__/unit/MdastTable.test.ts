@@ -1008,6 +1008,24 @@ describe('MdastTableExtension', () => {
     ).toBe('before\n\nafter');
   });
 
+  it('writes the lines of a code block in a cell as inline code', () => {
+    expect(
+      convert(
+        [table('| a |', '| - |', '| 1 |'), '```\nx|y\n\nz\n```'].join('\n\n'),
+        () => {
+          const code = $getRoot().getLastChildOrThrow();
+          $cells()[1][0].clear().append(code);
+        },
+      ),
+    ).toBe(
+      table(
+        '| a                 |',
+        '| ----------------- |',
+        '| `x\\|y`<br><br>`z` |',
+      ),
+    );
+  });
+
   it('adds no line for a block of only block decorators in a cell', () => {
     expect(
       convert(table('| a | b |', '| - | - |', '| 1 | 2 |'), () => {

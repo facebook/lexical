@@ -6,7 +6,12 @@
  *
  */
 
-import type {MdastExportHandler, MdastImportHandler, MdastNode} from './types';
+import type {
+  MdastExportContext,
+  MdastExportHandler,
+  MdastImportHandler,
+  MdastNode,
+} from './types';
 import type {AlignType, PhrasingContent, Table, TableCell} from 'mdast';
 import type {
   Handle,
@@ -42,9 +47,10 @@ import {
   type LexicalNode,
 } from 'lexical';
 import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
+import {phrasing} from 'mdast-util-phrasing';
 import {gfmTable} from 'micromark-extension-gfm-table';
 
-import {$append, $isBlockLevelNode, $slotNodes, inlineMarker} from './handlers';
+import {$append, $isBlockLevelNode, inlineMarker} from './handlers';
 import {MdastExtension} from './MdastExtension';
 
 /**
@@ -100,27 +106,37 @@ function $cellIn(node: LexicalNode, table: TableNode): TableCellNode | null {
   return null;
 }
 
+/** The first inline node in `node` with content, if any. */
+function $firstContent(node: ElementNode): LexicalNode | null {
+  for (const child of node.getChildren()) {
+    const found = $isElementNode(child)
+      ? $firstContent(child)
+      : $isLineBreakNode(child) ||
+          $isBlockLevelNode(child) ||
+          ($isTextNode(child) && child.getTextContent().trim() === '')
+        ? null
+        : child;
+    if (found) {
+      return found;
+    }
+  }
+  return null;
+}
+
 /**
- * The format of the text in a cell: that of the block its first line with
- * content is in, or of the nearest block around it in the cell that has
- * one, or else the cell's. Blocks in a nested table count for nothing (the
- * nested table has its own alignment). A start or end format (as pasted
- * HTML often has) takes no GFM alignment.
+ * The format of the text in a cell: that of the block its first inline node
+ * with content is in (or its first block, when it has none), or of the
+ * nearest block around it in the cell that has one, or else the cell's.
+ * Blocks in a nested table count for nothing (the nested table has its own
+ * alignment). A start or end format (as pasted HTML often has) takes no GFM
+ * alignment.
  */
 function $cellFormat(cell: TableCellNode): ElementFormatType {
-  const {lines, owners} = $cellLines(cell);
-  const first = lines.findIndex(line =>
-    line.some(
-      node =>
-        !$isLineBreakNode(node) &&
-        !($isTextNode(node) && node.getTextContent().trim() === ''),
-    ),
-  );
   let format: ElementFormatType = '';
   for (
-    let node: LexicalNode | null = owners[Math.max(first, 0)];
+    let node = $firstContent(cell) || cell.getFirstChild();
     node && !node.is(cell);
-    node = $slotHostOrParent(node)
+    node = node.getParent()
   ) {
     // Text in a nested table has that table's alignment, not this one's,
     // and the table's own format places it.
@@ -187,63 +203,57 @@ function $tableGrid(table: TableNode): {
 }
 
 /**
- * The inline content of a cell as lines (at least one): those of each block
- * in it, a nested block's on lines of its own. Also returns the blocks with
- * no inline form (block decorators), and the block (or the cell) each line
- * is in.
+ * The content of a cell as its export rules write it, as lines of phrasing
+ * content: each block's (a container's blocks on lines of their own), and a
+ * code block's lines as code. Also returns the blocks with no phrasing form
+ * (such as thematic breaks), which are written after the table. A cell a
+ * selection export doesn't reach is no line.
  */
-function $cellLines(cell: TableCellNode): {
-  decorators: LexicalNode[];
-  lines: LexicalNode[][];
-  owners: ElementNode[];
-} {
-  const lines: LexicalNode[][] = [];
-  const owners: ElementNode[] = [];
-  const decorators: LexicalNode[] = [];
-  let line: LexicalNode[] | undefined;
-  const $visit = (node: LexicalNode, owner: ElementNode) => {
-    if (!$isBlockLevelNode(node)) {
+function $cellContent(
+  cell: TableCellNode,
+  ctx: MdastExportContext,
+): {after: MdastNode[]; lines: PhrasingContent[][]} {
+  const lines: PhrasingContent[][] = [];
+  const after: MdastNode[] = [];
+  let line: PhrasingContent[] | undefined;
+  const visit = (node: MdastNode) => {
+    // Raw HTML, flow or phrasing, is written in the line as it is.
+    if (phrasing(node) || node.type === 'html') {
       if (!line) {
         lines.push((line = []));
-        owners.push(owner);
       }
       line.push(node);
       return;
     }
     line = undefined;
-    if ($isElementNode(node)) {
+    if (node.type === 'code') {
+      for (const value of node.value.split(/\r?\n|\r/)) {
+        lines.push(value ? [{type: 'inlineCode', value}] : []);
+      }
+    } else if ('children' in node) {
+      // An empty block is an empty line; one of blocks written after the
+      // table is none.
       const first = lines.length;
-      const firstDecorator = decorators.length;
-      $visitContent(node);
-      // An empty block is an empty line; one of block decorators is none.
-      if (lines.length === first && decorators.length === firstDecorator) {
+      const firstAfter = after.length;
+      node.children.forEach(visit);
+      line = undefined;
+      if (lines.length === first && after.length === firstAfter) {
         lines.push([]);
-        owners.push(node);
       }
-      line = undefined;
     } else {
-      decorators.push(node);
+      after.push(node);
     }
   };
-  // A block's named slots come first (declared ones in declaration order,
-  // as lexical keeps them), and a slot with no content is no line.
-  const $visitContent = (node: ElementNode) => {
-    for (const slot of $slotNodes(node)) {
-      const start = lines.length;
-      $visit(slot, node);
-      line = undefined;
-      if (lines.slice(start).every(slotLine => slotLine.length === 0)) {
-        lines.length = owners.length = start;
-      }
-    }
-    node.getChildren().forEach(child => $visit(child, node));
-  };
-  $visitContent(cell);
-  if (lines.length === 0) {
-    lines.push([]);
-    owners.push(cell);
+  if (!ctx.isIncluded(cell)) {
+    return {after, lines};
   }
-  return {decorators, lines, owners};
+  ctx.exportBlocks(cell).forEach(visit);
+  // A cell of only blocks written after the table is an empty line, unless
+  // it has text a selection export doesn't reach.
+  if (lines.length === 0 && !$firstContent(cell)) {
+    lines.push([]);
+  }
+  return {after, lines};
 }
 
 /**
@@ -340,24 +350,20 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     return ctx.exportBlocks(endCell);
   }
   // A merged cell is written where it starts, with empty cells where it
-  // spans, and every row as wide as the widest. Block decorators, which a
-  // cell can't hold, are written after the table.
+  // spans, and every row as wide as the widest. Blocks with no phrasing form,
+  // which a cell can't hold, are written after the table.
   const {grid, rows} = $tableGrid(node);
-  const decorators: LexicalNode[] = [];
-  // The lines of a cell a selection export reaches (an empty one by its
-  // block); the block decorators it reaches are collected.
-  const cellsLines = new Map<TableCellNode, LexicalNode[][]>();
+  const after: MdastNode[] = [];
+  // The lines of a cell (those a selection export reaches); the blocks with
+  // no phrasing form are collected.
+  const cellsLines = new Map<TableCellNode, PhrasingContent[][]>();
   const $linesOf = (cell: TableCellNode) => {
     let cached = cellsLines.get(cell);
     if (!cached) {
-      const cellLines = $cellLines(cell);
-      cached = cellLines.lines.filter((line, i) =>
-        line.length > 0
-          ? line.some(ctx.isIncluded)
-          : ctx.isIncluded(cellLines.owners[i]),
-      );
+      const content = $cellContent(cell, ctx);
+      cached = content.lines;
       cellsLines.set(cell, cached);
-      decorators.push(...cellLines.decorators.filter(ctx.isIncluded));
+      after.push(...content.after);
     }
     return cached;
   };
@@ -367,7 +373,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   rows.forEach((row, rowIndex) => {
     // Structural iteration bypasses the walk's selection filter, so rows a
     // selection export does not reach are skipped here, as are rows where it
-    // reaches only block decorators.
+    // reaches only blocks written after the table.
     if (!ctx.isIncluded(row)) {
       return;
     }
@@ -391,7 +397,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     written.push(cells);
   });
   if (to < 0) {
-    return ctx.exportChildren(decorators);
+    return after;
   }
   // The columns from the first a selection export reaches to the last.
   const columns = <T>(map: (column: number) => T) =>
@@ -414,9 +420,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
                   // cell writer below writes as `<br>`).
                   $linesOf(cells[column].cell).flatMap(
                     (line, i): PhrasingContent[] =>
-                      i > 0
-                        ? [{type: 'break'}, ...ctx.exportInline(line)]
-                        : ctx.exportInline(line),
+                      i > 0 ? [{type: 'break'}, ...line] : line,
                   )
                 : [],
             type: 'tableCell',
@@ -426,8 +430,8 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
       })),
       type: 'table',
     },
-    // Exported after the cells, in document order.
-    ...ctx.exportChildren(decorators),
+    // Written after the cells, in document order.
+    ...after,
   ];
 };
 
@@ -523,15 +527,16 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
  * an autolink from `[text](url)`). Column alignment is set on the paragraph of
  * each cell of the column as its element format, and a raw HTML `<br>` in a
  * cell, which export writes for a line break, is read as one.
- * Export writes any table as near as GFM allows: a cell's blocks (a block's
- * named slots first) and line breaks as lines separated by `<br>`, a merged
- * cell with empty cells where it spans, block decorators in a cell after the
- * table, and as a column's alignment, that of the text in its header cell (the
- * format of the block its first line with content is in, or of the nearest
- * block around it with one, or else of the cell, where blocks in a nested table
- * count for nothing and start and end are none; a merged header cell's for each
- * column it spans), none for one GFM can't express. The alignment of other
- * cells has no form in GFM.
+ * Export writes any table as near as GFM allows: the blocks a cell's content
+ * exports as (by its export rules), and their line breaks, as lines separated
+ * by `<br>` (a code block's lines as inline code), a merged cell with empty
+ * cells where it spans, blocks with no phrasing form (such as a thematic
+ * break) after the table, and as a column's alignment, that of the text in its
+ * header cell (the format of the block its first text is in, or of the nearest
+ * block around it with one, or else of the cell, where blocks in a nested
+ * table count for nothing and start and end are none; a merged header cell's
+ * for each column it spans), none for one GFM can't express. The alignment of
+ * other cells has no form in GFM.
  *
  * @example
  * ```ts

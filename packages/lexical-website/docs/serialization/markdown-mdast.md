@@ -133,7 +133,8 @@ GFM tables (`MdastTableExtension`) import a column's alignment as the
 element format of the paragraph in each of its cells, and write it from
 the content of the column's header cell (the format of the block holding
 the cell's first inline content, or of the nearest block around it with
-one, or else of the cell, where blocks in a nested table count for
+one, or without inline content of the cell's first block, or else of the
+cell, where blocks in a nested table count for
 nothing and start and end are none); a format GFM can't express leaves
 the column unaligned. Export is lossy where GFM has no form for a
 table's content: the content of a cell is exported by its export rules,

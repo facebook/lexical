@@ -22,8 +22,9 @@ in sync.
 
 Like `@lexical/markdown`, the original syntax of a construct is preserved on
 the Lexical nodes (the bullet character of a list, a code block's fence, and a
-hard line break's style), so re-serializing produces **minimally different**
-Markdown — `* a`/`+ b` bullets and `~~~` fences round-trip unchanged.
+hard line break's style), so re-serializing stays **close to the source**,
+though not exact — `* a`/`+ b` bullets and `~~~` fences round-trip unchanged,
+while tables are re-padded and some constructs are normalized (see the guide).
 
 ## Configured through extensions
 

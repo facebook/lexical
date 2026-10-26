@@ -732,6 +732,39 @@ describe('MdastTableExtension', () => {
     });
   });
 
+  it('writes a nested table’s cells as lines, without its filler cells', () => {
+    using editor = createEditor();
+    editor.update(
+      () => {
+        $convertFromMarkdownString(table('| a |', '| - |', '| x |'));
+        const [cell] = $cells()[1];
+        const textCell = (text: string) =>
+          $createTableCellNode().append(
+            $createParagraphNode().append($createTextNode(text)),
+          );
+        cell
+          .clear()
+          .append(
+            $createTableNode().append(
+              $createTableRowNode().append(textCell('A').setColSpan(2)),
+              $createTableRowNode().append(textCell('B'), textCell('C')),
+              $createTableRowNode().append(textCell('D')),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(
+        table(
+          '| a                |',
+          '| ---------------- |',
+          '| A<br>B<br>C<br>D |',
+        ),
+      );
+    });
+  });
+
   it('writes a table selection of a nested table as that table', () => {
     using editor = createEditor();
     editor.update(

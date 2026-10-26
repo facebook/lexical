@@ -267,8 +267,13 @@ function $cellContent(
       const firstAfter = after.length;
       visitAll((node as Parent).children as MdastNode[], true);
       // An empty one is an empty line; one of flow content written after
-      // the table is none.
-      if (lines.length === first && after.length === firstAfter) {
+      // the table is none, and so is a nested table's empty cell (which
+      // also pads a short row or fills where a merged cell spans).
+      if (
+        lines.length === first &&
+        after.length === firstAfter &&
+        node.type !== 'tableCell'
+      ) {
         lines.push([]);
       }
     } else if (CONTAINERS.has(node.type)) {
@@ -575,8 +580,8 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
  * cells where it spans, flow content with no form in a cell (such as a
  * thematic break) after the table, and as a column's alignment, that of the
  * content of its header cell (the format of the block its first inline
- * content is in, or of the nearest block around it with one, or else of the
- * cell, where blocks in a nested table count for nothing and start and end
+ * content is in, or of the nearest block around it with one, or without
+ * inline content of its first block, or else of the cell, where blocks in a nested table count for nothing and start and end
  * are none; a merged header cell's for each column it spans), none for one
  * GFM can't express. The alignment of other cells has no form in GFM.
  *

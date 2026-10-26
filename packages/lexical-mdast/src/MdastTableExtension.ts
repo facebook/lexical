@@ -213,7 +213,10 @@ const PHRASING_PARENTS = /* @__PURE__ */ new Set([
   'tableCell',
 ]);
 
-/** mdast containers of flow content, each block of which is a line. */
+/**
+ * mdast containers whose blocks are lines: of flow content, and of a nested
+ * table's rows and cells.
+ */
 const CONTAINERS = /* @__PURE__ */ new Set([
   'blockquote',
   'list',
@@ -240,7 +243,8 @@ const AFTER = /* @__PURE__ */ new Set([
  * The content of a cell as its export rules write it, as lines of phrasing
  * content: a run of phrasing content (any node that isn't flow content) is
  * a line, a code block's lines are code, raw HTML between blocks is a line
- * of its own, and an empty paragraph or heading is an empty line. Also
+ * of its own, an empty paragraph or heading is an empty line, and each cell
+ * of a nested table is a line (none for one of only empty lines). Also
  * returns the flow content with no form in a cell (such as thematic
  * breaks), which is written after the table.
  */

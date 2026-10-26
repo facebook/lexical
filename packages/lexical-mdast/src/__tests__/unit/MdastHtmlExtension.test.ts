@@ -38,6 +38,7 @@ import {
 } from '@lexical/rich-text';
 import {
   $create,
+  $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -1018,13 +1019,20 @@ describe('MdastHtmlExtension', () => {
           .getLastChildOrThrow<ElementNode>()
           .getFirstChildOrThrow<ElementNode>()
           .clear()
-          .append($create(CalloutNode).append($createTextNode('box')));
+          .append(
+            $create(CalloutNode).append(
+              $createTextNode('a'),
+              $createTextNode('b').toggleFormat('bold'),
+              $createLineBreakNode(),
+              $createTextNode('c'),
+            ),
+          );
       },
       {discrete: true},
     );
     editor.read(() => {
       expect($convertToMarkdownString()).toBe(
-        '# T\n\n| a   |\n| --- |\n| box |\n\nend',
+        '# T\n\n| a           |\n| ----------- |\n| a**b**<br>c |\n\nend',
       );
     });
   });

@@ -1125,12 +1125,18 @@ describe('MdastTableExtension', () => {
       },
       {discrete: true},
     );
+    const expected = [
+      table('| a |   |', '| - | - |', '| 1 |   |'),
+      '***',
+      '***',
+    ].join('\n\n');
     editor.read(() => {
-      expect($convertToMarkdownString()).toBe(
-        [table('| a |   |', '| - | - |', '| 1 |   |'), '***', '***'].join(
-          '\n\n',
-        ),
-      );
+      expect($convertToMarkdownString()).toBe(expected);
+    });
+    // A copy of the whole table keeps the column too.
+    editor.update(() => $getRoot().select(0, 1), {discrete: true});
+    editor.read(() => {
+      expect($convertSelectionToMarkdownString()).toBe(expected);
     });
   });
 

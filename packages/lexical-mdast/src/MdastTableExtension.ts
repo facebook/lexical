@@ -235,11 +235,11 @@ const isFlow = (node: MdastNode) =>
 
 /**
  * The content of a cell as its export rules write it, as lines of phrasing
- * content: each paragraph's or heading's (or a nested table cell's), split
- * where flow content is written in it, a code block's lines as code, and a
- * container's blocks on lines of their own, as is any other node (raw HTML,
- * say). Also returns the flow content with no form in a cell (such as
- * thematic breaks), which is written after the table.
+ * content: a run of phrasing content (any node that isn't flow content) is
+ * a line, a code block's lines are code, raw HTML between blocks is a line
+ * of its own, and an empty paragraph or heading is an empty line. Also
+ * returns the flow content with no form in a cell (such as thematic
+ * breaks), which is written after the table.
  */
 function $cellContent(
   cell: TableCellNode,
@@ -247,27 +247,32 @@ function $cellContent(
 ): {after: MdastNode[]; lines: PhrasingContent[][]} {
   const lines: PhrasingContent[][] = [];
   const after: MdastNode[] = [];
+  const visitAll = (nodes: readonly MdastNode[], phrasing: boolean) => {
+    let line: PhrasingContent[] | undefined;
+    for (const node of nodes) {
+      if (isFlow(node) || (!phrasing && node.type === 'html')) {
+        line = undefined;
+        visit(node);
+      } else {
+        if (!line) {
+          lines.push((line = []));
+        }
+        line.push(node as PhrasingContent);
+      }
+    }
+  };
   const visit = (node: MdastNode) => {
-    if (PHRASING_PARENTS.has(node.type) || CONTAINERS.has(node.type)) {
-      // An empty block is an empty line, and one of blocks written after
-      // the table is none.
+    if (PHRASING_PARENTS.has(node.type)) {
       const first = lines.length;
       const firstAfter = after.length;
-      let line: PhrasingContent[] | undefined;
-      for (const child of (node as Parent).children as MdastNode[]) {
-        if (PHRASING_PARENTS.has(node.type) && !isFlow(child)) {
-          if (!line) {
-            lines.push((line = []));
-          }
-          line.push(child as PhrasingContent);
-        } else {
-          line = undefined;
-          visit(child);
-        }
-      }
+      visitAll((node as Parent).children as MdastNode[], true);
+      // An empty one is an empty line; one of flow content written after
+      // the table is none.
       if (lines.length === first && after.length === firstAfter) {
         lines.push([]);
       }
+    } else if (CONTAINERS.has(node.type)) {
+      visitAll((node as Parent).children as MdastNode[], false);
     } else if (node.type === 'code') {
       for (const value of node.value.split(/\r?\n|\r/)) {
         lines.push(value ? [{type: 'inlineCode', value}] : []);
@@ -281,10 +286,11 @@ function $cellContent(
   if (!ctx.isIncluded(cell)) {
     return {after, lines};
   }
-  ctx.exportBlocks(cell).forEach(visit);
-  // A cell of only blocks written after the table is an empty line, unless
-  // it has text a selection export doesn't reach.
-  if (lines.length === 0 && (ctx.selection === null || !$firstContent(cell))) {
+  visitAll(ctx.exportBlocks(cell), false);
+  // A cell of only flow content written after the table is an empty line,
+  // unless it has inline content a selection export doesn't reach.
+  const content = lines.length === 0 && $firstContent(cell);
+  if (lines.length === 0 && (!content || ctx.isIncluded(content))) {
     lines.push([]);
   }
   return {after, lines};
@@ -438,7 +444,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     Array.from({length: to - from + 1}, (_, i) => map(from + i));
   return [
     {
-      // A column has the alignment of the text in its header cell (one a
+      // A column has the alignment of the content of its header cell (one a
       // merged header cell spans, that cell's), as GFM writes it under that
       // cell.
       align: columns(column => {

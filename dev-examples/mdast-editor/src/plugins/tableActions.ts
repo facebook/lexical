@@ -39,7 +39,7 @@ export type TableAction = (typeof TABLE_ACTIONS)[number]['value'];
 
 /**
  * Edits the table the selection is in. Export writes a column with the
- * alignment of the text in its header cell.
+ * alignment of the content of its header cell.
  */
 export function applyTableAction(
   editor: LexicalEditor,

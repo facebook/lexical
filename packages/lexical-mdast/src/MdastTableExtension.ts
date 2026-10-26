@@ -207,15 +207,11 @@ function $tableGrid(table: TableNode): {
 }
 
 /** mdast nodes that hold phrasing content, which is a line of a cell. */
-const PHRASING_PARENTS = /* @__PURE__ */ new Set([
-  'heading',
-  'paragraph',
-  'tableCell',
-]);
+const PHRASING_PARENTS = /* @__PURE__ */ new Set(['heading', 'paragraph']);
 
 /**
  * mdast containers whose blocks are lines: of flow content, and of a nested
- * table's rows and cells.
+ * table's rows.
  */
 const CONTAINERS = /* @__PURE__ */ new Set([
   'blockquote',
@@ -257,24 +253,26 @@ function $cellContent(
   const visitAll = (nodes: readonly MdastNode[], phrasing: boolean) => {
     let line: PhrasingContent[] | undefined;
     for (const node of nodes) {
-      if (PHRASING_PARENTS.has(node.type)) {
+      if (node.type === 'tableCell') {
+        // A nested table's cell is a line, and one of only empty lines
+        // (which its table writes as breaks) is none, as where it pads a
+        // short row or a merged cell spans.
+        const first = lines.length;
+        visitAll(node.children, true);
+        if (
+          lines
+            .slice(first)
+            .every(written => written.every(({type}) => type === 'break'))
+        ) {
+          lines.length = first;
+        }
+      } else if (PHRASING_PARENTS.has(node.type)) {
         const first = lines.length;
         const firstAfter = after.length;
         visitAll((node as Parent).children as MdastNode[], true);
-        if (node.type === 'tableCell') {
-          // A nested table's cell of only empty lines (which its table
-          // writes as breaks) writes none, as where it pads a short row or
-          // a merged cell spans.
-          if (
-            lines
-              .slice(first)
-              .every(written => written.every(({type}) => type === 'break'))
-          ) {
-            lines.length = first;
-          }
-        } else if (lines.length === first && after.length === firstAfter) {
-          // An empty one is an empty line; one of flow content written
-          // after the table is none.
+        // An empty one is an empty line; one of flow content written after
+        // the table is none.
+        if (lines.length === first && after.length === firstAfter) {
           lines.push([]);
         }
       } else if (CONTAINERS.has(node.type)) {

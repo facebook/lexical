@@ -260,14 +260,8 @@ function $cellContent(
         // A nested table's cell is a line, and one of only empty lines
         // (which its table writes as breaks) is none, as where it pads a
         // short row or a merged cell spans.
-        const first = lines.length;
-        visitAll(node.children, true);
-        if (
-          lines
-            .slice(first)
-            .every(written => written.every(({type}) => type === 'break'))
-        ) {
-          lines.length = first;
+        if (!node.children.every(({type}) => type === 'break')) {
+          visitAll(node.children, true);
         }
       } else if (PHRASING_PARENTS.has(node.type)) {
         const first = lines.length;

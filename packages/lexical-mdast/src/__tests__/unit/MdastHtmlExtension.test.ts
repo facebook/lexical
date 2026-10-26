@@ -959,6 +959,76 @@ describe('MdastHtmlExtension', () => {
     });
   });
 
+  it('writes raw HTML embedding Markdown in a cell paragraph after the table', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          MdastCommonMarkExtension,
+          MdastExtension,
+          MdastHtmlExtension,
+          MdastTableExtension,
+          configExtension(MdastExtension, {
+            exportRules: [
+              {
+                $export: () => [rawHtmlBlock('<hr class="x">')],
+                type: HorizontalRuleNode,
+              },
+            ],
+          }),
+        ],
+        name: '[root]',
+      }),
+    );
+    editor.update(
+      () => {
+        $convertFromMarkdownString('| a |\n| - |\n| 1 |');
+        $getRoot()
+          .getFirstChildOrThrow<ElementNode>()
+          .getLastChildOrThrow<ElementNode>()
+          .getFirstChildOrThrow<ElementNode>()
+          .getFirstChildOrThrow<ElementNode>()
+          .append($createHorizontalRuleNode(), $createTextNode('2'));
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(
+        '| a      |\n| ------ |\n| 1<br>2 |\n\n<hr class="x">',
+      );
+    });
+  });
+
+  it('keeps the inline content of a block without a rule in its cell', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          MdastCommonMarkExtension,
+          MdastExtension,
+          MdastTableExtension,
+        ],
+        name: '[root]',
+        nodes: [CalloutNode],
+      }),
+    );
+    editor.update(
+      () => {
+        $convertFromMarkdownString('# T\n\n| a |\n| - |\n| 1 |\n\nend');
+        $getRoot()
+          .getChildAtIndex<ElementNode>(1)!
+          .getLastChildOrThrow<ElementNode>()
+          .getFirstChildOrThrow<ElementNode>()
+          .clear()
+          .append($create(CalloutNode).append($createTextNode('box')));
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(
+        '# T\n\n| a   |\n| --- |\n| box |\n\nend',
+      );
+    });
+  });
+
   it('writes a block in a cell as its export rule does', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({

@@ -12,7 +12,7 @@ import type {
   MdastImportHandler,
   MdastNode,
 } from './types';
-import type {AlignType, PhrasingContent, Table, TableCell} from 'mdast';
+import type {AlignType, Parent, PhrasingContent, Table, TableCell} from 'mdast';
 import type {
   Handle,
   Options as ToMarkdownExtension,
@@ -201,34 +201,45 @@ function $tableGrid(table: TableNode): {
   return {grid, rows};
 }
 
-/** mdast nodes that hold phrasing content. */
+/** mdast nodes that hold phrasing content, which is a line of a cell. */
 const PHRASING_PARENTS = new Set(['heading', 'paragraph', 'tableCell']);
 
-/**
- * mdast nodes (of CommonMark, GFM and math) that are only ever flow
- * content, so that one written in phrasing content is a block there.
- */
-const FLOW = new Set([
-  ...PHRASING_PARENTS,
+/** mdast containers of flow content, each block of which is a line. */
+const CONTAINERS = new Set([
   'blockquote',
-  'code',
-  'definition',
-  'footnoteDefinition',
   'list',
   'listItem',
-  'math',
   'table',
   'tableRow',
+]);
+
+/**
+ * mdast flow content (of CommonMark, GFM, math and raw HTML embedding
+ * Markdown) with no form in a cell, which is written after the table.
+ */
+const AFTER = new Set([
+  'definition',
+  'footnoteDefinition',
+  'htmlBlock',
+  'math',
   'thematicBreak',
   'yaml',
 ]);
 
+/** Whether an mdast node is only ever flow content. */
+const isFlow = (node: MdastNode) =>
+  node.type === 'code' ||
+  PHRASING_PARENTS.has(node.type) ||
+  CONTAINERS.has(node.type) ||
+  AFTER.has(node.type);
+
 /**
  * The content of a cell as its export rules write it, as lines of phrasing
- * content: each paragraph's or heading's (or a nested table cell's), a code
- * block's lines as code, raw HTML as it is, and a container's blocks on
- * lines of their own. Also returns the blocks with no inline form (such as
- * thematic breaks), which are written after the table.
+ * content: each paragraph's or heading's (or a nested table cell's), split
+ * where flow content is written in it, a code block's lines as code, and a
+ * container's blocks on lines of their own, as is any other node (raw HTML,
+ * say). Also returns the flow content with no form in a cell (such as
+ * thematic breaks), which is written after the table.
  */
 function $cellContent(
   cell: TableCellNode,
@@ -237,26 +248,14 @@ function $cellContent(
   const lines: PhrasingContent[][] = [];
   const after: MdastNode[] = [];
   const visit = (node: MdastNode) => {
-    if (node.type === 'code') {
-      for (const value of node.value.split(/\r?\n|\r/)) {
-        lines.push(value ? [{type: 'inlineCode', value}] : []);
-      }
-    } else if (node.type === 'html') {
-      // Raw HTML can be written in a cell as it is.
-      lines.push([node]);
-    } else if ('value' in node || !('children' in node)) {
-      // Any other literal (such as a math block, or raw HTML embedding
-      // Markdown) or leaf (such as a thematic break) has no inline form.
-      after.push(node);
-    } else {
-      // A block's content is lines of its own; an empty block is an empty
-      // line, and one of blocks written after the table is none.
+    if (PHRASING_PARENTS.has(node.type) || CONTAINERS.has(node.type)) {
+      // An empty block is an empty line, and one of blocks written after
+      // the table is none.
       const first = lines.length;
       const firstAfter = after.length;
       let line: PhrasingContent[] | undefined;
-      for (const child of node.children as MdastNode[]) {
-        if (PHRASING_PARENTS.has(node.type) && !FLOW.has(child.type)) {
-          // Whatever an export rule wrote in it stays in its line.
+      for (const child of (node as Parent).children as MdastNode[]) {
+        if (PHRASING_PARENTS.has(node.type) && !isFlow(child)) {
           if (!line) {
             lines.push((line = []));
           }
@@ -269,6 +268,14 @@ function $cellContent(
       if (lines.length === first && after.length === firstAfter) {
         lines.push([]);
       }
+    } else if (node.type === 'code') {
+      for (const value of node.value.split(/\r?\n|\r/)) {
+        lines.push(value ? [{type: 'inlineCode', value}] : []);
+      }
+    } else if (AFTER.has(node.type)) {
+      after.push(node);
+    } else {
+      lines.push([node as PhrasingContent]);
     }
   };
   if (!ctx.isIncluded(cell)) {
@@ -377,12 +384,12 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
     return ctx.exportBlocks(endCell);
   }
   // A merged cell is written where it starts, with empty cells where it
-  // spans, and every row as wide as the widest. Blocks with no inline form,
-  // which a cell can't hold, are written after the table.
+  // spans, and every row as wide as the widest. Flow content with no form
+  // in a cell is written after the table.
   const {grid, rows} = $tableGrid(node);
   const after: MdastNode[] = [];
-  // The lines of a cell (those a selection export reaches); the blocks with
-  // no inline form are collected.
+  // The lines of a cell (those a selection export reaches); the flow
+  // content written after the table is collected.
   const cellsLines = new Map<TableCellNode, PhrasingContent[][]>();
   const $linesOf = (cell: TableCellNode) => {
     let cached = cellsLines.get(cell);
@@ -399,8 +406,8 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   let to = -1;
   rows.forEach((row, rowIndex) => {
     // Structural iteration bypasses the walk's selection filter, so rows a
-    // selection export does not reach are skipped here, as are rows where it
-    // reaches only blocks written after the table.
+    // selection export does not reach are skipped here, as are rows where no
+    // cell it reaches has a line.
     if (!ctx.isIncluded(row)) {
       return;
     }
@@ -557,13 +564,13 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
  * Export writes any table as near as GFM allows: the blocks a cell's content
  * exports as (by its export rules), and their line breaks, as lines separated
  * by `<br>` (a code block's lines as inline code), a merged cell with empty
- * cells where it spans, blocks with no inline form (such as a thematic
- * break) after the table, and as a column's alignment, that of the text in its
- * header cell (the format of the block its first text is in, or of the nearest
- * block around it with one, or else of the cell, where blocks in a nested
- * table count for nothing and start and end are none; a merged header cell's
- * for each column it spans), none for one GFM can't express. The alignment of
- * other cells has no form in GFM.
+ * cells where it spans, flow content with no form in a cell (such as a
+ * thematic break) after the table, and as a column's alignment, that of the
+ * content of its header cell (the format of the block its first inline
+ * content is in, or of the nearest block around it with one, or else of the
+ * cell, where blocks in a nested table count for nothing and start and end
+ * are none; a merged header cell's for each column it spans), none for one
+ * GFM can't express. The alignment of other cells has no form in GFM.
  *
  * @example
  * ```ts

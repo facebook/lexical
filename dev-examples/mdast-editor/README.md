@@ -58,8 +58,8 @@ example plumbing only (the preview signal and two toolbar commands), because
 - **No transformer list to curate.** Depending on `MdastCommonMarkExtension`
   and `MdastGfmExtension` pulls in their grammar and every node they need.
 - **No `registerMarkdownShortcuts` call.** `MdastShortcutsExtension`
-  registers the streaming shortcuts itself, driven by the same micromark grammar as
-  document import.
+  registers the streaming shortcuts itself, driven by the same micromark
+  grammar as document import.
 - **No checklist workaround.** The legacy example needed a custom
   `text-match` transformer (`CHECK_LIST_ITEM`, ~50 lines) so `[ ] ` typed in
   an existing bullet item would convert; that behavior is built in.

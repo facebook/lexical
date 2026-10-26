@@ -350,9 +350,9 @@ function $handleSummaryEnter(): boolean {
  * GFM-style `<details><summary>…</summary>…</details>` encoding, with
  * Markdown syntax inside the construct working in both directions (the
  * summary line too, which GitHub leaves raw). There is no details-specific
- * Markdown importer or serializer: {@link MdastHtmlExtension} routes raw HTML blocks (and the
- * Markdown text inside them) through the editor's DOM import rules, so the
- * one `<details>` rule here serves Markdown import and HTML paste alike,
+ * Markdown importer or serializer: {@link MdastHtmlExtension} routes raw
+ * HTML blocks (and the Markdown text inside them) through the editor's DOM
+ * import rules, so the one `<details>` rule here serves Markdown import and HTML paste alike,
  * and `$exportViaDOM` derives the Markdown encoding from the node's own
  * `exportDOM` shell — the summary phrasing and body blocks embed as
  * ordinary Markdown between the raw tags.

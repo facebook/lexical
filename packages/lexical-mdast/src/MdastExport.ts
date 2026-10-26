@@ -474,18 +474,11 @@ function createNodeExporter(
     if (asBreak !== null) {
       return [asBreak];
     }
-    // A block keeps its inline content in paragraphs.
-    const block = $isBlockLevelNode(node);
     if ($isElementNode(node)) {
-      return block && !node.isEmpty()
-        ? context.exportBlocks(node)
-        : context.exportChildren(node);
+      return context.exportChildren(node);
     }
     const text = node.getTextContent();
-    const phrasing: PhrasingContent = {type: 'text', value: text};
-    return text
-      ? [block ? {children: [phrasing], type: 'paragraph'} : phrasing]
-      : [];
+    return text ? [{type: 'text', value: text}] : [];
   }
 
   /**
@@ -586,12 +579,11 @@ function createNodeExporter(
 }
 
 /**
- * Picks the document-level emphasis and strong delimiters from the first
- * italic / bold text node that recorded a known delimiter on import, scanning
- * the tree rooted at `node`. Mixing delimiters within one document is not
- * supported by to-markdown's escaping, so a single choice is made per
- * document; nodes with no recorded delimiter (created in the editor) are
- * skipped so they cannot mask the document's authored style.
+ * Picks the document-level emphasis and strong delimiters, scanning the tree
+ * rooted at `node`: `_` when any italic / bold text node recorded `_` on
+ * import, otherwise to-markdown's default. Mixing delimiters within one
+ * document is not supported by to-markdown's escaping, so a single choice is
+ * made per document.
  */
 function $dominantInlineMarkers(node: ElementNode): {
   emphasis: '*' | '_' | undefined;

@@ -1037,40 +1037,6 @@ describe('MdastHtmlExtension', () => {
     });
   });
 
-  it('writes the inline content of blocks without a rule as paragraphs', () => {
-    using editor = buildEditorFromExtensions(
-      defineExtension({
-        dependencies: [
-          MdastCommonMarkExtension,
-          MdastExtension,
-          MdastTableExtension,
-        ],
-        name: '[root]',
-        nodes: [CalloutNode],
-      }),
-    );
-    editor.update(
-      () => {
-        $convertFromMarkdownString('p\n\n| a |\n| - |\n| 1 |');
-        const box = (text: string) =>
-          $create(CalloutNode).append($createTextNode(text));
-        $getRoot().getFirstChildOrThrow().insertAfter(box('root'));
-        $getRoot()
-          .getLastChildOrThrow<ElementNode>()
-          .getLastChildOrThrow<ElementNode>()
-          .getFirstChildOrThrow<ElementNode>()
-          .clear()
-          .append(box('x'), box('y'));
-      },
-      {discrete: true},
-    );
-    editor.read(() => {
-      expect($convertToMarkdownString()).toBe(
-        'p\n\nroot\n\n| a      |\n| ------ |\n| x<br>y |',
-      );
-    });
-  });
-
   it('writes a block in a cell as its export rule does', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({

@@ -289,9 +289,11 @@ function $cellContent(
   visitAll(ctx.exportBlocks(cell), false);
   // A cell of only flow content written after the table is an empty line,
   // unless it has inline content a selection export doesn't reach.
-  const content = lines.length === 0 && $firstContent(cell);
-  if (lines.length === 0 && (!content || ctx.isIncluded(content))) {
-    lines.push([]);
+  if (lines.length === 0) {
+    const content = $firstContent(cell);
+    if (!content || ctx.isIncluded(content)) {
+      lines.push([]);
+    }
   }
   return {after, lines};
 }

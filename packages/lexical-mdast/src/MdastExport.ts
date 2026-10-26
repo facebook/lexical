@@ -35,6 +35,8 @@ import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
   $getRoot,
   $getSelection,
+  $getSlot,
+  $getSlotNames,
   $getState,
   $isElementNode,
   $isLineBreakNode,
@@ -52,7 +54,6 @@ import {toString as mdastToString} from 'mdast-util-to-string';
 import {
   $exportLineBreak,
   $isBlockLevelNode,
-  $slotNodes,
   exportText,
   phrasingFromTextRuns,
   TEXT_FORMAT_MASK,
@@ -386,7 +387,11 @@ function createNodeExporter(
       selection === null ||
       node.isSelected(selection) ||
       ($isElementNode(node) && node.getChildren().some($isIncluded)) ||
-      ($isSlotHost(node) && $slotNodes(node).some($isIncluded))
+      ($isSlotHost(node) &&
+        $getSlotNames(node).some(name => {
+          const slot = $getSlot(node, name);
+          return slot !== null && $isIncluded(slot);
+        }))
     );
   }
 
@@ -469,11 +474,18 @@ function createNodeExporter(
     if (asBreak !== null) {
       return [asBreak];
     }
+    // A block keeps its inline content in paragraphs.
+    const block = $isBlockLevelNode(node);
     if ($isElementNode(node)) {
-      return context.exportChildren(node);
+      return block && !node.isEmpty()
+        ? context.exportBlocks(node)
+        : context.exportChildren(node);
     }
     const text = node.getTextContent();
-    return text ? [{type: 'text', value: text}] : [];
+    const phrasing: PhrasingContent = {type: 'text', value: text};
+    return text
+      ? [block ? {children: [phrasing], type: 'paragraph'} : phrasing]
+      : [];
   }
 
   /**

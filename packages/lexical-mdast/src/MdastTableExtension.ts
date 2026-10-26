@@ -124,7 +124,7 @@ function $firstContent(node: ElementNode): LexicalNode | null {
 
 /**
  * The format of the text in a cell: that of the block its first inline node
- * with content is in (or its first block, when it has none), or of the
+ * with content is in (or its first element block, when it has none), or of the
  * nearest block around it in the cell that has one, or else the cell's.
  * Blocks in a nested table count for nothing (the nested table has its own
  * alignment). A start or end format (as pasted HTML often has) takes no GFM
@@ -133,7 +133,8 @@ function $firstContent(node: ElementNode): LexicalNode | null {
 function $cellFormat(cell: TableCellNode): ElementFormatType {
   let format: ElementFormatType = '';
   for (
-    let node = $firstContent(cell) || cell.getFirstChild();
+    let node: LexicalNode | null | undefined =
+      $firstContent(cell) || cell.getChildren().find($isElementNode);
     node && !node.is(cell);
     node = node.getParent()
   ) {
@@ -580,10 +581,11 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
  * cells where it spans, flow content with no form in a cell (such as a
  * thematic break) after the table, and as a column's alignment, that of the
  * content of its header cell (the format of the block its first inline
- * content is in, or of the nearest block around it with one, or without
- * inline content of its first block, or else of the cell, where blocks in a nested table count for nothing and start and end
- * are none; a merged header cell's for each column it spans), none for one
- * GFM can't express. The alignment of other cells has no form in GFM.
+ * content is in, or of the nearest block around it with one, or, when the
+ * cell has no inline content, of its first block, or else of the cell, where
+ * blocks in a nested table count for nothing and start and end are none; a
+ * merged header cell's for each column it spans), none for one GFM can't
+ * express. The alignment of other cells has no form in GFM.
  *
  * @example
  * ```ts

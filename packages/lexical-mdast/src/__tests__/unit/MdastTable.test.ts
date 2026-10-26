@@ -1029,6 +1029,20 @@ describe('MdastTableExtension', () => {
     ).toBe(table('| p |', '| - |', '| x |'));
   });
 
+  it('reads the alignment of an empty header cell from its first element block', () => {
+    expect(
+      convert(table('| a | b |', '| :-: | - |', '| 1 | 2 |'), () => {
+        const [[cell]] = $cells();
+        cell
+          .clear()
+          .append(
+            $createHorizontalRuleNode(),
+            $createParagraphNode().setFormat('center'),
+          );
+      }),
+    ).toBe(table('|     | b |', '| :-: | - |', '|  1  | 2 |') + '\n\n***');
+  });
+
   it('reads a negative row span as 1', () => {
     expect(
       convert(table('| a | b |', '| - | - |', '| 1 | 2 |'), () =>

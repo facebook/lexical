@@ -121,8 +121,7 @@ the whole document, `_` if any was used, though not in named slots or
 in text between the tags of an HTML block, unless `toMarkdownExtensions`
 sets them),
 and link style (`[text](url)` vs `<autolink>` vs bare GFM literal).
-Round-trips are close but not exact; some forms are normalized, such
-as a run of text both bold and italic on its own, written as emphasis
+Some forms are normalized, such as a run of text both bold and italic on its own, written as emphasis
 around strong (`**_both_**` comes back as `_**both**_`), and GFM
 tables, padded so their columns line up and written as below. Nodes
 created in the editor defer to the document-level serialization
@@ -133,10 +132,10 @@ GFM tables (`MdastTableExtension`) import a column's alignment as the
 element format of the paragraph in each of its cells, and write it from
 the content of the column's header cell (the format of the block holding
 the cell's first inline content, or of the nearest block around it with
-one, or without inline content of the cell's first block, or else of the
-cell, where blocks in a nested table count for
-nothing and start and end are none); a format GFM can't express leaves
-the column unaligned. Export is lossy where GFM has no form for a
+one, or, when the cell has no inline content, of its first block, or
+else of the cell, where blocks in a nested table count for nothing and
+start and end are none); a format GFM can't express leaves the column
+unaligned. Export is lossy where GFM has no form for a
 table's content: the content of a cell is exported by its export rules,
 and the blocks that come out (and their line breaks) become lines
 separated by `<br>` (whatever spelling of the tag, such as `<br/>` or

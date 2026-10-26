@@ -206,6 +206,9 @@ function $tableGrid(table: TableNode): {
   return {grid, rows};
 }
 
+/** A line ending, as Markdown reads one. */
+const LINE_ENDING = /\r?\n|\r/g;
+
 /** mdast nodes that hold phrasing content, which is a line of a cell. */
 const PHRASING_PARENTS = /* @__PURE__ */ new Set(['heading', 'paragraph']);
 
@@ -278,7 +281,7 @@ function $cellContent(
       } else if (CONTAINERS.has(node.type)) {
         visitAll((node as Parent).children as MdastNode[], false);
       } else if (node.type === 'code') {
-        for (const value of node.value.split(/\r?\n|\r/)) {
+        for (const value of node.value.split(LINE_ENDING)) {
           lines.push(value ? [{type: 'inlineCode', value}] : []);
         }
       } else if (AFTER.has(node.type)) {
@@ -536,7 +539,7 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
                       ? [
                           {
                             ...child,
-                            value: child.value.replace(/\r?\n|\r/g, ' '),
+                            value: child.value.replace(LINE_ENDING, ' '),
                           },
                         ]
                       : undefined,
@@ -544,7 +547,7 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
               },
               {...info, after: ' ', before: ' '},
             )
-            .replace(/\r?\n|\r/g, ' ')
+            .replace(LINE_ENDING, ' ')
             .replace(/^[\t ]/, encodeSpace)
             // A backslash before the last space would escape its `&`.
             .replace(

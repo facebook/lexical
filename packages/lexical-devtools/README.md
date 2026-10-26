@@ -40,19 +40,15 @@ xcodebuild -runFirstLaunch
 
 # Normal operation
 pnpm run dev:safari
-
-# Build & upload to Apple Connect
-BUILD_VERSION=0 pnpm run safari:archive 
-PASSWORD="XXX" pnpm run safari:upload
 ```
+
+The Safari extension is no longer published: the Mac App Store listing has been taken down, so `dev:safari` builds it for local use only.
 
 ## Publishing
 
 Production (`latest`) npm releases submit Chrome and Firefox extensions for review from the released commit, with build version `0`. Update store screenshots/videos before releases that change the UI.
 
 For extension-only releases or retries, run [Publish DevTools extension to stores](https://github.com/facebook/lexical/actions/workflows/devtools-extension-publish.yml) on the release tag. Increase "Build version" for repeated uploads of the same Lexical version (`<version>.<build_version>`), and wait for pending Chrome reviews to finish. Store submissions can fail independently; retry this workflow without republishing npm packages.
-
-Safari releases use the [manual archive/upload commands](#local-development).
 
 ### Store credentials
 

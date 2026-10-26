@@ -914,8 +914,10 @@ export class NodeState<T extends LexicalNode> {
       if (jsonValue !== undefined) {
         parsed = stateConfig.parse(jsonValue);
       }
-      // Only update if the key was unknown
-      this.updateFromKnown(stateConfig, parsed);
+      // Record the parsed value. The JSON copy stays in unknownState so that
+      // a read does not change the key order of toJSON, and the key is
+      // already counted in size.
+      this.knownState.set(stateConfig, parsed);
     }
     return parsed;
   }
@@ -1016,13 +1018,13 @@ export class NodeState<T extends LexicalNode> {
     const key = stateConfig.key;
     this.sharedNodeState.sharedConfigMap.set(key, stateConfig);
     const {knownState, unknownState} = this;
-    if (
-      !(knownState.has(stateConfig) || (unknownState && key in unknownState))
-    ) {
-      if (unknownState) {
-        delete unknownState[key];
-        this.unknownState = undefinedIfEmpty(unknownState);
-      }
+    if (unknownState && key in unknownState) {
+      // The known value replaces the JSON copy, which getValue would
+      // otherwise parse again once the known value is undefined. The key is
+      // already counted in size.
+      delete unknownState[key];
+      this.unknownState = undefinedIfEmpty(unknownState);
+    } else if (!knownState.has(stateConfig)) {
       this.size++;
     }
     knownState.set(stateConfig, value);

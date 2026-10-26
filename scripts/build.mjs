@@ -186,7 +186,6 @@ const thirdPartyExternals = [
         // instead of inlining a ~36 kB character-entities table — and so
         // they dedupe with any other unified/remark tooling in the app.
         'mdast-util-from-markdown',
-        'mdast-util-phrasing',
         'mdast-util-to-markdown',
         'mdast-util-to-string',
         'mdast-util-gfm-autolink-literal',

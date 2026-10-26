@@ -117,8 +117,9 @@ with [NodeState](/docs/concepts/node-state): list bullet `-`/`*`/`+`,
 ordered delimiter `.`/`)`, code fence style and info-string meta,
 setext vs ATX headings, hard-break style, soft line breaks, thematic
 break marker, `*` vs `_` emphasis and strong markers (one of each for
-the whole document, `_` if any was used, though not in text between
-the tags of an HTML block, unless `toMarkdownExtensions` sets them),
+the whole document, `_` if any was used, though not in named slots or
+in text between the tags of an HTML block, unless `toMarkdownExtensions`
+sets them),
 and link style (`[text](url)` vs `<autolink>` vs bare GFM literal).
 Round-trips are close but not exact; some forms are normalized, such
 as a run of text both bold and italic on its own, written as emphasis

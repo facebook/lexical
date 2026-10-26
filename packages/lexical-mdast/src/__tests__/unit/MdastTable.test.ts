@@ -11,13 +11,19 @@
 import {
   $createHorizontalRuleNode,
   $isHorizontalRuleNode,
+  type AnyLexicalExtensionArgument,
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
+  HorizontalRuleNode,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
-import {$createLinkNode, $isLinkNode} from '@lexical/link';
+import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
-import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
+import {
+  $createHeadingNode,
+  $createQuoteNode,
+  QuoteNode,
+} from '@lexical/rich-text';
 import {
   $createTableCellNode,
   $createTableNode,
@@ -62,7 +68,9 @@ import {
   MdastTableExtension,
 } from '../../index';
 
-function createEditor(): LexicalEditorWithDispose {
+function createEditor(
+  ...extensions: AnyLexicalExtensionArgument[]
+): LexicalEditorWithDispose {
   // The caller is responsible for disposal (with `using`).
   return buildEditorFromExtensions(
     defineExtension({
@@ -70,6 +78,7 @@ function createEditor(): LexicalEditorWithDispose {
         MdastCommonMarkExtension,
         MdastExtension,
         MdastTableExtension,
+        ...extensions,
       ],
       name: '[root]',
       theme: {tableScrollableWrapper: 'table-wrapper'},
@@ -1024,6 +1033,105 @@ describe('MdastTableExtension', () => {
         '| `x\\|y`<br><br>`z` |',
       ),
     );
+  });
+
+  it('keeps an inline node an export rule writes in its line', () => {
+    using editor = createEditor(
+      configExtension(MdastExtension, {
+        exportRules: [
+          {
+            $export: node => [
+              {type: 'wikiLink', value: node.getTextContent()} as never,
+            ],
+            type: LinkNode,
+          },
+        ],
+        toMarkdownExtensions: [
+          {
+            handlers: {
+              wikiLink: (node: {value: string}) => `[[${node.value}]]`,
+            } as never,
+          },
+        ],
+      }),
+    );
+    editor.update(
+      () => {
+        $convertFromMarkdownString(table('| a |', '| - |', '| 1 [w](x) 2 |'));
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(
+        table('| a         |', '| --------- |', '| 1 [[w]] 2 |'),
+      );
+    });
+  });
+
+  it('writes raw HTML blocks in a cell on lines of their own', () => {
+    using editor = createEditor(
+      configExtension(MdastExtension, {
+        exportRules: [
+          {
+            $export: () => [{type: 'html', value: '<hr>'}],
+            type: HorizontalRuleNode,
+          },
+        ],
+      }),
+    );
+    editor.update(
+      () => {
+        $convertFromMarkdownString(table('| a |', '| - |', '| 1 |'));
+        $cells()[1][0].append(
+          $createHorizontalRuleNode(),
+          $createHorizontalRuleNode(),
+        );
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(
+        table(
+          '| a                 |',
+          '| ----------------- |',
+          '| 1<br><hr><br><hr> |',
+        ),
+      );
+    });
+  });
+
+  it('keeps a column whose cells export as blocks with no inline form', () => {
+    using editor = createEditor(
+      configExtension(MdastExtension, {
+        exportRules: [
+          {$export: () => [{type: 'thematicBreak'}], type: QuoteNode},
+        ],
+      }),
+    );
+    editor.update(
+      () => {
+        $convertFromMarkdownString(
+          table('| a | b |', '| - | - |', '| 1 | 2 |'),
+        );
+        for (const row of $cells()) {
+          row[1]
+            .clear()
+            .append(
+              $createQuoteNode().append(
+                $createParagraphNode().append($createTextNode('q')),
+              ),
+            );
+        }
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(
+        [table('| a |   |', '| - | - |', '| 1 |   |'), '***', '***'].join(
+          '\n\n',
+        ),
+      );
+    });
   });
 
   it('adds no line for a block of only block decorators in a cell', () => {

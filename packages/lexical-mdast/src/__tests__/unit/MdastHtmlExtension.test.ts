@@ -9,7 +9,9 @@
 import type {BlockContent} from 'mdast';
 
 import {
+  $createHorizontalRuleNode,
   buildEditorFromExtensions,
+  HorizontalRuleNode,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
 import {
@@ -916,6 +918,44 @@ describe('MdastHtmlExtension', () => {
     });
     editor.read(() => {
       expect($convertToMarkdownString()).toBe('| a |\n| - |\n|   |\n\n***');
+    });
+  });
+
+  it('writes raw HTML embedding Markdown in a cell after the table', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          MdastCommonMarkExtension,
+          MdastExtension,
+          MdastHtmlExtension,
+          MdastTableExtension,
+          configExtension(MdastExtension, {
+            exportRules: [
+              {
+                $export: () => [rawHtmlBlock('<hr class="x">')],
+                type: HorizontalRuleNode,
+              },
+            ],
+          }),
+        ],
+        name: '[root]',
+      }),
+    );
+    editor.update(
+      () => {
+        $convertFromMarkdownString('| a |\n| - |\n| 1 |');
+        $getRoot()
+          .getFirstChildOrThrow<ElementNode>()
+          .getLastChildOrThrow<ElementNode>()
+          .getFirstChildOrThrow<ElementNode>()
+          .append($createHorizontalRuleNode());
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(
+        '| a |\n| - |\n| 1 |\n\n<hr class="x">',
+      );
     });
   });
 

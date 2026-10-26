@@ -105,14 +105,18 @@ function $cellIn(node: LexicalNode, table: TableNode): TableCellNode | null {
   return null;
 }
 
-/** The first inline node in `node` with content, if any. */
-function $firstContent(node: ElementNode): LexicalNode | null {
+/** The first inline node in `node` with content that passes `test`, if any. */
+function $firstContent(
+  node: ElementNode,
+  test: (content: LexicalNode) => boolean = () => true,
+): LexicalNode | null {
   for (const child of node.getChildren()) {
     const found = $isElementNode(child)
-      ? $firstContent(child)
+      ? $firstContent(child, test)
       : $isLineBreakNode(child) ||
           $isBlockLevelNode(child) ||
-          ($isTextNode(child) && child.getTextContent().trim() === '')
+          ($isTextNode(child) && child.getTextContent().trim() === '') ||
+          !test(child)
         ? null
         : child;
     if (found) {
@@ -203,10 +207,14 @@ function $tableGrid(table: TableNode): {
 }
 
 /** mdast nodes that hold phrasing content, which is a line of a cell. */
-const PHRASING_PARENTS = new Set(['heading', 'paragraph', 'tableCell']);
+const PHRASING_PARENTS = /* @__PURE__ */ new Set([
+  'heading',
+  'paragraph',
+  'tableCell',
+]);
 
 /** mdast containers of flow content, each block of which is a line. */
-const CONTAINERS = new Set([
+const CONTAINERS = /* @__PURE__ */ new Set([
   'blockquote',
   'list',
   'listItem',
@@ -218,7 +226,7 @@ const CONTAINERS = new Set([
  * mdast flow content (of CommonMark, GFM, math and raw HTML embedding
  * Markdown) with no form in a cell, which is written after the table.
  */
-const AFTER = new Set([
+const AFTER = /* @__PURE__ */ new Set([
   'definition',
   'footnoteDefinition',
   'htmlBlock',
@@ -263,14 +271,20 @@ function $cellContent(
         const first = lines.length;
         const firstAfter = after.length;
         visitAll((node as Parent).children as MdastNode[], true);
-        // An empty one is an empty line; one of flow content written after
-        // the table is none, and so is a nested table's empty cell (as
-        // where it pads a short row or a merged cell spans).
-        if (
-          lines.length === first &&
-          after.length === firstAfter &&
-          node.type !== 'tableCell'
-        ) {
+        if (node.type === 'tableCell') {
+          // A nested table's cell of only empty lines (which its table
+          // writes as breaks) writes none, as where it pads a short row or
+          // a merged cell spans.
+          if (
+            lines
+              .slice(first)
+              .every(written => written.every(({type}) => type === 'break'))
+          ) {
+            lines.length = first;
+          }
+        } else if (lines.length === first && after.length === firstAfter) {
+          // An empty one is an empty line; one of flow content written
+          // after the table is none.
           lines.push([]);
         }
       } else if (CONTAINERS.has(node.type)) {
@@ -292,12 +306,12 @@ function $cellContent(
   }
   visitAll(ctx.exportBlocks(cell), false);
   // A cell of only flow content written after the table is an empty line,
-  // unless it has inline content a selection export doesn't reach.
-  if (lines.length === 0) {
-    const content = $firstContent(cell);
-    if (!content || ctx.isIncluded(content)) {
-      lines.push([]);
-    }
+  // unless a selection export reaches none of its inline content.
+  if (
+    lines.length === 0 &&
+    (!$firstContent(cell) || $firstContent(cell, ctx.isIncluded))
+  ) {
+    lines.push([]);
   }
   return {after, lines};
 }

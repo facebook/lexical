@@ -748,7 +748,13 @@ describe('MdastTableExtension', () => {
             $createTableNode().append(
               $createTableRowNode().append(textCell('A').setColSpan(2)),
               $createTableRowNode().append(textCell('B'), textCell('C')),
-              $createTableRowNode().append(textCell('D')),
+              $createTableRowNode().append(
+                textCell('D'),
+                $createTableCellNode().append(
+                  $createParagraphNode(),
+                  $createParagraphNode(),
+                ),
+              ),
             ),
           );
       },

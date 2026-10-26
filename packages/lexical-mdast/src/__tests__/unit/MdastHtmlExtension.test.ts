@@ -1130,38 +1130,46 @@ describe('MdastHtmlExtension', () => {
     });
   });
 
-  it('writes no line for a named slot a selection of a cell does not reach', () => {
+  it('keeps the column of a cell whose reached content goes after the table', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
-        dependencies: [MdastExtension, MdastTableExtension],
+        dependencies: [
+          MdastExtension,
+          MdastHtmlExtension,
+          MdastTableExtension,
+          configExtension(MdastExtension, {
+            exportRules: [{$export: $exportViaDOM, type: 'x-callout'}],
+          }),
+        ],
         name: '[root]',
         nodes: [CalloutNode],
       }),
     );
     editor.update(
       () => {
-        $convertFromMarkdownString('before\n\n| a |\n| - |\n| x |\n\nafter');
+        $convertFromMarkdownString('| a | b |\n| - | - |\n| x | 2 |\n\nend');
+        const body = $createTextNode('body');
         const callout = $create(CalloutNode).append(
-          $createParagraphNode().append($createTextNode('body')),
+          $createParagraphNode().append(body),
         );
-        $setSlot(
-          callout,
-          'title',
-          $createParagraphNode().append($createTextNode('title')),
-        );
+        $setSlot(callout, 'title', $createParagraphNode());
         $getRoot()
-          .getChildAtIndex<ElementNode>(1)!
+          .getFirstChildOrThrow<ElementNode>()
           .getLastChildOrThrow<ElementNode>()
           .getFirstChildOrThrow<ElementNode>()
           .append(callout);
-        $getRoot().select(0, $getRoot().getChildrenSize());
+        const selection = body.select(1, 1);
+        selection.focus.set(
+          $getRoot().getLastChildOrThrow().getKey(),
+          0,
+          'element',
+        );
       },
       {discrete: true},
     );
     editor.read(() => {
-      // Text in a slot is not in a range selection around its host.
-      expect($convertSelectionToMarkdownString()).toBe(
-        'before\n\n| a         |\n| --------- |\n| x<br>body |\n\nafter',
+      expect($convertSelectionToMarkdownString()).toMatch(
+        /^\| {3}\| 2 \|\n\| - \| - \|\n\n<x-callout open>/,
       );
     });
   });

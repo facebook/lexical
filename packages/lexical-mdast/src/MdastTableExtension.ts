@@ -223,8 +223,9 @@ const CONTAINERS = /* @__PURE__ */ new Set([
 ]);
 
 /**
- * mdast flow content (of CommonMark, GFM, math and raw HTML embedding
- * Markdown) with no form in a cell, which is written after the table.
+ * mdast flow content (of CommonMark, GFM, frontmatter, math and raw HTML
+ * embedding Markdown) with no form in a cell, which is written after the
+ * table.
  */
 const AFTER = /* @__PURE__ */ new Set([
   'definition',
@@ -234,13 +235,6 @@ const AFTER = /* @__PURE__ */ new Set([
   'thematicBreak',
   'yaml',
 ]);
-
-/** Whether an mdast node is only ever flow content. */
-const isFlow = (node: MdastNode) =>
-  node.type === 'code' ||
-  PHRASING_PARENTS.has(node.type) ||
-  CONTAINERS.has(node.type) ||
-  AFTER.has(node.type);
 
 /**
  * The content of a cell as its export rules write it, as lines of phrasing
@@ -259,14 +253,6 @@ function $cellContent(
   const visitAll = (nodes: readonly MdastNode[], phrasing: boolean) => {
     let line: PhrasingContent[] | undefined;
     for (const node of nodes) {
-      if (!isFlow(node) && (phrasing || node.type !== 'html')) {
-        if (!line) {
-          lines.push((line = []));
-        }
-        line.push(node as PhrasingContent);
-        continue;
-      }
-      line = undefined;
       if (PHRASING_PARENTS.has(node.type)) {
         const first = lines.length;
         const firstAfter = after.length;
@@ -295,10 +281,18 @@ function $cellContent(
         }
       } else if (AFTER.has(node.type)) {
         after.push(node);
-      } else {
+      } else if (!phrasing && node.type === 'html') {
         // Raw HTML between blocks.
-        lines.push([node as PhrasingContent]);
+        lines.push([node]);
+      } else {
+        if (!line) {
+          lines.push((line = []));
+        }
+        line.push(node as PhrasingContent);
+        continue;
       }
+      // Flow content ends a run of phrasing content.
+      line = undefined;
     }
   };
   if (!ctx.isIncluded(cell)) {

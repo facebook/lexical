@@ -251,42 +251,40 @@ function $cellContent(
   const visitAll = (nodes: readonly MdastNode[], phrasing: boolean) => {
     let line: PhrasingContent[] | undefined;
     for (const node of nodes) {
-      if (isFlow(node) || (!phrasing && node.type === 'html')) {
-        line = undefined;
-        visit(node);
-      } else {
+      if (!isFlow(node) && (phrasing || node.type !== 'html')) {
         if (!line) {
           lines.push((line = []));
         }
         line.push(node as PhrasingContent);
+        continue;
       }
-    }
-  };
-  const visit = (node: MdastNode) => {
-    if (PHRASING_PARENTS.has(node.type)) {
-      const first = lines.length;
-      const firstAfter = after.length;
-      visitAll((node as Parent).children as MdastNode[], true);
-      // An empty one is an empty line; one of flow content written after
-      // the table is none, and so is a nested table's empty cell (which
-      // also pads a short row or fills where a merged cell spans).
-      if (
-        lines.length === first &&
-        after.length === firstAfter &&
-        node.type !== 'tableCell'
-      ) {
-        lines.push([]);
+      line = undefined;
+      if (PHRASING_PARENTS.has(node.type)) {
+        const first = lines.length;
+        const firstAfter = after.length;
+        visitAll((node as Parent).children as MdastNode[], true);
+        // An empty one is an empty line; one of flow content written after
+        // the table is none, and so is a nested table's empty cell (as
+        // where it pads a short row or a merged cell spans).
+        if (
+          lines.length === first &&
+          after.length === firstAfter &&
+          node.type !== 'tableCell'
+        ) {
+          lines.push([]);
+        }
+      } else if (CONTAINERS.has(node.type)) {
+        visitAll((node as Parent).children as MdastNode[], false);
+      } else if (node.type === 'code') {
+        for (const value of node.value.split(/\r?\n|\r/)) {
+          lines.push(value ? [{type: 'inlineCode', value}] : []);
+        }
+      } else if (AFTER.has(node.type)) {
+        after.push(node);
+      } else {
+        // Raw HTML between blocks.
+        lines.push([node as PhrasingContent]);
       }
-    } else if (CONTAINERS.has(node.type)) {
-      visitAll((node as Parent).children as MdastNode[], false);
-    } else if (node.type === 'code') {
-      for (const value of node.value.split(/\r?\n|\r/)) {
-        lines.push(value ? [{type: 'inlineCode', value}] : []);
-      }
-    } else if (AFTER.has(node.type)) {
-      after.push(node);
-    } else {
-      lines.push([node as PhrasingContent]);
     }
   };
   if (!ctx.isIncluded(cell)) {
@@ -582,10 +580,10 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
  * thematic break) after the table, and as a column's alignment, that of the
  * content of its header cell (the format of the block its first inline
  * content is in, or of the nearest block around it with one, or, when the
- * cell has no inline content, of its first block, or else of the cell, where
- * blocks in a nested table count for nothing and start and end are none; a
- * merged header cell's for each column it spans), none for one GFM can't
- * express. The alignment of other cells has no form in GFM.
+ * cell has no inline content, of its first element block, or else of the
+ * cell, where blocks in a nested table count for nothing and start and end
+ * are none; a merged header cell's for each column it spans), none for one
+ * GFM can't express. The alignment of other cells has no form in GFM.
  *
  * @example
  * ```ts

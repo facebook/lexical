@@ -4,17 +4,14 @@ This is the source code for the Lexical DevTools browser extension.
 
 [link-chrome]: https://chromewebstore.google.com/detail/lexical-developer-tools/kgljmdocanfjckcgfpcpdoklodllfdpc 'Version published on Chrome Web Store'
 [link-firefox]: https://addons.mozilla.org/en-US/firefox/addon/lexical-developer-tools/ 'Version published on Mozilla Add-ons'
-[link-safari]: https://apps.apple.com/us/app/lexical-developer-tools/id6502753400 'Version published on Mac App Store'
 
 [<img src="https://cdnjs.cloudflare.com/ajax/libs/browser-logos/74.1.0/chrome/chrome.svg" width="48" alt="Chrome logo" valign="middle">][link-chrome] [<img valign="middle" src="https://img.shields.io/chrome-web-store/v/kgljmdocanfjckcgfpcpdoklodllfdpc?style=flat&label=%20">][link-chrome]
 
 [<img src="https://cdnjs.cloudflare.com/ajax/libs/browser-logos/74.1.0/firefox/firefox.svg" width="48" alt="Firefox logo" valign="middle">][link-firefox] [<img valign="middle" src="https://img.shields.io/amo/v/lexical-developer-tools.svg?label=%20">][link-firefox]
 
-[<img src="https://cdnjs.cloudflare.com/ajax/libs/browser-logos/74.1.0/safari/safari.svg" width="48" alt="Safari logo" valign="middle">][link-safari] [<img valign="middle" src="https://img.shields.io/itunes/v/6502753400?label=%20">][link-safari]
-
 ## Local development
 
-Lexical DevTools extension uses [WXT](https://wxt.dev/) framework to simplify development. Please refer to [WXT Development Guide](https://wxt.dev/guide/development.html) for comprehensive documentation.
+Lexical DevTools extension uses [WXT](https://wxt.dev/) framework to simplify development. Please refer to [WXT Development Guide](https://wxt.dev/guide/introduction.html) for comprehensive documentation.
 
 **TLDR:**
 ```bash
@@ -43,19 +40,15 @@ xcodebuild -runFirstLaunch
 
 # Normal operation
 pnpm run dev:safari
-
-# Build & upload to Apple Connect
-BUILD_VERSION=0 pnpm run safari:archive 
-PASSWORD="XXX" pnpm run safari:upload
 ```
+
+The Safari extension is no longer published: the Mac App Store listing has been taken down, so `dev:safari` builds it for local use only.
 
 ## Publishing
 
 Production (`latest`) npm releases submit Chrome and Firefox extensions for review from the released commit, with build version `0`. Update store screenshots/videos before releases that change the UI.
 
 For extension-only releases or retries, run [Publish DevTools extension to stores](https://github.com/facebook/lexical/actions/workflows/devtools-extension-publish.yml) on the release tag. Increase "Build version" for repeated uploads of the same Lexical version (`<version>.<build_version>`), and wait for pending Chrome reviews to finish. Store submissions can fail independently; retry this workflow without republishing npm packages.
-
-Safari releases use the [manual archive/upload commands](#local-development).
 
 ### Store credentials
 
@@ -74,7 +67,11 @@ Confirm Chrome visibility and rollout in the Developer Dashboard. Visibility cha
 
 ### Marketplace access
 
-Contact [Vladlen Fedosov](mailto:vladlen_fedosov@epam.com) or [Christopher Howard](mailto:christopher_howard@epam.com) at [EPAM Open Source Office](https://www.epam.com/open-source) for marketplace access. Chrome access requires a [publisher administrator](https://developer.chrome.com/docs/webstore/share-ownership). For Firefox, enable two-factor authentication, set a display name, and provide your Mozilla account email to an [existing maintainer](https://addons.mozilla.org/en-US/developers/addon/lexical-developer-tools/ownership).
+Marketplace governance is shared between Meta and the [EPAM Open Source Office](https://www.epam.com/open-source).
+
+An admin can invite any Google account to a Chrome publisher, so the request flow is: enable [2-Step Verification](https://support.google.com/accounts/answer/185839) on your Google account, then ping in the [Lexical Discord](https://discord.gg/KmG4wQnnD9) to ask to be added.
+
+For Firefox, enable two-factor authentication, set a display name, then ping in the [Lexical Discord](https://discord.gg/KmG4wQnnD9) to ask to be added.
 
 ## Design
 

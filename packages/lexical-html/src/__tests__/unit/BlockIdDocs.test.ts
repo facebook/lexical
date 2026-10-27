@@ -21,7 +21,7 @@ import {
   blockIdState,
   buildEditorFromExtensions,
 } from '@lexical/extension';
-import {BlockIdHTMLExtension} from '@lexical/html';
+import {BlockIdHTMLExtension} from '@lexical/html/BlockIdHTMLExtension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {$isTableCellNode, TableExtension} from '@lexical/table';
 import {

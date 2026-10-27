@@ -28,14 +28,14 @@ import {
   safeCast,
 } from 'lexical';
 
-import {domOverride} from './domOverride';
-import {DOMRenderExtension} from './DOMRenderExtension';
 import {defineImportRule} from './import/defineImportRule';
 import {defineOverlayRules} from './import/defineOverlayRules';
 import {DOMImportExtension} from './import/DOMImportExtension';
 import {ImportOverlays} from './import/ImportContext';
 import {selBase as sel} from './import/sel';
 import {type DOMPreprocessFn} from './import/types';
+import {domOverride} from './internal/domOverride';
+import {DOMRenderExtension} from './internal/DOMRenderExtension';
 
 /**
  * The attribute that carries a block id in HTML.

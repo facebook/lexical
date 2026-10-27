@@ -281,7 +281,7 @@ with.
 ## HTML
 
 Ids are not part of HTML by default. Add `BlockIdHTMLExtension` (from
-`@lexical/html`) to the editor's dependencies to opt in:
+`@lexical/html/BlockIdHTMLExtension`) to the editor's dependencies to opt in:
 
 - **Export:** every identified block's element gets a `data-block-id`
   attribute, in `$generateHtmlFromNodes` and in copied HTML.
@@ -404,4 +404,4 @@ document key `9fa59b03bb40d3d4ac45b31a472f965a0825ffc10693d4165b1e4dcf956b5dfa`
 ## API reference
 
 [`BlockIdExtension`](/docs/api/modules/lexical_extension#blockidextension) ·
-[`BlockIdHTMLExtension`](/docs/api/modules/lexical_html#blockidhtmlextension)
+[`BlockIdHTMLExtension`](/docs/api/modules/lexical_html_BlockIdHTMLExtension#blockidhtmlextension)

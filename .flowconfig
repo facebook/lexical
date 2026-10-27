@@ -76,6 +76,7 @@ module.name_mapper='^@lexical/headless/dom$' -> '<PROJECT_ROOT>/packages/lexical
 module.name_mapper='^@lexical/headless/HeadlessExtension$' -> '<PROJECT_ROOT>/packages/lexical-headless/flow/LexicalHeadlessHeadlessExtension.js.flow'
 module.name_mapper='^@lexical/history$' -> '<PROJECT_ROOT>/packages/lexical-history/flow/LexicalHistory.js.flow'
 module.name_mapper='^@lexical/html$' -> '<PROJECT_ROOT>/packages/lexical-html/flow/LexicalHtml.js.flow'
+module.name_mapper='^@lexical/html/BlockIdHTMLExtension$' -> '<PROJECT_ROOT>/packages/lexical-html/flow/LexicalHtmlBlockIdHTMLExtension.js.flow'
 module.name_mapper='^@lexical/internal/createDevError$' -> '<PROJECT_ROOT>/packages/lexical-internal/flow/LexicalInternalCreateDevError.js.flow'
 module.name_mapper='^@lexical/internal/createError$' -> '<PROJECT_ROOT>/packages/lexical-internal/flow/LexicalInternalCreateError.js.flow'
 module.name_mapper='^@lexical/internal/createProdError$' -> '<PROJECT_ROOT>/packages/lexical-internal/flow/LexicalInternalCreateProdError.js.flow'

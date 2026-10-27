@@ -404,4 +404,4 @@ document key `9fa59b03bb40d3d4ac45b31a472f965a0825ffc10693d4165b1e4dcf956b5dfa`
 ## API reference
 
 [`BlockIdExtension`](/docs/api/modules/lexical_extension#blockidextension) ·
-[`BlockIdHTMLExtension`](/docs/api/modules/lexical_html_BlockIdHTMLExtension#blockidhtmlextension)
+[`BlockIdHTMLExtension`](/docs/api/modules/lexical_html/BlockIdHTMLExtension#blockidhtmlextension)

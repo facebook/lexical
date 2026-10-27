@@ -56,10 +56,10 @@ export function transformersByType(transformers: Transformer[]): Readonly<{
   };
 }
 
-export const PUNCTUATION_OR_SPACE = /[!-/:-@[-`{-~\s]/;
+export const PUNCTUATION_OR_SPACE = /[\p{P}\p{S}\s]/u;
 export const WHITESPACE = /\s/;
-// Include every ASCII punctuation character, including the escape backslash.
-export const PUNCTUATION = /[!-/:-@[-`{-~]/;
+// CommonMark includes Unicode punctuation and symbols, including ASCII backslash.
+export const PUNCTUATION = /[\p{P}\p{S}]/u;
 
 const MARKDOWN_EMPTY_LINE_REG_EXP = /^\s{0,3}$/;
 

@@ -331,6 +331,259 @@ describe.each([false, true])(
 );
 
 describe('Markdown import escapes and references', () => {
+  it.each(['a', '€'])(
+    'repairs actual GFM strikethrough boundaries after %j',
+    prefix => {
+      const editor = createTestEditor();
+      editor.update(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append(
+              $createTextNode(prefix),
+              $createTextNode('!').toggleFormat('strikethrough'),
+              $createTextNode('b'),
+            ),
+          ),
+        {discrete: true},
+      );
+      const written = editor.read(() => $convertToMarkdownString());
+      expect(written).toBe((prefix === 'a' ? '&#97;' : prefix) + '~~!~~&#98;');
+      editor.update(() => $convertFromMarkdownString(written), {
+        discrete: true,
+      });
+      expect(
+        editor.read(() =>
+          $getRoot()
+            .getAllTextNodes()
+            .map(node => [node.getTextContent(), node.getFormat()]),
+        ),
+      ).toEqual([
+        [prefix, 0],
+        ['!', 4],
+        ['b', 0],
+      ]);
+    },
+  );
+  it.each(['[x](u)', '[x][r]', '[label]', 'a]b', 'a[b', '[x]([y])'])(
+    'preserves bracket bookkeeping in real link labels: %j',
+    label => {
+      const editor = createTestEditor();
+      editor.update(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append(
+              $createLinkNode('uri').append($createTextNode(label)),
+            ),
+          ),
+        {discrete: true},
+      );
+      const written = editor.read(() => $convertToMarkdownString());
+      expect(parse(written)).toEqual({
+        definitions: [],
+        html: [],
+        images: [],
+        links: ['uri'],
+        text: label,
+      });
+      editor.update(() => $convertFromMarkdownString(written), {
+        discrete: true,
+      });
+      expect(editor.read($links)).toEqual(['uri']);
+      expect(editor.read(() => $getRoot().getTextContent())).toBe(label);
+    },
+  );
+
+  it.each(['[ref]', '![ref]', '[a][ref]'])(
+    'keeps literal brackets when an opaque exporter defines references: %j',
+    text => {
+      const editor = createTestEditor();
+      editor.update(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append(
+              $createTextNode(text),
+              $createMarkNode(['definition']).append($createTextNode('owned')),
+            ),
+          ),
+        {discrete: true},
+      );
+      const custom: TextMatchTransformer = {
+        dependencies: [],
+        export: node => (node instanceof MarkNode ? '\n\n[ref]: /uri' : null),
+        regExp: /$^/,
+        type: 'text-match',
+      };
+      const written = editor.read(() =>
+        $convertToMarkdownString([custom, ...TRANSFORMERS]),
+      );
+      expect(parse(written)).toEqual({
+        definitions: ['/uri'],
+        html: [],
+        images: [],
+        links: [],
+        text,
+      });
+      expect(written.endsWith('[ref]: /uri')).toBe(true);
+    },
+  );
+
+  it('keeps literal brackets before a custom reference-definition block', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('[ref]')),
+          $createParagraphNode().append($createTextNode('owned definition')),
+        ),
+      {discrete: true},
+    );
+    const custom: ElementTransformer = {
+      dependencies: [],
+      export: node =>
+        node.getTextContent() === 'owned definition' ? '[ref]: /uri' : null,
+      regExp: /$^/,
+      replace: () => false,
+      type: 'element',
+    };
+    const written = editor.read(() =>
+      $convertToMarkdownString([custom, ...TRANSFORMERS]),
+    );
+    expect(parse(written)).toEqual({
+      definitions: ['/uri'],
+      html: [],
+      images: [],
+      links: [],
+      text: '[ref]',
+    });
+  });
+  it.each([
+    'AT&T',
+    'a < b',
+    '[label]',
+    'a]b',
+    '#topic',
+    '+plus',
+    '=equals',
+    '-dash',
+    '1.2',
+    '1)word',
+    '=',
+    '===',
+    '<widget',
+    '<br nonsense!>',
+    '<br /garbage>',
+    '[x](invalid spaces)',
+  ])('keeps ordinary GFM text readable: %j', text => {
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append($createParagraphNode().append($createTextNode(text))),
+      {discrete: true},
+    );
+    const written = editor.read(() => $convertToMarkdownString());
+    expect(written).toBe(text);
+    expectLiteral(written, text);
+    expect(fromMarkdown(written).children[0].type).toBe('paragraph');
+  });
+
+  it.each([
+    '# heading',
+    '>quote',
+    '+ item',
+    '- item',
+    '---',
+    '1. item',
+    '1) item',
+    '&copy;',
+    '&#60;',
+    '<b>x</b>',
+    '<div',
+    '<script',
+    '<b disabled title=">">x</b>',
+    '[label](u)',
+    '[x](a(b(c(d(e)))))',
+    '[ref]: /u',
+  ])('protects actual GFM syntax in literal text: %j', text => {
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append($createParagraphNode().append($createTextNode(text))),
+      {discrete: true},
+    );
+    const written = editor.read(() => $convertToMarkdownString());
+    expectLiteral(written, text);
+    expect(fromMarkdown(written).children[0].type).toBe('paragraph');
+  });
+
+  it.each([
+    [['[', 'x', '](u)'], [0, 1, 0], '\\[**x**](u)'],
+    [['[x]', '(u)'], [0, 1], '[x]**(u)**'],
+    [['<', 'b', '>'], [0, 1, 0], '<**b**>'],
+    [['&', '#65;'], [0, 1], '&**#65;**'],
+    [['1', '. item'], [1, 0], '**1**. item'],
+  ] as const)(
+    'checks emitted GFM syntax across runs: %j',
+    (texts, formats, expected) => {
+      const editor = createTestEditor();
+      editor.update(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append(
+              ...texts.map((text, index) =>
+                $createTextNode(text)
+                  .setFormat(formats[index])
+                  .setStyle(`order:${index}`),
+              ),
+            ),
+          ),
+        {discrete: true},
+      );
+      const written = editor.read(() => $convertToMarkdownString());
+      expect(written).toBe(expected);
+      expectLiteral(written, texts.join(''));
+    },
+  );
+  it.each([
+    [[1, 17, 1], ['a', 'b', 'c'], '**a`b`c**'],
+    [[1, 0], ['a', 'b'], '**a**b'],
+    [[1, 2, 0], ['a', 'b', 'c'], '**a**_b_&#99;'],
+    [[3, 1, 2], ['a', 'b', 'c'], '***a*b**_c_'],
+    [[0, 3, 1, 2], ['a', 'b', 'c', 'd'], 'a***b*c**_d_'],
+    [[0, 1, 0], ['a', '!', 'b'], '&#97;**!**&#98;'],
+    [[0, 17, 0], ['a', 'b', 'c'], '&#97;**`b`**&#99;'],
+    [[0, 1, 0], ['a', '€', 'b'], '&#97;**€**&#98;'],
+    [[1, 17, 1], ['😀', 'x', 'a'], '**😀`x`a**'],
+  ] as const)(
+    'emits GFM boundary references only where delimiters require them: %j',
+    (formats, texts, expected) => {
+      const editor = createTestEditor();
+      editor.update(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append(
+              ...texts.map((text, index) =>
+                $createTextNode(text)
+                  .setFormat(formats[index])
+                  .setStyle(`order: ${index}`),
+              ),
+            ),
+          ),
+        {discrete: true},
+      );
+      const written = editor.read(() => $convertToMarkdownString());
+      expect(written).toBe(expected);
+      expect(formatProjection(written)).toEqual(
+        texts.flatMap((text, index) =>
+          Array.from(text, character => `${formats[index]}:${character}`),
+        ),
+      );
+      editor.update(() => $convertFromMarkdownString(written), {
+        discrete: true,
+      });
+      const again = editor.read(() => $convertToMarkdownString());
+      expect(formatProjection(again)).toEqual(formatProjection(written));
+    },
+  );
   it.each([
     ['hello world   \n\nnext paragraph', 'hello world   '],
     ['   hello world\n\nnext paragraph', '   hello world'],

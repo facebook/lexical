@@ -116,8 +116,10 @@ unchanged callback result or their concatenation in call order delegates that
 content to the surrounding formatting stream; nodes
 are not exported again. Wrapping or rewriting a result instead produces an
 opaque Markdown string that is emitted unchanged. Such transformers must supply
-complete syntax and account for its boundaries with surrounding content. Ordinary
-child inspection is memoized within each block export, including overlapping
+complete syntax and account for its boundaries with surrounding content.
+Brackets remain conservatively escaped when custom exporters are configured,
+because authored reference definitions can change links elsewhere in the document.
+Ordinary child inspection is memoized within each block export, including overlapping
 subtrees, so inspecting content does not repeat descendant transformers.
 
 There're three types of transformers:

@@ -23,15 +23,22 @@ import {
   type TextNode,
 } from 'lexical';
 
+import {narrowLiteralEscapes} from './MarkdownEscaping';
 import {
+  CHECK_LIST,
+  CODE,
   type ElementTransformer,
   getCodeSpanDelimiter,
   hardLineBreakState,
+  HEADING,
   LINK,
   type MultilineElementTransformer,
+  ORDERED_LIST,
+  QUOTE,
   type TextFormatTransformer,
   type TextMatchTransformer,
   type Transformer,
+  UNORDERED_LIST,
 } from './MarkdownTransformers';
 import {isEmptyParagraph, transformersByType} from './utils';
 
@@ -156,7 +163,10 @@ function $processNodeForSelection(
   shouldPreserveNewLines: boolean,
 ): {shouldInclude: boolean; markdown: string | null} {
   let shouldInclude = node.isSelected(selection);
-  const nodeMemo: ExportMemo = new Map();
+  const nodeMemo = createExportMemo([
+    ...elementTransformers,
+    ...textMatchTransformers,
+  ]);
 
   const childPreviews = new Map<
     ElementNode,
@@ -247,7 +257,10 @@ function $exportTopLevelElements(
   textMatchTransformers: TextMatchTransformer[],
   shouldPreserveNewLines: boolean,
 ): string | null {
-  const nodeMemo: ExportMemo = new Map();
+  const nodeMemo = createExportMemo([
+    ...elementTransformers,
+    ...textMatchTransformers,
+  ]);
   const childPreviews = new Map<ElementNode, string>();
   const $children = (container: ElementNode) => {
     let markdown = childPreviews.get(container);
@@ -310,12 +323,151 @@ type MarkdownPiece =
 type ExportMemo = Map<
   LexicalNode,
   {shouldInclude: boolean; pieces: MarkdownPiece[]}
->;
+> & {conservativeBrackets: boolean};
+
+function createExportMemo(transformers: Transformer[]): ExportMemo {
+  const knownExporters = new Set<unknown>();
+  for (const transformer of [
+    CHECK_LIST,
+    CODE,
+    HEADING,
+    LINK,
+    ORDERED_LIST,
+    QUOTE,
+    UNORDERED_LIST,
+  ]) {
+    knownExporters.add(transformer.export);
+  }
+  // Opaque exporters can define document-wide reference labels. Keep the old
+  // bracket protection in that case, including for text in other blocks.
+  const conservativeBrackets = transformers.some(
+    transformer =>
+      'export' in transformer &&
+      transformer.export &&
+      !knownExporters.has(transformer.export),
+  );
+  return Object.assign(
+    new Map<LexicalNode, {shouldInclude: boolean; pieces: MarkdownPiece[]}>(),
+    {conservativeBrackets},
+  );
+}
 type RenderedChildren = {
   shouldInclude: boolean;
   markdown: string;
   pieces: MarkdownPiece[];
 };
+
+type MarkdownFragment = {
+  text: string;
+  kind: 'literal' | 'syntax' | 'open' | 'close';
+};
+
+function appendTags(
+  fragments: MarkdownFragment[],
+  text: string,
+  kind: 'open' | 'close',
+): void {
+  for (const tag of text.match(/([*_~])\1*|[^*_~]+/g) || []) {
+    fragments.push({kind: /^[*_~]/.test(tag) ? kind : 'syntax', text: tag});
+  }
+}
+
+function delimiterFlanking(
+  left: string,
+  right: string,
+): {open: boolean; close: boolean} {
+  const leftSpace = left === '' || /\s/u.test(left);
+  const rightSpace = right === '' || /\s/u.test(right);
+  const leftPunctuation = /[\p{P}\p{S}]/u.test(left);
+  const rightPunctuation = /[\p{P}\p{S}]/u.test(right);
+  return {
+    close: !leftSpace && (!leftPunctuation || rightSpace || rightPunctuation),
+    open: !rightSpace && (!rightPunctuation || leftSpace || leftPunctuation),
+  };
+}
+
+// Repair only actual generated delimiters. References can affect a delimiter
+// at either end of a one-character literal, so revisit its immediate neighbours.
+function repairFormatBoundaries(
+  fragments: MarkdownFragment[],
+  inLink: boolean,
+  conservativeBrackets: boolean,
+): string {
+  const parts = fragments.filter(part => part.text !== '');
+  const pending = parts.flatMap((part, index) =>
+    part.kind === 'open' || part.kind === 'close' ? [index] : [],
+  );
+  const queued = new Set(pending);
+  const revisit = (index: number) => {
+    if (
+      parts[index] &&
+      (parts[index].kind === 'open' || parts[index].kind === 'close') &&
+      !queued.has(index)
+    ) {
+      queued.add(index);
+      pending.push(index);
+    }
+  };
+  while (pending.length > 0) {
+    const index = pending.pop()!;
+    queued.delete(index);
+    const tag = parts[index];
+    const left = parts[index - 1];
+    const right = parts[index + 1];
+    const before = left ? left.text.slice(-1) : '';
+    const after = right ? right.text.slice(0, 1) : '';
+    const {open, close} = delimiterFlanking(before, after);
+    const underscore = tag.text[0] === '_';
+    const canOpen =
+      open && (!underscore || !close || /[\p{P}\p{S}]/u.test(before));
+    const canClose =
+      close && (!underscore || !open || /[\p{P}\p{S}]/u.test(after));
+    if (tag.kind === 'open' && !canOpen && left && left.kind === 'literal') {
+      const character = Array.from(left.text).pop()!;
+      if (!/[\s\p{P}\p{S}]/u.test(character.slice(-1))) {
+        left.text =
+          left.text.slice(0, -character.length) +
+          `&#${character.codePointAt(0)};`;
+        revisit(index - 2);
+        revisit(index);
+      }
+    }
+    if (
+      tag.kind === 'close' &&
+      !canClose &&
+      right &&
+      right.kind === 'literal'
+    ) {
+      const character = Array.from(right.text)[0];
+      if (!/[\s\p{P}\p{S}]/u.test(character.slice(0, 1))) {
+        right.text =
+          `&#${character.codePointAt(0)};` + right.text.slice(character.length);
+        revisit(index);
+        revisit(index + 2);
+      }
+    }
+  }
+  const escapes: number[] = [];
+  let offset = 0;
+  for (const part of parts) {
+    if (part.kind === 'literal') {
+      for (let index = 0; index < part.text.length; index++) {
+        if (part.text[index] === '\\') {
+          if ('&<[]#>+=-.)'.includes(part.text[index + 1] || '\0'))
+            escapes.push(offset + index);
+          index++;
+        }
+      }
+    }
+    offset += part.text.length;
+  }
+  return narrowLiteralEscapes(
+    parts.map(part => part.text).join(''),
+    escapes,
+    inLink,
+    conservativeBrackets,
+  );
+}
 
 // Only whole, unchanged callback results are delegated back to the literal
 // stream. A transformer that wraps or rewrites a result owns that Markdown.
@@ -340,12 +492,12 @@ function delegatedPieces(
   return null;
 }
 type TextExportContext = {
-  previous: LiteralRun | null;
   next: LiteralRun | null;
   linePrefix: string | null;
   atLineEnd: boolean;
   lastClosed: string;
   ownedPrefix?: string;
+  fragments?: MarkdownFragment[];
 };
 
 /**
@@ -362,17 +514,17 @@ function $renderChildren(
   unclosedTags: {format: TextFormatType; tag: string}[] = [],
   unclosableTags: {format: TextFormatType; tag: string}[] = [],
   selection?: BaseSelection,
-  nodeMemo: ExportMemo = new Map(),
+  nodeMemo: ExportMemo = createExportMemo(textMatchTransformers),
 ): RenderedChildren {
-  const output: string[] = [];
+  const renderedFragments: MarkdownFragment[] = [];
   const pieces: MarkdownPiece[] = [];
   let pending: LiteralRun | null = null;
-  let previous: LiteralRun | null = null;
   let linePrefix: string | null = $isLinkNode(node) ? null : '';
   let lastClosed = '';
 
-  const write = (value: string) => {
-    output.push(value);
+  const write = (value: string, rendered?: MarkdownFragment[]) => {
+    if (rendered) renderedFragments.push(...rendered);
+    else renderedFragments.push({kind: 'syntax', text: value});
     const ending = Math.max(value.lastIndexOf('\n'), value.lastIndexOf('\r'));
     const prefix =
       ending >= 0
@@ -390,11 +542,11 @@ function $renderChildren(
     if (pending !== null) {
       const context: TextExportContext = {
         atLineEnd,
+        fragments: [],
         lastClosed,
         linePrefix,
         next,
         ownedPrefix,
-        previous,
       };
       write(
         $exportTextFormat(
@@ -406,8 +558,8 @@ function $renderChildren(
           shouldPreserveNewLines,
           context,
         ),
+        context.fragments,
       );
-      previous = pending;
       lastClosed = context.lastClosed;
       pending = null;
     }
@@ -415,7 +567,6 @@ function $renderChildren(
   const $boundary = (record = true) => {
     if (record) pieces.push({type: 'boundary'});
     $flush(null, true);
-    previous = null;
     lastClosed = '';
   };
   const $writeOwned = (value: string, inline = false, record = true) => {
@@ -423,7 +574,6 @@ function $renderChildren(
       if (record) pieces.push({inline, markdown: value, type: 'syntax'});
       $flush(null, !inline, value);
       write(value);
-      previous = null;
       lastClosed = /^[*_]$/.test(value.slice(-1)) ? value.slice(-1) : '';
     }
   };
@@ -579,21 +729,19 @@ function $renderChildren(
   };
   const shouldInclude = $append(node);
   $flush(null, !$isLinkNode(node));
-  return {markdown: output.join(''), pieces, shouldInclude};
+  return {
+    markdown: repairFormatBoundaries(
+      renderedFragments,
+      $isLinkNode(node),
+      nodeMemo.conservativeBrackets,
+    ),
+    pieces,
+    shouldInclude,
+  };
 }
 
 function $exportLineBreak(node: LineBreakNode): string {
   return $getState(node, hardLineBreakState) + '\n';
-}
-
-// References give boundary characters unambiguous punctuation. Unicode
-// symbols are included conservatively: parsers differ on their punctuation
-// class and on whether astral characters are inspected as UTF-16 code units.
-function needsFormatBoundaryReference(value: string): boolean {
-  return (
-    /^[^\s\p{P}\x21-\x2f\x3a-\x40\x5b-\x60\x7b-\x7e]/u.test(value) ||
-    (value.codePointAt(0) ?? 0) > 0xffff
-  );
 }
 
 function $exportTextFormat(
@@ -609,7 +757,6 @@ function $exportTextFormat(
     lastClosed: '',
     linePrefix: '',
     next: null,
-    previous: null,
   },
 ): string {
   // This function handles the case of a string looking like this: "   foo   "
@@ -643,37 +790,6 @@ function $exportTextFormat(
             ? digits + '\\' + delimiter
             : found,
       );
-    }
-    // At an intraword format transition, literal boundary characters are
-    // references. Delimiters then see punctuation on either side even when a
-    // later overlapping format or a code fence changes their neighbours.
-    const previous = context.previous;
-    const next = context.next;
-    const chars = Array.from(textContent);
-    const first = chars[0];
-    const last = chars[chars.length - 1];
-    if (
-      first &&
-      needsFormatBoundaryReference(first) &&
-      previous &&
-      previous.first.getFormat() !== node.getFormat() &&
-      (previous.first.hasFormat('code') || !/\s$/u.test(previous.text))
-    ) {
-      output = `&#${first.codePointAt(0)};` + output.slice(first.length);
-    }
-    if (
-      last &&
-      needsFormatBoundaryReference(last) &&
-      next &&
-      next.first.getFormat() !== node.getFormat() &&
-      (next.first.hasFormat('code') || !/^\s/u.test(next.text)) &&
-      ((next.first.getFormat() & ~node.getFormat()) !== 0 ||
-        needsFormatBoundaryReference(next.text))
-    ) {
-      output =
-        chars.length === 1
-          ? `&#${last.codePointAt(0)};`
-          : output.slice(0, -last.length) + `&#${last.codePointAt(0)};`;
     }
     // A literal ! immediately before a generated link must not make an image.
     if (
@@ -808,18 +924,31 @@ function $exportTextFormat(
   // However, it must still output closing tags from previous nodes.
   if (isWhitespaceOnly && !node.hasFormat('code')) {
     context.lastClosed = '';
-    return (
+    const whitespace =
       closingTagsBefore +
       (context.linePrefix === ''
         ? output.replace(/[ \t]/g, char => `&#${char.charCodeAt(0)};`)
-        : output)
-    );
+        : output);
+    if (context.fragments)
+      context.fragments.push({kind: 'syntax', text: whitespace});
+    return whitespace;
   }
 
   context.lastClosed =
     trailingSpace === '' && closingTagsAfter !== ''
       ? closingTagsAfter.slice(-1)
       : '';
+  if (context.fragments) {
+    appendTags(context.fragments, closingTagsBefore, 'close');
+    context.fragments.push({kind: 'syntax', text: leadingSpace});
+    appendTags(context.fragments, openingTags, 'open');
+    context.fragments.push({
+      kind: isCode ? 'syntax' : 'literal',
+      text: trimmedOutput,
+    });
+    appendTags(context.fragments, closingTagsAfter, 'close');
+    context.fragments.push({kind: 'syntax', text: trailingSpace});
+  }
   // Formatting delimiters stay inside whitespace boundaries.
   return (
     closingTagsBefore +

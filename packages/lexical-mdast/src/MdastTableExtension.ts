@@ -421,17 +421,17 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
                   // Only the alignments GFM has.
                   gfmAlign(align[column] as ElementFormatType) || '',
                 ),
-                !cell
-                  ? []
-                  : cell.type === 'tableCell'
-                    ? ctx.importChildren({
-                        ...cell,
-                        children: mapPhrasing(cell.children || [], replace),
-                      })
-                    : ctx.importChildren({
-                        children: mapPhrasing([cell], replace),
-                        type: 'tableCell',
-                      }),
+                cell
+                  ? ctx.importChildren({
+                      children: mapPhrasing(
+                        cell.type === 'tableCell'
+                          ? cell.children || []
+                          : [cell],
+                        replace,
+                      ),
+                      type: 'tableCell',
+                    })
+                  : [],
               ),
             ],
           );

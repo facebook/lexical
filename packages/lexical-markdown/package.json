@@ -20,10 +20,11 @@
     "@lexical/selection": "workspace:*",
     "@lexical/text": "workspace:*",
     "@lexical/utils": "workspace:*",
-    "decode-named-character-reference": "^1.3.0",
+    "character-entities": "^2.0.2",
     "lexical": "workspace:*"
   },
   "devDependencies": {
+    "@lexical/history": "workspace:*",
     "mdast-util-from-markdown": "^2.0.3"
   },
   "repository": {

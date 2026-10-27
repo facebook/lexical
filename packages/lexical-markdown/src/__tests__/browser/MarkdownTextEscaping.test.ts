@@ -13,11 +13,31 @@ import {
 } from '@lexical/markdown';
 import {$getRoot} from 'lexical';
 import {fromMarkdown} from 'mdast-util-from-markdown';
-import {describe, expect, it} from 'vitest';
+import {assert, describe, expect, it} from 'vitest';
 
+import {unescapeText} from '../../utils';
 import {MarkdownTestExtension} from '../utils';
 
 describe('browser Markdown reference semantics', () => {
+  it('decodes named references without HTML assignments', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(
+      Element.prototype,
+      'innerHTML',
+    );
+    assert(descriptor);
+    Object.defineProperty(Element.prototype, 'innerHTML', {
+      configurable: true,
+      get: descriptor.get,
+      set() {
+        throw new TypeError('HTML string assignment is unavailable');
+      },
+    });
+    try {
+      expect(unescapeText('&amp;&NotEqualTilde;')).toBe('&\u2242\u0338');
+    } finally {
+      Object.defineProperty(Element.prototype, 'innerHTML', descriptor);
+    }
+  });
   it.each([
     ['&lt;b&gt;text&lt;/b&gt;', '<b>text</b>'],
     ['&NotEqualTilde;', '\u2242\u0338'],

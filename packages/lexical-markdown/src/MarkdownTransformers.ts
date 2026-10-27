@@ -48,12 +48,7 @@ import {
   type TextNode,
 } from 'lexical';
 
-import {
-  isEmptyParagraph,
-  isEscaped,
-  preservedLineBreakState,
-  unescapeText,
-} from './utils';
+import {isEmptyParagraph, isEscaped, unescapeText} from './utils';
 
 export type Transformer =
   | ElementTransformer
@@ -319,7 +314,6 @@ export const hardLineBreakState = createState('mdHardLineBreak', {
     }
     return '';
   },
-  resetOnCopyNode: true,
 });
 
 export function parseMarkdownHardLineBreak(
@@ -345,32 +339,23 @@ export function parseMarkdownHardLineBreak(
 // backslash must not acquire the meaning of a hard line break afterwards.
 const hardLineBreakMarkers = new WeakMap<TextNode, MarkdownHardLineBreak>();
 
-export function $splitMarkdownHardLineBreakMarker(
-  textNode: TextNode,
-  preserve: boolean,
-): void {
+export function $splitMarkdownHardLineBreakMarker(textNode: TextNode): void {
   const hardLineBreak = parseMarkdownHardLineBreak(textNode.getTextContent());
   if (hardLineBreak !== null && !textNode.hasFormat('code')) {
-    const parent = textNode.getParent();
-    if (preserve && parent) {
-      $setState(parent, preservedLineBreakState, hardLineBreak[1]);
-      textNode.setTextContent(hardLineBreak[0]);
-    } else {
-      const marker = $createTextNode(hardLineBreak[1]);
-      hardLineBreakMarkers.set(marker, hardLineBreak[1]);
-      textNode.setTextContent(hardLineBreak[0]).insertAfter(marker);
-    }
+    const marker = $createTextNode(hardLineBreak[1]);
+    hardLineBreakMarkers.set(marker, hardLineBreak[1]);
+    textNode.setTextContent(hardLineBreak[0]).insertAfter(marker);
   }
+}
+
+export function $hasSourceHardLineBreak(node: ElementNode): boolean {
+  const last = node.getLastChild();
+  return $isTextNode(last) && hardLineBreakMarkers.has(last);
 }
 
 function $extractMarkdownHardLineBreakMarker(
   previousNode: ElementNode,
 ): MarkdownHardLineBreak | null {
-  const preserved = $getState(previousNode, preservedLineBreakState);
-  if (preserved !== '') {
-    $setState(previousNode, preservedLineBreakState, '');
-    return preserved;
-  }
   const last = previousNode.getLastChild();
   if ($isTextNode(last)) {
     const marker = hardLineBreakMarkers.get(last);

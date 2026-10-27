@@ -24,6 +24,7 @@ import {
 import {importTextTransformers} from './importTextTransformers';
 import {
   $createMarkdownLineBreakNode,
+  $hasSourceHardLineBreak,
   $splitMarkdownHardLineBreakMarker,
   type ElementTransformer,
   type MultilineElementTransformer,
@@ -249,7 +250,7 @@ function $importBlocks(
   }
 
   if (hasFollowingLine && textNode.getParent() !== null) {
-    $splitMarkdownHardLineBreakMarker(textNode, shouldPreserveNewLines);
+    $splitMarkdownHardLineBreakMarker(textNode);
   }
 
   importTextTransformers(
@@ -264,10 +265,9 @@ function $importBlocks(
   if (elementNode.getParent() !== null && lineText.length > 0) {
     const previousNode = elementNode.getPreviousSibling();
     if (
-      !shouldPreserveNewLines && // Only append if we're not preserving newlines
-      ($isParagraphNode(previousNode) ||
-        $isQuoteNode(previousNode) ||
-        $isListNode(previousNode))
+      $isParagraphNode(previousNode) ||
+      $isQuoteNode(previousNode) ||
+      $isListNode(previousNode)
     ) {
       let targetNode: typeof previousNode | ListItemNode | null = previousNode;
 
@@ -280,7 +280,11 @@ function $importBlocks(
         }
       }
 
-      if (targetNode != null && targetNode.getTextContentSize() > 0) {
+      if (
+        targetNode != null &&
+        targetNode.getTextContentSize() > 0 &&
+        (!shouldPreserveNewLines || $hasSourceHardLineBreak(targetNode))
+      ) {
         targetNode.append(
           $createMarkdownLineBreakNode(targetNode),
           ...elementNode.getChildren(),

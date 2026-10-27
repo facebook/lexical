@@ -10,6 +10,7 @@
 
 import {$createCodeNode, CodeNode} from '@lexical/code-core';
 import {createHeadlessEditor} from '@lexical/headless';
+import {createEmptyHistoryState, registerHistory} from '@lexical/history';
 import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {$createMarkNode, MarkNode} from '@lexical/mark';
@@ -30,9 +31,13 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
+  $isRangeSelection,
   $isTextNode,
+  HISTORY_PUSH_TAG,
   type LexicalNode,
+  REDO_COMMAND,
   type TextNode,
+  UNDO_COMMAND,
 } from 'lexical';
 import {fromMarkdown} from 'mdast-util-from-markdown';
 import {assert, describe, expect, it} from 'vitest';
@@ -499,6 +504,439 @@ describe('Markdown import escapes and references', () => {
 });
 
 describe('intentional syntax', () => {
+  it.each([' ', 'a ', ' a', '\t', 'a\t', '\ta', '\u00a0'])(
+    'uses code fences rather than content whitespace for flanking: %j',
+    value => {
+      for (const format of [16, 17, 18, 19])
+        for (const before of [false, true]) {
+          const editor = createTestEditor();
+          editor.update(
+            () => {
+              const code = $createTextNode(value).setFormat(format);
+              const text = $createTextNode('b');
+              $getRoot().append(
+                $createParagraphNode().append(
+                  ...(before ? [text, code] : [code, text]),
+                ),
+              );
+            },
+            {discrete: true},
+          );
+          const expected = Array.from(value, char => `${format}:${char}`);
+          const written = editor.read(() => $convertToMarkdownString());
+          expect(
+            formatProjection(written),
+            JSON.stringify({before, format, value, written}),
+          ).toEqual(before ? ['0:b', ...expected] : [...expected, '0:b']);
+        }
+    },
+  );
+
+  it.each(['format', 'children', 'repeat', 'decline', 'opaque'])(
+    'retains callback delegation and owned syntax boundaries: %s',
+    mode => {
+      const editor = createTestEditor();
+      editor.update(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append(
+              $createTextNode('a').toggleFormat('bold').setStyle('order: 0'),
+              $createMarkNode(['custom']).append(
+                $createTextNode('b').toggleFormat('bold').setStyle('order: 1'),
+              ),
+              $createTextNode('c').setStyle('order: 2'),
+            ),
+          ),
+        {discrete: true},
+      );
+      const calls: string[] = [];
+      const custom: TextMatchTransformer = {
+        dependencies: [],
+        export(node, children, format) {
+          if ($isTextNode(node)) calls.push(node.getTextContent());
+          if (!(node instanceof MarkNode)) return null;
+          if (mode === 'children' || mode === 'decline') {
+            const value = children(node);
+            return mode === 'decline' ? null : value;
+          }
+          const text = node.getFirstChildOrThrow<TextNode>();
+          const value = format(text, text.getTextContent());
+          return mode === 'repeat'
+            ? value + value
+            : mode === 'opaque'
+              ? 'prefix' + value
+              : value;
+        },
+        regExp: /$^/,
+        type: 'text-match',
+      };
+      const written = editor.read(() =>
+        $convertToMarkdownString([custom, ...TRANSFORMERS]),
+      );
+      expect(formatProjection(written)).toEqual([
+        '1:a',
+        ...(mode === 'opaque' ? Array.from('prefix', char => `0:${char}`) : []),
+        '1:b',
+        ...(mode === 'repeat' ? ['1:b'] : []),
+        '0:c',
+      ]);
+      expect(calls).toEqual(
+        mode === 'children' || mode === 'decline'
+          ? ['a', 'b', 'c']
+          : ['a', 'c'],
+      );
+    },
+  );
+
+  it.each(['format', 'children', 'decline', 'concatenate'])(
+    'preserves generated custom callback transitions: %s',
+    mode => {
+      for (const left of [0, 1, 2, 3, 16, 17, 18, 19])
+        for (const right of [0, 1, 2, 3, 16, 17, 18, 19])
+          for (const values of [
+            ['a', 'b'],
+            ['!', 'b'],
+            ['a', '!'],
+          ]) {
+            const editor = createTestEditor();
+            editor.update(
+              () =>
+                $getRoot().append(
+                  $createParagraphNode().append(
+                    $createTextNode(values[0])
+                      .setFormat(left)
+                      .setStyle('order: 0'),
+                    $createMarkNode(['custom']).append(
+                      $createTextNode(values[1])
+                        .setFormat(right)
+                        .setStyle('order: 1'),
+                      ...(mode === 'concatenate'
+                        ? [
+                            $createTextNode('c')
+                              .setFormat(left)
+                              .setStyle('order: 2'),
+                          ]
+                        : []),
+                    ),
+                    $createTextNode('d').setFormat(right).setStyle('order: 3'),
+                  ),
+                ),
+              {discrete: true},
+            );
+            const calls: string[] = [];
+            const custom: TextMatchTransformer = {
+              dependencies: [],
+              export(node, children, format) {
+                if ($isTextNode(node)) calls.push(node.getTextContent());
+                if (!(node instanceof MarkNode)) return null;
+                if (mode === 'format') {
+                  const text = node.getFirstChildOrThrow<TextNode>();
+                  return format(text, text.getTextContent());
+                }
+                if (mode === 'concatenate')
+                  return node
+                    .getChildren<TextNode>()
+                    .map(text => format(text, text.getTextContent()))
+                    .join('');
+                const result = children(node);
+                return mode === 'decline' ? null : result;
+              },
+              regExp: /$^/,
+              type: 'text-match',
+            };
+            const written = editor.read(() =>
+              $convertToMarkdownString([custom, ...TRANSFORMERS]),
+            );
+            expect(
+              formatProjection(written),
+              JSON.stringify({left, mode, right, values, written}),
+            ).toEqual([
+              ...Array.from(values[0], char => `${left}:${char}`),
+              ...Array.from(values[1], char => `${right}:${char}`),
+              ...(mode === 'concatenate' ? [`${left}:c`] : []),
+              `${right}:d`,
+            ]);
+            expect(calls).toEqual(
+              mode === 'children' || mode === 'decline'
+                ? [values[0], values[1], 'd']
+                : [values[0], 'd'],
+            );
+          }
+    },
+  );
+
+  it.each([0, 1, 2])(
+    'preserves generated four-run sequences (wrapper pattern: %s)',
+    wrapper => {
+      for (const values of [
+        ['a', 'b', 'c', 'd'],
+        ['<', 'b', '>', 'x'],
+        ['&', '#', '6', '0;'],
+      ]) {
+        for (let sequence = 0; sequence < 256; sequence++)
+          for (const withCode of [false, true]) {
+            const formats = [0, 1, 2, 3].map(
+              index =>
+                ((sequence >> (index * 2)) & 3) |
+                (withCode && (sequence + index) % 3 === 0 ? 16 : 0),
+            );
+            const editor = createTestEditor();
+            editor.update(
+              () => {
+                const nodes = values.map((text, index) =>
+                  $createTextNode(text)
+                    .setFormat(formats[index])
+                    .setStyle(`order: ${index}`),
+                );
+                const children =
+                  wrapper === 0
+                    ? nodes
+                    : wrapper === 1
+                      ? nodes.map((node, index) =>
+                          $createMarkNode([String(index)]).append(node),
+                        )
+                      : [
+                          $createMarkNode(['group']).append(nodes[0], nodes[1]),
+                          nodes[2],
+                          $createMarkNode(['tail']).append(nodes[3]),
+                        ];
+                $getRoot().append($createParagraphNode().append(...children));
+              },
+              {discrete: true},
+            );
+            const written = editor.read(() => $convertToMarkdownString());
+            expect(
+              formatProjection(written),
+              JSON.stringify({formats, values, written}),
+            ).toEqual(
+              values.flatMap((value, index) =>
+                Array.from(value, char => `${formats[index]}:${char}`),
+              ),
+            );
+          }
+      }
+    },
+    30000,
+  );
+
+  it('keeps hard-break structure through split, join, history and JSON', () => {
+    const editor = createTestEditor();
+    const unregister = registerHistory(editor, createEmptyHistoryState(), 0);
+    try {
+      const original = 'foo\\\nbar\nbaz';
+      editor.update(
+        () =>
+          $convertFromMarkdownString(original, TRANSFORMERS, undefined, true),
+        {discrete: true, tag: HISTORY_PUSH_TAG},
+      );
+      editor.update(
+        () => {
+          const text = $getRoot()
+            .getAllTextNodes()
+            .find(node => node.getTextContent() === 'bar');
+          assert(text);
+          text.select(1, 1);
+          const selection = $getSelection();
+          assert($isRangeSelection(selection));
+          selection.insertParagraph();
+        },
+        {discrete: true, tag: HISTORY_PUSH_TAG},
+      );
+      const split = 'foo\\\nb\nar\nbaz';
+      expect(
+        editor.read(() =>
+          $convertToMarkdownString(TRANSFORMERS, undefined, true),
+        ),
+      ).toBe(split);
+      editor.update(
+        () => {
+          const text = $getRoot()
+            .getAllTextNodes()
+            .find(node => node.getTextContent() === 'ar');
+          assert(text);
+          text.select(0, 0);
+          const selection = $getSelection();
+          assert($isRangeSelection(selection));
+          selection.deleteCharacter(true);
+        },
+        {discrete: true, tag: HISTORY_PUSH_TAG},
+      );
+      expect(
+        editor.read(() =>
+          $convertToMarkdownString(TRANSFORMERS, undefined, true),
+        ),
+      ).toBe(original);
+      editor.update(() => editor.dispatchCommand(UNDO_COMMAND, undefined), {
+        discrete: true,
+      });
+      expect(
+        editor.read(() =>
+          $convertToMarkdownString(TRANSFORMERS, undefined, true),
+        ),
+      ).toBe(split);
+      editor.update(() => editor.dispatchCommand(REDO_COMMAND, undefined), {
+        discrete: true,
+      });
+      expect(
+        editor.read(() =>
+          $convertToMarkdownString(TRANSFORMERS, undefined, true),
+        ),
+      ).toBe(original);
+      editor.setEditorState(
+        editor.parseEditorState(
+          JSON.stringify(editor.getEditorState().toJSON()),
+        ),
+      );
+      expect(
+        editor.read(() =>
+          $convertToMarkdownString(TRANSFORMERS, undefined, true),
+        ),
+      ).toBe(original);
+    } finally {
+      unregister();
+    }
+  });
+
+  it.each([false, true])(
+    'uses emitted neighbours for three formatted runs (wrappers: %s)',
+    wrappers => {
+      for (const values of [
+        ['a', 'b', 'c'],
+        ['<', 'b', '>'],
+        ['&', '#', '60;'],
+      ]) {
+        for (const left of [0, 1, 2, 3, 16, 17, 18, 19])
+          for (const middle of [0, 1, 2, 3, 16, 17, 18, 19])
+            for (const right of [0, 1, 2, 3, 16, 17, 18, 19]) {
+              const formats = [left, middle, right];
+              const editor = createTestEditor();
+              editor.update(
+                () =>
+                  $getRoot().append(
+                    $createParagraphNode().append(
+                      ...values.map((value, index) => {
+                        const text = $createTextNode(value)
+                          .setFormat(formats[index])
+                          .setStyle(`order: ${index}`);
+                        return wrappers
+                          ? $createMarkNode([String(index)]).append(text)
+                          : text;
+                      }),
+                    ),
+                  ),
+                {discrete: true},
+              );
+              const written = editor.read(() => $convertToMarkdownString());
+              expect(
+                formatProjection(written),
+                JSON.stringify({formats, values, written}),
+              ).toEqual(
+                values.flatMap((value, index) =>
+                  Array.from(value, char => `${formats[index]}:${char}`),
+                ),
+              );
+            }
+      }
+    },
+  );
+
+  it('ignores an omitted formatted node when choosing delimiters', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createTextNode('a'),
+            $createTextNode('omitted')
+              .toggleFormat('bold')
+              .setStyle('color: red'),
+            $createTextNode('c').toggleFormat('bold'),
+          ),
+        ),
+      {discrete: true},
+    );
+    const custom: TextMatchTransformer = {
+      dependencies: [],
+      export: node =>
+        $isTextNode(node) && node.getTextContent() === 'omitted' ? '' : null,
+      regExp: /$^/,
+      type: 'text-match',
+    };
+    expect(
+      formatProjection(
+        editor.read(() => $convertToMarkdownString([custom, ...TRANSFORMERS])),
+      ),
+    ).toEqual(['0:a', '1:c']);
+  });
+
+  it('review regression: preserves three overlapping format runs', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createTextNode('a').setFormat(3),
+            $createTextNode('b').setFormat(1),
+            $createTextNode('c').setFormat(2),
+          ),
+        ),
+      {discrete: true},
+    );
+    expect(
+      formatProjection(editor.read(() => $convertToMarkdownString())),
+    ).toEqual(['3:a', '1:b', '2:c']);
+  });
+
+  it.each(['# foo\\\nbar', 'foo\\\n\nbar', '- foo\\\n- bar'])(
+    'review regression: retains literal backslashes at block boundaries: %j',
+    markdown => {
+      const editor = createTestEditor();
+      editor.update(
+        () =>
+          $convertFromMarkdownString(markdown, TRANSFORMERS, undefined, true),
+        {discrete: true},
+      );
+      const written = editor.read(() =>
+        $convertToMarkdownString(TRANSFORMERS, undefined, true),
+      );
+      expect(parse(written)).toEqual(parse(markdown));
+    },
+  );
+
+  it('review regression: deleting a break does not transfer it to the following boundary', () => {
+    const editor = createTestEditor();
+    const markdown = 'foo\\\nbar\nbaz';
+    editor.update(
+      () => $convertFromMarkdownString(markdown, TRANSFORMERS, undefined, true),
+      {discrete: true},
+    );
+    const snapshot = editor.getEditorState();
+    editor.update(
+      () => {
+        const text = $getRoot()
+          .getAllTextNodes()
+          .find(node => node.getTextContent() === 'bar');
+        assert(text);
+        text.select(0, 0);
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        selection.deleteCharacter(true);
+      },
+      {discrete: true},
+    );
+    expect(
+      editor.read(() =>
+        $convertToMarkdownString(TRANSFORMERS, undefined, true),
+      ),
+    ).toBe('foobar\nbaz');
+    editor.setEditorState(snapshot);
+    expect(
+      editor.read(() =>
+        $convertToMarkdownString(TRANSFORMERS, undefined, true),
+      ),
+    ).toBe(markdown);
+  });
+
   it.each([false, true])(
     'respects custom exporters between code runs (selection: %s)',
     selected => {
@@ -622,11 +1060,16 @@ describe('intentional syntax', () => {
     },
   );
 
-  it('keeps preserved break state on blocks across copy, text edits, JSON and selection', () => {
+  it('keeps hard-break nodes through copying, text edits, JSON, deletion and selection', () => {
     const editor = createTestEditor();
     editor.update(
       () =>
-        $convertFromMarkdownString('foo\\\nbar', TRANSFORMERS, undefined, true),
+        $convertFromMarkdownString(
+          'foo\\\nbar\nbaz',
+          TRANSFORMERS,
+          undefined,
+          true,
+        ),
       {discrete: true},
     );
     editor.update(
@@ -649,7 +1092,7 @@ describe('intentional syntax', () => {
       editor.read(() =>
         $convertToMarkdownString(TRANSFORMERS, undefined, true),
       ),
-    ).toBe('foo\\<b>\\\nbar');
+    ).toBe('foo\\<b>\\\nbar\nbaz');
     editor.update(
       () => {
         const first = $getRoot().getFirstChildOrThrow();
@@ -664,14 +1107,20 @@ describe('intentional syntax', () => {
       ),
       'foo<b>',
     );
-    editor.update(() => $getRoot().getLastChildOrThrow().remove(), {
-      discrete: true,
-    });
+    editor.update(
+      () => {
+        const first = $getRoot().getFirstChildOrThrow();
+        assert($isElementNode(first));
+        first.getChildAtIndex(1)?.remove();
+        $getRoot().getLastChildOrThrow().remove();
+      },
+      {discrete: true},
+    );
     expectLiteral(
       editor.read(() =>
         $convertToMarkdownString(TRANSFORMERS, undefined, true),
       ),
-      'foo<b>',
+      'foo<b>bar',
     );
   });
 

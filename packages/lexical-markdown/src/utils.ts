@@ -14,13 +14,8 @@ import type {
   Transformer,
 } from './MarkdownTransformers';
 
-import {decodeNamedCharacterReference} from 'decode-named-character-reference';
-import {
-  $isParagraphNode,
-  $isTextNode,
-  createState,
-  type LexicalNode,
-} from 'lexical';
+import {characterEntities} from 'character-entities';
+import {$isParagraphNode, $isTextNode, type LexicalNode} from 'lexical';
 
 export function indexBy<T>(
   list: T[],
@@ -95,7 +90,9 @@ function decodeCharacterReference(
   name: string | undefined,
 ): string {
   if (name !== undefined) {
-    return decodeNamedCharacterReference(name) || match;
+    return Object.prototype.hasOwnProperty.call(characterEntities, name)
+      ? characterEntities[name]
+      : match;
   }
   const codePoint = digits !== undefined ? Number(digits) : parseInt(hex!, 16);
   return codePoint === 0 ||
@@ -128,12 +125,3 @@ export function isEscaped(text: string, index: number): boolean {
   }
   return (index - start) % 2 === 1;
 }
-
-// In preserve-newlines mode each source line is a block. Its explicit hard
-// break marker belongs to the block's following line ending, not to its text.
-// The restricted spelling survives JSON and copying without giving any text raw
-// semantics, and cannot be changed by splitting or merging TextNodes.
-export const preservedLineBreakState = createState('mdPreservedLineBreak', {
-  parse: value =>
-    typeof value === 'string' && /^(\\| {2,})$/.test(value) ? value : '',
-});

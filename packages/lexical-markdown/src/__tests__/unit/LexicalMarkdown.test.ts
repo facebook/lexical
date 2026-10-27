@@ -994,10 +994,12 @@ describe('Markdown', () => {
     {
       html: '<p><i><em style="white-space: pre-wrap;">text</em></i><i><b><strong style="white-space: pre-wrap;">text</strong></b></i></p>',
       md: '*text**text***',
+      mdAfterExport: '*tex&#116;**&#116;ext***',
     },
     {
       html: '<p><b><strong style="white-space: pre-wrap;">text</strong></b><i><b><strong style="white-space: pre-wrap;">text</strong></b></i></p>',
       md: '**text*text***',
+      mdAfterExport: '**tex&#116;*&#116;ext***',
     },
     {
       html: '<p><i><em style="white-space: pre-wrap;">foo**bar</em></i></p>',
@@ -1628,7 +1630,7 @@ describe('Markdown', () => {
           ['ld', ITALIC],
           ['!', 0],
         ],
-        'he**llo*wor***_ld_!',
+        'h&#101;**&#108;l&#111;*&#119;o&#114;***_&#108;d_!',
       );
     });
 
@@ -1641,7 +1643,7 @@ describe('Markdown', () => {
           ['d', BOLD],
           ['e', 0],
         ],
-        'a*b**c***__d__&#101;',
+        '&#97;*&#98;**&#99;***__&#100;__&#101;',
       );
     });
 
@@ -1652,7 +1654,7 @@ describe('Markdown', () => {
           ['b', STRIKE | BOLD],
           ['c', BOLD],
         ],
-        '~~a**b**~~__c__',
+        '~~&#97;**&#98;**~~**&#99;**',
       );
     });
 
@@ -1663,7 +1665,7 @@ describe('Markdown', () => {
           ['b', BOLD | INLINE_CODE],
           ['c', BOLD],
         ],
-        '**a`b`c**',
+        '**&#97;`b`&#99;**',
       );
     });
 
@@ -2763,7 +2765,7 @@ describe('markdown whitespace import (default mode)', () => {
     ).toBe('foo   \nbar');
   });
 
-  it('does not copy markdown hard line break markers when line breaks are copied', () => {
+  it('preserves hard line break semantics when line breaks are copied', () => {
     const editor = createTestEditor();
     const marker = getHardLineBreakMarker('foo   ');
 
@@ -2774,7 +2776,7 @@ describe('markdown whitespace import (default mode)', () => {
 
         expect($getState(lineBreakNode, hardLineBreakState)).toBe('   ');
         const copy = $copyNode(lineBreakNode);
-        expect($getState(copy, hardLineBreakState)).toBe('');
+        expect($getState(copy, hardLineBreakState)).toBe(marker);
         expect($getState(lineBreakNode, hardLineBreakState)).toBe('   ');
       },
       {discrete: true},

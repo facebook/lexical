@@ -98,17 +98,24 @@ Source spelling of references and escapes is not preserved.
 
 Links have a `LinkNode` representation. Angle URI and email autolinks import as
 links and export using normal link syntax. Code spans and fenced code blocks
-keep their own literal-content rules. With `shouldPreserveNewLines`, backslashes
-in text are still escaped; a source hard-break marker belongs to its block's
-following line ending and survives JSON serialization and copying separately.
+keep their own literal-content rules. With `shouldPreserveNewLines`, soft source lines remain separate blocks; real
+hard breaks use `LineBreakNode`, including their source marker spelling. Literal
+backslashes at block boundaries remain text. Editing, copying and JSON use the
+normal node lifecycle rather than hidden state attached to paragraph boundaries.
+Copied hard breaks retain their marker so they do not become soft breaks when
+exported; earlier versions discarded that source state during copying.
 
 The default transformers do not interpret raw HTML. HTML-looking text imports
 as text and exports escaped. Applications that intentionally support raw HTML
 or other source constructs should represent them with custom nodes and
 transformers, rather than relying on unescaped `TextNode` content. An export
-transformer's returned string is intentional Markdown and is emitted unchanged;
-the transformer owns that syntax. Use its `exportFormat` callback for literal
-text and `exportChildren` for ordinary child content.
+transformer owns any Markdown syntax it authors. Use its `exportFormat` callback
+for literal text and `exportChildren` for ordinary child content. Returning an
+unchanged callback result, their concatenation in call order, or repetitions of
+one result delegates that content to the surrounding formatting stream; nodes
+are not exported again. Wrapping or rewriting a result instead produces an
+opaque Markdown string that is emitted unchanged. Such transformers must supply
+complete syntax and account for its boundaries with surrounding content.
 
 There're three types of transformers:
 

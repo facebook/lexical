@@ -999,6 +999,29 @@ describe('MdastHtmlExtension', () => {
     });
   });
 
+  it('keeps a block raw HTML imports as in its aligned cell paragraph', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          MdastCommonMarkExtension,
+          MdastExtension,
+          MdastHtmlExtension,
+          MdastTableExtension,
+        ],
+        name: '[root]',
+      }),
+    );
+    editor.update(
+      () => $convertFromMarkdownString('| <hr> | b |\n| :-: | - |\n| x | y |'),
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(
+        '|     | b |\n| :-: | - |\n|  x  | y |\n\n***',
+      );
+    });
+  });
+
   it('keeps the inline content of a block without a rule in its cell', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({

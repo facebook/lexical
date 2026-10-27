@@ -129,7 +129,8 @@ contributing `mdast-util-to-markdown` options through
 `toMarkdownExtensions`.
 
 GFM tables (`MdastTableExtension`) import a column's alignment as the
-element format of the paragraph in each of its cells, and write it from
+element format of the blocks in each of its cells (a paragraph of its
+inline content), and write it from
 the content of the column's header cell (the format of the block holding
 the cell's first inline content, or of the nearest block around it with
 one, or, when the cell has no inline content, of its first element

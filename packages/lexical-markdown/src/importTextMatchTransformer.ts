@@ -8,6 +8,8 @@
 import type {TextMatchTransformer} from './MarkdownTransformers';
 import type {TextNode} from 'lexical';
 
+import {isEscaped} from './utils';
+
 export function findOutermostTextMatchTransformer(
   textNode_: TextNode,
   textMatchTransformers: TextMatchTransformer[],
@@ -28,7 +30,10 @@ export function findOutermostTextMatchTransformer(
     if (!transformer.replace || !transformer.importRegExp) {
       continue;
     }
-    const match = textNode.getTextContent().match(transformer.importRegExp);
+    const match = matchUnescaped(
+      textNode.getTextContent(),
+      transformer.importRegExp,
+    );
 
     if (!match) {
       continue;
@@ -72,6 +77,26 @@ export function findOutermostTextMatchTransformer(
     startIndex: foundMatchStartIndex,
     transformer: foundMatchTransformer,
   };
+}
+
+const GLOBAL_REGEXPS = new WeakMap<RegExp, RegExp>();
+
+// An escaped opener is text. Continue searching so it cannot hide a later
+// genuine match, and preserve the original match indices for transformers.
+function matchUnescaped(text: string, regExp: RegExp): RegExpExecArray | null {
+  let search = GLOBAL_REGEXPS.get(regExp);
+  if (!search) {
+    search = new RegExp(regExp.source, regExp.flags.replace(/[gy]/g, '') + 'g');
+    GLOBAL_REGEXPS.set(regExp, search);
+  }
+  search.lastIndex = 0;
+  for (let match; (match = search.exec(text)); ) {
+    if (!isEscaped(text, match.index) || !/^[!-/:-@[-`{-~]/.test(match[0])) {
+      return match;
+    }
+    search.lastIndex = match.index + 1;
+  }
+  return null;
 }
 
 export function importFoundTextMatchTransformer(

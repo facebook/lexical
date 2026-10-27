@@ -20,7 +20,11 @@
     "@lexical/selection": "workspace:*",
     "@lexical/text": "workspace:*",
     "@lexical/utils": "workspace:*",
+    "decode-named-character-reference": "^1.3.0",
     "lexical": "workspace:*"
+  },
+  "devDependencies": {
+    "mdast-util-from-markdown": "^2.0.3"
   },
   "repository": {
     "type": "git",

@@ -87,6 +87,29 @@ And bundles of commonly used transformers:
 
 Transformers are explicitly passed to markdown API allowing application-specific subset of markdown or custom transformers.
 
+### Text and Markdown syntax
+
+The default exporter treats `TextNode` content as literal text. Characters that
+could become character references, HTML, or link syntax are escaped, including
+when a construct spans several styled text nodes or a partial selection.
+Import reads backslash escapes and decimal, hexadecimal, and named character
+references once. Their decoded characters remain text, not new Markdown syntax.
+Source spelling of references and escapes is not preserved.
+
+Links have a `LinkNode` representation. Angle URI and email autolinks import as
+links and export using normal link syntax. Code spans and fenced code blocks
+keep their own literal-content rules. With `shouldPreserveNewLines`, backslashes
+in text are still escaped; a source hard-break marker belongs to its block's
+following line ending and survives JSON serialization and copying separately.
+
+The default transformers do not interpret raw HTML. HTML-looking text imports
+as text and exports escaped. Applications that intentionally support raw HTML
+or other source constructs should represent them with custom nodes and
+transformers, rather than relying on unescaped `TextNode` content. An export
+transformer's returned string is intentional Markdown and is emitted unchanged;
+the transformer owns that syntax. Use its `exportFormat` callback for literal
+text and `exportChildren` for ordinary child content.
+
 There're three types of transformers:
 
 - **Element transformer** handles top level elements (lists, headings, quotes, tables or code blocks)

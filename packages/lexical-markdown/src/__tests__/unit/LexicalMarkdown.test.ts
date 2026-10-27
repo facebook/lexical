@@ -737,6 +737,7 @@ describe('Markdown', () => {
       // Export only: import will use $...$ to transform <span /> to <mark /> due to HIGHLIGHT_TEXT_MATCH_IMPORT
       html: "<p><span style='white-space: pre-wrap;'>$$H$&e$`l$'l$o$</span></p>",
       md: "$$H$&e$\\`l$'l$o$",
+      mdAfterExport: "$$H$\\&e$\\`l$'l$o$",
       skipImport: true,
     },
     {
@@ -829,6 +830,7 @@ describe('Markdown', () => {
     {
       html: '<p><span style="white-space: pre-wrap;">[foo </span><a href="/uri"><span style="white-space: pre-wrap;">bar</span></a><span style="white-space: pre-wrap;">](/uri)</span></p>',
       md: '[foo [bar](/uri)](/uri)',
+      mdAfterExport: '\\[foo [bar](/uri)\\](/uri)',
     },
     {
       // https://spec.commonmark.org/0.31.2/#link-destination allows a balanced
@@ -949,27 +951,36 @@ describe('Markdown', () => {
     {
       html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">[h]ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">h[e]llo</span></a></p>',
       md: '[[h]ello](https://lexical.dev)[h[e]llo](https://lexical.dev)',
+      mdAfterExport:
+        '[\\[h\\]ello](https://lexical.dev)[h\\[e\\]llo](https://lexical.dev)',
     },
     {
       html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">h[e[ll]]o</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
       md: '[h[e[ll]]o](https://lexical.dev)[world](https://lexical.dev)',
+      mdAfterExport:
+        '[h\\[e\\[ll\\]\\]o](https://lexical.dev)[world](https://lexical.dev)',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">[hello]](https://lexical.dev)</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
       md: '[hello]](https://lexical.dev)[world](https://lexical.dev)',
+      mdAfterExport:
+        '\\[hello\\]\\](https://lexical.dev)[world](https://lexical.dev)',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">[h</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
       md: '[h[ello](https://lexical.dev)[world](https://lexical.dev)',
+      mdAfterExport:
+        '\\[h[ello](https://lexical.dev)[world](https://lexical.dev)',
     },
     {
       html: '<p><i><em style="white-space: pre-wrap;">[h</em></i><a href="https://lexical.dev"><i><em style="white-space: pre-wrap;">ello</em></i></a></p>',
       md: '*[h[ello](https://lexical.dev)*',
-      mdAfterExport: '*[h*[*ello*](https://lexical.dev)',
+      mdAfterExport: '*\\[h*[*ello*](https://lexical.dev)',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">[](https://lexical.dev)</span></p>',
       md: '[](https://lexical.dev)',
+      mdAfterExport: '\\[\\](https://lexical.dev)',
     },
     {
       html: '<p><a href="https://lexical.dev"><b><strong style="white-space: pre-wrap;">link</strong></b></a><b><strong style="white-space: pre-wrap;">text</strong></b></p>',
@@ -1030,7 +1041,7 @@ describe('Markdown', () => {
     {
       html: '<p><span style="white-space: pre-wrap;">!"#$%&amp;\'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~</span></p>',
       md: '\\!\\"\\#\\$\\%\\&\\\'\\(\\)\\*\\+\\,\\-\\.\\/\\:\\;\\<\\=\\>\\?\\@\\[\\\\\\]\\^\\_\\`\\{\\|\\}\\~',
-      mdAfterExport: '!"#$%&\'()\\*+,-./:;<=>?@[\\\\]^\\_\\`{|}\\~',
+      mdAfterExport: '!"#$%\\&\'()\\*+,-./:;\\<=>?@\\[\\\\\\]^\\_\\`{|}\\~',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">\\→\\A\\a\\ \\3\\φ\\«</span></p>',
@@ -1617,7 +1628,7 @@ describe('Markdown', () => {
           ['ld', ITALIC],
           ['!', 0],
         ],
-        'he**llo*wor****ld*!',
+        'he**llo*wor***_ld_!',
       );
     });
 
@@ -1630,7 +1641,7 @@ describe('Markdown', () => {
           ['d', BOLD],
           ['e', 0],
         ],
-        'a*b**c*****d**e',
+        'a*b**c***__d__&#101;',
       );
     });
 
@@ -1641,7 +1652,7 @@ describe('Markdown', () => {
           ['b', STRIKE | BOLD],
           ['c', BOLD],
         ],
-        '~~a**b**~~**c**',
+        '~~a**b**~~__c__',
       );
     });
 
@@ -1664,7 +1675,7 @@ describe('Markdown', () => {
       const editor = overlapEditor();
       editor.update(
         () => {
-          $convertFromMarkdownString('he**llo*wor****ld*!', TRANSFORMERS);
+          $convertFromMarkdownString('he**llo*wor***_ld_!', TRANSFORMERS);
         },
         {discrete: true},
       );
@@ -2603,7 +2614,7 @@ describe('markdown whitespace import (default mode)', () => {
           HIGHLIGHT_TEXT_MATCH_IMPORT,
         ]),
       ),
-    ).toBe(md);
+    ).toBe('hello world&#32;&#32;&#32;\n\nnext paragraph');
   });
 
   it('preserves leading whitespace on a standalone paragraph line (default mode)', () => {
@@ -2626,7 +2637,7 @@ describe('markdown whitespace import (default mode)', () => {
           HIGHLIGHT_TEXT_MATCH_IMPORT,
         ]),
       ),
-    ).toBe(md);
+    ).toBe('&#32;&#32;&#32;hello world\n\nnext paragraph');
   });
 
   it('preserves two-space hard line break in default mode', () => {
@@ -3869,7 +3880,7 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
     const result = editor.read('latest', () =>
       $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
     );
-    expect(result).toBe('  **b**');
+    expect(result).toBe('&#32;&#32;**b**');
   });
 });
 

@@ -14,7 +14,13 @@ import type {
   Transformer,
 } from './MarkdownTransformers';
 
-import {$isParagraphNode, $isTextNode, type LexicalNode} from 'lexical';
+import {decodeNamedCharacterReference} from 'decode-named-character-reference';
+import {
+  $isParagraphNode,
+  $isTextNode,
+  createState,
+  type LexicalNode,
+} from 'lexical';
 
 export function indexBy<T>(
   list: T[],
@@ -76,12 +82,22 @@ export function isEmptyParagraph(node: LexicalNode): boolean {
   );
 }
 
-// A decimal character reference has one to seven digits, and one that names
+// A numeric character reference has one to seven decimal or one to six hex
+// digits. A named reference is decoded only if it is an HTML entity name.
+// A reference that names
 // U+0000, a surrogate or a number past U+10FFFF reads as U+FFFD instead of
 // making `String.fromCodePoint` throw.
 // https://spec.commonmark.org/0.31.2/#decimal-numeric-character
-function decodeDecimalCharacterReference(_: string, digits: string): string {
-  const codePoint = Number(digits);
+function decodeCharacterReference(
+  match: string,
+  digits: string | undefined,
+  hex: string | undefined,
+  name: string | undefined,
+): string {
+  if (name !== undefined) {
+    return decodeNamedCharacterReference(name) || match;
+  }
+  const codePoint = digits !== undefined ? Number(digits) : parseInt(hex!, 16);
   return codePoint === 0 ||
     (codePoint >= 0xd800 && codePoint <= 0xdfff) ||
     codePoint > 0x10ffff
@@ -90,7 +106,34 @@ function decodeDecimalCharacterReference(_: string, digits: string): string {
 }
 
 export function unescapeText(value: string): string {
-  return value
-    .replace(/\\([!-/:-@[-`{-~])/g, '$1')
-    .replace(/&#(\d{1,7});/g, decodeDecimalCharacterReference);
+  // One pass: an escaped ampersand and the result of a decoded reference
+  // must never be interpreted as another reference.
+  return value.replace(
+    /\\([!-/:-@[-`{-~])|&(?:#(\d{1,7})|#[xX]([\da-fA-F]{1,6})|([a-zA-Z][\da-zA-Z]{0,31}));/g,
+    (
+      match,
+      escaped: string | undefined,
+      digits: string | undefined,
+      hex: string | undefined,
+      name: string | undefined,
+    ) => escaped ?? decodeCharacterReference(match, digits, hex, name),
+  );
 }
+
+/** Whether the character at index follows an odd run of backslashes. */
+export function isEscaped(text: string, index: number): boolean {
+  let start = index;
+  while (start > 0 && text[start - 1] === '\\') {
+    start--;
+  }
+  return (index - start) % 2 === 1;
+}
+
+// In preserve-newlines mode each source line is a block. Its explicit hard
+// break marker belongs to the block's following line ending, not to its text.
+// The restricted spelling survives JSON and copying without giving any text raw
+// semantics, and cannot be changed by splitting or merging TextNodes.
+export const preservedLineBreakState = createState('mdPreservedLineBreak', {
+  parse: value =>
+    typeof value === 'string' && /^(\\| {2,})$/.test(value) ? value : '',
+});

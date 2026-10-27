@@ -6,6 +6,7 @@
  *
  */
 
+import {$isAutoLinkNode, $isLinkNode} from '@lexical/link';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
   $getRoot,
@@ -13,11 +14,13 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
+  $isRangeSelection,
   $isTextNode,
   type BaseSelection,
   type ElementNode,
   type LexicalNode,
   type LineBreakNode,
+  TEXT_TYPE_TO_FORMAT,
   type TextFormatType,
   type TextNode,
 } from 'lexical';
@@ -31,7 +34,11 @@ import {
   type TextMatchTransformer,
   type Transformer,
 } from './MarkdownTransformers';
-import {isEmptyParagraph, transformersByType} from './utils';
+import {
+  isEmptyParagraph,
+  preservedLineBreakState,
+  transformersByType,
+} from './utils';
 
 /**
  * Renders string from markdown. The selection is moved to the start after the operation.
@@ -221,126 +228,15 @@ function $exportChildrenForSelection(
   unclosedTags?: {format: TextFormatType; tag: string}[],
   unclosableTags?: {format: TextFormatType; tag: string}[],
 ): {shouldInclude: boolean; markdown: string} {
-  const output = [];
-  const children = node.getChildren();
-  let anyChildIncluded = false;
-
-  if (!unclosedTags) {
-    unclosedTags = [];
-  }
-  if (!unclosableTags) {
-    unclosableTags = [];
-  }
-
-  mainLoop: for (const child of children) {
-    let childIncluded = child.isSelected(selection);
-
-    // Try text match transformers (links, etc.)
-    for (const transformer of textMatchTransformers) {
-      if (!transformer.export) {
-        continue;
-      }
-
-      const result = transformer.export(
-        child,
-        parentNode =>
-          $exportChildrenForSelection(
-            parentNode,
-            selection,
-            textFormatTransformers,
-            textMatchTransformers,
-            shouldPreserveNewLines,
-            unclosedTags,
-            [...unclosableTags, ...unclosedTags],
-          ).markdown,
-        (textNode, textContent) => {
-          const slicedNode = $sliceSelectedTextNodeContent(
-            selection,
-            textNode,
-            'clone',
-          );
-          return exportTextFormat(
-            textNode,
-            slicedNode.getTextContent(),
-            textFormatTransformers,
-            unclosedTags,
-            unclosableTags,
-            shouldPreserveNewLines,
-          );
-        },
-      );
-
-      if (result != null) {
-        // Check extractWithChild if this node wasn't directly selected
-        if (
-          !childIncluded &&
-          $isElementNode(child) &&
-          child.getChildren().some(c => c.isSelected(selection)) &&
-          child.extractWithChild(child, selection, 'html')
-        ) {
-          childIncluded = true;
-        }
-        if (childIncluded) {
-          output.push(result);
-          anyChildIncluded = true;
-        }
-        continue mainLoop;
-      }
-    }
-
-    if ($isLineBreakNode(child)) {
-      if (childIncluded) {
-        output.push($exportLineBreak(child));
-        anyChildIncluded = true;
-      }
-    } else if ($isTextNode(child)) {
-      if (childIncluded) {
-        const target = $sliceSelectedTextNodeContent(selection, child, 'clone');
-        output.push(
-          exportTextFormat(
-            child,
-            target.getTextContent(),
-            textFormatTransformers,
-            unclosedTags,
-            unclosableTags,
-            shouldPreserveNewLines,
-          ),
-        );
-        anyChildIncluded = true;
-      }
-    } else if ($isElementNode(child)) {
-      const childResult = $exportChildrenForSelection(
-        child,
-        selection,
-        textFormatTransformers,
-        textMatchTransformers,
-        shouldPreserveNewLines,
-        unclosedTags,
-        unclosableTags,
-      );
-
-      // extractWithChild: if child has selected descendants, ask parent if it should be included
-      if (
-        !childIncluded &&
-        childResult.shouldInclude &&
-        child.extractWithChild(child, selection, 'html')
-      ) {
-        childIncluded = true;
-      }
-
-      if (childIncluded || childResult.shouldInclude) {
-        output.push(childResult.markdown);
-        anyChildIncluded = true;
-      }
-    } else if ($isDecoratorNode(child)) {
-      if (childIncluded) {
-        output.push(child.getTextContent());
-        anyChildIncluded = true;
-      }
-    }
-  }
-
-  return {markdown: output.join(''), shouldInclude: anyChildIncluded};
+  return $renderChildren(
+    node,
+    textFormatTransformers,
+    textMatchTransformers,
+    shouldPreserveNewLines,
+    unclosedTags,
+    unclosableTags,
+    selection,
+  );
 }
 
 function $exportTopLevelElements(
@@ -388,99 +284,191 @@ function $exportTopLevelElements(
 
 function $exportChildren(
   node: ElementNode,
-  textTransformersIndex: TextFormatTransformer[],
+  textFormatTransformers: TextFormatTransformer[],
   textMatchTransformers: TextMatchTransformer[],
   unclosedTags?: {format: TextFormatType; tag: string}[],
   unclosableTags?: {format: TextFormatType; tag: string}[],
   shouldPreserveNewLines: boolean = false,
 ): string {
-  const output = [];
-  const children = node.getChildren();
-  // keep track of unclosed tags from the very beginning
-  if (!unclosedTags) {
-    unclosedTags = [];
-  }
-  if (!unclosableTags) {
-    unclosableTags = [];
-  }
+  return $renderChildren(
+    node,
+    textFormatTransformers,
+    textMatchTransformers,
+    shouldPreserveNewLines,
+    unclosedTags,
+    unclosableTags,
+  ).markdown;
+}
 
-  mainLoop: for (const child of children) {
-    for (const transformer of textMatchTransformers) {
-      if (!transformer.export) {
-        continue;
-      }
+/**
+ * Classify each child once before combining literal code runs. Transparent
+ * wrappers share this stream; a transformer's owned string or callback is a
+ * boundary. Never look ahead through nodes a custom exporter may consume.
+ */
+function $renderChildren(
+  node: ElementNode,
+  textFormatTransformers: TextFormatTransformer[],
+  textMatchTransformers: TextMatchTransformer[],
+  shouldPreserveNewLines: boolean,
+  unclosedTags: {format: TextFormatType; tag: string}[] = [],
+  unclosableTags: {format: TextFormatType; tag: string}[] = [],
+  selection?: BaseSelection,
+): {shouldInclude: boolean; markdown: string} {
+  const output: string[] = [];
+  let codeRun: {first: TextNode; last: TextNode; text: string} | null = null;
 
-      const result = transformer.export(
-        child,
-        parentNode =>
-          $exportChildren(
-            parentNode,
-            textTransformersIndex,
-            textMatchTransformers,
-            unclosedTags,
-            // Add current unclosed tags to the list of unclosable tags - we don't want nested tags from
-            // textmatch transformers to close the outer ones, as that may result in invalid markdown.
-            // E.g. **text [text**](https://lexical.io)
-            // is invalid markdown, as the closing ** is inside the link.
-            //
-            [...unclosableTags, ...unclosedTags],
-            shouldPreserveNewLines,
-          ),
-        (textNode, textContent) =>
-          exportTextFormat(
-            textNode,
-            textContent,
-            textTransformersIndex,
-            unclosedTags,
-            unclosableTags,
-            shouldPreserveNewLines,
-          ),
-      );
-
-      if (result != null) {
-        output.push(result);
-        continue mainLoop;
-      }
-    }
-
-    if ($isLineBreakNode(child)) {
-      output.push($exportLineBreak(child));
-    } else if ($isTextNode(child)) {
+  const $flushCode = () => {
+    if (codeRun !== null) {
       output.push(
-        exportTextFormat(
-          child,
-          child.getTextContent(),
-          textTransformersIndex,
+        $exportTextFormat(
+          codeRun.first,
+          codeRun.text,
+          textFormatTransformers,
           unclosedTags,
           unclosableTags,
           shouldPreserveNewLines,
+          selection,
+          codeRun.last,
         ),
       );
-    } else if ($isElementNode(child)) {
-      // empty paragraph returns ""
-      output.push(
-        $exportChildren(
-          child,
-          textTransformersIndex,
-          textMatchTransformers,
-          unclosedTags,
-          unclosableTags,
-          shouldPreserveNewLines,
-        ),
-      );
-    } else if ($isDecoratorNode(child)) {
-      output.push(child.getTextContent());
+      codeRun = null;
     }
-  }
+  };
 
-  return output.join('');
+  const $append = (parent: ElementNode): boolean => {
+    let anyIncluded = false;
+    mainLoop: for (const child of parent.getChildren()) {
+      let included = selection === undefined || child.isSelected(selection);
+      for (const transformer of textMatchTransformers) {
+        if (!transformer.export) continue;
+        const result = transformer.export(
+          child,
+          container => {
+            $flushCode();
+            return $renderChildren(
+              container,
+              textFormatTransformers,
+              textMatchTransformers,
+              shouldPreserveNewLines,
+              unclosedTags,
+              [...unclosableTags, ...unclosedTags],
+              selection,
+            ).markdown;
+          },
+          (textNode, textContent) => {
+            $flushCode();
+            const content = selection
+              ? $sliceSelectedTextNodeContent(
+                  selection,
+                  textNode,
+                  'clone',
+                ).getTextContent()
+              : textContent;
+            return $exportTextFormat(
+              textNode,
+              content,
+              textFormatTransformers,
+              unclosedTags,
+              unclosableTags,
+              shouldPreserveNewLines,
+              selection,
+            );
+          },
+        );
+        if (result !== null && result !== undefined) {
+          if (
+            selection &&
+            !included &&
+            $isElementNode(child) &&
+            child
+              .getChildren()
+              .some(candidate => candidate.isSelected(selection)) &&
+            child.extractWithChild(child, selection, 'html')
+          ) {
+            included = true;
+          }
+          if (included) {
+            // An omitted node introduces no delimiter between ordinary runs.
+            if (result !== '') {
+              $flushCode();
+              output.push(result);
+            }
+            anyIncluded = true;
+          }
+          continue mainLoop;
+        }
+      }
+      if ($isElementNode(child)) {
+        anyIncluded = $append(child) || included || anyIncluded;
+      } else if (included) {
+        anyIncluded = true;
+        if ($isTextNode(child)) {
+          const content = selection
+            ? $sliceSelectedTextNodeContent(
+                selection,
+                child,
+                'clone',
+              ).getTextContent()
+            : child.getTextContent();
+          if (content === '') continue;
+          if (child.hasFormat('code')) {
+            if (
+              codeRun !== null &&
+              codeRun.first.getFormat() === child.getFormat()
+            ) {
+              codeRun.text += content;
+              codeRun.last = child;
+            } else {
+              $flushCode();
+              codeRun = {first: child, last: child, text: content};
+            }
+          } else {
+            $flushCode();
+            output.push(
+              $exportTextFormat(
+                child,
+                content,
+                textFormatTransformers,
+                unclosedTags,
+                unclosableTags,
+                shouldPreserveNewLines,
+                selection,
+              ),
+            );
+          }
+        } else {
+          $flushCode();
+          if ($isLineBreakNode(child)) output.push($exportLineBreak(child));
+          else if ($isDecoratorNode(child)) output.push(child.getTextContent());
+        }
+      }
+    }
+    if (
+      shouldPreserveNewLines &&
+      !parent.isInline() &&
+      $hasFollowingLine(parent) &&
+      (!selection ||
+        ((anyIncluded || parent.isSelected(selection)) &&
+          $selectionIncludesLineEnding(parent, selection)))
+    ) {
+      const marker = $getState(parent, preservedLineBreakState);
+      if (marker !== '') {
+        $flushCode();
+        output.push(marker);
+      }
+    }
+    return anyIncluded;
+  };
+  const shouldInclude = $append(node);
+  $flushCode();
+  return {markdown: output.join(''), shouldInclude};
 }
 
 function $exportLineBreak(node: LineBreakNode): string {
   return $getState(node, hardLineBreakState) + '\n';
 }
 
-function exportTextFormat(
+function $exportTextFormat(
   node: TextNode,
   textContent: string,
   textTransformers: TextFormatTransformer[],
@@ -488,6 +476,8 @@ function exportTextFormat(
   unclosedTags: {format: TextFormatType; tag: string}[],
   unclosableTags?: {format: TextFormatType; tag: string}[],
   shouldPreserveNewLines: boolean = false,
+  selection?: BaseSelection,
+  lastNode: TextNode = node,
 ): string {
   // This function handles the case of a string looking like this: "   foo   "
   // Where it would be invalid markdown to generate: "**   foo   **"
@@ -499,10 +489,67 @@ function exportTextFormat(
 
   let output = textContent;
   if (!isCode) {
-    // Preserve literal backslashes when preserving source newlines.
-    output = shouldPreserveNewLines
-      ? output.replace(/([*_`~])/g, '\\$1')
-      : output.replace(/([*_`~\\])/g, '\\$1');
+    // Escape literal introducers even when their syntax would be completed
+    // by another node. This is deliberately local to text: transformer output,
+    // link destinations, and code each have their own serialization rules.
+    // Backslashes are literal in either newline mode; source hard breaks are
+    // represented separately above and on LineBreakNodes.
+    output = output.replace(/([&<[\]*_`~\\\r\n])/g, char =>
+      char === '\r' ? '&#13;' : char === '\n' ? '&#10;' : '\\' + char,
+    );
+    const prefix = $getLinePrefix(node, selection);
+    if (prefix === '') {
+      output = output.replace(/^([#>+=-])/, '\\$1');
+    }
+    if (prefix !== null && /^\d{0,9}$/.test(prefix)) {
+      output = output.replace(
+        /^(\d*)([.)])/,
+        (found, digits: string, delimiter: string) =>
+          prefix.length + digits.length > 0 &&
+          prefix.length + digits.length <= 9
+            ? digits + '\\' + delimiter
+            : found,
+      );
+    }
+    // Delimiters next to punctuation do not flank a word. If a format starts
+    // or ends on punctuation at a run boundary, write the neighbouring word
+    // character as a reference so that the generated delimiter sees punctuation
+    // on both sides. The decoded character is still ordinary text.
+    const previous = $getAdjacentText(node, true);
+    const next = $getAdjacentText(node, false);
+    const chars = Array.from(textContent);
+    const first = chars[0];
+    const last = chars[chars.length - 1];
+    if (
+      first &&
+      !/[\s\p{P}\p{S}]/u.test(first) &&
+      previous &&
+      (previous.getFormat() & ~node.getFormat() & ~TEXT_TYPE_TO_FORMAT.code) !==
+        0 &&
+      (previous.hasFormat('code') ||
+        /[\p{P}\p{S}]$/u.test(previous.getTextContent()) ||
+        $isReopenedRun(previous))
+    ) {
+      output = `&#${first.codePointAt(0)};` + output.slice(first.length);
+    }
+    if (
+      last &&
+      !/[\s\p{P}\p{S}]/u.test(last) &&
+      next &&
+      (next.getFormat() & ~node.getFormat() & ~TEXT_TYPE_TO_FORMAT.code) !==
+        0 &&
+      (next.hasFormat('code') || /^[\p{P}\p{S}]/u.test(next.getTextContent()))
+    ) {
+      // The first and last character may be the same encoded character.
+      output =
+        chars.length === 1
+          ? `&#${last.codePointAt(0)};`
+          : output.slice(0, -last.length) + `&#${last.codePointAt(0)};`;
+    }
+    // A literal ! immediately before a generated link must not make an image.
+    if (output.endsWith('!') && $startsWithLink($getNextInline(node))) {
+      output = output.slice(0, -1) + '\\!';
+    }
   }
 
   let leadingSpace: string;
@@ -526,6 +573,25 @@ function exportTextFormat(
     trimmedOutput = match[2];
     trailingSpace = match[3];
     isWhitespaceOnly = trimmedOutput === '';
+    if ($getLinePrefix(node, selection) === '') {
+      leadingSpace = leadingSpace.replace(
+        /[ \t]/g,
+        char => `&#${char.charCodeAt(0)};`,
+      );
+    }
+    const following = $getAdjacentInline(node, false);
+    if (
+      following === null ||
+      $isLineBreakNode(following) ||
+      (selection && !following.isSelected(selection))
+    ) {
+      trailingSpace = trailingSpace.replace(
+        /[ \t]/g,
+        char => `&#${char.charCodeAt(0)};`,
+      );
+      if (isWhitespaceOnly)
+        output = output.replace(/[ \t]/g, char => `&#${char.charCodeAt(0)};`);
+    }
   }
 
   // the opening tags to be added to the result
@@ -534,14 +600,14 @@ function exportTextFormat(
   let closingTagsBefore = '';
   let closingTagsAfter = '';
 
-  const prevNode = getTextSibling(node, true);
-  const nextNode = getTextSibling(node, false);
+  const prevNode = $getTextSibling(node, true);
+  const nextNode = $getTextSibling(lastNode, false);
 
   const applied = new Set();
 
   for (const transformer of textTransformers) {
     const format = transformer.format[0];
-    const tag = transformer.tag;
+    let tag = transformer.tag;
 
     // Inline code uses a content-derived fence handled above, not a static tag.
     if (format === 'code') {
@@ -564,10 +630,23 @@ function exportTextFormat(
 
       // append the tag to openingTags, if it's not applied to the previous nodes,
       // or the nodes before that (which would result in an unclosed tag)
-      if (
-        !checkHasFormat(prevNode, format) ||
-        !unclosedTags.find(element => element.tag === tag)
-      ) {
+      if (!unclosedTags.find(element => element.format === format)) {
+        if (
+          checkHasFormat(prevNode, format) &&
+          (!selection ||
+            $sliceSelectedTextNodeContent(selection, prevNode!, 'clone')
+              .getTextContent()
+              .trim() !== '')
+        ) {
+          // Reopening an overlapping format immediately after its old tags
+          // were closed must not fuse the runs (e.g. three closing stars and
+          // one opening star). Use the other registered delimiter family.
+          const alternative = textTransformers.find(
+            candidate =>
+              candidate.format[0] === format && candidate.tag[0] !== tag[0],
+          );
+          tag = alternative ? alternative.tag : tag;
+        }
         unclosedTags.push({format, tag});
         openingTags += tag;
       }
@@ -616,7 +695,12 @@ function exportTextFormat(
   // If the node is entirely whitespace, we don't apply opening/closing tags around it.
   // However, it must still output closing tags from previous nodes.
   if (isWhitespaceOnly && !node.hasFormat('code')) {
-    return closingTagsBefore + output;
+    return (
+      closingTagsBefore +
+      ($getLinePrefix(node, selection) === ''
+        ? output.replace(/[ \t]/g, char => `&#${char.charCodeAt(0)};`)
+        : output)
+    );
   }
 
   // Flanking Compliance: Notice how openingTags and closingTagsAfter are placed INSIDE the whitespace boundaries!
@@ -630,14 +714,158 @@ function exportTextFormat(
   );
 }
 
-function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
-  const sibling = backward ? node.getPreviousSibling() : node.getNextSibling();
-
-  if ($isTextNode(sibling)) {
-    return sibling;
+/** A source line ending is selected only when the range extends past it. */
+function $hasFollowingLine(node: LexicalNode): boolean {
+  for (
+    let current: LexicalNode | null = node;
+    current;
+    current = current.getParent()
+  ) {
+    if (current.getNextSibling()) return true;
   }
+  return false;
+}
 
-  return null;
+function $selectionIncludesLineEnding(
+  node: ElementNode,
+  selection: BaseSelection,
+): boolean {
+  if (!$isRangeSelection(selection)) {
+    return false;
+  }
+  const end = selection.isBackward() ? selection.anchor : selection.focus;
+  const endNode = end.getNode();
+  let current: LexicalNode = node;
+  for (let parent = current.getParent(); parent; parent = current.getParent()) {
+    if (parent.is(endNode)) {
+      return (
+        end.type === 'element' && current.getIndexWithinParent() < end.offset
+      );
+    }
+    current = parent;
+  }
+  return (
+    !node.is(endNode) && !node.isParentOf(endNode) && node.isBefore(endNode)
+  );
+}
+
+/** The next inline node in this block, including across inline wrappers. */
+function $getNextInline(node: LexicalNode): LexicalNode | null {
+  let current = node;
+  while (!current.getNextSibling()) {
+    const parent = current.getParent();
+    if (!parent || !parent.isInline()) {
+      return null;
+    }
+    current = parent;
+  }
+  return current.getNextSibling();
+}
+
+function $startsWithLink(node: LexicalNode | null): boolean {
+  while ($isElementNode(node) && node.isInline() && !$isLinkNode(node)) {
+    node = node.getFirstChild() || $getNextInline(node);
+  }
+  return $isLinkNode(node) && !$isAutoLinkNode(node);
+}
+
+/** Adjacent text through transparent inline wrappers, stopping at links. */
+function $getAdjacentInline(
+  node: LexicalNode,
+  backward: boolean,
+): LexicalNode | null {
+  let current = node;
+  for (;;) {
+    const sibling = backward
+      ? current.getPreviousSibling()
+      : current.getNextSibling();
+    if (sibling) {
+      let candidate: LexicalNode | null = sibling;
+      while (
+        $isElementNode(candidate) &&
+        candidate.isInline() &&
+        !$isLinkNode(candidate)
+      ) {
+        const next: LexicalNode | null = backward
+          ? candidate.getLastChild()
+          : candidate.getFirstChild();
+        if (!next) break;
+        candidate = next;
+      }
+      if (
+        $isElementNode(candidate) &&
+        candidate.isInline() &&
+        !$isLinkNode(candidate) &&
+        candidate.getChildrenSize() === 0
+      ) {
+        current = candidate;
+        continue;
+      }
+      return candidate;
+    }
+    const parent = current.getParent();
+    if (!parent || !parent.isInline()) {
+      return null;
+    }
+    if ($isLinkNode(parent)) return parent;
+    current = parent;
+  }
+}
+
+function $getAdjacentText(
+  node: LexicalNode,
+  backward: boolean,
+): TextNode | null {
+  const adjacent = $getAdjacentInline(node, backward);
+  return $isTextNode(adjacent) ? adjacent : null;
+}
+
+function $getTextSibling(node: TextNode, backward: boolean): TextNode | null {
+  return $getAdjacentText(node, backward);
+}
+
+/** A run resumed after an overlapping outer format had to close. */
+function $isReopenedRun(node: TextNode): boolean {
+  const format = node.getFormat();
+  let previous = $getAdjacentText(node, true);
+  while (previous && previous.getFormat() === format) {
+    previous = $getAdjacentText(previous, true);
+  }
+  return (
+    previous !== null &&
+    (previous.getFormat() & format) !== 0 &&
+    (previous.getFormat() & ~format) !== 0
+  );
+}
+
+/** At most nine source digits can precede an ordered-list delimiter. */
+function $getLinePrefix(
+  node: TextNode,
+  selection?: BaseSelection,
+): string | null {
+  let prefix = '';
+  for (
+    let previous = $getAdjacentInline(node, true);
+    previous;
+    previous = $getAdjacentInline(previous, true)
+  ) {
+    if (
+      $isLineBreakNode(previous) ||
+      (selection && !previous.isSelected(selection))
+    )
+      return prefix;
+    if (!$isTextNode(previous)) return null;
+    prefix =
+      (selection
+        ? $sliceSelectedTextNodeContent(
+            selection,
+            previous,
+            'clone',
+          ).getTextContent()
+        : previous.getTextContent()) + prefix;
+    if (prefix.length > 9 || /\D/.test(prefix)) return null;
+  }
+  return prefix;
 }
 
 function hasFormat(

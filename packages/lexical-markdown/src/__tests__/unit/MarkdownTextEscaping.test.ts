@@ -37,7 +37,6 @@ import {
   HISTORY_PUSH_TAG,
   type LexicalNode,
   REDO_COMMAND,
-  type TextNode,
   UNDO_COMMAND,
 } from 'lexical';
 import {fromMarkdown} from 'mdast-util-from-markdown';
@@ -238,7 +237,8 @@ describe.each([false, true])(
         () => {
           const paragraph = $getRoot().getFirstChildOrThrow();
           assert($isElementNode(paragraph));
-          const text = paragraph.getFirstChildOrThrow<TextNode>();
+          const text = paragraph.getFirstChildOrThrow();
+          assert($isTextNode(text));
           const [first, second] = text.splitText(3);
           first.mergeWithSibling(second);
           const copy = $copyNode(first).setTextContent('<i>&#60;[new](u)</i>');
@@ -602,7 +602,8 @@ describe('intentional syntax', () => {
             const value = children(node);
             return mode === 'decline' ? null : value;
           }
-          const text = node.getFirstChildOrThrow<TextNode>();
+          const text = node.getFirstChildOrThrow();
+          assert($isTextNode(text));
           const value = format(text, text.getTextContent());
           return mode === 'repeat'
             ? value + value
@@ -658,7 +659,13 @@ describe('intentional syntax', () => {
             if ($isTextNode(node)) calls.push(node.getTextContent());
             if (!(node instanceof MarkNode) || node.getIDs()[0] !== 'group')
               return null;
-            const value = node.getChildren<MarkNode>().map(children).join('');
+            const value = node
+              .getChildren()
+              .map(child => {
+                assert($isElementNode(child));
+                return children(child);
+              })
+              .join('');
             return value + value;
           },
           regExp: /$^/,
@@ -717,13 +724,17 @@ describe('intentional syntax', () => {
                 if ($isTextNode(node)) calls.push(node.getTextContent());
                 if (!(node instanceof MarkNode)) return null;
                 if (mode === 'format') {
-                  const text = node.getFirstChildOrThrow<TextNode>();
+                  const text = node.getFirstChildOrThrow();
+                  assert($isTextNode(text));
                   return format(text, text.getTextContent());
                 }
                 if (mode === 'concatenate')
                   return node
-                    .getChildren<TextNode>()
-                    .map(text => format(text, text.getTextContent()))
+                    .getChildren()
+                    .map(text => {
+                      assert($isTextNode(text));
+                      return format(text, text.getTextContent());
+                    })
                     .join('');
                 const result = children(node);
                 return mode === 'decline' ? null : result;
@@ -1392,7 +1403,8 @@ describe('intentional syntax', () => {
           if ($isTextNode(node)) calls.push(node.getTextContent());
           if (!(node instanceof MarkNode) || node.getIDs()[0] !== 'group')
             return null;
-          const subset = node.getFirstChildOrThrow<MarkNode>();
+          const subset = node.getFirstChildOrThrow();
+          assert(subset instanceof MarkNode);
           if (subsetFirst) children(subset);
           const whole = children(node);
           if (!subsetFirst) children(subset);
@@ -1467,7 +1479,8 @@ describe('intentional syntax', () => {
         const clone = $copyNode(first);
         clone.append(...first.getChildren().map(child => $copyNode(child)));
         first.replace(clone);
-        const text = clone.getFirstChildOrThrow<TextNode>();
+        const text = clone.getFirstChildOrThrow();
+        assert($isTextNode(text));
         const [left, right] = text.splitText(1);
         left.mergeWithSibling(right).setTextContent('foo<b>');
       },
@@ -1485,7 +1498,9 @@ describe('intentional syntax', () => {
       () => {
         const first = $getRoot().getFirstChildOrThrow();
         assert($isElementNode(first));
-        first.getFirstChildOrThrow<TextNode>().select(0, 6);
+        const text = first.getFirstChildOrThrow();
+        assert($isTextNode(text));
+        text.select(0, 6);
       },
       {discrete: true},
     );

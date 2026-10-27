@@ -10,8 +10,10 @@ import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {
   $createListItemNode,
   $createListNode,
+  $getTaskListItemChecked,
   $isListItemNode,
   $isListNode,
+  $setTaskListItemChecked,
   CheckListExtension,
   INSERT_CHECK_LIST_COMMAND,
   INSERT_ORDERED_LIST_COMMAND,
@@ -34,9 +36,9 @@ import {
 } from 'vitest';
 
 // GFM decides per item whether a list item is a task, so a bullet or number
-// list can hold task items next to plain ones (`- plain` / `- [x] done`). An
-// item with a checked state is a task in any list; a check list makes every
-// item one.
+// list can hold task items next to plain ones (`- plain` / `- [x] done`).
+// $setTaskListItemChecked makes an item of such a list a task; a check list
+// makes every item one, as before.
 describe('task items in bullet and number lists', () => {
   // jsdom has no layout for ::before, which the click hit-test measures (see
   // checkList.test.tsx).
@@ -73,13 +75,15 @@ describe('task items in bullet and number lists', () => {
     const editor = buildEditorFromExtensions(
       defineExtension({
         $initialEditorState: () => {
-          $getRoot().append(
-            $createListNode(listType).append(
-              $createListItemNode().append($createTextNode('plain')),
-              $createListItemNode(false).append($createTextNode('todo')),
-              $createListItemNode(true).append($createTextNode('done')),
-            ),
+          const list = $createListNode(listType).append(
+            $createListItemNode().append($createTextNode('plain')),
+            $createListItemNode().append($createTextNode('todo')),
+            $createListItemNode().append($createTextNode('done')),
           );
+          $getRoot().append(list);
+          const [, todo, done] = list.getChildren().filter($isListItemNode);
+          $setTaskListItemChecked(todo, false);
+          $setTaskListItemChecked(done, true);
         },
         dependencies: [CheckListExtension, RichTextExtension],
         name: '[task-items-test]',
@@ -103,7 +107,7 @@ describe('task items in bullet and number lists', () => {
   }
 
   function readChecked(editor: ReturnType<typeof buildEditor>) {
-    return editor.read(() => $items().map(item => item.getChecked()));
+    return editor.read(() => $items().map($getTaskListItemChecked));
   }
 
   function readListType(editor: ReturnType<typeof buildEditor>) {
@@ -136,6 +140,17 @@ describe('task items in bullet and number lists', () => {
       it('keeps the checked state of the task items only', () => {
         using editor = buildEditor(listType);
         expect(readListType(editor)).toBe(listType);
+        expect(readChecked(editor)).toEqual([undefined, false, true]);
+      });
+
+      it('leaves getChecked() and setChecked() as they were', () => {
+        using editor = buildEditor(listType);
+        // getChecked() is only defined in a check list, as before.
+        expect(
+          editor.read(() => $items().map(item => item.getChecked())),
+        ).toEqual([undefined, undefined, undefined]);
+        // A checked state set the old way is still dropped outside a check list.
+        editor.update(() => $items()[0].setChecked(true), {discrete: true});
         expect(readChecked(editor)).toEqual([undefined, false, true]);
       });
 
@@ -213,6 +228,32 @@ describe('task items in bullet and number lists', () => {
       editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined);
       expect(readListType(editor)).toBe('number');
       expect(readChecked(editor)).toEqual([undefined, undefined, undefined]);
+    });
+
+    it('a task item moved into a check list keeps its tick', () => {
+      using editor = buildEditor('bullet');
+      editor.update(
+        () => {
+          const done = $items()[2];
+          $getRoot().append(
+            $createListNode('check').append(
+              $createListItemNode().append($createTextNode('other')),
+              done,
+            ),
+          );
+        },
+        {discrete: true},
+      );
+      expect(
+        editor.read(() => {
+          const check = $getRoot().getLastChildOrThrow();
+          invariant($isListNode(check), 'Expected a ListNode');
+          return check
+            .getChildren()
+            .filter($isListItemNode)
+            .map(item => item.getChecked());
+        }),
+      ).toEqual([false, true]);
     });
 
     it('a check list makes every item a task and keeps the ticks', () => {

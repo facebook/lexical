@@ -39,7 +39,12 @@ import {
 } from 'lexical';
 
 import {$insertList} from './formatList';
-import {$isListItemNode, type ListItemNode} from './LexicalListItemNode';
+import {
+  $getTaskListItemChecked,
+  $isListItemNode,
+  $setTaskListItemChecked,
+  type ListItemNode,
+} from './LexicalListItemNode';
 import {$isListNode} from './LexicalListNode';
 
 // What a focused check list item's own key handlers use: Space toggles it,
@@ -206,7 +211,7 @@ export function registerCheckList(
 
             if ($isListItemNode(listItemNode)) {
               event.preventDefault();
-              listItemNode.toggleChecked();
+              $toggleTaskListItem(listItemNode);
             }
           });
           return true;
@@ -246,8 +251,8 @@ export function registerCheckList(
                 const parent = elementNode.getParent();
                 if (
                   $isListNode(parent) &&
-                  // A check list item, or a task item in any other list
-                  elementNode.getChecked() !== undefined &&
+                  // A check list item, or a task item of a bullet or number list
+                  $getTaskListItemChecked(elementNode) !== undefined &&
                   (isElement || elementNode.getFirstDescendant() === anchorNode)
                 ) {
                   const domNode = editor.getElementByKey(elementNode.__key);
@@ -439,7 +444,7 @@ function handleClick(
             } else {
               domNode.focus();
             }
-            node.toggleChecked();
+            $toggleTaskListItem(node);
           }
         });
       }
@@ -490,6 +495,14 @@ function returnFocusToRoot(editor: LexicalEditor): void {
   ) {
     rootElement.focus({preventScroll: true});
   }
+}
+
+/**
+ * Ticks or unticks an item with a checkbox: an item of a check list, or a task
+ * item of a bullet or number list.
+ */
+function $toggleTaskListItem(listItem: ListItemNode): void {
+  $setTaskListItemChecked(listItem, !$getTaskListItemChecked(listItem));
 }
 
 /**

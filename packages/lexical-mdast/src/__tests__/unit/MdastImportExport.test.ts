@@ -25,8 +25,10 @@ import {$createLinkNode, $isLinkNode} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
+  $getTaskListItemChecked,
   $isListItemNode,
   $isListNode,
+  $setTaskListItemChecked,
 } from '@lexical/list';
 import {
   $createQuoteNode,
@@ -419,7 +421,9 @@ describe('@lexical/mdast import/export', () => {
           return {
             checked: list
               .getChildren()
-              .map(item => $assertNodeType(item, $isListItemNode).getChecked()),
+              .map(item =>
+                $getTaskListItemChecked($assertNodeType(item, $isListItemNode)),
+              ),
             start: list.getStart(),
             type: list.getListType(),
           };
@@ -454,10 +458,10 @@ describe('@lexical/mdast import/export', () => {
     it('writes a box on a plain item once it is made a task', () => {
       expect(
         exportAfter('- plain\n- [x] done', () => {
-          $assertNodeType(
-            $firstList().getFirstChild(),
-            $isListItemNode,
-          ).setChecked(false);
+          $setTaskListItemChecked(
+            $assertNodeType($firstList().getFirstChild(), $isListItemNode),
+            false,
+          );
         }),
       ).toBe('- [ ] plain\n- [x] done');
     });

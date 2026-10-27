@@ -32,8 +32,10 @@ import {
 import {
   $createListItemNode,
   $createListNode,
+  $getTaskListItemChecked,
   $isListItemNode,
   $isListNode,
+  $setTaskListItemChecked,
   ListItemNode,
   type ListNode,
 } from './';
@@ -75,15 +77,19 @@ function $newListFrom(list: ElementNode, listType: ListType): ListNode {
 
 /**
  * A list command makes the whole list one kind. In a check list every item is
- * a task already; any other list makes its task items plain items.
+ * a task (the ListItemNode transform keeps the ticks of former task items);
+ * any other list makes its task items plain items.
  */
 function $resetTaskItems(list: ListNode): void {
   if (list.getListType() === 'check') {
     return;
   }
   for (const child of list.getChildren()) {
-    if ($isListItemNode(child) && child.getChecked() !== undefined) {
-      child.setChecked(undefined);
+    if (
+      $isListItemNode(child) &&
+      $getTaskListItemChecked(child) !== undefined
+    ) {
+      $setTaskListItemChecked(child, undefined);
     }
   }
 }
@@ -425,16 +431,20 @@ export function $removeList(): void {
 
 /**
  * Takes the value of a child ListItemNode and makes it the value the ListItemNode
- * should be if it isn't already. The checked state is left alone: in a bullet
- * or number list it marks a task item.
+ * should be if it isn't already. Also ensures that checked is undefined if the
+ * parent does not have a list type of 'check'.
  * @param list - The list whose children are updated.
  */
 export function updateChildrenListItemValue(list: ListNode): void {
+  const isNotChecklist = list.getListType() !== 'check';
   let value = list.getStart();
   for (const child of list.getChildren()) {
     if ($isListItemNode(child)) {
       if (child.getValue() !== value) {
         child.setValue(value);
+      }
+      if (isNotChecklist && child.getLatest().__checked != null) {
+        child.setChecked(undefined);
       }
       if (!$isListNode(child.getFirstChild())) {
         value++;

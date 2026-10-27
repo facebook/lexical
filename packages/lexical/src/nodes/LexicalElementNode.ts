@@ -69,6 +69,7 @@ import {
   $getSlotsTextContent,
   $getSlotsTextContentSize,
 } from '../LexicalSlot';
+import {INTERNAL_isNodeStructureEnforced} from '../LexicalStructure';
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
   $getDOMSlot,
@@ -224,7 +225,14 @@ export type ElementFormatType =
  * @internal
  */
 function $normalizeShadowRootChildren(node: ElementNode): void {
-  if ($isRootOrShadowRoot(node)) {
+  // Where NodeStructureExtension enforces declared structure, it wraps these
+  // children itself (a root or shadow root holds blocks), after their own
+  // repairs: an empty inline element it removes is then never wrapped, which
+  // it would be here if this transform ran first.
+  if (
+    $isRootOrShadowRoot(node) &&
+    !INTERNAL_isNodeStructureEnforced(getActiveEditor())
+  ) {
     let block: ElementNode | null = null;
     for (const child of node.getChildren()) {
       block = child.isInline()

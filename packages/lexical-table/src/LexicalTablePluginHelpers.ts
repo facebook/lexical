@@ -47,7 +47,6 @@ import {
 import {
   $createTableCellNode,
   $isTableCellNode,
-  TableCellHeaderStates,
   TableCellNode,
 } from './LexicalTableCellNode';
 import {
@@ -76,6 +75,7 @@ import {
   $createTableNodeWithDimensions,
   $getNodeTriplet,
   $insertTableIntoGrid,
+  $padTableRows,
 } from './LexicalTableUtils';
 
 function $insertTable(
@@ -132,43 +132,7 @@ function $tableTransform(node: TableNode) {
   // TODO: Future support of tbody/thead/tfoot/caption may change this
   $unwrapAndFilterDescendants(node, $isTableRowNode);
 
-  const [gridMap] = $computeTableMapSkipCellCheck(node, null, null);
-  const maxRowLength = gridMap.reduce((curLength, row) => {
-    return Math.max(curLength, row.length);
-  }, 0);
-  const rowNodes = node.getChildren();
-  for (let i = 0; i < gridMap.length; ++i) {
-    const rowNode = rowNodes[i];
-    if (!rowNode) {
-      continue;
-    }
-    invariant(
-      $isTableRowNode(rowNode),
-      'TablePlugin: Expecting all children of TableNode to be TableRowNode, found %s (type %s)',
-      rowNode.constructor.name,
-      rowNode.getType(),
-    );
-    const rowLength = gridMap[i].reduce(
-      (acc, cell) => (cell ? 1 + acc : acc),
-      0,
-    );
-    if (rowLength === maxRowLength) {
-      continue;
-    }
-    // Padding cells are appended to the end of the row, so they are never in
-    // a header column — but they are in a header row whenever the row they
-    // extend is one. Inherit only that bit from the row's last cell, the same
-    // reference $insertTableColumnAtNode uses when it appends a column.
-    const lastCell = rowNode.getLastChild();
-    const headerState = $isTableCellNode(lastCell)
-      ? lastCell.getHeaderStyles() & TableCellHeaderStates.ROW
-      : TableCellHeaderStates.NO_STATUS;
-    for (let j = rowLength; j < maxRowLength; ++j) {
-      const newCell = $createTableCellNode(headerState);
-      newCell.append($createParagraphNode());
-      rowNode.append(newCell);
-    }
-  }
+  $padTableRows(node);
   const colWidths = node.getColWidths();
   const columnCount = node.getColumnCount();
   if (colWidths && colWidths.length !== columnCount) {

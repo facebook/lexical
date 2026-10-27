@@ -34,23 +34,6 @@ export const orderedMarkerState = createState('mdastOrderedMarker', {
   resetOnCopyNode: true,
 });
 
-/**
- * The GFM task list box a `ListItemNode` was written with, kept only where the
- * Lexical list can't hold it. GFM decides per item whether it is a task, but
- * in Lexical only a check list has boxes, and every one of its items has one:
- *
- * - `'none'`: an item without a box in a check list (`- plain` next to
- *   `- [x] done`).
- * - `'unchecked'` / `'checked'`: an item with a box in an ordered list
- *   (`1. [ ] todo`). A check list can't be ordered, so the list stays a number
- *   list, which drops `checked` from its items.
- */
-export const taskListItemState = createState('mdastTaskListItem', {
-  parse: (v): '' | 'checked' | 'none' | 'unchecked' =>
-    v === 'none' || v === 'unchecked' || v === 'checked' ? v : '',
-  resetOnCopyNode: true,
-});
-
 /** The marker (`_`) an italic run used when it was not the default `*`. */
 export const emphasisMarkerState = createState('mdastEmphasisMarker', {
   parse: (v): string => (v === '_' ? '_' : ''),

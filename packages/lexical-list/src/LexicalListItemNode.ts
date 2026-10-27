@@ -54,7 +54,7 @@ import {
   withField,
 } from 'lexical';
 
-import {$createListNode, $isListNode, type ListType} from './';
+import {$createListNode, $isListNode} from './';
 import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
 import {GENERATED_LISTITEM} from './LexicalListGeneratedJSON';
 import {ListNode} from './LexicalListNode';
@@ -188,11 +188,9 @@ export class ListItemNode extends ElementNode {
     return this.config('listitem', {
       $transform: (node: ListItemNode): void => {
         const parent = node.getParent();
-        if ($isListNode(parent)) {
-          if (parent.getListType() !== 'check' && node.getChecked() != null) {
-            node.setChecked(undefined);
-          }
-        } else if (parent) {
+        // An item keeps its checked state in any list: in a bullet or number
+        // list it is a task item (a GFM task list item), see getChecked.
+        if (parent && !$isListNode(parent)) {
           const newParent = node.createParentElementNode();
           invariant(
             $isListNode(newParent),
@@ -551,17 +549,23 @@ export class ListItemNode extends ElementNode {
     return self;
   }
 
+  /**
+   * Whether this item is checked. Every item of a check list is a task, so
+   * this is a boolean there. In a bullet or number list only the items that
+   * were made tasks have one (like `- [x] done` next to `- plain` in GFM), and
+   * it is undefined for the others.
+   */
   getChecked(): boolean | undefined {
     const self = this.getLatest();
 
-    let listType: ListType | undefined;
-
     const parent = this.getParent();
-    if ($isListNode(parent)) {
-      listType = parent.getListType();
+    if (!$isListNode(parent)) {
+      return undefined;
     }
 
-    return listType === 'check' ? Boolean(self.__checked) : undefined;
+    return parent.getListType() === 'check'
+      ? Boolean(self.__checked)
+      : self.__checked;
   }
 
   setChecked(checked?: boolean): this {
@@ -670,9 +674,8 @@ function $setListItemThemeClassNames(
 
   const listItemClassName = listTheme.listitem;
   const nestedListItemClassName = listTheme.nested && listTheme.nested.listitem;
-  const parentNode = node.getParent();
-  const isCheckList =
-    $isListNode(parentNode) && parentNode.getListType() === 'check';
+  // Defined for every item of a check list, and for a task item in any other
+  // list.
   const checked = node.getChecked();
   const isNested = node.getChildren().some(child => $isListNode(child));
 
@@ -698,7 +701,7 @@ function $setListItemThemeClassNames(
   if (listItemClassName !== undefined) {
     classesToAdd.push(...normalizeClassNames(listItemClassName));
   }
-  if (isCheckList) {
+  if (checked !== undefined) {
     const checkClassName = checked
       ? listTheme.listitemChecked
       : listTheme.listitemUnchecked;
@@ -719,10 +722,9 @@ function updateListItemChecked(
   listItemNode: ListItemNode,
   prevListItemNode: ListItemNode | null,
 ): void {
-  const parent = listItemNode.getParent();
   const isCheckbox =
-    $isListNode(parent) &&
-    parent.getListType() === 'check' &&
+    // Every item of a check list, or a task item in any other list
+    listItemNode.getChecked() !== undefined &&
     // Only add attributes for leaf list items
     !$isListNode(listItemNode.getFirstChild());
   if (!isCheckbox) {

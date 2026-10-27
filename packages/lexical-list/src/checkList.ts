@@ -246,7 +246,8 @@ export function registerCheckList(
                 const parent = elementNode.getParent();
                 if (
                   $isListNode(parent) &&
-                  parent.getListType() === 'check' &&
+                  // A check list item, or a task item in any other list
+                  elementNode.getChecked() !== undefined &&
                   (isElement || elementNode.getFirstDescendant() === anchorNode)
                 ) {
                   const domNode = editor.getElementByKey(elementNode.__key);
@@ -367,10 +368,7 @@ function handleCheckItemEvent(
     return;
   }
 
-  const parentNode = target.parentNode;
-
-  // @ts-ignore internal field
-  if (!parentNode || parentNode.__lexicalListType !== 'check') {
+  if (!isCheckListItem(target)) {
     return;
   }
   let clientX: number | null = null;
@@ -494,6 +492,10 @@ function returnFocusToRoot(editor: LexicalEditor): void {
   }
 }
 
+/**
+ * Whether `dom` is an item with a checkbox: an item of a check list, or a task
+ * item in any other list, which gets `aria-checked` the same way.
+ */
 function isCheckListItem(dom: HTMLElement): boolean {
   const parentNode = dom.parentNode;
 
@@ -501,7 +503,8 @@ function isCheckListItem(dom: HTMLElement): boolean {
     dom.tagName === 'LI' &&
     parentNode != null &&
     // @ts-ignore internal field
-    parentNode.__lexicalListType === 'check'
+    (parentNode.__lexicalListType === 'check' ||
+      dom.hasAttribute('aria-checked'))
   );
 }
 

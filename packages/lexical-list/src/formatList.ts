@@ -74,6 +74,21 @@ function $newListFrom(list: ElementNode, listType: ListType): ListNode {
 }
 
 /**
+ * A list command makes the whole list one kind. In a check list every item is
+ * a task already; any other list makes its task items plain items.
+ */
+function $resetTaskItems(list: ListNode): void {
+  if (list.getListType() === 'check') {
+    return;
+  }
+  for (const child of list.getChildren()) {
+    if ($isListItemNode(child) && child.getChecked() !== undefined) {
+      child.setChecked(undefined);
+    }
+  }
+}
+
+/**
  * Inserts a new ListNode. If the selection's anchor node is an empty ListItemNode and is a child of
  * the root/shadow root, it will replace the ListItemNode with a ListNode and the old ListItemNode.
  * Otherwise it will replace its parent with a new ListNode and re-insert the ListItemNode and any previous children.
@@ -120,6 +135,7 @@ export function $insertList(listType: ListType): void {
           if ($getSlotHost(parent) === null) {
             const list = $newListFrom(parent, listType);
             append(list, parent.getChildren());
+            $resetTaskItems(list);
             parent.replace(list);
           }
         }
@@ -162,6 +178,7 @@ export function $insertList(listType: ListType): void {
           if (!handled.has(parentKey) && $getSlotHost(parent) === null) {
             const newListNode = $newListFrom(parent, listType);
             append(newListNode, parent.getChildren());
+            $resetTaskItems(newListNode);
             parent.replace(newListNode);
             handled.add(parentKey);
           }
@@ -408,20 +425,16 @@ export function $removeList(): void {
 
 /**
  * Takes the value of a child ListItemNode and makes it the value the ListItemNode
- * should be if it isn't already. Also ensures that checked is undefined if the
- * parent does not have a list type of 'check'.
+ * should be if it isn't already. The checked state is left alone: in a bullet
+ * or number list it marks a task item.
  * @param list - The list whose children are updated.
  */
 export function updateChildrenListItemValue(list: ListNode): void {
-  const isNotChecklist = list.getListType() !== 'check';
   let value = list.getStart();
   for (const child of list.getChildren()) {
     if ($isListItemNode(child)) {
       if (child.getValue() !== value) {
         child.setValue(value);
-      }
-      if (isNotChecklist && child.getLatest().__checked != null) {
-        child.setChecked(undefined);
       }
       if (!$isListNode(child.getFirstChild())) {
         value++;

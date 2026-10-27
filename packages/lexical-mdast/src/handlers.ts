@@ -79,7 +79,6 @@ import {
   paragraphBreakState,
   setextState,
   strongMarkerState,
-  taskListItemState,
 } from './state';
 
 /**
@@ -258,17 +257,20 @@ export const $importShadowRootBlockquote: MdastImportHandler<Blockquote> = (
     $importBlockChildren(node, ctx),
   );
 
-/** Maps an mdast `list` node to the Lexical {@link ListType} it represents. */
+/**
+ * Maps an mdast `list` node to the Lexical {@link ListType} it represents.
+ * GFM decides per item whether it is a task, so only an unordered list whose
+ * items are all tasks is a check list. Any other list keeps its kind, and its
+ * task items keep their `checked` (see {@link ListItemNode.getChecked}).
+ */
 export function $listTypeFromMdast(node: List): ListType {
   if (node.ordered) {
     return 'number';
   }
-  for (const child of node.children) {
-    if (child.type === 'listItem' && child.checked != null) {
-      return 'check';
-    }
-  }
-  return 'bullet';
+  return node.children.length > 0 &&
+    node.children.every(child => child.checked != null)
+    ? 'check'
+    : 'bullet';
 }
 
 export const $importList: MdastImportHandler<List> = (node, ctx) => {
@@ -301,32 +303,9 @@ export const $importList: MdastImportHandler<List> = (node, ctx) => {
   }
   return $append(
     list,
-    node.children.flatMap(child => {
-      const imported = ctx.importNode(child);
-      const item = imported[0];
-      if ($isListItemNode(item)) {
-        $setTaskListItemState(item, child.checked, listType);
-      }
-      return imported;
-    }),
+    node.children.flatMap(child => ctx.importNode(child)),
   );
 };
-
-/**
- * Keeps the task list box an item was written with where the Lexical list
- * can't hold it; see {@link taskListItemState}.
- */
-function $setTaskListItemState(
-  item: ListItemNode,
-  checked: boolean | null | undefined,
-  listType: ListType,
-): void {
-  if (listType === 'check' && checked == null) {
-    $setState(item, taskListItemState, 'none');
-  } else if (listType === 'number' && checked != null) {
-    $setState(item, taskListItemState, checked ? 'checked' : 'unchecked');
-  }
-}
 
 export const $importListItem: MdastImportHandler<ListItem> = (node, ctx) => {
   const item = $createListItemNode(
@@ -639,7 +618,9 @@ function $exportListNode(node: ListNode, ctx: MdastExportContext): List {
       continue;
     }
     const item: ListItem = {
-      checked: $exportChecked(child, listType),
+      // Defined for every item of a check list, and for a task item in a
+      // bullet or number list.
+      checked: child.getChecked() ?? null,
       children: ctx.exportBlocks(child),
       spread: false,
       type: 'listItem',
@@ -653,26 +634,6 @@ function $exportListNode(node: ListNode, ctx: MdastExportContext): List {
     list.data = {mdastBulletOrdered: '.'};
   }
   return list;
-}
-
-/** The mdast `checked` of a list item; see {@link taskListItemState}. */
-function $exportChecked(
-  item: ListItemNode,
-  listType: ListType,
-): boolean | null {
-  const written = $getState(item, taskListItemState);
-  if (listType === 'check') {
-    // A ticked item always gets a box. An unticked one keeps the box it was
-    // written with, or no box.
-    return item.getChecked() ? true : written === 'none' ? null : false;
-  }
-  if (
-    listType === 'number' &&
-    (written === 'checked' || written === 'unchecked')
-  ) {
-    return written === 'checked';
-  }
-  return null;
 }
 
 export const $exportList: MdastExportHandler = (node, ctx) => {

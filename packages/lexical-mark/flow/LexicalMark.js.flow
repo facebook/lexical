@@ -8,6 +8,8 @@
  */
 
 import type {
+  BaseSelection,
+  DecoratorNode,
   NodeKey,
   RangeSelection,
   TextNode,
@@ -15,6 +17,7 @@ import type {
   LexicalExtension,
   ExtensionConfigBase,
 } from 'lexical';
+import type {ReadonlySignal, Signal} from '@lexical/extension';
 import {ElementNode, LexicalNode} from 'lexical';
 
 export type SerializedMarkNode = SerializedElementNode & {
@@ -56,3 +59,95 @@ declare export function $wrapSelectionInMarkNode(
 declare export function $unwrapMarkNode(node: MarkNode): void;
 
 declare export var MarkExtension: LexicalExtension<ExtensionConfigBase, "@lexical/mark", void, void>;
+
+/**
+ * @experimental
+ */
+declare export var MARK_STATE_KEY: 'markIds';
+/**
+ * @experimental
+ */
+declare export var MARK_STATE_IDS_ATTRIBUTE: 'data-lexical-mark-ids';
+
+/**
+ * @experimental
+ */
+export type MarkableNodeMatch =
+  | Class<LexicalNode>
+  | ((node: LexicalNode) => boolean);
+
+/**
+ * @experimental
+ */
+export type MarkStateConfig = {
+  disabled: boolean,
+  exportIDsToHTML: boolean,
+  markableNodes: ReadonlyArray<MarkableNodeMatch>,
+};
+
+/**
+ * @experimental
+ */
+export type MarkStateOutput = {
+  disabled: Signal<boolean>,
+  exportIDsToHTML: Signal<boolean>,
+  markIDNodeKeys: ReadonlySignal<ReadonlyMap<string, ReadonlyArray<NodeKey>>>,
+};
+
+/**
+ * @experimental
+ */
+declare export function $isInlineDecoratorNode(
+  node: ?LexicalNode,
+): node is DecoratorNode<unknown>;
+
+/**
+ * @experimental
+ */
+declare export var DEFAULT_MARKABLE_NODES: ReadonlyArray<MarkableNodeMatch>;
+
+/**
+ * @experimental
+ */
+declare export function $getNodeMarkIDs(node: LexicalNode): Array<string>;
+
+/**
+ * @experimental
+ */
+declare export function $addMarkID(
+  id: string,
+  selection: BaseSelection,
+): Array<LexicalNode>;
+
+/**
+ * @experimental
+ */
+declare export function $removeMarkID(
+  id: string,
+  selection?: null | BaseSelection,
+): void;
+
+/**
+ * @experimental
+ */
+declare export function $getMarkIDsAtSelection(
+  selection?: null | BaseSelection,
+  mode?: 'any' | 'all',
+): Array<string>;
+
+/**
+ * @experimental
+ */
+declare export function $migrateMarkNodesToMarkState(
+  node?: LexicalNode,
+): number;
+
+/**
+ * @experimental
+ */
+declare export var MarkStateExtension: LexicalExtension<
+  MarkStateConfig,
+  '@lexical/mark/MarkState',
+  MarkStateOutput,
+  {markIDNodeKeys: Signal<ReadonlyMap<string, ReadonlyArray<NodeKey>>>},
+>;

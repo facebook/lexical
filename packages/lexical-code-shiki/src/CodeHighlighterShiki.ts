@@ -131,36 +131,41 @@ function $codeNodeTransform(
     node.setTheme(theme);
   }
 
-  // dynamic import of themes
-  let inFlight = false;
-  if (!isCodeThemeLoaded(theme)) {
-    loadCodeTheme(theme, editor, nodeKey);
-    // Only the highlight path (a resolved language) consumes the theme. With
-    // no language the text is plainified, which needs no theme, so don't defer
-    // the split on a theme load that won't be used — otherwise a code block
-    // with `defaultLanguage: null` stays an unsplit TextNode until the theme
-    // happens to finish loading.
-    if (language) {
-      inFlight = true;
-    }
-  }
-
   // dynamic import of languages
+  let inFlight = false;
+  // Only a language Shiki has a grammar for is highlighted. Without one (no
+  // language, or one Shiki does not know, e.g. "After" from the markdown
+  // shortcut "```After ") the text is split into plain CodeHighlightNodes,
+  // so the indent and line-move handlers can work on it.
+  let highlight = false;
   if (language) {
     if (isCodeLanguageLoaded(language)) {
       if (!node.getIsSyntaxHighlightSupported()) {
         node.setIsSyntaxHighlightSupported(true);
       }
-    } else {
-      const loadingTask = loadCodeLanguage(language, editor, nodeKey);
-      // if the language is not supported, the download will not occur
-      if (!loadingTask && node.getIsSyntaxHighlightSupported()) {
-        node.setIsSyntaxHighlightSupported(false);
-      }
+      highlight = true;
+    } else if (loadCodeLanguage(language, editor, nodeKey)) {
+      // The grammar is downloading; highlight once it has loaded.
       inFlight = true;
+    } else if (node.getIsSyntaxHighlightSupported()) {
+      // The language is not supported, so the download will not occur.
+      node.setIsSyntaxHighlightSupported(false);
     }
   } else if (node.getIsSyntaxHighlightSupported()) {
     node.setIsSyntaxHighlightSupported(false);
+  }
+
+  // dynamic import of themes
+  if (!isCodeThemeLoaded(theme)) {
+    loadCodeTheme(theme, editor, nodeKey);
+    // Only the highlight path consumes the theme. Plain text needs no theme,
+    // so don't defer the split on a theme load that won't be used: otherwise
+    // a code block with `defaultLanguage: null`, or with a language Shiki
+    // does not know, stays an unsplit TextNode until the theme happens to
+    // finish loading.
+    if (highlight) {
+      inFlight = true;
+    }
   }
 
   if (inFlight) {
@@ -188,7 +193,10 @@ function $codeNodeTransform(
     }
 
     const lang = currentNode.getLanguage() || tokenizer.defaultLanguage;
-    const highlightNodes = tokenizer.$tokenize(currentNode, lang ?? undefined);
+    const highlightNodes =
+      lang && !isCodeLanguageLoaded(lang)
+        ? $plainifyCodeContent(currentNode.getTextContent())
+        : tokenizer.$tokenize(currentNode, lang ?? undefined);
     const diffRange = getDiffRange(currentNode.getChildren(), highlightNodes);
     const {from, to, nodesForReplacement} = diffRange;
 

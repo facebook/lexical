@@ -275,6 +275,7 @@ declare export class LexicalEditor {
   _key: string;
   _editable: boolean;
   _headless: boolean;
+  _recordNodeMoves: boolean;
   isComposing(): boolean;
   registerUpdateListener(listener: UpdateListener): () => void;
   registerRootListener(listener: RootListener): () => void;
@@ -452,6 +453,7 @@ declare export function createEditor(editorConfig?: {
 
 export interface EditorState {
   _nodeMap: NodeMap;
+  _movedNodes: null | WeakMap<NodeMap, Set<NodeKey>>;
   _selection: null | BaseSelection;
   _flushSync: boolean;
   _readOnly: boolean;
@@ -1251,6 +1253,12 @@ declare export function $getDOMTextNode(
   dom: HTMLElement,
   editor?: LexicalEditor,
 ): Text | null;
+/** @internal */
+declare export function $getElementAndOffsetForPoint(
+  editor: LexicalEditor,
+  node: LexicalNode,
+  offset: number,
+): [HTMLElement, number];
 declare export function $isElementDOMSlot(
   slot: DOMSlot<HTMLElement>,
 ): slot is ElementDOMSlot<HTMLElement>;
@@ -1844,6 +1852,7 @@ declare export class StateConfig<K extends string, V> {
   readonly isEqual: (a: V, b: V) => boolean;
   readonly defaultValue: V;
   readonly resetOnCopyNode: boolean;
+  readonly derived: boolean;
   readonly schema?: AnySerializationSchema;
   constructor(key: K, stateValueConfig: StateValueConfig<V>): this;
 }
@@ -1853,6 +1862,7 @@ export type StateValueConfig<V> = {
   unparse?: (parsed: V) => unknown;
   isEqual?: (a: V, b: V) => boolean;
   resetOnCopyNode?: boolean;
+  derived?: boolean;
 }
 
 export type Parse<T> = (value: unknown) => T;
@@ -1861,6 +1871,7 @@ export type Parse<T> = (value: unknown) => T;
 // `defaultValue` off a schema rather than only calling it.
 export type SerializationSchema<T> = Parse<T> & {
   readonly defaultValue: T,
+  readonly derived?: true,
   readonly meta: SerializationSchemaMeta,
   readonly getter?: SchemaGetterAccessor,
   readonly setter?: SchemaSetterAccessor,
@@ -1992,6 +2003,9 @@ declare export function aliasedValue<T>(
 ): SerializationSchema<T>;
 declare export function rawValue<T>(): SerializationSchema<T | void>;
 declare export function arrayValue<T>(item: SerializationSchema<T>): SerializationSchema<T[]>;
+declare export function arraySetValue<T extends string>(
+  item: SerializationSchema<T>,
+): SerializationSchema<ReadonlyArray<T>>;
 declare export function objectValue<T>(fields: SerializationSchemaShape<T>): SerializationSchema<T>;
 
 // Every member of `N` a schema may name: its own `__`-prefixed fields and its
@@ -2066,6 +2080,7 @@ export type FieldOptions = {
   readonly getter?: string,
   readonly setter?: string,
   readonly when?: string,
+  readonly derived?: boolean,
 };
 // One direction of a schema field: a method name, a node field, or null for a
 // direction that is deliberately unsupported.
@@ -2073,6 +2088,7 @@ export type SchemaAccessor = string | SchemaField | null;
 export type SchemaAccessors = {
   readonly getter?: SchemaGetterAccessor,
   readonly setter?: SchemaSetterAccessor,
+  readonly derived?: boolean,
 };
 declare export function isSchemaField<T extends SchemaFieldBase>(
   accessor: string | T | null | void,
@@ -2180,8 +2196,36 @@ export interface StaticNodeConfigValue<
   readonly generated?: GeneratedJSONFactory;
   readonly stateConfigs?: ReadonlyArray<RequiredNodeStateConfig>;
   readonly slots?: ReadonlyArray<string>;
+  readonly inline?: boolean;
+  readonly children?: NodeChildrenConfig;
+  readonly mergeAdjacent?: MergeAdjacentConfig | false;
   readonly extends?: Class<LexicalNode>;
 }
+
+export type NodeChildrenConfig =
+  | 'inline'
+  | 'block'
+  | ReadonlyArray<'inline' | Class<LexicalNode>>;
+
+export type MergeAdjacentConfig = {
+  readonly by: ReadonlyArray<string | AnyStateConfig>,
+};
+
+export type DeclaredNodeStructure = {
+  readonly inline?: boolean,
+  readonly children?: NodeChildrenConfig,
+  readonly mergeAdjacent?: MergeAdjacentConfig,
+  readonly derived: ReadonlySet<string>,
+  readonly declaredBy: {
+    readonly inline?: Class<LexicalNode>,
+    readonly children?: Class<LexicalNode>,
+    readonly mergeAdjacent?: Class<LexicalNode>,
+  },
+};
+
+declare export function getDeclaredNodeStructure(
+  klass: Class<LexicalNode>,
+): DeclaredNodeStructure;
 
 /**
  * This is the type of LexicalNode.$config() that can be

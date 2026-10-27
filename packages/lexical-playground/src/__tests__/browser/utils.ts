@@ -22,12 +22,6 @@ import {commands, userEvent} from 'vitest/browser';
 
 import theme from '../../themes/PlaygroundEditorTheme';
 
-declare module 'vitest/browser' {
-  interface BrowserCommands {
-    typeText(text: string, selector: string): Promise<void>;
-  }
-}
-
 export function setupEditor(dependencies: AnyLexicalExtensionArgument[]) {
   const root = document.createElement('div');
   root.contentEditable = 'true';
@@ -148,28 +142,52 @@ export async function assertCaret(
   selector: string,
   offset?: number,
 ) {
+  // Poll a description rather than a boolean, so that a failure shows where
+  // each of the DOM and the editor had the caret.
+  const describe = () => {
+    const root = editor.getRootElement();
+    const target = root?.querySelector(selector);
+    const domSelection = root?.ownerDocument.defaultView?.getSelection();
+    const describeDOM = (node: Node | null | undefined) =>
+      node == null
+        ? null
+        : node === target || node === target?.firstChild
+          ? selector
+          : node.nodeName;
+    return editor.read('latest', () => {
+      const selection = $getSelection();
+      return {
+        dom:
+          domSelection == null
+            ? null
+            : {
+                isCollapsed: domSelection.isCollapsed,
+                node: describeDOM(domSelection.anchorNode),
+                offset: domSelection.anchorOffset,
+              },
+        lexical: $isRangeSelection(selection)
+          ? {
+              isCollapsed: selection.isCollapsed(),
+              node: describeDOM(editor.getElementByKey(selection.anchor.key)),
+              offset: selection.anchor.offset,
+            }
+          : String(selection),
+      };
+    });
+  };
   await expect
-    .poll(() => {
-      const root = editor.getRootElement();
-      const target = root?.querySelector(selector);
-      const domSelection = root?.ownerDocument.defaultView?.getSelection();
-      return editor.read('latest', () => {
-        const selection = $getSelection();
-        return (
-          target != null &&
-          domSelection != null &&
-          domSelection.isCollapsed &&
-          (domSelection.anchorNode === target ||
-            domSelection.anchorNode === target.firstChild) &&
-          $isRangeSelection(selection) &&
-          selection.isCollapsed() &&
-          editor.getElementByKey(selection.anchor.key) === target &&
-          selection.anchor.offset === domSelection.anchorOffset &&
-          (offset === undefined || selection.anchor.offset === offset)
-        );
-      });
-    })
-    .toBe(true);
+    .poll(describe)
+    .toSatisfy(
+      ({dom, lexical}) =>
+        dom !== null &&
+        typeof lexical === 'object' &&
+        dom.isCollapsed &&
+        lexical.isCollapsed &&
+        dom.node === selector &&
+        lexical.node === selector &&
+        dom.offset === lexical.offset &&
+        (offset === undefined || lexical.offset === offset),
+    );
 }
 
 interface SelectionExpectation {

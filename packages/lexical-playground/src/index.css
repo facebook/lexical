@@ -1058,8 +1058,13 @@ i.page-setup,
   .code-language .dropdown-button-text {
     display: flex !important;
   }
+
+  .vertical-align .dropdown-button-text {
+    display: flex !important;
+  }
 }
 
+i.paragraph,
 .icon.paragraph {
   -webkit-mask-image: url(images/icons/text-paragraph.svg);
   mask-image: url(images/icons/text-paragraph.svg);
@@ -1226,7 +1231,6 @@ i.page-setup,
   cursor: default;
   display: inline-block;
   position: relative;
-  user-select: none;
   overflow: hidden;
 }
 

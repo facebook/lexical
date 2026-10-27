@@ -44,6 +44,7 @@ import {
   type SlotChildNode,
   type SlotHostNode,
 } from '../LexicalNode';
+import {$reconcileDecoratorBoundaryAnchors} from '../LexicalReconciler';
 import {
   enumValue,
   nodeSchema,
@@ -68,11 +69,14 @@ import {
   $getSlotsTextContent,
   $getSlotsTextContentSize,
 } from '../LexicalSlot';
+import {INTERNAL_isNodeStructureEnforced} from '../LexicalStructure';
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
   $getDOMSlot,
   $getNodeByKey,
   $isRootOrShadowRoot,
+  getNodeKeyFromDOMNode,
+  isDOMUnmanaged,
   isHTMLElement,
   toggleTextFormatType,
 } from '../LexicalUtils';
@@ -221,7 +225,14 @@ export type ElementFormatType =
  * @internal
  */
 function $normalizeShadowRootChildren(node: ElementNode): void {
-  if ($isRootOrShadowRoot(node)) {
+  // Where NodeStructureExtension enforces declared structure, it wraps these
+  // children itself (a root or shadow root holds blocks), after their own
+  // repairs: an empty inline element it removes is then never wrapped, which
+  // it would be here if this transform ran first.
+  if (
+    $isRootOrShadowRoot(node) &&
+    !INTERNAL_isNodeStructureEnforced(getActiveEditor())
+  ) {
     let block: ElementNode | null = null;
     for (const child of node.getChildren()) {
       block = child.isInline()
@@ -1016,28 +1027,57 @@ export class ElementNode
 
   /** @internal */
   reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void {
-    const slot = $getDOMSlot(this, dom, editor);
-    let currentDOM = slot.getFirstChild();
-    for (
-      let currentNode = this.getFirstChild();
-      currentNode;
-      currentNode = currentNode.getNextSibling()
-    ) {
-      const correctDOM = editor.getElementByKey(currentNode.getKey());
-
-      if (correctDOM === null) {
-        continue;
+    // Put back the children of the committed state: they are what is on
+    // screen, and what the reconciler diffs the DOM against when this runs
+    // inside an update (onInput) that has already changed them.
+    editor.read('latest', () => {
+      let slot = $getDOMSlot(this, dom, editor);
+      const element = slot.element;
+      // The edit may have removed a boundary that the slot still names.
+      if (slot.after && slot.after.parentNode !== element) {
+        slot = slot.withAfter(null);
       }
-
-      if (currentDOM == null) {
-        slot.insertChild(correctDOM);
-        currentDOM = correctDOM;
-      } else if (currentDOM !== correctDOM) {
-        slot.replaceChild(correctDOM, currentDOM);
+      if (slot.before && slot.before.parentNode !== element) {
+        slot = slot.withBefore(null);
       }
+      // Put the managed line break back where the reconciler would if the
+      // edit removed or moved a node of it.
+      const lineBreak = slot.getManagedLineBreak();
+      if (lineBreak) {
+        slot.insertManagedLineBreak(lineBreak.nodeName === 'IMG');
+      }
+      let currentDOM = slot.getFirstChild();
+      for (const key of this.getChildrenKeys()) {
+        const correctDOM = editor.getElementByKey(key);
 
-      currentDOM = currentDOM.nextSibling;
-    }
+        if (!correctDOM) {
+          continue;
+        }
+
+        // Only move children into place, never replace a node. DOM an
+        // extension keeps among the children (keyless, marked with
+        // setDOMUnmanaged) stays ahead of the child that follows it; a
+        // child with no such follower goes before that DOM, so DOM at the
+        // end stays at the end.
+        let nextDOM = currentDOM;
+        let nextKey: NodeKey | undefined;
+        while (
+          nextDOM &&
+          !(nextKey = getNodeKeyFromDOMNode(nextDOM, editor)) &&
+          isDOMUnmanaged(nextDOM)
+        ) {
+          nextDOM = nextDOM.nextSibling;
+        }
+        if (nextDOM !== correctDOM) {
+          element.insertBefore(
+            correctDOM,
+            nextKey ? nextDOM : currentDOM || slot.getInsertionAnchor(),
+          );
+        }
+        currentDOM = correctDOM.nextSibling;
+      }
+      $reconcileDecoratorBoundaryAnchors(this, dom, slot);
+    });
   }
 }
 

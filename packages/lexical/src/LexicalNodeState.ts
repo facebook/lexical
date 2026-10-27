@@ -828,8 +828,8 @@ export class NodeState<T extends LexicalNode> {
    * A copy of serializedNode[NODE_STATE_KEY] that is made when JSON is
    * imported but has not been parsed yet.
    *
-   * It stays here until a get state requires us to parse it, and since we
-   * then know the value is safe we move it to knownState.
+   * It stays here until a set state replaces it with a known value, or the
+   * node is next cloned and its key is known to the node type.
    *
    * Note that since only string keys are used here, we can only allow this
    * state to pass-through on export or on the next version since there is
@@ -897,10 +897,9 @@ export class NodeState<T extends LexicalNode> {
    * @internal
    *
    * Get the value from knownState, or parse it from unknownState
-   * if it contains the given key.
+   * and cache in knownState if it contains the given key.
    *
    * Updates the sharedConfigMap when no known state is found.
-   * Updates unknownState and knownState when an unknownState is parsed.
    */
   getValue<K extends string, V>(stateConfig: StateConfig<K, V>): V {
     const known = this.knownState.get(stateConfig) as V | undefined;

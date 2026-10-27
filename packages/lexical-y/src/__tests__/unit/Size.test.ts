@@ -64,7 +64,8 @@ const BUDGETS: Record<string, [number, number, number]> = {
   'indent list item': [74, 32, 67],
   'link a word': [116, 13, 116],
   'list type change': [21, 69, 13],
-  'move a block': [104, 104, 97],
+  // The first move also records layout 2 (`lexical-y:2`) in its update.
+  'move a block': [108, 104, 97],
   'outdent list item': [32, 67, 32],
   'paste 1k chars': [1129, 15, 1130],
   'quote toggle': [32, 13, 29],

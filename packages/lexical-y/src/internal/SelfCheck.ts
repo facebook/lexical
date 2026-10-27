@@ -52,7 +52,13 @@ import {
   TYPE_KEY,
   WRAPPER_PREFIX,
 } from './Schema';
-import {type CS, EMPTY_FORMATS, prevLiveEnd, State} from './State';
+import {
+  type CS,
+  EMPTY_FORMATS,
+  lineStart,
+  startItemAfter,
+  State,
+} from './State';
 
 // The opt-in self-check (YBindingOptions.selfCheck): the lines a local
 // write touched, read back from Yjs and compared with the editor
@@ -164,14 +170,14 @@ export function $checkWrite(writer: Writer): string[] {
       get: key => writer.state.segments.get(key),
     };
     $pushInline(want, nodes, ctx);
-    const left = prevLiveEnd(end);
+    const {left, zone} = lineStart(writer.state, end);
     const have = new Atoms();
     readAtoms(
-      left === null ? unit.cs.y._start : left.right,
+      startItemAfter(writer.state.zonesOf(unit.cs.y), unit.cs.y, left, zone),
       end,
       unit.start || EMPTY_FORMATS,
       have,
-      writer.state.hidden,
+      writer.state.view(unit.cs.y, zone),
     );
     if (want.text !== have.text && want.text !== $shownText(writer, have)) {
       problems.push(
@@ -776,7 +782,10 @@ export function $followUpDifference(
   if (!$isElementNode(container) || !container.isAttached()) {
     return null;
   }
-  const whole = ranges === null || cs.kind === 'i';
+  // A container with move records is read whole, by the zone-aware full
+  // read: units can show elsewhere than their items (see Reader#$readRegion).
+  const zoned = state.zonesOf(cs.y) !== null || cs.units.some(u => u.zone);
+  const whole = ranges === null || cs.kind === 'i' || zoned;
   // The editor's side: the top-level children each range covers.
   const lives: Attrs[][] = [];
   if (whole) {
@@ -864,7 +873,7 @@ export function $followUpDifference(
             $getRoot().clear().append(el);
           }
           const fcs = freshState.newCS(cs.y, el.getKey(), cs.kind);
-          if (cs.kind === 'i') {
+          if (cs.kind === 'i' || zoned) {
             reader.$readFull(fcs, el);
           } else {
             reader.$readRange(fcs, el, start, stop, formatsAt(start));

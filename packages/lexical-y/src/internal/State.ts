@@ -9,7 +9,13 @@
 import type {Hidden} from './Hidden';
 
 import invariant from '@lexical/internal/invariant';
-import {ContentType, type Doc, type Item, type Node as YNode} from '@y/y';
+import {
+  ContentFormat,
+  ContentType,
+  type Doc,
+  type Item,
+  type Node as YNode,
+} from '@y/y';
 import {
   $isDecoratorNode,
   $isElementNode,
@@ -26,6 +32,15 @@ import {
 import {BlockIdIndex} from './BlockIds';
 import {type Formats} from './Cursor';
 import {
+  isMoveItem,
+  type Shown,
+  stepZone,
+  stepZoneBack,
+  type Zone,
+  Zones,
+  ZoneView,
+} from './Moves';
+import {
   $isGroup,
   $isInlineChild,
   $isLine,
@@ -35,6 +50,7 @@ import {
   getGroupSpec,
   getLineSpec,
   type GroupSpec,
+  isBlockNodeType,
   klassOf,
   MARKER,
   RUN_END,
@@ -83,6 +99,11 @@ export type Unit = {
   sig: string;
   /** Formats in effect at the start of the unit (null: none). */
   start: Formats | null;
+  /**
+   * The move record whose range holds the unit (it shows where the record
+   * is), or null: the unit shows where its items are.
+   */
+  zone?: Zone;
 };
 
 type Role =
@@ -109,12 +130,14 @@ export function isEndItem(it: Item): boolean {
   if (!(it.content instanceof ContentType)) {
     return false;
   }
-  const name = it.content.type.name;
-  return (
-    name === MARKER ||
-    name === RUN_END ||
-    (typeof name === 'string' && name.startsWith(BLOCK_PREFIX))
-  );
+  const type = it.content.type;
+  const name = type.name;
+  return name === MARKER || name === RUN_END || isBlockNodeType(type);
+}
+
+/** Whether `it` is a block node of its container (see isBlockNodeType). */
+export function isBlockNodeItem(it: Item): boolean {
+  return it.content instanceof ContentType && isBlockNodeType(it.content.type);
 }
 
 /** The previous live end item before `it` in its container, or null. */
@@ -125,6 +148,159 @@ export function prevLiveEnd(it: Item | null): Item | null {
     }
   }
   return null;
+}
+
+/**
+ * Where a line (or run) whose end item is `end` starts: the item its content
+ * starts after (the previous live end item of the walk, or the start of a
+ * zone's range, even deleted, or null for the container's start) and the
+ * zone a walk from there starts in. A line can span zones: an inline record
+ * in it shows another range's text in its place (a join), and a line can
+ * start inside such a range. Without moves: `prevLiveEnd`, the container.
+ */
+export function lineStart(
+  state: State | Zones | null,
+  end: Item,
+): {left: Item | null; zone: Zone} {
+  const zones =
+    state instanceof State ? state.zonesOf(end.parent as YNode) : state;
+  if (zones === null) {
+    return {left: prevLiveEnd(end), zone: null};
+  }
+  const view = new ZoneView(zones, zones.ownerOf(end), null);
+  for (let p = stepZoneBack(view, end); p !== null; ) {
+    const z = view.zone;
+    if (zones.ownerOf(p) !== z) {
+      if (z !== null && !zones.inRange(z, p)) {
+        return {left: p, zone: z};
+      }
+    } else if (!p.deleted && isEndItem(p)) {
+      // The last item of a range shown inline: the line starts after the
+      // record (a walk from there starts in the record's zone).
+      let left: Item = p;
+      let zone: Zone = z;
+      for (
+        let r = zones.inlineRec(zone), guard = 0;
+        r !== null && r.e === left && guard < 64;
+        r = zones.inlineRec(zone), guard++
+      ) {
+        left = r.item;
+        zone = zones.ownerOf(r.item);
+      }
+      return {left, zone};
+    }
+    p = stepZoneBack(view, p);
+  }
+  return {left: null, zone: view.zone};
+}
+
+/**
+ * The item a unit's content starts after (see `lineStart`). `prevLiveEnd`
+ * when the container holds no moves.
+ */
+export function prevBoundary(
+  state: State | Zones | null,
+  it: Item,
+): Item | null {
+  return lineStart(state, it).left;
+}
+
+/**
+ * The item right after `left` (a line start, see `lineStart`): walks from
+ * there enter the inline ranges they meet themselves.
+ */
+export function startItemAfter(
+  _zones: Zones | null,
+  y: YNode,
+  left: Item | null,
+  _zone: Zone,
+): Item | null {
+  return left === null ? y._start : left.right;
+}
+
+/**
+ * The next live end item after `it` in a walk of the zone of `it` (or of
+ * `zone`), null when none (or past the end of a range shown before a line).
+ */
+export function nextZoneEnd(
+  state: State | Zones | null,
+  it: Item,
+  zone?: Zone,
+): Item | null {
+  const zones =
+    state instanceof State ? state.zonesOf(it.parent as YNode) : state;
+  if (zones === null) {
+    for (let p = it.right; p !== null; p = p.right) {
+      if (!p.deleted && isEndItem(p)) {
+        return p;
+      }
+    }
+    return null;
+  }
+  const y = it.parent as YNode;
+  const view = new ZoneView(
+    zones,
+    zone === undefined ? zones.ownerOf(it) : zone,
+    null,
+  );
+  for (let p = stepZone(view, y, it, null); p !== null; ) {
+    const z = view.zone;
+    if (zones.ownerOf(p) !== z) {
+      if (z !== null && !zones.inRange(z, p)) {
+        return null;
+      }
+    } else if (!p.deleted && isEndItem(p)) {
+      return p;
+    }
+    p = stepZone(view, y, p, null);
+  }
+  return null;
+}
+
+/**
+ * The start formats of every unit of a container holding moves, from its
+ * items: formats are positional (every format item applies to what follows
+ * it physically), and a unit starts right after its line start (see
+ * `lineStart`).
+ */
+export function physicalStarts(state: State, cs: CS): Map<Unit, Formats> {
+  const out = new Map<Unit, Formats>();
+  const zones = state.zonesOf(cs.y);
+  const startOf = new Map<Unit, Item | null>();
+  const wanted = new Set<Item>();
+  for (const u of cs.units) {
+    if (u.end === null || u.end.deleted) {
+      continue;
+    }
+    const {left} = lineStart(zones, u.end);
+    startOf.set(u, left);
+    if (left !== null) {
+      wanted.add(left);
+    }
+  }
+  const after = new Map<Item, Formats>();
+  const fmt = new Map<string, unknown>();
+  for (
+    let it = cs.y._start;
+    it !== null && after.size < wanted.size;
+    it = it.right
+  ) {
+    if (!it.deleted && it.content instanceof ContentFormat) {
+      const {key, value} = it.content;
+      if (value === null) {
+        fmt.delete(key);
+      } else {
+        fmt.set(key, value);
+      }
+    }
+    if (wanted.has(it)) {
+      after.set(it, new Map(fmt));
+    }
+  }
+  startOf.forEach((left, u) => {
+    out.set(u, left === null ? new Map() : (after.get(left) ?? new Map()));
+  });
+  return out;
 }
 
 export function nameOf(it: Item): string {
@@ -181,11 +357,117 @@ export class State {
   blockIdHolder: ((id: string) => LexicalNode | null) | null = null;
   /** Block ids as stored, for the nodes a read gave one. */
   readonly ids = new BlockIdIndex(this);
+  /** Containers that hold (or held) move records, and their ownership. */
+  private readonly withMoves = new WeakSet<YNode>();
+  /** Write moved units as move records (off: as a delete and a reinsert). */
+  moves = true;
+  private readonly zoneCache = new WeakMap<YNode, Zones>();
+  /**
+   * Bumped by the binding when a transaction starts and when Yjs has cleaned
+   * one up (it merges items then, anchors among them). Between the two, the
+   * document does not change outside a transaction, so ownership checked
+   * there stays valid until the next bump; in a transaction, it is checked
+   * on every use (null: always).
+   */
+  private epoch: number | null = null;
   constructor(
     readonly editor: LexicalEditor,
     readonly doc: Doc,
     readonly root: YNode,
   ) {}
+
+  nextEpoch(): void {
+    this.epoch = (this.epoch ?? 0) + 1;
+  }
+
+  /** Note that `y` holds a move record (written or read). */
+  noteMoves(y: YNode): void {
+    this.withMoves.add(y);
+    this.zoneCache.delete(y);
+  }
+
+  /** Forget the ownership of `y` (its records changed). */
+  invalidateZones(y: YNode): void {
+    this.zoneCache.delete(y);
+  }
+
+  /**
+   * The ownership last computed for `y`, as it was: the ownership its units
+   * show (no validation against records changed since).
+   */
+  peekZones(y: YNode): Zones | undefined {
+    return this.zoneCache.get(y);
+  }
+
+  hasMoves(y: YNode): boolean {
+    return this.withMoves.has(y);
+  }
+
+  /**
+   * Whether a record of `y` names an item not received yet: its ownership
+   * is computed again (and the container read again) when items arrive.
+   */
+  takeUnresolved(y: YNode): boolean {
+    const zones = this.zoneCache.get(y);
+    if (zones === undefined || !zones.unresolved) {
+      return false;
+    }
+    this.zoneCache.delete(y);
+    return true;
+  }
+
+  /**
+   * Ownership of the items of `y`, or null when it holds no active move
+   * record (every item is the container's own: the common, free case).
+   */
+  zonesOf(y: YNode): Zones | null {
+    if (!this.withMoves.has(y)) {
+      return null;
+    }
+    let zones = this.zoneCache.get(y);
+    if (
+      zones !== undefined &&
+      (zones.checked === null || zones.checked !== this.epoch) &&
+      (zones.records.some(r => r.deleted) || zones.anchorsMoved())
+    ) {
+      zones = undefined;
+    }
+    if (zones === undefined) {
+      zones = new Zones(this.doc, y);
+      if (zones.records.length === 0) {
+        this.withMoves.delete(y);
+        return null;
+      }
+      this.zoneCache.set(y, zones);
+    }
+    zones.checked = this.doc._transaction === null ? this.epoch : null;
+    return zones.active.length === 0 ? null : zones;
+  }
+
+  /** What a walk of `zone` in `y` shows (null: everything live). */
+  view(y: YNode, zone: Zone): Shown | null {
+    const zones = this.zonesOf(y);
+    if (zones === null) {
+      return this.hidden;
+    }
+    return new ZoneView(zones, zone, this.hidden);
+  }
+
+  /** The zone of `it` in its container. */
+  zoneOf(it: Item): Zone {
+    const zones = this.zonesOf(it.parent as YNode);
+    return zones === null ? null : zones.ownerOf(it);
+  }
+
+  /** Note record items among items inserted or deleted in `y`. */
+  noteItems(y: YNode, items: Iterable<Item>): void {
+    for (const it of items) {
+      if (it.content instanceof ContentType && isMoveItem(it)) {
+        this.noteMoves(y);
+        return;
+      }
+    }
+  }
 
   /**
    * A new state for `doc` and `root` with this one's configuration (what the
@@ -322,7 +604,23 @@ export class State {
 export class Roles {
   private readonly memo = new Map<NodeKey, Role>();
   private readonly kinds = new Map<NodeKey, Kind>();
+  /**
+   * Nodes a write keeps stored as their own node where they are (a block
+   * lifted in place out of the line it was written in, see Writer
+   * #$liftInPlace): containers, whatever their class.
+   */
+  private readonly keptAsNode = new Set<NodeKey>();
   constructor(readonly state: State) {}
+
+  /** See keptAsNode. */
+  keepAsNode(key: NodeKey, keep: boolean): void {
+    if (keep) {
+      this.keptAsNode.add(key);
+    } else {
+      this.keptAsNode.delete(key);
+    }
+    this.memo.clear();
+  }
 
   $role(node: LexicalNode): Role {
     const key = node.getKey();
@@ -349,6 +647,11 @@ export class Roles {
     }
     const parent = node.getParent();
     if (parent === null) {
+      return 'container';
+    }
+    if (this.keptAsNode.has(node.getKey()) || this.isLifted(node.getKey())) {
+      // Stored as an `i:` node made a unit in place (UNIT_KEY): its storage
+      // is kept, whatever the class (rewriting it as a line would copy it).
       return 'container';
     }
     const p = this.$role(parent);
@@ -402,6 +705,19 @@ export class Roles {
       }
     }
     return true;
+  }
+
+  /** Whether `key` is stored as an `i:` node lifted in place (UNIT_KEY). */
+  private isLifted(key: NodeKey): boolean {
+    const y = this.state.yByKey.get(key);
+    return (
+      y !== undefined &&
+      y._item !== null &&
+      !y._item.deleted &&
+      typeof y.name === 'string' &&
+      !y.name.startsWith(BLOCK_PREFIX) &&
+      isBlockNodeType(y)
+    );
   }
 
   /** Whether a container holds blocks ('b') or only inline content ('i'). */

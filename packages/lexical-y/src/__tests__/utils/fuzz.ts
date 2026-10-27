@@ -443,7 +443,15 @@ export class FPeer {
 const TOKEN_RE = /<\d+(?:\.\d+)?>/g;
 const VALID_TEXT = /^(?:<\d+(?:\.\d+)?>)*$/;
 
-type TokInfo = {op: number; peer: number; round: number; inCont: boolean};
+type TokInfo = {
+  op: number;
+  peer: number;
+  round: number;
+  /** Typed inside a table, box or column. */
+  inCont: boolean;
+  /** Peers that moved a block holding the token into one. */
+  carriedBy?: number[];
+};
 
 export type Failure = {sig: string; detail: string};
 
@@ -808,7 +816,16 @@ type Ctx = {
   peer: number;
   op: Op;
   newTok: (sub?: number) => string;
+  /** Tokens a move carried into a table, box or column. */
+  carried: string[];
 };
+
+/** Records the tokens of a moved block that now sits in a container. */
+function $carry(ctx: Ctx, node: LexicalNode) {
+  if (inNestedContainer(node)) {
+    ctx.carried.push(...(node.getTextContent().match(TOKEN_RE) || []));
+  }
+}
 
 /** Returns a description, or null when not applicable. */
 function $op(ctx: Ctx): string | null {
@@ -1182,6 +1199,7 @@ function $op(ctx: Ctx): string | null {
       } else {
         target.insertBefore(node);
       }
+      $carry(ctx, node);
       return `move ${d} ${r[2] < 0.5 ? 'after' : 'before'} ${describeNode(target).slice(0, 60)}`;
     }
     case 'moveli': {
@@ -1201,6 +1219,7 @@ function $op(ctx: Ctx): string | null {
       } else {
         target.insertBefore(li);
       }
+      $carry(ctx, li);
       return `moveli ${descLine(li)} near ${descLine(target)}`;
     }
   }
@@ -1223,6 +1242,7 @@ function runOp(world: World, round: number, op: Op) {
   const before = peer.editor.getEditorState().read($tokensOf);
   const newToks: string[] = [];
   const ctx: Ctx = {
+    carried: [],
     newTok: sub => {
       const t = sub === undefined ? `<${op.id}>` : `<${op.id}.${sub}>`;
       newToks.push(t);
@@ -1285,6 +1305,14 @@ function runOp(world: World, round: number, op: Op) {
         peer: op.p,
         round,
       });
+    }
+  }
+  if (desc !== null) {
+    for (const tok of ctx.carried) {
+      const info = world.tokens.get(tok);
+      if (info !== undefined) {
+        info.carriedBy = [...(info.carriedBy ?? []), op.p];
+      }
     }
   }
   for (const [tok, n] of before.counts) {
@@ -1597,8 +1625,16 @@ function checkFinal(world: World) {
       if (frags.some(f => f.includes(inner + '>') || f.includes('<' + inner))) {
         return 'rotated';
       }
-      const otherRemoval = world.removals.some(r => r.peer !== info.peer);
-      return info.inCont && otherRemoval ? 'container' : 'line';
+      // Delete wins: the token was typed into a table, box or column, or a
+      // block holding it was moved into one, and another peer removed
+      // something (which can remove that container).
+      const putInContainerBy = [
+        ...(info.inCont ? [info.peer] : []),
+        ...(info.carriedBy ?? []),
+      ];
+      return putInContainerBy.some(p => world.removals.some(r => r.peer !== p))
+        ? 'container'
+        : 'line';
     });
     world.metrics.lost = [...lost].sort();
     world.metrics.lostInContainer = lost
@@ -1663,6 +1699,31 @@ function $init(seed: number) {
   );
 }
 
+/** Debugging: the items of a shared type, one per line. */
+export function dumpYNode(y: Y.Node, ind = ''): string {
+  const out: string[] = [];
+  for (let it = y._start; it !== null; it = it.right) {
+    const c = it.content as unknown;
+    let d = '';
+    if (c instanceof Y.ContentType) {
+      d = 'T:' + c.type.name + ' ' + JSON.stringify(c.type.getAttrs());
+    } else if (c instanceof Y.ContentString) {
+      d = JSON.stringify(c.str);
+    } else if (c instanceof Y.ContentFormat) {
+      d = 'F:' + c.key + '=' + JSON.stringify(c.value);
+    } else {
+      d = (c as object).constructor.name;
+    }
+    out.push(
+      `${ind}${it.id.client}:${it.id.clock}${it.deleted ? ' DEL' : ''} ${d}`,
+    );
+    if (c instanceof Y.ContentType && !it.deleted && c.type._start !== null) {
+      out.push(dumpYNode(c.type as Y.Node, ind + '    '));
+    }
+  }
+  return out.join('\n');
+}
+
 export function runScript(script: Script, trace = false): RunResult {
   const t0 = performance.now();
   const world = new World();
@@ -1708,6 +1769,14 @@ export function runScript(script: Script, trace = false): RunResult {
       ops++;
       runOp(world, ri, op);
       applied++;
+      if (trace && process.env.FUZZ_DUMP === '1') {
+        for (const p of world.peers) {
+          world.log(`   ${p.name}: ${p.describe()}`);
+          if (process.env.FUZZ_DUMP_DOC === '1' && p.layout === 'y') {
+            world.log(dumpYNode((p.doc as Y.Doc).get('lexical-y'), '      '));
+          }
+        }
+      }
       if (round.mode === 'live') {
         deliverCausal(world, rnd);
       }
@@ -1723,6 +1792,14 @@ export function runScript(script: Script, trace = false): RunResult {
       const j = (i + 1 + Math.floor(rnd() * 2)) % 3;
       deliverSender(world, rnd, [world.peers[i], world.peers[j]]);
       world.log(`   partial ${world.peers[i].name}<->${world.peers[j].name}`);
+    }
+    if (trace && process.env.FUZZ_DUMP === '1') {
+      for (const p of world.peers) {
+        world.log(`   delivered ${p.name}: ${p.describe()}`);
+        if (process.env.FUZZ_DUMP_DOC === '1' && p.layout === 'y') {
+          world.log(dumpYNode((p.doc as Y.Doc).get('lexical-y'), '      '));
+        }
+      }
     }
     if (round.mode !== 'partial') {
       checkPeers(world, 'mid');

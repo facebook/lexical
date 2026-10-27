@@ -68,7 +68,8 @@ these to run more (from the repository root, with
 `npx vitest --project unit --no-watch packages/lexical-y`):
 
 - `FUZZ_SEEDS`, `FUZZ_GC_SEEDS` (`Fuzz.test.ts`, with and without
-  garbage collection; `FUZZ_SEED_START` picks the first seed);
+  garbage collection; `FUZZ_SEED_START` picks the first seed), and
+  `FUZZ_MOVE_SEEDS`, `FUZZ_MOVE_GC_SEEDS` for its runs with block moves;
 - `NORMALIZE_FUZZ_SEEDS` (`NormalizationConvergence.test.ts`);
 - `SHAPE_FUZZ_SEEDS` (`ConcurrentShapesFuzz.test.ts`);
 - `SLOTS_FUZZ_SEEDS` (`SlotsFuzz.test.ts`, named slots);
@@ -101,8 +102,8 @@ otherwise.
 
 Layout 1 is frozen: these names are stored in documents and do not change.
 A change to any of them is a new layout version, which older clients open
-read only. Layout 2 (planned, #9449) adds move records and keeps everything
-below.
+read only. Layout 2 (below) keeps everything here and adds move records and
+lifted blocks.
 
 - **Root:** the top-level type `lexical-y` (or the `root` option). Root
   attributes: `lexical-y:<n>` = `true` for each layout version `n` the
@@ -190,4 +191,50 @@ below.
   `{t: 'heading'}`; a nested item of a numbered list has no `g:listType`).
   Every client of a document must therefore register classes with the same
   defaults.
+
+## Wire format: layout 2
+
+Layout 2 is layout 1 plus the following, and is frozen the same way.
+
+A layout 1 document is upgraded in place, lazily. The first client that
+writes a move record, a join record or a lifted block adds `lexical-y:2` =
+`true` to the layout record, in the same transaction; undo never deletes
+it. Nothing else is rewritten. From then on, clients that only read layout
+1 open the document read only, and the record never shrinks.
+Documents that never see a move or a lifted block stay at layout 1, and
+older clients keep editing them. Later additive layouts follow the same
+pattern. A change to how existing data is stored would instead need a
+reseed (out of scope here).
+
+- **Move records:** `↷` (U+21B7) children of a container. Attributes:
+  - `s`: the id `[client, clock]` of the item right before the range, or
+    `null` for the start of the container;
+  - `e`: the id of the range's last item (inclusive);
+  - `p`: the priority, a non-negative integer;
+  - `o`: optional, the id of the record this one was written again from
+    (it keeps that record's rank among records of equal priority);
+  - `j`: optional, `1` for a join record (below).
+
+  Ids name items of the same container. Ownership is computed when
+  reading, never stored: an item belongs to the record whose range holds it
+  positionally (items inserted later inside a range included) that ranks
+  first: highest `p`, then highest client and then clock of `o` (the
+  record's own id when it has none), then of the record's own id; otherwise
+  to the container. A record that sits inside its own range, directly or
+  through the records that show it, is inactive (it shows nothing). A
+  record whose ids are not received yet waits for them. A block record
+  (no `j`) shows its range's units right before the line its item is in.
+- **Join records:** a move record with `j` = `1` shows its range inline, at
+  its own position inside the line around it: a walk of the line enters
+  the range at the record and goes on after the record past the range's
+  last item. A join of two lines in different ranges is written as the
+  first line's text, one join record per piece of the second line (a piece
+  is a run of the line's items in one range, in order), and the first
+  line's marker; the second line's marker is deleted. A line can start or
+  end inside a range a join record shows. A line moved while it spans
+  ranges gets one join record per piece but its last, written at the
+  start of that last piece, and a block record over that last piece.
+- **Lifted blocks:** `u` = `1` on an `i:<type>`
+  node: the node is a unit of its container, like a `b:<type>` child (a
+  block a peer wrote inside a line, lifted out of it in place).
 

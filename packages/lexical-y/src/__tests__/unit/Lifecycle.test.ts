@@ -171,7 +171,7 @@ describe('version gate', () => {
   test('active client receives a newer version mid session', async () => {
     const t = await setup(() => $getRoot().append($p('abc')));
     t.b.doc.transact(() =>
-      t.b.doc.get('lexical-y').setAttr('lexical-y:2', true),
+      t.b.doc.get('lexical-y').setAttr('lexical-y:3', true),
     );
     await t.sync();
     // b's binding: its own transaction with origin != binding is treated as remote

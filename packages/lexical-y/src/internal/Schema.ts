@@ -58,6 +58,31 @@ export const INLINE_PREFIX = 'i:';
 export {LAYOUT_PREFIX, LAYOUT_VERSION} from './constants';
 /** Container attribute: 'b' when it holds blocks, 'i' when inline content. */
 export const KIND_KEY = 'c';
+/**
+ * Layout 2: `u` = 1 on an `i:<type>` node makes it a unit of its container,
+ * as a `b:<type>` child is (a block a repair lifted out of the line it was
+ * written in: the node, its content and its position are kept, so peers
+ * typing in it and peers lifting it at once never copy or lose it).
+ */
+export const UNIT_KEY = 'u';
+
+/**
+ * Whether a child node is a unit of its container (a block): `b:<type>`, or
+ * an `i:<type>` node lifted in place (UNIT_KEY).
+ */
+export function isBlockNodeType(y: {
+  name: unknown;
+  getAttr: (k: string) => unknown;
+}): boolean {
+  const name = y.name;
+  if (typeof name !== 'string') {
+    return false;
+  }
+  return (
+    name.startsWith(BLOCK_PREFIX) ||
+    (name.startsWith(INLINE_PREFIX) && y.getAttr(UNIT_KEY) === 1)
+  );
+}
 
 // Marker keys
 export const TYPE_KEY = 't';

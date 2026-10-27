@@ -8,7 +8,13 @@
 
 // @vitest-environment node
 
-import type {PhrasingContent, Table, TableCell, TableRow} from 'mdast';
+import type {
+  AlignType,
+  PhrasingContent,
+  Table,
+  TableCell,
+  TableRow,
+} from 'mdast';
 
 import {
   $createHorizontalRuleNode,
@@ -910,7 +916,7 @@ describe('MdastTableExtension', () => {
       ).getChildren();
       expect(text.getTextContent()).toBe('a');
       expect($isLineBreakNode(br)).toBe(true);
-      // Only Markdown source holds its pipes escaped.
+      // Raw HTML not parsed from Markdown holds its pipes unescaped.
       expect($assertNodeType(nested, $isTableNode).getTextContent()).toBe(
         '<i title="\\\\|">',
       );
@@ -970,6 +976,56 @@ describe('MdastTableExtension', () => {
           '| [l]() |   |',
         ),
       );
+    });
+  });
+
+  it('reads a supplied table’s missing header cells, alignment and escapes as GFM has them', () => {
+    using editor = createEditor();
+    const position = {end: {column: 1, line: 1}, start: {column: 1, line: 1}};
+    editor.update(
+      () =>
+        $convertFromMdast({
+          children: [
+            {
+              align: ['constructor' as AlignType, 'center'],
+              children: [
+                {children: [], type: 'tableRow'},
+                {
+                  children: [
+                    {children: [{type: 'text', value: 'x'}], type: 'tableCell'},
+                    {
+                      children: [
+                        // From a parse, which leaves the pipe escaped.
+                        {position, type: 'html', value: '<i title="\\|">'},
+                        {type: 'html', value: '<i title="\\|">'},
+                      ],
+                      type: 'tableCell',
+                    },
+                  ],
+                  type: 'tableRow',
+                },
+              ],
+              type: 'table',
+            },
+          ],
+          type: 'root',
+        }),
+      {discrete: true},
+    );
+    editor.read(() => {
+      const cells = $cells();
+      expect(cells.map(row => row.map(cell => cell.getTextContent()))).toEqual([
+        ['', ''],
+        ['x', '<i title="|"><i title="\\|">'],
+      ]);
+      expect(
+        cells[1].map(cell =>
+          $assertNodeType(
+            cell.getFirstChild(),
+            $isParagraphNode,
+          ).getFormatType(),
+        ),
+      ).toEqual(['', 'center']);
     });
   });
 

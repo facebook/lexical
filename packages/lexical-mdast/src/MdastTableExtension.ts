@@ -325,8 +325,10 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
       if (BR_RE.test(child.value)) {
         return [{type: 'break'}];
       }
-      // Only a tree parsed from Markdown source has them escaped.
-      const value = ctx.source ? unescapePipes(child.value) : child.value;
+      // Only one parsed from Markdown has them escaped, which a node with a
+      // source position (or one from this import's own parse) is.
+      const value =
+        ctx.source || child.position ? unescapePipes(child.value) : child.value;
       return value === child.value ? undefined : [{...child, value}];
     }
     // An autolink, `<…>` or literal, rather than `[text](url)`, which reads
@@ -355,12 +357,17 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
     child.type === type
       ? ('children' in child && child.children) || []
       : [child];
-  const rows = childrenOf(node, 'table').map(row =>
-    childrenOf(row, 'tableRow'),
-  );
+  const rows = (node.children || []).map(row => childrenOf(row, 'tableRow'));
   // Each row has the header row's cells, as GFM reads it: those past them
-  // are dropped and missing ones are empty.
-  const header = rows.length > 0 ? rows[0] : [];
+  // are dropped and missing ones are empty. A supplied header row without
+  // cells has those of its widest row.
+  const header =
+    rows.length > 0 && rows[0].length > 0
+      ? rows[0]
+      : rows.reduce(
+          (widest, row) => (row.length > widest.length ? row : widest),
+          [],
+        );
   if (header.length === 0) {
     return [];
   }
@@ -379,7 +386,14 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
             ),
             [
               $append(
-                $createParagraphNode().setFormat(align[column] || ''),
+                $createParagraphNode().setFormat(
+                  // Only the alignments GFM has.
+                  align[column] === 'left' ||
+                    align[column] === 'center' ||
+                    align[column] === 'right'
+                    ? align[column]
+                    : '',
+                ),
                 cell
                   ? ctx.importChildren({
                       ...cell,
@@ -590,10 +604,12 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
  * nodes it ships.
  *
  * Import reads a table as GFM does: the first row is the header row, each row
- * has the header row's cells, and an escaped pipe is a pipe in raw HTML and
- * autolinks imported from Markdown source (where micromark leaves it
- * escaped; an mdast tree holds it unescaped). Column alignment is set on the paragraph of
- * each cell of the column as its element format, and a raw HTML `<br>` in a
+ * has the header row's cells, and an escaped pipe, which micromark leaves
+ * escaped, is a pipe in raw HTML parsed from Markdown (imported from its
+ * source, or with a source position) and in autolinks imported from Markdown
+ * source (an mdast tree without it can't tell an autolink from
+ * `[text](url)`). Column alignment is set on the paragraph of each cell of
+ * the column as its element format, and a raw HTML `<br>` in a
  * cell, which export writes for a line break, is read as one.
  * Export writes any table as near as GFM allows: the blocks a cell's content
  * exports as (by its export rules), and their line breaks, as lines separated

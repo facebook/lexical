@@ -8,7 +8,7 @@
 
 // @vitest-environment node
 
-import type {PhrasingContent} from 'mdast';
+import type {PhrasingContent, TableCell} from 'mdast';
 
 import {
   $createHorizontalRuleNode,
@@ -495,6 +495,12 @@ describe('MdastTableExtension', () => {
       ]);
       expect($convertToMarkdownString()).toBe(markdown);
     });
+    // The mdast holds them unescaped, which reads back as it is.
+    const mdast = editor.read(() => $convertToMdast());
+    editor.update(() => $convertFromMdast(mdast), {discrete: true});
+    editor.read(() => {
+      expect($convertToMarkdownString()).toBe(markdown);
+    });
     // A pipe after an odd run of backslashes, which a cell can't hold, isn't
     // where GFM ends the cell, so it's written as it is.
     editor.update(
@@ -853,7 +859,7 @@ describe('MdastTableExtension', () => {
     });
   });
 
-  it('reads a break tag and a nested table in a supplied cell', () => {
+  it('reads a break tag, raw HTML and a nested table in a supplied cell', () => {
     using editor = createEditor();
     editor.update(
       () =>
@@ -904,10 +910,42 @@ describe('MdastTableExtension', () => {
       ).getChildren();
       expect(text.getTextContent()).toBe('a');
       expect($isLineBreakNode(br)).toBe(true);
-      // A pipe escaped in raw HTML is unescaped once.
+      // Only Markdown source holds its pipes escaped.
       expect($assertNodeType(nested, $isTableNode).getTextContent()).toBe(
-        '<i title="\\|">',
+        '<i title="\\\\|">',
       );
+    });
+  });
+
+  it('reads a supplied row’s phrasing content as a cell, and no header cells as no table', () => {
+    using editor = createEditor();
+    editor.update(
+      () =>
+        $convertFromMdast({
+          children: [
+            {
+              children: [{children: [], type: 'tableRow'}],
+              type: 'table',
+            },
+            {
+              children: [
+                {
+                  children: [
+                    {type: 'text', value: 'x'} as unknown as TableCell,
+                  ],
+                  type: 'tableRow',
+                },
+              ],
+              type: 'table',
+            },
+          ],
+          type: 'root',
+        }),
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($getRoot().getChildrenSize()).toBe(1);
+      expect($cells()[0][0].getTextContent()).toBe('x');
     });
   });
 

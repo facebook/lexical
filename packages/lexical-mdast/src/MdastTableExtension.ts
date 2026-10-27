@@ -68,8 +68,8 @@ function gfmAlign(format: ElementFormatType): AlignType {
 
 /**
  * Replaces each node for which `replace` returns an array with that array,
- * maps the children of every node but a table (which maps its own) the same
- * way, and returns `nodes` itself when nothing changed.
+ * maps the children of every node the same way, and returns `nodes` itself
+ * when nothing changed.
  */
 function mapPhrasing(
   nodes: readonly MdastNode[],
@@ -80,9 +80,7 @@ function mapPhrasing(
     const replaced = replace(node);
     const result = (replaced || [node]).map(child => {
       const children =
-        'children' in child &&
-        child.type !== 'table' &&
-        mapPhrasing(child.children, replace);
+        'children' in child && mapPhrasing(child.children, replace);
       return children && children !== child.children
         ? ({...child, children} as MdastNode)
         : child;
@@ -327,7 +325,8 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
       if (BR_RE.test(child.value)) {
         return [{type: 'break'}];
       }
-      const value = unescapePipes(child.value);
+      // Only a tree parsed from Markdown source has them escaped.
+      const value = ctx.source ? unescapePipes(child.value) : child.value;
       return value === child.value ? undefined : [{...child, value}];
     }
     // An autolink, `<…>` or literal, rather than `[text](url)`, which reads
@@ -350,19 +349,20 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
       ];
     }
   };
-  if (node.children.length === 0) {
-    return [];
-  }
   // Each row has the header row's cells, as GFM reads it: those past them
   // are dropped and missing ones are empty.
-  const header = node.children[0].children;
+  const header = node.children.length > 0 ? node.children[0].children : [];
+  if (header.length === 0) {
+    return [];
+  }
   return $append(
     $createTableNode(),
     node.children.map((row, rowIndex) =>
       $append(
         $createTableRowNode(),
         header.map((_, column) => {
-          const cell = row.children[column];
+          // A supplied row can hold phrasing content rather than a cell.
+          const cell: MdastNode | undefined = row.children[column];
           return $append(
             $createTableCellNode(
               rowIndex === 0
@@ -375,7 +375,11 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
                 cell
                   ? ctx.importChildren({
                       ...cell,
-                      children: mapPhrasing(cell.children, replace),
+                      children: mapPhrasing(
+                        'children' in cell ? cell.children : [cell],
+                        replace,
+                      ),
+                      type: 'tableCell',
                     })
                   : [],
               ),
@@ -578,9 +582,9 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
  * nodes it ships.
  *
  * Import reads a table as GFM does: the first row is the header row, each row
- * has the header row's cells, and an escaped pipe is a pipe in raw HTML, and in
- * autolinks imported from Markdown source (an mdast tree without it can't tell
- * an autolink from `[text](url)`). Column alignment is set on the paragraph of
+ * has the header row's cells, and an escaped pipe is a pipe in raw HTML and
+ * autolinks imported from Markdown source (where micromark leaves it
+ * escaped; an mdast tree holds it unescaped). Column alignment is set on the paragraph of
  * each cell of the column as its element format, and a raw HTML `<br>` in a
  * cell, which export writes for a line break, is read as one.
  * Export writes any table as near as GFM allows: the blocks a cell's content

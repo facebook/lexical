@@ -330,7 +330,8 @@ function unescapeCellHtml(node: MdastNode, inCell: boolean): void {
   if (inCell && (node.type === 'html' || node.type === 'htmlInline')) {
     node.value = unescapePipes(node.value);
   }
-  if ('children' in node) {
+  // A table is flow content, so outside one only flow content holds one.
+  if ('children' in node && (inCell || !PHRASING_PARENTS.has(node.type))) {
     for (const child of node.children) {
       unescapeCellHtml(child, inCell || node.type === 'tableCell');
     }

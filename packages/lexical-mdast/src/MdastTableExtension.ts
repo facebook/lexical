@@ -53,10 +53,11 @@ import {$append, $isBlockLevelNode, inlineMarker} from './handlers';
 import {MdastExtension} from './MdastExtension';
 
 /**
- * An inline HTML `<br>` tag (or `</br>`, which HTML reads as one), the line
- * break a GFM cell can hold.
+ * An inline HTML `<br>` tag (or `</br>`, which HTML reads as one) on its
+ * own, the line break a GFM cell can hold. Raw HTML with more in it is
+ * imported as any other raw HTML is.
  */
-const BR_RE = /^<\/?br(?:[\s/][^>]*)?>/i;
+const BR_RE = /^<\/?br(?:[\s/][^>]*)?>$/i;
 
 /** The column alignment GFM writes for an element format. */
 function gfmAlign(format: ElementFormatType): AlignType {
@@ -321,14 +322,8 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
   const align = node.align || [];
   const replace = (child: MdastNode): MdastNode[] | undefined => {
     if (child.type === 'html' || child.type === 'htmlInline') {
-      const br = BR_RE.exec(child.value);
-      if (br) {
-        // A supplied tree can hold more HTML after the tag in one node.
-        const rest = {...child, value: child.value.slice(br[0].length)};
-        return [
-          {type: 'break'},
-          ...(rest.value ? replace(rest) || [rest] : []),
-        ];
+      if (BR_RE.test(child.value)) {
+        return [{type: 'break'}];
       }
       const value = unescapePipes(child.value);
       return value === child.value ? undefined : [{...child, value}];

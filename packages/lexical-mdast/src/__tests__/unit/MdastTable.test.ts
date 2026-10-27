@@ -813,7 +813,7 @@ describe('MdastTableExtension', () => {
     });
   });
 
-  it('keeps the HTML after a break tag in one supplied html node', () => {
+  it('keeps a supplied html node with more than a break tag in it whole', () => {
     using editor = createEditor();
     editor.update(
       () =>
@@ -845,10 +845,8 @@ describe('MdastTableExtension', () => {
       const [tableNode] = $convertToMdast().children;
       assert(tableNode.type === 'table');
       expect(tableNode.children[0].children[0].children).toMatchObject([
-        {type: 'text', value: 'a'},
-        {type: 'break'},
-        // Raw HTML is text without MdastHtmlExtension.
-        {value: '<b>content</b>'},
+        // A raw html node imports as its text.
+        {type: 'text', value: 'a<br><b>content</b>'},
       ]);
     });
   });

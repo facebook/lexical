@@ -853,24 +853,20 @@ describe('MdastTableExtension', () => {
     });
   });
 
-  it('reads the blocks in a supplied cell into the cell, aligned', () => {
+  it('reads a break tag and a nested table in a supplied cell', () => {
     using editor = createEditor();
     editor.update(
       () =>
         $convertFromMdast({
           children: [
             {
-              align: ['center'],
               children: [
                 {
                   children: [
                     {
                       children: [
-                        {
-                          children: [{type: 'text', value: 'a'}],
-                          depth: 2,
-                          type: 'heading',
-                        } as unknown as PhrasingContent,
+                        {type: 'text', value: 'a'},
+                        {type: 'html', value: ' <br>\n'},
                         {
                           children: [
                             {
@@ -902,12 +898,12 @@ describe('MdastTableExtension', () => {
       {discrete: true},
     );
     editor.read(() => {
-      const [heading, nested] = $cells()[0][0].getChildren();
-      expect(heading.getTextContent()).toBe('a');
-      expect($assertNodeType(heading, $isElementNode).getFormatType()).toBe(
-        'center',
-      );
-      expect($convertToMdast().children[0]).toMatchObject({align: ['center']});
+      const [text, br, nested] = $assertNodeType(
+        $cells()[0][0].getFirstChild(),
+        $isParagraphNode,
+      ).getChildren();
+      expect(text.getTextContent()).toBe('a');
+      expect($isLineBreakNode(br)).toBe(true);
       // A pipe escaped in raw HTML is unescaped once.
       expect($assertNodeType(nested, $isTableNode).getTextContent()).toBe(
         '<i title="\\|">',

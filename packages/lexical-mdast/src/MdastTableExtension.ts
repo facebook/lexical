@@ -57,7 +57,7 @@ import {MdastExtension} from './MdastExtension';
  * own, the line break a GFM cell can hold. Raw HTML with more in it is
  * imported as any other raw HTML is.
  */
-const BR_RE = /^<\/?br(?:[\s/](?:[^>"']|"[^"]*"|'[^']*')*)?>$/i;
+const BR_RE = /^\s*<\/?br(?:[\s/](?:[^>"']|"[^"]*"|'[^']*')*)?>\s*$/i;
 
 /** The column alignment GFM writes for an element format. */
 function gfmAlign(format: ElementFormatType): AlignType {
@@ -350,56 +350,6 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
       ];
     }
   };
-  // A cell's phrasing content in paragraphs aligned with its column, and
-  // the flow content a supplied tree can hold in a cell, aligned, beside them.
-  const $cellBlocks = (
-    cell: TableCell | undefined,
-    format: ElementFormatType,
-  ): LexicalNode[] => {
-    const blocks: LexicalNode[] = [];
-    let run: MdastNode[] = [];
-    const flush = () => {
-      blocks.push(
-        $append(
-          $createParagraphNode().setFormat(format),
-          ctx.importChildren({
-            ...cell,
-            children: run as PhrasingContent[],
-            type: 'tableCell',
-          }),
-        ),
-      );
-      run = [];
-    };
-    const children: MdastNode[] = cell
-      ? mapPhrasing(cell.children, replace)
-      : [];
-    for (const child of children) {
-      if (
-        child.type === 'code' ||
-        PHRASING_PARENTS.has(child.type) ||
-        CONTAINERS.has(child.type) ||
-        AFTER.has(child.type)
-      ) {
-        if (run.length > 0) {
-          flush();
-        }
-        for (const block of ctx.importNode(child)) {
-          blocks.push(
-            $isElementNode(block) && !block.isInline()
-              ? block.setFormat(format)
-              : block,
-          );
-        }
-      } else {
-        run.push(child);
-      }
-    }
-    if (run.length > 0 || blocks.length === 0) {
-      flush();
-    }
-    return blocks;
-  };
   if (node.children.length === 0) {
     return [];
   }
@@ -419,7 +369,17 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
                 ? TableCellHeaderStates.ROW
                 : TableCellHeaderStates.NO_STATUS,
             ),
-            $cellBlocks(cell, align[column] || ''),
+            [
+              $append(
+                $createParagraphNode().setFormat(align[column] || ''),
+                cell
+                  ? ctx.importChildren({
+                      ...cell,
+                      children: mapPhrasing(cell.children, replace),
+                    })
+                  : [],
+              ),
+            ],
           );
         }),
       ),
@@ -620,8 +580,8 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
  * Import reads a table as GFM does: the first row is the header row, each row
  * has the header row's cells, and an escaped pipe is a pipe in raw HTML, and in
  * autolinks imported from Markdown source (an mdast tree without it can't tell
- * an autolink from `[text](url)`). Column alignment is set on the blocks of
- * each cell of the column as their element format, and a raw HTML `<br>` in a
+ * an autolink from `[text](url)`). Column alignment is set on the paragraph of
+ * each cell of the column as its element format, and a raw HTML `<br>` in a
  * cell, which export writes for a line break, is read as one.
  * Export writes any table as near as GFM allows: the blocks a cell's content
  * exports as (by its export rules), and their line breaks, as lines separated

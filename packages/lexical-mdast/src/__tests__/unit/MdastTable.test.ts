@@ -8,7 +8,7 @@
 
 // @vitest-environment node
 
-import type {PhrasingContent, TableCell, TableRow} from 'mdast';
+import type {PhrasingContent, Table, TableCell, TableRow} from 'mdast';
 
 import {
   $createHorizontalRuleNode,
@@ -927,6 +927,7 @@ describe('MdastTableExtension', () => {
               children: [{children: [], type: 'tableRow'}],
               type: 'table',
             },
+            {type: 'table'} as unknown as Table,
             {
               children: [
                 {
@@ -958,7 +959,7 @@ describe('MdastTableExtension', () => {
       {discrete: true},
     );
     editor.read(() => {
-      // A table without header cells is none.
+      // A table without header cells, or without rows, is none.
       expect($getRoot().getChildrenSize()).toBe(1);
       expect($convertToMarkdownString()).toBe(
         table(

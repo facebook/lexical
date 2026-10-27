@@ -355,7 +355,9 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
     child.type === type
       ? ('children' in child && child.children) || []
       : [child];
-  const rows = node.children.map(row => childrenOf(row, 'tableRow'));
+  const rows = childrenOf(node, 'table').map(row =>
+    childrenOf(row, 'tableRow'),
+  );
   // Each row has the header row's cells, as GFM reads it: those past them
   // are dropped and missing ones are empty.
   const header = rows.length > 0 ? rows[0] : [];

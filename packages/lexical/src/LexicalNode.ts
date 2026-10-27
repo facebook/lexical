@@ -40,6 +40,7 @@ import {
 import {DOMSlot} from './LexicalDOMSlot';
 import {
   $updateStateFromJSON,
+  type AnyStateConfig,
   type NodeState,
   type NodeStateJSON,
   type Prettify,
@@ -125,6 +126,27 @@ export type SerializedLexicalNode = {
    */
   $slots?: Record<string, SerializedLexicalNode>;
 };
+
+/**
+ * @experimental node-structure
+ *
+ * What an element may hold; see {@link StaticNodeConfigValue.children}.
+ */
+export type NodeChildrenConfig =
+  | 'inline'
+  | 'block'
+  | readonly ('inline' | Klass<LexicalNode>)[];
+
+/**
+ * @experimental node-structure
+ *
+ * When adjacent siblings merge; see
+ * {@link StaticNodeConfigValue.mergeAdjacent}.
+ */
+export interface MergeAdjacentConfig {
+  /** Schema field names of the class, or NodeState configs. */
+  readonly by: readonly (string | AnyStateConfig)[];
+}
 
 /**
  * EXPERIMENTAL
@@ -224,6 +246,68 @@ export interface StaticNodeConfigValue<
    * concurrency instead of racing on attribute creation.
    */
   readonly slots?: readonly string[];
+  /**
+   * @experimental node-structure
+   *
+   * Whether a node of this class is inline (it sits among text, like a link)
+   * rather than a block. A class that declares it in its own `$config()` and
+   * does not write its own `isInline()` gets one that returns it; a class
+   * that writes one must agree with it (checked when an editor is created, in
+   * development). Inherited by subclasses that do not declare it, unless a
+   * subclass's own `isInline()` may return something else.
+   */
+  readonly inline?: boolean;
+  /**
+   * @experimental node-structure
+   *
+   * What an {@link ElementNode} of this class may hold:
+   *
+   * - `'inline'`: inline content only (text, line breaks, inline elements and
+   *   decorators), like a paragraph. A plain paragraph child becomes lines of
+   *   the node: its content is joined to the inline content next to it with
+   *   line breaks, as importers build a quote or list item from several
+   *   paragraphs. Any other block child is lifted out: the node is split
+   *   around it, so the block keeps its type and sits between the two parts.
+   *   Out of an inline element (a link), the block's content is first wrapped
+   *   in a copy of the element.
+   * - `'block'`: blocks only, like a table cell. Each run of inline children
+   *   is wrapped in a paragraph.
+   * - a list of `'inline'` and classes: only those (a class allows its
+   *   subclasses). When the list names no `'inline'` (a list holds list
+   *   items), a child the first listed class can hold is wrapped in one (a
+   *   run of inline content in one), a plain paragraph becomes one holding
+   *   its content, and any other block is lifted out. Otherwise blocks are
+   *   handled as for `'inline'`.
+   *
+   * A block lifted out of a node goes on up until it reaches a node that may
+   * hold it, or one whose class declares nothing. A root or shadow root
+   * always holds blocks, whatever its class declares.
+   *
+   * The opt-in `NodeStructureExtension` enforces it in the same update as a
+   * change, and only moves content (it also removes an inline element left
+   * with nothing in it, which Lexical removes anyway); without the extension
+   * it changes nothing. Inherited by subclasses that do not declare it.
+   */
+  readonly children?: NodeChildrenConfig;
+  /**
+   * @experimental node-structure
+   *
+   * Adjacent siblings of this class are the same thing when the values `by`
+   * names are equal: schema fields of the class or {@link StateConfig}s
+   * (NodeState counts only when named; a derived value cannot be named).
+   * Tools that read the declarations can treat such siblings as one.
+   *
+   * `NodeStructureExtension` merges them, the later one's children appended
+   * to the earlier one, whose values win, for the class that declares it in
+   * its own `$config()` only. A subclass that merely inherits the declaration
+   * is never merged by the extension, so a merge method it overrides (such as
+   * `LinkNode`'s `shouldMergeAdjacentLink`) stays the authority. A class
+   * whose own transform merges must merge the same siblings the same way
+   * (`ListNode`'s leaves it to the extension where it is registered). `false`
+   * turns off a declaration an ancestor made. Inherited by subclasses that do
+   * not declare it.
+   */
+  readonly mergeAdjacent?: MergeAdjacentConfig | false;
   /**
    * The exact superclass of the node. Always name it.
    *
@@ -1593,7 +1677,9 @@ export class LexicalNode {
     if (latest === null) {
       invariant(
         false,
-        'Lexical node does not exist in active editor state. Avoid using the same node references between nested closures from editorState.read/editor.update.',
+        'Lexical node does not exist in active editor state (key %s, type %s). The reference was probably kept from another read or update, for example in a closure, event handler or component state, and the node has since been removed or is not part of this editor state. Before using a node reference that may be stale, check node.isAttached() or look the node up again with $getNodeByKey(node.getKey()), inside the read or update where it is used.',
+        this.__key,
+        this.__type,
       );
     }
     return latest;
@@ -1630,7 +1716,9 @@ export class LexicalNode {
     const latestNode = nodeMap.get(key) as this | undefined;
     invariant(
       latestNode !== undefined,
-      'Lexical node does not exist in active editor state. Avoid using the same node references between nested closures from editorState.read/editor.update.',
+      'Lexical node does not exist in active editor state (key %s, type %s). The reference was probably kept from another read or update, for example in a closure, event handler or component state, and the node has since been removed or is not part of this editor state. Before using a node reference that may be stale, check node.isAttached() or look the node up again with $getNodeByKey(node.getKey()), inside the read or update where it is used.',
+      key,
+      this.__type,
     );
     const mutableNode = $cloneWithProperties(latestNode);
     cloneNotNeeded.set(key, mutableNode);

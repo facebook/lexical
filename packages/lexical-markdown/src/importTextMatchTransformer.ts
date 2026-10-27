@@ -81,6 +81,7 @@ export function importFoundTextMatchTransformer(
   transformer: TextMatchTransformer,
   match: RegExpMatchArray,
 ): {
+  matchedNode: TextNode;
   transformedNode?: TextNode;
   nodeBefore: TextNode | undefined; // If split
   nodeAfter: TextNode | undefined; // If split
@@ -102,6 +103,7 @@ export function importFoundTextMatchTransformer(
   const potentialTransformedNode = transformer.replace(transformedNode, match);
 
   return {
+    matchedNode: transformedNode,
     nodeAfter,
     nodeBefore,
     transformedNode: potentialTransformedNode || undefined,

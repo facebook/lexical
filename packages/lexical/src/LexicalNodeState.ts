@@ -340,6 +340,16 @@ export type NodeStateJSON<T extends LexicalNode> = Prettify<
  * //    ^? State<'format', StateValueConfig<number>>
  * ```
  *
+ * {@link arraySetValue} builds an array of strings used as a set: frozen,
+ * sorted and without duplicates, both when it is parsed and when it is
+ * written with {@link $setState}:
+ *
+ * @example
+ * ```ts
+ * const tagsState = createState('tags', {parse: arraySetValue(stringValue())});
+ * //    ^? StateConfig<'tags', readonly string[]>
+ * ```
+ *
  * Only the parse option is required, it is generally not useful to
  * override `unparse` or `isEqual`. However, if you are using
  * non-primitive types such as Array, Object, Date, or something
@@ -404,6 +414,15 @@ export interface StateValueConfig<V> {
    * value to the default.
    */
   resetOnCopyNode?: boolean;
+  /**
+   * @experimental
+   *
+   * `true` when the node's own code recomputes this value from the document
+   * (like a list item's number). It is serialized as usual, but tools that
+   * copy or compare a node's data can leave it out, and `mergeAdjacent` may
+   * not name it.
+   */
+  derived?: boolean;
 }
 
 /**
@@ -433,6 +452,8 @@ export class StateConfig<K extends string | symbol, V> {
    */
   readonly defaultValue: V;
   readonly resetOnCopyNode: boolean;
+  /** @experimental See {@link StateValueConfig.derived}. */
+  readonly derived: boolean;
   /**
    * The {@link SerializationSchema} for this state's value, present when its
    * `parse` is a schema (e.g. `createState('mode', {parse: enumValue([...])})`).
@@ -443,6 +464,7 @@ export class StateConfig<K extends string | symbol, V> {
   readonly schema?: AnySerializationSchema;
   constructor(key: K, stateValueConfig: StateValueConfig<V>) {
     this.key = key;
+    this.derived = stateValueConfig.derived === true;
     // Binding below strips a schema's own properties from this.parse, so
     // resolve it first and keep the original when it carries introspectable
     // metadata.
@@ -632,18 +654,37 @@ export function $setState<Node extends LexicalNode, K extends string, V>(
   if (typeof valueOrUpdater === 'function') {
     const latest = node.getLatest();
     const prevValue = $getState(latest, stateConfig);
-    value = (valueOrUpdater as (v: V) => V)(prevValue);
+    value = canonicalValue(
+      stateConfig,
+      (valueOrUpdater as (v: V) => V)(prevValue),
+    );
     if (stateConfig.isEqual(prevValue, value)) {
       return latest;
     }
   } else {
-    value = valueOrUpdater;
+    value = canonicalValue(stateConfig, valueOrUpdater);
   }
   const writable = node.getWritable();
   const state = $getWritableNodeState(writable);
   $checkCollision(node, stateConfig, state);
   state.updateFromKnown(stateConfig, value);
   return writable;
+}
+
+/**
+ * The value {@link $setState} stores. An {@link arraySetValue} state puts a
+ * written value into the canonical form its parse produces (frozen, sorted,
+ * no duplicates), so a value set directly is stored, read back and compared
+ * like one loaded from JSON. Every other state stores the value as given.
+ */
+function canonicalValue<K extends string, V>(
+  stateConfig: StateConfig<K, V>,
+  value: V,
+): V {
+  const {schema} = stateConfig;
+  return schema !== undefined && schema.meta.kind === 'set'
+    ? stateConfig.parse(value)
+    : value;
 }
 
 /**

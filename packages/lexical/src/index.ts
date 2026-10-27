@@ -223,6 +223,8 @@ export type {
   LexicalNode,
   LexicalParseJSON,
   LexicalUpdateJSON,
+  MergeAdjacentConfig,
+  NodeChildrenConfig,
   NodeKey,
   NodeMap,
   ParsableSerializedNode,
@@ -265,6 +267,7 @@ export {
   aliasedValue,
   aliasTableOf,
   type AnySerializationSchema,
+  arraySetValue,
   arrayValue,
   booleanValue,
   type ComposedSchemaFields,
@@ -326,6 +329,7 @@ export {
   $formatText,
   $generateNodesFromRawText,
   $getCharacterOffsets,
+  $getElementAndOffsetForPoint,
   $getPreviousSelection,
   $getSelection,
   $getTextContent,
@@ -358,6 +362,13 @@ export {
   $setSlot,
   getDeclaredSlots,
 } from './LexicalSlot';
+export type {DeclaredNodeStructure} from './LexicalStructure';
+export {
+  getDeclaredNodeStructure,
+  INTERNAL_$normalizeNodeStructure,
+  INTERNAL_isNodeStructureEnforced,
+  INTERNAL_registerNodeStructure,
+} from './LexicalStructure';
 export {
   $assumeActiveEditor,
   $flushSyncAfterUpdate,

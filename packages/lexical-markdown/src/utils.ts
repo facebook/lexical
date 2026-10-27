@@ -76,12 +76,10 @@ export function isEmptyParagraph(node: LexicalNode): boolean {
   );
 }
 
-// A decimal character reference has one to seven digits, and one that names
-// U+0000, a surrogate or a number past U+10FFFF reads as U+FFFD instead of
-// making `String.fromCodePoint` throw.
-// https://spec.commonmark.org/0.31.2/#decimal-numeric-character
-function decodeDecimalCharacterReference(_: string, digits: string): string {
-  const codePoint = Number(digits);
+// A numeric character reference naming U+0000, a surrogate or a number past
+// U+10FFFF reads as U+FFFD instead of making `String.fromCodePoint` throw.
+// https://spec.commonmark.org/0.31.2/#entity-and-numeric-character-references
+function decodeCharacterReferenceCodePoint(codePoint: number): string {
   return codePoint === 0 ||
     (codePoint >= 0xd800 && codePoint <= 0xdfff) ||
     codePoint > 0x10ffff
@@ -89,8 +87,25 @@ function decodeDecimalCharacterReference(_: string, digits: string): string {
     : String.fromCodePoint(codePoint);
 }
 
+function unescapeTextMatch(
+  _: string,
+  escaped: string | undefined,
+  decimalDigits: string | undefined,
+  hexDigits: string | undefined,
+): string {
+  if (escaped !== undefined) {
+    return escaped;
+  }
+  const codePoint =
+    decimalDigits !== undefined
+      ? Number(decimalDigits)
+      : Number.parseInt(hexDigits ?? '', 16);
+  return decodeCharacterReferenceCodePoint(codePoint);
+}
+
 export function unescapeText(value: string): string {
-  return value
-    .replace(/\\([!-/:-@[-`{-~])/g, '$1')
-    .replace(/&#(\d{1,7});/g, decodeDecimalCharacterReference);
+  return value.replace(
+    /\\([!-/:-@[-`{-~])|&#(\d{1,7});|&#[Xx]([\dA-Fa-f]{1,6});/g,
+    unescapeTextMatch,
+  );
 }

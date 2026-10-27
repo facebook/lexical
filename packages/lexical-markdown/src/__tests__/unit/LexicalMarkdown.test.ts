@@ -4183,3 +4183,34 @@ describe('decimal character references that name no character', () => {
     ).toEqual([{title: 't\uFFFD', url: 'https://example.com/\uFFFD'}]);
   });
 });
+
+describe('hexadecimal character references', () => {
+  const CASES: [md: string, text: string][] = [
+    ['a&#x41;b', 'aAb'],
+    ['a&#X1F600;b', 'a😀b'],
+    ['a&#x0;b', 'a\uFFFDb'],
+    ['a&#xD800;b', 'a\uFFFDb'],
+    ['a&#x110000;b', 'a\uFFFDb'],
+    ['a&#x1234567;b', 'a&#x1234567;b'],
+    ['a\\&#x41;b', 'a&#x41;b'],
+    ['a\\&#65;b', 'a&#65;b'],
+  ];
+
+  for (const [md, text] of CASES) {
+    it(`reads ${JSON.stringify(md)}`, () => {
+      const editor = createTestEditor();
+      editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+        discrete: true,
+      });
+      expect(editor.read('latest', () => $getRoot().getTextContent())).toBe(
+        text,
+      );
+    });
+  }
+
+  it('reads hexadecimal references in a link destination and title', () => {
+    expect(importLinks('[x](https://example.com/&#x41; "t&#x42;")')).toEqual([
+      {title: 'tB', url: 'https://example.com/A'},
+    ]);
+  });
+});

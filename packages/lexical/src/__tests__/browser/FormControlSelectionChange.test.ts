@@ -84,9 +84,10 @@ describe('form-control selectionchange (#9471)', () => {
         document.removeEventListener('selectionchange', onSelectionChange),
       );
 
-      // Changing the value also changes the control's own selection. Let the
-      // browser deliver its bubbling event to the document listener.
-      control.value = 'updated value';
+      // Move the control's own selection. Every engine fires this at the
+      // control and lets it bubble to the document listener (Firefox and
+      // WebKit fire nothing for a value change alone).
+      control.setSelectionRange(1, 3);
       await expect.poll(() => controlEvents.length).toBeGreaterThan(0);
       expect(controlEvents[0].isTrusted).toBe(true);
       expect(controlEvents[0].bubbles).toBe(true);

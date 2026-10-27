@@ -175,9 +175,6 @@ export default defineConfig({
         // react-dom/client bundle gets its own copy and hooks fail with a null
         // dispatcher ("Cannot read properties of null (reading 'useMemo')").
         optimizeDeps: {
-          // This pure ESM test oracle needs no pre-bundling. Serve it directly
-          // so discovering it cannot reload a browser test during collection.
-          exclude: ['character-entities'],
           include: [
             'react',
             'react/jsx-dev-runtime',

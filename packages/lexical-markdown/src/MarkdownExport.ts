@@ -336,17 +336,6 @@ function delegatedPieces(
         ];
   for (const callback of candidates) {
     if (markdown === callback.markdown) return callback.pieces;
-    if (
-      callback.markdown !== '' &&
-      markdown.length % callback.markdown.length === 0 &&
-      markdown ===
-        callback.markdown.repeat(markdown.length / callback.markdown.length)
-    ) {
-      return Array.from(
-        {length: markdown.length / callback.markdown.length},
-        () => callback.pieces,
-      ).flat();
-    }
   }
   return null;
 }

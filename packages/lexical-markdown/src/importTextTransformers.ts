@@ -18,7 +18,7 @@ import {
   findOutermostTextMatchTransformer,
   importFoundTextMatchTransformer,
 } from './importTextMatchTransformer';
-import {$unescapeText} from './utils';
+import {unescapeText} from './utils';
 
 /**
  * Returns true if the node can contain transformable markdown.
@@ -38,7 +38,7 @@ export function canContainTransformableMarkdown(
  * then recursively calls itself to apply the next outermost transformer,
  * until there are no more transformers to apply.
  */
-export function $importTextTransformers(
+export function importTextTransformers(
   textNode: TextNode,
   textFormatTransformersIndex: TextFormatTransformersIndex,
   textMatchTransformers: TextMatchTransformer[],
@@ -95,21 +95,21 @@ export function $importTextTransformers(
     );
 
     if (canContainTransformableMarkdown(result.nodeAfter)) {
-      $importTextTransformers(
+      importTextTransformers(
         result.nodeAfter,
         textFormatTransformersIndex,
         textMatchTransformers,
       );
     }
     if (canContainTransformableMarkdown(result.nodeBefore)) {
-      $importTextTransformers(
+      importTextTransformers(
         result.nodeBefore,
         textFormatTransformersIndex,
         textMatchTransformers,
       );
     }
     if (canContainTransformableMarkdown(result.transformedNode)) {
-      $importTextTransformers(
+      importTextTransformers(
         result.transformedNode,
         textFormatTransformersIndex,
         textMatchTransformers,
@@ -128,21 +128,21 @@ export function $importTextTransformers(
     }
 
     if (canContainTransformableMarkdown(result.nodeAfter)) {
-      $importTextTransformers(
+      importTextTransformers(
         result.nodeAfter,
         textFormatTransformersIndex,
         textMatchTransformers,
       );
     }
     if (canContainTransformableMarkdown(result.nodeBefore)) {
-      $importTextTransformers(
+      importTextTransformers(
         result.nodeBefore,
         textFormatTransformersIndex,
         textMatchTransformers,
       );
     }
     if (canContainTransformableMarkdown(result.transformedNode)) {
-      $importTextTransformers(
+      importTextTransformers(
         result.transformedNode,
         textFormatTransformersIndex,
         textMatchTransformers,
@@ -156,7 +156,7 @@ export function $importTextTransformers(
       // new parent. Read its escapes once without trying the same match again.
       // A parent also exists when importing into a detached tree.
       result.matchedNode.setTextContent(
-        $unescapeText(result.matchedNode.getTextContent()),
+        unescapeText(result.matchedNode.getTextContent()),
       );
     }
   }
@@ -166,7 +166,7 @@ export function $importTextTransformers(
   // escapes read, and code spans must keep their backslashes.
   if (!foundTextFormat && !foundTextMatch) {
     const textContent = textNode.getTextContent();
-    const unescapedText = $unescapeText(textContent);
+    const unescapedText = unescapeText(textContent);
     textNode.setTextContent(unescapedText);
   }
 }

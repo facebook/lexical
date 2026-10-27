@@ -168,9 +168,6 @@
       "@lexical/list": ["./packages/lexical-list/src/index.ts"],
       "@lexical/mark": ["./packages/lexical-mark/src/index.ts"],
       "@lexical/markdown": ["./packages/lexical-markdown/src/index.ts"],
-      "@lexical/markdown/SSRMarkdownExtension": [
-        "./packages/lexical-markdown/src/SSRMarkdownExtension.ts"
-      ],
       "@lexical/mdast": ["./packages/lexical-mdast/src/index.ts"],
       "@lexical/offset": ["./packages/lexical-offset/src/index.ts"],
       "@lexical/overflow": ["./packages/lexical-overflow/src/index.ts"],

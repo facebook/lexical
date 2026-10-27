@@ -1010,9 +1010,6 @@ importers:
       '@lexical/code-core':
         specifier: workspace:*
         version: link:../lexical-code-core
-      '@lexical/extension':
-        specifier: workspace:*
-        version: link:../lexical-extension
       '@lexical/internal':
         specifier: workspace:*
         version: link:../lexical-internal
@@ -1034,9 +1031,6 @@ importers:
       '@lexical/utils':
         specifier: workspace:*
         version: link:../lexical-utils
-      character-entities:
-        specifier: ^2.0.2
-        version: 2.0.2
       lexical:
         specifier: workspace:*
         version: link:../lexical
@@ -1048,7 +1042,7 @@ importers:
         specifier: workspace:*
         version: link:../lexical-history
       mdast-util-from-markdown:
-        specifier: ^2.0.3
+        specifier: ^2.1.0
         version: 2.1.0(supports-color@10.2.2)
 
   packages/lexical-mdast:

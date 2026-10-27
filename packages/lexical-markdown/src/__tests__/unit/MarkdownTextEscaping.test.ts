@@ -9,8 +9,7 @@
 // @vitest-environment node
 
 import {$createCodeNode, CodeNode} from '@lexical/code-core';
-import {buildEditorFromExtensions} from '@lexical/extension';
-import {HeadlessExtension} from '@lexical/headless';
+import {createHeadlessEditor} from '@lexical/headless';
 import {createEmptyHistoryState, registerHistory} from '@lexical/history';
 import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
@@ -25,7 +24,6 @@ import {
   type TextMatchTransformer,
   TRANSFORMERS,
 } from '@lexical/markdown';
-import {SSRMarkdownExtension} from '@lexical/markdown/SSRMarkdownExtension';
 import {$createHeadingNode, HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
   $copyNode,
@@ -36,7 +34,6 @@ import {
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
-  defineExtension,
   HISTORY_PUSH_TAG,
   type LexicalNode,
   REDO_COMMAND,
@@ -45,25 +42,21 @@ import {
 import {fromMarkdown} from 'mdast-util-from-markdown';
 import {assert, describe, expect, it} from 'vitest';
 
-const MarkdownConformanceTestExtension = defineExtension({
-  dependencies: [HeadlessExtension, SSRMarkdownExtension],
-  name: '@lexical/markdown/conformance-test',
-  nodes: () => [
-    CodeNode,
-    LinkNode,
-    ListNode,
-    ListItemNode,
-    HeadingNode,
-    QuoteNode,
-    MarkNode,
-  ],
-});
-
 function createTestEditor() {
-  const editor = buildEditorFromExtensions(MarkdownConformanceTestExtension);
-  // The builder seeds a paragraph; these tree-construction tests start empty.
-  editor.update(() => $getRoot().clear(), {discrete: true});
-  return editor;
+  return createHeadlessEditor({
+    nodes: [
+      CodeNode,
+      LinkNode,
+      ListNode,
+      ListItemNode,
+      HeadingNode,
+      QuoteNode,
+      MarkNode,
+    ],
+    onError(error) {
+      throw error;
+    },
+  });
 }
 
 function parse(markdown: string) {
@@ -388,11 +381,11 @@ describe('Markdown import escapes and references', () => {
     [String.raw`\&#x3c;`, '&#x3c;'],
     [String.raw`\&lt;`, '&lt;'],
     ['&#38;#60;', '&#60;'],
-    ['&amp;lt;', '&lt;'],
+    ['&amp;lt;', '&amp;lt;'],
     ['&#60;b&#62;', '<b>'],
     ['&#x3c;b&#x3e;', '<b>'],
-    ['&lt;b&gt;', '<b>'],
-    ['&NotEqualTilde;', '\u2242\u0338'],
+    ['&lt;b&gt;', '&lt;b&gt;'],
+    ['&NotEqualTilde;', '&NotEqualTilde;'],
     ['&#0;', '\uFFFD'],
     ['&#xD800;', '\uFFFD'],
     ['&#1114112;', '\uFFFD'],
@@ -512,6 +505,37 @@ describe('Markdown import escapes and references', () => {
 });
 
 describe('intentional syntax', () => {
+  it('does not infer repetition ownership from authored code syntax', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createMarkNode(['custom']).append(
+              $createTextNode('a').toggleFormat('code'),
+            ),
+          ),
+        ),
+      {discrete: true},
+    );
+    const custom: TextMatchTransformer = {
+      dependencies: [],
+      export(node, _children, format) {
+        if (!(node instanceof MarkNode)) return null;
+        const text = node.getFirstChildOrThrow();
+        assert($isTextNode(text));
+        format(text, text.getTextContent());
+        return '`a``a`';
+      },
+      regExp: /$^/,
+      type: 'text-match',
+    };
+    const written = editor.read(() =>
+      $convertToMarkdownString([custom, ...TRANSFORMERS]),
+    );
+    expect(written).toBe('`a``a`');
+    expect(parse(written).text).toBe('a``a');
+  });
   it.each([' ', 'a ', ' a', '\t', 'a\t', '\ta', '\u00a0'])(
     'uses code fences rather than content whitespace for flanking: %j',
     value => {
@@ -582,7 +606,7 @@ describe('intentional syntax', () => {
     },
   );
 
-  it.each(['format', 'children', 'repeat', 'decline', 'opaque'])(
+  it.each(['format', 'children', 'decline', 'opaque'])(
     'retains callback delegation and owned syntax boundaries: %s',
     mode => {
       const editor = createTestEditor();
@@ -612,11 +636,7 @@ describe('intentional syntax', () => {
           const text = node.getFirstChildOrThrow();
           assert($isTextNode(text));
           const value = format(text, text.getTextContent());
-          return mode === 'repeat'
-            ? value + value
-            : mode === 'opaque'
-              ? 'prefix' + value
-              : value;
+          return mode === 'opaque' ? 'prefix' + value : value;
         },
         regExp: /$^/,
         type: 'text-match',
@@ -628,7 +648,6 @@ describe('intentional syntax', () => {
         '1:a',
         ...(mode === 'opaque' ? Array.from('prefix', char => `0:${char}`) : []),
         '1:b',
-        ...(mode === 'repeat' ? ['1:b'] : []),
         '0:c',
       ]);
       expect(calls).toEqual(
@@ -638,56 +657,6 @@ describe('intentional syntax', () => {
       );
     },
   );
-
-  it('delegates repetitions of a combined callback sequence', () => {
-    for (const left of [0, 1, 2, 3])
-      for (const right of [0, 1, 2, 3]) {
-        const editor = createTestEditor();
-        editor.update(
-          () =>
-            $getRoot().append(
-              $createParagraphNode().append(
-                $createMarkNode(['group']).append(
-                  $createMarkNode(['left']).append(
-                    $createTextNode('a').setFormat(left),
-                  ),
-                  $createMarkNode(['right']).append(
-                    $createTextNode('b').setFormat(right),
-                  ),
-                ),
-              ),
-            ),
-          {discrete: true},
-        );
-        const calls: string[] = [];
-        const custom: TextMatchTransformer = {
-          dependencies: [],
-          export(node, children) {
-            if ($isTextNode(node)) calls.push(node.getTextContent());
-            if (!(node instanceof MarkNode) || node.getIDs()[0] !== 'group')
-              return null;
-            const value = node
-              .getChildren()
-              .map(child => {
-                assert($isElementNode(child));
-                return children(child);
-              })
-              .join('');
-            return value + value;
-          },
-          regExp: /$^/,
-          type: 'text-match',
-        };
-        const written = editor.read(() =>
-          $convertToMarkdownString([custom, ...TRANSFORMERS]),
-        );
-        expect(
-          formatProjection(written),
-          JSON.stringify({left, right, written}),
-        ).toEqual([`${left}:a`, `${right}:b`, `${left}:a`, `${right}:b`]);
-        expect(calls).toEqual(['a', 'b']);
-      }
-  });
 
   it.each(['format', 'children', 'decline', 'concatenate'])(
     'preserves generated custom callback transitions: %s',

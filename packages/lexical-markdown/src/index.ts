@@ -53,13 +53,6 @@ import {
   UNORDERED_LIST,
 } from './MarkdownTransformers';
 
-export {decodeNativeNamedCharacterReference} from './decodeNamedReference';
-export {
-  type MarkdownConfig,
-  MarkdownExtension,
-  type NamedCharacterReferenceDecoder,
-} from './MarkdownExtension';
-
 /**
  * Renders markdown from a string. The selection is moved to the start after the operation.
  *

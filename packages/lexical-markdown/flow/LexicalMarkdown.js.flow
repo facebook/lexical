@@ -9,30 +9,12 @@
 
 import type {
   BaseSelection,
-  LexicalExtension,
   LexicalEditor,
   LexicalNode,
   ElementNode,
   TextFormatType,
   TextNode,
 } from 'lexical';
-
-export type NamedCharacterReferenceDecoder = (name: string) => string | void;
-
-export type MarkdownConfig = {
-  readonly decodeNamedCharacterReference: NamedCharacterReferenceDecoder,
-};
-
-declare export var MarkdownExtension: LexicalExtension<
-  MarkdownConfig,
-  '@lexical/markdown/Markdown',
-  unknown,
-  unknown,
->;
-
-declare export function decodeNativeNamedCharacterReference(
-  name: string,
-): string | void;
 
 export type Transformer =
   | ElementTransformer

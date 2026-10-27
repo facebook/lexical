@@ -7,10 +7,6 @@
  */
 
 import type {
-  MarkdownExtension,
-  NamedCharacterReferenceDecoder,
-} from './MarkdownExtension';
-import type {
   ElementTransformer,
   MultilineElementTransformer,
   TextFormatTransformer,
@@ -18,10 +14,7 @@ import type {
   Transformer,
 } from './MarkdownTransformers';
 
-import {$getPeerDependency} from '@lexical/extension';
 import {$isParagraphNode, $isTextNode, type LexicalNode} from 'lexical';
-
-import {decodeNativeNamedCharacterReference} from './decodeNamedReference';
 
 export function indexBy<T>(
   list: T[],
@@ -85,21 +78,15 @@ export function isEmptyParagraph(node: LexicalNode): boolean {
 }
 
 // A numeric character reference has one to seven decimal or one to six hex
-// digits. A named reference is decoded only if it is an HTML entity name.
+// digits. Named references retain their legacy literal spelling.
 // A reference that names
 // U+0000, a surrogate or a number past U+10FFFF reads as U+FFFD instead of
 // making `String.fromCodePoint` throw.
 // https://spec.commonmark.org/0.31.2/#decimal-numeric-character
 function decodeCharacterReference(
-  match: string,
   digits: string | undefined,
   hex: string | undefined,
-  name: string | undefined,
-  decodeNamedReference: NamedCharacterReferenceDecoder,
 ): string {
-  if (name !== undefined) {
-    return decodeNamedReference(name) ?? match;
-  }
   const codePoint = digits !== undefined ? Number(digits) : parseInt(hex!, 16);
   return codePoint === 0 ||
     (codePoint >= 0xd800 && codePoint <= 0xdfff) ||
@@ -108,26 +95,17 @@ function decodeCharacterReference(
     : String.fromCodePoint(codePoint);
 }
 
-export function $unescapeText(value: string): string {
-  const dependency = $getPeerDependency<typeof MarkdownExtension>(
-    '@lexical/markdown/Markdown',
-  );
-  const decodeNamedReference = dependency
-    ? dependency.config.decodeNamedCharacterReference
-    : decodeNativeNamedCharacterReference;
+export function unescapeText(value: string): string {
   // One pass: an escaped ampersand and the result of a decoded reference
   // must never be interpreted as another reference.
   return value.replace(
-    /\\([!-/:-@[-`{-~])|&(?:#(\d{1,7})|#[xX]([\da-fA-F]{1,6})|([a-zA-Z][\da-zA-Z]{0,31}));/g,
+    /\\([!-/:-@[-`{-~])|&#(?:(\d{1,7})|[xX]([\da-fA-F]{1,6}));/g,
     (
-      match,
+      _match,
       escaped: string | undefined,
       digits: string | undefined,
       hex: string | undefined,
-      name: string | undefined,
-    ) =>
-      escaped ??
-      decodeCharacterReference(match, digits, hex, name, decodeNamedReference),
+    ) => escaped ?? decodeCharacterReference(digits, hex),
   );
 }
 

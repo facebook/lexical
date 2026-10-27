@@ -134,6 +134,7 @@ import {
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $isEventFromEmbeddedInput,
+  $isSelectionCapturedInDecoratorInput,
   $isTokenOrSegmented,
   $isTokenOrTab,
   $setSelection,
@@ -1181,12 +1182,20 @@ export function registerDefaultCommandHandlers(editor: LexicalEditor) {
  * such an event into a Lexical command would insert text into the editor
  * instead of the focused control.
  *
+ * A focused `<input>`, `<textarea>` or foreign contentEditable in any node's
+ * DOM owns its input events too, as
+ * {@link $isSelectionCapturedInDecoratorInput} decides, even in unmanaged DOM
+ * that wasn't marked with `captureSelection`: an `<input>` that a render
+ * override adds beside a paragraph's children, say. Firefox gives the
+ * `insertFromPaste` input event of a paste there the pasted text as its data,
+ * which would otherwise be inserted at the editor's selection as well.
+ *
  * Two signals are checked because Firefox 152 changed how it dispatches
  * `beforeinput` for these controls (#8738): the event is retargeted off of the
  * focused control, so its composed target no longer points at it. The deep
  * active element still does, and is used as a fallback.
  */
-function isInputEventTargetingCapturedSelection(
+function $isInputEventTargetingCapturedSelection(
   event: InputEvent,
   editor: LexicalEditor,
 ): boolean {
@@ -1210,7 +1219,8 @@ function isInputEventTargetingCapturedSelection(
   return (
     activeElement !== null &&
     rootElement.contains(activeElement) &&
-    isDOMCapturingSelection(activeElement, editor)
+    (isDOMCapturingSelection(activeElement, editor) ||
+      $isSelectionCapturedInDecoratorInput(rootElement, activeElement))
   );
 }
 
@@ -1240,7 +1250,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
   updateEditorSync(
     editor,
     () => {
-      if (!isInputEventTargetingCapturedSelection(event, editor)) {
+      if (!$isInputEventTargetingCapturedSelection(event, editor)) {
         dispatchCommand(editor, BEFORE_INPUT_COMMAND, event);
       }
     },
@@ -1675,7 +1685,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
   updateEditorSync(
     editor,
     () => {
-      if (!isInputEventTargetingCapturedSelection(event, editor)) {
+      if (!$isInputEventTargetingCapturedSelection(event, editor)) {
         editor.dispatchCommand(INPUT_COMMAND, event);
       }
     },

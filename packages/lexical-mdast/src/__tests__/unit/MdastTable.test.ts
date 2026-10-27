@@ -943,6 +943,19 @@ describe('MdastTableExtension', () => {
             {type: 'table'} as unknown as Table,
             {
               children: [
+                {type: 'text', value: 'c'} as unknown as TableRow,
+                {
+                  children: [
+                    {children: [{type: 'text', value: 'a'}], type: 'tableCell'},
+                    {children: [{type: 'text', value: 'b'}], type: 'tableCell'},
+                  ],
+                  type: 'tableRow',
+                },
+              ],
+              type: 'table',
+            },
+            {
+              children: [
                 {
                   children: [
                     {children: [{type: 'text', value: 'x'}], type: 'strong'},
@@ -976,15 +989,17 @@ describe('MdastTableExtension', () => {
     );
     editor.read(() => {
       // A table without header cells, or without rows, is none.
-      expect($getRoot().getChildrenSize()).toBe(1);
+      expect($getRoot().getChildrenSize()).toBe(2);
       expect($convertToMarkdownString()).toBe(
-        table(
-          '| **x** | y |',
-          '| ----- | - |',
-          '| z     |   |',
-          '|       |   |',
-          '| [l]() |   |',
-        ),
+        table('| c |   |', '| - | - |', '| a | b |') +
+          '\n\n' +
+          table(
+            '| **x** | y |',
+            '| ----- | - |',
+            '| z     |   |',
+            '|       |   |',
+            '| [l]() |   |',
+          ),
       );
     });
   });

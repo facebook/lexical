@@ -360,19 +360,19 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
     (('children' in parent && parent.children) || []).filter(
       (child: MdastNode) => child.type !== 'text' || child.value.trim() !== '',
     );
-  const rows = partsOf(node).map(row =>
+  const parts = partsOf(node);
+  const rows = parts.map(row =>
     row.type === 'tableRow' ? partsOf(row) : [row],
   );
   // Each row has the header row's cells, as GFM reads it: those past them
-  // are dropped and missing ones are empty. A supplied header row without
-  // cells has those of its widest row.
+  // are dropped and missing ones are empty. In a supplied tree, they are
+  // those of its first row of cells, or else one.
   const header =
-    rows.length > 0 && rows[0].length > 0
-      ? rows[0]
-      : rows.reduce(
-          (widest, row) => (row.length > widest.length ? row : widest),
-          [],
-        );
+    rows.find(
+      (row, index) => parts[index].type === 'tableRow' && row.length > 0,
+    ) ||
+    rows.find(row => row.length > 0) ||
+    [];
   if (header.length === 0) {
     return [];
   }

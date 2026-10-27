@@ -52,13 +52,13 @@ For extension-only releases or retries, run [Publish DevTools extension to store
 
 ### Store credentials
 
-Chrome publishes through the Chrome Web Store API with a [service account](https://developer.chrome.com/docs/webstore/service-accounts) from the `lexical-devtools` Google Cloud project, linked to the listing's publisher under **Settings > Service account** in the [Developer Dashboard](https://chrome.google.com/webstore/devconsole). Configure these repository settings:
+Chrome publishes through the Chrome Web Store API with a [service account](https://console.cloud.google.com/iam-admin/serviceaccounts?project=lexical-devtools) from the `lexical-devtools` Google Cloud project, linked to the listing's publisher under **Service account** in the [Developer Dashboard Settings page](https://chrome.google.com/webstore/devconsole/f0fd8a71-2d57-4015-b897-d9e628e2e143/settings). Configure these repository settings:
 
 | Setting | Type | Value |
 | --- | --- | --- |
 | `EXTENSION_CHROME_EXTENSION_ID` | Secret | Listing's extension ID |
-| `EXTENSION_CHROME_PUBLISHER_ID` | Variable | Publisher ID under **Settings** in the Developer Dashboard |
-| `EXTENSION_CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL` | Variable | Service account's `client_email`, also listed under **Settings > Service account** |
+| `EXTENSION_CHROME_PUBLISHER_ID` | Variable | Publisher ID on the [Developer Dashboard Settings page](https://chrome.google.com/webstore/devconsole/f0fd8a71-2d57-4015-b897-d9e628e2e143/settings) |
+| `EXTENSION_CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL` | Variable | Service account's `client_email`, also listed under **Service account** on that page |
 | `EXTENSION_CHROME_SERVICE_ACCOUNT_PRIVATE_KEY` | Secret | Decoded `private_key` PEM with actual newlines, not the full JSON key |
 
 Firefox requires repository secrets `EXTENSION_FIREFOX_EXTENSION_ID`, `EXTENSION_FIREFOX_JWT_ISSUER`, and `EXTENSION_FIREFOX_JWT_SECRET`.

@@ -813,6 +813,46 @@ describe('MdastTableExtension', () => {
     });
   });
 
+  it('keeps the HTML after a break tag in one supplied html node', () => {
+    using editor = createEditor();
+    editor.update(
+      () =>
+        $convertFromMdast({
+          children: [
+            {
+              children: [
+                {
+                  children: [
+                    {
+                      children: [
+                        {type: 'text', value: 'a'},
+                        {type: 'html', value: '<br><b>content</b>'},
+                      ],
+                      type: 'tableCell',
+                    },
+                  ],
+                  type: 'tableRow',
+                },
+              ],
+              type: 'table',
+            },
+          ],
+          type: 'root',
+        }),
+      {discrete: true},
+    );
+    editor.read(() => {
+      const [tableNode] = $convertToMdast().children;
+      assert(tableNode.type === 'table');
+      expect(tableNode.children[0].children[0].children).toMatchObject([
+        {type: 'text', value: 'a'},
+        {type: 'break'},
+        // Raw HTML is text without MdastHtmlExtension.
+        {value: '<b>content</b>'},
+      ]);
+    });
+  });
+
   it('keeps a line break in a cell a break in mdast', () => {
     using editor = createEditor();
     editor.update(

@@ -358,7 +358,8 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
   // which is read as one.
   const partsOf = (parent: MdastNode): MdastNode[] =>
     (('children' in parent && parent.children) || []).filter(
-      (child: MdastNode) => child.type !== 'text' || child.value.trim() !== '',
+      (child: MdastNode) =>
+        child.type !== 'text' || (child.value || '').trim() !== '',
     );
   const parts = partsOf(node);
   const rows = parts.map(row =>
@@ -366,14 +367,16 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
   );
   // Each row has the header row's cells, as GFM reads it: those past them
   // are dropped and missing ones are empty. In a supplied tree, they are
-  // those of its first row of cells, or else one.
-  const header =
-    rows.find(
-      (row, index) => parts[index].type === 'tableRow' && row.length > 0,
-    ) ||
-    rows.find(row => row.length > 0) ||
-    [];
-  if (header.length === 0) {
+  // those of its first row of cells, or else one for its phrasing content.
+  const header = rows.find(
+    (row, index) => parts[index].type === 'tableRow' && row.length > 0,
+  );
+  const width = header
+    ? header.length
+    : parts.some(part => part.type !== 'tableRow')
+      ? 1
+      : 0;
+  if (width === 0) {
     return [];
   }
   return $append(
@@ -381,7 +384,7 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
     rows.map((row, rowIndex) =>
       $append(
         $createTableRowNode(),
-        header.map((_, column) => {
+        Array.from({length: width}, (_, column) => {
           const cell: MdastNode | undefined = row[column];
           return $append(
             $createTableCellNode(
@@ -395,18 +398,17 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
                   // Only the alignments GFM has.
                   gfmAlign(align[column] as ElementFormatType) || '',
                 ),
-                cell
-                  ? ctx.importChildren({
-                      ...cell,
-                      children: mapPhrasing(
-                        cell.type === 'tableCell'
-                          ? cell.children || []
-                          : [cell],
-                        replace,
-                      ),
-                      type: 'tableCell',
-                    })
-                  : [],
+                !cell
+                  ? []
+                  : cell.type === 'tableCell'
+                    ? ctx.importChildren({
+                        ...cell,
+                        children: mapPhrasing(cell.children || [], replace),
+                      })
+                    : ctx.importChildren({
+                        children: mapPhrasing([cell], replace),
+                        type: 'tableCell',
+                      }),
               ),
             ],
           );

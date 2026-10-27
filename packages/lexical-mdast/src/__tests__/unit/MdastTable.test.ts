@@ -943,6 +943,7 @@ describe('MdastTableExtension', () => {
             {type: 'table'} as unknown as Table,
             {
               children: [
+                {type: 'text'} as unknown as TableRow,
                 {type: 'text', value: 'c'} as unknown as TableRow,
                 {
                   children: [

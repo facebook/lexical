@@ -1173,7 +1173,7 @@ export function registerDefaultCommandHandlers(editor: LexicalEditor) {
 }
 
 /**
- * Returns true when a `beforeinput` / `input` event belongs to a native
+ * Returns true when a `beforeinput` / `input` / `keydown` event belongs to a native
  * control (e.g. an `<input>` or `<textarea>`, or any other subtree marked with
  * `setDOMUnmanaged({captureSelection: true})`) inside a decorator whose
  * selection is owned by the browser rather than managed by Lexical. Turning
@@ -1185,8 +1185,8 @@ export function registerDefaultCommandHandlers(editor: LexicalEditor) {
  * focused control, so its composed target no longer points at it. The deep
  * active element still does, and is used as a fallback.
  */
-function isInputEventTargetingCapturedSelection(
-  event: InputEvent,
+function isEventTargetingCapturedSelection(
+  event: InputEvent | KeyboardEvent,
   editor: LexicalEditor,
 ): boolean {
   // Use the composed target so an event coming from inside a decorator's
@@ -1239,7 +1239,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
   updateEditorSync(
     editor,
     () => {
-      if (!isInputEventTargetingCapturedSelection(event, editor)) {
+      if (!isEventTargetingCapturedSelection(event, editor)) {
         dispatchCommand(editor, BEFORE_INPUT_COMMAND, event);
       }
     },
@@ -1674,7 +1674,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
   updateEditorSync(
     editor,
     () => {
-      if (!isInputEventTargetingCapturedSelection(event, editor)) {
+      if (!isEventTargetingCapturedSelection(event, editor)) {
         editor.dispatchCommand(INPUT_COMMAND, event);
       }
     },
@@ -2092,7 +2092,11 @@ function buildKeyDownShortcuts(): KeyDownShortcut[] {
       dispatchCommand(editor, command, event);
     },
   });
-  /** preventDefault() and dispatch the command with a fixed payload */
+  /**
+   * preventDefault() and dispatch the command with a fixed payload, unless a
+   * decorator's own input has the focus (#3761): the browser's action (eg.
+   * deleting a word in the input) is the right one there.
+   */
   const prevent = <T>(
     key: string,
     modifiers: KeyboardEventModifierMask,
@@ -2102,6 +2106,9 @@ function buildKeyDownShortcuts(): KeyDownShortcut[] {
     key,
     modifiers,
     onMatch: (event, editor) => {
+      if (isEventTargetingCapturedSelection(event, editor)) {
+        return;
+      }
       event.preventDefault();
       dispatchCommand(editor, command, payload);
     },
@@ -2131,7 +2138,11 @@ function buildKeyDownShortcuts(): KeyDownShortcut[] {
     modifiers: CONTROL_OR_META,
     onMatch: (event, editor) => {
       const prevSelection = editor._editorState._selection;
-      if (prevSelection !== null && !$isRangeSelection(prevSelection)) {
+      if (
+        prevSelection !== null &&
+        !$isRangeSelection(prevSelection) &&
+        !isEventTargetingCapturedSelection(event, editor)
+      ) {
         event.preventDefault();
         dispatchCommand(editor, command, event);
       }
@@ -2177,6 +2188,9 @@ function buildKeyDownShortcuts(): KeyDownShortcut[] {
             key: 'o',
             modifiers: CTRL_KEY,
             onMatch: (event: KeyboardEvent, editor: LexicalEditor) => {
+              if (isEventTargetingCapturedSelection(event, editor)) {
+                return;
+              }
               event.preventDefault();
               dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, true);
             },
@@ -2211,6 +2225,9 @@ function buildKeyDownShortcuts(): KeyDownShortcut[] {
       key: 'a',
       modifiers: CONTROL_OR_META,
       onMatch: (event, editor) => {
+        if (isEventTargetingCapturedSelection(event, editor)) {
+          return;
+        }
         event.preventDefault();
         if (dispatchCommand(editor, SELECT_ALL_COMMAND, event)) {
           markHandledSelectionCommandInsertText(editor._inputState);

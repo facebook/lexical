@@ -885,7 +885,14 @@ describe('MdastTableExtension', () => {
                               children: [
                                 {
                                   children: [
-                                    {type: 'html', value: '<i title="\\\\|">'},
+                                    {
+                                      position: {
+                                        end: {column: 1, line: 1},
+                                        start: {column: 1, line: 1},
+                                      },
+                                      type: 'html',
+                                      value: '<i title="\\\\\\|">',
+                                    },
                                   ],
                                   type: 'tableCell',
                                 },
@@ -916,7 +923,7 @@ describe('MdastTableExtension', () => {
       ).getChildren();
       expect(text.getTextContent()).toBe('a');
       expect($isLineBreakNode(br)).toBe(true);
-      // Raw HTML not parsed from Markdown holds its pipes unescaped.
+      // A pipe escaped in parsed raw HTML is unescaped once.
       expect($assertNodeType(nested, $isTableNode).getTextContent()).toBe(
         '<i title="\\\\|">',
       );
@@ -939,10 +946,13 @@ describe('MdastTableExtension', () => {
                 {
                   children: [
                     {children: [{type: 'text', value: 'x'}], type: 'strong'},
+                    // Whitespace between cells or rows is neither.
+                    {type: 'text', value: '\n  '},
                     {type: 'text', value: 'y'},
                   ] as unknown as TableCell[],
                   type: 'tableRow',
                 },
+                {type: 'text', value: '\n'} as unknown as TableRow,
                 {type: 'text', value: 'z'} as unknown as TableRow,
                 {type: 'tableRow'} as unknown as TableRow,
                 {

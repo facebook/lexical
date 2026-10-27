@@ -68,8 +68,8 @@ function gfmAlign(format: ElementFormatType): AlignType {
 
 /**
  * Replaces each node for which `replace` returns an array with that array,
- * maps the children of every node the same way, and returns `nodes` itself
- * when nothing changed.
+ * maps the children of every node but a table (which maps its own) the same
+ * way, and returns `nodes` itself when nothing changed.
  */
 function mapPhrasing(
   nodes: readonly MdastNode[],
@@ -80,7 +80,9 @@ function mapPhrasing(
     const replaced = replace(node);
     const result = (replaced || [node]).map(child => {
       const children =
-        'children' in child && mapPhrasing(child.children, replace);
+        'children' in child &&
+        child.type !== 'table' &&
+        mapPhrasing(child.children, replace);
       return children && children !== child.children
         ? ({...child, children} as MdastNode)
         : child;
@@ -351,13 +353,16 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
       ];
     }
   };
-  // The children of a row or a cell, or else the node itself: a supplied
-  // tree can hold phrasing content where GFM has a row or a cell.
-  const childrenOf = (child: MdastNode, type: string): MdastNode[] =>
-    child.type === type
-      ? ('children' in child && child.children) || []
-      : [child];
-  const rows = (node.children || []).map(row => childrenOf(row, 'tableRow'));
+  // The children of a table or a row, but whitespace between them. A
+  // supplied tree can hold phrasing content where GFM has a row or a cell,
+  // which is read as one.
+  const partsOf = (parent: MdastNode): MdastNode[] =>
+    (('children' in parent && parent.children) || []).filter(
+      (child: MdastNode) => child.type !== 'text' || child.value.trim() !== '',
+    );
+  const rows = partsOf(node).map(row =>
+    row.type === 'tableRow' ? partsOf(row) : [row],
+  );
   // Each row has the header row's cells, as GFM reads it: those past them
   // are dropped and missing ones are empty. A supplied header row without
   // cells has those of its widest row.
@@ -388,17 +393,15 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
               $append(
                 $createParagraphNode().setFormat(
                   // Only the alignments GFM has.
-                  align[column] === 'left' ||
-                    align[column] === 'center' ||
-                    align[column] === 'right'
-                    ? align[column]
-                    : '',
+                  gfmAlign(align[column] as ElementFormatType) || '',
                 ),
                 cell
                   ? ctx.importChildren({
                       ...cell,
                       children: mapPhrasing(
-                        childrenOf(cell, 'tableCell'),
+                        cell.type === 'tableCell'
+                          ? cell.children || []
+                          : [cell],
                         replace,
                       ),
                       type: 'tableCell',

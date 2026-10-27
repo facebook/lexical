@@ -1289,8 +1289,6 @@ export class LexicalNode {
         return true;
       }
 
-      // Annotation breaks a circular inference through the loop (TS7022),
-      // remove when the deprecated generic signatures from #8661 are removed
       const node: LexicalNode | null = $getNodeByKey(nodeKey);
 
       if (node === null) {
@@ -1410,8 +1408,6 @@ export class LexicalNode {
   getTopLevelElement(): ElementNode | DecoratorNode<unknown> | null {
     let node: ElementNode | this | null = this;
     while (node !== null) {
-      // Annotation breaks a circular inference through the loop (TS7022),
-      // remove when the deprecated generic signatures from #8661 are removed
       const parent: ElementNode | null = node.getParent();
       // A slot value's host acts as a shadow root, so the slot boundary is
       // the top of the isolated scope and this node is its top-level element.

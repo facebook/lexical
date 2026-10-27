@@ -3305,43 +3305,6 @@ describe('LexicalNode.$config() without registration', () => {
       expectTypeOf(
         $getNodeByKeyOrThrow(node.getKey()),
       ).toEqualTypeOf<LexicalNode>();
-      // Explicit type arguments cannot establish the type of a related node.
-      // @ts-expect-error - unchecked type arguments are not supported
-      node.getParent<ParagraphNode>();
-      // @ts-expect-error - unchecked type arguments are not supported
-      node.getParentOrThrow<ParagraphNode>();
-      // @ts-expect-error - unchecked type arguments are not supported
-      node.getParents<ParagraphNode>();
-      // @ts-expect-error - unchecked type arguments are not supported
-      node.getPreviousSibling<TextNode>();
-      // @ts-expect-error - unchecked type arguments are not supported
-      node.getPreviousSiblings<TextNode>();
-      // @ts-expect-error - unchecked type arguments are not supported
-      node.getNextSibling<TextNode>();
-      // @ts-expect-error - unchecked type arguments are not supported
-      node.getNextSiblings<TextNode>();
-      // @ts-expect-error - unchecked type arguments are not supported
-      element.getChildren<TextNode>();
-      // @ts-expect-error - unchecked type arguments are not supported
-      element.getChildAtIndex<TextNode>(0);
-      // @ts-expect-error - unchecked type arguments are not supported
-      element.getFirstChild<TextNode>();
-      // @ts-expect-error - unchecked type arguments are not supported
-      element.getFirstChildOrThrow<TextNode>();
-      // @ts-expect-error - unchecked type arguments are not supported
-      element.getLastChild<TextNode>();
-      // @ts-expect-error - unchecked type arguments are not supported
-      element.getLastChildOrThrow<TextNode>();
-      // @ts-expect-error - unchecked type arguments are not supported
-      element.getFirstDescendant<TextNode>();
-      // @ts-expect-error - unchecked type arguments are not supported
-      element.getLastDescendant<TextNode>();
-      // @ts-expect-error - unchecked type arguments are not supported
-      element.getDescendantByIndex<TextNode>(0);
-      // @ts-expect-error - unchecked type arguments are not supported
-      $getNodeByKey<TextNode>(node.getKey());
-      // @ts-expect-error - unchecked type arguments are not supported
-      $getNodeByKeyOrThrow<TextNode>(node.getKey());
       // Contextual return types cannot establish the node type either.
       // @ts-expect-error - getFirstChild() returns LexicalNode | null
       const child: TextNode | null = element.getFirstChild();

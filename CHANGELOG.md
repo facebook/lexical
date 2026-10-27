@@ -367,9 +367,9 @@
 - lexicallexical-utilslexical-extensionlexical-playground Feature SelectBlockExtension (#8532) Sergey Gorbachev
 - lexical-dragon Bug Fix Handle makeChanges messages and the listener registration race (#8665) Bruno Prieto
 - lexical Bug Fix stop infinite-update-loop detector over-firing on bounded activity (fast typing) (#8635) Sherry
-- lexical Chore stop using deprecated traversal type parameters in tests (#8667) Bob Ippolito
+- lexical Chore use guarded node traversal in tests (#8667) Bob Ippolito
 - Breaking Changes Refactor Register DOMImportExtension rules implicitly via node extensions and make tree-shaking annotations effective (#8662) Bob Ippolito
-- Breaking Changelexical Chore deprecate unsafe type parameters on node traversal methods (#8661) Bob Ippolito
+- Breaking Changelexical Chore improve node traversal type safety (#8661) Bob Ippolito
 - lexical-yjs Bug Fix Yjs desynchronizes after clearing all nodes (#8646) sahir
 - lexicallexical-yjs Bug Fix avoid empty-paragraph echo and splice crash on collab undo (#6614) and dont preserve tags on non-dirty update (#8651) 0x1vn
 - lexicallexical-react Bug Fix actually route the update-recursion guard through editor.onWarn end-to-end (follow-up to #8644) (#8658) Sherry

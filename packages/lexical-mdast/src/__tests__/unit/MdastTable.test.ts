@@ -949,6 +949,13 @@ describe('MdastTableExtension', () => {
             {type: 'table'} as unknown as Table,
             {
               children: [
+                {children: [{type: 'text', value: 'd'}], type: 'tableCell'},
+                {children: [{type: 'text', value: 'e'}], type: 'tableCell'},
+              ] as unknown as TableRow[],
+              type: 'table',
+            },
+            {
+              children: [
                 {type: 'text'} as unknown as TableRow,
                 {type: 'text', value: 'c'} as unknown as TableRow,
                 {
@@ -997,16 +1004,17 @@ describe('MdastTableExtension', () => {
     );
     editor.read(() => {
       // A table without header cells, or without rows, is none.
-      expect($getRoot().getChildrenSize()).toBe(2);
+      expect($getRoot().getChildrenSize()).toBe(3);
       expect($convertToMarkdownString()).toBe(
-        table('| c |   |', '| - | - |', '| a | b |') +
+        table('| d | e |', '| - | - |') +
+          '\n\n' +
+          table('| c |   |', '| - | - |', '| a | b |') +
           '\n\n' +
           table(
             '| **x** | y |',
             '| ----- | - |',
             // Only spaces, tabs and line endings are whitespace in Markdown.
-            '| \u00a0     |   |',
-            '| z     |   |',
+            '| \u00a0     | z |',
             '|       |   |',
             '| [l]() |   |',
           ),
@@ -1293,6 +1301,24 @@ describe('MdastTableExtension', () => {
           );
       }),
     ).toBe(table('|     | b |', '| :-: | - |', '|  1  | 2 |') + '\n\n***');
+  });
+
+  it('reads the alignment of a header cell from a no-break space', () => {
+    expect(
+      convert(table('| a |', '| - |', '| 1 |'), () => {
+        const [[cell]] = $cells();
+        cell
+          .clear()
+          .append(
+            $createParagraphNode()
+              .setFormat('right')
+              .append($createTextNode('\u00a0')),
+            $createParagraphNode()
+              .setFormat('center')
+              .append($createTextNode('x')),
+          );
+      }),
+    ).toBe(table('| \u00a0<br>x |', '| -----: |', '|      1 |'));
   });
 
   it('reads a negative row span as 1', () => {

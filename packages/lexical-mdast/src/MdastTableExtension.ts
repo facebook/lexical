@@ -113,6 +113,11 @@ function $cellIn(node: LexicalNode, table: TableNode): TableCellNode | null {
   return null;
 }
 
+/** Whether `value` is only Markdown whitespace (not, say, a no-break space). */
+function isBlank(value: string): boolean {
+  return /^[ \t\r\n]*$/.test(value);
+}
+
 /** The first inline node in `node` with content that passes `test`, if any. */
 function $firstContent(
   node: ElementNode,
@@ -123,7 +128,7 @@ function $firstContent(
       ? $firstContent(child, test)
       : $isLineBreakNode(child) ||
           $isBlockLevelNode(child) ||
-          ($isTextNode(child) && child.getTextContent().trim() === '') ||
+          ($isTextNode(child) && isBlank(child.getTextContent())) ||
           !test(child)
         ? null
         : child;
@@ -377,29 +382,36 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
       ];
     }
   };
-  // The children of a table or a row, but whitespace between them. A
-  // supplied tree can hold phrasing content where GFM has a row or a cell,
-  // which is read as one.
+  // The children of a table or a row, but whitespace between them.
   const partsOf = (parent: MdastNode): MdastNode[] =>
     (('children' in parent && parent.children) || []).filter(
       (child: MdastNode) =>
-        child.type !== 'text' || !/^[ \t\r\n]*$/.test(child.value || ''),
+        child.type !== 'text' || !isBlank(child.value || ''),
     );
-  const parts = partsOf(node);
-  const rows = parts.map(row =>
-    row.type === 'tableRow' ? partsOf(row) : [row],
-  );
+  // A supplied tree can hold cells or phrasing content outside a row, each
+  // run of which is read as a row of cells.
+  const rows: MdastNode[][] = [];
+  let loose: MdastNode[] | undefined;
+  let firstLoose: MdastNode[] | undefined;
+  let width = 0;
+  for (const part of partsOf(node)) {
+    if (part.type === 'tableRow') {
+      const cells = partsOf(part);
+      rows.push(cells);
+      width = width || cells.length;
+      loose = undefined;
+    } else {
+      if (!loose) {
+        rows.push((loose = []));
+        firstLoose = firstLoose || loose;
+      }
+      loose.push(part);
+    }
+  }
   // Each row has the header row's cells, as GFM reads it: those past them
   // are dropped and missing ones are empty. In a supplied tree, they are
-  // those of its first row of cells, or else one for its phrasing content.
-  const header = rows.find(
-    (row, index) => parts[index].type === 'tableRow' && row.length > 0,
-  );
-  const width = header
-    ? header.length
-    : parts.some(part => part.type !== 'tableRow')
-      ? 1
-      : 0;
+  // those of its first row with cells, or else of its first run outside one.
+  width = width || (firstLoose ? firstLoose.length : 0);
   if (width === 0) {
     return [];
   }

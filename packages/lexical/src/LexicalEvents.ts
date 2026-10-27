@@ -2320,7 +2320,16 @@ function $selectMouseDown(
 const activeNestedEditorsMap: Map<string, LexicalEditor> = new Map();
 
 function onDocumentSelectionChange(event: Event): void {
-  const domSelection = getDOMSelectionFromTarget(event.target);
+  const target = event.target;
+  // Text controls have their own selection. Their bubbling selectionchange
+  // events do not indicate a change to the document's selection.
+  if (
+    isHTMLElement(target) &&
+    (target.nodeName === 'INPUT' || target.nodeName === 'TEXTAREA')
+  ) {
+    return;
+  }
+  const domSelection = getDOMSelectionFromTarget(target);
   if (domSelection === null) {
     return;
   }
@@ -2341,7 +2350,7 @@ function onDocumentSelectionChange(event: Event): void {
   // landing inside outer's tree) never wins because we have already broken
   // out of the loop.
 
-  const ownerDocument = getDOMOwnerDocument(event.target);
+  const ownerDocument = getDOMOwnerDocument(target);
   let nextActiveEditor: LexicalEditor | null = null;
   const registration =
     ownerDocument !== null

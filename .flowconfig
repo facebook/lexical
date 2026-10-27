@@ -38,6 +38,7 @@ module.name_mapper='^@lexical/dragon$' -> '<PROJECT_ROOT>/packages/lexical-drago
 module.name_mapper='^@lexical/eslint-plugin$' -> '<PROJECT_ROOT>/packages/lexical-eslint-plugin/flow/LexicalEslintPlugin.js.flow'
 module.name_mapper='^@lexical/extension$' -> '<PROJECT_ROOT>/packages/lexical-extension/flow/LexicalExtension.js.flow'
 module.name_mapper='^@lexical/extension/AutoFocusExtension$' -> '<PROJECT_ROOT>/packages/lexical-extension/flow/LexicalExtensionAutoFocusExtension.js.flow'
+module.name_mapper='^@lexical/extension/BlockIdExtension$' -> '<PROJECT_ROOT>/packages/lexical-extension/flow/LexicalExtensionBlockIdExtension.js.flow'
 module.name_mapper='^@lexical/extension/ClearEditorExtension$' -> '<PROJECT_ROOT>/packages/lexical-extension/flow/LexicalExtensionClearEditorExtension.js.flow'
 module.name_mapper='^@lexical/extension/ClickAfterLastBlockExtension$' -> '<PROJECT_ROOT>/packages/lexical-extension/flow/LexicalExtensionClickAfterLastBlockExtension.js.flow'
 module.name_mapper='^@lexical/extension/config$' -> '<PROJECT_ROOT>/packages/lexical-extension/flow/LexicalExtensionConfig.js.flow'

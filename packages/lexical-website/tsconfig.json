@@ -44,6 +44,9 @@
       "@lexical/extension/AutoFocusExtension": [
         "../lexical-extension/src/AutoFocusExtension.ts"
       ],
+      "@lexical/extension/BlockIdExtension": [
+        "../lexical-extension/src/BlockIdExtension.ts"
+      ],
       "@lexical/extension/ClearEditorExtension": [
         "../lexical-extension/src/ClearEditorExtension.ts"
       ],

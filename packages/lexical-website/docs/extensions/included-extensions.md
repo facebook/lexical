@@ -37,6 +37,7 @@ Framework-agnostic accessibility extensions. See [Keyboard Accessibility](/docs/
 [@lexical/extension](/docs/api/modules/lexical_extension)
 
 - [AutoFocusExtension](/docs/api/modules/lexical_extension#autofocusextension) - Focus the editor when it is created (e.g. on page load)
+- [BlockIdExtension](/docs/api/modules/lexical_extension#blockidextension) - Stable, unique block ids stored as NodeState, for addressing blocks from outside the editor; see [Block IDs](/docs/extensions/block-ids) (experimental)
 - [ClearEditorExtension](/docs/api/modules/lexical_extension#cleareditorextension) - Implementation for the `CLEAR_EDITOR_COMMAND`
 - [ClickAfterLastBlockExtension](/docs/api/modules/lexical_extension#clickafterlastblockextension) - Inserts a paragraph when clicking below a last block that can not accommodate the click (e.g. a DecoratorNode or TableNode)
 - [DecoratorTextExtension](/docs/api/modules/lexical_extension#decoratortextextension) - DecoratorTextNode support, sets the format and CSS classes for the DOM container
@@ -70,6 +71,7 @@ Framework-agnostic accessibility extensions. See [Keyboard Accessibility](/docs/
 
 [@lexical/html](/docs/api/modules/lexical_html)
 
+- [BlockIdHTMLExtension](/docs/api/modules/lexical_html#blockidhtmlextension) - Exports block ids as `data-block-id` and reads them back on import, through the uniqueness rule (experimental)
 - [CoreImportExtension](/docs/api/modules/lexical_html#coreimportextension) - DOM import rules for the core nodes, included implicitly by node-providing extensions (experimental)
 - [DOMImportExtension](/docs/api/modules/lexical_html#domimportextension) - Extension-based replacement for `importDOM`/`DOMConversion`, rules are compiled into a dispatcher at editor build time (experimental)
 - [DOMRenderExtension](/docs/api/modules/lexical_html#domrenderextension) - Overrides the DOM render and export behavior for an editor (experimental)
@@ -88,6 +90,7 @@ Framework-agnostic accessibility extensions. See [Keyboard Accessibility](/docs/
 [@lexical/mark](/docs/api/modules/lexical_mark)
 
 - [MarkExtension](/docs/api/modules/lexical_mark#markextension) - MarkNode
+- [MarkStateExtension](/docs/api/modules/lexical_mark#markstateextension) - Experimental: comment and annotation ids stored as NodeState on the leaves they cover, so marks overlap without wrapper nodes (see [Comments and Annotations](/docs/collaboration/comments))
 
 [@lexical/mdast](/docs/api/modules/lexical_mdast)
 

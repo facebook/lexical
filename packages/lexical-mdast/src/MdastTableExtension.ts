@@ -64,7 +64,8 @@ import {MdastExtension} from './MdastExtension';
  * own, the line break a GFM cell can hold. Raw HTML with more in it is
  * imported as any other raw HTML is.
  */
-const BR_RE = /^\s*<\/?br(?:[\s/](?:[^>"']|"[^"]*"|'[^']*')*)?>\s*$/i;
+const BR_RE =
+  /^[ \t\n\f\r]*<\/?br(?:[ \t\n\f\r/](?:[^>"']|"[^"]*"|'[^']*')*)?>[ \t\n\f\r]*$/i;
 
 /** The column alignment GFM writes for an element format. */
 function gfmAlign(format: ElementFormatType): AlignType {

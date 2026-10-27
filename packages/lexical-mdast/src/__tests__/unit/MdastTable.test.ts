@@ -854,6 +854,8 @@ describe('MdastTableExtension', () => {
                       children: [
                         {type: 'text', value: 'a'},
                         {type: 'html', value: '<br><b>content</b>'},
+                        // A no-break space is not whitespace in HTML.
+                        {type: 'html', value: '<br>\u00a0'},
                       ],
                       type: 'tableCell',
                     },
@@ -873,7 +875,7 @@ describe('MdastTableExtension', () => {
       assert(tableNode.type === 'table');
       expect(tableNode.children[0].children[0].children).toMatchObject([
         // A raw html node imports as its text.
-        {type: 'text', value: 'a<br><b>content</b>'},
+        {type: 'text', value: 'a<br><b>content</b><br>\u00a0'},
       ]);
     });
   });

@@ -958,6 +958,144 @@ describe('intentional syntax', () => {
     ).toEqual(['0:a', '1:c']);
   });
 
+  it.each([
+    {formats: [1, 2, 18]},
+    {formats: [2, 1, 17]},
+    {formats: [3, 2, 18]},
+  ])(
+    'reimports disjoint formatting before code with formats %j',
+    ({formats}) => {
+      for (const values of [
+        ['a', 'b', 'c'],
+        ['!', 'x', '!'],
+        ['<', 'b', '>'],
+      ]) {
+        const editor = createTestEditor();
+        editor.update(
+          () =>
+            $getRoot().append(
+              $createParagraphNode().append(
+                ...values.map((value, index) =>
+                  $createTextNode(value)
+                    .setFormat(formats[index])
+                    .setStyle(`order: ${index}`),
+                ),
+              ),
+            ),
+          {discrete: true},
+        );
+        const expected = values.flatMap((value, index) =>
+          Array.from(value, char => `${formats[index]}:${char}`),
+        );
+        for (let round = 0; round < 3; round++) {
+          const written = editor.read(() => $convertToMarkdownString());
+          expect(
+            formatProjection(written),
+            JSON.stringify({formats, values, written}),
+          ).toEqual(expected);
+          editor.update(() => $convertFromMarkdownString(written), {
+            discrete: true,
+          });
+          expect(
+            editor.read(() =>
+              $getRoot()
+                .getAllTextNodes()
+                .flatMap(node =>
+                  Array.from(
+                    node.getTextContent(),
+                    char => `${node.getFormat()}:${char}`,
+                  ),
+                ),
+            ),
+          ).toEqual(expected);
+        }
+      }
+    },
+  );
+
+  it('reimports code beside escaped backtick runs across formatting boundaries', () => {
+    for (let slashes = 0; slashes < 4; slashes++)
+      for (let ticks = 1; ticks < 4; ticks++)
+        for (const format of [0, 1, 2, 3])
+          for (const codeFormat of [16, 17, 18, 19])
+            for (const content of ['b', '`b', 'b`', '`b`', '``b', 'b\\', '\\b'])
+              for (const codeFirst of [false, true]) {
+                const editor = createTestEditor();
+                const prefix =
+                  (codeFirst ? '' : 'a') +
+                  '\\'.repeat(slashes) +
+                  '`'.repeat(ticks);
+                editor.update(
+                  () =>
+                    $getRoot().append(
+                      $createParagraphNode().append(
+                        // Keep this inline control distinct from CODE's legacy
+                        // single-line triple-fence block syntax at line start.
+                        $createTextNode('z'),
+                        ...(codeFirst
+                          ? [
+                              $createTextNode(content).setFormat(codeFormat),
+                              $createTextNode(prefix).setFormat(format),
+                            ]
+                          : [
+                              $createTextNode(prefix).setFormat(format),
+                              $createTextNode(content).setFormat(codeFormat),
+                            ]),
+                      ),
+                    ),
+                  {discrete: true},
+                );
+                const plainProjection = Array.from(
+                  prefix,
+                  char => `${format}:${char}`,
+                );
+                const codeProjection = Array.from(
+                  content,
+                  char => `${codeFormat}:${char}`,
+                );
+                const expected = codeFirst
+                  ? ['0:z', ...codeProjection, ...plainProjection]
+                  : ['0:z', ...plainProjection, ...codeProjection];
+                for (let round = 0; round < 3; round++) {
+                  const written = editor.read(() => $convertToMarkdownString());
+                  expect(
+                    formatProjection(written),
+                    JSON.stringify({
+                      codeFirst,
+                      codeFormat,
+                      content,
+                      format,
+                      prefix,
+                      written,
+                    }),
+                  ).toEqual(expected);
+                  editor.update(() => $convertFromMarkdownString(written), {
+                    discrete: true,
+                  });
+                  expect(
+                    editor.read(() =>
+                      $getRoot()
+                        .getAllTextNodes()
+                        .flatMap(node =>
+                          Array.from(
+                            node.getTextContent(),
+                            char => `${node.getFormat()}:${char}`,
+                          ),
+                        ),
+                    ),
+                    JSON.stringify({
+                      codeFirst,
+                      codeFormat,
+                      content,
+                      format,
+                      prefix,
+                      written,
+                    }),
+                  ).toEqual(expected);
+                }
+              }
+  }, 30000);
+
   it('review regression: preserves three overlapping format runs', () => {
     const editor = createTestEditor();
     editor.update(

@@ -77,9 +77,13 @@ export function findOutermostTextFormatTransformer(
   let resultTransformer = null;
 
   if (codeMatch && emphasisMatch) {
+    // Read completed emphasis before the first code span before splitting out
+    // that code. Otherwise an earlier, disjoint emphasis match can hide a later
+    // emphasis wrapper around the code and leave its delimiters unmatched.
     if (
-      emphasisMatch.startIndex <= codeMatch.startIndex &&
-      emphasisMatch.endIndex >= codeMatch.endIndex
+      emphasisMatch.endIndex <= codeMatch.startIndex ||
+      (emphasisMatch.startIndex <= codeMatch.startIndex &&
+        emphasisMatch.endIndex >= codeMatch.endIndex)
     ) {
       resultMatch = emphasisMatch;
       resultTransformer =
@@ -156,13 +160,18 @@ function scanCodeSpans(text: string): {
   const spans: {content: string; endIndex: number; startIndex: number}[] = [];
   let openIdx = 0;
   while (openIdx < runs.length) {
-    const opener = runs[openIdx];
-
-    // An escaped backtick run is a literal backtick and cannot open a span.
-    if (isEscaped(opener.index)) {
+    const run = runs[openIdx];
+    const escaped = isEscaped(run.index);
+    if (escaped && run.length === 1) {
       openIdx++;
       continue;
     }
+    // Outside code only the first tick is escaped. The remaining suffix can
+    // open a code span. Keep the original run for closer matching, where
+    // backslashes are literal and every tick belongs to the fence.
+    const opener = escaped
+      ? {index: run.index + 1, length: run.length - 1}
+      : run;
 
     let closeIdx = -1;
     for (let c = openIdx + 1; c < runs.length; c++) {

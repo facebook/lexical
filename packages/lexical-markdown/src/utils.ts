@@ -14,8 +14,9 @@ import type {
   Transformer,
 } from './MarkdownTransformers';
 
-import {characterEntities} from 'character-entities';
 import {$isParagraphNode, $isTextNode, type LexicalNode} from 'lexical';
+
+import {decodeNamedReference} from './decodeNamedReference';
 
 export function indexBy<T>(
   list: T[],
@@ -91,9 +92,7 @@ function decodeCharacterReference(
   name: string | undefined,
 ): string {
   if (name !== undefined) {
-    return Object.prototype.hasOwnProperty.call(characterEntities, name)
-      ? characterEntities[name]
-      : match;
+    return decodeNamedReference(name) || match;
   }
   const codePoint = digits !== undefined ? Number(digits) : parseInt(hex!, 16);
   return codePoint === 0 ||

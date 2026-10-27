@@ -11,6 +11,7 @@ import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
 } from '@lexical/markdown';
+import {characterEntities} from 'character-entities';
 import {$getRoot} from 'lexical';
 import {fromMarkdown} from 'mdast-util-from-markdown';
 import {assert, describe, expect, it} from 'vitest';
@@ -19,25 +20,58 @@ import {unescapeText} from '../../utils';
 import {MarkdownTestExtension} from '../utils';
 
 describe('browser Markdown reference semantics', () => {
-  it('decodes named references without HTML assignments', () => {
+  it.skipIf(!('setHTML' in Element.prototype))(
+    'uses safe native decoding when string HTML assignments are unavailable',
+    () => {
+      const descriptor = Object.getOwnPropertyDescriptor(
+        Element.prototype,
+        'innerHTML',
+      );
+      assert(descriptor);
+      Object.defineProperty(Element.prototype, 'innerHTML', {
+        configurable: true,
+        get: descriptor.get,
+        set() {
+          throw new TypeError('HTML string assignment is unavailable');
+        },
+      });
+      try {
+        expect(unescapeText('&amp;&NotEqualTilde;')).toBe('&\u2242\u0338');
+      } finally {
+        Object.defineProperty(Element.prototype, 'innerHTML', descriptor);
+      }
+    },
+  );
+  it('decodes the complete named-reference set once through the browser entry', () => {
+    for (const [name, value] of Object.entries(characterEntities)) {
+      expect(unescapeText('&' + name + ';'), name).toBe(value);
+      expect(unescapeText('\\&' + name + ';'), name).toBe('&' + name + ';');
+      expect(unescapeText('&amp;' + name + ';'), name).toBe('&' + name + ';');
+    }
+    for (const name of ['notit', 'constructor', 'toString', 'semiX', 'AMPx'])
+      expect(unescapeText('&' + name + ';')).toBe('&' + name + ';');
+  });
+
+  it('supports the legacy native decoder when setHTML is unavailable', () => {
     const descriptor = Object.getOwnPropertyDescriptor(
       Element.prototype,
-      'innerHTML',
+      'setHTML',
     );
-    assert(descriptor);
-    Object.defineProperty(Element.prototype, 'innerHTML', {
+    Object.defineProperty(Element.prototype, 'setHTML', {
       configurable: true,
-      get: descriptor.get,
-      set() {
-        throw new TypeError('HTML string assignment is unavailable');
-      },
+      value: undefined,
     });
     try {
-      expect(unescapeText('&amp;&NotEqualTilde;')).toBe('&\u2242\u0338');
+      expect(unescapeText('&semi; &notit; &amp; &NotEqualTilde;')).toBe(
+        '; &notit; & \u2242\u0338',
+      );
     } finally {
-      Object.defineProperty(Element.prototype, 'innerHTML', descriptor);
+      if (descriptor)
+        Object.defineProperty(Element.prototype, 'setHTML', descriptor);
+      else Reflect.deleteProperty(Element.prototype, 'setHTML');
     }
   });
+
   it.each([
     ['&lt;b&gt;text&lt;/b&gt;', '<b>text</b>'],
     ['&NotEqualTilde;', '\u2242\u0338'],

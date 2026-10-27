@@ -96,6 +96,20 @@ Import reads backslash escapes and decimal, hexadecimal, and named character
 references once. Their decoded characters remain text, not new Markdown syntax.
 Source spelling of references and escapes is not preserved.
 
+Browser builds decode named references through native HTML parsing rather than
+bundling the complete entity table. Node uses the separate DOM-free decoder.
+Browser-targeted Worker and headless bundles must select the decoder package's
+`worker` export condition in their separate build (for example,
+`conditions: ['worker']` with esbuild's browser platform). The ordinary browser
+condition requires a document and must not be used for a Worker bundle.
+
+Where `Element.setHTML` is available, the browser decoder uses that safe native
+API without creating a Trusted Types policy. Older browsers use the native
+string HTML sink; decoding named references throws if strict Trusted Types
+blocks that sink. Such applications can explicitly select the DOM-free build,
+accepting its table cost. The default browser path neither bundles that fallback
+nor weakens CSP or installs a policy.
+
 Links have a `LinkNode` representation. Angle URI and email autolinks import as
 links and export using normal link syntax. Code spans and fenced code blocks
 keep their own literal-content rules. With `shouldPreserveNewLines`, soft source lines remain separate blocks; real

@@ -1031,9 +1031,9 @@ importers:
       '@lexical/utils':
         specifier: workspace:*
         version: link:../lexical-utils
-      character-entities:
-        specifier: ^2.0.2
-        version: 2.0.2
+      decode-named-character-reference:
+        specifier: ^1.3.0
+        version: 1.3.0
       lexical:
         specifier: workspace:*
         version: link:../lexical
@@ -1044,6 +1044,9 @@ importers:
       '@lexical/history':
         specifier: workspace:*
         version: link:../lexical-history
+      character-entities:
+        specifier: ^2.0.2
+        version: 2.0.2
       mdast-util-from-markdown:
         specifier: ^2.0.3
         version: 2.0.3(supports-color@10.2.2)

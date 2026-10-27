@@ -372,7 +372,12 @@ export default [
             'createBinding',
           ],
           isLexicalProvider: ['updateEditor', 'updateEditorSync'],
-          isSafeDollarFunction: ['$createRootNode', '$createCollabElementNode'],
+          isSafeDollarFunction: [
+            '$createRootNode',
+            '$createCollabElementNode',
+            // Also supports headless DOM serialization without an active editor.
+            '$getDocument',
+          ],
         }),
       ],
       '@typescript-eslint/array-type': [ERROR, {default: 'array'}],

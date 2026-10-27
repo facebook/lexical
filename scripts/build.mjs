@@ -27,6 +27,7 @@ import {
   productionTerserOptions,
 } from './shared/buildOptions.mjs';
 import {exec} from './shared/childProcess.mjs';
+import {namedReferenceBrowserResolver} from './shared/namedReferenceBrowserResolver.mjs';
 import {packagesManager} from './shared/packagesManager.mjs';
 import {
   getTypeScriptTooOldStub,
@@ -177,6 +178,8 @@ const thirdPartyExternals = [
         // that pins the whole signals runtime into any bundle importing
         // anything from @lexical/extension.
         '@preact/signals-core',
+        // Preserve native browser decoding and the separate Node/worker table.
+        'decode-named-character-reference',
         // @lexical/mdast delegates parsing/serialization to the
         // micromark/mdast ecosystem. Keep those (declared) dependencies
         // external in the npm build so consumer bundlers resolve them with
@@ -327,6 +330,14 @@ async function build(
           {find: 'buffer', replacement: 'buffer'},
         ],
       }),
+      ...(isWWW
+        ? [
+            // The www artifact targets browsers and bundles dependencies.
+            // Select only this decoder's browser entry without changing the
+            // resolution conditions of unrelated packages.
+            namedReferenceBrowserResolver(extensions),
+          ]
+        : []),
       nodeResolve({
         extensions,
         preferBuiltins: false,

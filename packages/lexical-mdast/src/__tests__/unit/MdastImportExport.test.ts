@@ -22,7 +22,12 @@ import {
   createImportState,
 } from '@lexical/html';
 import {$createLinkNode, $isLinkNode} from '@lexical/link';
-import {$createListItemNode, $createListNode, $isListNode} from '@lexical/list';
+import {
+  $createListItemNode,
+  $createListNode,
+  $isListItemNode,
+  $isListNode,
+} from '@lexical/list';
 import {
   $createQuoteNode,
   $isHeadingNode,
@@ -345,6 +350,127 @@ describe('@lexical/mdast import/export', () => {
       expect(list.getListType()).toBe('bullet');
       // a, b, (nested list wrapper), c
       expect(list.getChildrenSize()).toBe(4);
+    });
+  });
+
+  describe('task lists', () => {
+    function exportAfter(markdown: string, $edit: () => void): string {
+      using editor = createEditor();
+      editor.update(
+        () => {
+          $convertFromMarkdownString(markdown);
+        },
+        {discrete: true},
+      );
+      editor.update($edit, {discrete: true});
+      return editor.read(() => $convertToMarkdownString());
+    }
+
+    function $firstList() {
+      return $assertNodeType($getRoot().getFirstChild(), $isListNode);
+    }
+
+    describe('round-trips', () => {
+      // GFM decides per item whether it is a task, so plain items and task
+      // items can share a list, and an ordered list can hold task items.
+      const cases: [string, string][] = [
+        ['plain items next to task items', '- plain\n- [x] done\n- [ ] todo'],
+        ['a task item followed by a plain item', '- [x] done\n- plain'],
+        ['an ordered task list', '1. [ ] todo\n2. [x] done'],
+        [
+          'an ordered task list with a custom start',
+          '3. [x] three\n4. [ ] four',
+        ],
+        ['an ordered list with plain and task items', '1. plain\n2. [x] done'],
+        [
+          'a mixed task list nested in a task list',
+          '- [ ] parent\n  - child\n  - [x] done',
+        ],
+        [
+          'an ordered task list nested in a bullet list',
+          '- parent\n  1. [x] done\n  2. [ ] todo',
+        ],
+      ];
+      for (const [name, markdown] of cases) {
+        it(name, () => {
+          expect(importExport(markdown)).toBe(markdown);
+        });
+      }
+    });
+
+    it('writes an ordered task list with "." so the boxes are kept', () => {
+      // The GFM task list writer only adds a box after `1.`, not after `1)`.
+      expect(importExport('1) [ ] todo\n2) [x] done')).toBe(
+        '1. [ ] todo\n2. [x] done',
+      );
+    });
+
+    it('imports an ordered task list as a number list', () => {
+      using editor = createEditor();
+      editor.update(
+        () => {
+          $convertFromMarkdownString('3. [x] three\n4. [ ] four');
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        const list = $firstList();
+        expect(list.getListType()).toBe('number');
+        expect(list.getStart()).toBe(3);
+      });
+    });
+
+    it('writes a box on a plain item once it is ticked', () => {
+      expect(
+        exportAfter('- plain\n- [x] done', () => {
+          $assertNodeType(
+            $firstList().getFirstChild(),
+            $isListItemNode,
+          ).setChecked(true);
+        }),
+      ).toBe('- [x] plain\n- [x] done');
+    });
+
+    it('writes a box on an item added after a plain item', () => {
+      expect(
+        exportAfter('- plain\n- [x] done', () => {
+          const plain = $assertNodeType(
+            $firstList().getFirstChild(),
+            $isListItemNode,
+          );
+          plain
+            .insertNewAfter(plain.selectEnd())
+            .append($createTextNode('new'));
+        }),
+      ).toBe('- plain\n- [ ] new\n- [x] done');
+    });
+
+    it('writes a box on every item of a bullet list turned into a check list', () => {
+      expect(
+        exportAfter('- one\n- two', () => {
+          $firstList().setListType('check');
+        }),
+      ).toBe('- [ ] one\n- [ ] two');
+    });
+
+    it('writes a box on every item of a check list made in the editor', () => {
+      using editor = createEditor();
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append(
+              $createListNode('check').append(
+                $createListItemNode().append($createTextNode('todo')),
+                $createListItemNode(true).append($createTextNode('done')),
+              ),
+            );
+        },
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertToMarkdownString())).toBe(
+        '- [ ] todo\n- [x] done',
+      );
     });
   });
 

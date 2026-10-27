@@ -52,7 +52,7 @@ For extension-only releases or retries, run [Publish DevTools extension to store
 
 ### Store credentials
 
-Chrome publishes through the Chrome Web Store API with a [service account](https://console.cloud.google.com/iam-admin/serviceaccounts?project=lexical-devtools) from the `lexical-devtools` Google Cloud project, linked to the listing's publisher under **Service account** in the [Developer Dashboard Settings page](https://chrome.google.com/webstore/devconsole/f0fd8a71-2d57-4015-b897-d9e628e2e143/settings). Configure these repository settings:
+Chrome publishes through the Chrome Web Store API with a [service account](https://console.cloud.google.com/iam-admin/serviceaccounts?project=lexical-devtools) from the `lexical-devtools` Google Cloud project, linked to the listing's publisher under **Service account** in the [Developer Dashboard Settings page](https://chrome.google.com/webstore/devconsole/f0fd8a71-2d57-4015-b897-d9e628e2e143/settings). Configure these [repository settings](https://github.com/facebook/lexical/settings/variables/actions):
 
 | Setting | Type | Value |
 | --- | --- | --- |

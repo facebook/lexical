@@ -112,10 +112,12 @@ transformers, rather than relying on unescaped `TextNode` content. An export
 transformer owns any Markdown syntax it authors. Use its `exportFormat` callback
 for literal text and `exportChildren` for ordinary child content. Returning an
 unchanged callback result, their concatenation in call order, or repetitions of
-one result delegates that content to the surrounding formatting stream; nodes
+either form delegates that content to the surrounding formatting stream; nodes
 are not exported again. Wrapping or rewriting a result instead produces an
 opaque Markdown string that is emitted unchanged. Such transformers must supply
-complete syntax and account for its boundaries with surrounding content.
+complete syntax and account for its boundaries with surrounding content. Ordinary
+child inspection is memoized within each block export, including overlapping
+subtrees, so inspecting content does not repeat descendant transformers.
 
 There're three types of transformers:
 

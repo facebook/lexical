@@ -20,10 +20,11 @@ import {
   $convertToMarkdownString,
   $generateNodesFromMarkdownString,
   CODE,
+  type ElementTransformer,
   type TextMatchTransformer,
   TRANSFORMERS,
 } from '@lexical/markdown';
-import {HeadingNode, QuoteNode} from '@lexical/rich-text';
+import {$createHeadingNode, HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
   $copyNode,
   $createParagraphNode,
@@ -532,6 +533,48 @@ describe('intentional syntax', () => {
     },
   );
 
+  it.each(['😀', '€', '∑', '©', '🧭', '$', '+'])(
+    'keeps symbol boundaries unambiguous to Markdown parsers: %s',
+    symbol => {
+      for (const format of [1, 2, 3, 17, 18, 19])
+        for (const before of [false, true]) {
+          const editor = createTestEditor();
+          editor.update(
+            () => {
+              const plain = $createTextNode(symbol);
+              const styled = $createTextNode('!').setFormat(format);
+              $getRoot().append(
+                $createParagraphNode().append(
+                  ...(before ? [styled, plain] : [plain, styled]),
+                ),
+              );
+            },
+            {discrete: true},
+          );
+          const expected = Array.from(symbol, char => `0:${char}`);
+          const written = editor.read(() => $convertToMarkdownString());
+          expect(
+            formatProjection(written),
+            JSON.stringify({before, format, symbol, written}),
+          ).toEqual(
+            before
+              ? [`${format}:!`, ...expected]
+              : [...expected, `${format}:!`],
+          );
+          editor.update(() => $convertFromMarkdownString(written), {
+            discrete: true,
+          });
+          expect(
+            formatProjection(editor.read(() => $convertToMarkdownString())),
+          ).toEqual(
+            before
+              ? [`${format}:!`, ...expected]
+              : [...expected, `${format}:!`],
+          );
+        }
+    },
+  );
+
   it.each(['format', 'children', 'repeat', 'decline', 'opaque'])(
     'retains callback delegation and owned syntax boundaries: %s',
     mode => {
@@ -587,6 +630,50 @@ describe('intentional syntax', () => {
       );
     },
   );
+
+  it('delegates repetitions of a combined callback sequence', () => {
+    for (const left of [0, 1, 2, 3])
+      for (const right of [0, 1, 2, 3]) {
+        const editor = createTestEditor();
+        editor.update(
+          () =>
+            $getRoot().append(
+              $createParagraphNode().append(
+                $createMarkNode(['group']).append(
+                  $createMarkNode(['left']).append(
+                    $createTextNode('a').setFormat(left),
+                  ),
+                  $createMarkNode(['right']).append(
+                    $createTextNode('b').setFormat(right),
+                  ),
+                ),
+              ),
+            ),
+          {discrete: true},
+        );
+        const calls: string[] = [];
+        const custom: TextMatchTransformer = {
+          dependencies: [],
+          export(node, children) {
+            if ($isTextNode(node)) calls.push(node.getTextContent());
+            if (!(node instanceof MarkNode) || node.getIDs()[0] !== 'group')
+              return null;
+            const value = node.getChildren<MarkNode>().map(children).join('');
+            return value + value;
+          },
+          regExp: /$^/,
+          type: 'text-match',
+        };
+        const written = editor.read(() =>
+          $convertToMarkdownString([custom, ...TRANSFORMERS]),
+        );
+        expect(
+          formatProjection(written),
+          JSON.stringify({left, right, written}),
+        ).toEqual([`${left}:a`, `${right}:b`, `${left}:a`, `${right}:b`]);
+        expect(calls).toEqual(['a', 'b']);
+      }
+  });
 
   it.each(['format', 'children', 'decline', 'concatenate'])(
     'preserves generated custom callback transitions: %s',
@@ -672,6 +759,7 @@ describe('intentional syntax', () => {
         ['a', 'b', 'c', 'd'],
         ['<', 'b', '>', 'x'],
         ['&', '#', '6', '0;'],
+        ['©', '!', '∑', '$'],
       ]) {
         for (let sequence = 0; sequence < 256; sequence++)
           for (const withCode of [false, true]) {
@@ -804,6 +892,7 @@ describe('intentional syntax', () => {
         ['a', 'b', 'c'],
         ['<', 'b', '>'],
         ['&', '#', '60;'],
+        ['😀', '!', '€'],
       ]) {
         for (const left of [0, 1, 2, 3, 16, 17, 18, 19])
           for (const middle of [0, 1, 2, 3, 16, 17, 18, 19])
@@ -1019,6 +1108,167 @@ describe('intentional syntax', () => {
     ).toBe('`a`{`b`}`c`');
     expect(calls).toEqual(['a', 'b', 'b', 'c']);
   });
+
+  it('exports a partially selected heading through custom exporters once', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const text = $createTextNode('abc');
+        $getRoot().append($createHeadingNode('h1').append(text));
+        text.select(1, 2);
+      },
+      {discrete: true},
+    );
+    const calls: string[] = [];
+    const custom: TextMatchTransformer = {
+      dependencies: [],
+      export(node) {
+        if ($isTextNode(node)) calls.push(node.getTextContent());
+        return null;
+      },
+      regExp: /$^/,
+      type: 'text-match',
+    };
+    expect(
+      editor.read(() =>
+        $convertSelectionToMarkdownString(
+          [custom, ...TRANSFORMERS],
+          $getSelection(),
+        ),
+      ),
+    ).toBe('# b');
+    expect(calls).toEqual(['abc']);
+  });
+
+  it.each([false, true])(
+    'shares block child export previews across declining inspectors (selection: %s)',
+    selected => {
+      const editor = createTestEditor();
+      editor.update(
+        () => {
+          const text = $createTextNode('abc');
+          $getRoot().append($createHeadingNode('h1').append(text));
+          if (selected) text.select(1, 2);
+        },
+        {discrete: true},
+      );
+      const calls: string[] = [];
+      const custom: TextMatchTransformer = {
+        dependencies: [],
+        export(node) {
+          if ($isTextNode(node)) calls.push(node.getTextContent());
+          return null;
+        },
+        regExp: /$^/,
+        type: 'text-match',
+      };
+      const inspector: ElementTransformer = {
+        dependencies: [],
+        export(node, children) {
+          if (node instanceof HeadingNode) children(node);
+          return null;
+        },
+        regExp: /$^/,
+        replace() {},
+        type: 'element',
+      };
+      const transformers = [inspector, {...inspector}, custom, ...TRANSFORMERS];
+      const written = editor.read(() =>
+        selected
+          ? $convertSelectionToMarkdownString(transformers, $getSelection())
+          : $convertToMarkdownString(transformers),
+      );
+      expect(written).toBe(selected ? '# b' : '# abc');
+      expect(calls).toEqual(['abc']);
+    },
+  );
+
+  it.each([false, true])(
+    'shares child export previews across declining inspectors (selection: %s)',
+    selected => {
+      const editor = createTestEditor();
+      editor.update(
+        () => {
+          const text = $createTextNode('abc');
+          $getRoot().append(
+            $createParagraphNode().append(
+              $createMarkNode(['outer']).append(
+                $createMarkNode(['inner']).append(text),
+              ),
+            ),
+          );
+          if (selected) text.select(1, 2);
+        },
+        {discrete: true},
+      );
+      const calls: string[] = [];
+      const custom: TextMatchTransformer = {
+        dependencies: [],
+        export(node) {
+          if ($isTextNode(node)) calls.push(node.getTextContent());
+          return null;
+        },
+        regExp: /$^/,
+        type: 'text-match',
+      };
+      const inspector: TextMatchTransformer = {
+        dependencies: [],
+        export(node, children) {
+          if (node instanceof MarkNode) children(node);
+          return null;
+        },
+        regExp: /$^/,
+        type: 'text-match',
+      };
+      const transformers = [inspector, {...inspector}, custom, ...TRANSFORMERS];
+      const written = editor.read(() =>
+        selected
+          ? $convertSelectionToMarkdownString(transformers, $getSelection())
+          : $convertToMarkdownString(transformers),
+      );
+      expect(written).toBe(selected ? 'b' : 'abc');
+      expect(calls).toEqual(['abc']);
+    },
+  );
+
+  it.each([false, true])(
+    'shares classification for overlapping child previews (subset first: %s)',
+    subsetFirst => {
+      const editor = createTestEditor();
+      editor.update(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append(
+              $createMarkNode(['group']).append(
+                $createMarkNode(['subset']).append($createTextNode('b')),
+                $createTextNode('c'),
+              ),
+            ),
+          ),
+        {discrete: true},
+      );
+      const calls: string[] = [];
+      const custom: TextMatchTransformer = {
+        dependencies: [],
+        export(node, children) {
+          if ($isTextNode(node)) calls.push(node.getTextContent());
+          if (!(node instanceof MarkNode) || node.getIDs()[0] !== 'group')
+            return null;
+          const subset = node.getFirstChildOrThrow<MarkNode>();
+          if (subsetFirst) children(subset);
+          const whole = children(node);
+          if (!subsetFirst) children(subset);
+          return whole;
+        },
+        regExp: /$^/,
+        type: 'text-match',
+      };
+      expect(
+        editor.read(() => $convertToMarkdownString([custom, ...TRANSFORMERS])),
+      ).toBe('bc');
+      expect(calls).toEqual(['b', 'c']);
+    },
+  );
 
   it.each([false, true])(
     'preserves source line endings and literal backslashes (preserve: %s)',

@@ -156,6 +156,29 @@ function $processNodeForSelection(
   shouldPreserveNewLines: boolean,
 ): {shouldInclude: boolean; markdown: string | null} {
   let shouldInclude = node.isSelected(selection);
+  const nodeMemo: ExportMemo = new Map();
+
+  const childPreviews = new Map<
+    ElementNode,
+    {shouldInclude: boolean; markdown: string}
+  >();
+  const $selectedChildren = (container: ElementNode) => {
+    let rendered = childPreviews.get(container);
+    if (rendered === undefined) {
+      rendered = $exportChildrenForSelection(
+        container,
+        selection,
+        textFormatTransformers,
+        textMatchTransformers,
+        shouldPreserveNewLines,
+        undefined,
+        undefined,
+        nodeMemo,
+      );
+      childPreviews.set(container, rendered);
+    }
+    return rendered;
+  };
 
   // For element transformers (heading, quote, list, code block, etc.)
   for (const transformer of elementTransformers) {
@@ -164,14 +187,7 @@ function $processNodeForSelection(
     }
     const result = transformer.export(
       node,
-      node_ =>
-        $exportChildrenForSelection(
-          node_,
-          selection,
-          textFormatTransformers,
-          textMatchTransformers,
-          shouldPreserveNewLines,
-        ).markdown,
+      node_ => $selectedChildren(node_).markdown,
       selection,
     );
 
@@ -179,13 +195,7 @@ function $processNodeForSelection(
       if (!shouldInclude) {
         // Check if any descendant is selected
         if ($isElementNode(node)) {
-          const childResult = $exportChildrenForSelection(
-            node,
-            selection,
-            textFormatTransformers,
-            textMatchTransformers,
-            shouldPreserveNewLines,
-          );
+          const childResult = $selectedChildren(node);
           if (childResult.shouldInclude) {
             shouldInclude = true;
           }
@@ -196,13 +206,7 @@ function $processNodeForSelection(
   }
 
   if ($isElementNode(node)) {
-    const childResult = $exportChildrenForSelection(
-      node,
-      selection,
-      textFormatTransformers,
-      textMatchTransformers,
-      shouldPreserveNewLines,
-    );
+    const childResult = $selectedChildren(node);
     return {
       markdown: childResult.markdown,
       shouldInclude: shouldInclude || childResult.shouldInclude,
@@ -222,6 +226,7 @@ function $exportChildrenForSelection(
   shouldPreserveNewLines: boolean,
   unclosedTags?: {format: TextFormatType; tag: string}[],
   unclosableTags?: {format: TextFormatType; tag: string}[],
+  nodeMemo?: ExportMemo,
 ): {shouldInclude: boolean; markdown: string} {
   return $renderChildren(
     node,
@@ -231,6 +236,7 @@ function $exportChildrenForSelection(
     unclosedTags,
     unclosableTags,
     selection,
+    nodeMemo,
   );
 }
 
@@ -241,35 +247,32 @@ function $exportTopLevelElements(
   textMatchTransformers: TextMatchTransformer[],
   shouldPreserveNewLines: boolean,
 ): string | null {
-  for (const transformer of elementTransformers) {
-    if (!transformer.export) {
-      continue;
-    }
-    const result = transformer.export(node, _node =>
-      $exportChildren(
-        _node,
+  const nodeMemo: ExportMemo = new Map();
+  const childPreviews = new Map<ElementNode, string>();
+  const $children = (container: ElementNode) => {
+    let markdown = childPreviews.get(container);
+    if (markdown === undefined) {
+      markdown = $exportChildren(
+        container,
         textTransformersIndex,
         textMatchTransformers,
         undefined,
         undefined,
         shouldPreserveNewLines,
-      ),
-    );
-
-    if (result != null) {
-      return result;
+        nodeMemo,
+      );
+      childPreviews.set(container, markdown);
     }
+    return markdown;
+  };
+  for (const transformer of elementTransformers) {
+    if (!transformer.export) continue;
+    const result = transformer.export(node, $children);
+    if (result != null) return result;
   }
 
   if ($isElementNode(node)) {
-    return $exportChildren(
-      node,
-      textTransformersIndex,
-      textMatchTransformers,
-      undefined,
-      undefined,
-      shouldPreserveNewLines,
-    );
+    return $children(node);
   } else if ($isDecoratorNode(node)) {
     return node.getTextContent();
   } else {
@@ -284,6 +287,7 @@ function $exportChildren(
   unclosedTags?: {format: TextFormatType; tag: string}[],
   unclosableTags?: {format: TextFormatType; tag: string}[],
   shouldPreserveNewLines: boolean = false,
+  nodeMemo?: ExportMemo,
 ): string {
   return $renderChildren(
     node,
@@ -292,6 +296,8 @@ function $exportChildren(
     shouldPreserveNewLines,
     unclosedTags,
     unclosableTags,
+    undefined,
+    nodeMemo,
   ).markdown;
 }
 
@@ -299,7 +305,12 @@ type LiteralRun = {first: TextNode; last: TextNode; text: string};
 type MarkdownPiece =
   | {type: 'literal'; run: LiteralRun}
   | {type: 'syntax'; markdown: string; inline: boolean}
-  | {type: 'boundary'};
+  | {type: 'boundary'}
+  | {type: 'group'; pieces: MarkdownPiece[]};
+type ExportMemo = Map<
+  LexicalNode,
+  {shouldInclude: boolean; pieces: MarkdownPiece[]}
+>;
 type RenderedChildren = {
   shouldInclude: boolean;
   markdown: string;
@@ -313,10 +324,17 @@ function delegatedPieces(
   callbacks: RenderedChildren[],
 ): MarkdownPiece[] | null {
   if (callbacks.length === 0) return null;
-  const combined = callbacks.map(callback => callback.markdown).join('');
-  if (markdown === combined)
-    return callbacks.flatMap(callback => callback.pieces);
-  for (const callback of callbacks) {
+  const candidates =
+    callbacks.length === 1
+      ? callbacks
+      : [
+          {
+            markdown: callbacks.map(callback => callback.markdown).join(''),
+            pieces: callbacks.flatMap(callback => callback.pieces),
+          },
+          ...callbacks,
+        ];
+  for (const callback of candidates) {
     if (markdown === callback.markdown) return callback.pieces;
     if (
       callback.markdown !== '' &&
@@ -355,6 +373,7 @@ function $renderChildren(
   unclosedTags: {format: TextFormatType; tag: string}[] = [],
   unclosableTags: {format: TextFormatType; tag: string}[] = [],
   selection?: BaseSelection,
+  nodeMemo: ExportMemo = new Map(),
 ): RenderedChildren {
   const output: string[] = [];
   const pieces: MarkdownPiece[] = [];
@@ -404,24 +423,24 @@ function $renderChildren(
       pending = null;
     }
   };
-  const $boundary = () => {
-    pieces.push({type: 'boundary'});
+  const $boundary = (record = true) => {
+    if (record) pieces.push({type: 'boundary'});
     $flush(null, true);
     previous = null;
     lastClosed = '';
   };
-  const $writeOwned = (value: string, inline = false) => {
+  const $writeOwned = (value: string, inline = false, record = true) => {
     if (value !== '') {
-      pieces.push({inline, markdown: value, type: 'syntax'});
+      if (record) pieces.push({inline, markdown: value, type: 'syntax'});
       $flush(null, !inline, value);
       write(value);
       previous = null;
       lastClosed = /^[*_]$/.test(value.slice(-1)) ? value.slice(-1) : '';
     }
   };
-  const $appendLiteral = (run: LiteralRun) => {
+  const $appendLiteral = (run: LiteralRun, record = true) => {
     if (run.text === '') return;
-    pieces.push({run, type: 'literal'});
+    if (record) pieces.push({run, type: 'literal'});
     if (
       pending !== null &&
       pending.first.getFormat() === run.first.getFormat()
@@ -433,20 +452,37 @@ function $renderChildren(
       pending = {...run};
     }
   };
-  const $appendPieces = (fragments: MarkdownPiece[]) => {
+  const $appendPieces = (fragments: MarkdownPiece[], record = true) => {
+    if (record) pieces.push({pieces: fragments, type: 'group'});
     for (const piece of fragments) {
-      if (piece.type === 'literal') $appendLiteral(piece.run);
+      if (piece.type === 'literal') $appendLiteral(piece.run, false);
       else if (piece.type === 'syntax')
-        $writeOwned(piece.markdown, piece.inline);
-      else $boundary();
+        $writeOwned(piece.markdown, piece.inline, false);
+      else if (piece.type === 'group') $appendPieces(piece.pieces, false);
+      else $boundary(false);
     }
   };
 
   const $append = (parent: ElementNode): boolean => {
     let anyIncluded = false;
     mainLoop: for (const child of parent.getChildren()) {
+      const memoized = nodeMemo.get(child);
+      if (memoized !== undefined) {
+        $appendPieces(memoized.pieces);
+        anyIncluded = memoized.shouldInclude || anyIncluded;
+        continue;
+      }
+      const start = pieces.length;
+      const $remember = (shouldInclude: boolean) => {
+        // Keep fragments as a tree so nested previews share classification
+        // without copying every descendant at every wrapper depth.
+        const fragments = pieces.splice(start);
+        pieces.push({pieces: fragments, type: 'group'});
+        nodeMemo.set(child, {pieces: fragments, shouldInclude});
+      };
       let included = selection === undefined || child.isSelected(selection);
       let fallback: RenderedChildren | undefined;
+      const childPreviews = new Map<ElementNode, RenderedChildren>();
       for (const transformer of textMatchTransformers) {
         if (!transformer.export) continue;
         const inlineLink =
@@ -455,15 +491,20 @@ function $renderChildren(
         const result = transformer.export(
           child,
           container => {
-            const rendered = $renderChildren(
-              container,
-              textFormatTransformers,
-              textMatchTransformers,
-              shouldPreserveNewLines,
-              [],
-              [],
-              selection,
-            );
+            let rendered = childPreviews.get(container);
+            if (rendered === undefined) {
+              rendered = $renderChildren(
+                container,
+                textFormatTransformers,
+                textMatchTransformers,
+                shouldPreserveNewLines,
+                [],
+                [],
+                selection,
+                nodeMemo,
+              );
+              childPreviews.set(container, rendered);
+            }
             callbacks.push(rendered);
             if (container.is(child)) fallback = rendered;
             return rendered.markdown;
@@ -514,6 +555,7 @@ function $renderChildren(
             else $writeOwned(result, inlineLink);
             anyIncluded = true;
           }
+          $remember(included);
           continue mainLoop;
         }
       }
@@ -521,8 +563,9 @@ function $renderChildren(
         if (!child.isInline()) $boundary();
         if (fallback) {
           $appendPieces(fallback.pieces);
-          anyIncluded = fallback.shouldInclude || included || anyIncluded;
-        } else anyIncluded = $append(child) || included || anyIncluded;
+          included = fallback.shouldInclude || included;
+        } else included = $append(child) || included;
+        anyIncluded = included || anyIncluded;
         if (!child.isInline()) $boundary();
       } else if (included) {
         anyIncluded = true;
@@ -541,6 +584,7 @@ function $renderChildren(
           $writeOwned(child.getTextContent());
         }
       }
+      $remember(included);
     }
     return anyIncluded;
   };
@@ -551,6 +595,16 @@ function $renderChildren(
 
 function $exportLineBreak(node: LineBreakNode): string {
   return $getState(node, hardLineBreakState) + '\n';
+}
+
+// References give boundary characters unambiguous punctuation. Unicode
+// symbols are included conservatively: parsers differ on their punctuation
+// class and on whether astral characters are inspected as UTF-16 code units.
+function needsFormatBoundaryReference(value: string): boolean {
+  return (
+    /^[^\s\p{P}\x21-\x2f\x3a-\x40\x5b-\x60\x7b-\x7e]/u.test(value) ||
+    (value.codePointAt(0) ?? 0) > 0xffff
+  );
 }
 
 function $exportTextFormat(
@@ -611,7 +665,7 @@ function $exportTextFormat(
     const last = chars[chars.length - 1];
     if (
       first &&
-      !/[\s\p{P}\p{S}]/u.test(first) &&
+      needsFormatBoundaryReference(first) &&
       previous &&
       previous.first.getFormat() !== node.getFormat() &&
       (previous.first.hasFormat('code') || !/\s$/u.test(previous.text))
@@ -620,12 +674,12 @@ function $exportTextFormat(
     }
     if (
       last &&
-      !/[\s\p{P}\p{S}]/u.test(last) &&
+      needsFormatBoundaryReference(last) &&
       next &&
       next.first.getFormat() !== node.getFormat() &&
       (next.first.hasFormat('code') || !/^\s/u.test(next.text)) &&
       ((next.first.getFormat() & ~node.getFormat()) !== 0 ||
-        /^[^\s\p{P}\p{S}]/u.test(next.text))
+        needsFormatBoundaryReference(next.text))
     ) {
       output =
         chars.length === 1

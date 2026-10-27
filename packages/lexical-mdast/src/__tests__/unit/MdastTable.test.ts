@@ -973,6 +973,7 @@ describe('MdastTableExtension', () => {
                   type: 'tableRow',
                 },
                 {type: 'text', value: '\n'} as unknown as TableRow,
+                {type: 'text', value: '\u00a0'} as unknown as TableRow,
                 {type: 'text', value: 'z'} as unknown as TableRow,
                 {type: 'tableRow'} as unknown as TableRow,
                 {
@@ -1003,6 +1004,8 @@ describe('MdastTableExtension', () => {
           table(
             '| **x** | y |',
             '| ----- | - |',
+            // Only spaces, tabs and line endings are whitespace in Markdown.
+            '| \u00a0     |   |',
             '| z     |   |',
             '|       |   |',
             '| [l]() |   |',

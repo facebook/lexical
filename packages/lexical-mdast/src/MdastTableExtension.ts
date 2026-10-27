@@ -383,7 +383,7 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
   const partsOf = (parent: MdastNode): MdastNode[] =>
     (('children' in parent && parent.children) || []).filter(
       (child: MdastNode) =>
-        child.type !== 'text' || (child.value || '').trim() !== '',
+        child.type !== 'text' || !/^[ \t\r\n]*$/.test(child.value || ''),
     );
   const parts = partsOf(node);
   const rows = parts.map(row =>

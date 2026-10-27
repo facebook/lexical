@@ -61,6 +61,7 @@ import {
   TextNode,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
+import {fromMarkdown} from 'mdast-util-from-markdown';
 import {defaultHandlers} from 'mdast-util-to-markdown';
 import {assert, describe, expect, it} from 'vitest';
 
@@ -501,12 +502,24 @@ describe('MdastTableExtension', () => {
       ]);
       expect($convertToMarkdownString()).toBe(markdown);
     });
-    // The mdast holds them unescaped, which reads back as it is.
-    const mdast = editor.read(() => $convertToMdast());
-    editor.update(() => $convertFromMdast(mdast), {discrete: true});
-    editor.read(() => {
-      expect($convertToMarkdownString()).toBe(markdown);
-    });
+    // The mdast holds them unescaped, which reads back as it is, as does
+    // a tree parsed with the editor's grammar.
+    const {registry} = getExtensionDependencyFromEditor(
+      editor,
+      MdastExtension,
+    ).output;
+    for (const mdast of [
+      editor.read(() => $convertToMdast()),
+      fromMarkdown(markdown, {
+        extensions: registry.micromarkExtensions,
+        mdastExtensions: registry.mdastExtensions,
+      }),
+    ]) {
+      editor.update(() => $convertFromMdast(mdast), {discrete: true});
+      editor.read(() => {
+        expect($convertToMarkdownString()).toBe(markdown);
+      });
+    }
     // A pipe after an odd run of backslashes, which a cell can't hold, isn't
     // where GFM ends the cell, so it's written as it is.
     editor.update(
@@ -885,14 +898,7 @@ describe('MdastTableExtension', () => {
                               children: [
                                 {
                                   children: [
-                                    {
-                                      position: {
-                                        end: {column: 1, line: 1},
-                                        start: {column: 1, line: 1},
-                                      },
-                                      type: 'html',
-                                      value: '<i title="\\\\\\|">',
-                                    },
+                                    {type: 'html', value: '<i title="\\|">'},
                                   ],
                                   type: 'tableCell',
                                 },
@@ -923,9 +929,9 @@ describe('MdastTableExtension', () => {
       ).getChildren();
       expect(text.getTextContent()).toBe('a');
       expect($isLineBreakNode(br)).toBe(true);
-      // A pipe escaped in parsed raw HTML is unescaped once.
+      // A supplied tree holds the pipes in raw HTML as they are.
       expect($assertNodeType(nested, $isTableNode).getTextContent()).toBe(
-        '<i title="\\\\|">',
+        '<i title="\\|">',
       );
     });
   });
@@ -1005,9 +1011,8 @@ describe('MdastTableExtension', () => {
     });
   });
 
-  it('reads a supplied table’s missing header cells, alignment and escapes as GFM has them', () => {
+  it('reads a supplied table’s missing header cells and alignment as GFM has them', () => {
     using editor = createEditor();
-    const position = {end: {column: 1, line: 1}, start: {column: 1, line: 1}};
     editor.update(
       () =>
         $convertFromMdast({
@@ -1020,11 +1025,7 @@ describe('MdastTableExtension', () => {
                   children: [
                     {children: [{type: 'text', value: 'x'}], type: 'tableCell'},
                     {
-                      children: [
-                        // From a parse, which leaves the pipe escaped.
-                        {position, type: 'html', value: '<i title="\\|">'},
-                        {type: 'html', value: '<i title="\\|">'},
-                      ],
+                      children: [{type: 'html', value: '<i title="\\|">'}],
                       type: 'tableCell',
                     },
                   ],
@@ -1042,7 +1043,7 @@ describe('MdastTableExtension', () => {
       const cells = $cells();
       expect(cells.map(row => row.map(cell => cell.getTextContent()))).toEqual([
         ['', ''],
-        ['x', '<i title="|"><i title="\\|">'],
+        ['x', '<i title="\\|">'],
       ]);
       expect(
         cells[1].map(cell =>

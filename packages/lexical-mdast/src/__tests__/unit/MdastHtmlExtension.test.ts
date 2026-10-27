@@ -11,6 +11,7 @@ import type {BlockContent} from 'mdast';
 import {
   $createHorizontalRuleNode,
   buildEditorFromExtensions,
+  getExtensionDependencyFromEditor,
   HorizontalRuleNode,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
@@ -54,10 +55,12 @@ import {
   type TextNode,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
+import {fromMarkdown} from 'mdast-util-from-markdown';
 import {describe, expect, it} from 'vitest';
 
 import {
   $convertFromMarkdownString,
+  $convertFromMdast,
   $convertSelectionToMarkdownString,
   $convertToMarkdownString,
   $exportViaDOM,
@@ -1020,6 +1023,41 @@ describe('MdastHtmlExtension', () => {
         '|     | b |\n| :-: | - |\n|  x  | y |\n\n***',
       );
     });
+  });
+
+  it('reads the pipes in raw HTML in a cell of a tree parsed with the editor’s grammar', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          MdastCommonMarkExtension,
+          MdastExtension,
+          MdastHtmlExtension,
+          MdastTableExtension,
+          LinkExtension,
+        ],
+        name: '[root]',
+      }),
+    );
+    const markdown = '| a |\n| - |\n| <a href="x\\|y">q</a> |';
+    const {registry} = getExtensionDependencyFromEditor(
+      editor,
+      MdastExtension,
+    ).output;
+    const tree = fromMarkdown(markdown, {
+      extensions: registry.micromarkExtensions,
+      mdastExtensions: registry.mdastExtensions,
+    });
+    for (const $convert of [
+      () => $convertFromMarkdownString(markdown),
+      () => $convertFromMdast(tree),
+    ]) {
+      editor.update($convert, {discrete: true});
+      editor.read(() => {
+        expect($convertToMarkdownString()).toBe(
+          '| a         |\n| --------- |\n| [q](x\\|y) |',
+        );
+      });
+    }
   });
 
   it('keeps the inline content of a block without a rule in its cell', () => {

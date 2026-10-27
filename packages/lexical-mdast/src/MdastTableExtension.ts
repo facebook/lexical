@@ -12,7 +12,14 @@ import type {
   MdastImportHandler,
   MdastNode,
 } from './types';
-import type {AlignType, Parent, PhrasingContent, Table, TableCell} from 'mdast';
+import type {
+  AlignType,
+  Parent,
+  PhrasingContent,
+  Root,
+  Table,
+  TableCell,
+} from 'mdast';
 import type {
   Handle,
   Options as ToMarkdownExtension,
@@ -68,8 +75,8 @@ function gfmAlign(format: ElementFormatType): AlignType {
 
 /**
  * Replaces each node for which `replace` returns an array with that array,
- * maps the children of every node but a table (which maps its own) the same
- * way, and returns `nodes` itself when nothing changed.
+ * maps the children of every node the same way, and returns `nodes` itself
+ * when nothing changed.
  */
 function mapPhrasing(
   nodes: readonly MdastNode[],
@@ -80,9 +87,7 @@ function mapPhrasing(
     const replaced = replace(node);
     const result = (replaced || [node]).map(child => {
       const children =
-        'children' in child &&
-        child.type !== 'table' &&
-        mapPhrasing(child.children, replace);
+        'children' in child && mapPhrasing(child.children, replace);
       return children && children !== child.children
         ? ({...child, children} as MdastNode)
         : child;
@@ -320,18 +325,36 @@ function unescapePipes(value: string): string {
   return value.replace(/\\\|/g, '|');
 }
 
+/** Unescapes the pipes in raw HTML in a cell in or below `node`. */
+function unescapeCellHtml(node: MdastNode, inCell: boolean): void {
+  if (inCell && (node.type === 'html' || node.type === 'htmlInline')) {
+    node.value = unescapePipes(node.value);
+  }
+  if ('children' in node) {
+    for (const child of node.children) {
+      unescapeCellHtml(child, inCell || node.type === 'tableCell');
+    }
+  }
+}
+
+/**
+ * Unescapes the pipes micromark leaves escaped in raw HTML in a cell, which
+ * GFM reads as escaped before anything else, as the tree is parsed: a tree
+ * supplied to the import holds them as they are.
+ */
+const gfmTableHtmlFromMarkdown = {
+  transforms: [
+    (tree: Root) => {
+      unescapeCellHtml(tree, false);
+    },
+  ],
+};
+
 const $importTable: MdastImportHandler<Table> = (node, ctx) => {
   const align = node.align || [];
   const replace = (child: MdastNode): MdastNode[] | undefined => {
     if (child.type === 'html' || child.type === 'htmlInline') {
-      if (BR_RE.test(child.value)) {
-        return [{type: 'break'}];
-      }
-      // Only one parsed from Markdown has them escaped, which a node with a
-      // source position (or one from this import's own parse) is.
-      const value =
-        ctx.source || child.position ? unescapePipes(child.value) : child.value;
-      return value === child.value ? undefined : [{...child, value}];
+      return BR_RE.test(child.value) ? [{type: 'break'}] : undefined;
     }
     // An autolink, `<…>` or literal, rather than `[text](url)`, which reads
     // its escapes as text does. Its text is its URL, as written.
@@ -610,10 +633,9 @@ function gfmTableCellsToMarkdown(): ToMarkdownExtension {
  *
  * Import reads a table as GFM does: the first row is the header row, each row
  * has the header row's cells, and an escaped pipe, which micromark leaves
- * escaped, is a pipe in raw HTML parsed from Markdown (imported from its
- * source, or with a source position) and in autolinks imported from Markdown
- * source (an mdast tree without it can't tell an autolink from
- * `[text](url)`). Column alignment is set on the paragraph of each cell of
+ * escaped, is a pipe in raw HTML (as its parse extension reads it; a supplied
+ * tree holds it as it is) and in autolinks imported from Markdown source (an
+ * mdast tree without it can't tell an autolink from `[text](url)`). Column alignment is set on the paragraph of each cell of
  * the column as its element format, and a raw HTML `<br>` in a
  * cell, which export writes for a line break, is read as one.
  * Export writes any table as near as GFM allows: the blocks a cell's content
@@ -650,7 +672,10 @@ export const MdastTableExtension = defineExtension({
     configExtension(MdastExtension, {
       exportRules: [{$export: $exportTable, type: TableNode}],
       importRules: [{$import: $importTable, type: 'table'}],
-      mdastExtensions: [/* @__PURE__ */ gfmTableFromMarkdown()],
+      mdastExtensions: [
+        /* @__PURE__ */ gfmTableFromMarkdown(),
+        gfmTableHtmlFromMarkdown,
+      ],
       micromarkExtensions: [/* @__PURE__ */ gfmTable()],
       toMarkdownExtensions: [gfmTableCellsToMarkdown()],
     }),

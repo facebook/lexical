@@ -54,16 +54,11 @@ test.each(['{Enter}', '{Shift>}{Enter}{/Shift}'])(
   '%s in a table cell writes a <br> line break',
   async keys => {
     const editor = mountEditor('| a | b |\n| - | - |\n| 1 | 2 |');
-    editor.update(
-      () => {
-        const one = $getRoot()
-          .getAllTextNodes()
-          .find(node => node.getTextContent() === '1');
-        one!.select(1, 1);
-      },
-      {discrete: true},
-    );
-    editor.focus();
+    // editor.focus() only sets the DOM selection, which focuses the root in
+    // Chromium but not in Firefox, where the typed keys were then dropped.
+    window.focus();
+    editor.getRootElement()!.focus();
+    editor.update(() => $selectText('1', 1), {discrete: true});
     await userEvent.keyboard(`${keys}x`);
     expect(editor.read(() => $convertToMarkdownString())).toBe(
       '| a      | b |\n| ------ | - |\n| 1<br>x | 2 |',

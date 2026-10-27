@@ -333,8 +333,8 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
     // its escapes as text does. Its text is its URL, as written.
     if (
       child.type === 'link' &&
-      child.url.includes('\\|') &&
-      (inlineMarker(ctx, child) || '[') !== '['
+      (inlineMarker(ctx, child) || '[') !== '[' &&
+      child.url.includes('\\|')
     ) {
       return [
         {
@@ -349,20 +349,26 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
       ];
     }
   };
+  // The children of a row or a cell, or else the node itself: a supplied
+  // tree can hold phrasing content where GFM has a row or a cell.
+  const childrenOf = (child: MdastNode, type: string): MdastNode[] =>
+    child.type === type
+      ? ('children' in child && child.children) || []
+      : [child];
+  const rows = node.children.map(row => childrenOf(row, 'tableRow'));
   // Each row has the header row's cells, as GFM reads it: those past them
   // are dropped and missing ones are empty.
-  const header = node.children.length > 0 ? node.children[0].children : [];
+  const header = rows.length > 0 ? rows[0] : [];
   if (header.length === 0) {
     return [];
   }
   return $append(
     $createTableNode(),
-    node.children.map((row, rowIndex) =>
+    rows.map((row, rowIndex) =>
       $append(
         $createTableRowNode(),
         header.map((_, column) => {
-          // A supplied row can hold phrasing content rather than a cell.
-          const cell: MdastNode | undefined = row.children[column];
+          const cell: MdastNode | undefined = row[column];
           return $append(
             $createTableCellNode(
               rowIndex === 0
@@ -376,7 +382,7 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
                   ? ctx.importChildren({
                       ...cell,
                       children: mapPhrasing(
-                        'children' in cell ? cell.children : [cell],
+                        childrenOf(cell, 'tableCell'),
                         replace,
                       ),
                       type: 'tableCell',

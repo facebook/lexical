@@ -8,7 +8,7 @@
 
 // @vitest-environment node
 
-import type {PhrasingContent, TableCell} from 'mdast';
+import type {PhrasingContent, TableCell, TableRow} from 'mdast';
 
 import {
   $createHorizontalRuleNode,
@@ -917,7 +917,7 @@ describe('MdastTableExtension', () => {
     });
   });
 
-  it('reads a supplied row’s phrasing content as a cell, and no header cells as no table', () => {
+  it('reads phrasing content a supplied tree holds for a row or a cell', () => {
     using editor = createEditor();
     editor.update(
       () =>
@@ -931,7 +931,21 @@ describe('MdastTableExtension', () => {
               children: [
                 {
                   children: [
-                    {type: 'text', value: 'x'} as unknown as TableCell,
+                    {children: [{type: 'text', value: 'x'}], type: 'strong'},
+                    {type: 'text', value: 'y'},
+                  ] as unknown as TableCell[],
+                  type: 'tableRow',
+                },
+                {type: 'text', value: 'z'} as unknown as TableRow,
+                {type: 'tableRow'} as unknown as TableRow,
+                {
+                  children: [
+                    {
+                      children: [
+                        {children: [{type: 'text', value: 'l'}], type: 'link'},
+                      ],
+                      type: 'tableCell',
+                    } as unknown as TableCell,
                   ],
                   type: 'tableRow',
                 },
@@ -944,8 +958,17 @@ describe('MdastTableExtension', () => {
       {discrete: true},
     );
     editor.read(() => {
+      // A table without header cells is none.
       expect($getRoot().getChildrenSize()).toBe(1);
-      expect($cells()[0][0].getTextContent()).toBe('x');
+      expect($convertToMarkdownString()).toBe(
+        table(
+          '| **x** | y |',
+          '| ----- | - |',
+          '| z     |   |',
+          '|       |   |',
+          '| [l]() |   |',
+        ),
+      );
     });
   });
 

@@ -13,6 +13,7 @@
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/code-core": "workspace:*",
+    "@lexical/extension": "workspace:*",
     "@lexical/internal": "workspace:*",
     "@lexical/link": "workspace:*",
     "@lexical/list": "workspace:*",
@@ -20,12 +21,11 @@
     "@lexical/selection": "workspace:*",
     "@lexical/text": "workspace:*",
     "@lexical/utils": "workspace:*",
-    "decode-named-character-reference": "^1.3.0",
+    "character-entities": "^2.0.2",
     "lexical": "workspace:*"
   },
   "devDependencies": {
     "@lexical/history": "workspace:*",
-    "character-entities": "^2.0.2",
     "mdast-util-from-markdown": "^2.0.3"
   },
   "repository": {
@@ -36,6 +36,22 @@
   "module": "./dist/LexicalMarkdown.js",
   "sideEffects": false,
   "exports": {
+    "./SSRMarkdownExtension": {
+      "source": "./src/SSRMarkdownExtension.ts",
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/SSRMarkdownExtension.d.ts",
+      "development": "./dist/LexicalMarkdownSSRMarkdownExtension.dev.js",
+      "production": "./dist/LexicalMarkdownSSRMarkdownExtension.prod.js",
+      "default": "./dist/LexicalMarkdownSSRMarkdownExtension.js"
+    },
+    "./SSRMarkdownExtension.js": {
+      "source": "./src/SSRMarkdownExtension.ts",
+      "types@<5.2": "./dist/typescript-too-old.d.ts",
+      "types": "./dist/SSRMarkdownExtension.d.ts",
+      "development": "./dist/LexicalMarkdownSSRMarkdownExtension.dev.js",
+      "production": "./dist/LexicalMarkdownSSRMarkdownExtension.prod.js",
+      "default": "./dist/LexicalMarkdownSSRMarkdownExtension.js"
+    },
     ".": {
       "source": "./src/index.ts",
       "types@<5.2": "./dist/typescript-too-old.d.ts",

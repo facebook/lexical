@@ -11,7 +11,6 @@ import type {Plugin} from 'vite';
 import react from '@vitejs/plugin-react';
 import {playwright} from '@vitest/browser-playwright';
 import * as fs from 'node:fs';
-import {createRequire} from 'node:module';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {configDefaults, defineConfig} from 'vitest/config';
@@ -142,22 +141,6 @@ export default defineConfig({
         },
         extends: true,
         plugins: [react()],
-        resolve: {
-          alias: [
-            {
-              // The unit project also runs headless Node tests. Exercise the
-              // real Node decoder here; browser mode checks native decoding
-              // through the package's unaliased browser export condition.
-              find: 'decode-named-character-reference',
-              replacement: createRequire(
-                new URL(
-                  './packages/lexical-markdown/package.json',
-                  import.meta.url,
-                ),
-              ).resolve('decode-named-character-reference'),
-            },
-          ],
-        },
         test: {
           env: {
             LEXICAL_VERSION: JSON.stringify(

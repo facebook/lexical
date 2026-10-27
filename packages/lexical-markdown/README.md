@@ -96,18 +96,44 @@ Import reads backslash escapes and decimal, hexadecimal, and named character
 references once. Their decoded characters remain text, not new Markdown syntax.
 Source spelling of references and escapes is not preserved.
 
-Browser builds decode named references through native HTML parsing rather than
-bundling the complete entity table. Node uses the separate DOM-free decoder.
-Browser-targeted Worker and headless bundles must select the decoder package's
-`worker` export condition in their separate build (for example,
-`conditions: ['worker']` with esbuild's browser platform). The ordinary browser
-condition requires a document and must not be used for a Worker bundle.
+Named-reference decoding is editor-scoped. `MarkdownExtension` configures its
+`decodeNamedCharacterReference` function for imports, detached-node generation,
+and link shortcuts. The default uses native HTML parsing and does not include
+the full entity table. Existing editors without this extension use the same
+native default. Without a document, that default preserves named references as
+text, as earlier DOM-free imports did; numeric references and escapes still work.
+
+For full named-reference decoding on a server or in a Web Worker, explicitly
+import `SSRMarkdownExtension`. It configures `MarkdownExtension` with the full
+table, without requiring a document, a bundler condition, or global settings:
+
+```ts
+import {buildEditorFromExtensions} from '@lexical/extension';
+import {SSRMarkdownExtension} from '@lexical/markdown/SSRMarkdownExtension';
+
+const editor = buildEditorFromExtensions(SSRMarkdownExtension);
+```
+
+Register the nodes required by your transformers separately, as with existing
+Markdown APIs. This extension only configures decoding; it does not register
+nodes, shortcuts, or a DOM implementation. Legacy `createEditor()` callers can
+keep using native decoding, or migrate to `buildEditorFromExtensions` to choose
+the DOM-free decoder. Do not re-export the SSR entry from a shared browser
+barrel if that barrel retains all exports.
+
+Applications can instead use `configExtension(MarkdownExtension, {
+decodeNamedCharacterReference: customDecoder})`. The synchronous function receives
+a complete bare entity name, without `&` and `;`, and returns its text or
+`undefined` for an unknown name. Lexical owns reference matching, numeric
+decoding, and backslash handling in a single pass; decoder output is never
+reinterpreted as syntax. Configuration belongs to each editor, including nested
+editors, and is not serialized into document state.
 
 Where `Element.setHTML` is available, the browser decoder uses that safe native
 API without creating a Trusted Types policy. Older browsers use the native
 string HTML sink; decoding named references throws if strict Trusted Types
-blocks that sink. Such applications can explicitly select the DOM-free build,
-accepting its table cost. The default browser path neither bundles that fallback
+blocks that sink. Such applications can explicitly use `SSRMarkdownExtension`
+or a custom decoder, accepting its cost. The default browser path neither bundles that fallback
 nor weakens CSP or installs a policy.
 
 Links have a `LinkNode` representation. Angle URI and email autolinks import as

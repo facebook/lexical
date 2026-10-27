@@ -9,7 +9,8 @@
 // @vitest-environment node
 
 import {$createCodeNode, CodeNode} from '@lexical/code-core';
-import {createHeadlessEditor} from '@lexical/headless';
+import {buildEditorFromExtensions} from '@lexical/extension';
+import {HeadlessExtension} from '@lexical/headless';
 import {createEmptyHistoryState, registerHistory} from '@lexical/history';
 import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
@@ -24,6 +25,7 @@ import {
   type TextMatchTransformer,
   TRANSFORMERS,
 } from '@lexical/markdown';
+import {SSRMarkdownExtension} from '@lexical/markdown/SSRMarkdownExtension';
 import {$createHeadingNode, HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
   $copyNode,
@@ -34,6 +36,7 @@ import {
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
+  defineExtension,
   HISTORY_PUSH_TAG,
   type LexicalNode,
   REDO_COMMAND,
@@ -42,21 +45,25 @@ import {
 import {fromMarkdown} from 'mdast-util-from-markdown';
 import {assert, describe, expect, it} from 'vitest';
 
+const MarkdownConformanceTestExtension = defineExtension({
+  dependencies: [HeadlessExtension, SSRMarkdownExtension],
+  name: '@lexical/markdown/conformance-test',
+  nodes: () => [
+    CodeNode,
+    LinkNode,
+    ListNode,
+    ListItemNode,
+    HeadingNode,
+    QuoteNode,
+    MarkNode,
+  ],
+});
+
 function createTestEditor() {
-  return createHeadlessEditor({
-    nodes: [
-      CodeNode,
-      LinkNode,
-      ListNode,
-      ListItemNode,
-      HeadingNode,
-      QuoteNode,
-      MarkNode,
-    ],
-    onError(error) {
-      throw error;
-    },
-  });
+  const editor = buildEditorFromExtensions(MarkdownConformanceTestExtension);
+  // The builder seeds a paragraph; these tree-construction tests start empty.
+  editor.update(() => $getRoot().clear(), {discrete: true});
+  return editor;
 }
 
 function parse(markdown: string) {

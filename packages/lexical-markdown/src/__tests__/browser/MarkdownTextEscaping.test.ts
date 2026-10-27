@@ -10,16 +10,32 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
+  decodeNativeNamedCharacterReference,
 } from '@lexical/markdown';
 import {characterEntities} from 'character-entities';
 import {$getRoot} from 'lexical';
 import {fromMarkdown} from 'mdast-util-from-markdown';
-import {assert, describe, expect, it} from 'vitest';
+import {assert, beforeEach, describe, expect, it, onTestFinished} from 'vitest';
 
-import {unescapeText} from '../../utils';
+import {$unescapeText} from '../../utils';
 import {MarkdownTestExtension} from '../utils';
 
+let decoderEditor: ReturnType<typeof buildEditorFromExtensions>;
+beforeEach(() => {
+  decoderEditor = buildEditorFromExtensions();
+  onTestFinished(() => decoderEditor.dispose());
+});
+
+function unescapeText(value: string) {
+  return decoderEditor.read(() => $unescapeText(value));
+}
+
 describe('browser Markdown reference semantics', () => {
+  it('rejects incomplete or invalid names at the native adapter boundary', () => {
+    for (const name of ['', 'amp;copy', '<b>', '&copy', 'a'.repeat(33)]) {
+      expect(decodeNativeNamedCharacterReference(name)).toBeUndefined();
+    }
+  });
   it.skipIf(!('setHTML' in Element.prototype))(
     'uses safe native decoding when string HTML assignments are unavailable',
     () => {

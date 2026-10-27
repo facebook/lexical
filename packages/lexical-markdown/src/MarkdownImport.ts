@@ -21,7 +21,7 @@ import {
   type TextNode,
 } from 'lexical';
 
-import {importTextTransformers} from './importTextTransformers';
+import {$importTextTransformers} from './importTextTransformers';
 import {
   $createMarkdownLineBreakNode,
   $hasSourceHardLineBreak,
@@ -253,7 +253,7 @@ function $importBlocks(
     $splitMarkdownHardLineBreakMarker(textNode);
   }
 
-  importTextTransformers(
+  $importTextTransformers(
     textNode,
     textFormatTransformersIndex,
     textMatchTransformers,

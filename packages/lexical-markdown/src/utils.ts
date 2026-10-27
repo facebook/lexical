@@ -7,6 +7,10 @@
  */
 
 import type {
+  MarkdownExtension,
+  NamedCharacterReferenceDecoder,
+} from './MarkdownExtension';
+import type {
   ElementTransformer,
   MultilineElementTransformer,
   TextFormatTransformer,
@@ -14,9 +18,10 @@ import type {
   Transformer,
 } from './MarkdownTransformers';
 
+import {$getPeerDependency} from '@lexical/extension';
 import {$isParagraphNode, $isTextNode, type LexicalNode} from 'lexical';
 
-import {decodeNamedReference} from './decodeNamedReference';
+import {decodeNativeNamedCharacterReference} from './decodeNamedReference';
 
 export function indexBy<T>(
   list: T[],
@@ -90,9 +95,10 @@ function decodeCharacterReference(
   digits: string | undefined,
   hex: string | undefined,
   name: string | undefined,
+  decodeNamedReference: NamedCharacterReferenceDecoder,
 ): string {
   if (name !== undefined) {
-    return decodeNamedReference(name) || match;
+    return decodeNamedReference(name) ?? match;
   }
   const codePoint = digits !== undefined ? Number(digits) : parseInt(hex!, 16);
   return codePoint === 0 ||
@@ -102,7 +108,13 @@ function decodeCharacterReference(
     : String.fromCodePoint(codePoint);
 }
 
-export function unescapeText(value: string): string {
+export function $unescapeText(value: string): string {
+  const dependency = $getPeerDependency<typeof MarkdownExtension>(
+    '@lexical/markdown/Markdown',
+  );
+  const decodeNamedReference = dependency
+    ? dependency.config.decodeNamedCharacterReference
+    : decodeNativeNamedCharacterReference;
   // One pass: an escaped ampersand and the result of a decoded reference
   // must never be interpreted as another reference.
   return value.replace(
@@ -113,7 +125,9 @@ export function unescapeText(value: string): string {
       digits: string | undefined,
       hex: string | undefined,
       name: string | undefined,
-    ) => escaped ?? decodeCharacterReference(match, digits, hex, name),
+    ) =>
+      escaped ??
+      decodeCharacterReference(match, digits, hex, name, decodeNamedReference),
   );
 }
 

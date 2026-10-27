@@ -48,7 +48,7 @@ import {
   type TextNode,
 } from 'lexical';
 
-import {isEmptyParagraph, isEscaped, unescapeText} from './utils';
+import {$unescapeText, isEmptyParagraph, isEscaped} from './utils';
 
 export type Transformer =
   | ElementTransformer
@@ -1261,11 +1261,11 @@ export const LINK: TextMatchTransformer = {
     // At most one destination shape matched, either may legitimately be empty,
     // and `[a]()` matches with no destination at all, so none of this can fall
     // back on truthiness.
-    const linkUrl = unescapeText(pointyLinkUrl ?? rawLinkUrl ?? '');
+    const linkUrl = $unescapeText(pointyLinkUrl ?? rawLinkUrl ?? '');
     // A title has three spellings and only the one that matched is defined.
     const rawLinkTitle = quotedTitle ?? apostrophedTitle ?? parenthesizedTitle;
     const linkTitle =
-      rawLinkTitle != null ? unescapeText(rawLinkTitle) : undefined;
+      rawLinkTitle != null ? $unescapeText(rawLinkTitle) : undefined;
     const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
     // The link's text starts after the last `[` that no `]` after it
     // closes, as CommonMark matches brackets, and what is before it stays

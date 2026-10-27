@@ -8,6 +8,8 @@
 
 // @vitest-environment node
 
+import type {PhrasingContent} from 'mdast';
+
 import {
   $createHorizontalRuleNode,
   $isHorizontalRuleNode,
@@ -165,7 +167,7 @@ describe('MdastTableExtension', () => {
           table(
             '| a |',
             '| - |',
-            '| x<br>y **p<BR/>q** <br class="c">z</br>w |',
+            '| x<br>y **p<BR/>q** <br title="x>y">z</br>w |',
           ),
         ),
       {discrete: true},
@@ -848,6 +850,59 @@ describe('MdastTableExtension', () => {
         // A raw html node imports as its text.
         {type: 'text', value: 'a<br><b>content</b>'},
       ]);
+    });
+  });
+
+  it('reads a table in a supplied cell into the cell once', () => {
+    using editor = createEditor();
+    editor.update(
+      () =>
+        $convertFromMdast({
+          children: [
+            {
+              children: [
+                {
+                  children: [
+                    {
+                      children: [
+                        {type: 'text', value: 'a'},
+                        {
+                          children: [
+                            {
+                              children: [
+                                {
+                                  children: [
+                                    {type: 'html', value: '<i title="\\\\|">'},
+                                  ],
+                                  type: 'tableCell',
+                                },
+                              ],
+                              type: 'tableRow',
+                            },
+                          ],
+                          type: 'table',
+                        } as unknown as PhrasingContent,
+                      ],
+                      type: 'tableCell',
+                    },
+                  ],
+                  type: 'tableRow',
+                },
+              ],
+              type: 'table',
+            },
+          ],
+          type: 'root',
+        }),
+      {discrete: true},
+    );
+    editor.read(() => {
+      const [paragraph, nested] = $cells()[0][0].getChildren();
+      expect(paragraph.getTextContent()).toBe('a');
+      // A pipe escaped in raw HTML is unescaped once.
+      expect($assertNodeType(nested, $isTableNode).getTextContent()).toBe(
+        '<i title="\\|">',
+      );
     });
   });
 

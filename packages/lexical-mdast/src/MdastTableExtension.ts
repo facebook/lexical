@@ -57,7 +57,7 @@ import {MdastExtension} from './MdastExtension';
  * own, the line break a GFM cell can hold. Raw HTML with more in it is
  * imported as any other raw HTML is.
  */
-const BR_RE = /^<\/?br(?:[\s/][^>]*)?>$/i;
+const BR_RE = /^<\/?br(?:[\s/](?:[^>"']|"[^"]*"|'[^']*')*)?>$/i;
 
 /** The column alignment GFM writes for an element format. */
 function gfmAlign(format: ElementFormatType): AlignType {
@@ -68,8 +68,8 @@ function gfmAlign(format: ElementFormatType): AlignType {
 
 /**
  * Replaces each node for which `replace` returns an array with that array,
- * maps the children of every node the same way, and returns `nodes` itself
- * when nothing changed.
+ * maps the children of every node but a table (which maps its own) the same
+ * way, and returns `nodes` itself when nothing changed.
  */
 function mapPhrasing(
   nodes: readonly MdastNode[],
@@ -80,7 +80,9 @@ function mapPhrasing(
     const replaced = replace(node);
     const result = (replaced || [node]).map(child => {
       const children =
-        'children' in child && mapPhrasing(child.children, replace);
+        'children' in child &&
+        child.type !== 'table' &&
+        mapPhrasing(child.children, replace);
       return children && children !== child.children
         ? ({...child, children} as MdastNode)
         : child;
@@ -318,6 +320,33 @@ function unescapePipes(value: string): string {
   return value.replace(/\\\|/g, '|');
 }
 
+/**
+ * The blocks of a cell holding `nodes`: its inline content in paragraphs
+ * aligned with its column, and the blocks a supplied tree can hold in a cell
+ * beside them.
+ */
+function $cellBlocks(
+  nodes: LexicalNode[],
+  format: ElementFormatType,
+): LexicalNode[] {
+  const blocks: LexicalNode[] = [];
+  let paragraph: ElementNode | undefined;
+  for (const node of nodes) {
+    if ($isBlockLevelNode(node)) {
+      blocks.push(node);
+      paragraph = undefined;
+    } else {
+      if (!paragraph) {
+        blocks.push((paragraph = $createParagraphNode().setFormat(format)));
+      }
+      paragraph.append(node);
+    }
+  }
+  return blocks.length > 0
+    ? blocks
+    : [$createParagraphNode().setFormat(format)];
+}
+
 const $importTable: MdastImportHandler<Table> = (node, ctx) => {
   const align = node.align || [];
   const replace = (child: MdastNode): MdastNode[] | undefined => {
@@ -367,17 +396,15 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
                 ? TableCellHeaderStates.ROW
                 : TableCellHeaderStates.NO_STATUS,
             ),
-            [
-              $append(
-                $createParagraphNode().setFormat(align[column] || ''),
-                cell
-                  ? ctx.importChildren({
-                      ...cell,
-                      children: mapPhrasing(cell.children, replace),
-                    })
-                  : [],
-              ),
-            ],
+            $cellBlocks(
+              cell
+                ? ctx.importChildren({
+                    ...cell,
+                    children: mapPhrasing(cell.children, replace),
+                  })
+                : [],
+              align[column] || '',
+            ),
           );
         }),
       ),

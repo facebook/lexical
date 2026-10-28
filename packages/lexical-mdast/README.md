@@ -22,8 +22,9 @@ in sync.
 
 Like `@lexical/markdown`, the original syntax of a construct is preserved on
 the Lexical nodes (the bullet character of a list, a code block's fence, and a
-hard line break's style), so re-serializing produces **minimally different**
-Markdown — `* a`/`+ b` bullets and `~~~` fences round-trip unchanged.
+hard line break's style), so re-serializing stays **close to the source**,
+though not exact — `* a`/`+ b` bullets and `~~~` fences round-trip unchanged,
+while tables are re-padded and some constructs are normalized (see the guide).
 
 ## Configured through extensions
 
@@ -67,9 +68,10 @@ Behavior and convenience bundles:
 
 Everything composes granularly and degrades gracefully: an editor with only
 the extensions it wants imports unsupported constructs as their content
-(a table becomes its cell text), and the typing shortcuts — driven by the
-same registry — only fire for constructs the editor can represent (`> `
-stays literal without `MdastBlockquoteExtension`).
+(without `MdastTableExtension`, which brings the GFM table grammar, a table
+is read as plain CommonMark), and the typing shortcuts — driven by the same
+registry — only fire for constructs the editor can represent (`> ` stays
+literal without `MdastBlockquoteExtension`).
 
 `MdastExtension` owns the shared configuration and exposes both import and
 export. Feature extensions depend on it automatically.
@@ -118,7 +120,9 @@ and
 `$convertSelectionToMarkdownString(selection?)` serializes only the
 selected content (defaulting to the current selection): unselected
 blocks and list items are skipped and partially selected text is
-sliced to the selected range.
+sliced to the selected range. A GFM table writes the rows and columns a
+selection reaches, or a text or node selection within one cell as that
+cell's blocks, as copying in a cell does.
 
 ### unified / remark interop
 
@@ -185,7 +189,9 @@ Markdown passes raw HTML through — GitHub-style `<details>` blocks, inline
 `MdastHtmlExtension` routes it through the editor's `@lexical/html`
 `DOMImportExtension` rules instead, so **any HTML the editor can already
 import works from Markdown**, and Markdown *inside* the construct keeps
-working in both directions, the way it does on GitHub:
+working in both directions: the blocks after a blank line, as on GitHub,
+and also text between the tags, such as the summary line below, which GFM
+itself leaves raw:
 
 ```md
 <details><summary>
@@ -225,7 +231,10 @@ The **body** blocks
   (`$convertSelectionToMarkdownString`) run under
   `RenderContextMarkdownSelection` carrying the selection, so a
   contributed to-markdown handler that appends end-of-document data can
-  scope its output to a clipboard copy.
+  scope its output to a clipboard copy. An export rule reads the selection
+  its own export is limited to as `context.selection` (`null` for a
+  whole-document export, including one a handler runs during a selection
+  export), which needs no active editor.
 
 A complete HTML-encoded construct is one DOM import rule (which then also
 serves HTML paste) plus one export rule:

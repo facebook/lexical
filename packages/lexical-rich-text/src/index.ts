@@ -57,11 +57,11 @@ import {
   $insertNodes,
   $isDecoratorNode,
   $isElementNode,
+  $isEventFromEmbeddedInput,
   $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
   $isRootOrShadowRoot,
-  $isSelectionCapturedInDecoratorInput,
   $isShadowRootNode,
   $isSiblingCaret,
   $isTextNode,
@@ -111,7 +111,6 @@ import {
   IS_APPLE_WEBKIT,
   IS_IOS,
   IS_SAFARI,
-  isDOMNode,
   isHTMLElement,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
@@ -1988,6 +1987,12 @@ export function registerRichText(
     editor.registerCommand(
       COPY_COMMAND,
       event => {
+        // A copy in an input embedded in a node's DOM, such as a decorator's,
+        // is the input's, as are a cut and a paste below: the editor's
+        // selection is still the one it had before the input took the focus.
+        if ($isEventFromEmbeddedInput(event)) {
+          return false;
+        }
         copyToClipboard(
           editor,
           objectKlassEquals(event, ClipboardEvent) ? event : null,
@@ -1999,6 +2004,9 @@ export function registerRichText(
     editor.registerCommand(
       CUT_COMMAND,
       event => {
+        if ($isEventFromEmbeddedInput(event)) {
+          return false;
+        }
         onCutForRichText(event, editor);
         return true;
       },
@@ -2016,10 +2024,7 @@ export function registerRichText(
         }
 
         // if inputs then paste within the input ignore creating a new node on paste event
-        if (
-          isDOMNode(event.target) &&
-          $isSelectionCapturedInDecoratorInput(event.target)
-        ) {
+        if ($isEventFromEmbeddedInput(event)) {
           return false;
         }
 

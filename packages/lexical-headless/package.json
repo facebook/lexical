@@ -58,7 +58,7 @@
   },
   "dependencies": {
     "@lexical/internal": "workspace:*",
-    "happy-dom": "^20.9.0",
+    "happy-dom": "^21.0.4",
     "lexical": "workspace:*"
   },
   "files": [

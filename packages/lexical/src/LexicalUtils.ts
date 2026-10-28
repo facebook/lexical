@@ -254,6 +254,22 @@ export function $isSelectionCapturedInDecoratorInput(
         getEditorPropertyFromDOMNode(activeElement) == null))
   );
 }
+/**
+ * Returns true if an event comes from an input embedded in a node's DOM, read
+ * from its composed target: an `<input>`, a `<textarea>` or a foreign
+ * contentEditable (see {@link $isSelectionCapturedInDecoratorInput}). That is
+ * a decorator's own input, or one in unmanaged DOM that any node renders
+ * beside its children or text, through `createDOM`, a DOM slot or a render
+ * override. The editor's selection is then still the one it had before the
+ * input took the focus, so a copy, cut or paste there belongs to the input: a
+ * `COPY_COMMAND`, `CUT_COMMAND` or `PASTE_COMMAND` handler that acts on the
+ * editor's selection should return false for it.
+ */
+export function $isEventFromEmbeddedInput(event: Event | null): boolean {
+  const target = event === null ? null : getComposedEventTarget(event);
+  return isDOMNode(target) && $isSelectionCapturedInDecoratorInput(target);
+}
+
 /** @deprecated renamed to {@link $isSelectionCapturedInDecoratorInput} by @lexical/eslint-plugin rules-of-lexical */
 export const isSelectionCapturedInDecoratorInput =
   $isSelectionCapturedInDecoratorInput;
@@ -644,20 +660,6 @@ export function $isEmptyCompositionTarget(node: TextNode): boolean {
  * Returns the node with the given key from the active EditorState
  * (or the given EditorState), or null if it does not exist.
  */
-export function $getNodeByKey(
-  key: NodeKey,
-  _editorState?: EditorState,
-): LexicalNode | null;
-/**
- * @deprecated The type parameter is an unchecked and unsafe cast,
- * equivalent to `$getNodeByKey(key) as T | null`, and will be removed
- * in a future release. Call this function without a type argument and
- * narrow the result with a type guard instead.
- */
-export function $getNodeByKey<T extends LexicalNode>(
-  key: NodeKey,
-  _editorState?: EditorState,
-): T | null;
 export function $getNodeByKey(
   key: NodeKey,
   _editorState?: EditorState,
@@ -2157,14 +2159,6 @@ export function errorOnInsertTextNodeOnRoot(
  * Returns the node with the given key from the active EditorState,
  * or throws if it does not exist.
  */
-export function $getNodeByKeyOrThrow(key: NodeKey): LexicalNode;
-/**
- * @deprecated The type parameter is an unchecked and unsafe cast,
- * equivalent to `$getNodeByKeyOrThrow(key) as N`, and will be removed
- * in a future release. Call this function without a type argument and
- * narrow the result with a type guard instead.
- */
-export function $getNodeByKeyOrThrow<N extends LexicalNode>(key: NodeKey): N;
 export function $getNodeByKeyOrThrow(key: NodeKey): LexicalNode {
   const node = $getNodeByKey(key);
   if (node === null) {

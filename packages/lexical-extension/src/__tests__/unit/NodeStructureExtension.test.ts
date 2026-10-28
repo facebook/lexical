@@ -86,9 +86,9 @@ import {
   type RangeSelection,
   type SerializedParagraphNode,
   stringValue,
-  type TextNode,
   withField,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, test} from 'vitest';
 
 function shape(node: LexicalNode): unknown {
@@ -369,9 +369,7 @@ describe('existing subclasses that inherit a declaration', () => {
       'title',
     ]);
     editor.read(() => {
-      expect($getRoot().getFirstChildOrThrow<ElementNode>().isInline()).toBe(
-        false,
-      );
+      expect($getRoot().getFirstChildOrThrow().isInline()).toBe(false);
     });
     // LinkNode itself still declares it.
     expect(getDeclaredNodeStructure(LinkNode).inline).toBe(true);
@@ -578,9 +576,10 @@ describe('NodeStructureExtension', () => {
       ['paragraph', 'within', ['overflow', 'over']],
     ]);
     editor.read(() => {
-      const overflow = $getRoot()
-        .getFirstChildOrThrow<ElementNode>()
-        .getLastChild<OverflowNode>();
+      const overflow = $assertNodeType(
+        $getRoot().getFirstChildOrThrow(),
+        $isElementNode,
+      ).getLastChild();
       // Its behaviour is unchanged: still not inline for the caret.
       expect(overflow!.isInline()).toBe(false);
     });
@@ -733,7 +732,7 @@ describe('NodeStructureExtension', () => {
       // The caret that was in the last (empty) paragraph is on that line.
       const selection = $getSelection();
       assert($isRangeSelection(selection));
-      const quote = $getRoot().getFirstChildOrThrow<QuoteNode>();
+      const quote = $getRoot().getFirstChildOrThrow();
       expect([selection.anchor.key, selection.anchor.offset]).toEqual([
         quote.getKey(),
         3,
@@ -996,9 +995,13 @@ describe('NodeStructureExtension', () => {
     using editor = build(() => $numbered(5, 'x', 'a', 'y'), true);
     editor.update(
       () => {
-        const item = $getRoot()
-          .getFirstChildOrThrow<ListNode>()
-          .getChildAtIndex<ListItemNode>(1)!;
+        const item = $assertNodeType(
+          $assertNodeType(
+            $getRoot().getFirstChildOrThrow(),
+            $isListNode,
+          ).getChildAtIndex(1),
+          $isElementNode,
+        );
         item.getFirstChildOrThrow().insertBefore($createHorizontalRuleNode());
       },
       {discrete: true},
@@ -1651,11 +1654,21 @@ describe('registration', () => {
       editor.read(() => {});
       editor.update(
         () => {
-          const cell = $getRoot()
-            .getFirstChildOrThrow<ElementNode>()
-            .getFirstChildOrThrow<ElementNode>()
-            .getFirstChildOrThrow<ElementNode>();
-          cell.getFirstChildOrThrow<ChipNode>().getWritable().__inline = true;
+          const table = $assertNodeType(
+            $getRoot().getFirstChildOrThrow(),
+            $isElementNode,
+          );
+          const row = $assertNodeType(
+            table.getFirstChildOrThrow(),
+            $isElementNode,
+          );
+          const cell = $assertNodeType(
+            row.getFirstChildOrThrow(),
+            $isElementNode,
+          );
+          const chip = cell.getFirstChildOrThrow();
+          assert(chip instanceof ChipNode);
+          chip.getWritable().__inline = true;
         },
         {discrete: true},
       );
@@ -2496,7 +2509,11 @@ describe('formatting, list seams, orphan list items and the root', () => {
     };
     const edits: (() => void)[] = [
       // An edit somewhere else.
-      () => $getRoot().getFirstDescendant<TextNode>()!.setTextContent('pp'),
+      () =>
+        $assertNodeType(
+          $getRoot().getFirstDescendant(),
+          $isTextNode,
+        ).setTextContent('pp'),
       // An update that only marks the root dirty.
       () => $getRoot().markDirty(),
     ];

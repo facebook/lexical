@@ -43,6 +43,7 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   $isTextNode,
   $setCompositionKey,
@@ -53,7 +54,6 @@ import {
   CONTROLLED_TEXT_INSERTION_COMMAND,
   defineExtension,
   DELETE_CHARACTER_COMMAND,
-  type ElementNode,
   FORMAT_TEXT_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   type LexicalEditor,
@@ -62,6 +62,7 @@ import {
   TextNode,
   UNDO_COMMAND,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
 /** A character of the model and the ids it carries, sorted */
@@ -150,12 +151,14 @@ function describeModel(model: Model): string {
 
 function $documentModel(): Model {
   return $getRoot()
-    .getChildren<ElementNode>()
+    .getChildren()
     .map(block =>
-      block.getAllTextNodes().flatMap(node => {
-        const ids = $getNodeMarkIDs(node);
-        return Array.from(node.getTextContent(), c => ({c, ids}));
-      }),
+      $assertNodeType(block, $isElementNode)
+        .getAllTextNodes()
+        .flatMap(node => {
+          const ids = $getNodeMarkIDs(node);
+          return Array.from(node.getTextContent(), c => ({c, ids}));
+        }),
     );
 }
 
@@ -164,7 +167,10 @@ function $documentModel(): Model {
  * between two TextNodes, `preferNext` picks the start of the next one.
  */
 function $point(block: number, offset: number, preferNext: boolean) {
-  const element = $getRoot().getChildAtIndex<ElementNode>(block)!;
+  const element = $assertNodeType(
+    $getRoot().getChildAtIndex(block),
+    $isElementNode,
+  );
   const texts = element.getAllTextNodes();
   if (texts.length === 0) {
     return {key: element.getKey(), offset: 0, type: 'element' as const};
@@ -315,8 +321,8 @@ function check(
       );
     }
     // The DOM, and no equal siblings left unmerged
-    for (const block of $getRoot().getChildren<ElementNode>()) {
-      const children = block.getChildren();
+    for (const block of $getRoot().getChildren()) {
+      const children = $assertNodeType(block, $isElementNode).getChildren();
       children.forEach((node, i) => {
         if (!$isTextNode(node)) {
           return;

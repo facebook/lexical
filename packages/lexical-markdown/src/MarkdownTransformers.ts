@@ -49,7 +49,8 @@ import {
   type TextNode,
 } from 'lexical';
 
-import {isEmptyParagraph, unescapeText} from './utils';
+import {scanCodeSpans} from './importTextFormatTransformer';
+import {isEmptyParagraph, isEscaped, unescapeText} from './utils';
 
 export type Transformer =
   | ElementTransformer
@@ -1167,6 +1168,50 @@ function escapeCharacterReferences(value: string): string {
   );
 }
 
+// Mask escaped/code brackets without changing source offsets, then find an inner
+// opener after a literal prefix. Return -1 for balanced labels or null when
+// unmatched closers leave no recoverable opener.
+function getLinkLabelOpener(text: string): number | null {
+  const codeSpans = scanCodeSpans(text);
+  let codeIndex = 0;
+  const brackets = text.replace(/\\.|[[\]]/g, (part, index: number) => {
+    while (
+      codeIndex < codeSpans.length &&
+      index >= codeSpans[codeIndex].endIndex
+    )
+      codeIndex++;
+    return (codeIndex < codeSpans.length &&
+      index >= codeSpans[codeIndex].startIndex) ||
+      part[0] === '\\'
+      ? ' '.repeat(part.length)
+      : part;
+  });
+  const openers: number[] = [];
+  let unmatchedCloser = false;
+  for (let index = 0; index < brackets.length; index++) {
+    const character = brackets[index];
+    if (character === '[') {
+      openers.push(index);
+    } else if (character === ']') {
+      if (openers.pop() === undefined) unmatchedCloser = true;
+    }
+  }
+  return openers.pop() ?? (unmatchedCloser ? null : -1);
+}
+
+function unescapeLinkPrefix(text: string): string {
+  let output = '';
+  let previous = 0;
+  // Keep existing code-prefix source intact; only plain text has escapes.
+  for (const {startIndex, endIndex} of scanCodeSpans(text)) {
+    output +=
+      unescapeText(text.slice(previous, startIndex)) +
+      text.slice(startIndex, endIndex);
+    previous = endIndex;
+  }
+  return output + unescapeText(text.slice(previous));
+}
+
 // Order of text transformers matters:
 //
 // - code should go first as it prevents any transformations inside
@@ -1252,7 +1297,13 @@ export const LINK: TextMatchTransformer = {
     /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:[^"]*\\")*[^"]*)"|'((?:[^']*\\')*[^']*)'|\(((?:\\.|[^()\\])*)\)))?\s*)?\))$/,
   replace: (textNode, match) => {
     // https://spec.commonmark.org/0.31.2/#inline-link
-    if ($findMatchingParent(textNode, $isLinkNode)) {
+    const source = match.input || '';
+    const startIndex = match.index || 0;
+    if (
+      $findMatchingParent(textNode, $isLinkNode) ||
+      isEscaped(source, startIndex) ||
+      isEscaped(source, startIndex + match[1].length + 1)
+    ) {
       return;
     }
     const [
@@ -1274,16 +1325,14 @@ export const LINK: TextMatchTransformer = {
     const linkTitle =
       rawLinkTitle != null ? unescapeText(rawLinkTitle) : undefined;
     const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
-    const openBracketAmount = linkText.split('[').length - 1;
-    const closeBracketAmount = linkText.split(']').length - 1;
+    const openBracketIndex = getLinkLabelOpener(linkText);
+    if (openBracketIndex === null) return;
     let parsedLinkText = linkText;
     let outsideLinkText = '';
-    if (openBracketAmount < closeBracketAmount) {
-      return;
-    } else if (openBracketAmount > closeBracketAmount) {
-      const linkTextParts = linkText.split('[');
-      outsideLinkText = '[' + linkTextParts[0];
-      parsedLinkText = linkTextParts.slice(1).join('[');
+    if (openBracketIndex !== -1) {
+      outsideLinkText =
+        '[' + unescapeLinkPrefix(linkText.slice(0, openBracketIndex));
+      parsedLinkText = linkText.slice(openBracketIndex + 1);
     }
     // Both new nodes stand in for the TextNode being replaced, so the text
     // left outside the link carries its inline format just like the link's own

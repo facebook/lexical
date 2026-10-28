@@ -153,8 +153,8 @@ or code that inserts text and leaves the caret after it) gets:
   new text shares with the replaced text: selecting `teh` and typing `t`, or
   an autocorrection to `the`, gives the new text those ids, and pasting `bX`
   over `bc` in `abcde`, where only `cde` is marked, leaves `bX` unmarked.
-- its own ids: pasted or dropped content, and nodes that code inserts, keep
-  the ids they came with, wherever they land, and also join the run they
+- its own ids: pasted or dropped content, and new nodes that code inserts,
+  keep the ids they came with, wherever they land, and also join the run they
   land inside, the way typed text does. Text inserted into existing text
   has no ids of its own, also when a transform then splits it off into a
   new TextNode: the piece starts out with the very ids of the node it was
@@ -165,9 +165,13 @@ or code that inserts text and leaves the caret after it) gets:
   commented text keeps its comment there.
 
 Text that the edit does not delete keeps exactly its ids, also when the
+edit moves it into another block (turning a list item into a paragraph, or
+a paragraph into a list item that joins the list above it), and when the
 editor or a transform moves it into a new TextNode: a hashtag or a mention
 created from commented text, a segmented node that typing turns into plain
-text. An id removed with `$removeMarkID` in the same update is not given
+text. A node that code moves, rather than
+creates, is not inserted text: it does not join a run it lands inside. An
+id removed with `$removeMarkID` in the same update is not given
 back, neither to that text nor to inserted text (see the limitations for
 how far that reaches).
 

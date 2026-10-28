@@ -33,6 +33,7 @@ import {
   $applyNodeReplacement,
   $caretFromPoint,
   $comparePointCaretNext,
+  $copyNode,
   $createNodeSelection,
   $createParagraphNode,
   $createRangeSelection,
@@ -59,6 +60,7 @@ import {
   $isElementNode,
   $isEventFromEmbeddedInput,
   $isNodeSelection,
+  $isParagraphNode,
   $isRangeSelection,
   $isRootNode,
   $isRootOrShadowRoot,
@@ -336,6 +338,43 @@ export function $isQuoteNode(
   node: LexicalNode | null | undefined,
 ): node is QuoteNode {
   return node instanceof QuoteNode;
+}
+
+/**
+ * Enter on an empty paragraph of a shadow root quote moves that paragraph out
+ * of the quote, the way Enter on an empty list item leaves the list. Without
+ * this, Enter only ever adds lines to the quote, so the caret can't leave a
+ * quote at the end of the document. An empty line in the middle of the quote
+ * splits it in two.
+ */
+function $handleQuoteInsertParagraph(selection: RangeSelection): boolean {
+  if (!selection.isCollapsed()) {
+    return false;
+  }
+  const paragraph = selection.anchor.getNode();
+  const quote = paragraph.getParent();
+  if (
+    !$isParagraphNode(paragraph) ||
+    !paragraph.isEmpty() ||
+    !$isQuoteNode(quote) ||
+    !quote.isShadowRoot()
+  ) {
+    return false;
+  }
+  if (paragraph.getPreviousSibling() === null) {
+    quote.insertBefore(paragraph);
+  } else {
+    const nextSiblings = paragraph.getNextSiblings();
+    if (nextSiblings.length > 0) {
+      quote.insertAfter($copyNode(quote).append(...nextSiblings));
+    }
+    quote.insertAfter(paragraph);
+  }
+  if (quote.isEmpty()) {
+    quote.remove();
+  }
+  paragraph.select();
+  return true;
 }
 
 export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
@@ -1472,7 +1511,9 @@ export function registerRichText(
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        selection.insertParagraph();
+        if (!$handleQuoteInsertParagraph(selection)) {
+          selection.insertParagraph();
+        }
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

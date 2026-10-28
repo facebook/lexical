@@ -25,6 +25,7 @@ import {
 } from '@lexical/rich-text';
 import {
   $addUpdateTag,
+  $createParagraphNode,
   $getNodeByKey,
   $getSelection,
   $isParagraphNode,
@@ -93,12 +94,32 @@ function $placeBlock(container: ElementNode, block: ElementNode): void {
 }
 
 /**
+ * Creates the quote for the `> ` shortcut with the registry's import
+ * handlers, so a typed quote is the same kind as a loaded one. With
+ * {@link MdastShadowRootQuoteExtension} that is a shadow root quote, which
+ * holds paragraphs. Falls back to a plain QuoteNode when the import makes
+ * something else.
+ */
+function $createShortcutQuote(
+  scanner: MarkdownStreamScanner,
+  match: MdastBlockMatch & {kind: 'blockquote'},
+): QuoteNode {
+  const imported = scanner.importBlock(match.node);
+  const quote = imported.length === 1 ? imported[0] : null;
+  return $isQuoteNode(quote) && quote.isEmpty() ? quote : $createQuoteNode();
+}
+
+/**
  * Replaces `paragraph` with the block construct described by `match`, keeping
  * the content that followed the marker. `paragraph` is the shortcut container:
  * a ParagraphNode, or an inline-content QuoteNode that adopts the new block
  * rather than being replaced by it.
  */
-function $applyBlock(paragraph: ElementNode, match: MdastBlockMatch): boolean {
+function $applyBlock(
+  paragraph: ElementNode,
+  match: MdastBlockMatch,
+  scanner: MarkdownStreamScanner,
+): boolean {
   // Capture the fence before the marker is stripped from the paragraph.
   const fence =
     match.kind === 'code'
@@ -132,9 +153,16 @@ function $applyBlock(paragraph: ElementNode, match: MdastBlockMatch): boolean {
     target = heading;
     selectInto = heading;
   } else if (match.kind === 'blockquote') {
-    const quote = $append($createQuoteNode(), remaining);
+    const quote = $createShortcutQuote(scanner, match);
+    if (quote.isShadowRoot()) {
+      const line = $append($createParagraphNode(), remaining);
+      $append(quote, [line]);
+      selectInto = line;
+    } else {
+      $append(quote, remaining);
+      selectInto = quote;
+    }
     target = quote;
-    selectInto = quote;
   } else {
     const listNode = match.node;
     const listType = $listTypeFromMdast(listNode);
@@ -453,7 +481,7 @@ export function registerMarkdownShortcuts(
                 match.kind !== 'code' &&
                 match.markerLength === anchorOffset
               ) {
-                transformed = $applyBlock(parent, match);
+                transformed = $applyBlock(parent, match, scanner);
               }
             }
           } else {
@@ -498,7 +526,7 @@ export function registerMarkdownShortcuts(
         if (
           match &&
           match.markerLength === anchorOffset &&
-          $applyBlock(parent, match)
+          $applyBlock(parent, match, scanner)
         ) {
           if (event !== null) {
             event.preventDefault();

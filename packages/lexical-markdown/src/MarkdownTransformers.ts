@@ -36,6 +36,7 @@ import {
   $createTextNode,
   $findMatchingParent,
   $getState,
+  $isLineBreakNode,
   $isTextNode,
   $setState,
   type BaseSelection,
@@ -48,6 +49,7 @@ import {
   type TextNode,
 } from 'lexical';
 
+import {scanCodeSpans} from './importTextFormatTransformer';
 import {isEmptyParagraph, isEscaped, unescapeText} from './utils';
 
 export type Transformer =
@@ -314,6 +316,7 @@ export const hardLineBreakState = createState('mdHardLineBreak', {
     }
     return '';
   },
+  resetOnCopyNode: true,
 });
 
 export function parseMarkdownHardLineBreak(
@@ -335,35 +338,49 @@ export function parseMarkdownHardLineBreak(
   return spaces ? [spaces[1], spaces[2]] : null;
 }
 
-// Source markers are identified before unescaping. A decoded or escaped
-// backslash must not acquire the meaning of a hard line break afterwards.
-const hardLineBreakMarkers = new WeakMap<TextNode, MarkdownHardLineBreak>();
-
-export function $splitMarkdownHardLineBreakMarker(textNode: TextNode): void {
-  const hardLineBreak = parseMarkdownHardLineBreak(textNode.getTextContent());
-  if (hardLineBreak !== null && !textNode.hasFormat('code')) {
-    const marker = $createTextNode(hardLineBreak[1]);
-    hardLineBreakMarkers.set(marker, hardLineBreak[1]);
-    textNode.setTextContent(hardLineBreak[0]).insertAfter(marker);
+function hasNonWhitespaceContentOnLine(
+  children: LexicalNode[],
+  endIndex: number,
+): boolean {
+  for (let i = endIndex - 1; i >= 0; i--) {
+    if ($isLineBreakNode(children[i])) {
+      return false;
+    }
+    if (/\S/.test(children[i].getTextContent())) {
+      return true;
+    }
   }
-}
-
-export function $hasSourceHardLineBreak(node: ElementNode): boolean {
-  const last = node.getLastChild();
-  return $isTextNode(last) && hardLineBreakMarkers.has(last);
+  return false;
 }
 
 function $extractMarkdownHardLineBreakMarker(
   previousNode: ElementNode,
 ): MarkdownHardLineBreak | null {
-  const last = previousNode.getLastChild();
-  if ($isTextNode(last)) {
-    const marker = hardLineBreakMarkers.get(last);
-    if (marker !== undefined) {
-      last.remove();
-      return marker;
-    }
+  const children = previousNode.getChildren();
+  const lastChildIndex = children.length - 1;
+  const lastChild = children[lastChildIndex];
+
+  if (!$isTextNode(lastChild)) {
+    return null;
   }
+
+  const lastText = lastChild.getTextContent();
+  const hardLineBreak = parseMarkdownHardLineBreak(lastText);
+
+  if (hardLineBreak !== null) {
+    const [text, marker] = hardLineBreak;
+    lastChild.setTextContent(text);
+    return marker;
+  }
+
+  if (
+    /^ {2,}$/.test(lastText) &&
+    hasNonWhitespaceContentOnLine(children, lastChildIndex)
+  ) {
+    lastChild.setTextContent('');
+    return lastText;
+  }
+
   return null;
 }
 
@@ -815,10 +832,10 @@ export const QUOTE: ElementTransformer = {
     if (isImport) {
       const previousNode = parentNode.getPreviousSibling();
       if ($isQuoteNode(previousNode)) {
-        previousNode.append(
+        previousNode.splice(previousNode.getChildrenSize(), 0, [
           $createMarkdownLineBreakNode(previousNode),
           ...children,
-        );
+        ]);
         parentNode.remove();
         return;
       }
@@ -1074,21 +1091,15 @@ export function getCodeSpanDelimiter(content: string): {
   fence: string;
   padded: string;
 } {
-  // A loop, as one argument per run would overflow the stack.
-  let longestRun = 0;
-  for (const [run] of content.matchAll(/`+/g)) {
-    longestRun = Math.max(longestRun, run.length);
-  }
+  const backtickRuns = content.match(/`+/g);
+  const longestRun = backtickRuns
+    ? Math.max(...backtickRuns.map(run => run.length))
+    : 0;
   const fence = '`'.repeat(longestRun + 1);
   const needsPadding =
     content.length === 0 ||
     content.includes('`') ||
-    // A reader turns line endings into spaces, then strips one space
-    // (U+0020 only) from each end of a span that has something other than
-    // spaces, so only such a span needs padding.
-    (/^[ \r\n]/.test(content) &&
-      /[ \r\n]$/.test(content) &&
-      /[^ \r\n]/.test(content));
+    (/^\s/.test(content) && /\s$/.test(content));
   const padded = needsPadding ? ` ${content} ` : content;
   return {fence, padded};
 }
@@ -1173,10 +1184,7 @@ export const LINK: TextMatchTransformer = {
     // A title is read back through `unescapeText` as well, so a character
     // reference in it needs the same treatment the destination gets below.
     if (title != null) {
-      title = escapeCharacterReferences(title)
-        .replace(/([\\"])/g, '\\$1')
-        .replace(/\r/g, '&#13;')
-        .replace(/\n/g, '&#10;');
+      title = escapeCharacterReferences(title).replace(/([\\"])/g, '\\$1');
     }
 
     // A raw destination cannot hold whitespace, so a URL that has any is
@@ -1245,7 +1253,10 @@ export const LINK: TextMatchTransformer = {
     /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:[^"]*\\")*[^"]*)"|'((?:[^']*\\')*[^']*)'|\(((?:\\.|[^()\\])*)\)))?\s*)?\))$/,
   replace: (textNode, match) => {
     // https://spec.commonmark.org/0.31.2/#inline-link
-    if ($findMatchingParent(textNode, $isLinkNode)) {
+    if (
+      $findMatchingParent(textNode, $isLinkNode) ||
+      isEscaped(match.input || '', match.index || 0)
+    ) {
       return;
     }
     const [
@@ -1267,42 +1278,44 @@ export const LINK: TextMatchTransformer = {
     const linkTitle =
       rawLinkTitle != null ? unescapeText(rawLinkTitle) : undefined;
     const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
-    // The link's text starts after the last `[` that no `]` after it
-    // closes, as CommonMark matches brackets, and what is before it stays
-    // text. An escaped bracket is text, and an inner `]` that closes the
-    // first `[` leaves no link.
-    let depth = 0;
-    let opener = -1;
-    for (let i = linkText.length - 1; i >= 0 && opener < 0; i--) {
-      const bracket = linkText[i];
-      if ((bracket !== '[' && bracket !== ']') || isEscaped(linkText, i)) {
-        continue;
-      }
-      if (bracket === ']') {
-        depth++;
-      } else if (depth) {
-        depth--;
-      } else {
-        opener = i;
-      }
-    }
-    if (opener < 0 && depth) {
+    // Escaped brackets are literal outside code. Preserve offsets for the
+    // existing unmatched-opener handling below.
+    const codeSpans = scanCodeSpans(linkText);
+    let codeIndex = 0;
+    const brackets = linkText.replace(/\\./g, (escaped, index: number) => {
+      while (
+        codeIndex < codeSpans.length &&
+        index >= codeSpans[codeIndex].endIndex
+      )
+        codeIndex++;
+      return codeIndex < codeSpans.length &&
+        index >= codeSpans[codeIndex].startIndex
+        ? escaped
+        : '  ';
+    });
+    const openBracketAmount = brackets.split('[').length - 1;
+    const closeBracketAmount = brackets.split(']').length - 1;
+    let parsedLinkText = linkText;
+    let outsideLinkText = '';
+    if (openBracketAmount < closeBracketAmount) {
       return;
+    } else if (openBracketAmount > closeBracketAmount) {
+      const openBracketIndex = brackets.indexOf('[');
+      outsideLinkText = '[' + unescapeText(linkText.slice(0, openBracketIndex));
+      parsedLinkText = linkText.slice(openBracketIndex + 1);
     }
-    const parsedLinkText = linkText.slice(opener + 1);
-    const outsideLinkText = opener < 0 ? '' : '[' + linkText.slice(0, opener);
-    // The link's text stands in for the TextNode being replaced, so it carries
-    // its inline format. Read the format before the replace below detaches it.
+    // Both new nodes stand in for the TextNode being replaced, so the text
+    // left outside the link carries its inline format just like the link's own
+    // text node does. Read the format before the replace below detaches it.
     const format = textNode.getFormat();
     const linkTextNode = $createTextNode(parsedLinkText);
     linkTextNode.setFormat(format);
     linkNode.append(linkTextNode);
-    // The text outside the link stays in the matched node, which the
-    // importer goes on to read.
-    (outsideLinkText
-      ? textNode.splitText(outsideLinkText.length)[1]
-      : textNode
-    ).replace(linkNode);
+    textNode.replace(linkNode);
+
+    if (outsideLinkText) {
+      linkNode.insertBefore($createTextNode(outsideLinkText).setFormat(format));
+    }
     return linkTextNode;
   },
   trigger: ')',
@@ -1336,32 +1349,7 @@ export const TEXT_FORMAT_TRANSFORMERS: TextFormatTransformer[] = [
   STRIKETHROUGH,
 ];
 
-// Angle autolinks have a semantic representation already: LinkNode. Do not
-// retain raw syntax on a TextNode or run inline escape/format parsing inside it.
-const AUTOLINK: TextMatchTransformer = {
-  dependencies: [LinkNode],
-  // URI autolinks exclude ASCII controls and spaces.
-  importRegExp:
-    // eslint-disable-next-line no-control-regex
-    /<([A-Za-z][A-Za-z\d+.-]{1,31}:[^<>\x00-\x20\x7f]*|[A-Za-z\d.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z\d](?:[A-Za-z\d-]{0,61}[A-Za-z\d])?(?:\.[A-Za-z\d](?:[A-Za-z\d-]{0,61}[A-Za-z\d])?)*)>/,
-  regExp: /$^/,
-  replace: (node, match) => {
-    if ($findMatchingParent(node, $isLinkNode)) {
-      return;
-    }
-    const text = match[1];
-    const url = /^[A-Za-z][A-Za-z\d+.-]{1,31}:/.test(text)
-      ? text
-      : 'mailto:' + text;
-    const link = $createLinkNode(url);
-    const child = $createTextNode(text).setFormat(node.getFormat());
-    node.replace(link);
-    link.append(child);
-  },
-  type: 'text-match',
-};
-
-export const TEXT_MATCH_TRANSFORMERS: TextMatchTransformer[] = [AUTOLINK, LINK];
+export const TEXT_MATCH_TRANSFORMERS: TextMatchTransformer[] = [LINK];
 
 /**
  * Concatenate transformer lists. A function declared side-effect free (so the

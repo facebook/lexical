@@ -87,40 +87,12 @@ And bundles of commonly used transformers:
 
 Transformers are explicitly passed to markdown API allowing application-specific subset of markdown or custom transformers.
 
-### Text and Markdown syntax
-
-The default exporter treats `TextNode` content as literal text. Characters that
-could become character references, HTML, or link syntax are escaped, including
-when a construct spans several styled text nodes or a partial selection.
-Import reads backslash escapes and decimal and hexadecimal character references
-once. Decoded characters remain text rather than new Markdown syntax. Named
-references remain literal text, matching legacy import behavior. Reference-looking
-literal text is escaped on export so a subsequent Markdown parser preserves it.
-
-Links have a `LinkNode` representation. Angle URI and email autolinks import as
-links and export using normal link syntax. Code spans and fenced code blocks
-keep their own literal-content rules. With `shouldPreserveNewLines`, soft source lines remain separate blocks; real
-hard breaks use `LineBreakNode`, including their source marker spelling. Literal
-backslashes at block boundaries remain text. Editing, copying and JSON use the
-normal node lifecycle rather than hidden state attached to paragraph boundaries.
-Copied hard breaks retain their marker so they do not become soft breaks when
-exported; earlier versions discarded that source state during copying.
-
-The default transformers do not interpret raw HTML. HTML-looking text imports
-as text and exports escaped. Applications that intentionally support raw HTML
-or other source constructs should represent them with custom nodes and
-transformers, rather than relying on unescaped `TextNode` content. An export
-transformer owns any Markdown syntax it authors. Use its `exportFormat` callback
-for literal text and `exportChildren` for ordinary child content. Returning an
-unchanged callback result or their concatenation in call order delegates that
-content to the surrounding formatting stream; nodes
-are not exported again. Wrapping or rewriting a result instead produces an
-opaque Markdown string that is emitted unchanged. Such transformers must supply
-complete syntax and account for its boundaries with surrounding content.
-Brackets remain conservatively escaped when custom exporters are configured,
-because authored reference definitions can change links elsewhere in the document.
-Ordinary child inspection is memoized within each block export, including overlapping
-subtrees, so inspecting content does not repeat descendant transformers.
+Default export escapes literal `<`, `&`, `[` and `]` in text, including when a
+construct spans multiple text nodes. Code and strings returned by custom
+transformers retain their existing serialization rules. The legacy source
+escaping behavior of `shouldPreserveNewLines` is unchanged. Import reads
+backslash escapes and decimal or hexadecimal references in one pass; named
+references remain literal text.
 
 There're three types of transformers:
 

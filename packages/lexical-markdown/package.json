@@ -67,9 +67,5 @@
       "optional": true
     }
   },
-  "type": "module",
-  "devDependencies": {
-    "@lexical/history": "workspace:*",
-    "mdast-util-from-markdown": "^2.1.0"
-  }
+  "type": "module"
 }

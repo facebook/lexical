@@ -56,10 +56,9 @@ export function transformersByType(transformers: Transformer[]): Readonly<{
   };
 }
 
-export const PUNCTUATION_OR_SPACE = /[\p{P}\p{S}\s]/u;
+export const PUNCTUATION_OR_SPACE = /[!-/:-@[-`{-~\s]/;
 export const WHITESPACE = /\s/;
-// CommonMark includes Unicode punctuation and symbols, including ASCII backslash.
-export const PUNCTUATION = /[\p{P}\p{S}]/u;
+export const PUNCTUATION = /[!"#$%&'()*+,\-./:;<=>?@[\]^_`{|}~]/;
 
 const MARKDOWN_EMPTY_LINE_REG_EXP = /^\s{0,3}$/;
 
@@ -77,8 +76,7 @@ export function isEmptyParagraph(node: LexicalNode): boolean {
   );
 }
 
-// A numeric character reference has one to seven decimal or one to six hex
-// digits. Named references retain their legacy literal spelling.
+// Numeric references have one to seven decimal or one to six hexadecimal digits.
 // A reference that names
 // U+0000, a surrogate or a number past U+10FFFF reads as U+FFFD instead of
 // making `String.fromCodePoint` throw.
@@ -96,8 +94,7 @@ function decodeCharacterReference(
 }
 
 export function unescapeText(value: string): string {
-  // One pass: an escaped ampersand and the result of a decoded reference
-  // must never be interpreted as another reference.
+  // Do not decode an escaped ampersand or revisit a decoded reference.
   return value.replace(
     /\\([!-/:-@[-`{-~])|&#(?:(\d{1,7})|[xX]([\da-fA-F]{1,6}));/g,
     (
@@ -109,11 +106,10 @@ export function unescapeText(value: string): string {
   );
 }
 
-/** Whether the character at index follows an odd run of backslashes. */
 export function isEscaped(text: string, index: number): boolean {
-  let start = index;
-  while (start > 0 && text[start - 1] === '\\') {
-    start--;
+  let backslashes = 0;
+  for (let i = index - 1; i >= 0 && text[i] === '\\'; i--) {
+    backslashes++;
   }
-  return (index - start) % 2 === 1;
+  return backslashes % 2 === 1;
 }

@@ -24,8 +24,6 @@ import {
 import {importTextTransformers} from './importTextTransformers';
 import {
   $createMarkdownLineBreakNode,
-  $hasSourceHardLineBreak,
-  $splitMarkdownHardLineBreakMarker,
   type ElementTransformer,
   type MultilineElementTransformer,
   type TextFormatTransformer,
@@ -85,7 +83,6 @@ export function $importMarkdownNodes(
         textFormatTransformersIndex,
         byType.textMatch,
         shouldPreserveNewLines,
-        i < linesLength - 1,
       );
     }
   });
@@ -231,7 +228,6 @@ function $importBlocks(
   textFormatTransformersIndex: TextFormatTransformersIndex,
   textMatchTransformers: TextMatchTransformer[],
   shouldPreserveNewLines: boolean,
-  hasFollowingLine: boolean,
 ) {
   const textNode = $createTextNode(lineText);
   const elementNode = $createParagraphNode();
@@ -249,10 +245,6 @@ function $importBlocks(
     }
   }
 
-  if (hasFollowingLine && textNode.getParent() !== null) {
-    $splitMarkdownHardLineBreakMarker(textNode);
-  }
-
   importTextTransformers(
     textNode,
     textFormatTransformersIndex,
@@ -265,9 +257,10 @@ function $importBlocks(
   if (elementNode.getParent() !== null && lineText.length > 0) {
     const previousNode = elementNode.getPreviousSibling();
     if (
-      $isParagraphNode(previousNode) ||
-      $isQuoteNode(previousNode) ||
-      $isListNode(previousNode)
+      !shouldPreserveNewLines && // Only append if we're not preserving newlines
+      ($isParagraphNode(previousNode) ||
+        $isQuoteNode(previousNode) ||
+        $isListNode(previousNode))
     ) {
       let targetNode: typeof previousNode | ListItemNode | null = previousNode;
 
@@ -280,15 +273,11 @@ function $importBlocks(
         }
       }
 
-      if (
-        targetNode != null &&
-        targetNode.getTextContentSize() > 0 &&
-        (!shouldPreserveNewLines || $hasSourceHardLineBreak(targetNode))
-      ) {
-        targetNode.append(
+      if (targetNode != null && targetNode.getTextContentSize() > 0) {
+        targetNode.splice(targetNode.getChildrenSize(), 0, [
           $createMarkdownLineBreakNode(targetNode),
           ...elementNode.getChildren(),
-        );
+        ]);
         elementNode.remove();
       }
     }

@@ -400,6 +400,7 @@ export {
   $hasAncestor,
   $hasUpdateTag,
   $isElementDOMSlot,
+  $isEventFromEmbeddedInput,
   $isInlineElementOrDecoratorNode,
   $isLeafNode,
   $isRootOrShadowRoot,

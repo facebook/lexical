@@ -13,7 +13,7 @@
   "types": "./dist/typescript-too-old.d.ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/facebook/lexical.git",
+    "url": "git+https://github.com/meta/lexical.git",
     "directory": "packages/lexical-overflow"
   },
   "module": "./dist/LexicalOverflow.js",

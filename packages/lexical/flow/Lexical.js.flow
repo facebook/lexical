@@ -463,6 +463,8 @@ export interface EditorState {
       | ['split', NodeKey, ReadonlyArray<NodeKey>, ReadonlyArray<number>, string]
       | ['merge', NodeKey, NodeKey, boolean, string, string]
       | ['set', NodeKey, string, string]
+      | ['move', NodeKey, NodeKey, number, string, string]
+      | ['retype', NodeKey, NodeKey, string]
       | ['attach', NodeKey, NodeKey, NodeKey | null, NodeKey | null, string | null]
       | ['detach', NodeKey, NodeKey]
       | ['delete', NodeKey],

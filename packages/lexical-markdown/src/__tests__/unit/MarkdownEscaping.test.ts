@@ -14,6 +14,7 @@ import {
   $convertFromMarkdownString,
   $convertSelectionToMarkdownString,
   $convertToMarkdownString,
+  LINK,
   type TextMatchTransformer,
   TRANSFORMERS,
 } from '@lexical/markdown';
@@ -288,6 +289,56 @@ describe('literal Markdown text', () => {
       );
     });
   });
+
+  it.each([false, true])(
+    'preserves copied LINK imports (cloned pattern: %s)',
+    clonedPattern => {
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      const exportLink = LINK.export;
+      assert(exportLink);
+      const pattern = LINK.importRegExp;
+      assert(pattern);
+      const customLink: TextMatchTransformer = {
+        ...LINK,
+        export: (...args) => exportLink(...args),
+        importRegExp: clonedPattern
+          ? new RegExp(pattern.source, pattern.flags)
+          : pattern,
+      };
+      const transformers = TRANSFORMERS.map(transformer =>
+        transformer === LINK ? customLink : transformer,
+      );
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $createTextNode('[a]](u) '),
+                $createLinkNode('v', {title: 'title'}).append(
+                  $createTextNode('b'),
+                ),
+              ),
+            ),
+        {discrete: true},
+      );
+      const written = editor.read(() => $convertToMarkdownString(transformers));
+      editor.update(() => $convertFromMarkdownString(written, transformers), {
+        discrete: true,
+      });
+      editor.read(() => {
+        const paragraph = $getRoot().getFirstChildOrThrow();
+        assert($isElementNode(paragraph));
+        const [text, link] = paragraph.getChildren();
+        assert($isTextNode(text));
+        expect(text.getTextContent()).toBe('[a]](u) ');
+        assert($isLinkNode(link));
+        expect([link.getTextContent(), link.getURL(), link.getTitle()]).toEqual(
+          ['b', 'v', 'title'],
+        );
+      });
+    },
+  );
 
   it.each(['<', '&', '[', ']'])(
     'retains bold before an exported literal escape: %j',

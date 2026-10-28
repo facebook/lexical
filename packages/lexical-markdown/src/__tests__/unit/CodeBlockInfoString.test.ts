@@ -75,10 +75,31 @@ describe('fenced code block info string', () => {
     });
   });
 
-  it('keeps content that follows a fence with no language', () => {
+  it('reads a language that follows whitespace after the fence', () => {
+    expect(importCodeBlock('``` js\ncode\n```')).toEqual({
+      language: 'js',
+      text: 'code',
+    });
     expect(importCodeBlock('``` code\nmore\n```')).toEqual({
+      language: 'code',
+      text: 'more',
+    });
+  });
+
+  it('keeps the metadata of a fence with whitespace before the language', () => {
+    expect(importCodeBlock('``` js title=x\ncode\n```')).toEqual({
+      language: 'js',
+      text: 'code',
+    });
+    expect(roundTrip('``` js title=x\ncode\n```')).toBe(
+      '```js title=x\ncode\n```',
+    );
+  });
+
+  it('keeps content that follows a fence with no language', () => {
+    expect(importCodeBlock('``` {1,3}\nmore\n```')).toEqual({
       language: undefined,
-      text: 'code\nmore',
+      text: '{1,3}\nmore',
     });
   });
 
@@ -104,10 +125,22 @@ describe('fenced code block info string', () => {
     expect(roundTrip('```\ncode\n```')).toBe('```\ncode\n```');
   });
 
-  it('leaves an unterminated fence unchanged', () => {
+  it('reads the info string of an unterminated fence', () => {
     expect(importCodeBlock('```javascript Incomplete tag')).toEqual({
       language: 'javascript',
-      text: 'Incomplete tag',
+      text: '',
+    });
+    expect(importCodeBlock('```js title=x\ncode')).toEqual({
+      language: 'js',
+      text: 'code',
+    });
+    expect(roundTrip('```js title=x\ncode')).toBe('```js title=x\ncode\n```');
+  });
+
+  it('reads the language of an unterminated fence after whitespace', () => {
+    expect(importCodeBlock('``` js\ncode')).toEqual({
+      language: 'js',
+      text: 'code',
     });
   });
 });

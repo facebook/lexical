@@ -1278,20 +1278,21 @@ export const LINK: TextMatchTransformer = {
     const linkTitle =
       rawLinkTitle != null ? unescapeText(rawLinkTitle) : undefined;
     const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
-    // Escaped brackets are literal outside code. Preserve offsets for the
-    // existing unmatched-opener handling below.
+    // Code and escaped brackets do not delimit links. Preserve offsets for
+    // the existing unmatched-opener handling below.
     const codeSpans = scanCodeSpans(linkText);
     let codeIndex = 0;
-    const brackets = linkText.replace(/\\./g, (escaped, index: number) => {
+    const brackets = linkText.replace(/\\.|[[\]]/g, (part, index: number) => {
       while (
         codeIndex < codeSpans.length &&
         index >= codeSpans[codeIndex].endIndex
       )
         codeIndex++;
-      return codeIndex < codeSpans.length &&
-        index >= codeSpans[codeIndex].startIndex
-        ? escaped
-        : '  ';
+      return (codeIndex < codeSpans.length &&
+        index >= codeSpans[codeIndex].startIndex) ||
+        part[0] === '\\'
+        ? ' '.repeat(part.length)
+        : part;
     });
     const openBracketAmount = brackets.split('[').length - 1;
     const closeBracketAmount = brackets.split(']').length - 1;

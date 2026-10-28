@@ -171,6 +171,46 @@ describe('literal Markdown text', () => {
     },
   );
 
+  it.each([
+    ['[', ']'],
+    [']', '['],
+  ])('preserves mixed code/plain brackets in a link: %j', (code, plain) => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(
+      () =>
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $createLinkNode('uri').append(
+                $createTextNode(code).toggleFormat('code'),
+                $createTextNode(plain),
+              ),
+            ),
+          ),
+      {discrete: true},
+    );
+    const written = editor.read(() => $convertToMarkdownString());
+    editor.update(() => $convertFromMarkdownString(written), {discrete: true});
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isElementNode(paragraph));
+      expect(paragraph.getChildrenSize()).toBe(1);
+      const link = paragraph.getFirstChildOrThrow();
+      assert($isLinkNode(link));
+      expect(link.getURL()).toBe('uri');
+      expect(
+        link.getChildren().map(node => {
+          assert($isTextNode(node));
+          return [node.getTextContent(), node.hasFormat('code')];
+        }),
+      ).toEqual([
+        [code, true],
+        [plain, false],
+      ]);
+    });
+  });
+
   it('continues searching after an escaped link opener', () => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
     editor.update(

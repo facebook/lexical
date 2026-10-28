@@ -379,7 +379,7 @@ const config: Config = {
     parseFrontMatter,
     preprocessor: ({fileContent}: {fileContent: string}) =>
       fileContent.replaceAll(
-        'https://stackblitz.com/github/facebook/lexical/tree/main/',
+        'https://stackblitz.com/github/meta/lexical/tree/main/',
         STACKBLITZ_PREFIX,
       ),
   },

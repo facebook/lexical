@@ -403,6 +403,6 @@ Future:
 
 This example demonstrates an advanced use case of storing a style object on TextNode using NodeState.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/facebook/lexical/tree/main/examples/node-state-style?file=src/main.tsx)
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/meta/lexical/tree/main/examples/node-state-style?file=src/main.tsx)
 
-<iframe width="100%" height="600" src="https://stackblitz.com/github/facebook/lexical/tree/main/examples/node-state-style?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts" title="Node State Style Example"></iframe>
+<iframe width="100%" height="600" src="https://stackblitz.com/github/meta/lexical/tree/main/examples/node-state-style?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts" title="Node State Style Example"></iframe>

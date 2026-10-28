@@ -21,7 +21,7 @@ for a minimal example that uses this package and the
 [TablePlugin](https://lexical.dev/docs/api/modules/lexical_react_LexicalTablePlugin)
 from @lexical/react/LexicalTablePlugin
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-table?file=src/main.tsx)
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/meta/lexical/tree/main/examples/react-table?file=src/main.tsx)
 
 ## Features
 

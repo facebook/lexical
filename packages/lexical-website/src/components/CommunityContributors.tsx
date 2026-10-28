@@ -49,7 +49,7 @@ export default function CommunityContributors() {
           target="_blank"
           rel="noreferrer">
           <img
-            src="https://contrib.rocks/image?repo=facebook/lexical"
+            src="https://contrib.rocks/image?repo=meta/lexical"
             alt="GitHub avatars of Lexical contributors"
           />
         </a>

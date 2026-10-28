@@ -13,7 +13,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/lexical"><img alt="NPM Version" src="https://img.shields.io/npm/v/lexical?color=43be15&label="/></a>
   <a href="https://www.npmjs.com/package/lexical"><img alt="NPM Downloads" src="https://img.shields.io/npm/dw/lexical"/></a>
-  <a href="https://github.com/meta/lexical/actions/workflows/tests.yml"><img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/facebook/lexical/tests.yml"/></a>
+  <a href="https://github.com/meta/lexical/actions/workflows/tests.yml"><img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/meta/lexical/tests.yml"/></a>
   <a href="https://discord.gg/KmG4wQnnD9"><img alt="Discord" src="https://img.shields.io/discord/953974421008293909"/></a>
 </p>
 
@@ -40,7 +40,7 @@
 For framework-agnostic usage, start with the
 [Vanilla JS quick start](https://lexical.dev/docs/getting-started/quick-start)
 or the
-[Vanilla JS example](https://stackblitz.com/github/facebook/lexical/tree/main/examples/vanilla-js?file=src%2Fmain.ts).
+[Vanilla JS example](https://stackblitz.com/github/meta/lexical/tree/main/examples/vanilla-js?file=src%2Fmain.ts).
 
 For React applications, install Lexical with the official React bindings:
 
@@ -75,8 +75,8 @@ function Editor() {
 ```
 
 Try it yourself:
-- [Plain Text Example](https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-plain-text?file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview)
-- [Rich Text Example](https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-rich?file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview)
+- [Plain Text Example](https://stackblitz.com/github/meta/lexical/tree/main/examples/react-plain-text?file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview)
+- [Rich Text Example](https://stackblitz.com/github/meta/lexical/tree/main/examples/react-rich?file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview)
 
 ## Development
 
@@ -123,7 +123,7 @@ See [CONTRIBUTING.md](https://github.com/meta/lexical/blob/main/CONTRIBUTING.md)
 
 We welcome contributions! Please read our [Contributing Guide](https://github.com/meta/lexical/blob/main/CONTRIBUTING.md) to learn about our development process and how to propose bugfixes and improvements.
 
-<a href="https://github.com/meta/lexical/graphs/contributors"><img src="https://contrib.rocks/image?repo=facebook/lexical" /></a>
+<a href="https://github.com/meta/lexical/graphs/contributors"><img src="https://contrib.rocks/image?repo=meta/lexical" /></a>
 
 ## License
 

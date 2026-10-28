@@ -386,7 +386,7 @@ Current:
   a different set of plugins based on context, etc.).
 - Pre-registration system for nodes to declare expected state
   and serialize them as top-level properties (`flat`) with `$config`
-  (see [#7260](https://github.com/facebook/lexical/issues/7260)).
+  (see [#7260](https://github.com/meta/lexical/issues/7260)).
 - Can be integrated with
   [DOMRenderExtension](../serialization/dom-render.md) for editor
   rendering and HTML export
@@ -397,7 +397,7 @@ Future:
 
 - Does not yet support direct integration with Yjs, e.g.
   you can not store a Y.Map as a NodeState value
-  (see [#7293](https://github.com/facebook/lexical/issues/7293))
+  (see [#7293](https://github.com/meta/lexical/issues/7293))
 
 ## Node State Style Example
 

@@ -397,13 +397,13 @@ properties on its instances and stores it as a node of its own.
 of a type records its kind, so a later client whose class declares something
 else keeps the recorded kind or opens read only. The stored names are
 specified in the
-[package README](https://github.com/facebook/lexical/tree/main/packages/lexical-y#wire-format-layout-1).
+[package README](https://github.com/meta/lexical/tree/main/packages/lexical-y#wire-format-layout-1).
 
 ## Wire format
 
 The diagrams below use the stored names. The package README specifies them
 exactly:
-[layout 1](https://github.com/facebook/lexical/tree/main/packages/lexical-y#wire-format-layout-1).
+[layout 1](https://github.com/meta/lexical/tree/main/packages/lexical-y#wire-format-layout-1).
 
 **Layout 1.** A container's sequence holds characters, `¶` markers and
 nodes of their own. A marker holds the line's type in `t` (left out for a
@@ -885,7 +885,7 @@ not merge as a user might expect:
 
 ## Changing the layout and migrating
 
-The [wire format](https://github.com/facebook/lexical/tree/main/packages/lexical-y#wire-format-layout-1)
+The [wire format](https://github.com/meta/lexical/tree/main/packages/lexical-y#wire-format-layout-1)
 in the package README is the contract for what a room stores: the markers,
 attributes and records, and their names. Every room records the layout
 versions it needs (`lexical-y:<n>: true`, a record that only grows;

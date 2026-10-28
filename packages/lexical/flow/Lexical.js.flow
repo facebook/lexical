@@ -532,57 +532,15 @@ declare export class LexicalNode {
   getKey(): NodeKey;
   getIndexWithinParent(): number;
   getParent(): ElementNode | null;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast and
-   * will be removed in a future release. Call this method without a type
-   * argument and narrow the result with a type guard instead.
-   */
-  getParent<T extends ElementNode>(): T | null;
   getParentOrThrow(): ElementNode;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast and
-   * will be removed in a future release. Call this method without a type
-   * argument and narrow the result with a type guard instead.
-   */
-  getParentOrThrow<T extends ElementNode>(): T;
   getTopLevelElement(): DecoratorNode<unknown> | ElementNode | null;
   getTopLevelElementOrThrow(): DecoratorNode<unknown> | ElementNode;
   getParents(): ElementNode[];
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast and
-   * will be removed in a future release. Call this method without a type
-   * argument and narrow the result with a type guard instead.
-   */
-  getParents<T extends ElementNode>(): T[];
   getParentKeys(): NodeKey[];
   getPreviousSibling(): LexicalNode | null;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast and
-   * will be removed in a future release. Call this method without a type
-   * argument and narrow the result with a type guard instead.
-   */
-  getPreviousSibling<T extends LexicalNode>(): T | null;
   getPreviousSiblings(): LexicalNode[];
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast and
-   * will be removed in a future release. Call this method without a type
-   * argument and narrow the result with a type guard instead.
-   */
-  getPreviousSiblings<T extends LexicalNode>(): T[];
   getNextSibling(): LexicalNode | null;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast and
-   * will be removed in a future release. Call this method without a type
-   * argument and narrow the result with a type guard instead.
-   */
-  getNextSibling<T extends LexicalNode>(): T | null;
   getNextSiblings(): LexicalNode[];
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast and
-   * will be removed in a future release. Call this method without a type
-   * argument and narrow the result with a type guard instead.
-   */
-  getNextSiblings<T extends LexicalNode>(): T[];
   is(object: ?LexicalNode): boolean;
   isBefore(targetNode: LexicalNode): boolean;
   isParentOf(targetNode: LexicalNode): boolean;
@@ -978,79 +936,19 @@ declare export class ElementNode extends LexicalNode {
   getFormatType(): ElementFormatType;
   getIndent(): number;
   getChildren(): LexicalNode[];
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast and
-   * will be removed in a future release. Call this method without a type
-   * argument and narrow the result with a type guard instead.
-   */
-  getChildren<T extends LexicalNode>(): T[];
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast and
-   * will be removed in a future release. Call this method without a type
-   * argument and narrow the result with a type guard instead.
-   */
-  getChildren<T extends LexicalNode[]>(): T;
   getChildrenKeys(): NodeKey[];
   getChildrenSize(): number;
   isEmpty(): boolean;
   isDirty(): boolean;
   getAllTextNodes(): TextNode[];
   getFirstDescendant(): null | LexicalNode;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast and
-   * will be removed in a future release. Call this method without a type
-   * argument and narrow the result with a type guard instead.
-   */
-  getFirstDescendant<T extends LexicalNode>(): null | T;
   getLastDescendant(): null | LexicalNode;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast and
-   * will be removed in a future release. Call this method without a type
-   * argument and narrow the result with a type guard instead.
-   */
-  getLastDescendant<T extends LexicalNode>(): null | T;
   getDescendantByIndex(index: number): null | LexicalNode;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast and
-   * will be removed in a future release. Call this method without a type
-   * argument and narrow the result with a type guard instead.
-   */
-  getDescendantByIndex<T extends LexicalNode>(index: number): null | T;
   getFirstChild(): null | LexicalNode;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast and
-   * will be removed in a future release. Call this method without a type
-   * argument and narrow the result with a type guard instead.
-   */
-  getFirstChild<T extends LexicalNode>(): null | T;
   getFirstChildOrThrow(): LexicalNode;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast and
-   * will be removed in a future release. Call this method without a type
-   * argument and narrow the result with a type guard instead.
-   */
-  getFirstChildOrThrow<T extends LexicalNode>(): T;
   getLastChild(): null | LexicalNode;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast and
-   * will be removed in a future release. Call this method without a type
-   * argument and narrow the result with a type guard instead.
-   */
-  getLastChild<T extends LexicalNode>(): null | T;
   getLastChildOrThrow(): LexicalNode;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast and
-   * will be removed in a future release. Call this method without a type
-   * argument and narrow the result with a type guard instead.
-   */
-  getLastChildOrThrow<T extends LexicalNode>(): T;
   getChildAtIndex(index: number): null | LexicalNode;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast and
-   * will be removed in a future release. Call this method without a type
-   * argument and narrow the result with a type guard instead.
-   */
-  getChildAtIndex<T extends LexicalNode>(index: number): null | T;
   getTextContent(): string;
   getDirection(): 'ltr' | 'rtl' | null;
   hasFormat(type: ElementFormatType): boolean;
@@ -1217,19 +1115,7 @@ declare export function $getNodeByKey(
   key: NodeKey,
   _editorState?: EditorState,
 ): LexicalNode | null;
-/**
- * @deprecated The type parameter is an unchecked and unsafe cast and
- * will be removed in a future release. Call this function without a type
- * argument and narrow the result with a type guard instead.
- */
-declare export function $getNodeByKey<N extends LexicalNode>(key: NodeKey): N | null;
 declare export function $getNodeByKeyOrThrow(key: NodeKey): LexicalNode;
-/**
- * @deprecated The type parameter is an unchecked and unsafe cast and
- * will be removed in a future release. Call this function without a type
- * argument and narrow the result with a type guard instead.
- */
-declare export function $getNodeByKeyOrThrow<N extends LexicalNode>(key: NodeKey): N;
 declare export function $getRoot(): RootNode;
 declare export function $isLeafNode<T = unknown>(
   node: ?LexicalNode,

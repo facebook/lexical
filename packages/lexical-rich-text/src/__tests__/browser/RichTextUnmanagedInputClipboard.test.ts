@@ -13,6 +13,7 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $isTextNode,
   isHTMLElement,
   type Klass,
   type LexicalEditor,
@@ -21,7 +22,7 @@ import {
   setDOMUnmanaged,
   TextNode,
 } from 'lexical';
-import {describe, expect, onTestFinished, test, vi} from 'vitest';
+import {assert, describe, expect, onTestFinished, test, vi} from 'vitest';
 import {userEvent} from 'vitest/browser';
 
 const FIELD_ATTR = 'data-test-field';
@@ -72,7 +73,9 @@ function mountEditor(klass: Klass<LexicalNode>) {
   rootElement.focus();
   editor.update(
     () => {
-      $getRoot().getFirstDescendant<TextNode>()!.select(0, 5);
+      const text = $getRoot().getFirstDescendant();
+      assert($isTextNode(text));
+      text.select(0, 5);
     },
     {discrete: true},
   );

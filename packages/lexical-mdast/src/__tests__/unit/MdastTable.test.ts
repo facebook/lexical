@@ -42,7 +42,6 @@ import {
   $isTableRowNode,
   type TableCellNode,
   type TableNode,
-  type TableRowNode,
 } from '@lexical/table';
 import {
   $createLineBreakNode,
@@ -57,7 +56,6 @@ import {
   $setSelection,
   configExtension,
   defineExtension,
-  type ElementNode,
   TextNode,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
@@ -418,9 +416,10 @@ describe('MdastTableExtension', () => {
     expect(
       convert(table('| a |', '| - |', '| 1 |'), () => {
         $table().append($createParagraphNode());
-        $table()
-          .getFirstChildOrThrow<TableRowNode>()
-          .append($createTextNode('x'));
+        $assertNodeType(
+          $table().getFirstChildOrThrow(),
+          $isTableRowNode,
+        ).append($createTextNode('x'));
       }),
     ).toBe(table('| a |', '| - |', '| 1 |'));
   });
@@ -445,7 +444,10 @@ describe('MdastTableExtension', () => {
     );
     editor.read(() => {
       const link = $assertNodeType(
-        $cells()[1][0].getFirstChildOrThrow<ElementNode>().getFirstChild(),
+        $assertNodeType(
+          $cells()[1][0].getFirstChildOrThrow(),
+          $isElementNode,
+        ).getFirstChild(),
         $isLinkNode,
       );
       expect(link.getURL()).toBe('http://a.dev/b|c');

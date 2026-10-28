@@ -42,7 +42,6 @@ import {
   $isTextNode,
   $setSelectionFromCaretRange,
   defineExtension,
-  type ElementNode,
   type LexicalNode,
   TEXT_TYPE_TO_FORMAT,
   type TextNode,
@@ -513,7 +512,10 @@ describe('@lexical/mdast import/export', () => {
         });
         editor.update(
           () => {
-            const paragraph = $getRoot().getFirstChildOrThrow<ElementNode>();
+            const paragraph = $assertNodeType(
+              $getRoot().getFirstChildOrThrow(),
+              $isElementNode,
+            );
             const lines = paragraph
               .getChildren()
               .filter(node => !$isLineBreakNode(node));

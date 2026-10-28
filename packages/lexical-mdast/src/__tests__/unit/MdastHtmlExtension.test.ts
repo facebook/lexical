@@ -948,11 +948,19 @@ describe('MdastHtmlExtension', () => {
     editor.update(
       () => {
         $convertFromMarkdownString('| a |\n| - |\n| 1 |');
-        $getRoot()
-          .getFirstChildOrThrow<ElementNode>()
-          .getLastChildOrThrow<ElementNode>()
-          .getFirstChildOrThrow<ElementNode>()
-          .append($createHorizontalRuleNode());
+        const table = $assertNodeType(
+          $getRoot().getFirstChildOrThrow(),
+          $isElementNode,
+        );
+        const row = $assertNodeType(
+          table.getLastChildOrThrow(),
+          $isElementNode,
+        );
+        const cell = $assertNodeType(
+          row.getFirstChildOrThrow(),
+          $isElementNode,
+        );
+        cell.append($createHorizontalRuleNode());
       },
       {discrete: true},
     );
@@ -986,12 +994,22 @@ describe('MdastHtmlExtension', () => {
     editor.update(
       () => {
         $convertFromMarkdownString('| a |\n| - |\n| 1 |');
-        $getRoot()
-          .getFirstChildOrThrow<ElementNode>()
-          .getLastChildOrThrow<ElementNode>()
-          .getFirstChildOrThrow<ElementNode>()
-          .getFirstChildOrThrow<ElementNode>()
-          .append($createHorizontalRuleNode(), $createTextNode('2'));
+        const table = $assertNodeType(
+          $getRoot().getFirstChildOrThrow(),
+          $isElementNode,
+        );
+        const row = $assertNodeType(
+          table.getLastChildOrThrow(),
+          $isElementNode,
+        );
+        const cell = $assertNodeType(
+          row.getFirstChildOrThrow(),
+          $isElementNode,
+        );
+        $assertNodeType(cell.getFirstChildOrThrow(), $isElementNode).append(
+          $createHorizontalRuleNode(),
+          $createTextNode('2'),
+        );
       },
       {discrete: true},
     );
@@ -1075,10 +1093,19 @@ describe('MdastHtmlExtension', () => {
     editor.update(
       () => {
         $convertFromMarkdownString('# T\n\n| a |\n| - |\n| 1 |\n\nend');
-        $getRoot()
-          .getChildAtIndex<ElementNode>(1)!
-          .getLastChildOrThrow<ElementNode>()
-          .getFirstChildOrThrow<ElementNode>()
+        const table = $assertNodeType(
+          $getRoot().getChildAtIndex(1),
+          $isElementNode,
+        );
+        const row = $assertNodeType(
+          table.getLastChildOrThrow(),
+          $isElementNode,
+        );
+        const cell = $assertNodeType(
+          row.getFirstChildOrThrow(),
+          $isElementNode,
+        );
+        cell
           .clear()
           .append(
             $create(CalloutNode).append(
@@ -1137,12 +1164,19 @@ describe('MdastHtmlExtension', () => {
           'title',
           $createParagraphNode().append($createTextNode('title')),
         );
-        $getRoot()
-          .getFirstChildOrThrow<ElementNode>()
-          .getFirstChildOrThrow<ElementNode>()
-          .getFirstChildOrThrow<ElementNode>()
-          .clear()
-          .append(callout);
+        const table = $assertNodeType(
+          $getRoot().getFirstChildOrThrow(),
+          $isElementNode,
+        );
+        const row = $assertNodeType(
+          table.getFirstChildOrThrow(),
+          $isElementNode,
+        );
+        const cell = $assertNodeType(
+          row.getFirstChildOrThrow(),
+          $isElementNode,
+        );
+        cell.clear().append(callout);
       },
       {discrete: true},
     );
@@ -1174,11 +1208,19 @@ describe('MdastHtmlExtension', () => {
         const title = $createTextNode('title');
         const callout = $create(CalloutNode).append($createParagraphNode());
         $setSlot(callout, 'title', $createParagraphNode().append(title));
-        $getRoot()
-          .getFirstChildOrThrow<ElementNode>()
-          .getLastChildOrThrow<ElementNode>()
-          .getFirstChildOrThrow<ElementNode>()
-          .append(callout);
+        const table = $assertNodeType(
+          $getRoot().getFirstChildOrThrow(),
+          $isElementNode,
+        );
+        const row = $assertNodeType(
+          table.getLastChildOrThrow(),
+          $isElementNode,
+        );
+        const cell = $assertNodeType(
+          row.getFirstChildOrThrow(),
+          $isElementNode,
+        );
+        cell.append(callout);
         title.select(1, 4);
       },
       {discrete: true},
@@ -1214,11 +1256,19 @@ describe('MdastHtmlExtension', () => {
           $createParagraphNode().append(body),
         );
         $setSlot(callout, 'title', $createParagraphNode());
-        $getRoot()
-          .getFirstChildOrThrow<ElementNode>()
-          .getLastChildOrThrow<ElementNode>()
-          .getFirstChildOrThrow<ElementNode>()
-          .append(callout);
+        const table = $assertNodeType(
+          $getRoot().getFirstChildOrThrow(),
+          $isElementNode,
+        );
+        const row = $assertNodeType(
+          table.getLastChildOrThrow(),
+          $isElementNode,
+        );
+        const cell = $assertNodeType(
+          row.getFirstChildOrThrow(),
+          $isElementNode,
+        );
+        cell.append(callout);
         const selection = body.select(1, 1);
         selection.focus.set(
           $getRoot().getLastChildOrThrow().getKey(),

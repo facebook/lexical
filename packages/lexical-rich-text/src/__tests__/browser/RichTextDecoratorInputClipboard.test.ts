@@ -14,12 +14,12 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isTextNode,
   $setSelection,
   DecoratorNode,
   type LexicalEditor,
-  type TextNode,
 } from 'lexical';
-import {describe, expect, onTestFinished, test, vi} from 'vitest';
+import {assert, describe, expect, onTestFinished, test, vi} from 'vitest';
 import {userEvent} from 'vitest/browser';
 
 /** An inline decorator whose DOM holds a text field of its own. */
@@ -73,7 +73,9 @@ function mountEditor(): {editor: LexicalEditor; input: HTMLInputElement} {
   rootElement.focus();
   editor.update(
     () => {
-      $getRoot().getFirstDescendant<TextNode>()!.select(0, 5);
+      const text = $getRoot().getFirstDescendant();
+      assert($isTextNode(text));
+      text.select(0, 5);
     },
     {discrete: true},
   );

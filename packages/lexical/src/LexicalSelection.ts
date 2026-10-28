@@ -131,6 +131,8 @@ import {
 import {$createTabNode} from './nodes/LexicalTabNode';
 import {
   $isInlineFormattable,
+  $recordDeleted,
+  $recordTextInserted,
   type TextFormatType,
 } from './nodes/LexicalTextNode';
 
@@ -502,6 +504,8 @@ function $insertText(
     const newNode = $createTextNode(text);
     newNode.setFormat(format);
     newNode.setStyle(style);
+    $recordDeleted(anchorNode);
+    $recordTextInserted(newNode);
     anchorNode.replace(newNode);
     newNode.select();
     return;
@@ -552,6 +556,7 @@ function $insertTextAtPoint(
   invariant($isTextNode(anchorNode), 'insertText: anchor is not a text node');
   const offset = selection.anchor.offset;
   const textNode = $createTextNode(text).setFormat(format).setStyle(style);
+  $recordTextInserted(textNode);
   const parent = anchorNode.getParentOrThrow();
   const before = offset === 0;
   const atBoundary = before || offset === anchorNode.getTextContentSize();

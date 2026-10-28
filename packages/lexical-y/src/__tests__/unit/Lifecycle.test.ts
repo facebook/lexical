@@ -24,7 +24,7 @@ import {
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {YBinding} from '../..';
+import {LAYOUT_VERSION, YBinding} from '../..';
 import {
   $block,
   $p,
@@ -171,7 +171,9 @@ describe('version gate', () => {
   test('active client receives a newer version mid session', async () => {
     const t = await setup(() => $getRoot().append($p('abc')));
     t.b.doc.transact(() =>
-      t.b.doc.get('lexical-y').setAttr('lexical-y:2', true),
+      t.b.doc
+        .get('lexical-y')
+        .setAttr('lexical-y:' + (LAYOUT_VERSION + 1), true),
     );
     await t.sync();
     // b's binding: its own transaction with origin != binding is treated as remote
@@ -184,28 +186,32 @@ describe('version gate', () => {
     expect(t.b.describe()).toBe('paragraph("abc")');
   });
 
-  test('two clients record newer layouts at once (3 ‖ 2): every client and a fresh reader take the highest', async () => {
+  test('two clients record newer layouts at once (n+2 ‖ n+1): every client and a fresh reader take the highest', async () => {
     const t = await setup(() => $getRoot().append($p('abc')), {
       ids: [10, 20, 30],
     });
+    const newer = LAYOUT_VERSION + 1;
+    const newest = LAYOUT_VERSION + 2;
     t.offline();
-    // As newer bindings would, each before the content that needs it.
+    // As newer bindings would, each in the transaction that needs it.
     t.a.doc.transact(() =>
-      t.a.doc.get('lexical-y').setAttr('lexical-y:3', true),
+      t.a.doc.get('lexical-y').setAttr('lexical-y:' + newest, true),
     );
     t.b.doc.transact(() =>
-      t.b.doc.get('lexical-y').setAttr('lexical-y:2', true),
+      t.b.doc.get('lexical-y').setAttr('lexical-y:' + newer, true),
     );
     await t.sync();
     const layoutWarning = (warnings: string[]) =>
       warnings.filter(w => w.includes('is newer than')).pop();
     for (const peer of t.peers) {
       expect(peer.binding.status).toBe('readonly');
-      expect(layoutWarning(peer.warnings)).toBe('layout 3 is newer than 1');
+      expect(layoutWarning(peer.warnings)).toBe(
+        `layout ${newest} is newer than ${LAYOUT_VERSION}`,
+      );
       expect(peer.binding.root.getAttrs()).toMatchObject({
         'lexical-y:1': true,
-        'lexical-y:2': true,
-        'lexical-y:3': true,
+        ['lexical-y:' + newer]: true,
+        ['lexical-y:' + newest]: true,
       });
     }
     const warnings: string[] = [];
@@ -215,7 +221,9 @@ describe('version gate', () => {
     fresh.start();
     fresh.initialize();
     expect(fresh.status).toBe('readonly');
-    expect(layoutWarning(warnings)).toBe('layout 3 is newer than 1');
+    expect(layoutWarning(warnings)).toBe(
+      `layout ${newest} is newer than ${LAYOUT_VERSION}`,
+    );
   });
 
   test('at a layout this version does not read, undo and redo write nothing, through the binding or its UndoManager', async () => {

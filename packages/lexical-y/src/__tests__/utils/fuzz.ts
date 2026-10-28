@@ -66,12 +66,14 @@ import {
   $isTextNode,
   $setSelection,
   $setState,
+  arraySetValue,
   createEditor,
   createState,
   type ElementNode,
   type LexicalEditor,
   type LexicalNode,
   type PointType,
+  stringValue,
   type TextNode,
 } from 'lexical';
 import * as Y13 from 'yjs';
@@ -337,6 +339,7 @@ export class FPeer {
       bound !== null
         ? bound.editor
         : createEditor({namespace: 'fuzz', nodes: NODES, onError, onWarn});
+    registerCommentState(this.editor);
     // Lexical's table plugin, as an app with tables registers it: a table
     // command, or a local edit that marks a table dirty, pads a table that a
     // race left ragged, under the editing client's own id.
@@ -614,9 +617,58 @@ function deliverBulk(world: World, rnd: () => number) {
 // ---------------------------------------------------------------------------
 // Document helpers
 
-const COMMENTS = Array.from({length: 6}, (_, i) =>
+// Comments are one set-valued NodeState (`arraySetValue`), as MarkStateExtension
+// stores them: each id is its own format. FUZZ_COMMENTS=keys uses one boolean
+// state per id instead.
+const COMMENT_COUNT = 6;
+const COMMENTS_AS_KEYS = process.env.FUZZ_COMMENTS === 'keys';
+const COMMENT_KEYS = Array.from({length: COMMENT_COUNT}, (_, i) =>
   createState(`mark:c${i}`, {parse: (v: unknown) => v === true}),
 );
+const commentSetState = createState('comments', {
+  parse: arraySetValue(stringValue()),
+});
+
+function $getComments(node: LexicalNode): number[] {
+  if (COMMENTS_AS_KEYS) {
+    return COMMENT_KEYS.flatMap((c, i) => ($getState(node, c) ? [i] : []));
+  }
+  return $getState(node, commentSetState).map(id => Number(id.slice(1)));
+}
+
+function $setComment(node: LexicalNode, i: number, on: boolean): void {
+  if (COMMENTS_AS_KEYS) {
+    $setState(node, COMMENT_KEYS[i], on);
+    return;
+  }
+  const id = `c${i}`;
+  $setState(node, commentSetState, prev =>
+    prev.includes(id) === on
+      ? prev
+      : on
+        ? [...prev, id]
+        : prev.filter(other => other !== id),
+  );
+}
+
+/**
+ * Make the comment state known to TextNode on this editor, as
+ * MarkStateExtension registers its state when the editor is built (in the
+ * node type's shared state config, with no update), so that every peer (and
+ * a fresh reader) joins the per-id formats it reads back into one set. An
+ * update here would commit before the peers' seed, and BlockIdExtension
+ * would then not name the seed as a load: each peer would give its blocks
+ * other ids and write the initial content once more.
+ */
+function registerCommentState(editor: LexicalEditor): void {
+  if (COMMENTS_AS_KEYS) {
+    return;
+  }
+  const {sharedConfigMap} = editor._nodes.get('text')!.sharedNodeState;
+  if (!sharedConfigMap.has(commentSetState.key)) {
+    sharedConfigMap.set(commentSetState.key, commentSetState);
+  }
+}
 const URLS = ['https://a.x', 'https://b.x', 'https://c.x'];
 const LIST_TYPES: ListType[] = ['bullet', 'number', 'check'];
 
@@ -848,10 +900,10 @@ function $op(ctx: Ctx): string | null {
         $toggleLink(url);
         return `link ${url} ${JSON.stringify(txt)}`;
       }
-      const c = Math.floor(r[3] * COMMENTS.length);
+      const c = Math.floor(r[3] * COMMENT_COUNT);
       for (const n of sel.extract()) {
         if ($isTextNode(n)) {
-          $setState(n, COMMENTS[c], true);
+          $setComment(n, c, true);
         }
       }
       return `comment c${c} ${JSON.stringify(txt)}`;
@@ -859,19 +911,13 @@ function $op(ctx: Ctx): string | null {
     case 'cRem': {
       const texts = $getRoot()
         .getAllTextNodes()
-        .filter(t => COMMENTS.some(c => $getState(t, c)));
+        .filter(t => $getComments(t).length > 0);
       if (texts.length === 0) {
         return null;
       }
       const t = pick(texts, r[0]);
-      const on = COMMENTS.map((c, i) => [c, i] as const).filter(([c]) =>
-        $getState(t, c),
-      );
-      const [c, i] = pick(
-        on as unknown as [(typeof COMMENTS)[0], number][],
-        r[1],
-      );
-      $setState(t, c, false);
+      const i = pick($getComments(t), r[1]);
+      $setComment(t, i, false);
       return `uncomment c${i} ${t.getTextContent()}`;
     }
     case 'bksp': {

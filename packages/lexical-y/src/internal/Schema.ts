@@ -6,10 +6,12 @@
  *
  */
 
+import devInvariant from '@lexical/internal/devInvariant';
 import {
   $isElementNode,
   $isLineBreakNode,
   $isTextNode,
+  type AnyStateConfig,
   createEditor,
   createSharedNodeState,
   ElementNode,
@@ -18,6 +20,7 @@ import {
   getDeclaredSlots,
   getStaticNodeConfig,
   type Klass,
+  type LexicalEditor,
   type LexicalNode,
   TEXT_TYPE_TO_FORMAT,
   type TextNode,
@@ -92,10 +95,19 @@ export const WRAPPER_PREFIX = 'w:';
 /**
  * The family of a format key: the keys whose items together give content
  * one attribute, which the write cursor bounds and keeps at boundaries as
- * one (see Cursor#collapseGap and Cursor#format). Here every key is a family
- * of its own.
+ * one (see Cursor#collapseGap and Cursor#format). A set-valued state's
+ * member entries (`s:<key>\u001f<member>`, see setMemberEntry) are the
+ * family of the set's key (`s:<key>`), with an array an earlier build
+ * stored whole under that key (see joinSetMembers): together they give
+ * content the set. Every other key is a family of its own.
  */
 export function formatFamily(key: string): string {
+  if (key.startsWith(STATE_PREFIX)) {
+    const separator = key.indexOf(SET_MEMBER_SEPARATOR, STATE_PREFIX.length);
+    if (separator >= 0) {
+      return key.slice(0, separator);
+    }
+  }
   return key;
 }
 
@@ -845,9 +857,13 @@ export const decodeFormatValue = (v: unknown): unknown => {
 };
 
 /** Format attributes of a line break: its NodeState. */
-export function $lineBreakAttrs(node: LexicalNode, wrapperAttrs: Attrs): Attrs {
+export function $lineBreakAttrs(
+  node: LexicalNode,
+  wrapperAttrs: Attrs,
+  strict = true,
+): Attrs {
   const own: Attrs = {};
-  $stateAttrs(node, own);
+  $stateAttrs(node, own, '', true, strict);
   return {...wrapperAttrs, ...encodeFormats(own)};
 }
 
@@ -863,6 +879,405 @@ export function lineBreakStateFromAttrs(encoded: Attrs): Attrs {
     }
   }
   return state;
+}
+
+// ---------------------------------------------------------------------------
+// Set-valued NodeState
+
+/**
+ * Between a set-valued state's key and a member in the key of a member
+ * entry: `<key>\u001f<member>` = `true`.
+ */
+export const SET_MEMBER_SEPARATOR = '\u001f';
+
+/** Whether `s` holds a surrogate code unit that is not half of a pair. */
+function hasLoneSurrogate(s: string): boolean {
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c >= 0xdc00 && c <= 0xdfff) {
+      return true;
+    }
+    if (c >= 0xd800 && c <= 0xdbff) {
+      const next = s.charCodeAt(i + 1);
+      if (!(next >= 0xdc00 && next <= 0xdfff)) {
+        return true;
+      }
+      i++;
+    }
+  }
+  return false;
+}
+
+/**
+ * The name of a set member's entry: the set's key, U+001F and the member.
+ * Yjs stores names as UTF-8, which turns a lone surrogate (a code unit from
+ * U+D800 to U+DFFF that is not half of a pair) into U+FFFD, so two members
+ * that differ only there would be one. A member holding a lone surrogate is
+ * stored escaped instead: U+001F, then the member's JSON with every
+ * surrogate code unit written as a `\uXXXX` escape (ASCII). A member that
+ * starts with U+001F is escaped the same way, so that every name reads back
+ * as the member it was written for (see setMemberOfEntry).
+ */
+export function setMemberEntry(key: string, member: string): string {
+  if (member.charAt(0) !== SET_MEMBER_SEPARATOR && !hasLoneSurrogate(member)) {
+    return key + SET_MEMBER_SEPARATOR + member;
+  }
+  const escaped = JSON.stringify(member).replace(
+    /[\ud800-\udfff]/g,
+    unit => '\\u' + unit.charCodeAt(0).toString(16),
+  );
+  return key + SET_MEMBER_SEPARATOR + SET_MEMBER_SEPARATOR + escaped;
+}
+
+/**
+ * The member a member entry's name stores, given what follows the set's key
+ * and U+001F in it (see setMemberEntry).
+ */
+function setMemberOfEntry(stored: string): string {
+  if (stored.charAt(0) === SET_MEMBER_SEPARATOR) {
+    try {
+      const member: unknown = JSON.parse(stored.slice(1));
+      if (typeof member === 'string') {
+        return member;
+      }
+    } catch (_e) {
+      // Not escaped: the member itself.
+    }
+  }
+  return stored;
+}
+
+/**
+ * Whether a stored format or attribute name is a member entry (`s:`, then a
+ * key and U+001F): what a document that has one needs layout
+ * SET_MEMBERS_LAYOUT_VERSION for.
+ */
+export function isSetMemberEntryName(name: string): boolean {
+  return (
+    name.startsWith(STATE_PREFIX) &&
+    name.indexOf(SET_MEMBER_SEPARATOR, STATE_PREFIX.length) >= 0
+  );
+}
+
+/**
+ * The keys of sets no StateConfig knows that the reader joined from member
+ * entries, per node type of an editor (its shared node state): the writer
+ * stores an array under such a key one entry per member again, whatever
+ * object holds it (a JSON copy of a node's state too), so a semantic no-op
+ * writes nothing and a change writes only the members it adds or removes.
+ */
+const LEARNED_SETS = new WeakMap<object, Set<string>>();
+
+/** The learned set keys of a node type's shared node state (see LEARNED_SETS). */
+export function learnedSetKeys(sharedNodeState: object): Set<string> {
+  let keys = LEARNED_SETS.get(sharedNodeState);
+  if (keys === undefined) {
+    keys = new Set();
+    LEARNED_SETS.set(sharedNodeState, keys);
+  }
+  return keys;
+}
+
+/**
+ * Whether a StateConfig holds a set (its parse is `arraySetValue(...)`),
+ * which is stored one entry per member on text runs, line breaks and nodes
+ * stored as their own Y.Node, so that concurrent additions and removals of
+ * different members merge. Elsewhere (markers, groups, wrappers) a set is one
+ * value.
+ */
+export function isSetStateConfig(config: AnyStateConfig | undefined): boolean {
+  return (
+    config !== undefined &&
+    config.schema !== undefined &&
+    config.schema.meta.kind === 'set'
+  );
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every(v => typeof v === 'string');
+}
+
+/**
+ * The joined values of sets no StateConfig knows (see joinSetMembers), which
+ * the writer stores one entry per member again.
+ */
+const UNKNOWN_SETS = new WeakSet<readonly string[]>();
+
+/**
+ * The NodeState entries of a node (its JSON `$`) to store, with every
+ * set-valued state known for the node (used on it, or registered for its
+ * type, as MarkStateExtension does) as one `<key>\u001f<member>` = `true`
+ * entry per member. A set whose key contains the separator itself is stored
+ * whole, since a reader could not tell where the key ends.
+ *
+ * Entries no StateConfig knows are written back as they are, except:
+ * - the joined value of a set no StateConfig knows, which the reader keeps
+ *   (see joinSetMembers): stored one entry per member again, as is any
+ *   string array under the key of such a set the reader joined for this
+ *   node type (see LEARNED_SETS), so that a copy of the value (a node's
+ *   JSON loaded back) is stored the same way and an unchanged set writes
+ *   nothing;
+ * - member entries of a set that has become known since they were loaded
+ *   (JSON exported by a client that did not know the state): the set's
+ *   value replaces them when the node holds one.
+ *
+ * A StateConfig named like a member entry of a known set (its key, U+001F,
+ * anything) would be stored under the same name as one of that set's
+ * members, and readers that know it would drop that member. Such a pair is
+ * refused whenever this node's set or that state is written, whether or not
+ * the state holds a value: an invariant in development; in production a
+ * warning, and the set is stored whole, as one value. Not `strict` (a reader
+ * comparing a node with what is stored, which writes nothing): such a pair
+ * is stored whole without a report.
+ */
+function $splitSetMembers(
+  node: LexicalNode,
+  entries: Attrs,
+  strict = true,
+): Attrs {
+  const state = node.getLatest().__state;
+  if (!state) {
+    return entries;
+  }
+  const {sharedConfigMap} = state.sharedNodeState;
+  const learned = LEARNED_SETS.get(state.sharedNodeState);
+  const known = state.getInternalState()[1];
+  const configOf = (key: string): AnyStateConfig | undefined => {
+    const shared = sharedConfigMap.get(key);
+    if (shared !== undefined) {
+      return shared;
+    }
+    for (const config of known.keys()) {
+      if (config.key === key) {
+        return config;
+      }
+    }
+    return undefined;
+  };
+  const isSetKey = (key: string): boolean => isSetStateConfig(configOf(key));
+  // Whether the node holds a value for that set (a value equal to the
+  // default, such as an empty set, is left out of `entries`).
+  const holdsSet = (key: string): boolean => {
+    if (key in entries) {
+      return true;
+    }
+    for (const config of known.keys()) {
+      if (config.key === key) {
+        return true;
+      }
+    }
+    return false;
+  };
+  // A known StateConfig named `<set>\u001f…`: the first one found.
+  const collisionOf = (set: string): string | null => {
+    const prefix = set + SET_MEMBER_SEPARATOR;
+    for (const key of sharedConfigMap.keys()) {
+      if (key.startsWith(prefix)) {
+        return key;
+      }
+    }
+    for (const config of known.keys()) {
+      if (config.key.startsWith(prefix)) {
+        return config.key;
+      }
+    }
+    return null;
+  };
+  const refused = new Set<string>();
+  const refuse = (key: string, set: string): void => {
+    refused.add(set);
+    if (!strict) {
+      return;
+    }
+    devInvariant(
+      false,
+      '@lexical/y: the NodeState key %s has the name of a member entry of the set-valued state %s (its key, U+001F, a member); rename the state.',
+      JSON.stringify(key),
+      JSON.stringify(set),
+    );
+  };
+  for (const key in entries) {
+    const separator = key.indexOf(SET_MEMBER_SEPARATOR);
+    if (separator >= 0) {
+      const base = key.slice(0, separator);
+      if (configOf(key) !== undefined && isSetKey(base)) {
+        refuse(key, base);
+      }
+    }
+  }
+  for (const key in entries) {
+    const value = entries[key];
+    if (
+      key.indexOf(SET_MEMBER_SEPARATOR) < 0 &&
+      isStringArray(value) &&
+      isSetKey(key)
+    ) {
+      const collision = collisionOf(key);
+      if (collision !== null && !refused.has(key)) {
+        refuse(collision, key);
+      }
+    }
+  }
+  let out: Attrs | null = null;
+  const copyBefore = (key: string): Attrs => {
+    const copy: Attrs = {};
+    for (const k in entries) {
+      if (k === key) {
+        break;
+      }
+      copy[k] = entries[k];
+    }
+    return copy;
+  };
+  for (const key in entries) {
+    const value = entries[key];
+    const separator = key.indexOf(SET_MEMBER_SEPARATOR);
+    const base = separator >= 0 ? key.slice(0, separator) : null;
+    let replaced: Attrs | null = null;
+    if (base === null) {
+      if (
+        isStringArray(value) &&
+        !refused.has(key) &&
+        (isSetKey(key) ||
+          (configOf(key) === undefined &&
+            (UNKNOWN_SETS.has(value) ||
+              (learned !== undefined && learned.has(key)))))
+      ) {
+        replaced = {};
+        for (const member of value) {
+          replaced[setMemberEntry(key, member)] = true;
+        }
+      }
+    } else if (
+      configOf(key) === undefined &&
+      isSetKey(base) &&
+      holdsSet(base)
+    ) {
+      // A member entry read before the set was known: the set's value
+      // replaces it.
+      replaced = {};
+    }
+    if (replaced !== null) {
+      if (out === null) {
+        out = copyBefore(key);
+      }
+      Object.assign(out, replaced);
+    } else if (out !== null) {
+      out[key] = value;
+    }
+  }
+  return out === null ? entries : out;
+}
+
+/**
+ * The NodeState entries read from a text run, line break or node stored as
+ * its own Y.Node, with the member entries (`<key>\u001f<member>` = `true`)
+ * of each set joined back into one array under the set's key. When a
+ * StateConfig uses the entry key itself, or the set's key is a StateConfig
+ * that does not hold a set, an entry stays an ordinary key.
+ *
+ * - A set-valued state that `configs` (the reader's StateConfigs for the
+ *   node type) knows: the state's parse turns the array into its canonical
+ *   frozen array (sorted, without duplicates).
+ * - A set no StateConfig knows yet: the array (sorted and frozen) is kept
+ *   as an unknown entry, and the writer stores it one entry per member
+ *   again, so a reader that does not know the state never collapses the
+ *   members. A client that uses the state after it read the node (its
+ *   first `$getState` registers it) reads the set from that entry.
+ *
+ * A whole array under the set's key next to member entries (stored by an
+ * earlier `@lexical/y` build) is joined with them. An escaped member (see
+ * setMemberEntry) reads back as the member it was written for. The key of
+ * each set no StateConfig knows is added to `learned` (see LEARNED_SETS).
+ */
+export function joinSetMembers(
+  entries: Attrs,
+  configs: ReadonlyMap<string, AnyStateConfig> | undefined = new Map(),
+  learned?: Set<string>,
+): Attrs {
+  // The set an entry is a member of, or null.
+  const setOf = (key: string): string | null => {
+    const i = key.indexOf(SET_MEMBER_SEPARATOR);
+    if (i < 0 || entries[key] !== true || configs.has(key)) {
+      return null;
+    }
+    // `i === 0` is a member of a set whose key is the empty string.
+    const base = key.slice(0, i);
+    const config = configs.get(base);
+    if (config !== undefined) {
+      return isSetStateConfig(config) ? base : null;
+    }
+    const whole = entries[base];
+    return whole === undefined || isStringArray(whole) ? base : null;
+  };
+  let out: Attrs | null = null;
+  const sets = new Map<string, string[]>();
+  for (const key in entries) {
+    const base = setOf(key);
+    if (base === null) {
+      if (out !== null) {
+        out[key] = entries[key];
+      }
+      continue;
+    }
+    if (out === null) {
+      out = {};
+      for (const k in entries) {
+        if (k === key) {
+          break;
+        }
+        out[k] = entries[k];
+      }
+    }
+    const members = sets.get(base) || [];
+    members.push(setMemberOfEntry(key.slice(base.length + 1)));
+    sets.set(base, members);
+  }
+  if (out === null) {
+    return entries;
+  }
+  for (const [base, members] of sets) {
+    const whole = entries[base];
+    const list: string[] = isStringArray(whole) ? whole.slice() : [];
+    for (const member of members) {
+      if (!list.includes(member)) {
+        list.push(member);
+      }
+    }
+    if (configs.has(base)) {
+      out[base] = list;
+    } else {
+      // Sorted, so that every reader holds the same value.
+      const joined = Object.freeze(list.sort());
+      UNKNOWN_SETS.add(joined);
+      if (learned !== undefined) {
+        learned.add(base);
+      }
+      out[base] = joined;
+    }
+  }
+  return out;
+}
+
+/**
+ * {@link joinSetMembers} on the NodeState of a node's serialized form, with
+ * the StateConfigs `editor` knows for the node's type.
+ */
+export function joinSetMembersInJSON(
+  json: Attrs,
+  editor: LexicalEditor,
+): Attrs {
+  const state = json.$;
+  if (state === null || typeof state !== 'object') {
+    return json;
+  }
+  const info = editor._nodes.get(json.type as string);
+  const joined = joinSetMembers(
+    state as Attrs,
+    info && info.sharedNodeState.sharedConfigMap,
+    info && learnedSetKeys(info.sharedNodeState),
+  );
+  return joined === state ? json : {...json, $: joined};
 }
 
 function encodeFormats(attrs: Attrs): Attrs {
@@ -887,10 +1302,33 @@ function putValue(attrs: Attrs, key: string, value: unknown, what: string) {
   attrs[key] = plain;
 }
 
-/** NodeState entries as `s:<key>` attributes. */
-export function $stateAttrs(node: LexicalNode, out: Attrs, prefix = ''): void {
+/**
+ * NodeState entries as `s:<key>` attributes. With `split`, a set-valued state
+ * is one entry per member (see $splitSetMembers, and `strict` there): for
+ * line breaks.
+ */
+export function $stateAttrs(
+  node: LexicalNode,
+  out: Attrs,
+  prefix = '',
+  split = false,
+  strict = true,
+): void {
   const state = node.__state;
   if (!state) {
+    return;
+  }
+  if (split) {
+    const own: Attrs = {};
+    $stateAttrs(node, own);
+    const entries: Attrs = {};
+    for (const k in own) {
+      entries[k.slice(STATE_PREFIX.length)] = own[k];
+    }
+    const stored = $splitSetMembers(node, entries, strict);
+    for (const k in stored) {
+      out[prefix + STATE_PREFIX + k] = stored[k];
+    }
     return;
   }
   const [unknown = {}, known] = state.getInternalState();
@@ -980,6 +1418,7 @@ export function hasArrayHole(v: unknown, depth = 0): boolean {
 export function $nodeAttrs(
   node: LexicalNode,
   holes: string[] | null = null,
+  strict = true,
 ): Attrs {
   const latest = node.getLatest();
   // Compact: properties at their default are left out (parsing restores
@@ -1001,9 +1440,10 @@ export function $nodeAttrs(
   }
   const state = json.$ as Attrs | undefined;
   if (state) {
-    for (const k in state) {
-      putValue(attrs, STATE_PREFIX + k, state[k], `NodeState ${k}`);
-      if (holes !== null && hasArrayHole(state[k])) {
+    const stored = $splitSetMembers(latest, state, strict);
+    for (const k in stored) {
+      putValue(attrs, STATE_PREFIX + k, stored[k], `NodeState ${k}`);
+      if (holes !== null && hasArrayHole(stored[k])) {
         holes.push(STATE_PREFIX + k);
       }
     }
@@ -1110,7 +1550,11 @@ export function $foreignFlatKeys(
  * JSON, and keeps a key under `$` whatever its class, but a top-level key
  * only where the class declares it.
  */
-export function $textAttrs(node: TextNode, segment: string | null): Attrs {
+export function $textAttrs(
+  node: TextNode,
+  segment: string | null,
+  strict = true,
+): Attrs {
   const latest = node.getLatest();
   const json = latest.exportJSON(true) as unknown as Attrs;
   const attrs: Attrs = {};
@@ -1137,8 +1581,9 @@ export function $textAttrs(node: TextNode, segment: string | null): Attrs {
   }
   const state = json.$ as Attrs | undefined;
   if (state) {
-    for (const k in state) {
-      putValue(attrs, STATE_PREFIX + k, state[k], `NodeState ${k}`);
+    const stored = $splitSetMembers(latest, state, strict);
+    for (const k in stored) {
+      putValue(attrs, STATE_PREFIX + k, stored[k], `NodeState ${k}`);
     }
   }
   if (segment !== null) {

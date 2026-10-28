@@ -32,18 +32,18 @@ import {unescapeText} from '../../utils';
 import {MarkdownTestExtension} from '../utils';
 
 const LITERALS = [
-  '<b>text</b>',
-  '<https://example.com>',
-  '<0@a.b>',
-  '<+@a.b>',
-  '&#65;',
-  '&#x41;',
-  '[label](uri)',
-  '[ref]: uri',
+  ['<b>text</b>', '&#60;b>text&#60;/b>'],
+  ['<https://example.com>', '&#60;https://example.com>'],
+  ['<0@a.b>', '&#60;0@a.b>'],
+  ['<+@a.b>', '&#60;+@a.b>'],
+  ['&#65;', '&#38;#65;'],
+  ['&#x41;', '&#38;#x41;'],
+  ['[label](uri)', '&#91;label&#93;(uri)'],
+  ['[ref]: uri', '&#91;ref&#93;: uri'],
 ];
 
 describe('literal Markdown text', () => {
-  it.each(LITERALS)('escapes %j across styled text nodes', text => {
+  it.each(LITERALS)('escapes %j across styled text nodes', (text, expected) => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
     for (let split = 0; split <= text.length; split++) {
       editor.update(
@@ -60,7 +60,7 @@ describe('literal Markdown text', () => {
         {discrete: true},
       );
       const written = editor.read(() => $convertToMarkdownString());
-      expect(written).toBe(text.replace(/[&<[\]]/g, '\\$&'));
+      expect(written).toBe(expected);
       editor.update(() => $convertFromMarkdownString(written), {
         discrete: true,
       });
@@ -88,12 +88,62 @@ describe('literal Markdown text', () => {
     },
   );
 
+  it.each(['bold', 'italic', 'strikethrough'] as const)(
+    'preserves existing formatted markers after plain text: %s',
+    format => {
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      editor.update(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append(
+              $createTextNode('a'),
+              $createTextNode('*').toggleFormat(format),
+            ),
+          ),
+        {discrete: true},
+      );
+      const written = editor.read(() => $convertToMarkdownString());
+      editor.update(() => $convertFromMarkdownString(written), {
+        discrete: true,
+      });
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toBe('a*');
+        const [plain, formatted] = $getRoot().getAllTextNodes();
+        expect(plain.getFormat()).toBe(0);
+        expect(formatted.hasFormat(format)).toBe(true);
+      });
+    },
+  );
+
+  it.each(['*', '**', '~~'])(
+    'keeps literal delimiters beside escaped punctuation: %j',
+    delimiter => {
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      for (const inside of ['[', '&', '<']) {
+        for (const outside of ['[', '&', '<']) {
+          const source = `a${delimiter}\\${inside}${delimiter}\\${outside}`;
+          editor.update(() => $convertFromMarkdownString(source), {
+            discrete: true,
+          });
+          editor.read(() => {
+            expect($getRoot().getTextContent()).toBe(
+              `a${delimiter}${inside}${delimiter}${outside}`,
+            );
+            for (const text of $getRoot().getAllTextNodes()) {
+              expect(text.getFormat()).toBe(0);
+            }
+          });
+        }
+      }
+    },
+  );
+
   it.each([
-    [['&', '#65;'], '\\&#65;'],
-    [['&', 'copy;'], '\\&copy;'],
-    [['<', 'b>text</b>'], '\\<b>text\\</b>'],
-    [['AT&', 'T'], 'AT\\&T'],
-    [['a <', ' b'], 'a \\< b'],
+    [['&', '#65;'], '&#38;#65;'],
+    [['&', 'copy;'], '&#38;copy;'],
+    [['<', 'b>text</b>'], '&#60;b>text&#60;/b>'],
+    [['AT&', 'T'], 'AT&#38;T'],
+    [['a <', ' b'], 'a &#60; b'],
   ] as const)('guards ambiguous node boundaries: %j', (pieces, expected) => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
     editor.update(
@@ -152,7 +202,7 @@ describe('literal Markdown text', () => {
       editor.read(() =>
         $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
       ),
-    ).toBe('\\<b>&copy; \\[x\\](u)\\</b>');
+    ).toBe('&#60;b>&copy; &#91;x&#93;(u)&#60;/b>');
   });
 
   it.each(['[label]', 'a]b', 'a[b', 'a](other)'])(

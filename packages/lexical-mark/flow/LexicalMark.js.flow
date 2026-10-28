@@ -83,6 +83,7 @@ export type MarkStateConfig = {
   disabled: boolean,
   exportIDsToHTML: boolean,
   markableNodes: ReadonlyArray<MarkableNodeMatch>,
+  isMarkIDShown?: (id: string) => boolean,
 };
 
 /**
@@ -91,6 +92,7 @@ export type MarkStateConfig = {
 export type MarkStateOutput = {
   disabled: Signal<boolean>,
   exportIDsToHTML: Signal<boolean>,
+  isMarkIDShown: Signal<(id: string) => boolean>,
   markIDNodeKeys: ReadonlySignal<ReadonlyMap<string, ReadonlyArray<NodeKey>>>,
 };
 

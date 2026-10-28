@@ -8,7 +8,7 @@
 import type {TextMatchTransformer} from './MarkdownTransformers';
 import type {TextNode} from 'lexical';
 
-import {getLinkLabelOpener, LINK} from './MarkdownTransformers';
+import {LINK} from './MarkdownTransformers';
 import {isEscaped} from './utils';
 
 function matchLink(text: string, regExp: RegExp): RegExpExecArray | null {
@@ -18,8 +18,7 @@ function matchLink(text: string, regExp: RegExp): RegExpExecArray | null {
   );
   let match;
   while ((match = search.exec(text)) !== null) {
-    if (!isEscaped(text, match.index) && getLinkLabelOpener(match[1]) !== null)
-      return match;
+    if (!isEscaped(text, match.index)) return match;
     search.lastIndex = match.index + 1;
   }
   return null;

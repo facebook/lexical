@@ -550,6 +550,38 @@ describe('literal Markdown text', () => {
     },
   );
 
+  it.each([
+    ['~~[]~~~](u)', '~~[]~~~](u)', ''],
+    ['~~[]~~~](u)', '~~[]~~~](u)', ' [ok](v)'],
+    ['~~[\\a]~~~](u)', '~~[\\a]~~~](u)', ''],
+    ['~~[\\a]~~~](u)', '~~[\\a]~~~](u)', ' [ok](v)'],
+    ['~~[\\]]~~~](u)', '~~[]]~~~](u)', ''],
+    ['~~[\\]]~~~](u)', '~~[]]~~~](u)', ' [ok](v)'],
+  ])(
+    'keeps legacy grouping for malformed link candidates: %j',
+    (source, expected, suffix) => {
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      editor.update(() => $convertFromMarkdownString(source + suffix), {
+        discrete: true,
+      });
+      editor.read(() => {
+        const root = $getRoot();
+        expect(root.getTextContent()).toBe(expected + (suffix ? ' ok' : ''));
+        for (const text of root.getAllTextNodes()) {
+          expect(text.getFormat()).toBe(0);
+        }
+        if (suffix) {
+          const paragraph = root.getFirstChildOrThrow();
+          assert($isElementNode(paragraph));
+          const link = paragraph.getLastChildOrThrow();
+          assert($isLinkNode(link));
+          expect(link.getURL()).toBe('v');
+          expect(link.getTextContent()).toBe('ok');
+        }
+      });
+    },
+  );
+
   it('preserves existing literal prefix text before an unbalanced link', () => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
     const prefix = '[`\\`';

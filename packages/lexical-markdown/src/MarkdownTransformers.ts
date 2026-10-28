@@ -1168,11 +1168,10 @@ function escapeCharacterReferences(value: string): string {
   );
 }
 
-// Mask literal brackets without changing source offsets. An unmatched closing
-// bracket ends the current link candidate; unmatched openers retain the
-// existing outside-text handling in LINK.replace.
-// Return the innermost unmatched opener, -1 for balanced, or null for invalid order.
-export function getLinkLabelOpener(text: string): number | null {
+// Mask escaped/code brackets without changing source offsets, then find an inner
+// opener after a literal prefix. Return -1 for balanced labels or null when
+// unmatched closers leave no recoverable opener.
+function getLinkLabelOpener(text: string): number | null {
   const codeSpans = scanCodeSpans(text);
   let codeIndex = 0;
   const brackets = text.replace(/\\.|[[\]]/g, (part, index: number) => {
@@ -1188,15 +1187,16 @@ export function getLinkLabelOpener(text: string): number | null {
       : part;
   });
   const openers: number[] = [];
+  let unmatchedCloser = false;
   for (let index = 0; index < brackets.length; index++) {
     const character = brackets[index];
     if (character === '[') {
       openers.push(index);
     } else if (character === ']') {
-      if (openers.pop() === undefined) return null;
+      if (openers.pop() === undefined) unmatchedCloser = true;
     }
   }
-  return openers.pop() ?? -1;
+  return openers.pop() ?? (unmatchedCloser ? null : -1);
 }
 
 function unescapeLinkPrefix(text: string): string {

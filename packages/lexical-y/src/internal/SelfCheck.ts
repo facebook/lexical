@@ -40,9 +40,9 @@ import {
   getGroupSpec,
   getWrapperSpec,
   INLINE_PREFIX,
-  isOwnedTextKey,
   isSetStateConfig,
   MARKER,
+  ownsFormat,
   RUN_END,
   SEGMENT_KEY,
   SET_MEMBER_SEPARATOR,
@@ -123,7 +123,6 @@ function hasLiveContent(y: YNode): boolean {
  */
 export function $checkWrite(writer: Writer): string[] {
   const problems: string[] = [];
-  const isKnownWrapper = (type: string) => writer.state.editor._nodes.has(type);
   // A line written twice in one write (its container rewritten after it)
   // is checked as last written.
   const last = new Map<string, number>();
@@ -209,6 +208,7 @@ export function $checkWrite(writer: Writer): string[] {
         continue;
       }
       lastKey = key;
+      const fields = writer.textFields(a[TYPE_KEY], b[TYPE_KEY]);
       for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {
         // A segment key under text the editor holds in a node Lexical
         // merges (an opener an undo restored, left open over later lines):
@@ -230,13 +230,18 @@ export function $checkWrite(writer: Writer): string[] {
           // reader shows none, whatever is stored.
           continue;
         }
+        // What the write stores of it, where the editor owns it (see
+        // ownsFormat, Writer#formatAsStored).
         if (
           (!wrappersOnly ||
             k.startsWith(WRAPPER_PREFIX) ||
             (isBreak && k.startsWith(STATE_PREFIX))) &&
-          isOwnedTextKey(k, isKnownWrapper) &&
+          ownsFormat(k, fields, writer.wrapperFields) &&
           !equalFormatValue(
-            withoutTextFields(a[k] ?? null, derivedText),
+            withoutTextFields(
+              writer.formatAsStored(k, a[k] ?? null, b[k]),
+              derivedText,
+            ),
             withoutTextFields(b[k] ?? null, derivedText),
           )
         ) {
@@ -247,11 +252,17 @@ export function $checkWrite(writer: Writer): string[] {
       }
     }
     if (d.kind === 'line') {
-      const marker = writer.$marker(d);
       const attrs = (end.content as ContentType).type.getAttrs() as Record<
         string,
         unknown
       >;
+      const desired = writer.$marker(d);
+      const marker = writer.$markerAsStored(
+        desired,
+        attrs,
+        writer.markerOwners(desired, attrs),
+        null,
+      );
       for (const k in marker) {
         if (
           !equalValue(attrs[k], marker[k]) &&

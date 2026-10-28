@@ -249,7 +249,7 @@ a short note for developers: render your own text from `code` and `data`.
 | Constant | Reported when | `data` (`reason`: other fields) |
 | -- | -- | -- |
 | `UNSUPPORTED_LAYOUT_WARNING` | The layout is one this version cannot read. Read only. | `'newer'`: `found`; `'malformed'`: `key`, `found`; `'missing'`, `'removed'`; `'legacy-roots'`: `roots`. All: `supported` |
-| `UNKNOWN_NODE_TYPES_WARNING` | The document has node types the editor cannot build. Read only. | `'unregistered'`, `'malformed-slot'`: `types` |
+| `UNKNOWN_NODE_TYPES_WARNING` | The document has node types the editor cannot build: types it does not register, however they are stored (a link class it lacks too). Read only. | `'unregistered'`, `'malformed-slot'`: `types` |
 | `STORAGE_MISMATCH_WARNING` | A node type is stored in a way its class cannot be (one warning per type). Read only. | `'declaration-changed'`: `type`, `stored`, `declared`; `'malformed'`: `type`, `key`, `found` |
 | `UNSUPPORTED_SLOTS_WARNING` | Named slots where the document cannot store them. Not written; read only. | `'stored-host'`, `'root'`: `types` |
 | `UNSUPPORTED_CONFIG_WARNING` | `BlockIdExtension` with `repairTransforms: true` (see [Set up an editor](#set-up-an-editor)). Nothing is written; read only. | `'repair-transforms'`: `options` |
@@ -874,6 +874,14 @@ not merge as a user might expect:
   keeps the format: the collaborator's undo brings it back.
 - **Large lists.** A structural edit in a list costs time proportional to
   the list on every client.
+- **Older app versions.** A client keeps the fields, text formats and
+  NodeState it does not know when it edits a node (see
+  [Changing your own node types](#changing-the-layout-and-migrating)), but a
+  block it moves is written anew from what it shows, so the moved block loses
+  them (see Moves). A class that writes its own `exportJSON` owns every
+  field of its type, since which ones it writes cannot be known: an older
+  version of it deletes the fields a newer one added. Declare fields in
+  `$config` to keep them.
 - **The caret when a collaborator rewrites its line.** A caret stays after
   the text it was after. When a collaborator replaces the line holding it,
   deleting all the line showed and putting new content at its place in one
@@ -936,9 +944,13 @@ hold one stay readable and editable by layout 1 clients.
   field with a default, or dropping one, works as in
   [Lexical JSON](/docs/serialization/#versioning--breaking-changes): a field
   a room does not have reads as its default, and one your class no longer has
-  is ignored. A change to a class's declared node structure does not apply to
-  rooms that already hold that type (they keep the recorded kind); reseed
-  them to adopt it.
+  is ignored. Clients of both versions can edit a room at once (during a
+  rollout): a client writes only the fields its classes declare in
+  `$config`, so an older client's edit of a node keeps the fields a newer
+  version added, and a field a client knows and clears is deleted (see
+  "Older app versions" in the limits). A change to a class's declared node
+  structure does not apply to rooms that already hold that type (they keep
+  the recorded kind); reseed them to adopt it.
 
 ### Reseeding a room
 

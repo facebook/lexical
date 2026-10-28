@@ -56,6 +56,7 @@ import {
   type Attrs,
   BLOCK_PREFIX,
   decodeFormatValue,
+  eachOuterLevel,
   FIELD_PREFIX,
   getContainerGroupSpec,
   getGroupSpec,
@@ -63,6 +64,7 @@ import {
   getWrapperSpec,
   GROUP_FIELD_PREFIX,
   GROUP_KEY,
+  groupItemFields,
   type GroupSpec,
   INLINE_PREFIX,
   isUnsafeKey,
@@ -76,14 +78,21 @@ import {
   MARKER,
   nodeJSONFromAttrs,
   OUTER_KEY,
+  type OwnedFields,
+  ownedFields,
+  ownedFieldsOf,
+  ownsMarkerAttr,
+  ownsNodeAttr,
   SEGMENT_KEY,
   stableStringify,
   STATE_PREFIX,
   storedTypeOf,
   textJSONFromAttrs,
   TYPE_KEY,
+  withoutUnownedMembers,
   WRAPPER_FIELDS_KEY,
   WRAPPER_PREFIX,
+  wrapperFieldsOf,
   wrappersFromAttrs,
   type WrapperValue,
 } from './Schema';
@@ -244,7 +253,12 @@ function parseRange(
 }
 
 export class Reader {
-  private readonly isKnownWrapper: (type: string) => boolean;
+  /**
+   * The fields this editor owns in the value of a format wrapper (see
+   * wrapperFieldsOf), or null where it does not store the type as one. A
+   * type it does not register is an unknown type (see State#unknownTypes).
+   */
+  private readonly wrapperFields: (type: string) => OwnedFields | null;
   /** Item -> unit cache for one read. */
   private located = new Map<Item, Unit | null>();
   /** Formats in effect after the content last read by $pieces. */
@@ -274,10 +288,12 @@ export class Reader {
   readonly settler: BlockIdSettler;
   constructor(readonly state: State) {
     this.settler = new BlockIdSettler(state);
-    const nodes = state.editor._nodes;
-    this.isKnownWrapper = type => {
-      const info = nodes.get(type);
-      return info !== undefined && getWrapperSpec(info.klass) !== null;
+    const editor = state.editor;
+    this.wrapperFields = type => {
+      if (!editor._nodes.has(type)) {
+        state.unknownTypes.add(type);
+      }
+      return wrapperFieldsOf(editor, type);
     };
   }
 
@@ -1080,9 +1096,16 @@ export class Reader {
     }
     const spec = ginfo === undefined ? null : getGroupSpec(ginfo.klass);
     if (spec !== null && spec.items.includes(info.klass)) {
+      // What this editor's classes read: the group fields it owns (see
+      // ownsMarkerAttr), as its writes give them.
+      const lineFields = ownedFieldsOf(info.klass, false);
+      const groupFields = ownedFieldsOf(spec.klass, false);
       const gkey: Attrs = {};
       for (const k in attrs) {
-        if (k.startsWith(GROUP_FIELD_PREFIX)) {
+        if (
+          k.startsWith(GROUP_FIELD_PREFIX) &&
+          ownsMarkerAttr(k, lineFields, groupFields)
+        ) {
           gkey[k] = attrs[k];
         }
       }
@@ -1104,7 +1127,13 @@ export class Reader {
         Array.isArray(o) &&
         o.length === level &&
         o.every(v => v !== null && typeof v === 'object' && !Array.isArray(v))
-          ? (o as Attrs[])
+          ? eachOuterLevel(
+              o as Attrs[],
+              null,
+              groupFields,
+              groupItemFields(spec),
+              (value, _stored, owns) => withoutUnownedMembers(value, owns),
+            )
           : null;
       return {gkey, gtype: g as string, level, outer, spec};
     }
@@ -1809,14 +1838,20 @@ export class Reader {
       y.getAttrs() as Attrs,
       placed,
     );
-    // Compare in the stored encoding (compact, textFormat always kept). A
-    // value holding an array hole is stored as null, which the class parses
-    // its own way (colWidths: 0): applied, so the node shows what every
-    // reader shows.
+    // Compare in the stored encoding (compact, textFormat always kept), what
+    // this editor owns of it (see ownsNodeAttr). A value holding an array
+    // hole is stored as null, which the class parses its own way (colWidths:
+    // 0): applied, so the node shows what every reader shows.
+    const fields = ownedFields(
+      this.state.editor,
+      node.getType(),
+      node.getType(),
+      true,
+    );
     const owned = (x: Attrs) => {
       const out: Attrs = {};
       for (const k of Object.keys(x).sort()) {
-        if (k.startsWith(FIELD_PREFIX) || k.startsWith(STATE_PREFIX)) {
+        if (ownsNodeAttr(k, fields)) {
           out[k] = x[k];
         }
       }
@@ -1953,7 +1988,7 @@ export class Reader {
           }
         });
         tsig = stableStringify(tattrs);
-        wrappers = wrappersFromAttrs(all, this.isKnownWrapper);
+        wrappers = wrappersFromAttrs(all, this.wrapperFields);
       }
     };
     for (let it = start; it !== null && it !== stop; it = it.right) {
@@ -2341,7 +2376,7 @@ export class Reader {
     if (reused !== undefined) {
       const own: Attrs = {};
       $wrapperAttrs(reused, own);
-      const current = wrappersFromAttrs(own, () => true)[0];
+      const current = wrappersFromAttrs(own, this.wrapperFields)[0];
       if (
         current === undefined ||
         stableStringify(current.json) !== stableStringify(w.json)

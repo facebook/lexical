@@ -49,9 +49,8 @@ export function findOutermostTextMatchTransformer(
       continue;
     }
     const text = textNode.getTextContent();
-    // A custom exporter may reuse the built-in parser with a copied pattern.
+    // Transformers sharing the built-in link syntax need the same candidate rules.
     const match =
-      transformer.replace === LINK.replace &&
       LINK.importRegExp !== undefined &&
       transformer.importRegExp.source === LINK.importRegExp.source
         ? matchLink(text, transformer.importRegExp)

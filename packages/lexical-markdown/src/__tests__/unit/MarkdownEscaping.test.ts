@@ -290,20 +290,30 @@ describe('literal Markdown text', () => {
     });
   });
 
-  it.each([false, true])(
-    'preserves copied LINK imports (cloned pattern: %s)',
-    clonedPattern => {
+  it.each([
+    [false, false],
+    [false, true],
+    [true, false],
+    [true, true],
+  ] as const)(
+    'preserves copied LINK imports (cloned pattern: %s, wrapped replace: %s)',
+    (clonedPattern, wrappedReplace) => {
       using editor = buildEditorFromExtensions([MarkdownTestExtension]);
       const exportLink = LINK.export;
       assert(exportLink);
       const pattern = LINK.importRegExp;
       assert(pattern);
+      const replaceLink = LINK.replace;
+      assert(replaceLink);
       const customLink: TextMatchTransformer = {
         ...LINK,
         export: (...args) => exportLink(...args),
         importRegExp: clonedPattern
           ? new RegExp(pattern.source, pattern.flags)
           : pattern,
+        replace: wrappedReplace
+          ? (...args) => replaceLink(...args)
+          : replaceLink,
       };
       const transformers = TRANSFORMERS.map(transformer =>
         transformer === LINK ? customLink : transformer,

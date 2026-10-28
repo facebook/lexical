@@ -22,6 +22,12 @@
 // S7-11: content of a type a client does not register opens the room read
 // only for it, whatever kind stores it: a line, a group, text, a node, or an
 // inline element stored as a format (a link class it lacks).
+//
+// S7-21: stored content a client's class throws on (an updateFromJSON that
+// rejects a value only a newer version writes) is unreadable for it, as
+// content of a type it does not register is: it opens the room read only,
+// warns (`'unreadable'`), keeps showing the rest of the document, and throws
+// nothing, into the provider or from initialize().
 
 import type {ListItemNode} from '@lexical/list';
 
@@ -62,6 +68,7 @@ import {
   seedYState,
   YHeadlessError,
 } from '../../../headless';
+import {Reader} from '../../../internal/Read';
 import {
   ownedFields,
   ownsFormat,
@@ -1123,9 +1130,230 @@ describe('S7-11: content of a type a client does not register opens the room rea
 
 // ---------------------------------------------------------------------------
 
+type SerializedMode = SerializedElementNode & {mode?: string};
+/** v1 of a class with a field `mode` whose updateFromJSON rejects a value v2 writes. */
+function modeClasses(type: string, base: typeof ElementNode) {
+  class ModeV2 extends base {
+    __mode = 'a';
+    static getType(): string {
+      return type;
+    }
+    static clone(node: ModeV2): ModeV2 {
+      const copy = new ModeV2(node.__key);
+      copy.__mode = node.__mode;
+      return copy;
+    }
+    static importJSON(json: SerializedMode): ModeV2 {
+      return new ModeV2().updateFromJSON(json);
+    }
+    updateFromJSON(json: LexicalUpdateJSON<SerializedMode>): this {
+      const self = super.updateFromJSON(json);
+      self.__mode = json.mode ?? 'a';
+      return self;
+    }
+    exportJSON(): SerializedMode {
+      return {...super.exportJSON(), mode: this.__mode, type};
+    }
+    createDOM(): HTMLElement {
+      throw new Error('headless');
+    }
+    updateDOM(): boolean {
+      return false;
+    }
+  }
+  class ModeV1 extends ModeV2 {
+    static getType(): string {
+      return type;
+    }
+    static clone(node: ModeV1): ModeV1 {
+      const copy = new ModeV1(node.__key);
+      copy.__mode = node.__mode;
+      return copy;
+    }
+    static importJSON(json: SerializedMode): ModeV1 {
+      return new ModeV1().updateFromJSON(json);
+    }
+    updateFromJSON(json: LexicalUpdateJSON<SerializedMode>): this {
+      if (json.mode !== undefined && json.mode !== 'a' && json.mode !== 'b') {
+        throw new Error('unknown mode ' + json.mode);
+      }
+      return super.updateFromJSON(json);
+    }
+  }
+  return {ModeV1, ModeV2};
+}
+
+const modeLine = modeClasses(
+  'test_mode_line',
+  ParagraphNode as unknown as typeof ElementNode,
+);
+const modeBox = modeClasses('test_mode_box', ElementNode);
+
+describe('S7-21: stored content an older class throws on opens the room read only', () => {
+  const shapes = [
+    [
+      'a line',
+      modeLine,
+      'test_mode_line',
+      () => $create(modeLine.ModeV2).append($createTextNode('mode line')),
+    ],
+    [
+      'a node of its own',
+      modeBox,
+      'test_mode_box',
+      () => $create(modeBox.ModeV2).append($p('in the box')),
+    ],
+  ] as const;
+
+  test.each(shapes)(
+    '%s: a value a newer client sets',
+    async (_name, {ModeV1, ModeV2}, type, $node) => {
+      const net = newNet();
+      const author = new Peer(2, net as never, [...NODES, ModeV2]);
+      const old = new Peer(1, net as never, [...NODES, ModeV1]);
+      author.update(() => {
+        $getRoot().clear().append($p('first'), $node(), $p('last'));
+      });
+      author.binding.initialize();
+      await flush();
+      const shown = old.describe();
+      expect(old.binding.status).toBe('active');
+      author.update(() => {
+        (
+          $block([1]) as unknown as {getWritable(): {__mode: string}}
+        ).getWritable().__mode = 'v2only';
+      });
+      await flush();
+      expectUnreadable(old, type, shown);
+      await expectWritesNothing(old, author);
+    },
+  );
+
+  test.each(shapes)(
+    '%s: opening a room that holds it',
+    async (_name, {ModeV1, ModeV2}, type, $node) => {
+      const net = newNet();
+      const author = new Peer(2, net as never, [...NODES, ModeV2]);
+      author.update(() => {
+        const node = $node();
+        (node as unknown as {__mode: string}).__mode = 'v2only';
+        $getRoot().clear().append($p('first'), node, $p('last'));
+      });
+      author.binding.initialize();
+      await flush();
+      const old = new Peer(1, newNet() as never, [...NODES, ModeV1]);
+      Y.applyUpdate(old.doc, Y.encodeStateAsUpdate(author.doc));
+      old.binding.initialize();
+      await flush();
+      expectUnreadable(old, type, null);
+      expect(old.describe()).toContain('"first"');
+      expect(old.describe()).toContain('"last"');
+    },
+  );
+});
+
+describe('S7-21: a read that throws on every attempt fails closed', () => {
+  // Not a class: the reader itself (a bug) throws, on a read and on the
+  // fresh read of the document that follows.
+  const failingReads = () => {
+    const proto = Reader.prototype as unknown as {
+      $apply: (...args: unknown[]) => void;
+      $readFull: (...args: unknown[]) => void;
+    };
+    const {$apply, $readFull} = proto;
+    proto.$apply = proto.$readFull = () => {
+      throw new Error('simulated reader failure');
+    };
+    return () => {
+      proto.$apply = $apply;
+      proto.$readFull = $readFull;
+    };
+  };
+  const warned = (peer: Peer) =>
+    peer.warnings.filter(w => !w.includes('stored as a nested'));
+
+  test('a remote change: the editor keeps what it showed', async () => {
+    const net = newNet();
+    const a = new Peer(2, net as never);
+    const b = new Peer(1, net as never);
+    a.update(() => $getRoot().clear().append($p('hello')));
+    a.binding.initialize();
+    await flush();
+    const restore = failingReads();
+    try {
+      a.update(() => $block([0]).append($createTextNode(' there')));
+      await flush();
+    } finally {
+      restore();
+    }
+    expect(b.errors).toEqual([]);
+    expect(b.binding.status).toBe('readonly');
+    expect(warned(b)).toEqual([
+      'the document cannot be read: simulated reader failure',
+    ]);
+    expect(b.describe()).toBe('paragraph("hello")');
+    // It reads nothing more.
+    a.update(() => $block([0]).append($createTextNode('!')));
+    await flush();
+    expect(b.describe()).toBe('paragraph("hello")');
+    expect(b.errors).toEqual([]);
+  });
+
+  test('opening the room: nothing is thrown, and nothing is shown', async () => {
+    const a = new Peer(2, newNet() as never);
+    a.update(() => $getRoot().clear().append($p('hello')));
+    a.binding.initialize();
+    await flush();
+    const b = new Peer(1, newNet() as never);
+    const restore = failingReads();
+    try {
+      expect(() => {
+        Y.applyUpdate(b.doc, Y.encodeStateAsUpdate(a.doc));
+        b.binding.initialize();
+      }).not.toThrow();
+    } finally {
+      restore();
+    }
+    await flush();
+    expect(b.errors).toEqual([]);
+    expect(b.binding.status).toBe('readonly');
+    expect(warned(b)).toEqual([
+      'the document cannot be read: simulated reader failure',
+    ]);
+    expect(b.describe()).toBe('');
+  });
+});
+
+/**
+ * `peer` opened the room read only for stored content of `type` its class
+ * throws on, warned once, threw nothing, and shows `shown` (when given).
+ */
+function expectUnreadable(peer: Peer, type: string, shown: string | null) {
+  expect(peer.errors).toEqual([]);
+  expect(peer.binding.status).toBe('readonly');
+  expect(
+    peer.warnings.filter(w => !w.includes('stored as a nested node')),
+  ).toEqual([`stored content the editor's classes cannot read: ${type}`]);
+  if (shown !== null) {
+    expect(peer.describe()).toBe(shown);
+  }
+}
+
+/** An edit of read-only `peer` changes nothing `other` shows or stores. */
+async function expectWritesNothing(peer: Peer, other: Peer) {
+  const vector = Y.encodeStateVector(peer.doc);
+  const before = docJSON(other);
+  peer.update(() => $getRoot().append($p('typed while read only')));
+  await flush();
+  expect(Y.encodeStateVector(peer.doc)).toEqual(vector);
+  expect(docJSON(other)).toBe(before);
+}
+
+// ---------------------------------------------------------------------------
+
 // The same rules for a server agent whose config has the older classes: the
 // headless helpers write through the same binding.
-describe('S7-3, S7-11: a server agent with older classes', () => {
+describe('S7-3, S7-11, S7-21: a server agent with older classes', () => {
   const quiet = () => {};
   const refusal = (edit: () => void) => {
     try {
@@ -1185,5 +1413,37 @@ describe('S7-3, S7-11: a server agent with older classes', () => {
         },
       ],
     });
+  });
+
+  test('S7-21: it refuses a document its classes throw on', () => {
+    const seeded = seedYState(
+      {nodes: [...NODES, modeBox.ModeV2], onWarn: quiet},
+      () => {
+        const box = $create(modeBox.ModeV2).append($p('in the box'));
+        box.__mode = 'v2only';
+        $getRoot().append(box);
+      },
+    );
+    const error = refusal(() =>
+      editYState(
+        seeded,
+        {nodes: [...NODES, modeBox.ModeV1], onWarn: quiet},
+        () => $getRoot().append($p('more')),
+        {writer: null},
+      ),
+    );
+    expect(error).toBeInstanceOf(YHeadlessError);
+    expect(error).toMatchObject({code: 'read-only'});
+    expect((error as YHeadlessError).warnings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: UNKNOWN_NODE_TYPES_WARNING,
+          data: expect.objectContaining({
+            reason: 'unreadable',
+            types: ['test_mode_box'],
+          }),
+        }),
+      ]),
+    );
   });
 });

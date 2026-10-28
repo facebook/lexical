@@ -302,13 +302,20 @@ export class QuoteNode extends ElementNode {
 
   collapseAtStart(): true {
     if (this.isShadowRoot()) {
-      // A shadow root quote holds block-level children, so collapsing
-      // dissolves the quote and lifts the blocks out as siblings rather
-      // than merging them into a single paragraph.
-      for (const child of this.getChildren()) {
-        this.insertBefore(child);
+      // A shadow root quote holds block-level children. Collapsing moves
+      // only the first block out of the quote, the way Backspace at the
+      // start of a list item takes only that item out of the list. The
+      // other blocks stay in the quote.
+      const first = this.getFirstChild();
+      if (first !== null) {
+        this.insertBefore(first);
+        if ($isElementNode(first)) {
+          first.selectStart();
+        }
       }
-      this.remove();
+      if (this.isEmpty()) {
+        this.remove();
+      }
       return true;
     }
     const paragraph = $createParagraphNode();

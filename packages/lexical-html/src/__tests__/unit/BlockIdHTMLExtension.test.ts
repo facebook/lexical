@@ -18,10 +18,12 @@ import {
 import {
   $generateDOMFromNodes,
   $generateHtmlFromNodes,
-  type BlockIdHTMLConfig,
-  BlockIdHTMLExtension,
   DOMImportExtension,
 } from '@lexical/html';
+import {
+  type BlockIdHTMLConfig,
+  BlockIdHTMLExtension,
+} from '@lexical/html/BlockIdHTMLExtension';
 import {ListExtension} from '@lexical/list';
 import {RichTextExtension} from '@lexical/rich-text';
 import {

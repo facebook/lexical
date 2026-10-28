@@ -133,7 +133,7 @@ function $createParagraphBreakNode(): LineBreakNode {
 }
 
 /** Reads the first source character of `node` (an inline delimiter, if any). */
-function inlineMarker(
+export function inlineMarker(
   ctx: MdastImportContext,
   node: {position?: {start: {offset?: number}}},
 ): string | undefined {
@@ -656,7 +656,10 @@ export const $exportList: MdastExportHandler = (node, ctx) => {
 
 /**
  * Wraps a plain string in the mdast phrasing nodes implied by a Lexical text
- * format bitmask (code span innermost, then emphasis, strong, strikethrough).
+ * format bitmask (code span innermost, then strong, emphasis, strikethrough:
+ * emphasis around strong is how CommonMark reads `***x***`, which
+ * mdast-util-to-markdown writes back as `***x***` when both markers are
+ * `*`).
  * The emphasis/strong *delimiter* (`*` vs `_`) is a document-level to-markdown
  * option (see the exporter) rather than per-node, because mixing delimiters in
  * one document desyncs to-markdown's character escaping.
@@ -667,11 +670,11 @@ export function phrasingFromFormattedText(
 ): PhrasingContent {
   let content: PhrasingContent =
     format & FORMAT_CODE ? {type: 'inlineCode', value} : {type: 'text', value};
-  if (format & FORMAT_ITALIC) {
-    content = {children: [content], type: 'emphasis'};
-  }
   if (format & FORMAT_BOLD) {
     content = {children: [content], type: 'strong'};
+  }
+  if (format & FORMAT_ITALIC) {
+    content = {children: [content], type: 'emphasis'};
   }
   if (format & FORMAT_STRIKETHROUGH) {
     content = {children: [content], type: 'delete'};
@@ -688,18 +691,18 @@ export interface TextRun {
 /**
  * Emphasis-family format bits eligible for cross-run grouping, in tie-break
  * order matching the single-run nesting of {@link phrasingFromFormattedText}
- * (strong outside emphasis).
+ * (emphasis outside strong).
  */
 const EMPHASIS_FORMATS: readonly [number, 'strong' | 'emphasis'][] = [
-  [FORMAT_BOLD, 'strong'],
   [FORMAT_ITALIC, 'emphasis'],
+  [FORMAT_BOLD, 'strong'],
 ];
 
 /**
  * Converts a segment of strikethrough-free (or strikethrough-stripped) runs
  * into nested emphasis/strong phrasing. At each position the wrapper is
  * chosen greedily: the format bit shared by the longest stretch of upcoming
- * runs becomes the outer container (ties fall back to strong-outside-emphasis,
+ * runs becomes the outer container (ties fall back to emphasis-outside-strong,
  * matching the single-run nesting), and the covered runs recurse with that
  * bit cleared. Overlap is not always fully expressible as nesting — the
  * format that extends furthest keeps a single pair of delimiters and the

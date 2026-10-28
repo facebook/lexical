@@ -35,7 +35,6 @@ import {
   $isHeadingNode,
   $isQuoteNode,
 } from '@lexical/rich-text';
-import {$isTableNode} from '@lexical/table';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -50,7 +49,6 @@ import {
   $isTextNode,
   $setSelectionFromCaretRange,
   defineExtension,
-  type ElementNode,
   type LexicalNode,
   TEXT_TYPE_TO_FORMAT,
   type TextNode,
@@ -74,12 +72,11 @@ import {
   MdastHeadingExtension,
   MdastShadowRootQuoteExtension,
   MdastStrikethroughExtension,
-  MdastTableExtension,
   MdastTaskListExtension,
   RenderContextMarkdownSelection,
 } from '../../index';
 
-function createEditor(withTable = false): LexicalEditorWithDispose {
+function createEditor(): LexicalEditorWithDispose {
   // The caller is responsible for disposal (with `using`).
   return buildEditorFromExtensions(
     defineExtension({
@@ -89,15 +86,14 @@ function createEditor(withTable = false): LexicalEditorWithDispose {
         MdastStrikethroughExtension,
         MdastTaskListExtension,
         MdastExtension,
-        ...(withTable ? [MdastTableExtension] : []),
       ],
       name: '[root]',
     }),
   );
 }
 
-function importExport(markdown: string, withTable = false): string {
-  using editor = createEditor(withTable);
+function importExport(markdown: string): string {
+  using editor = createEditor();
   editor.update(
     () => {
       $convertFromMarkdownString(markdown);
@@ -679,7 +675,10 @@ describe('@lexical/mdast import/export', () => {
         });
         editor.update(
           () => {
-            const paragraph = $getRoot().getFirstChildOrThrow<ElementNode>();
+            const paragraph = $assertNodeType(
+              $getRoot().getFirstChildOrThrow(),
+              $isElementNode,
+            );
             const lines = paragraph
               .getChildren()
               .filter(node => !$isLineBreakNode(node));
@@ -1262,66 +1261,6 @@ describe('@lexical/mdast import/export', () => {
     const once = importExport(markdown);
     const twice = importExport(once);
     expect(twice).toBe(once);
-  });
-
-  describe('with MdastTableExtension', () => {
-    it('round-trips a GFM table', () => {
-      const markdown = [
-        '| a | b |',
-        '| - | - |',
-        '| 1 | 2 |',
-        '| 3 | 4 |',
-      ].join('\n');
-      const out = importExport(markdown, true);
-      // Re-import to confirm the structure is stable.
-      expect(importExport(out, true)).toBe(out);
-      expect(out).toContain('| a | b |');
-      expect(out).toContain('| 1 | 2 |');
-    });
-
-    it('imports a table into @lexical/table nodes', () => {
-      using editor = createEditor(true);
-      editor.update(
-        () => {
-          $convertFromMarkdownString('| h1 | h2 |\n| - | - |\n| a | b |');
-        },
-        {discrete: true},
-      );
-      editor.read(() => {
-        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
-        expect(table.getChildrenSize()).toBe(2);
-      });
-    });
-
-    it('preserves column alignment', () => {
-      const markdown = '| a | b | c |\n| :- | :-: | -: |\n| 1 | 2 | 3 |';
-      const out = importExport(markdown, true);
-      expect(out).toContain(':-');
-      expect(out).toContain(':-:');
-      expect(out).toContain('-:');
-      expect(importExport(out, true)).toBe(out);
-    });
-
-    it('joins multi-paragraph cells instead of fusing their text', () => {
-      using editor = createEditor(true);
-      editor.update(
-        () => {
-          $convertFromMarkdownString('| a |\n| - |\n| foo |');
-          const table = $assertNodeType(
-            $getRoot().getFirstChild(),
-            $isTableNode,
-          );
-          const lastRow = $assertNodeType(table.getLastChild(), $isElementNode);
-          const cell = $assertNodeType(lastRow.getFirstChild(), $isElementNode);
-          const extra = $createParagraphNode();
-          extra.append($createTextNode('bar'));
-          cell.append(extra);
-        },
-        {discrete: true},
-      );
-      const out = editor.read(() => $convertToMarkdownString());
-      expect(out).toContain('| foo bar |');
-    });
   });
 
   describe('with MdastShadowRootQuoteExtension', () => {

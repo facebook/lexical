@@ -174,6 +174,15 @@ of set-valued NodeState; layout 3 (planned, #9449) adds move records.
     `\u0000` followed by the value's JSON with sorted keys. A string that
     itself starts with `\u0000` is stored the same way (as the JSON of that
     string), so every member reads back with its type and value.
+- **Names a client does not own:** a writer sets and deletes only the names
+  it owns, the binding's own and the fields its classes declare for the
+  content's type (all of them where the write changes that type), its text
+  formats and NodeState, and keeps every other name as stored: a field a
+  newer version of a class added, a text format a newer Lexical added, a key
+  of a later layout. Inserted text takes the names it does not own from the
+  text it continues (a field only from text of its own type), and a new
+  group item the group fields another item of its group stores. A reader
+  reads only the names it owns.
 - **Defaults are left out:** a field or NodeState value equal to the one a
   new instance of the class has (its `$config` default) is not stored, so a
   reader takes it from its own class (an `h1` heading's marker is

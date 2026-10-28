@@ -737,7 +737,6 @@ describe('Markdown', () => {
       // Export only: import will use $...$ to transform <span /> to <mark /> due to HIGHLIGHT_TEXT_MATCH_IMPORT
       html: "<p><span style='white-space: pre-wrap;'>$$H$&e$`l$'l$o$</span></p>",
       md: "$$H$&e$\\`l$'l$o$",
-      mdAfterExport: "$$H$\\&e$\\`l$'l$o$",
       skipImport: true,
     },
     {
@@ -1041,7 +1040,7 @@ describe('Markdown', () => {
     {
       html: '<p><span style="white-space: pre-wrap;">!"#$%&amp;\'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~</span></p>',
       md: '\\!\\"\\#\\$\\%\\&\\\'\\(\\)\\*\\+\\,\\-\\.\\/\\:\\;\\<\\=\\>\\?\\@\\[\\\\\\]\\^\\_\\`\\{\\|\\}\\~',
-      mdAfterExport: '!"#$%\\&\'()\\*+,-./:;\\<=>?@\\[\\\\\\]^\\_\\`{|}\\~',
+      mdAfterExport: '!"#$%&\'()\\*+,-./:;\\<=>?@\\[\\\\\\]^\\_\\`{|}\\~',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">\\→\\A\\a\\ \\3\\φ\\«</span></p>',

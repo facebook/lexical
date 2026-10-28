@@ -33,7 +33,8 @@ import {MarkdownTestExtension} from '../utils';
 const LITERALS = [
   '<b>text</b>',
   '<https://example.com>',
-  '&copy;',
+  '<0@a.b>',
+  '<+@a.b>',
   '&#65;',
   '&#x41;',
   '[label](uri)',
@@ -64,6 +65,52 @@ describe('literal Markdown text', () => {
       });
       expect(editor.read(() => $getRoot().getTextContent())).toBe(text);
     }
+  });
+
+  it.each(['AT&T', 'a < b', '&nbsp;', '&copy;'])(
+    'keeps legacy-readable text unchanged: %j',
+    text => {
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append($createTextNode(text))),
+        {discrete: true},
+      );
+      const written = editor.read(() => $convertToMarkdownString());
+      expect(written).toBe(text);
+      editor.update(() => $convertFromMarkdownString(written), {
+        discrete: true,
+      });
+      expect(editor.read(() => $getRoot().getTextContent())).toBe(text);
+    },
+  );
+
+  it.each([
+    [['&', '#65;'], '\\&#65;'],
+    [['&', 'copy;'], '\\&copy;'],
+    [['<', 'b>text</b>'], '\\<b>text\\</b>'],
+    [['AT&', 'T'], 'AT\\&T'],
+    [['a <', ' b'], 'a \\< b'],
+  ] as const)('guards ambiguous node boundaries: %j', (pieces, expected) => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(
+      () =>
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              ...pieces.map((text, index) =>
+                $createTextNode(text).setStyle(
+                  index ? 'color: blue' : 'color: red',
+                ),
+              ),
+            ),
+          ),
+      {discrete: true},
+    );
+    expect(editor.read(() => $convertToMarkdownString())).toBe(expected);
   });
 
   it.each([
@@ -104,7 +151,7 @@ describe('literal Markdown text', () => {
       editor.read(() =>
         $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
       ),
-    ).toBe('\\<b>\\&copy; \\[x\\](u)\\</b>');
+    ).toBe('\\<b>&copy; \\[x\\](u)\\</b>');
   });
 
   it.each(['[label]', 'a]b', 'a[b', 'a](other)'])(

@@ -87,12 +87,13 @@ And bundles of commonly used transformers:
 
 Transformers are explicitly passed to markdown API allowing application-specific subset of markdown or custom transformers.
 
-Default export escapes literal `<`, `&`, `[` and `]` in text, including when a
-construct spans multiple text nodes. Code and strings returned by custom
-transformers retain their existing serialization rules. The legacy source
-escaping behavior of `shouldPreserveNewLines` is unchanged. Import reads
-backslash escapes and decimal or hexadecimal references in one pass; named
-references remain literal text.
+Default export protects numeric-reference, HTML and link syntax in text,
+including constructs split across text nodes. `AT&T` and `a < b` stay readable;
+named references keep their legacy import and export behavior. An ambiguous `<`
+or `&` at the end of a text node is escaped conservatively. Code and strings
+returned by custom transformers retain their existing serialization rules, as
+does the legacy source escaping of `shouldPreserveNewLines`. Import reads
+backslash escapes and decimal or hexadecimal references in one pass.
 
 There're three types of transformers:
 

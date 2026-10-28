@@ -134,6 +134,9 @@
       ],
       "@lexical/history": ["../lexical-history/src/index.ts"],
       "@lexical/html": ["../lexical-html/src/index.ts"],
+      "@lexical/html/BlockIdHTMLExtension": [
+        "../lexical-html/src/BlockIdHTMLExtension.ts"
+      ],
       "@lexical/internal/createDevError": [
         "../lexical-internal/src/createDevError.ts"
       ],

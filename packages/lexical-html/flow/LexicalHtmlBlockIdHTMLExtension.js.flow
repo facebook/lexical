@@ -1,0 +1,28 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+import type {LexicalExtension} from 'lexical';
+import type {Signal} from '@lexical/extension/signals';
+
+declare export var BLOCK_ID_ATTRIBUTE: 'data-block-id';
+
+export type BlockIdHTMLConfig = {
+  export: boolean,
+  import: boolean,
+};
+
+declare export var BlockIdHTMLExtension: LexicalExtension<
+  BlockIdHTMLConfig,
+  '@lexical/html/BlockIdHTML',
+  {
+    export: Signal<boolean>,
+    import: Signal<boolean>,
+  },
+  unknown,
+>;

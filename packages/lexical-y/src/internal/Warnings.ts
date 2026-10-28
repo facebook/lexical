@@ -140,14 +140,29 @@ export type YStorageMismatchData =
 
 /**
  * @experimental `data` of an `UNKNOWN_NODE_TYPES_WARNING` (the binding is read
- * only): types the editor does not register (`'unregistered'`), or slots the
- * document holds that are not a block node (`'malformed-slot'`: the slot's
- * key, or the type of the inline node in it).
+ * only).
  */
-export interface YUnknownNodeTypesData {
-  readonly reason: 'unregistered' | 'malformed-slot';
-  readonly types: readonly string[];
-}
+export type YUnknownNodeTypesData =
+  /**
+   * Types the editor does not register (`'unregistered'`), or slots the
+   * document holds that are not a block node (`'malformed-slot'`: the slot's
+   * key, or the type of the inline node in it).
+   */
+  | {
+      readonly reason: 'unregistered' | 'malformed-slot';
+      readonly types: readonly string[];
+    }
+  /**
+   * The editor's classes throw `error` on stored content (of `types`, where
+   * the error came from a class reading content of a type), on a read and on
+   * a fresh read of the document after it. The editor keeps what it showed
+   * before, and reads nothing more.
+   */
+  | {
+      readonly reason: 'unreadable';
+      readonly types: readonly string[];
+      readonly error: unknown;
+    };
 
 /**
  * @experimental `data` of an `UNSUPPORTED_SLOTS_WARNING` (the change is not

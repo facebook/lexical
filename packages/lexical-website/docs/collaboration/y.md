@@ -98,8 +98,8 @@ provider.once('sync', () => {
 - The editor stays **read only** until the document's layout record has
   been read. `status` is a signal: `'pending'`, then `'active'`, or
   `'readonly'` when the binding cannot write the document safely (a newer
-  layout, a node type this editor does not register; a
-  [warning](#warnings) says why).
+  layout, a node type this editor does not register, stored content its
+  classes throw on; a [warning](#warnings) says why).
   Register the same node classes on every client.
 - `binding.initialize()`, called after the provider's first sync, writes the
   editor's content into an empty document (an `editor.update()` still
@@ -235,7 +235,7 @@ a short note for developers: render your own text from `code` and `data`.
 | Constant | Reported when | `data` (`reason`: other fields) |
 | -- | -- | -- |
 | `UNSUPPORTED_LAYOUT_WARNING` | The layout is one this version cannot read. Read only. | `'newer'`: `found`; `'malformed'`: `key`, `found`; `'missing'`, `'removed'`; `'legacy-roots'`: `roots`. All: `supported` |
-| `UNKNOWN_NODE_TYPES_WARNING` | The document has node types the editor cannot build: types it does not register, however they are stored (a link class it lacks too). Read only. | `'unregistered'`, `'malformed-slot'`: `types` |
+| `UNKNOWN_NODE_TYPES_WARNING` | The document has node types the editor cannot build: types it does not register, however they are stored (a link class it lacks too), or content its classes throw on. Read only. | `'unregistered'`, `'malformed-slot'`: `types`; `'unreadable'`: `types`, `error` |
 | `STORAGE_MISMATCH_WARNING` | A node type is stored in a way its class cannot be (one warning per type). Read only. | `'declaration-changed'`: `type`, `stored`, `declared`; `'malformed'`: `type`, `key`, `found` |
 | `UNSUPPORTED_SLOTS_WARNING` | Named slots where the document cannot store them. Not written; read only. | `'stored-host'`, `'root'`: `types` |
 | `UNSUPPORTED_CONFIG_WARNING` | `BlockIdExtension` with `repairTransforms: true` (see [Set up an editor](#set-up-an-editor)). Nothing is written; read only. | `'repair-transforms'`: `options` |
@@ -917,9 +917,12 @@ hold one stay readable and editable by layout 1 clients.
   rollout): a client writes only the fields its classes declare in
   `$config`, so an older client's edit of a node keeps the fields a newer
   version added, and a field a client knows and clears is deleted (see
-  "Older app versions" in the limits). A change to a class's declared node
-  structure does not apply to rooms that already hold that type (they keep
-  the recorded kind); reseed them to adopt it.
+  "Older app versions" in the limits). A value an older class throws on (an
+  `updateFromJSON` that rejects a value the newer version writes) opens the
+  room read only for that client, as a type it does not register does. A
+  change to a class's declared node structure does not apply to rooms that
+  already hold that type (they keep the recorded kind); reseed them to adopt
+  it.
 
 ### Reseeding a room
 

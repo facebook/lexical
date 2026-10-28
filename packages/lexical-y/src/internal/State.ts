@@ -170,6 +170,12 @@ export class State {
    */
   readonly unknownTypes = new Set<string>();
   /**
+   * Node types whose stored content this editor's classes throw on when they
+   * read it (see Reader#$readStored), each with the first error: as with
+   * unknownTypes, the binding goes read only.
+   */
+  readonly unreadable = new Map<string, unknown>();
+  /**
    * Of unknownTypes, the slots that are not a block node: a slot's key, or
    * the type of the inline node in it (see Slots).
    */

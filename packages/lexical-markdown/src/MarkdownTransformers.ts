@@ -1171,7 +1171,7 @@ function escapeCharacterReferences(value: string): string {
 // Mask literal brackets without changing source offsets. An unmatched closing
 // bracket ends the current link candidate; unmatched openers retain the
 // existing outside-text handling in LINK.replace.
-// Return the unmatched opener, -1 for a balanced label, or null for invalid order.
+// Return the innermost unmatched opener, -1 for balanced, or null for invalid order.
 export function getLinkLabelOpener(text: string): number | null {
   const codeSpans = scanCodeSpans(text);
   let codeIndex = 0;
@@ -1187,19 +1187,16 @@ export function getLinkLabelOpener(text: string): number | null {
       ? ' '.repeat(part.length)
       : part;
   });
-  let depth = 0;
-  let opener = -1;
+  const openers: number[] = [];
   for (let index = 0; index < brackets.length; index++) {
     const character = brackets[index];
     if (character === '[') {
-      if (depth === 0) opener = index;
-      depth++;
+      openers.push(index);
     } else if (character === ']') {
-      if (depth === 0) return null;
-      depth--;
+      if (openers.pop() === undefined) return null;
     }
   }
-  return depth === 0 ? -1 : opener;
+  return openers.pop() ?? -1;
 }
 
 function unescapeLinkPrefix(text: string): string {

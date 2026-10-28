@@ -11,7 +11,7 @@
   "version": "0.53.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/facebook/lexical.git",
+    "url": "git+https://github.com/meta/lexical.git",
     "directory": "packages/lexical-headless"
   },
   "sideEffects": false,

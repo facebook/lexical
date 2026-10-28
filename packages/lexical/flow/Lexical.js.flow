@@ -1307,6 +1307,7 @@ declare export function getActiveElementDeep(
   root: Document | ShadowRoot,
 ): Element | null;
 declare export function getComposedEventTarget(event: Event): EventTarget | null;
+declare export function $isEventFromEmbeddedInput(event: Event | null): boolean;
 
 /**
  * LexicalNormalization

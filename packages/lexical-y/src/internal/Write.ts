@@ -60,18 +60,18 @@ import {
   $textAttrs,
   type Attrs,
   BLOCK_PREFIX,
+  eachOuterLevel,
   equalValue,
   FIELD_PREFIX,
   getContainerGroupSpec,
   getGroupSpec,
-  getLineSpec,
   GROUP_FIELD_PREFIX,
   GROUP_KEY,
   groupAttrsOf,
+  groupItemFields,
   type GroupSpec,
   INLINE_PREFIX,
   isMergeableText,
-  isOwnedTextKey,
   isTextFieldKey,
   KIND_KEY,
   klassOf,
@@ -79,13 +79,22 @@ import {
   MARKER,
   OUTER_KEY,
   outerWithoutTextFields,
+  type OwnedFields,
+  ownedFields,
+  ownsFormat,
+  ownsMarkerAttr,
+  ownsMember,
+  ownsNodeAttr,
   RUN_END,
   stableStringify,
   STATE_PREFIX,
   storedTypeOf,
+  TEXT_FORMAT_PREFIX,
   TYPE_KEY,
+  withUnownedMembers,
   WRAPPER_FIELDS_KEY,
   WRAPPER_PREFIX,
+  wrapperFieldsOf,
 } from './Schema';
 import {$writeSlots} from './Slots';
 import {
@@ -131,6 +140,16 @@ const storedType = (y: YNode): string =>
 // an insert would be written once per client.
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
+
+/** The fields a client owns on one marker (see Writer#markerOwners). */
+export type MarkerOwners = {
+  /** Of the line. */
+  readonly fields: OwnedFields;
+  /** Of its group, stored as `g:<field>` and in each outer level. */
+  readonly groupFields: OwnedFields;
+  /** Of its group's items, in each outer level's wrapper item. */
+  readonly itemFields: OwnedFields;
+};
 
 type Desired = {
   kind: 'line' | 'node' | 'run';
@@ -393,7 +412,13 @@ export class Writer {
    * (see YBinding#$normalize).
    */
   readonly holed = new Set<NodeKey>();
-  private readonly isKnownWrapper: (type: string) => boolean;
+  /**
+   * The fields this editor owns in the value of a format wrapper, or null
+   * where it does not store the type as one (see wrapperFieldsOf).
+   */
+  readonly wrapperFields: (type: string) => OwnedFields | null;
+  /** Per item, see $storedItemAtOrBefore. */
+  private readonly groupReferences = new Map<NodeKey, Attrs | null>();
   constructor(
     readonly state: State,
     readonly roles: Roles,
@@ -401,8 +426,8 @@ export class Writer {
     readonly prevState: EditorState,
     readonly plan: WritePlan,
   ) {
-    const nodes = state.editor._nodes;
-    this.isKnownWrapper = type => nodes.has(type);
+    const editor = state.editor;
+    this.wrapperFields = type => wrapperFieldsOf(editor, type);
   }
 
   // -------------------------------------------------------------------------
@@ -3607,15 +3632,96 @@ export class Writer {
     return true;
   }
 
-  private inheritUnknown(cursor: Cursor, attrs: Attrs): Attrs {
-    let result = attrs;
-    cursor.formats.forEach((v, k) => {
-      if (!(k in attrs) && !isOwnedTextKey(k, this.isKnownWrapper)) {
-        if (result === attrs) {
-          result = {...attrs};
+  /**
+   * The fields this editor owns in the formats of text whose type keys
+   * (TYPE_KEY, absent for `text`) are `a` and `b` (see ownsFormat): its
+   * classes' of those text node types.
+   */
+  textFields(a: unknown, b: unknown): OwnedFields {
+    return ownedFields(this.state.editor, a ?? 'text', b ?? 'text', true);
+  }
+
+  /**
+   * Format `key`'s value `value`, as this editor writes it, as stored where
+   * `stored` is: a format wrapper's value keeps the members of `stored`
+   * this editor does not own (see ownsMember). With `same`, only where
+   * `stored` is the same wrapper as this editor shows it: its owned members
+   * (but the text fields Lexical derives, see stripGroupText) are `value`'s.
+   */
+  formatAsStored(
+    key: string,
+    value: unknown,
+    stored: unknown,
+    same = false,
+  ): unknown {
+    const fields = key.startsWith(WRAPPER_PREFIX)
+      ? this.wrapperFields(key.slice(WRAPPER_PREFIX.length))
+      : null;
+    if (
+      fields === null ||
+      value === null ||
+      typeof value !== 'object' ||
+      stored === null ||
+      typeof stored !== 'object'
+    ) {
+      return value;
+    }
+    const owns = (m: string) => ownsMember(m, fields);
+    if (same) {
+      const a = value as Attrs;
+      const b = stored as Attrs;
+      for (const m of new Set([...Object.keys(a), ...Object.keys(b)])) {
+        if (
+          m !== 'textFormat' &&
+          m !== 'textStyle' &&
+          owns(m) &&
+          !equalValue(a[m], b[m])
+        ) {
+          return value;
         }
-        result[k] = v;
       }
+    }
+    return withUnownedMembers(value as Attrs, stored, owns);
+  }
+
+  /**
+   * `attrs`, the formats of content inserted at `cursor`, with the formats
+   * there that this editor does not own (see ownsFormat): the content
+   * continues what is before it, which its formats must not cut. A field
+   * goes only into text of the same type (it is that node's: of another
+   * type, every field is owned), and neither a field nor a text format into
+   * an inline node (`wrappersOnly`), which holds wrappers only; a wrapper's
+   * value keeps the members it does not own of the same wrapper there (see
+   * formatAsStored).
+   */
+  private inheritUnknown(
+    cursor: Cursor,
+    attrs: Attrs,
+    wrappersOnly = false,
+  ): Attrs {
+    let result = attrs;
+    const fields = this.textFields(
+      cursor.formats.get(TYPE_KEY),
+      attrs[TYPE_KEY],
+    );
+    cursor.formats.forEach((v, k) => {
+      let value = v;
+      if (k in attrs) {
+        value = this.formatAsStored(k, attrs[k], v, true);
+        if (value === attrs[k]) {
+          return;
+        }
+      } else if (
+        ownsFormat(k, fields, this.wrapperFields) ||
+        (wrappersOnly &&
+          (k.startsWith(FIELD_PREFIX) || k.startsWith(TEXT_FORMAT_PREFIX)))
+      ) {
+        return;
+      }
+      if (result === attrs) {
+        result = {...attrs};
+      }
+      result[k] = value;
     });
     return result;
   }
@@ -3645,7 +3751,11 @@ export class Writer {
           const y = new YNode(INLINE_PREFIX + special.node.getType());
           cursor.insert(
             new ContentType(y),
-            this.inheritUnknown(cursor, wrapperOnly(run ? run.attrs : {})),
+            this.inheritUnknown(
+              cursor,
+              wrapperOnly(run ? run.attrs : {}),
+              true,
+            ),
           );
           this.$fillNode(y, special.node);
         }
@@ -3685,12 +3795,18 @@ export class Writer {
     );
     const ops: {start: number; end: number; formats: Attrs; sig: string}[] = [];
     // A line break carries wrapper formats and its own NodeState; a child
-    // node carries wrapper formats only.
-    const owned = (k: string, wrappersOnly: boolean, isBreak: boolean) =>
+    // node carries wrapper formats only. Of those, what this editor owns
+    // (see ownsFormat).
+    const owned = (
+      k: string,
+      wrappersOnly: boolean,
+      isBreak: boolean,
+      fields: OwnedFields,
+    ) =>
       (!wrappersOnly ||
         k.startsWith(WRAPPER_PREFIX) ||
         (isBreak && k.startsWith(STATE_PREFIX))) &&
-      isOwnedTextKey(k, this.isKnownWrapper);
+      ownsFormat(k, fields, this.wrapperFields);
     // Walk segments between run boundaries, child nodes and line breaks
     // (where only wrapper formats apply), not characters: the cost is in
     // runs, so a keystroke in a long line stays cheap.
@@ -3744,19 +3860,20 @@ export class Writer {
           : {};
       const isBreak = special === undefined && text.charCodeAt(start) === 10;
       const wrappersOnly = special !== undefined || isBreak;
+      const fields = this.textFields(want[TYPE_KEY], have[TYPE_KEY]);
       let diff: Attrs | null = null;
       for (const k in want) {
-        if (
-          owned(k, wrappersOnly, isBreak) &&
-          !equalFormatValue(want[k] ?? null, have[k] ?? null)
-        ) {
-          (diff || (diff = {}))[k] = want[k] ?? null;
+        if (owned(k, wrappersOnly, isBreak, fields)) {
+          const value = this.formatAsStored(k, want[k] ?? null, have[k]);
+          if (!equalFormatValue(value, have[k] ?? null)) {
+            (diff || (diff = {}))[k] = value;
+          }
         }
       }
       for (const k in have) {
         if (
           !(k in want) &&
-          owned(k, wrappersOnly, isBreak) &&
+          owned(k, wrappersOnly, isBreak, fields) &&
           have[k] !== null
         ) {
           (diff || (diff = {}))[k] = null;
@@ -3795,24 +3912,22 @@ export class Writer {
     const y = typeOf(item);
     const current = attrsOf(y) as Attrs;
     const storedText = $isElementNode(line) && !$holdsText(line);
+    const owners = this.markerOwners(desired, current);
+    const want = this.$markerAsStored(desired, current, owners, line);
     let changed = false;
-    for (const k in desired) {
+    for (const k in want) {
       if (
-        !equalValue(current[k], desired[k]) &&
-        !this.keepsStored(k, current[k], desired[k], storedText)
+        !equalValue(current[k], want[k]) &&
+        !this.keepsStored(k, current[k], want[k], storedText)
       ) {
-        setAttr(y, k, desired[k], this.tr);
+        setAttr(y, k, want[k], this.tr);
         changed = true;
       }
     }
-    const types = [
-      desired[TYPE_KEY] ?? 'paragraph',
-      current[TYPE_KEY] ?? 'paragraph',
-    ];
     for (const k in current) {
       if (
-        !(k in desired) &&
-        this.isOwnedMarkerKey(k, types) &&
+        !(k in want) &&
+        ownsMarkerAttr(k, owners.fields, owners.groupFields) &&
         !this.keepsStored(k, current[k], undefined, storedText)
       ) {
         deleteAttr(y, k, this.tr);
@@ -3860,29 +3975,155 @@ export class Writer {
     );
   }
 
-  isOwnedMarkerKey(key: string, types: unknown[]): boolean {
-    if (
-      key === TYPE_KEY ||
-      key === GROUP_KEY ||
-      key === LEVEL_KEY ||
-      key === OUTER_KEY ||
-      key.startsWith(GROUP_FIELD_PREFIX) ||
-      key.startsWith(STATE_PREFIX)
-    ) {
-      return true;
-    }
-    if (key.startsWith(FIELD_PREFIX)) {
-      const f = key.slice(FIELD_PREFIX.length);
-      for (const t of types) {
-        const info =
-          typeof t === 'string' ? this.state.editor._nodes.get(t) : undefined;
-        const spec = info ? getLineSpec(info.klass) : null;
-        if (spec !== null && spec.fields.has(f)) {
-          return true;
+  /**
+   * The fields this editor owns on a marker that is stored as `current` and
+   * written as `desired` (see ownsMarkerAttr): its classes' of the line's
+   * type, of its group's type and of that group's items (whose fields an
+   * outer level's wrapper item stores), each stored and written.
+   */
+  markerOwners(desired: Attrs, current: Attrs): MarkerOwners {
+    const editor = this.state.editor;
+    const group = current[GROUP_KEY];
+    const info =
+      group === desired[GROUP_KEY] && typeof group === 'string'
+        ? editor._nodes.get(group)
+        : undefined;
+    const spec = info === undefined ? null : getGroupSpec(info.klass);
+    const groupFields = ownedFields(editor, group, desired[GROUP_KEY], false);
+    return {
+      fields: ownedFields(
+        editor,
+        current[TYPE_KEY] ?? 'paragraph',
+        desired[TYPE_KEY] ?? 'paragraph',
+        false,
+      ),
+      groupFields,
+      itemFields: spec === null ? groupFields : groupItemFields(spec),
+    };
+  }
+
+  /**
+   * What a write of marker attributes `desired` (what this editor owns of
+   * them, see $marker) stores where `current` is stored (see ownsMarkerAttr,
+   * `owners`): the members of the outer levels (OUTER_KEY) it does not own
+   * kept as stored, and, for an item new to its group (`line`), the group's
+   * fields it does not own taken from another item of the group, as every
+   * item stores them (see $groupReference).
+   */
+  $markerAsStored(
+    desired: Attrs,
+    current: Attrs,
+    owners: MarkerOwners,
+    line: LexicalNode | null,
+  ): Attrs {
+    let want = desired;
+    const keepOuter = (stored: unknown, of: MarkerOwners) => {
+      const outer = want[OUTER_KEY];
+      if (Array.isArray(outer) && stored !== undefined) {
+        const kept = eachOuterLevel(
+          outer,
+          stored,
+          of.groupFields,
+          of.itemFields,
+          withUnownedMembers,
+        );
+        if (kept !== outer) {
+          want = {...want, [OUTER_KEY]: kept};
         }
       }
+    };
+    keepOuter(current[OUTER_KEY], owners);
+    if (
+      line !== null &&
+      GROUP_KEY in desired &&
+      current[GROUP_KEY] === undefined
+    ) {
+      const ref = this.$groupReference(line, desired[GROUP_KEY]);
+      if (ref !== null) {
+        // Owned as at the other item, whose group has the item's type.
+        const of = this.markerOwners(desired, ref);
+        for (const k in ref) {
+          if (
+            k.startsWith(GROUP_FIELD_PREFIX) &&
+            !(k in want) &&
+            !ownsMarkerAttr(k, of.fields, of.groupFields)
+          ) {
+            want = {...want, [k]: ref[k]};
+          }
+        }
+        keepOuter(ref[OUTER_KEY], of);
+      }
     }
-    return false;
+    return want;
+  }
+
+  /**
+   * The stored marker attributes of the item of `line`'s group (of type
+   * `gtype`) nearest before it, else after it, that this write did not
+   * make, or null. Its neighbor, not any item: a client that does not own a
+   * group field shows one group where another client shows two that differ
+   * in it, and the item goes into the one it is next to.
+   */
+  private $groupReference(line: LexicalNode, gtype: unknown): Attrs | null {
+    const before = line.getPreviousSibling();
+    const ref =
+      before === null ? null : this.$storedItemAtOrBefore(before, gtype);
+    if (ref !== null) {
+      return ref;
+    }
+    for (let c = line.getNextSibling(); c !== null; c = c.getNextSibling()) {
+      const attrs = this.storedItemAttrs(c, gtype);
+      if (attrs !== null) {
+        return attrs;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * The stored marker attributes of `item` or of the nearest item before it
+   * that this write did not make (see $groupReference), or null. Noted for
+   * each item walked: new items written in order find theirs at once.
+   */
+  private $storedItemAtOrBefore(
+    item: LexicalNode,
+    gtype: unknown,
+  ): Attrs | null {
+    const walked: NodeKey[] = [];
+    let ref: Attrs | null = null;
+    for (let c: LexicalNode | null = item; c !== null; ) {
+      const noted = this.groupReferences.get(c.getKey());
+      if (noted !== undefined) {
+        ref = noted;
+        break;
+      }
+      walked.push(c.getKey());
+      ref = this.storedItemAttrs(c, gtype);
+      if (ref !== null) {
+        break;
+      }
+      c = c.getPreviousSibling();
+    }
+    for (const key of walked) {
+      this.groupReferences.set(key, ref);
+    }
+    return ref;
+  }
+
+  /**
+   * The stored marker attributes of item `item` of a group of type `gtype`,
+   * or null where this write made its marker (or it has none).
+   */
+  private storedItemAttrs(item: LexicalNode, gtype: unknown): Attrs | null {
+    const unit = this.state.unitByKey.get(item.getKey());
+    const end = unit === undefined ? null : unit.end;
+    if (end === null || end.deleted || this.tr.insertSet.hasId(end.id)) {
+      return null;
+    }
+    const marker = typeOf(end);
+    return marker.getAttr(GROUP_KEY) === gtype
+      ? (marker.getAttrs() as Attrs)
+      : null;
   }
 
   $writeNodeAttrs(y: YNode, node: LexicalNode): void {
@@ -3892,6 +4133,14 @@ export class Writer {
       this.holed.add(node.getKey());
     }
     const current = attrsOf(y) as Attrs;
+    // The fields this editor owns here (see ownsNodeAttr): its classes' of
+    // the type stored and of the node's.
+    const fields = ownedFields(
+      this.state.editor,
+      storedTypeOf(y),
+      node.getType(),
+      true,
+    );
     if (String(y.name).slice(2) !== node.getType()) {
       desired[TYPE_KEY] = node.getType();
     } else if (TYPE_KEY in current) {
@@ -3909,7 +4158,7 @@ export class Writer {
     for (const k in current) {
       if (
         !(k in desired) &&
-        (k.startsWith(FIELD_PREFIX) || k.startsWith(STATE_PREFIX)) &&
+        ownsNodeAttr(k, fields) &&
         !this.keepsStored(k, current[k], undefined, storedText)
       ) {
         deleteAttr(y, k, this.tr);

@@ -630,6 +630,11 @@ export class YBinding {
   private readonly pendingWarnings: LexicalWarning[] = [];
   /** Depth of the binding's own work in progress (see guard). */
   private busy = 0;
+  /**
+   * Whether the editor's classes cannot read the document (see failClosed):
+   * the binding is read only, and reads nothing more.
+   */
+  private unreadable = false;
   private flushingWarnings = false;
   /** Whether start() has completed, and dispose() not run since. */
   private started = false;
@@ -1431,7 +1436,11 @@ export class YBinding {
   }
 
   private rereadContainers(list: CS[], extraTags: string[] = []): void {
+    if (this.unreadable) {
+      return;
+    }
     this.commitPending();
+    const shown = this._editor.getEditorState();
     let error: unknown = null;
     this._editor.update(
       () => {
@@ -1457,7 +1466,7 @@ export class YBinding {
       },
     );
     if (error !== null) {
-      this.recoverRead(error);
+      this.recoverRead(error, shown);
     }
   }
 
@@ -1495,8 +1504,25 @@ export class YBinding {
     return true;
   }
 
-  /** Fail closed when a read found node types this editor lacks. */
+  /**
+   * Fail closed when a read found node types this editor lacks, or stored
+   * content its classes throw on (see Reader#$readStored).
+   */
   private checkUnknownTypes(): void {
+    const unreadable = this.state.unreadable;
+    if (unreadable.size > 0 && this._status === 'active') {
+      const types = [...unreadable.keys()].sort();
+      this.warn(
+        UNKNOWN_NODE_TYPES_WARNING,
+        `stored content the editor's classes cannot read: ${types.join(', ')}`,
+        {
+          error: unreadable.get(types[0]),
+          reason: 'unreadable',
+          types,
+        },
+      );
+      this.setStatus('readonly');
+    }
     const unknown = this.state.unknownTypes;
     if (unknown.size > 0 && this._status === 'active') {
       const slots = this.state.malformedSlots;
@@ -1643,39 +1669,18 @@ export class YBinding {
     kept: SelectionState | null = null,
     deep = false,
   ): void {
+    if (this.unreadable) {
+      return;
+    }
+    const shown = this._editor.getEditorState();
+    let error: unknown = null;
     this._editor.update(
       () => {
-        const reader = new Reader(this.state);
-        let cs = this.state.containers.get(this._root);
-        if (cs === undefined) {
-          cs = this.state.newCS(this._root, 'root', 'b');
+        try {
+          this.$readAllInner(cursor, kept, deep);
+        } catch (e) {
+          error = e;
         }
-        reader.$readFull(cs, $getRoot());
-        if (deep) {
-          // The containers of the stored nodes the read kept (see
-          // initializeInner).
-          for (const inner of [...this.state.csByKey.values()]) {
-            const el = $getNodeByKey(inner.key);
-            if (
-              inner !== cs &&
-              this.state.csByKey.get(inner.key) === inner &&
-              $isElementNode(el) &&
-              el.isAttached()
-            ) {
-              reader.$readFull(inner, el);
-            }
-          }
-        }
-        $setSelection(null);
-        if (cursor !== null) {
-          this.$restoreSelection(cursor);
-        }
-        if (kept !== null) {
-          $restoreSelectionState(this.state, kept, json =>
-            this.$resolvePosition(json),
-          );
-        }
-        this.$quietSelection();
       },
       {
         discrete: true,
@@ -1683,8 +1688,50 @@ export class YBinding {
         tag: REMOTE_TAGS,
       },
     );
+    if (error !== null) {
+      this.failClosed(error, shown);
+      return;
+    }
     this.checkUnknownTypes();
     this.flushRefresh(true);
+  }
+
+  private $readAllInner(
+    cursor: YCursor | null,
+    kept: SelectionState | null,
+    deep: boolean,
+  ): void {
+    const reader = new Reader(this.state);
+    let cs = this.state.containers.get(this._root);
+    if (cs === undefined) {
+      cs = this.state.newCS(this._root, 'root', 'b');
+    }
+    reader.$readFull(cs, $getRoot());
+    if (deep) {
+      // The containers of the stored nodes the read kept (see
+      // initializeInner).
+      for (const inner of [...this.state.csByKey.values()]) {
+        const el = $getNodeByKey(inner.key);
+        if (
+          inner !== cs &&
+          this.state.csByKey.get(inner.key) === inner &&
+          $isElementNode(el) &&
+          el.isAttached()
+        ) {
+          reader.$readFull(inner, el);
+        }
+      }
+    }
+    $setSelection(null);
+    if (cursor !== null) {
+      this.$restoreSelection(cursor);
+    }
+    if (kept !== null) {
+      $restoreSelectionState(this.state, kept, json =>
+        this.$resolvePosition(json),
+      );
+    }
+    this.$quietSelection();
   }
 
   // -------------------------------------------------------------------------
@@ -1747,6 +1794,9 @@ export class YBinding {
       return;
     }
     this.remoteSeq++;
+    if (this.unreadable) {
+      return;
+    }
     if (this._status === 'pending') {
       if (recordedLayout(this._root) !== null) {
         this.evaluate();
@@ -1847,12 +1897,14 @@ export class YBinding {
     }
     let rebuilt: ReadonlySet<CS> = new Set();
     let readError: unknown = null;
+    // What the editor shows before the read (see failClosed).
+    const shown = this._editor.getEditorState();
     // A re-read of a naming update's change is tagged as that update (see
     // rereadRefused).
     const naming = this.refused.size > 0 && this.refusedNaming;
     const after = () => {
       if (readError !== null) {
-        this.recoverRead(readError);
+        this.recoverRead(readError, shown);
         return;
       }
       this.checkUnknownTypes();
@@ -1982,8 +2034,16 @@ export class YBinding {
    * showing something else than the document for good: the editor is
    * rebuilt from the shared content (a fresh reader's result, which every
    * client converges on) in a fresh update, and the failure is reported.
+   * Where the rebuild throws too, the editor's classes cannot read the
+   * document: the binding fails closed, back to `shown` (see failClosed).
    */
-  private recoverRead(error: unknown): void {
+  private recoverRead(error: unknown, shown: EditorState): void {
+    try {
+      this.rebuildFromDocument();
+    } catch (e) {
+      this.failClosed(e, shown);
+      return;
+    }
     this.warn(
       RECOVERED_READ_WARNING,
       `a remote change could not be read: ${String(
@@ -1991,10 +2051,43 @@ export class YBinding {
       )}`,
       {error, reason: 'remote-change'},
     );
-    try {
-      this.rebuildFromDocument();
-    } catch (e) {
-      this._editor._onError(e instanceof Error ? e : new Error(String(e)));
+  }
+
+  /**
+   * Fail closed where the document cannot be read (a read threw and so did
+   * a fresh read of the document after it, or a read of the whole document
+   * did; a class that throws on stored content does not, see
+   * Reader#$readStored): warn (UNKNOWN_NODE_TYPES_WARNING, reason
+   * `'unreadable'`), open read only, and show `shown` again, what the editor
+   * showed before. The binding reads nothing more from then on, so the
+   * editor keeps showing it, and no error reaches Yjs or a provider.
+   */
+  private failClosed(error: unknown, shown: EditorState): void {
+    if (this.unreadable) {
+      return;
+    }
+    this.unreadable = true;
+    this.warn(
+      UNKNOWN_NODE_TYPES_WARNING,
+      `the document cannot be read: ${String(
+        error instanceof Error ? error.message : error,
+      )}`,
+      {error, reason: 'unreadable', types: []},
+    );
+    this.setStatus('readonly');
+    const editor = this._editor;
+    if (editor.getEditorState() === shown) {
+      return;
+    }
+    if (shown.isEmpty()) {
+      // Before the first read: an editor that showed nothing yet.
+      editor.update(() => $getRoot().clear(), {
+        discrete: true,
+        skipTransforms: true,
+        tag: REMOTE_TAGS,
+      });
+    } else {
+      editor.setEditorState(shown, {tag: COLLABORATION_TAG});
     }
   }
 
@@ -2661,6 +2754,7 @@ export class YBinding {
       this._status !== 'active' ||
       state.hidden !== null ||
       state.unknownTypes.size > 0 ||
+      state.unreadable.size > 0 ||
       this.untransformed.size > 0 ||
       this.untransformedText.size > 0 ||
       this.storedHoles.size > 0
@@ -3633,6 +3727,9 @@ export class YBinding {
       $addUpdateTag(BLOCK_ID_REPAIR_TAG);
     }
     const cursor = this.$cursorBeforeRead();
+    // What the editor shows before the read (see failClosed).
+    const shown = this._editor.getEditorState();
+    let unreadable: unknown = null;
     try {
       const reader = new Reader(this.state);
       for (const cs of list) {
@@ -3644,14 +3741,22 @@ export class YBinding {
       reader.$settle(settle);
       this.$selectionAfterRead(cursor);
     } catch (e) {
-      this.warn(
-        RECOVERED_READ_WARNING,
-        `a change could not be read again: ${String(
-          e instanceof Error ? e.message : e,
-        )}`,
-        {error: e, reason: 'reread'},
-      );
-      this.$rebuild();
+      try {
+        this.$rebuild();
+        this.warn(
+          RECOVERED_READ_WARNING,
+          `a change could not be read again: ${String(
+            e instanceof Error ? e.message : e,
+          )}`,
+          {error: e, reason: 'reread'},
+        );
+      } catch (rebuildError) {
+        unreadable = rebuildError;
+      }
+    }
+    if (unreadable !== null) {
+      const error = unreadable;
+      return () => this.failClosed(error, shown);
     }
     this.$quietSelection();
     if (last) {

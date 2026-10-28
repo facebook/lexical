@@ -62,10 +62,16 @@ export type YStorageMismatchData =
       readonly stored: YStoredAs,
       readonly declared: YStoredAs,
     };
-export type YUnknownNodeTypesData = {
-  readonly reason: 'unregistered' | 'malformed-slot',
-  readonly types: ReadonlyArray<string>,
-};
+export type YUnknownNodeTypesData =
+  | {
+      readonly reason: 'unregistered' | 'malformed-slot',
+      readonly types: ReadonlyArray<string>,
+    }
+  | {
+      readonly reason: 'unreadable',
+      readonly types: ReadonlyArray<string>,
+      readonly error: unknown,
+    };
 export type YUnsupportedSlotsData = {
   readonly reason: 'stored-host' | 'root',
   readonly types: ReadonlyArray<string>,

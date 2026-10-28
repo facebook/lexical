@@ -52,6 +52,10 @@ const __DEV__ = process.env.NODE_ENV !== 'production';
 // peer's concurrent delete there came back. Where the record does not
 // explain a line's text, the line has no identities, and the writer diffs it
 // as before the record.
+//
+// Text entity transforms also record text they move into the previous node
+// (a move) and text they remake in a node of another type (a retype): that
+// text keeps its identities there, as an edit the record places does.
 
 export type TextEditLog =
   NonNullable<EditorState['_textEdits']> extends WeakMap<NodeMap, infer L>
@@ -97,6 +101,11 @@ type Run = {
    * which characters it is, the record does not say (see stretch).
    */
   readonly set?: true;
+  /**
+   * The index of the move entry that split this run's history from the rest
+   * of its node's, or joined it with another node's (see the move entry).
+   */
+  readonly moved?: number;
 };
 
 /**
@@ -319,6 +328,12 @@ export class TextReplay {
   /** An entry this binding does not know: nothing is known. */
   private broken = false;
   private ids = 0;
+  /** The index of the entry being replayed. */
+  private at = 0;
+  /** Moves replayed as the text sets they stand for (see the move entry). */
+  private readonly unsafe = new Set<number>();
+  /** The moves found unsafe in this replay (see the move entry). */
+  private restart: number[] | null = null;
 
   constructor(
     log: TextEditLog | null,
@@ -328,8 +343,53 @@ export class TextReplay {
     private readonly composing: boolean,
   ) {
     if (log !== null) {
-      for (const e of log) {
-        this.apply(e);
+      // Where a text set reaches text whose history a move split or joined,
+      // or a removed node still holds such text at the end (its text is
+      // aligned whole or not at all, see stretch), the replay starts over
+      // with that move as the text sets it stands for (see the move entry):
+      // at most once per move.
+      for (;;) {
+        for (let i = 0; i < log.length && this.restart === null; i++) {
+          this.at = i;
+          this.apply(log[i]);
+        }
+        if (this.restart === null) {
+          // (Only where the node it was removed from is in the new state:
+          // what a node removed with it held is aligned with that node.)
+          const moves = new Set<number>();
+          for (const gone of this.goneAt.values()) {
+            for (const [list, entry] of gone) {
+              const owner = $getNodeByKey(list.key);
+              if (
+                entry.out !== true &&
+                entry.runs !== null &&
+                this.lists.get(list.key) === list &&
+                owner !== null &&
+                owner.isAttached()
+              ) {
+                this.marks(entry.runs).forEach(m => moves.add(m));
+              }
+            }
+          }
+          if (moves.size > 0) {
+            this.restart = [...moves];
+          }
+        }
+        const moves = this.restart;
+        if (moves === null) {
+          break;
+        }
+        for (const m of moves) {
+          this.unsafe.add(m);
+        }
+        this.restart = null;
+        this.texts.clear();
+        this.lists.clear();
+        this.goneAt.clear();
+        this.parents.clear();
+        this.deleted.clear();
+        this.broken = false;
+        this.ids = 0;
       }
     }
   }
@@ -358,6 +418,9 @@ export class TextReplay {
   }
 
   private apply(e: TextEditLog[number]): void {
+    if (this.restart !== null) {
+      return;
+    }
     switch (e[0]) {
       case 'splice': {
         const [, key, offset, del, text, before] = e;
@@ -417,6 +480,11 @@ export class TextReplay {
         const [, key, before, after] = e;
         let runs = this.text(key, before);
         if (runs !== null) {
+          const moves = this.marks(runs);
+          if (moves.length > 0) {
+            this.restart = moves;
+            break;
+          }
           if (runs.some(r => r.dead === true)) {
             runs = this.compose(runs);
           }
@@ -442,6 +510,47 @@ export class TextReplay {
         // deletes.
         this.deleted.add(e[1]);
         break;
+      case 'move': {
+        // The first characters of a node moved to the end of its previous
+        // sibling (an entity grown over the text after it): where both texts
+        // are the ones replayed, the moved runs keep their identities there.
+        // Text that left a node earlier in the commit, and what arrived in
+        // its place (a set, typed text deleted again), are aligned with each
+        // other when that node is set whole again (see compose and stretch),
+        // and a removed node's text is aligned whole or not at all (see
+        // stretch). Where the move splits such a history between the two
+        // nodes, or joins two, those runs are marked with it, wherever they
+        // go; where a text set later in the commit reaches one, or a removed
+        // node still holds one at the end, the replay starts over with the
+        // move as the two text sets it stands for.
+        const [, from, to, count, fromText, toText] = e;
+        const a = this.text(to, toText);
+        const b = this.text(from, fromText);
+        if (a !== null && b !== null && !this.unsafe.has(this.at)) {
+          const [head, rest] = cut(b, count);
+          const ofHistory = (r: Run) => !isLive(r) || r.set === true;
+          const at = this.at;
+          const mark =
+            head.some(ofHistory) && (rest.some(ofHistory) || a.some(ofHistory))
+              ? (runs: Run[]) =>
+                  runs.map(r => (ofHistory(r) ? {...r, moved: at} : r))
+              : (runs: Run[]) => runs;
+          this.texts.set(to, mark(a).concat(mark(head)));
+          this.texts.set(from, mark(rest));
+          break;
+        }
+        this.apply(['set', to, toText, toText + fromText.slice(0, count)]);
+        if (count < fromText.length) {
+          // (Where it moved all of them, the node's removal follows.)
+          this.apply(['set', from, fromText, fromText.slice(count)]);
+        }
+        break;
+      }
+      case 'retype': {
+        const [, prev, next, text] = e;
+        this.retype(prev, next, text);
+        break;
+      }
       case 'attach': {
         const [, key, parent, prev, next, text] = e;
         if (text !== null) {
@@ -757,6 +866,55 @@ export class TextReplay {
       this.lists.set(key, list);
     }
     return list;
+  }
+
+  /**
+   * The moves not yet replayed as text sets that split or joined history
+   * runs `runs` hold (see the move entry).
+   */
+  private marks(runs: readonly Run[]): number[] {
+    const moves: number[] = [];
+    for (const r of runs) {
+      if (r.moved !== undefined && !this.unsafe.has(r.moved)) {
+        moves.push(r.moved);
+      }
+    }
+    return moves;
+  }
+
+  /**
+   * Node `next` replaced node `prev`, remade with its text `text` (a retype,
+   * see the record): where all of next's text arrived (made) and is what
+   * prev held when it was removed, next holds what prev held, from now on,
+   * and nothing of it is gone where prev was. Otherwise nothing changes (the
+   * rest is resolved at the end, see stretch).
+   */
+  private retype(prev: NodeKey, next: NodeKey, text: string): void {
+    const runs = this.texts.get(next);
+    const gone = this.goneAt.get(prev);
+    if (
+      runs === undefined ||
+      runs === null ||
+      gone === undefined ||
+      liveText(runs) !== text ||
+      runs.some(r => isLive(r) && r.kind !== LOOSE)
+    ) {
+      return;
+    }
+    const [list, entry] = gone[gone.length - 1];
+    const held = entry.held;
+    if (
+      held === undefined ||
+      entry.runs === null ||
+      entry.out === true ||
+      liveText(held) !== text ||
+      held.some(r => r.kind === UNKNOWN)
+    ) {
+      return;
+    }
+    this.texts.set(next, held);
+    unlink(list, entry);
+    entry.runs = [];
   }
 
   /**

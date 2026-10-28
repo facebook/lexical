@@ -325,6 +325,53 @@ describe('literal Markdown text', () => {
     },
   );
 
+  it.each(['bold', 'italic', 'strikethrough', 'bold+italic'] as const)(
+    'preserves formatted backslashes next to plain text: %s',
+    format => {
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      for (const before of [false, true]) {
+        const text = before ? '\\path' : 'path\\';
+        let expectedFormat = 0;
+        editor.update(
+          () => {
+            const formatted = $createTextNode(text);
+            if (format === 'bold+italic') {
+              formatted.toggleFormat('bold').toggleFormat('italic');
+            } else formatted.toggleFormat(format);
+            expectedFormat = formatted.getFormat();
+            const plain = $createTextNode('file');
+            $getRoot()
+              .clear()
+              .append(
+                $createParagraphNode().append(
+                  ...(before ? [plain, formatted] : [formatted, plain]),
+                ),
+              );
+          },
+          {discrete: true},
+        );
+        const written = editor.read(() => $convertToMarkdownString());
+        editor.update(() => $convertFromMarkdownString(written), {
+          discrete: true,
+        });
+        editor.read(() => {
+          const paragraph = $getRoot().getFirstChildOrThrow();
+          assert($isElementNode(paragraph));
+          const expected = [
+            [text, expectedFormat],
+            ['file', 0],
+          ];
+          expect(
+            paragraph.getChildren().map(node => {
+              assert($isTextNode(node));
+              return [node.getTextContent(), node.getFormat()];
+            }),
+          ).toEqual(before ? expected.reverse() : expected);
+        });
+      }
+    },
+  );
+
   it('preserves existing literal prefix text before an unbalanced link', () => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
     const prefix = '[`\\`';

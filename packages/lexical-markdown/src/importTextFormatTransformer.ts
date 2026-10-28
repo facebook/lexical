@@ -418,7 +418,9 @@ function isFlanking(
   if (primary === undefined || WHITESPACE.test(primary)) {
     return false;
   }
-  if (!PUNCTUATION.test(primary)) {
+  // Keep legacy content-side backslash flanking; escape introducers outside
+  // the delimiter still count as punctuation in the test below.
+  if (primary === '\\' || !PUNCTUATION.test(primary)) {
     return true;
   }
   return (

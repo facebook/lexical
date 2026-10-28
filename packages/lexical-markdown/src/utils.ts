@@ -58,7 +58,8 @@ export function transformersByType(transformers: Transformer[]): Readonly<{
 
 export const PUNCTUATION_OR_SPACE = /[!-/:-@[-`{-~\s]/;
 export const WHITESPACE = /\s/;
-export const PUNCTUATION = /[!"#$%&'()*+,\-./:;<=>?@[\]^_`{|}~]/;
+// ASCII punctuation includes the backslash that introduces literal escapes.
+export const PUNCTUATION = /[!-/:-@[-`{-~]/;
 
 const MARKDOWN_EMPTY_LINE_REG_EXP = /^\s{0,3}$/;
 

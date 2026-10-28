@@ -273,6 +273,58 @@ describe('literal Markdown text', () => {
     });
   });
 
+  it('does not let an escaped closer absorb a later real link', () => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(() => $convertFromMarkdownString('[a]\\](u) [b](v)'), {
+      discrete: true,
+    });
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isElementNode(paragraph));
+      expect(paragraph.getTextContent()).toBe('[a]](u) b');
+      const links = paragraph.getChildren().filter($isLinkNode);
+      expect(links.map(link => [link.getTextContent(), link.getURL()])).toEqual(
+        [['b', 'v']],
+      );
+    });
+  });
+
+  it.each(['<', '&', '[', ']'])(
+    'retains bold before an exported literal escape: %j',
+    literal => {
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $createTextNode('!').toggleFormat('bold'),
+                $createTextNode(literal),
+              ),
+            ),
+        {discrete: true},
+      );
+      const written = editor.read(() => $convertToMarkdownString());
+      editor.update(() => $convertFromMarkdownString(written), {
+        discrete: true,
+      });
+      editor.read(() => {
+        const paragraph = $getRoot().getFirstChildOrThrow();
+        assert($isElementNode(paragraph));
+        expect(
+          paragraph.getChildren().map(node => {
+            assert($isTextNode(node));
+            return [node.getTextContent(), node.hasFormat('bold')];
+          }),
+        ).toEqual([
+          ['!', true],
+          [literal, false],
+        ]);
+      });
+    },
+  );
+
   it('preserves existing literal prefix text before an unbalanced link', () => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
     const prefix = '[`\\`';

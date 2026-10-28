@@ -1168,6 +1168,35 @@ function escapeCharacterReferences(value: string): string {
   );
 }
 
+// Mask literal brackets without changing source offsets. An unmatched closing
+// bracket ends the current link candidate; unmatched openers retain the
+// existing outside-text handling in LINK.replace.
+export function getLinkLabelBrackets(text: string): string | null {
+  const codeSpans = scanCodeSpans(text);
+  let codeIndex = 0;
+  const brackets = text.replace(/\\.|[[\]]/g, (part, index: number) => {
+    while (
+      codeIndex < codeSpans.length &&
+      index >= codeSpans[codeIndex].endIndex
+    )
+      codeIndex++;
+    return (codeIndex < codeSpans.length &&
+      index >= codeSpans[codeIndex].startIndex) ||
+      part[0] === '\\'
+      ? ' '.repeat(part.length)
+      : part;
+  });
+  let depth = 0;
+  for (const character of brackets) {
+    if (character === '[') depth++;
+    else if (character === ']') {
+      if (depth === 0) return null;
+      depth--;
+    }
+  }
+  return brackets;
+}
+
 // Order of text transformers matters:
 //
 // - code should go first as it prevents any transformations inside
@@ -1278,22 +1307,8 @@ export const LINK: TextMatchTransformer = {
     const linkTitle =
       rawLinkTitle != null ? unescapeText(rawLinkTitle) : undefined;
     const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
-    // Code and escaped brackets do not delimit links. Preserve offsets for
-    // the existing unmatched-opener handling below.
-    const codeSpans = scanCodeSpans(linkText);
-    let codeIndex = 0;
-    const brackets = linkText.replace(/\\.|[[\]]/g, (part, index: number) => {
-      while (
-        codeIndex < codeSpans.length &&
-        index >= codeSpans[codeIndex].endIndex
-      )
-        codeIndex++;
-      return (codeIndex < codeSpans.length &&
-        index >= codeSpans[codeIndex].startIndex) ||
-        part[0] === '\\'
-        ? ' '.repeat(part.length)
-        : part;
-    });
+    const brackets = getLinkLabelBrackets(linkText);
+    if (brackets === null) return;
     const openBracketAmount = brackets.split('[').length - 1;
     const closeBracketAmount = brackets.split(']').length - 1;
     let parsedLinkText = linkText;

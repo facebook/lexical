@@ -504,6 +504,29 @@ describe('literal Markdown text', () => {
     });
   });
 
+  it.each([
+    ['[a\\][]\\](u) ', '[a][]](u) '],
+    ['[&#65;\\][]\\](u) ', '[A][]](u) '],
+  ])(
+    'preserves balanced bracket prefixes before a later link: %j',
+    (prefix, expected) => {
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      editor.update(() => $convertFromMarkdownString(prefix + '[ok](v)'), {
+        discrete: true,
+      });
+      editor.read(() => {
+        const paragraph = $getRoot().getFirstChildOrThrow();
+        assert($isElementNode(paragraph));
+        const [text, link] = paragraph.getChildren();
+        assert($isTextNode(text));
+        expect(text.getTextContent()).toBe(expected);
+        assert($isLinkNode(link));
+        expect(link.getURL()).toBe('v');
+        expect(link.getTextContent()).toBe('ok');
+      });
+    },
+  );
+
   it('preserves existing literal prefix text before an unbalanced link', () => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
     const prefix = '[`\\`';

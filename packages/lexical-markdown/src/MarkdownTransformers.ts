@@ -1171,7 +1171,8 @@ function escapeCharacterReferences(value: string): string {
 // Mask literal brackets without changing source offsets. An unmatched closing
 // bracket ends the current link candidate; unmatched openers retain the
 // existing outside-text handling in LINK.replace.
-export function getLinkLabelBrackets(text: string): string | null {
+// Return the unmatched opener, -1 for a balanced label, or null for invalid order.
+export function getLinkLabelOpener(text: string): number | null {
   const codeSpans = scanCodeSpans(text);
   let codeIndex = 0;
   const brackets = text.replace(/\\.|[[\]]/g, (part, index: number) => {
@@ -1187,14 +1188,18 @@ export function getLinkLabelBrackets(text: string): string | null {
       : part;
   });
   let depth = 0;
-  for (const character of brackets) {
-    if (character === '[') depth++;
-    else if (character === ']') {
+  let opener = -1;
+  for (let index = 0; index < brackets.length; index++) {
+    const character = brackets[index];
+    if (character === '[') {
+      if (depth === 0) opener = index;
+      depth++;
+    } else if (character === ']') {
       if (depth === 0) return null;
       depth--;
     }
   }
-  return brackets;
+  return depth === 0 ? -1 : opener;
 }
 
 function unescapeLinkPrefix(text: string): string {
@@ -1320,16 +1325,11 @@ export const LINK: TextMatchTransformer = {
     const linkTitle =
       rawLinkTitle != null ? unescapeText(rawLinkTitle) : undefined;
     const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
-    const brackets = getLinkLabelBrackets(linkText);
-    if (brackets === null) return;
-    const openBracketAmount = brackets.split('[').length - 1;
-    const closeBracketAmount = brackets.split(']').length - 1;
+    const openBracketIndex = getLinkLabelOpener(linkText);
+    if (openBracketIndex === null) return;
     let parsedLinkText = linkText;
     let outsideLinkText = '';
-    if (openBracketAmount < closeBracketAmount) {
-      return;
-    } else if (openBracketAmount > closeBracketAmount) {
-      const openBracketIndex = brackets.indexOf('[');
+    if (openBracketIndex !== -1) {
       outsideLinkText =
         '[' + unescapeLinkPrefix(linkText.slice(0, openBracketIndex));
       parsedLinkText = linkText.slice(openBracketIndex + 1);

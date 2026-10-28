@@ -47,13 +47,18 @@ binding.initialize();
 
 - [Yjs 14 (`@lexical/y`)](https://lexical.dev/docs/collaboration/y): setup,
   options, servers, limits and upgrading from `@lexical/yjs`.
+- [Server-side editing](https://lexical.dev/docs/collaboration/y-server):
+  `@lexical/y/headless` (`seedYState`, `editYState`, `readYState`,
+  `createYWriter` for who the server's edits are by, and `createYDoc` for a
+  relay's copy of a document).
 - [API reference](https://lexical.dev/docs/api/modules/lexical_y)
 
 ## Servers
 
 A server or relay that loads a document into a plain Yjs `Doc` and stores
 its state must set `doc.cleanupFormatting = false` before it applies
-updates. Otherwise Yjs's format cleanup deletes format items the clients
+updates (`createYDoc(state)` from `@lexical/y/headless` makes such a
+document). Otherwise Yjs's format cleanup deletes format items the clients
 keep (the binding stops that cleanup in its own containers on the clients),
 and the stored state reads differently from what the clients show. See
 [Servers](https://lexical.dev/docs/collaboration/y#servers) for the other

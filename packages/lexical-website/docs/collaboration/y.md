@@ -34,9 +34,9 @@ every client and on its server:
   works with any framework and in a headless editor.
 
 Stay on `@lexical/yjs` when you have documents stored in its layouts (see
-[Upgrading](#upgrading-from-lexicalyjs)), when your server or other clients
-cannot move to Yjs 14, or when you need the `LexicalCollaborationPlugin`
-React API.
+[Moving from `@lexical/yjs`](#moving-from-lexicalyjs)), when your server or
+other clients cannot move to Yjs 14, or when you need the
+`LexicalCollaborationPlugin` React API.
 
 ## Install
 
@@ -127,6 +127,8 @@ provider.once('sync', () => {
   synchronously in the same task as updates made before any commit is
   integrated before them, and they are written after it (providers that
   apply changes from network or channel events never do this).
+- To seed or convert a document on a server, use `seedYState` (see
+  [Server-side editing](./y-server.md)).
 
 | Option | Default | |
 | -- | -- | -- |
@@ -619,21 +621,33 @@ person's:
   document, so give its `YBinding` the same `clientIDRange` as the other
   clients (see [Servers](#servers)).
 
+On a server, `editYState` from `@lexical/y/headless` does the second step:
+run it on the state the edit was computed from, with the agent's writer, and
+merge the `update` it returns into the live document (see
+[Edits by agents and tools](./y-server.md#edits-by-agents-and-tools)).
+
 ## Servers
 
 Any Yjs 14 server or relay can host the documents. Clients of
 `@lexical/yjs` write to other roots (`root`, `root-v2`), never to
 `DEFAULT_ROOT_NAME` (`'lexical-y'`), so they cannot change a `@lexical/y`
 document's content and the server needs no check to keep them out.
+To seed, edit or read documents on the server, see
+[Server-side editing](./y-server.md).
 
-A server or relay that loads a document into a plain Yjs `Doc` and stores
-its state must turn off Yjs's format cleanup on that document before it
-applies updates:
+A server or relay that loads a document into a Yjs `Doc` and stores its
+state must turn off Yjs's format cleanup on that document before it applies
+updates. `createYDoc` from `@lexical/y/headless` makes such a document, with
+the stored state applied:
 
 ```ts
-const doc = new Doc();
-doc.cleanupFormatting = false;
+import {createYDoc} from '@lexical/y/headless';
+
+const doc = createYDoc(stored);
 ```
+
+A relay that cannot import it sets the flag on a new document itself
+(`doc.cleanupFormatting = false`).
 
 Otherwise, when Yjs applies an update there it deletes format items that
 it finds redundant but the clients keep (the binding stops that cleanup on
@@ -644,7 +658,7 @@ Servers built on **yrs before 0.28** (y-crdt) read client ids as 32-bit
 numbers, while Yjs 14 draws 53-bit ones: an author can receive its own
 content back as another client's on reconnect (duplicating it), or lose
 offline edits. For such a server, pass `clientIDRange: 'uint32'` on every
-client of the document. Give the document a 32-bit client id
+client of the document and in the server's `@lexical/y/headless` config. Give the document a 32-bit client id
 before you create the awareness and the provider, because an awareness takes
 the document's client id when it is created:
 
@@ -781,8 +795,16 @@ not merge as a user might expect:
   shows twice; so do different block id configurations (with and without
   `BlockIdExtension`, or another `$isIdentifiedBlock`), initializing a root
   that held content before, and initializing a root inside another shared
-  type. Seed new documents in one place, or give the initial blocks fixed
-  ids.
+  type. Seed new documents in one place (on the server with `seedYState`, for
+  example), or give the initial blocks fixed ids.
+- **Client ids add up.** A document keeps every client id that ever wrote
+  to it, in its state vector (which every sync sends) and in the
+  bookkeeping Yjs does each time it loads the document. A browser tab writes
+  under one while it is open; an editor bound to a new `Y.Doc` for each task
+  (an agent's copy, a script) adds one each time. On a server, give
+  `editYState` a writer from `createYWriter`, which keeps one client id per
+  document; with `writer: null`, each edit adds one (see
+  [Writers](./y-server.md#writers)).
 - **Undo** keeps a container whole once another client has put content in
   it. Undoing a removal restores the text as new content: a block a
   collaborator moved out of the removed range at the same time shows twice
@@ -839,16 +861,87 @@ not merge as a user might expect:
   and so does that text where an undo brings it back after another
   collaborator's delete there.
 
-## Upgrading from `@lexical/yjs`
+## Changing the layout and migrating
 
-There is no in-place migration. `@lexical/y` uses a different root and
-layout, and `initialize()` refuses a document whose `@lexical/yjs` roots
-hold content, so an old document is never shown as empty or overwritten.
-Start new documents on `@lexical/y` and keep existing ones on
-`@lexical/yjs`, choosing the binding per document.
-Upgrade every client that opens a document at the same time: edits that old
-clients make stay in the old root.
+The [wire format](https://github.com/facebook/lexical/tree/main/packages/lexical-y#wire-format-layout-1)
+in the package README is the contract for what a room stores: the markers,
+attributes and records, and their names. Every room records the layout
+versions it needs (`lexical-y:<n>: true`, a record that only grows;
+`LAYOUT_VERSION` is currently 1), and a client reads the highest.
+
+- **Changes that keep the layout:** additions older clients can ignore, such
+  as a new optional attribute. Rooms keep working in old and new clients.
+- **Changes that bump `LAYOUT_VERSION`:** anything older clients would
+  misread. A newer `@lexical/y` reads every older layout and adds the new
+  version to a room's record only when it first writes something that needs
+  it, in the same transaction; from then on, older clients open that room
+  read only. Upgrade every client of a room together.
+- **Changing your own node types:** fields are stored by name, so adding a
+  field with a default, or dropping one, works as in
+  [Lexical JSON](/docs/serialization/#versioning--breaking-changes): a field
+  a room does not have reads as its default, and one your class no longer has
+  is ignored. A change to a class's declared node structure does not apply to
+  rooms that already hold that type (they keep the recorded kind); reseed
+  them to adopt it.
+
+### Reseeding a room
+
+No converter ships today. To move a room's content into a new layout, or out
+of `@lexical/yjs`, write it into a new room with `seedYState`:
+
+```mermaid
+flowchart LR
+  accTitle: Reseeding a room
+  accDescr: An @lexical/y room is read into Lexical JSON with readYState. A @lexical/yjs room is read into Lexical JSON with an editor that uses @lexical/yjs. Lexical JSON, read from a room or taken from your database, is written into a new @lexical/y room with seedYState.
+  y["@lexical/y room"] -->|"readYState"| json
+  v["@lexical/yjs room"] -->|"editor with @lexical/yjs"| json
+  db[("Your database")] --> json
+  json["Lexical JSON"] -->|"seedYState"| room["New @lexical/y room"]
+```
+
+1. **Get the content as Lexical JSON.** If your database holds it, use that.
+   If you store only Yjs, read it with the binding that wrote it:
+   `readYState` for an `@lexical/y` room, or an editor with `@lexical/yjs`
+   for a `@lexical/yjs` room, then `editor.getEditorState().toJSON()`.
+2. **Seed the new room** with the same extensions as the clients:
+
+   ```ts
+   import {readYState, seedYState} from '@lexical/y/headless';
+   import {$getEditor, $getRoot, $parseSerializedNode} from 'lexical';
+
+   const config = {extensions: [AppNodesExtension]};
+
+   // 1. The content as Lexical JSON (here read from an @lexical/y room).
+   const json = readYState(oldState, config, () =>
+     $getEditor().getEditorState().toJSON(),
+   );
+
+   // 2. A new room holding it.
+   const seed = seedYState(config, () => {
+     for (const child of json.root.children) {
+       $getRoot().append($parseSerializedNode(child));
+     }
+   });
+   ```
+
+3. **Switch clients to the new room.** Store `seed` under a new room name,
+   point upgraded clients at it, and retire the old room. A client that
+   still holds the old room (an open tab, an offline cache) must drop it:
+   merging the old room into the new one would mix the two.
+
+### Moving from `@lexical/yjs`
+
+`@lexical/y` writes a different root, and `initialize()` refuses a document
+whose `@lexical/yjs` roots hold content, so an old document is never shown
+as empty or overwritten. Keep existing documents on `@lexical/yjs` and start
+new ones on `@lexical/y`, or reseed them as above. Because the seed holds
+only the `@lexical/y` root, a `@lexical/yjs` document can also keep its name:
+merge the seed into the stored document next to the old roots (see
+[Converting a `@lexical/yjs` document](./y-server.md#converting-a-lexicalyjs-document)).
+Either way, upgrade every client of the document at once: edits old clients
+make stay in the old root.
 
 ## API reference
 
-[`@lexical/y`](/docs/api/modules/lexical_y)
+[`@lexical/y`](/docs/api/modules/lexical_y) ·
+[`@lexical/y/headless`](/docs/api/modules/lexical_y/headless)

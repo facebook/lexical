@@ -274,7 +274,7 @@ describe('changeset entry format', () => {
       'v0.60',
       'no earlier than v0.60.0.',
       'Not scheduled; it still works.',
-      'v0.46.0 ([#8704](https://github.com/facebook/lexical/pull/8704)).',
+      'v0.46.0 ([#8704](https://github.com/meta/lexical/pull/8704)).',
     ]) {
       expect(deprecation(`\nRemoval: ${ok}\n`), ok).toEqual([]);
     }

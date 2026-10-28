@@ -76,13 +76,13 @@ Preamble.
 
 ### Breaking changes
 
-- **lexical**: \`LexicalNode.getCommonAncestor\` removed ([#9238](https://github.com/facebook/lexical/pull/9238))
+- **lexical**: \`LexicalNode.getCommonAncestor\` removed ([#9238](https://github.com/meta/lexical/pull/9238))
 
   Migration: use \`$getCommonAncestor\`.
 
 ### Deprecations
 
-- **@lexical/mdast**: \`MdastImportExtension\` deprecated ([#9198](https://github.com/facebook/lexical/pull/9198))
+- **@lexical/mdast**: \`MdastImportExtension\` deprecated ([#9198](https://github.com/meta/lexical/pull/9198))
 
   Replacement: \`MdastExtension\`.
 
@@ -108,7 +108,7 @@ describe('renderVersionBlock', () => {
         '',
         '### Breaking changes',
         '',
-        '- **lexical, @lexical/html**: Remove `LexicalNode.getCommonAncestor` ([#9401](https://github.com/facebook/lexical/pull/9401))',
+        '- **lexical, @lexical/html**: Remove `LexicalNode.getCommonAncestor` ([#9401](https://github.com/meta/lexical/pull/9401))',
         '',
         '  Migration: use `$getCommonAncestor`.',
         '',
@@ -118,7 +118,7 @@ describe('renderVersionBlock', () => {
         '',
         '### Fixes',
         '',
-        '- **@lexical/list**: Keep the list marker style when a list item is split ([#9400](https://github.com/facebook/lexical/pull/9400))',
+        '- **@lexical/list**: Keep the list marker style when a list item is split ([#9400](https://github.com/meta/lexical/pull/9400))',
         '',
         '### Contributors',
         '',
@@ -205,7 +205,7 @@ describe('behavior changes', () => {
       '### Fixes',
     ]);
     expect(block).toContain(
-      '### Behavior changes\n\n- **@lexical/html**: Export a terminating `<br>` ([#2](https://github.com/facebook/lexical/pull/2))\n\n  Verify: HTML export snapshots.\n\n### Deprecations',
+      '### Behavior changes\n\n- **@lexical/html**: Export a terminating `<br>` ([#2](https://github.com/meta/lexical/pull/2))\n\n  Verify: HTML export snapshots.\n\n### Deprecations',
     );
     expect(block).toContain('### Fixes\n\n- **lexical**: Plain fix');
   });
@@ -297,7 +297,7 @@ describe('parseChangelog', () => {
     });
     expect(
       parseEntryHead(
-        '**lexical, @lexical/html**: Summary (with parens) ([#1](https://github.com/facebook/lexical/pull/1))',
+        '**lexical, @lexical/html**: Summary (with parens) ([#1](https://github.com/meta/lexical/pull/1))',
       ),
     ).toEqual({
       packages: ['lexical', '@lexical/html'],
@@ -362,13 +362,13 @@ describe('selectRange', () => {
         '',
         '### Breaking changes',
         '',
-        '- **lexical**: `LexicalNode.getCommonAncestor` removed ([#9238](https://github.com/facebook/lexical/pull/9238))',
+        '- **lexical**: `LexicalNode.getCommonAncestor` removed ([#9238](https://github.com/meta/lexical/pull/9238))',
         '',
         '  Migration: use `$getCommonAncestor`.',
         '',
         '### Deprecations',
         '',
-        '- **@lexical/mdast**: `MdastImportExtension` deprecated ([#9198](https://github.com/facebook/lexical/pull/9198))',
+        '- **@lexical/mdast**: `MdastImportExtension` deprecated ([#9198](https://github.com/meta/lexical/pull/9198))',
         '',
         '  Replacement: `MdastExtension`.',
       ].join('\n'),
@@ -385,7 +385,7 @@ describe('selectRange', () => {
         {
           packages: ['lexical'],
           pr: 9238,
-          prUrl: 'https://github.com/facebook/lexical/pull/9238',
+          prUrl: 'https://github.com/meta/lexical/pull/9238',
           sections: {migration: 'use `$getCommonAncestor`.'},
           summary: '`LexicalNode.getCommonAncestor` removed',
         },
@@ -496,10 +496,10 @@ describe('release', () => {
     // Every commit since v0.52.0, newest included, the release commit not.
     expect(v.sections[4].body).toBe(
       [
-        '- Add remove-get-common-ancestor.md ([#9402](https://github.com/facebook/lexical/pull/9402)) Dev Example',
-        '- Add list-marker-style.md ([#9401](https://github.com/facebook/lexical/pull/9401)) Dev Example',
-        '- Add deprecate-table-selection.md ([#9400](https://github.com/facebook/lexical/pull/9400)) Dev Example',
-        '- [lexical] Bug Fix: Keep \\<br> after a decorator ([#9300](https://github.com/facebook/lexical/pull/9300)) Dev Example',
+        '- Add remove-get-common-ancestor.md ([#9402](https://github.com/meta/lexical/pull/9402)) Dev Example',
+        '- Add list-marker-style.md ([#9401](https://github.com/meta/lexical/pull/9401)) Dev Example',
+        '- Add deprecate-table-selection.md ([#9400](https://github.com/meta/lexical/pull/9400)) Dev Example',
+        '- [lexical] Bug Fix: Keep \\<br> after a decorator ([#9300](https://github.com/meta/lexical/pull/9300)) Dev Example',
       ].join('\n'),
     );
     expect(fs.readdirSync(path.join(dir, '.changeset'))).toEqual(['README.md']);
@@ -512,7 +512,7 @@ describe('release', () => {
         {author: 'Dev Example', subject: 'Fix C:\\path and <br> (#9300)'},
       ]),
     ).toBe(
-      '- Fix C:\\\\path and \\<br> ([#9300](https://github.com/facebook/lexical/pull/9300)) Dev Example',
+      '- Fix C:\\\\path and \\<br> ([#9300](https://github.com/meta/lexical/pull/9300)) Dev Example',
     );
   });
 
@@ -647,7 +647,7 @@ describe('release', () => {
           : {number: 93, user: {login: 'renovate[bot]'}};
         return {json: async () => body, ok: true};
       }) as unknown as typeof fetch;
-      const options = {fetchImpl, repository: 'facebook/lexical', token: 't'};
+      const options = {fetchImpl, repository: 'meta/lexical', token: 't'};
       expect(await resolveOrigin(dir, '.changeset/a.md', options)).toEqual({
         author: '@octo',
         pr: 55,

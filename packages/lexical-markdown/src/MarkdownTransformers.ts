@@ -1197,6 +1197,19 @@ export function getLinkLabelBrackets(text: string): string | null {
   return brackets;
 }
 
+function unescapeLinkPrefix(text: string): string {
+  let output = '';
+  let previous = 0;
+  // Keep existing code-prefix source intact; only plain text has escapes.
+  for (const {startIndex, endIndex} of scanCodeSpans(text)) {
+    output +=
+      unescapeText(text.slice(previous, startIndex)) +
+      text.slice(startIndex, endIndex);
+    previous = endIndex;
+  }
+  return output + unescapeText(text.slice(previous));
+}
+
 // Order of text transformers matters:
 //
 // - code should go first as it prevents any transformations inside
@@ -1317,7 +1330,8 @@ export const LINK: TextMatchTransformer = {
       return;
     } else if (openBracketAmount > closeBracketAmount) {
       const openBracketIndex = brackets.indexOf('[');
-      outsideLinkText = '[' + linkText.slice(0, openBracketIndex);
+      outsideLinkText =
+        '[' + unescapeLinkPrefix(linkText.slice(0, openBracketIndex));
       parsedLinkText = linkText.slice(openBracketIndex + 1);
     }
     // Both new nodes stand in for the TextNode being replaced, so the text

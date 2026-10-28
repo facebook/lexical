@@ -26,6 +26,7 @@ import {
 import invariant from '@lexical/internal/invariant';
 import {
   $createTextNode,
+  $fullReconcile,
   $getEditor,
   $getNodeByKey,
   $getRoot,
@@ -68,6 +69,7 @@ import {
   RootNode,
   safeCast,
   type SerializationSchema,
+  SKIP_DOM_SELECTION_TAG,
   TextNode,
 } from 'lexical';
 
@@ -143,6 +145,26 @@ export interface MarkStateConfig {
    * Every editor that edits the same document should use the same set.
    */
   markableNodes: readonly MarkableNodeMatch[];
+  /**
+   * Which mark ids are rendered in the editor DOM. A leaf gets the `mark`
+   * theme class and the `data-lexical-mark-ids` attribute for the ids this
+   * returns `true` for (and `markOverlap` when there is more than one), and
+   * no decoration when it returns `false` for all of them. The default shows
+   * every id.
+   *
+   * Use it to hide resolved comment threads while their ids stay in the
+   * document. It only changes rendering: the ids stay in the document, and
+   * the `$` functions, the `markIDNodeKeys` output and HTML export still see
+   * every id. It is called during reconciliation, so it should be a cheap,
+   * pure read of the app's own state.
+   *
+   * To change it at runtime, for example when a thread is resolved or
+   * reopened, update the app's state and assign a new function to the
+   * `isMarkIDShown` output signal: the marked leaves are re-rendered (after
+   * the pending update commits, when assigned during one). Changing the state that the current function reads without assigning a
+   * new function does not re-render them.
+   */
+  isMarkIDShown?: (id: string) => boolean;
 }
 
 /**
@@ -153,6 +175,12 @@ export interface MarkStateConfig {
 export interface MarkStateOutput {
   disabled: Signal<boolean>;
   exportIDsToHTML: Signal<boolean>;
+  /**
+   * The `isMarkIDShown` config, which defaults to showing every id. Assign a
+   * new function to re-render the marked leaves with it, for example when a
+   * thread is resolved or reopened.
+   */
+  isMarkIDShown: Signal<(id: string) => boolean>;
   /**
    * Every mark id in the document, mapped to the keys of the leaves that carry
    * it (in no particular order). A new Map is published after each update that
@@ -626,12 +654,34 @@ const MarkStateRenderDisabled = createRenderState(
   () => false,
 );
 
+/** The default `isMarkIDShown`: every id is rendered. */
+function isEveryMarkIDShown(_id: string): boolean {
+  return true;
+}
+
+/** The ids in `ids` that `isMarkIDShown` renders. */
+function filterShownMarkIDs(
+  ids: readonly string[],
+  isMarkIDShown: (id: string) => boolean,
+): readonly string[] {
+  return ids.length === 0 || isMarkIDShown === isEveryMarkIDShown
+    ? ids
+    : ids.filter(id => isMarkIDShown(id));
+}
+
 function $decorateMarkIDs(
   node: LexicalNode,
   dom: HTMLElement,
   editor: LexicalEditor,
 ): void {
-  const ids = $readNodeMarkIDs(node);
+  const dep = getPeerDependencyFromEditor<MarkStateExtensionType>(
+    editor,
+    MARK_STATE_EXTENSION_NAME,
+  );
+  const ids = filterShownMarkIDs(
+    $readNodeMarkIDs(node),
+    dep ? dep.output.isMarkIDShown.peek() : isEveryMarkIDShown,
+  );
   // @internal access with precedent (CodeNode, HorizontalRuleExtension): the
   // render overrides receive the editor, not its theme
   const {mark, markOverlap} = editor._config.theme;
@@ -2045,7 +2095,9 @@ function registerMarkIDsState(editor: LexicalEditor): void {
  * - Marked leaves are rendered with the `mark` (and, for more than one id,
  *   `markOverlap`) theme classes and a `data-lexical-mark-ids` attribute.
  *   With `exportIDsToHTML`, HTML export writes that attribute too; the
- *   `@lexical/html` import pipeline reads it back.
+ *   `@lexical/html` import pipeline reads it back. `isMarkIDShown` limits
+ *   which ids are rendered (to hide resolved threads, for example), and can
+ *   be changed at runtime through the output signal of the same name.
  * - Text inserted at the edge of a marked run does not join it, like
  *   MarkNode; text inserted inside a run does. Text that replaces a
  *   selection also gets the ids all of the replaced text had, and pasted
@@ -2076,15 +2128,21 @@ export const MarkStateExtension: MarkStateExtensionType = defineExtension<
     }
     isMarkableByEditor.set(editor, compileMarkableNodes(config.markableNodes));
     registerMarkIDsState(editor);
-    const {markableNodes: _markableNodes, ...signalConfig} = config;
+    const {
+      isMarkIDShown,
+      markableNodes: _markableNodes,
+      ...signalConfig
+    } = config;
     return {
       ...namedSignals(signalConfig),
+      isMarkIDShown: signal(isMarkIDShown || isEveryMarkIDShown),
       markIDNodeKeys: state.getInitResult().markIDNodeKeys,
     };
   },
   config: safeCast<MarkStateConfig>({
     disabled: false,
     exportIDsToHTML: false,
+    isMarkIDShown: isEveryMarkIDShown,
     markableNodes: DEFAULT_MARKABLE_NODES,
   }),
   dependencies: [
@@ -2128,14 +2186,92 @@ export const MarkStateExtension: MarkStateExtensionType = defineExtension<
   init: (): MarkStateInit => ({markIDNodeKeys: signal(new Map())}),
   name: MARK_STATE_EXTENSION_NAME,
   register: (editor, _config, state) => {
-    const {disabled} = state.getOutput();
+    const {disabled, isMarkIDShown} = state.getOutput();
     const {markIDNodeKeys} = state.getInitResult();
-    return effect(() => {
-      const isDisabled = disabled.value;
-      $setRenderContextValue(MarkStateRenderDisabled, isDisabled, editor);
-      if (!isDisabled) {
-        return registerMarkState(editor, markIDNodeKeys);
-      }
-    });
+    return mergeRegister(
+      effect(() => {
+        const isDisabled = disabled.value;
+        $setRenderContextValue(MarkStateRenderDisabled, isDisabled, editor);
+        if (!isDisabled) {
+          return registerMarkState(editor, markIDNodeKeys);
+        }
+      }),
+      registerMarkIDShownRerender(
+        editor,
+        isMarkIDShown,
+        disabled,
+        markIDNodeKeys,
+      ),
+    );
   },
 });
+
+/**
+ * Re-render the marked leaves when a new `isMarkIDShown` is assigned. The
+ * old and the new function cannot be compared: an app that resolves a thread
+ * typically updates the state both of them read, then assigns a new
+ * function. So every marked leaf is re-rendered, unless the document has no
+ * marks. The ids are rendered by `$decorateDOM`, which a full reconcile runs
+ * for every node without changing any (as `DOMRenderExtension` does when
+ * `disabled` changes), so nothing is synced to collaborators or pushed to
+ * the history.
+ *
+ * The full reconcile is an update of its own: when the function is assigned
+ * while an update is pending (inside `editor.update`, or before a batched
+ * update commits), it waits for that update to commit, since a full
+ * reconcile in an edit would make it look like a `setEditorState` to
+ * {@link registerMarkState}. It does not move the DOM selection, which may
+ * be in another editable (a comment reply box) when a thread is resolved.
+ */
+function registerMarkIDShownRerender(
+  editor: LexicalEditor,
+  isMarkIDShown: ReadonlySignal<(id: string) => boolean>,
+  disabled: ReadonlySignal<boolean>,
+  markIDNodeKeys: ReadonlySignal<ReadonlyMap<string, readonly NodeKey[]>>,
+): () => void {
+  let prev = isMarkIDShown.peek();
+  let scheduled = false;
+  let disposed = false;
+  const rerender = () => {
+    scheduled = false;
+    if (
+      disposed ||
+      disabled.peek() ||
+      editor.getRootElement() === null ||
+      markIDNodeKeys.peek().size === 0
+    ) {
+      return;
+    }
+    // @internal access: whether an update is in progress or waiting to
+    // commit, which the full reconcile would otherwise join
+    if (editor._pendingEditorState !== null) {
+      schedule();
+      return;
+    }
+    editor.update($fullReconcile, {
+      discrete: true,
+      tag: SKIP_DOM_SELECTION_TAG,
+    });
+  };
+  const schedule = () => {
+    if (!scheduled) {
+      scheduled = true;
+      // After the commit of the pending update, which was scheduled first
+      Promise.resolve().then(rerender);
+    }
+  };
+  const unregister = effect(() => {
+    const next = isMarkIDShown.value;
+    if (next !== prev) {
+      prev = next;
+      // A scheduled re-render reads the latest function when it runs
+      if (!scheduled) {
+        rerender();
+      }
+    }
+  });
+  return () => {
+    disposed = true;
+    unregister();
+  };
+}

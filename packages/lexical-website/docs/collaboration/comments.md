@@ -112,6 +112,8 @@ editor.read(() => $getMarkIDsAtSelection());
   `[...DEFAULT_MARKABLE_NODES, MyNode]`. All peers should use the same set.
 - Marking a range also marks the content of the
   [slots](/docs/concepts/named-slots) of the nodes in it.
+- `isMarkIDShown` sets which ids are rendered; see
+  [Resolving comments](#resolving-comments).
 - HTML export leaves the ids out by default, so that they do not leak into
   other applications through the clipboard. Set `exportIDsToHTML: true` to
   write `data-lexical-mark-ids`; HTML imported through the
@@ -122,11 +124,46 @@ editor.read(() => $getMarkIDsAtSelection());
 Resolve a comment in your own data rather than in the document: keep its id
 on the text, mark its thread resolved in the store that holds your threads,
 and ignore resolved ids wherever you show comments (the highlight, the
-thread that opens at the caret, a list of comments). To leave resolved ids
-out of what the editor renders (the `mark` and `markOverlap` theme classes
-and `data-lexical-mark-ids`), see the `MarkStateExtension` option for it.
-Resolving then writes nothing to the document, and reopening a thread is
-free: its id never left the text.
+thread that opens at the caret, a list of comments). Resolving then writes
+nothing to the document, and reopening a thread is free: its id never left
+the text. It also avoids a race: with `@lexical/yjs`, a collaborator's
+concurrent change to the same text can bring a removed id back (see
+[Collaboration](#collaboration)).
+
+Then tell the extension which ids to render with `isMarkIDShown`. A leaf is
+decorated (the `mark` and `markOverlap` theme classes and the
+`data-lexical-mark-ids` attribute) only with the ids it returns `true` for,
+so resolved threads are no longer highlighted. The default shows every id.
+When a thread is resolved or reopened, assign a new function to the
+`isMarkIDShown` output signal, and the marked leaves are re-rendered:
+
+```ts
+import {getExtensionDependencyFromEditor} from '@lexical/extension';
+import {MarkStateExtension} from '@lexical/mark';
+import {configExtension, type LexicalEditor} from 'lexical';
+
+const resolved = new Set<string>();
+const isMarkIDShown = (id: string) => !resolved.has(id);
+
+// In the editor's dependencies
+configExtension(MarkStateExtension, {isMarkIDShown});
+
+// When a thread is resolved (or reopened, with resolved.delete)
+function resolveThread(editor: LexicalEditor, threadId: string) {
+  resolved.add(threadId);
+  getExtensionDependencyFromEditor(
+    editor,
+    MarkStateExtension,
+  ).output.isMarkIDShown.value = id => !resolved.has(id);
+}
+```
+
+Assign a new function each time: changing the state that the current one
+reads does not re-render anything. The filter only changes rendering. The
+ids stay in the document, and `$getMarkIDsAtSelection`, `$getNodeMarkIDs`,
+the `markIDNodeKeys` output and HTML export still see every id, so filter
+resolved threads out of what you list or open from them. The function is
+called while the editor renders, so keep it a cheap read of your own state.
 
 You can instead remove the id with `$removeMarkID(threadId)` when the thread
 is resolved. Reopening the thread then means adding its id again over its
@@ -239,8 +276,8 @@ ids of a leaf as one value, so:
   either without `c2` (the addition is lost) or with both `c1` and `c2` (the
   removal is lost, so the resolved `c1` reappears).
   Keep the state of each thread (open or resolved) in your own store, and
-  ignore the ids of resolved threads when you render or list comments (see
-  [Resolving comments](#resolving-comments)).
+  ignore the ids of resolved threads when you render (with `isMarkIDShown`)
+  or list comments (see [Resolving comments](#resolving-comments)).
 - A collaborator's concurrent structural change to the same text, such as
   wrapping it in a link or merging its paragraph into the previous one, can
   drop the marks on it or extend them over neighboring text. Typing exactly

@@ -2863,6 +2863,17 @@ describe('inline code with backticks (CommonMark code spans)', () => {
     expect(exportCodeSpan('`x')).toBe('`` `x ``');
   });
 
+  it('does not pad a code span made only of spaces', () => {
+    // CommonMark strips one space from each end only when the content is not
+    // all spaces, so padding such a span would add two spaces on import.
+    expect(exportCodeSpan(' ')).toBe('` `');
+    expect(exportCodeSpan('   ')).toBe('`   `');
+    expect(roundtrip('a ` ` b')).toBe('a ` ` b');
+    expect(roundtrip('a `   ` b')).toBe('a `   ` b');
+    expect(exportCodeSpan(' x ')).toBe('`  x  `');
+    expect(exportCodeSpan('\tx\t')).toBe('` \tx\t `');
+  });
+
   it('normalizes a redundant inline fence to the minimal valid fence', () => {
     // Both a single- and triple-backtick inline fence with backtick-free
     // content normalize to a single backtick on export.

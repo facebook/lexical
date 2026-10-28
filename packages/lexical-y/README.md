@@ -104,8 +104,8 @@ otherwise.
 
 Layout 1 is frozen: these names are stored in documents and do not change.
 A change to any of them is a new layout version, which older clients open
-read only. Layout 2 (planned, #9449) adds move records and keeps everything
-below.
+read only. Layout 2 (below) keeps everything here and adds member entries
+of set-valued NodeState; layout 3 (planned, #9449) adds move records.
 
 - **Root:** the top-level type `lexical-y` (or the `root` option). Root
   attributes: `lexical-y:<n>` = `true` for each layout version `n` the
@@ -117,10 +117,11 @@ below.
   the document read only when it is newer than its own layout, or when a
   `lexical-y:` attribute is not an integer from 1 set to `true`. The record
   only grows: no client deletes one, and a writer records a version in the
-  same transaction as, and before, the first content that needs it. Two
-  clients that upgrade a document at once both record theirs, and every
-  reader takes the higher. Any change to how a stored shape is read is a new
-  version.
+  same transaction as the first content that needs it (a new document
+  records version 1 before its content), so no client receives that content
+  without the version. Two clients that upgrade a document at once both
+  record theirs, and every reader takes the higher. Any change to how a
+  stored shape is read is a new version.
 - **Children of a container** (the root and every node stored as its own
   `Y.Node`), in order:
   - text (`Y` strings) with formats;
@@ -180,3 +181,38 @@ below.
   Every client of a document must therefore register classes with the same
   defaults.
 
+## Wire format: layout 2
+
+Layout 2 is layout 1 plus member entries of set-valued NodeState, and is
+frozen the same way.
+
+A layout 1 document is upgraded in place, lazily. The first client that
+writes a member entry adds `lexical-y:2` = `true` to the layout record, in
+the same transaction; undo never deletes it. Nothing else is rewritten.
+From then on, clients that only read layout 1 open the document read only
+(they would read the entries as other NodeState and miss the members).
+Documents that never hold a member entry stay at layout 1, and older
+clients keep editing them.
+
+- **Set-valued NodeState** (an `arraySetValue` state, whose schema has
+  `meta.kind === 'set'`): on text, line breaks and nodes stored as their
+  own `Y.Node`, one `s:<key>\u001f<member>` = `true` entry per member
+  instead of one `s:<key>` value (`s:\u001f<member>` for a state whose key
+  is empty). Yjs stores names as UTF-8, which would turn a lone surrogate
+  into U+FFFD, so a member holding one, or starting with U+001F, is
+  escaped: its entry is `s:<key>\u001f\u001f` followed by the member's
+  JSON, with every surrogate code unit written as a `\uXXXX` escape. A
+  reader joins the entries back into one array, unless it knows a state of
+  the entry's own name, or a state of the set's key that is not a set. For
+  a state it does not know yet, the array is an unknown NodeState value,
+  which the state's first use reads, and which is written back one entry
+  per member, as is any array under that key on a node of that type (a
+  JSON copy of the node's state too): an unchanged set writes nothing, and
+  a changed one writes only the members it adds or removes. A whole
+  `s:<key>` array (layout 1) next to member entries is joined with them,
+  and the next write stores it per member. A set whose key contains U+001F
+  is stored as one value. Any other StateConfig whose key starts with a
+  set-valued state's key and U+001F would be the name of a member entry, so
+  the binding refuses it whenever it writes it or the set, even without a
+  value (an invariant in development; in production a warning, and the set
+  is stored as one value).

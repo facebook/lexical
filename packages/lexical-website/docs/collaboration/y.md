@@ -718,7 +718,33 @@ not merge as a user might expect:
   wrapping a range (an autolink made as its last character is typed) moves
   the text into it, written there anew: concurrent typing in that range
   stays outside, and a collaborator's concurrent delete of a character there
-  does not apply to the moved text.
+  does not apply to the moved text. Store comments as NodeState instead,
+  with [`MarkStateExtension`](./comments.md).
+- **Set-valued NodeState** (`arraySetValue`, which `MarkStateExtension` uses)
+  merges per member on text, line breaks and nodes stored as their own Yjs
+  node (such as decorators), so two collaborators commenting on the same
+  words both keep their comment. On a line such as a paragraph or heading, a
+  list item, a list or a link the set is one value, and concurrent changes
+  to it keep one writer's set. The state needs no registration: a client
+  that has not used it yet holds the members as one unknown value, which
+  its first `$getState` reads, and writes them back one per member. Do not
+  name another state with a set's key followed by U+001F (`'tags\u001fx'`
+  next to a set `'tags'`): that is the name the binding stores the set's
+  member `x` under, so it refuses such a state, even one without a value,
+  whenever it writes it or the set. Storing members this way is layout 2:
+  the first member a client stores in a room records it, and from then on
+  clients of an earlier `@lexical/y` (layout 1 only) open that room read
+  only (see [Changing the layout](#changing-the-layout-and-migrating)).
+- **Removed set members.** Removing a member from text that stores its set
+  per member (resolving a comment with `$removeMarkID`) leaves one small
+  live format item after that text (about 30 bytes with a short comment id),
+  which the binding cannot safely clean up: a collaborator writing inside
+  that text at the same time may still rely on it. So the document grows
+  with every member removed, not only with its content. Removing the same
+  member again at the same place adds nothing, and adding a member and
+  undoing it leaves nothing. For comments, keep resolved ids in the text and
+  mark the threads resolved in your own store instead (see
+  [Resolving comments](./comments.md#resolving-comments)).
 - **Named slots.** A slot holds one node: two collaborators setting the same
   slot at once keep one writer's node, and text typed in a slot that a
   collaborator replaces or removes at the same time is lost (as with delete
@@ -830,10 +856,6 @@ not merge as a user might expect:
   place (or replaced by a block node) sends it to the start of the line
   after, or to the end of the line before where a block node follows,
   never onto the block node.
-- **NodeState sets.** A NodeState value that is a set (declared with
-  `arraySetValue`, as `MarkStateExtension` stores mark ids) is one value per
-  text run: two clients changing the set of the same text at once keep one
-  writer's set.
 - **NodeState key order.** Other clients (and any later reader) get a node's
   NodeState with its keys in sorted order, which every client builds the
   same way, not in the order the author's editor exported them (a Yjs map
@@ -867,7 +889,10 @@ The [wire format](https://github.com/facebook/lexical/tree/main/packages/lexical
 in the package README is the contract for what a room stores: the markers,
 attributes and records, and their names. Every room records the layout
 versions it needs (`lexical-y:<n>: true`, a record that only grows;
-`LAYOUT_VERSION` is currently 1), and a client reads the highest.
+`LAYOUT_VERSION` is currently 2), and a client reads the highest. A new
+room records layout 1; the first member of a set-valued NodeState stored
+per member (see the limits above) records layout 2, so rooms that never
+hold one stay readable and editable by layout 1 clients.
 
 - **Changes that keep the layout:** additions older clients can ignore, such
   as a new optional attribute. Rooms keep working in old and new clients.

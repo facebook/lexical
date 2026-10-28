@@ -891,7 +891,10 @@ not merge as a user might expect:
   inside the earlier deleted text after that, where its format changed
   more than once along it, takes the format that text had at its start,
   and so does that text where an undo brings it back after another
-  collaborator's delete there.
+  collaborator's delete there. Two joins at once into the same line both
+  write its type, and Yjs keeps one of them by client id: a heading joined
+  across a quote to the paragraph after it, while a collaborator joins that
+  paragraph into the quote, can become a quote.
 
 ## Changing the layout and migrating
 

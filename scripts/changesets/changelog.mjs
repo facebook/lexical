@@ -15,7 +15,7 @@
  *
  *   ### Breaking changes
  *
- *   - **lexical, @lexical/html**: Summary ([#9231](https://github.com/facebook/lexical/pull/9231))
+ *   - **lexical, @lexical/html**: Summary ([#9231](https://github.com/meta/lexical/pull/9231))
  *
  *     Migration: ...
  *

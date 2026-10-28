@@ -560,7 +560,7 @@ describe('Markdown', () => {
     {
       // Code spans bind tighter than text-match transformers, so the $...$
       // (HIGHLIGHT_TEXT_MATCH_IMPORT) must not consume across the code spans.
-      // https://github.com/facebook/lexical/issues/8687
+      // https://github.com/meta/lexical/issues/8687
       html: '<p><code spellcheck="false" style="white-space: pre-wrap;"><span>$a</span></code><span style="white-space: pre-wrap;"> </span><code spellcheck="false" style="white-space: pre-wrap;"><span>$b</span></code></p>',
       md: '`$a` `$b`',
     },

@@ -16,7 +16,7 @@ npm install @lexical/table @lexical/react
 
 ## Usage
 
-See the [react-table example](https://github.com/facebook/lexical/tree/main/examples/react-table)
+See the [react-table example](https://github.com/meta/lexical/tree/main/examples/react-table)
 for a minimal example that uses this package and the
 [TablePlugin](https://lexical.dev/docs/api/modules/lexical_react_LexicalTablePlugin)
 from @lexical/react/LexicalTablePlugin

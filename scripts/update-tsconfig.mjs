@@ -75,13 +75,22 @@ async function updateTsconfig({
     }
     if (test) {
       testPaths.push([`${pkg.getNpmName()}/src`, [resolveRelative('src')]]);
-      for (const fn of globSync(
-        pkg.resolve('src', '__tests__', 'utils', '*.{ts,tsx,mjs,jsx}'),
+      // `<pkg>/src/__tests__/utils` names a directory, so the alias has to
+      // resolve to that directory's entry point. Globbing every file in it
+      // and pushing them all under this one key left whichever file glob
+      // returned last to win, which is filesystem order: the same command
+      // writes `utils/index.tsx` on one machine and `utils/assertNodeType.ts`
+      // on another, and `pnpm run tsc` fails wherever the entry point lost.
+      // Deep imports of the other files resolve through the `<pkg>/src/*`
+      // alias below.
+      const [utilsEntry] = globSync(
+        pkg.resolve('src', '__tests__', 'utils', 'index.{ts,tsx,mjs,jsx}'),
         {windowsPathsNoEscape: true},
-      )) {
+      ).sort();
+      if (utilsEntry) {
         testPaths.push([
           `${pkg.getNpmName()}/src/__tests__/utils`,
-          [resolveRelative(fn)],
+          [resolveRelative(utilsEntry)],
         ]);
       }
       // Deep source imports (e.g. `lexical/src/environment`). Tests need to

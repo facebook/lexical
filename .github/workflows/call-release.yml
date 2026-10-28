@@ -118,7 +118,7 @@ jobs:
     needs: [publish]
     # A skipped version bump is valid for an existing production release tag.
     # Require a successful real npm publish before submitting to the stores.
-    if: ${{ !cancelled() && !failure() && needs.publish.result == 'success' && inputs.publish && !inputs.dry-run && inputs.channel == 'latest' && github.repository_owner == 'facebook' }}
+    if: ${{ !cancelled() && !failure() && needs.publish.result == 'success' && inputs.publish && !inputs.dry-run && inputs.channel == 'latest' && github.repository_owner == 'meta' }}
     permissions:
       contents: read
     uses: ./.github/workflows/devtools-extension-publish.yml

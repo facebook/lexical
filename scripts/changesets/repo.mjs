@@ -195,7 +195,7 @@ export function isMain(metaUrl) {
 
 /** The GitHub repository the release links point at. */
 export const GITHUB_REPOSITORY =
-  process.env.GITHUB_REPOSITORY || 'facebook/lexical';
+  process.env.GITHUB_REPOSITORY || 'meta/lexical';
 
 const BOT_RE =
   /\[bot\]$|^(?:dependabot|renovate|github-actions)\b|GitHub Actions Bot/i;

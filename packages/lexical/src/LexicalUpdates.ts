@@ -1095,7 +1095,7 @@ export function triggerCommandListeners<TCommand extends AnyLexicalCommand>(
   }
   if (updatingParentEditor) {
     // Preserve the fairly broken legacy semantics of command delegation to fix
-    // https://github.com/facebook/lexical/issues/8306
+    // https://github.com/meta/lexical/issues/8306
     updatingParentEditor.update(() => {
       // This will be async so we can't know the result
       triggerCommandListeners(updatingParentEditor, type, payload, fromEditor);

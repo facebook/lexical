@@ -29,7 +29,7 @@ This file also ships in the `lexical` package as
 
 ### Breaking changes
 
-- **lexical, @lexical/clipboard, @lexical/selection, @lexical/table**: Let mouse drags select across inline decorators; `ElementNode.reconcileObservedMutation` restores the committed children's DOM ([#9329](https://github.com/facebook/lexical/pull/9329))
+- **lexical, @lexical/clipboard, @lexical/selection, @lexical/table**: Let mouse drags select across inline decorators; `ElementNode.reconcileObservedMutation` restores the committed children's DOM ([#9329](https://github.com/meta/lexical/pull/9329))
 
   A drag over an inline decorator (an image, equation or mention) now moves the selection past it, and clicks beside such a decorator at a line break land on the right line.
 
@@ -39,7 +39,7 @@ This file also ships in the `lexical` package as
 
   Codemod: none.
 
-- **@lexical/mdast**: `MdastTableExtension` reads and writes GFM tables, and stores column alignment as the cell paragraphs' format instead of the `mdastTableAlign` NodeState ([#9478](https://github.com/facebook/lexical/pull/9478))
+- **@lexical/mdast**: `MdastTableExtension` reads and writes GFM tables, and stores column alignment as the cell paragraphs' format instead of the `mdastTableAlign` NodeState ([#9478](https://github.com/meta/lexical/pull/9478))
 
   Import pads or truncates body rows to the header row's cell count, reads `\|` and raw `<br>` in cells, and turns column alignment into the element format of each cell's paragraph. Export writes any table as a GFM table: multi-block cells as lines joined by `<br>`, merged and ragged cells padded, blocks with no inline form after the table, and pipes escaped.
 
@@ -49,7 +49,7 @@ This file also ships in the `lexical` package as
 
   Codemod: none.
 
-- **@lexical/code-core, @lexical/code-shiki, @lexical/html, @lexical/link, @lexical/list, @lexical/mdast, @lexical/rich-text, @lexical/table**: Remove the extensions deprecated in v0.52.0 and earlier ([#9316](https://github.com/facebook/lexical/pull/9316))
+- **@lexical/code-core, @lexical/code-shiki, @lexical/html, @lexical/link, @lexical/list, @lexical/mdast, @lexical/rich-text, @lexical/table**: Remove the extensions deprecated in v0.52.0 and earlier ([#9316](https://github.com/meta/lexical/pull/9316))
 
   The deprecated import and alias extensions are removed. The `*ImportRules`
   arrays, including `HorizontalRuleImportRules`, stay.
@@ -72,7 +72,7 @@ This file also ships in the `lexical` package as
 
   Codemod: none; each is a rename of an import and its use.
 
-- **lexical**: Remove the deprecated unchecked type arguments from node traversal and key lookup ([#9479](https://github.com/facebook/lexical/pull/9479))
+- **lexical**: Remove the deprecated unchecked type arguments from node traversal and key lookup ([#9479](https://github.com/meta/lexical/pull/9479))
 
   The generic overloads that let callers claim an arbitrary node subclass without checking it are removed from TypeScript and Flow. The methods themselves and their runtime behavior are unchanged, and safe generics whose inputs establish the result type remain.
 
@@ -94,51 +94,51 @@ This file also ships in the `lexical` package as
 
 ### Behavior changes
 
-- **@lexical/link**: `ClickableLinkExtension` accepts `getWindow(editor)`, and a nested editor's links are handled only by that editor ([#9360](https://github.com/facebook/lexical/pull/9360))
+- **@lexical/link**: `ClickableLinkExtension` accepts `getWindow(editor)`, and a nested editor's links are handled only by that editor ([#9360](https://github.com/meta/lexical/pull/9360))
 
   `getWindow` lets an editor inside an iframe navigate in its own window, or return `null` to leave the click unhandled. The default is still the global window.
 
   Verify: clicks on links inside nested editors, which no longer also run the parent editor's handler.
 
-- **@lexical/link**: Open new-tab links from `ClickableLinkPlugin` / `registerClickableLink` without `window.opener` ([#9303](https://github.com/facebook/lexical/pull/9303))
+- **@lexical/link**: Open new-tab links from `ClickableLinkPlugin` / `registerClickableLink` without `window.opener` ([#9303](https://github.com/meta/lexical/pull/9303))
 
   This prevents the opened page from navigating the editor's tab (reverse tabnabbing). Same-tab opens are unchanged.
 
   Verify: pages opened from editor links that relied on `window.opener`.
 
-- **@lexical/code-core**: Normalize imported code block content to code lines, tabs and line breaks ([#9272](https://github.com/facebook/lexical/pull/9272))
+- **@lexical/code-core**: Normalize imported code block content to code lines, tabs and line breaks ([#9272](https://github.com/meta/lexical/pull/9272))
 
   Applies to the experimental HTML import pipeline; nested paragraphs, headings and links inside imported code no longer end up inside a `CodeNode`.
 
   Verify: HTML import of code blocks that contain paragraphs, headings or links (snapshots of the imported tree change).
 
-- **@lexical/markdown**: Markdown import keeps backslashes in leading code spans and unescapes text only once ([#9396](https://github.com/facebook/lexical/pull/9396))
+- **@lexical/markdown**: Markdown import keeps backslashes in leading code spans and unescapes text only once ([#9396](https://github.com/meta/lexical/pull/9396))
 
   Verify: Markdown import of text with backslash escapes and inline code.
 
-- **@lexical/markdown**: Markdown export escapes literal text so it does not become HTML, character references or links when parsed again ([#9481](https://github.com/facebook/lexical/pull/9481))
+- **@lexical/markdown**: Markdown export escapes literal text so it does not become HTML, character references or links when parsed again ([#9481](https://github.com/meta/lexical/pull/9481))
 
   Literal brackets and significant `<` and `&` characters are escaped, using numeric references where that keeps adjacent emphasis intact; ordinary text such as `AT&T` and `a < b` is unchanged. Import decodes backslash escapes and decimal or hexadecimal character references in one pass, and link labels respect escaped brackets and code spans.
 
   Verify: Markdown export snapshots of text containing `[`, `]`, `<` or `&`.
 
-- **@lexical/mdast**: Keep consecutive and leading line breaks in a Markdown round trip ([#9392](https://github.com/facebook/lexical/pull/9392))
+- **@lexical/mdast**: Keep consecutive and leading line breaks in a Markdown round trip ([#9392](https://github.com/meta/lexical/pull/9392))
 
   Such breaks now export as hard breaks (`\` and a newline) instead of plain newlines.
 
   Verify: Markdown export of paragraphs with adjacent or leading line breaks.
 
-- **@lexical/react**: A non-editable `ContentEditable` no longer renders `role="textbox"` or widget-only ARIA attributes ([#9270](https://github.com/facebook/lexical/pull/9270))
+- **@lexical/react**: A non-editable `ContentEditable` no longer renders `role="textbox"` or widget-only ARIA attributes ([#9270](https://github.com/meta/lexical/pull/9270))
 
   Verify: accessibility snapshots and selectors that relied on `role="textbox"` for read-only editors.
 
-- **lexical, @lexical/selection**: Preserve selected text and formatting at range boundaries; `$patchStyleText` styles the selection it is given ([#9261](https://github.com/facebook/lexical/pull/9261))
+- **lexical, @lexical/selection**: Preserve selected text and formatting at range boundaries; `$patchStyleText` styles the selection it is given ([#9261](https://github.com/meta/lexical/pull/9261))
 
   Equivalent element and text endpoints now select, copy and extract the same text, and `$patchStyleText(selection, patch)` styles `selection` even when another selection is active.
 
   Verify: code that calls `$patchStyleText` with a selection other than the active one, and tests that assert on text extracted or copied from element-boundary selections.
 
-- **lexical, @lexical/react**: Do not read `Math.random()` while rendering on the server ([#9319](https://github.com/facebook/lexical/pull/9319))
+- **lexical, @lexical/react**: Do not read `Math.random()` while rendering on the server ([#9319](https://github.com/meta/lexical/pull/9319))
 
   Without a DOM, editor keys and namespaces come from a counter, and `LexicalCollaboration` uses a fixed name and color, so server prerenders (such as Next.js with `cacheComponents`) no longer need a `Suspense` boundary around the composer. Browser behavior is unchanged.
 
@@ -146,121 +146,121 @@ This file also ships in the `lexical` package as
 
 ### Features
 
-- **@lexical/react**: `LexicalAutoEmbedPlugin` accepts `$disableMenuFor` to suppress the embed menu for a matched link ([#9365](https://github.com/facebook/lexical/pull/9365))
+- **@lexical/react**: `LexicalAutoEmbedPlugin` accepts `$disableMenuFor` to suppress the embed menu for a matched link ([#9365](https://github.com/meta/lexical/pull/9365))
 
-- **@lexical/extension, @lexical/html**: Experimental `BlockIdExtension` and `BlockIdHTMLExtension` for stable block ids ([#9421](https://github.com/facebook/lexical/pull/9421))
+- **@lexical/extension, @lexical/html**: Experimental `BlockIdExtension` and `BlockIdHTMLExtension` for stable block ids ([#9421](https://github.com/meta/lexical/pull/9421))
 
   `BlockIdExtension` gives each block an id that survives serialization, reloads, undo/redo, the Lexical clipboard and collaboration, so code outside the editor (an agent, a server pipeline) can address blocks directly. The id is NodeState (`blockIdState`), serialized as `"$": {"blockId": "…"}`. `BlockIdHTMLExtension`, imported from its own entry point `@lexical/html/BlockIdHTMLExtension` (#9474) so that the rest of `@lexical/html` does not pull in the block id implementation, carries the ids through HTML export and import. Both are opt-in; editors that do not register them are unchanged.
 
-- **@lexical/clipboard**: Clipboard import middleware can pass replaced data and selection to `$next(data, selection)` ([#9312](https://github.com/facebook/lexical/pull/9312))
+- **@lexical/clipboard**: Clipboard import middleware can pass replaced data and selection to `$next(data, selection)` ([#9312](https://github.com/meta/lexical/pull/9312))
 
   `$next()` with no arguments behaves as before. Passing arguments replaces
   the data and selection for the remaining handlers of that MIME type, for
   example to clean up pasted HTML before Lexical imports it.
 
-- **lexical, @lexical/compiler, @lexical/fast-check, @lexical/mark**: Experimental set-valued NodeState (`arraySetValue`) and `MarkStateExtension` ([#9380](https://github.com/facebook/lexical/pull/9380))
+- **lexical, @lexical/compiler, @lexical/fast-check, @lexical/mark**: Experimental set-valued NodeState (`arraySetValue`) and `MarkStateExtension` ([#9380](https://github.com/meta/lexical/pull/9380))
 
   `arraySetValue(item)` declares a state whose value is a frozen, sorted, deduplicated array of strings, and `$setState` keeps such values canonical. `MarkStateExtension` in `@lexical/mark` uses it to store mark ids on the leaves they cover instead of in `MarkNode` wrappers, so overlapping marks need no tree restructuring and ids travel with the text. Existing states and `MarkNode` are unchanged.
 
-- **lexical, @lexical/code-core, @lexical/extension, @lexical/link, @lexical/list, @lexical/mark, @lexical/mdast, @lexical/rich-text, @lexical/table**: Experimental node structure keys in `$config` (`inline`, `children`, `mergeAdjacent`, `derived`) and an opt-in `NodeStructureExtension` ([#9452](https://github.com/facebook/lexical/pull/9452))
+- **lexical, @lexical/code-core, @lexical/extension, @lexical/link, @lexical/list, @lexical/mark, @lexical/mdast, @lexical/rich-text, @lexical/table**: Experimental node structure keys in `$config` (`inline`, `children`, `mergeAdjacent`, `derived`) and an opt-in `NodeStructureExtension` ([#9452](https://github.com/meta/lexical/pull/9452))
 
   Classes can declare what they may hold and when adjacent siblings are the same thing, so importers, serializers and storage layers can read rules that used to live only in transforms. `getDeclaredNodeStructure(klass)` reads the declarations, and `NodeStructureExtension` in `@lexical/extension` enforces them. The built-in nodes declare their structure; behavior without the extension is unchanged.
 
 ### Fixes
 
-- **@lexical/react**: `LexicalAutoEmbedPlugin` ignores `parseUrl` results for links that were removed or changed while parsing ([#9331](https://github.com/facebook/lexical/pull/9331))
+- **@lexical/react**: `LexicalAutoEmbedPlugin` ignores `parseUrl` results for links that were removed or changed while parsing ([#9331](https://github.com/meta/lexical/pull/9331))
 
-- **lexical**: Preserve sibling links and selections when caret operations move or replace nodes ([#9262](https://github.com/facebook/lexical/pull/9262))
+- **lexical**: Preserve sibling links and selections when caret operations move or replace nodes ([#9262](https://github.com/meta/lexical/pull/9262))
 
-- **@lexical/code-prism, @lexical/code-shiki**: Tab no longer throws in a code block whose language the highlighter does not know ([#9472](https://github.com/facebook/lexical/pull/9472))
+- **@lexical/code-prism, @lexical/code-shiki**: Tab no longer throws in a code block whose language the highlighter does not know ([#9472](https://github.com/meta/lexical/pull/9472))
 
   The highlighters now split such a block into the flat `CodeHighlightNode`, `TabNode` and `LineBreakNode` structure the indentation handlers expect.
 
-- **lexical**: Keep update listeners in commit order when `editor.read()` runs during listener dispatch ([#9335](https://github.com/facebook/lexical/pull/9335))
+- **lexical**: Keep update listeners in commit order when `editor.read()` runs during listener dispatch ([#9335](https://github.com/meta/lexical/pull/9335))
 
   Collaboration (Yjs) and history no longer receive commits out of order, which could drop content from the shared document.
 
-- **lexical**: Composing text (IME, dead keys) into a `TextNode` subclass keeps its type, key and node state ([#9291](https://github.com/facebook/lexical/pull/9291))
+- **lexical**: Composing text (IME, dead keys) into a `TextNode` subclass keeps its type, key and node state ([#9291](https://github.com/meta/lexical/pull/9291))
 
-- **lexical**: `$getRoot().getTextContent()` and text content listeners honor element `getTextContent()` overrides after reconciliation ([#9260](https://github.com/facebook/lexical/pull/9260))
+- **lexical**: `$getRoot().getTextContent()` and text content listeners honor element `getTextContent()` overrides after reconciliation ([#9260](https://github.com/meta/lexical/pull/9260))
 
-- **@lexical/plain-text, @lexical/rich-text**: Leave a copy, cut or paste inside a decorator's own input to that input ([#9288](https://github.com/facebook/lexical/pull/9288))
+- **@lexical/plain-text, @lexical/rich-text**: Leave a copy, cut or paste inside a decorator's own input to that input ([#9288](https://github.com/meta/lexical/pull/9288))
 
-- **lexical**: The Flow types of `registerEventListener` and `registerEventListeners` no longer depend on a specific DOM libdef ([#9258](https://github.com/facebook/lexical/pull/9258))
+- **lexical**: The Flow types of `registerEventListener` and `registerEventListeners` no longer depend on a specific DOM libdef ([#9258](https://github.com/meta/lexical/pull/9258))
 
   Flow projects using the default DOM library definition of Flow 0.333 and later no longer get `cannot-resolve-name` errors.
 
-- **@lexical/rich-text**: Enter in a heading after a line break or an inline decorator splits the heading instead of turning the start into a paragraph ([#9295](https://github.com/facebook/lexical/pull/9295))
+- **@lexical/rich-text**: Enter in a heading after a line break or an inline decorator splits the heading instead of turning the start into a paragraph ([#9295](https://github.com/meta/lexical/pull/9295))
 
-- **@lexical/history**: An update tagged `HISTORY_PUSH_TAG` always pushes its own undo entry, even when its only dirty leaf is an unchanged `TextNode` ([#9218](https://github.com/facebook/lexical/pull/9218))
+- **@lexical/history**: An update tagged `HISTORY_PUSH_TAG` always pushes its own undo entry, even when its only dirty leaf is an unchanged `TextNode` ([#9218](https://github.com/meta/lexical/pull/9218))
 
-- **lexical**: Markdown shortcuts no longer leave the closing delimiter behind in editors mounted in an iframe ([#9352](https://github.com/facebook/lexical/pull/9352))
+- **lexical**: Markdown shortcuts no longer leave the closing delimiter behind in editors mounted in an iframe ([#9352](https://github.com/meta/lexical/pull/9352))
 
-- **lexical**: Stop the page jumping when tapping a decorator, such as an image, on iOS ([#9325](https://github.com/facebook/lexical/pull/9325))
+- **lexical**: Stop the page jumping when tapping a decorator, such as an image, on iOS ([#9325](https://github.com/meta/lexical/pull/9325))
 
-- **@lexical/table**: Double-tapping an empty table cell on iOS keeps the selection inside the cell ([#9267](https://github.com/facebook/lexical/pull/9267))
+- **@lexical/table**: Double-tapping an empty table cell on iOS keeps the selection inside the cell ([#9267](https://github.com/meta/lexical/pull/9267))
 
-- **@lexical/rich-text**: Allow native iOS text drops that arrive as `text/plain` files ([#9320](https://github.com/facebook/lexical/pull/9320))
+- **@lexical/rich-text**: Allow native iOS text drops that arrive as `text/plain` files ([#9320](https://github.com/meta/lexical/pull/9320))
 
   `DRAG_DROP_PASTE` handlers still get the first chance to handle the drop.
 
-- **lexical**: Deleting a line that starts with an inline decorator keeps the line break before it ([#9301](https://github.com/facebook/lexical/pull/9301))
+- **lexical**: Deleting a line that starts with an inline decorator keeps the line break before it ([#9301](https://github.com/meta/lexical/pull/9301))
 
-- **lexical**: Write the managed line break selectors so jsdom 26 and older can parse them ([#9372](https://github.com/facebook/lexical/pull/9372))
+- **lexical**: Write the managed line break selectors so jsdom 26 and older can parse them ([#9372](https://github.com/meta/lexical/pull/9372))
 
-- **@lexical/markdown**: Markdown import reads an out-of-range decimal character reference as U+FFFD instead of throwing ([#9388](https://github.com/facebook/lexical/pull/9388))
+- **@lexical/markdown**: Markdown import reads an out-of-range decimal character reference as U+FFFD instead of throwing ([#9388](https://github.com/meta/lexical/pull/9388))
 
-- **@lexical/table**: Leave clicks on a nested editor's table to that editor ([#9356](https://github.com/facebook/lexical/pull/9356))
+- **@lexical/table**: Leave clicks on a nested editor's table to that editor ([#9356](https://github.com/meta/lexical/pull/9356))
 
-- **lexical**: Setting a NodeState key that is still in `unknownState` drops its JSON copy, so removing the value takes effect ([#9468](https://github.com/facebook/lexical/pull/9468))
+- **lexical**: Setting a NodeState key that is still in `unknownState` drops its JSON copy, so removing the value takes effect ([#9468](https://github.com/meta/lexical/pull/9468))
 
-- **@lexical/utils**: `positionNodeOnRange` no longer loops forever once its root element is detached from the document ([#9358](https://github.com/facebook/lexical/pull/9358))
+- **@lexical/utils**: `positionNodeOnRange` no longer loops forever once its root element is detached from the document ([#9358](https://github.com/meta/lexical/pull/9358))
 
-- **@lexical/table**: Table commands repair a ragged table instead of throwing ([#9375](https://github.com/facebook/lexical/pull/9375))
+- **@lexical/table**: Table commands repair a ragged table instead of throwing ([#9375](https://github.com/meta/lexical/pull/9375))
 
   Inserting or deleting rows and columns, merging and unmerging cells, and pasting a table into a table first pad short rows, the same repair the `TableNode` transform does. Collaborative edits applied with `skipTransforms` can leave a table ragged.
 
-- **lexical**: Moving a child into an earlier sibling and inserting into its old parent in one update no longer misorders or rebuilds the DOM ([#9302](https://github.com/facebook/lexical/pull/9302))
+- **lexical**: Moving a child into an earlier sibling and inserting into its old parent in one update no longer misorders or rebuilds the DOM ([#9302](https://github.com/meta/lexical/pull/9302))
 
-- **@lexical/list**: Removing a list keeps a caret that was after an inline decorator in place ([#9300](https://github.com/facebook/lexical/pull/9300))
+- **@lexical/list**: Removing a list keeps a caret that was after an inline decorator in place ([#9300](https://github.com/meta/lexical/pull/9300))
 
-- **lexical**: A `SELECTION_CHANGE_COMMAND` listener that restates the selection no longer suppresses the next notification ([#9328](https://github.com/facebook/lexical/pull/9328))
+- **lexical**: A `SELECTION_CHANGE_COMMAND` listener that restates the selection no longer suppresses the next notification ([#9328](https://github.com/meta/lexical/pull/9328))
 
-- **lexical**: Fix a crash when inserting a paragraph over a range that ends in styled text followed by a link ([#9263](https://github.com/facebook/lexical/pull/9263))
+- **lexical**: Fix a crash when inserting a paragraph over a range that ends in styled text followed by a link ([#9263](https://github.com/meta/lexical/pull/9263))
 
-- **lexical, @lexical/rich-text**: Keep selections and deletions inside slot boundaries, including slots of the root and nested slots ([#9373](https://github.com/facebook/lexical/pull/9373))
+- **lexical, @lexical/rich-text**: Keep selections and deletions inside slot boundaries, including slots of the root and nested slots ([#9373](https://github.com/meta/lexical/pull/9373))
 
-- **lexical**: Keep the root text content correct after repeated edits inside slots, and read the DOM caret on keydown ([#9283](https://github.com/facebook/lexical/pull/9283))
+- **lexical**: Keep the root text content correct after repeated edits inside slots, and read the DOM caret on keydown ([#9283](https://github.com/meta/lexical/pull/9283))
 
-- **lexical**: Deleting to a soft-wrapped line boundary keeps inline decorators on the neighboring line ([#9321](https://github.com/facebook/lexical/pull/9321))
+- **lexical**: Deleting to a soft-wrapped line boundary keeps inline decorators on the neighboring line ([#9321](https://github.com/meta/lexical/pull/9321))
 
-- **lexical**: Keep Chromium spellcheck underlines when the reconciler changes a text node's text ([#9354](https://github.com/facebook/lexical/pull/9354))
+- **lexical**: Keep Chromium spellcheck underlines when the reconciler changes a text node's text ([#9354](https://github.com/meta/lexical/pull/9354))
 
   The reconciler writes only the changed part of the text to the DOM instead of replacing the whole string.
 
-- **lexical**: The missing node error names the node and explains how to guard a stale node reference ([#9366](https://github.com/facebook/lexical/pull/9366))
+- **lexical**: The missing node error names the node and explains how to guard a stale node reference ([#9366](https://github.com/meta/lexical/pull/9366))
 
-- **lexical**: Ignore `selectionchange` events from unfocused inputs and textareas, which cleared a focused editor's pending formatting ([#9477](https://github.com/facebook/lexical/pull/9477))
+- **lexical**: Ignore `selectionchange` events from unfocused inputs and textareas, which cleared a focused editor's pending formatting ([#9477](https://github.com/meta/lexical/pull/9477))
 
-- **@lexical/link**: `$toggleLink(null)` no longer throws when the selection only touches a link's edge ([#9412](https://github.com/facebook/lexical/pull/9412))
+- **@lexical/link**: `$toggleLink(null)` no longer throws when the selection only touches a link's edge ([#9412](https://github.com/meta/lexical/pull/9412))
 
-- **@lexical/extension**: `NormalizeTripleClickSelectionExtension` trims a triple-click overselection however late the selection change arrives ([#9317](https://github.com/facebook/lexical/pull/9317))
+- **@lexical/extension**: `NormalizeTripleClickSelectionExtension` trims a triple-click overselection however late the selection change arrives ([#9317](https://github.com/meta/lexical/pull/9317))
 
-- **@lexical/react**: `LexicalTypeaheadMenuPlugin` ignores an asynchronous `onClose` that finishes after a newer query opened ([#9332](https://github.com/facebook/lexical/pull/9332))
+- **@lexical/react**: `LexicalTypeaheadMenuPlugin` ignores an asynchronous `onClose` that finishes after a newer query opened ([#9332](https://github.com/meta/lexical/pull/9332))
 
-- **lexical**: Finish a cancelled IME composition in desktop WebKit, so the next Enter reaches `KEY_ENTER_COMMAND` ([#9362](https://github.com/facebook/lexical/pull/9362))
+- **lexical**: Finish a cancelled IME composition in desktop WebKit, so the next Enter reaches `KEY_ENTER_COMMAND` ([#9362](https://github.com/meta/lexical/pull/9362))
 
 ### Performance
 
-- **lexical**: Garbage collection no longer walks a detached subtree once per dirty ancestor ([#9264](https://github.com/facebook/lexical/pull/9264))
+- **lexical**: Garbage collection no longer walks a detached subtree once per dirty ancestor ([#9264](https://github.com/meta/lexical/pull/9264))
 
-- **lexical, @lexical/yjs**: Re-create only the children that moved when syncing an element's children to Yjs ([#9349](https://github.com/facebook/lexical/pull/9349))
+- **lexical, @lexical/yjs**: Re-create only the children that moved when syncing an element's children to Yjs ([#9349](https://github.com/meta/lexical/pull/9349))
 
   Siblings keep their Yjs identities, so concurrent edits to them are not lost, and moving one paragraph in a long document no longer re-creates every paragraph in between.
 
 ### Other
 
-- **lexical**: The `lexical` package includes CHANGELOG.md, so the release history is available at node_modules/lexical/CHANGELOG.md ([#9357](https://github.com/facebook/lexical/pull/9357))
+- **lexical**: The `lexical` package includes CHANGELOG.md, so the release history is available at node_modules/lexical/CHANGELOG.md ([#9357](https://github.com/meta/lexical/pull/9357))
 
 ### Contributors
 
@@ -268,109 +268,109 @@ This file also ships in the `lexical` package as
 
 ### All changes
 
-- [lexical][lexical-website] Chore: Changesets-based CHANGELOG with migration notes, plus changesets for everything since v0.52.0 ([#9357](https://github.com/facebook/lexical/pull/9357)) Gerard Rovira
-- [lexical-markdown] Bug Fix: Preserve literal text and escaped link brackets in Markdown round trips ([#9481](https://github.com/facebook/lexical/pull/9481)) Bob Ippolito
-- [lexical-html][lexical-website] Breaking change: give BlockIdHTMLExtension its own entry point ([#9474](https://github.com/facebook/lexical/pull/9474)) Sherry
-- [lexical] Breaking Change: Remove deprecated unchecked node type arguments ([#9479](https://github.com/facebook/lexical/pull/9479)) Bob Ippolito
-- [scripts] Chore: Map the bare __tests__/utils alias to the index module only ([#9482](https://github.com/facebook/lexical/pull/9482)) Gerard Rovira
-- [lexical-plain-text][lexical-rich-text] Bug Fix: Leave a copy, cut or paste in a decorator's input to the input ([#9288](https://github.com/facebook/lexical/pull/9288)) Rin Arakaki
-- build(deps): bump happy-dom from 20.9.0 to 21.0.4 ([#9456](https://github.com/facebook/lexical/pull/9456)) dependabot[bot]
-- [lexical-mdast][lexical-website] Feature: GFM tables in @lexical/mdast ([#9478](https://github.com/facebook/lexical/pull/9478)) Bob Ippolito
-- [lexical-code-prism][lexical-code-shiki] Bug Fix: Tab in a code block whose language the highlighter does not know ([#9472](https://github.com/facebook/lexical/pull/9472)) Gerard Rovira
-- [lexical] Bug Fix: Setting a NodeState key that is still in unknownState no longer leaves the JSON copy behind ([#9468](https://github.com/facebook/lexical/pull/9468)) Gerard Rovira
-- [lexical] Bug Fix: Ignore text-control selectionchange events ([#9477](https://github.com/facebook/lexical/pull/9477)) Bob Ippolito
-- [lexical-devtools] Documentation Update: Document Chrome service account key rotation ([#9473](https://github.com/facebook/lexical/pull/9473)) Sherry
-- [lexical-devtools][lexical-website] Chore: Remove Safari publishing (taken down from the Mac App Store) ([#9457](https://github.com/facebook/lexical/pull/9457)) Sherry
-- [lexical-devtools] Documentation Update: refresh marketplace access docs and document publishing credentials ([#9330](https://github.com/facebook/lexical/pull/9330)) Sherry
-- [lexical-extension][lexical-html][lexical-yjs][lexical-website][lexical-devtools] Feature: Stable block ids (BlockIdExtension) ([#9421](https://github.com/facebook/lexical/pull/9421)) Gerard Rovira
-- [lexical][lexical-compiler][lexical-fast-check][lexical-mark][lexical-website][lexical-yjs] Feature: Experimental MarkStateExtension and set-valued NodeState with arraySetValue ([#9380](https://github.com/facebook/lexical/pull/9380)) Gerard Rovira
-- [lexical][lexical-code-core][lexical-devtools][lexical-extension][lexical-link][lexical-list][lexical-mark][lexical-mdast][lexical-rich-text][lexical-table][lexical-website] Feature: Experimental node structure in $config (inline, children, mergeAdjacent, derived) and an opt-in NodeStructureExtension ([#9452](https://github.com/facebook/lexical/pull/9452)) Gerard Rovira
-- [lexical-table][lexical-website] Bug Fix: Table commands throw or misbehave on a ragged table ([#9375](https://github.com/facebook/lexical/pull/9375)) Gerard Rovira
-- [lexical-link] Bug Fix: Fix $toggleLink(null) crash when the selection touches a link boundary ([#9412](https://github.com/facebook/lexical/pull/9412)) Gerard Rovira
-- [lexical-history] Bug Fix: HISTORY_PUSH_TAG is ignored when the only dirty leaf is an unchanged TextNode ([#9218](https://github.com/facebook/lexical/pull/9218)) ump45nose
-- build(deps): bump follow-redirects from 1.16.0 to 1.16.1 ([#9397](https://github.com/facebook/lexical/pull/9397)) dependabot[bot]
-- build(deps): bump launch-editor from 2.13.2 to 2.14.2 ([#9398](https://github.com/facebook/lexical/pull/9398)) dependabot[bot]
-- build(deps-dev): bump vite from 8.3.1 to 8.3.3 ([#9399](https://github.com/facebook/lexical/pull/9399)) dependabot[bot]
-- [lexical-markdown] Bug Fix: Keep backslashes in leading code spans and unescape text only once ([#9396](https://github.com/facebook/lexical/pull/9396)) David Billiot
-- [lexical] Bug Fix: Finish cancelled desktop WebKit compositions ([#9362](https://github.com/facebook/lexical/pull/9362)) Justin Chen
-- [lexical-website][ci] Bug Fix: Stop advertising pkg.pr.new yarn commands that install extra copies of lexical ([#9394](https://github.com/facebook/lexical/pull/9394)) Gerard Rovira
-- [lexical-mdast] Bug Fix: Keep consecutive and leading line breaks in a Markdown round trip ([#9392](https://github.com/facebook/lexical/pull/9392)) UNKNOWN H4CK3R
-- [lexical-website][ci] Bug Fix: Stop advertising pkg.pr.new pnpm commands that install two copies of lexical ([#9387](https://github.com/facebook/lexical/pull/9387)) Gerard Rovira
-- [lexical-markdown] Bug Fix: Read an out-of-range decimal character reference as U+FFFD ([#9388](https://github.com/facebook/lexical/pull/9388)) kevin
-- [lexical][lexical-rich-text][lexical-playground] Bug Fix: Keep selections and deletions inside slot boundaries ([#9373](https://github.com/facebook/lexical/pull/9373)) Bob Ippolito
-- [lexical-website][ci] Feature: Publish every PR and main commit to pkg.pr.new ([#9385](https://github.com/facebook/lexical/pull/9385)) Gerard Rovira
-- [lexical-playground] Bug Fix: Declare the playground's missing terser and @lexical/a11y dependencies ([#9384](https://github.com/facebook/lexical/pull/9384)) garhinful
-- [lexical] Bug Fix: Keep spellcheck underlines when a text node's text changes ([#9354](https://github.com/facebook/lexical/pull/9354)) Badcuban
-- [lexical-link] Bug Fix: Configure link navigation and isolate nested editors ([#9360](https://github.com/facebook/lexical/pull/9360)) Maxim Gagiev
-- [lexical-eslint-plugin-internal] Bug Fix: resolve messaging namespaces through imports, assertions and declaration scope ([#9351](https://github.com/facebook/lexical/pull/9351)) Sherry
-- [lexical-playground] Bug Fix: fix the blank ‘Vertical Align’ menu item in Table Actions menu when width is \< 1100 ([#9346](https://github.com/facebook/lexical/pull/9346)) Syed Umar Anis
-- [lexical] Bug Fix: Write the managed line break selectors so jsdom 26's nwsapi can parse them ([#9372](https://github.com/facebook/lexical/pull/9372)) Gerard Rovira
-- [lexical-devtools] Chore: Migrate Chrome publishing and release extensions with npm ([#9369](https://github.com/facebook/lexical/pull/9369)) Bob Ippolito
-- [lexical-react] Bug Fix: no widget role or widget-only ARIA on a non-editable editor ([#9270](https://github.com/facebook/lexical/pull/9270)) Sherry
-- [lexical-playground][lexical-website] Chore: Fix automated copyright checks ([#9370](https://github.com/facebook/lexical/pull/9370)) xiezhenjia-meta
-- [lexical-playground] Feature: Add "Copy as Markdown" to the context menu ([#9367](https://github.com/facebook/lexical/pull/9367)) Ivaylo Pavlov
-- [lexical] Bug Fix: Explain how to guard a stale node reference in the missing node error ([#9366](https://github.com/facebook/lexical/pull/9366)) Yashvardhan Thanvi
-- [lexical-playground] Fix context menu icons not rendering ([#9368](https://github.com/facebook/lexical/pull/9368)) Ivaylo Pavlov
-- [lexical-react][lexical-playground] Feature: Add optional $disableMenuFor prop to LexicalAutoEmbedPlugin ([#9365](https://github.com/facebook/lexical/pull/9365)) Abhinav Sharma
-- [lexical-utils] Bug Fix: positionNodeOnRange no longer loops when its root element is detached ([#9358](https://github.com/facebook/lexical/pull/9358)) Pieter Willekens
-- [lexical-table] Bug Fix: Leave clicks on another editor's table to that editor ([#9356](https://github.com/facebook/lexical/pull/9356)) Yashvardhan Thanvi
-- [lexical-yjs] Bug Fix: Re-create only moved children in syncChildrenFromLexical ([#9349](https://github.com/facebook/lexical/pull/9349)) adstep
-- [lexical][lexical-playground] Bug Fix: Markdown shortcuts in iframe editors ([#9352](https://github.com/facebook/lexical/pull/9352)) Hossein Dehghan
-- [lexical][lexical-clipboard][lexical-playground][lexical-selection][lexical-table] Bug Fix: Let mouse drags select across inline decorators ([#9329](https://github.com/facebook/lexical/pull/9329)) vijay ojha
-- [lexical-yjs][Chore] Change last `Object` to `any` in lexical ([#9353](https://github.com/facebook/lexical/pull/9353)) Sam Zhou
-- [lexical-eslint-plugin-internal] Chore: lint window messaging channel scoping ([#9339](https://github.com/facebook/lexical/pull/9339)) Sherry
-- build(deps): bump joi from 17.13.4 to 17.13.8 ([#9343](https://github.com/facebook/lexical/pull/9343)) dependabot[bot]
-- build(deps): bump compression from 1.8.1 to 1.8.2 ([#9344](https://github.com/facebook/lexical/pull/9344)) dependabot[bot]
-- build(deps): bump proxy-addr from 2.0.7 to 2.0.8 ([#9345](https://github.com/facebook/lexical/pull/9345)) dependabot[bot]
-- [lexical][lexical-react][lexical-website] Bug Fix: Keep commit listeners in order when editor.read() is called during listener dispatch ([#9335](https://github.com/facebook/lexical/pull/9335)) Ved Thakar
-- [lexical-react] Bug Fix: Ignore stale asynchronous typeahead close completions ([#9332](https://github.com/facebook/lexical/pull/9332)) TABISH AYUB RAZA
-- [lexical-react] Bug Fix: Ignore stale asynchronous auto-embed results ([#9331](https://github.com/facebook/lexical/pull/9331)) TABISH AYUB RAZA
-- [lexical] Bug Fix: Restore the notified selection when a no-op update is dropped ([#9328](https://github.com/facebook/lexical/pull/9328)) Den Ilin
-- [lexical][lexical-rich-text] Bug Fix: Stop the page jumping when tapping a decorator on iOS ([#9325](https://github.com/facebook/lexical/pull/9325)) Bob Ippolito
-- [lexical-playground] Chore: Reduce E2E overhead and move focused coverage to faster suites ([#9322](https://github.com/facebook/lexical/pull/9322)) Bob Ippolito
-- [lexical-extension][lexical-playground] Bug Fix: trim triple-click overselection however late the selection change arrives ([#9317](https://github.com/facebook/lexical/pull/9317)) Bob Ippolito
-- [*] Breaking change: Remove extensions deprecated as of v0.52.0 ([#9316](https://github.com/facebook/lexical/pull/9316)) Bob Ippolito
-- [lexical] Bug Fix: preserve inline decorators across soft-wrap line deletion ([#9321](https://github.com/facebook/lexical/pull/9321)) Bob Ippolito
-- [lexical-rich-text][lexical-playground] Bug Fix: Allow native iOS text-file drops ([#9320](https://github.com/facebook/lexical/pull/9320)) Bob Ippolito
-- [lexical][lexical-react] Bug Fix: Don't read Math.random while rendering on the server ([#9319](https://github.com/facebook/lexical/pull/9319)) Bob Ippolito
-- [lexical-clipboard][lexical-website] Feature: Allow clipboard import middleware to replace data and selection ([#9312](https://github.com/facebook/lexical/pull/9312)) Bob Ippolito
-- Documentation Update: Describe $config json schemas in the AGENTS.md custom node guide ([#9313](https://github.com/facebook/lexical/pull/9313)) Bob Ippolito
-- build(deps): bump fast-uri from 3.1.2 to 3.1.8 ([#9315](https://github.com/facebook/lexical/pull/9315)) dependabot[bot]
-- build(deps): bump undici from 7.27.0 to 7.30.0 ([#9314](https://github.com/facebook/lexical/pull/9314)) dependabot[bot]
-- build(deps-dev): bump the vitest group across 1 directory with 2 updates ([#9310](https://github.com/facebook/lexical/pull/9310)) dependabot[bot]
-- [lexical][lexical-playground] Bug Fix: keep root text right after repeated slot edits, and read the DOM caret on keydown ([#9283](https://github.com/facebook/lexical/pull/9283)) Rin Arakaki
-- build(deps): bump the rollup group across 1 directory with 5 updates ([#9309](https://github.com/facebook/lexical/pull/9309)) dependabot[bot]
-- build(deps-dev): bump flow-bin from 0.331.0 to 0.333.0 in the flow-and-hermes group ([#9308](https://github.com/facebook/lexical/pull/9308)) dependabot[bot]
-- build(deps-dev): bump the dev-dependencies group with 16 updates ([#9311](https://github.com/facebook/lexical/pull/9311)) dependabot[bot]
-- build(deps): bump the docusaurus-and-typedoc group with 2 updates ([#9307](https://github.com/facebook/lexical/pull/9307)) dependabot[bot]
-- [lexical-link] Bug Fix: open new-tab links without window.opener ([#9303](https://github.com/facebook/lexical/pull/9303)) Maxime
-- [lexical-rich-text] Bug Fix: Split a heading on Enter after a line break or an inline decorator ([#9295](https://github.com/facebook/lexical/pull/9295)) Rin Arakaki
-- [lexical] Bug Fix: Keep a TextNode subclass's type, key and node state when composing into it ([#9291](https://github.com/facebook/lexical/pull/9291)) Rin Arakaki
-- [lexical] Chore: reduce unit test environment overhead ([#9304](https://github.com/facebook/lexical/pull/9304)) Bob Ippolito
-- [lexical] Bug Fix: preserve custom element text in root cache ([#9260](https://github.com/facebook/lexical/pull/9260)) Maxim Gagiev
-- [lexical-list] Bug Fix: Keep a caret after an inline decorator when removing a list ([#9300](https://github.com/facebook/lexical/pull/9300)) Rin Arakaki
-- [lexical] Bug Fix: Keep the line break when deleting a line that starts with an inline decorator ([#9301](https://github.com/facebook/lexical/pull/9301)) Rin Arakaki
-- [lexical-code-core] Bug Fix: normalize imported code content ([#9272](https://github.com/facebook/lexical/pull/9272)) Maxim Gagiev
-- [lexical-table] Bug Fix: keep iOS empty-cell double taps inside the cell ([#9267](https://github.com/facebook/lexical/pull/9267)) Bob Ippolito
-- [lexical] Bug Fix: preserve insertion anchors when moving children across parents ([#9302](https://github.com/facebook/lexical/pull/9302)) Bob Ippolito
-- build(deps): bump dompurify from 3.4.13 to 3.4.16 ([#9297](https://github.com/facebook/lexical/pull/9297)) dependabot[bot]
-- [lexical-website] Chore: drop preset-classic to stop installing the unused Algolia search theme ([#9298](https://github.com/facebook/lexical/pull/9298)) Bob Ippolito
-- lexical extension devtool bugfix ([#9299](https://github.com/facebook/lexical/pull/9299)) Sherry
-- [lexical-devtools][lexical-website] Chore: Remove Edge extension (taken down from the Edge Add-ons store) ([#9296](https://github.com/facebook/lexical/pull/9296)) Gerard Rovira
-- [lexical][lexical-selection] Bug Fix: preserve selected text and formatting at range boundaries ([#9261](https://github.com/facebook/lexical/pull/9261)) Bob Ippolito
-- [lexical] Bug Fix: preserve tree links and selections during caret mutations ([#9262](https://github.com/facebook/lexical/pull/9262)) Bob Ippolito
-- [lexical] Bug Fix: share selection operations and repair endpoints without direction comparisons ([#9263](https://github.com/facebook/lexical/pull/9263)) Bob Ippolito
-- [lexical] Refactor: avoid repeated traversal of dirty subtrees during GC ([#9264](https://github.com/facebook/lexical/pull/9264)) Bob Ippolito
-- [lexical] Bug Fix: Make the registerEventListener Flow options type libdef-independent ([#9258](https://github.com/facebook/lexical/pull/9258)) Sherry
-- [lexical-website] Documentation Update: webpack and Parcel need an adapter for HMRExtension's hot config ([#9256](https://github.com/facebook/lexical/pull/9256)) Sherry
-- [lexical-website] Documentation Update: make the create-plugin snippets valid JSX ([#9255](https://github.com/facebook/lexical/pull/9255)) Sherry
-- [lexical-website] Documentation Update: fix five incorrect snippets and claims in the React plugins guide ([#9254](https://github.com/facebook/lexical/pull/9254)) Sherry
+- [lexical][lexical-website] Chore: Changesets-based CHANGELOG with migration notes, plus changesets for everything since v0.52.0 ([#9357](https://github.com/meta/lexical/pull/9357)) Gerard Rovira
+- [lexical-markdown] Bug Fix: Preserve literal text and escaped link brackets in Markdown round trips ([#9481](https://github.com/meta/lexical/pull/9481)) Bob Ippolito
+- [lexical-html][lexical-website] Breaking change: give BlockIdHTMLExtension its own entry point ([#9474](https://github.com/meta/lexical/pull/9474)) Sherry
+- [lexical] Breaking Change: Remove deprecated unchecked node type arguments ([#9479](https://github.com/meta/lexical/pull/9479)) Bob Ippolito
+- [scripts] Chore: Map the bare __tests__/utils alias to the index module only ([#9482](https://github.com/meta/lexical/pull/9482)) Gerard Rovira
+- [lexical-plain-text][lexical-rich-text] Bug Fix: Leave a copy, cut or paste in a decorator's input to the input ([#9288](https://github.com/meta/lexical/pull/9288)) Rin Arakaki
+- build(deps): bump happy-dom from 20.9.0 to 21.0.4 ([#9456](https://github.com/meta/lexical/pull/9456)) dependabot[bot]
+- [lexical-mdast][lexical-website] Feature: GFM tables in @lexical/mdast ([#9478](https://github.com/meta/lexical/pull/9478)) Bob Ippolito
+- [lexical-code-prism][lexical-code-shiki] Bug Fix: Tab in a code block whose language the highlighter does not know ([#9472](https://github.com/meta/lexical/pull/9472)) Gerard Rovira
+- [lexical] Bug Fix: Setting a NodeState key that is still in unknownState no longer leaves the JSON copy behind ([#9468](https://github.com/meta/lexical/pull/9468)) Gerard Rovira
+- [lexical] Bug Fix: Ignore text-control selectionchange events ([#9477](https://github.com/meta/lexical/pull/9477)) Bob Ippolito
+- [lexical-devtools] Documentation Update: Document Chrome service account key rotation ([#9473](https://github.com/meta/lexical/pull/9473)) Sherry
+- [lexical-devtools][lexical-website] Chore: Remove Safari publishing (taken down from the Mac App Store) ([#9457](https://github.com/meta/lexical/pull/9457)) Sherry
+- [lexical-devtools] Documentation Update: refresh marketplace access docs and document publishing credentials ([#9330](https://github.com/meta/lexical/pull/9330)) Sherry
+- [lexical-extension][lexical-html][lexical-yjs][lexical-website][lexical-devtools] Feature: Stable block ids (BlockIdExtension) ([#9421](https://github.com/meta/lexical/pull/9421)) Gerard Rovira
+- [lexical][lexical-compiler][lexical-fast-check][lexical-mark][lexical-website][lexical-yjs] Feature: Experimental MarkStateExtension and set-valued NodeState with arraySetValue ([#9380](https://github.com/meta/lexical/pull/9380)) Gerard Rovira
+- [lexical][lexical-code-core][lexical-devtools][lexical-extension][lexical-link][lexical-list][lexical-mark][lexical-mdast][lexical-rich-text][lexical-table][lexical-website] Feature: Experimental node structure in $config (inline, children, mergeAdjacent, derived) and an opt-in NodeStructureExtension ([#9452](https://github.com/meta/lexical/pull/9452)) Gerard Rovira
+- [lexical-table][lexical-website] Bug Fix: Table commands throw or misbehave on a ragged table ([#9375](https://github.com/meta/lexical/pull/9375)) Gerard Rovira
+- [lexical-link] Bug Fix: Fix $toggleLink(null) crash when the selection touches a link boundary ([#9412](https://github.com/meta/lexical/pull/9412)) Gerard Rovira
+- [lexical-history] Bug Fix: HISTORY_PUSH_TAG is ignored when the only dirty leaf is an unchanged TextNode ([#9218](https://github.com/meta/lexical/pull/9218)) ump45nose
+- build(deps): bump follow-redirects from 1.16.0 to 1.16.1 ([#9397](https://github.com/meta/lexical/pull/9397)) dependabot[bot]
+- build(deps): bump launch-editor from 2.13.2 to 2.14.2 ([#9398](https://github.com/meta/lexical/pull/9398)) dependabot[bot]
+- build(deps-dev): bump vite from 8.3.1 to 8.3.3 ([#9399](https://github.com/meta/lexical/pull/9399)) dependabot[bot]
+- [lexical-markdown] Bug Fix: Keep backslashes in leading code spans and unescape text only once ([#9396](https://github.com/meta/lexical/pull/9396)) David Billiot
+- [lexical] Bug Fix: Finish cancelled desktop WebKit compositions ([#9362](https://github.com/meta/lexical/pull/9362)) Justin Chen
+- [lexical-website][ci] Bug Fix: Stop advertising pkg.pr.new yarn commands that install extra copies of lexical ([#9394](https://github.com/meta/lexical/pull/9394)) Gerard Rovira
+- [lexical-mdast] Bug Fix: Keep consecutive and leading line breaks in a Markdown round trip ([#9392](https://github.com/meta/lexical/pull/9392)) UNKNOWN H4CK3R
+- [lexical-website][ci] Bug Fix: Stop advertising pkg.pr.new pnpm commands that install two copies of lexical ([#9387](https://github.com/meta/lexical/pull/9387)) Gerard Rovira
+- [lexical-markdown] Bug Fix: Read an out-of-range decimal character reference as U+FFFD ([#9388](https://github.com/meta/lexical/pull/9388)) kevin
+- [lexical][lexical-rich-text][lexical-playground] Bug Fix: Keep selections and deletions inside slot boundaries ([#9373](https://github.com/meta/lexical/pull/9373)) Bob Ippolito
+- [lexical-website][ci] Feature: Publish every PR and main commit to pkg.pr.new ([#9385](https://github.com/meta/lexical/pull/9385)) Gerard Rovira
+- [lexical-playground] Bug Fix: Declare the playground's missing terser and @lexical/a11y dependencies ([#9384](https://github.com/meta/lexical/pull/9384)) garhinful
+- [lexical] Bug Fix: Keep spellcheck underlines when a text node's text changes ([#9354](https://github.com/meta/lexical/pull/9354)) Badcuban
+- [lexical-link] Bug Fix: Configure link navigation and isolate nested editors ([#9360](https://github.com/meta/lexical/pull/9360)) Maxim Gagiev
+- [lexical-eslint-plugin-internal] Bug Fix: resolve messaging namespaces through imports, assertions and declaration scope ([#9351](https://github.com/meta/lexical/pull/9351)) Sherry
+- [lexical-playground] Bug Fix: fix the blank ‘Vertical Align’ menu item in Table Actions menu when width is \< 1100 ([#9346](https://github.com/meta/lexical/pull/9346)) Syed Umar Anis
+- [lexical] Bug Fix: Write the managed line break selectors so jsdom 26's nwsapi can parse them ([#9372](https://github.com/meta/lexical/pull/9372)) Gerard Rovira
+- [lexical-devtools] Chore: Migrate Chrome publishing and release extensions with npm ([#9369](https://github.com/meta/lexical/pull/9369)) Bob Ippolito
+- [lexical-react] Bug Fix: no widget role or widget-only ARIA on a non-editable editor ([#9270](https://github.com/meta/lexical/pull/9270)) Sherry
+- [lexical-playground][lexical-website] Chore: Fix automated copyright checks ([#9370](https://github.com/meta/lexical/pull/9370)) xiezhenjia-meta
+- [lexical-playground] Feature: Add "Copy as Markdown" to the context menu ([#9367](https://github.com/meta/lexical/pull/9367)) Ivaylo Pavlov
+- [lexical] Bug Fix: Explain how to guard a stale node reference in the missing node error ([#9366](https://github.com/meta/lexical/pull/9366)) Yashvardhan Thanvi
+- [lexical-playground] Fix context menu icons not rendering ([#9368](https://github.com/meta/lexical/pull/9368)) Ivaylo Pavlov
+- [lexical-react][lexical-playground] Feature: Add optional $disableMenuFor prop to LexicalAutoEmbedPlugin ([#9365](https://github.com/meta/lexical/pull/9365)) Abhinav Sharma
+- [lexical-utils] Bug Fix: positionNodeOnRange no longer loops when its root element is detached ([#9358](https://github.com/meta/lexical/pull/9358)) Pieter Willekens
+- [lexical-table] Bug Fix: Leave clicks on another editor's table to that editor ([#9356](https://github.com/meta/lexical/pull/9356)) Yashvardhan Thanvi
+- [lexical-yjs] Bug Fix: Re-create only moved children in syncChildrenFromLexical ([#9349](https://github.com/meta/lexical/pull/9349)) adstep
+- [lexical][lexical-playground] Bug Fix: Markdown shortcuts in iframe editors ([#9352](https://github.com/meta/lexical/pull/9352)) Hossein Dehghan
+- [lexical][lexical-clipboard][lexical-playground][lexical-selection][lexical-table] Bug Fix: Let mouse drags select across inline decorators ([#9329](https://github.com/meta/lexical/pull/9329)) vijay ojha
+- [lexical-yjs][Chore] Change last `Object` to `any` in lexical ([#9353](https://github.com/meta/lexical/pull/9353)) Sam Zhou
+- [lexical-eslint-plugin-internal] Chore: lint window messaging channel scoping ([#9339](https://github.com/meta/lexical/pull/9339)) Sherry
+- build(deps): bump joi from 17.13.4 to 17.13.8 ([#9343](https://github.com/meta/lexical/pull/9343)) dependabot[bot]
+- build(deps): bump compression from 1.8.1 to 1.8.2 ([#9344](https://github.com/meta/lexical/pull/9344)) dependabot[bot]
+- build(deps): bump proxy-addr from 2.0.7 to 2.0.8 ([#9345](https://github.com/meta/lexical/pull/9345)) dependabot[bot]
+- [lexical][lexical-react][lexical-website] Bug Fix: Keep commit listeners in order when editor.read() is called during listener dispatch ([#9335](https://github.com/meta/lexical/pull/9335)) Ved Thakar
+- [lexical-react] Bug Fix: Ignore stale asynchronous typeahead close completions ([#9332](https://github.com/meta/lexical/pull/9332)) TABISH AYUB RAZA
+- [lexical-react] Bug Fix: Ignore stale asynchronous auto-embed results ([#9331](https://github.com/meta/lexical/pull/9331)) TABISH AYUB RAZA
+- [lexical] Bug Fix: Restore the notified selection when a no-op update is dropped ([#9328](https://github.com/meta/lexical/pull/9328)) Den Ilin
+- [lexical][lexical-rich-text] Bug Fix: Stop the page jumping when tapping a decorator on iOS ([#9325](https://github.com/meta/lexical/pull/9325)) Bob Ippolito
+- [lexical-playground] Chore: Reduce E2E overhead and move focused coverage to faster suites ([#9322](https://github.com/meta/lexical/pull/9322)) Bob Ippolito
+- [lexical-extension][lexical-playground] Bug Fix: trim triple-click overselection however late the selection change arrives ([#9317](https://github.com/meta/lexical/pull/9317)) Bob Ippolito
+- [*] Breaking change: Remove extensions deprecated as of v0.52.0 ([#9316](https://github.com/meta/lexical/pull/9316)) Bob Ippolito
+- [lexical] Bug Fix: preserve inline decorators across soft-wrap line deletion ([#9321](https://github.com/meta/lexical/pull/9321)) Bob Ippolito
+- [lexical-rich-text][lexical-playground] Bug Fix: Allow native iOS text-file drops ([#9320](https://github.com/meta/lexical/pull/9320)) Bob Ippolito
+- [lexical][lexical-react] Bug Fix: Don't read Math.random while rendering on the server ([#9319](https://github.com/meta/lexical/pull/9319)) Bob Ippolito
+- [lexical-clipboard][lexical-website] Feature: Allow clipboard import middleware to replace data and selection ([#9312](https://github.com/meta/lexical/pull/9312)) Bob Ippolito
+- Documentation Update: Describe $config json schemas in the AGENTS.md custom node guide ([#9313](https://github.com/meta/lexical/pull/9313)) Bob Ippolito
+- build(deps): bump fast-uri from 3.1.2 to 3.1.8 ([#9315](https://github.com/meta/lexical/pull/9315)) dependabot[bot]
+- build(deps): bump undici from 7.27.0 to 7.30.0 ([#9314](https://github.com/meta/lexical/pull/9314)) dependabot[bot]
+- build(deps-dev): bump the vitest group across 1 directory with 2 updates ([#9310](https://github.com/meta/lexical/pull/9310)) dependabot[bot]
+- [lexical][lexical-playground] Bug Fix: keep root text right after repeated slot edits, and read the DOM caret on keydown ([#9283](https://github.com/meta/lexical/pull/9283)) Rin Arakaki
+- build(deps): bump the rollup group across 1 directory with 5 updates ([#9309](https://github.com/meta/lexical/pull/9309)) dependabot[bot]
+- build(deps-dev): bump flow-bin from 0.331.0 to 0.333.0 in the flow-and-hermes group ([#9308](https://github.com/meta/lexical/pull/9308)) dependabot[bot]
+- build(deps-dev): bump the dev-dependencies group with 16 updates ([#9311](https://github.com/meta/lexical/pull/9311)) dependabot[bot]
+- build(deps): bump the docusaurus-and-typedoc group with 2 updates ([#9307](https://github.com/meta/lexical/pull/9307)) dependabot[bot]
+- [lexical-link] Bug Fix: open new-tab links without window.opener ([#9303](https://github.com/meta/lexical/pull/9303)) Maxime
+- [lexical-rich-text] Bug Fix: Split a heading on Enter after a line break or an inline decorator ([#9295](https://github.com/meta/lexical/pull/9295)) Rin Arakaki
+- [lexical] Bug Fix: Keep a TextNode subclass's type, key and node state when composing into it ([#9291](https://github.com/meta/lexical/pull/9291)) Rin Arakaki
+- [lexical] Chore: reduce unit test environment overhead ([#9304](https://github.com/meta/lexical/pull/9304)) Bob Ippolito
+- [lexical] Bug Fix: preserve custom element text in root cache ([#9260](https://github.com/meta/lexical/pull/9260)) Maxim Gagiev
+- [lexical-list] Bug Fix: Keep a caret after an inline decorator when removing a list ([#9300](https://github.com/meta/lexical/pull/9300)) Rin Arakaki
+- [lexical] Bug Fix: Keep the line break when deleting a line that starts with an inline decorator ([#9301](https://github.com/meta/lexical/pull/9301)) Rin Arakaki
+- [lexical-code-core] Bug Fix: normalize imported code content ([#9272](https://github.com/meta/lexical/pull/9272)) Maxim Gagiev
+- [lexical-table] Bug Fix: keep iOS empty-cell double taps inside the cell ([#9267](https://github.com/meta/lexical/pull/9267)) Bob Ippolito
+- [lexical] Bug Fix: preserve insertion anchors when moving children across parents ([#9302](https://github.com/meta/lexical/pull/9302)) Bob Ippolito
+- build(deps): bump dompurify from 3.4.13 to 3.4.16 ([#9297](https://github.com/meta/lexical/pull/9297)) dependabot[bot]
+- [lexical-website] Chore: drop preset-classic to stop installing the unused Algolia search theme ([#9298](https://github.com/meta/lexical/pull/9298)) Bob Ippolito
+- lexical extension devtool bugfix ([#9299](https://github.com/meta/lexical/pull/9299)) Sherry
+- [lexical-devtools][lexical-website] Chore: Remove Edge extension (taken down from the Edge Add-ons store) ([#9296](https://github.com/meta/lexical/pull/9296)) Gerard Rovira
+- [lexical][lexical-selection] Bug Fix: preserve selected text and formatting at range boundaries ([#9261](https://github.com/meta/lexical/pull/9261)) Bob Ippolito
+- [lexical] Bug Fix: preserve tree links and selections during caret mutations ([#9262](https://github.com/meta/lexical/pull/9262)) Bob Ippolito
+- [lexical] Bug Fix: share selection operations and repair endpoints without direction comparisons ([#9263](https://github.com/meta/lexical/pull/9263)) Bob Ippolito
+- [lexical] Refactor: avoid repeated traversal of dirty subtrees during GC ([#9264](https://github.com/meta/lexical/pull/9264)) Bob Ippolito
+- [lexical] Bug Fix: Make the registerEventListener Flow options type libdef-independent ([#9258](https://github.com/meta/lexical/pull/9258)) Sherry
+- [lexical-website] Documentation Update: webpack and Parcel need an adapter for HMRExtension's hot config ([#9256](https://github.com/meta/lexical/pull/9256)) Sherry
+- [lexical-website] Documentation Update: make the create-plugin snippets valid JSX ([#9255](https://github.com/meta/lexical/pull/9255)) Sherry
+- [lexical-website] Documentation Update: fix five incorrect snippets and claims in the React plugins guide ([#9254](https://github.com/meta/lexical/pull/9254)) Sherry
 
 ## v0.52.0 (2026-09-27)
 
 ### Breaking changes
 
-- **lexical, @lexical/table**: `SELECTION_CHANGE_COMMAND` runs before reconciliation ([#9219](https://github.com/facebook/lexical/pull/9219))
+- **lexical, @lexical/table**: `SELECTION_CHANGE_COMMAND` runs before reconciliation ([#9219](https://github.com/meta/lexical/pull/9219))
 
   The command runs inside the pending update, before DOM
   reconciliation, including automatic `NodeSelection` / `TableSelection`
@@ -399,7 +399,7 @@ This file also ships in the `lexical` package as
   Use `registerUpdateListener` for UI that must react to every commit. See
   [Selection change timing](https://lexical.dev/docs/concepts/selection#selection-change-timing).
 
-- **lexical**: `LexicalNode.getCommonAncestor` removed ([#9238](https://github.com/facebook/lexical/pull/9238))
+- **lexical**: `LexicalNode.getCommonAncestor` removed ([#9238](https://github.com/meta/lexical/pull/9238))
 
   The method is removed. `$getCommonAncestor` is not a drop-in
   replacement: the old method first replaced non-element arguments with
@@ -418,7 +418,7 @@ This file also ships in the `lexical` package as
 
 ### Behavior changes
 
-- **lexical, @lexical/html**: HTML export honors `DOMRenderExtension` `$createDOM` overrides ([#9231](https://github.com/facebook/lexical/pull/9231))
+- **lexical, @lexical/html**: HTML export honors `DOMRenderExtension` `$createDOM` overrides ([#9231](https://github.com/meta/lexical/pull/9231))
 
   Nodes that inherit `LexicalNode.exportDOM` or call
   `super.exportDOM(editor)` export the DOM produced by `$createDOM`
@@ -434,11 +434,11 @@ This file also ships in the `lexical` package as
 
 ### Deprecations
 
-- **@lexical/mdast**: `MdastImportExtension`, `MdastExportExtension` and their output types deprecated ([#9198](https://github.com/facebook/lexical/pull/9198))
+- **@lexical/mdast**: `MdastImportExtension`, `MdastExportExtension` and their output types deprecated ([#9198](https://github.com/meta/lexical/pull/9198))
 
   Replacement: `MdastExtension` and `MdastExtensionOutput`.
 
-  Removal: no earlier than v0.53.0; [#9316](https://github.com/facebook/lexical/pull/9316) removes it after v0.52.0.
+  Removal: no earlier than v0.53.0; [#9316](https://github.com/meta/lexical/pull/9316) removes it after v0.52.0.
 
 ### All changes
 
@@ -501,7 +501,7 @@ This file also ships in the `lexical` package as
 
 ### Breaking changes
 
-- **all packages**: npm packages are ESM only ([#9127](https://github.com/facebook/lexical/pull/9127))
+- **all packages**: npm packages are ESM only ([#9127](https://github.com/meta/lexical/pull/9127))
 
   Every package declares `"type": "module"` and its `exports`
   map has no `require` condition.
@@ -515,7 +515,7 @@ This file also ships in the `lexical` package as
   pass to Lexical (`yjs`, `@preact/signals-core`) as ESM too so only one copy
   exists. See the [FAQ](https://lexical.dev/docs/faq) on module formats.
 
-- **lexical**: `exportJSON` may read a stale node ([#8602](https://github.com/facebook/lexical/pull/8602))
+- **lexical**: `exportJSON` may read a stale node ([#8602](https://github.com/meta/lexical/pull/8602))
 
   Properties declared with `withField` are read directly from
   the instance, so `exportJSON` on a stale reference can write stale values.
@@ -525,7 +525,7 @@ This file also ships in the `lexical` package as
 
   Migration: call `node.getLatest().exportJSON()`.
 
-- **@lexical/code, @lexical/code-prism**: Prism re-exports removed from `@lexical/code` ([#9141](https://github.com/facebook/lexical/pull/9141))
+- **@lexical/code, @lexical/code-prism**: Prism re-exports removed from `@lexical/code` ([#9141](https://github.com/meta/lexical/pull/9141))
 
   The deprecated Prism re-exports and the `@lexical/code-prism`
   dependency are removed from `@lexical/code`.
@@ -541,13 +541,13 @@ This file also ships in the `lexical` package as
 
 ### Deprecations
 
-- **@lexical/react**: `LexicalComposer` deprecated ([#9168](https://github.com/facebook/lexical/pull/9168))
+- **@lexical/react**: `LexicalComposer` deprecated ([#9168](https://github.com/meta/lexical/pull/9168))
 
   Replacement: `LexicalExtensionComposer`; see [React extensions](https://lexical.dev/docs/extensions/react).
 
   Removal: not scheduled.
 
-- **lexical, @lexical/clipboard**: The `version` field of serialized nodes and clipboard payloads deprecated ([#8602](https://github.com/facebook/lexical/pull/8602))
+- **lexical, @lexical/clipboard**: The `version` field of serialized nodes and clipboard payloads deprecated ([#8602](https://github.com/meta/lexical/pull/8602))
 
   Replacement: none; parsing ignores it and a compact export omits it.
 
@@ -597,7 +597,7 @@ This file also ships in the `lexical` package as
 
 ### Breaking changes
 
-- **lexical, @lexical/utils, @lexical/selection**: `replace()` no longer moves named slot values ([#8938](https://github.com/facebook/lexical/pull/8938))
+- **lexical, @lexical/utils, @lexical/selection**: `replace()` no longer moves named slot values ([#8938](https://github.com/meta/lexical/pull/8938))
 
   Calling `replace()` on a named slot value throws; `$setBlocksType`
   and block converters skip slot values.
@@ -606,7 +606,7 @@ This file also ships in the `lexical` package as
 
   Migration: use `$setSlot` on the owning host.
 
-- **@lexical/clipboard**: Lexical clipboard JSON uses `excludeFromCopy('clone')` ([#8995](https://github.com/facebook/lexical/pull/8995))
+- **@lexical/clipboard**: Lexical clipboard JSON uses `excludeFromCopy('clone')` ([#8995](https://github.com/meta/lexical/pull/8995))
 
   The `application/x-lexical-editor` payload asks
   `excludeFromCopy('clone')` instead of `'html'`.
@@ -616,7 +616,7 @@ This file also ships in the `lexical` package as
 
   Migration: return the intended value for `'clone'` as well.
 
-- **lexical**: Only `RootListener` and `EditableListener` may return cleanup ([#8990](https://github.com/facebook/lexical/pull/8990))
+- **lexical**: Only `RootListener` and `EditableListener` may return cleanup ([#8990](https://github.com/meta/lexical/pull/8990))
 
   Returning a function from other listener types is a type
   error (it was never called).
@@ -627,7 +627,7 @@ This file also ships in the `lexical` package as
 
   Migration: remove the returned function and clean up elsewhere.
 
-- **lexical, @lexical/yjs**: New invariants ([#6483](https://github.com/facebook/lexical/pull/6483))
+- **lexical, @lexical/yjs**: New invariants ([#6483](https://github.com/meta/lexical/pull/6483))
 
   These now throw instead of failing later: an `insertText` anchor that is not
   a text node, an empty `KeyboardShortcutMatch` key, and a `createBindingV2`
@@ -643,7 +643,7 @@ This file also ships in the `lexical` package as
 
 ### Behavior changes
 
-- **lexical, @lexical/html**: HTML export emits a terminating managed `<br>` ([#8765](https://github.com/facebook/lexical/pull/8765))
+- **lexical, @lexical/html**: HTML export emits a terminating managed `<br>` ([#8765](https://github.com/meta/lexical/pull/8765))
 
   A trailing `LineBreakNode` in a block also exports
   `<br data-lexical-managed-linebreak="true">`.
@@ -654,13 +654,13 @@ This file also ships in the `lexical` package as
 
   Verify: HTML export of blocks ending in a line break.
 
-- **@lexical/rich-text, @lexical/link**: Rich text and autolink mount an `aria-live` region ([#8908](https://github.com/facebook/lexical/pull/8908))
+- **@lexical/rich-text, @lexical/link**: Rich text and autolink mount an `aria-live` region ([#8908](https://github.com/meta/lexical/pull/8908))
 
   `HeadingAnnounceExtension` (via `RichTextExtension`) and
   `AutoLinkAnnounceExtension` (via `AutoLinkExtension`) append a live-region
   `<div>` to `document.body` or the configured owner.
 
-  See also [#9071](https://github.com/facebook/lexical/pull/9071).
+  See also [#9071](https://github.com/meta/lexical/pull/9071).
 
   Detect: `RichTextExtension` or `AutoLinkExtension` users with DOM
   snapshot tests or strict body markup.
@@ -671,7 +671,7 @@ This file also ships in the `lexical` package as
 
   Verify: DOM snapshots; screen reader output.
 
-- **lexical**: Select-all delete and cut remove the blocks ([#8884](https://github.com/facebook/lexical/pull/8884))
+- **lexical**: Select-all delete and cut remove the blocks ([#8884](https://github.com/meta/lexical/pull/8884))
 
   Deleting or cutting a whole-document selection removes the
   top-level blocks and leaves a fresh empty paragraph.
@@ -682,7 +682,7 @@ This file also ships in the `lexical` package as
 
   Verify: select-all then delete, cut, and paste.
 
-- **lexical**: Formatted paragraphs copy as blocks ([#9059](https://github.com/facebook/lexical/pull/9059))
+- **lexical**: Formatted paragraphs copy as blocks ([#9059](https://github.com/meta/lexical/pull/9059))
 
   A fully selected paragraph with alignment, indent, or inline
   style is copied as a block instead of having its children spliced in.
@@ -693,12 +693,12 @@ This file also ships in the `lexical` package as
 
   Verify: copy/paste of aligned or indented paragraphs.
 
-- **lexical**: `importJSON` applies registered node replacements ([#9061](https://github.com/facebook/lexical/pull/9061))
+- **lexical**: `importJSON` applies registered node replacements ([#9061](https://github.com/meta/lexical/pull/9061))
 
   JSON deserialization constructs the replacement class from
   `nodes: [{replace, with, withKlass}]` and runs its `importJSON`.
 
-  See also [#9090](https://github.com/facebook/lexical/pull/9090).
+  See also [#9090](https://github.com/meta/lexical/pull/9090).
 
   Detect: editors that configure node replacements and load JSON.
 
@@ -706,7 +706,7 @@ This file also ships in the `lexical` package as
 
   Verify: loading saved documents with node replacements.
 
-- **@lexical/yjs**: Root `textFormat` / `textStyle` are no longer synced ([#8940](https://github.com/facebook/lexical/pull/8940))
+- **@lexical/yjs**: Root `textFormat` / `textStyle` are no longer synced ([#8940](https://github.com/meta/lexical/pull/8940))
 
   Collaboration no longer syncs the root node's `textFormat` and `textStyle`.
 
@@ -714,7 +714,7 @@ This file also ships in the `lexical` package as
 
   Verify: collaborative documents whose root text format or style was relied on.
 
-- **@lexical/markdown**: Markdown import restructures nested mixed-type lists and keeps fence metadata ([#8283](https://github.com/facebook/lexical/pull/8283))
+- **@lexical/markdown**: Markdown import restructures nested mixed-type lists and keeps fence metadata ([#8283](https://github.com/meta/lexical/pull/8283))
 
   Markdown import builds a different structure for nested lists that mix
   list types, and stores code fence metadata in a new `mdCodeMeta` node state.
@@ -727,7 +727,7 @@ This file also ships in the `lexical` package as
 
 ### Deprecations
 
-- **lexical**: `CAN_UNDO_COMMAND` and `CAN_REDO_COMMAND` deprecated ([#8918](https://github.com/facebook/lexical/pull/8918))
+- **lexical**: `CAN_UNDO_COMMAND` and `CAN_REDO_COMMAND` deprecated ([#8918](https://github.com/meta/lexical/pull/8918))
 
   Replacement: the `canUndo` / `canRedo` signals of `HistoryExtension`.
 
@@ -848,7 +848,7 @@ This file also ships in the `lexical` package as
 
 ### Breaking changes
 
-- **lexical, @lexical/rich-text, @lexical/link, @lexical/mark, @lexical/hashtag, @lexical/table, @lexical/code, @lexical/extension, @lexical/react**: Built-in nodes use `$config()`; static methods not for callers ([#8640](https://github.com/facebook/lexical/pull/8640))
+- **lexical, @lexical/rich-text, @lexical/link, @lexical/mark, @lexical/hashtag, @lexical/table, @lexical/code, @lexical/extension, @lexical/react**: Built-in nodes use `$config()`; static methods not for callers ([#8640](https://github.com/meta/lexical/pull/8640))
 
   Built-in node classes are ported to `$config()`. Static
   `transform()` is gone from ported classes; static `clone()`,
@@ -866,7 +866,7 @@ This file also ships in the `lexical` package as
   instead of `importDOM`; extensions or `$transform` in `$config` instead of
   `transform`.
 
-- **lexical**: `LexicalCommand<T>` is invariant ([#8877](https://github.com/facebook/lexical/pull/8877))
+- **lexical**: `LexicalCommand<T>` is invariant ([#8877](https://github.com/meta/lexical/pull/8877))
 
   Commands with different payload types are no longer
   assignable to each other. `dispatchCommand`'s payload is optional for
@@ -881,13 +881,13 @@ This file also ships in the `lexical` package as
 
 ### Deprecations
 
-- **@lexical/table**: `$createTableSelection` deprecated ([#8855](https://github.com/facebook/lexical/pull/8855))
+- **@lexical/table**: `$createTableSelection` deprecated ([#8855](https://github.com/meta/lexical/pull/8855))
 
   Replacement: `$createTableSelectionFrom`.
 
   Removal: not scheduled.
 
-- **@lexical/table**: `TableSelection.getShape()` deprecated ([#8853](https://github.com/facebook/lexical/pull/8853))
+- **@lexical/table**: `TableSelection.getShape()` deprecated ([#8853](https://github.com/meta/lexical/pull/8853))
 
   Replacement: `$computeTableMap` with `$computeTableCellRectBoundary`.
 
@@ -930,7 +930,7 @@ This file also ships in the `lexical` package as
 
 ### Deprecations
 
-- **@lexical/extension**: `$applyFormatToDom` deprecated ([#8826](https://github.com/facebook/lexical/pull/8826))
+- **@lexical/extension**: `$applyFormatToDom` deprecated ([#8826](https://github.com/meta/lexical/pull/8826))
 
   Replacement: `applyFormatToDom` (the function does not need an active editor).
 
@@ -960,7 +960,7 @@ This file also ships in the `lexical` package as
 
 ### Breaking changes
 
-- **@lexical/react, @lexical/devtools-core**: React 18 is the minimum ([#8782](https://github.com/facebook/lexical/pull/8782))
+- **@lexical/react, @lexical/devtools-core**: React 18 is the minimum ([#8782](https://github.com/meta/lexical/pull/8782))
 
   Peer dependencies require `react` and `react-dom` `>=18`.
 
@@ -970,7 +970,7 @@ This file also ships in the `lexical` package as
 
 ### Behavior changes
 
-- **lexical**: Segmented `TextNode` switches to `normal` during IME composition ([#8784](https://github.com/facebook/lexical/pull/8784))
+- **lexical**: Segmented `TextNode` switches to `normal` during IME composition ([#8784](https://github.com/meta/lexical/pull/8784))
 
   Composing in the middle of a segmented `TextNode` keeps the
   node and its DOM, temporarily switching it to `normal` mode until
@@ -1049,7 +1049,7 @@ This file also ships in the `lexical` package as
 
 ### Breaking changes
 
-- **lexical**: Traversal methods return the base node type ([#8661](https://github.com/facebook/lexical/pull/8661))
+- **lexical**: Traversal methods return the base node type ([#8661](https://github.com/meta/lexical/pull/8661))
 
   `getParent`, `getChildren`, `getFirstChild`, `getLastChild`,
   `getNextSibling(s)`, `getPreviousSibling(s)`, `getChildAtIndex`,
@@ -1074,7 +1074,7 @@ This file also ships in the `lexical` package as
   }
   ```
 
-- **lexical**: `$getNearestNodeFromDOMNode(rootElement)` returns `RootNode` ([#8588](https://github.com/facebook/lexical/pull/8588))
+- **lexical**: `$getNearestNodeFromDOMNode(rootElement)` returns `RootNode` ([#8588](https://github.com/meta/lexical/pull/8588))
 
   The root element resolves to the `RootNode` instead of `null`
   in `$getNearestNodeFromDOMNode` and `$getNodeFromDOM`.
@@ -1084,7 +1084,7 @@ This file also ships in the `lexical` package as
 
   Migration: check `$isRootNode(result)` as well.
 
-- **lexical, @lexical/clipboard, @lexical/html, @lexical/yjs**: Element `NodeSelection` copies include children; Yjs v2 sync signature ([#8603](https://github.com/facebook/lexical/pull/8603))
+- **lexical, @lexical/clipboard, @lexical/html, @lexical/yjs**: Element `NodeSelection` copies include children; Yjs v2 sync signature ([#8603](https://github.com/meta/lexical/pull/8603))
 
   Copying a `NodeSelection` that contains an `ElementNode`
   includes its children. The experimental `syncLexicalUpdateToYjsV2__EXPERIMENTAL`
@@ -1098,7 +1098,7 @@ This file also ships in the `lexical` package as
 
   Verify: copy/cut of selected element nodes.
 
-- **@lexical/link**: `toggleLink` removed ([#8704](https://github.com/facebook/lexical/pull/8704))
+- **@lexical/link**: `toggleLink` removed ([#8704](https://github.com/meta/lexical/pull/8704))
 
   The deprecated `toggleLink` export is removed.
 
@@ -1107,7 +1107,7 @@ This file also ships in the `lexical` package as
   Migration: rename to `$toggleLink`; `toggleLink` was an alias of it,
   so arguments and calling context are unchanged.
 
-- **@lexical/list**: `insertList` / `removeList` removed ([#8704](https://github.com/facebook/lexical/pull/8704))
+- **@lexical/list**: `insertList` / `removeList` removed ([#8704](https://github.com/meta/lexical/pull/8704))
 
   The deprecated `insertList(editor, listType)` and
   `removeList(editor)` exports are removed.
@@ -1125,7 +1125,7 @@ This file also ships in the `lexical` package as
   editor.update(() => $removeList());
   ```
 
-- **@lexical/react**: `ContentEditable` `Props` type removed ([#8704](https://github.com/facebook/lexical/pull/8704))
+- **@lexical/react**: `ContentEditable` `Props` type removed ([#8704](https://github.com/meta/lexical/pull/8704))
 
   The `Props` type alias exported by
   `@lexical/react/LexicalContentEditable` is removed.
@@ -1136,7 +1136,7 @@ This file also ships in the `lexical` package as
 
 ### Behavior changes
 
-- **lexical**: Managed line breaks are tagged; `insertNodes` keeps a leading linebreak ([#8615](https://github.com/facebook/lexical/pull/8615))
+- **lexical**: Managed line breaks are tagged; `insertNodes` keeps a leading linebreak ([#8615](https://github.com/meta/lexical/pull/8615))
 
   Reconciler-inserted `<br>`s carry
   `data-lexical-managed-linebreak="true"` (on iOS Safari sometimes an `<img>`
@@ -1152,25 +1152,25 @@ This file also ships in the `lexical` package as
 
 ### Deprecations
 
-- **lexical**: Type arguments on node traversal methods deprecated ([#8661](https://github.com/facebook/lexical/pull/8661))
+- **lexical**: Type arguments on node traversal methods deprecated ([#8661](https://github.com/meta/lexical/pull/8661))
 
   Replacement: type guards such as `$isParagraphNode`. Applies to the traversal methods listed under Breaking changes and to `$getNodeByKey` / `$getNodeByKeyOrThrow`.
 
   Removal: not scheduled.
 
-- **@lexical/html, @lexical/rich-text, @lexical/list, @lexical/link, @lexical/table, @lexical/code**: `RichTextImportExtension` and the other per-package DOM import extensions deprecated ([#8662](https://github.com/facebook/lexical/pull/8662))
+- **@lexical/html, @lexical/rich-text, @lexical/list, @lexical/link, @lexical/table, @lexical/code**: `RichTextImportExtension` and the other per-package DOM import extensions deprecated ([#8662](https://github.com/meta/lexical/pull/8662))
 
   Replacement: remove them from your dependencies; the node extensions (`RichTextExtension`, `ListExtension`, `LinkExtension`, `TableExtension`, `CodeExtension`, `HorizontalRuleExtension`) register their own DOM import rules. These are experimental APIs.
 
-  Removal: no earlier than v0.53.0; [#9316](https://github.com/facebook/lexical/pull/9316) removes it after v0.52.0.
+  Removal: no earlier than v0.53.0; [#9316](https://github.com/meta/lexical/pull/9316) removes it after v0.52.0.
 
-- **lexical**: `removeFromParent` and `isSelectionCapturedInDecoratorInput` deprecated ([#8603](https://github.com/facebook/lexical/pull/8603))
+- **lexical**: `removeFromParent` and `isSelectionCapturedInDecoratorInput` deprecated ([#8603](https://github.com/meta/lexical/pull/8603))
 
   Replacement: `$removeFromParent` and `$isSelectionCapturedInDecoratorInput`.
 
   Removal: not scheduled.
 
-- **@lexical/react**: `getScrollParent` from `@lexical/react/LexicalTypeaheadMenuPlugin` deprecated ([#8733](https://github.com/facebook/lexical/pull/8733))
+- **@lexical/react**: `getScrollParent` from `@lexical/react/LexicalTypeaheadMenuPlugin` deprecated ([#8733](https://github.com/meta/lexical/pull/8733))
 
   Replacement: `getScrollParent` from `@lexical/utils`.
 
@@ -1285,7 +1285,7 @@ This file also ships in the `lexical` package as
 
 ### Breaking changes
 
-- **lexical, @lexical/html, @lexical/selection, @lexical/utils**: `DOMSlot` generalized ([#8519](https://github.com/facebook/lexical/pull/8519))
+- **lexical, @lexical/html, @lexical/selection, @lexical/utils**: `DOMSlot` generalized ([#8519](https://github.com/meta/lexical/pull/8519))
 
   `DOMSlot` can describe arbitrary DOM containers and
   `DOMRenderExtension` overrides flow through `$getDOMSlot`. `markSelection`
@@ -1299,7 +1299,7 @@ This file also ships in the `lexical` package as
 
 ### Behavior changes
 
-- **lexical**: `$getReconciledDirection` walks through shadow roots ([#8479](https://github.com/facebook/lexical/pull/8479))
+- **lexical**: `$getReconciledDirection` walks through shadow roots ([#8479](https://github.com/meta/lexical/pull/8479))
 
   Elements inside shadow roots (for example table cells) inherit
   direction like other elements.
@@ -1309,7 +1309,7 @@ This file also ships in the `lexical` package as
 
   Verify: RTL content inside tables.
 
-- **lexical, @lexical/rich-text**: Backspace at block start preserves the current block ([#8493](https://github.com/facebook/lexical/pull/8493))
+- **lexical, @lexical/rich-text**: Backspace at block start preserves the current block ([#8493](https://github.com/meta/lexical/pull/8493))
 
   Backspace at the start of a non-empty block after an empty
   block removes the empty block and keeps the current block's type, and a
@@ -1322,7 +1322,7 @@ This file also ships in the `lexical` package as
 
   Verify: Backspace at the start of headings, quotes, and list items.
 
-- **lexical**: Selection follows nodes moved between parents ([#8501](https://github.com/facebook/lexical/pull/8501))
+- **lexical**: Selection follows nodes moved between parents ([#8501](https://github.com/meta/lexical/pull/8501))
 
   `replace`, `insertBefore`, `insertAfter` and other callers that
   move a node adjust the selection to follow it.
@@ -1334,7 +1334,7 @@ This file also ships in the `lexical` package as
 
   Verify: features that move nodes containing the caret.
 
-- **@lexical/markdown**: Markdown shortcuts fire after IME composition ([#8503](https://github.com/facebook/lexical/pull/8503))
+- **@lexical/markdown**: Markdown shortcuts fire after IME composition ([#8503](https://github.com/meta/lexical/pull/8503))
 
   Markdown shortcuts typed through IME composition trigger once
   the composition is committed.
@@ -1343,7 +1343,7 @@ This file also ships in the `lexical` package as
 
   Verify: markdown shortcuts with an IME.
 
-- **@lexical/extension, @lexical/rich-text, @lexical/plain-text**: Empty inline elements are removed (`NormalizeInlineElementsExtension`) ([#8497](https://github.com/facebook/lexical/pull/8497))
+- **@lexical/extension, @lexical/rich-text, @lexical/plain-text**: Empty inline elements are removed (`NormalizeInlineElementsExtension`) ([#8497](https://github.com/meta/lexical/pull/8497))
 
   `registerRichText` / `registerPlainText` register a transform
   that removes empty inline elements such as `LinkNode`.
@@ -1356,7 +1356,7 @@ This file also ships in the `lexical` package as
 
   Verify: empty links and other inline wrappers.
 
-- **lexical, @lexical/extension, @lexical/rich-text, @lexical/plain-text**: Triple-click normalization moved to `NormalizeTripleClickSelectionExtension` ([#8520](https://github.com/facebook/lexical/pull/8520))
+- **lexical, @lexical/extension, @lexical/rich-text, @lexical/plain-text**: Triple-click normalization moved to `NormalizeTripleClickSelectionExtension` ([#8520](https://github.com/meta/lexical/pull/8520))
 
   The core editor no longer normalizes triple-click selection;
   rich text and plain text register the new extension.
@@ -1371,7 +1371,7 @@ This file also ships in the `lexical` package as
 
 ### Deprecations
 
-- **@lexical/selection**: `getStyleObjectFromRawCSS` deprecated ([#8447](https://github.com/facebook/lexical/pull/8447))
+- **@lexical/selection**: `getStyleObjectFromRawCSS` deprecated ([#8447](https://github.com/meta/lexical/pull/8447))
 
   Replacement: `getStyleObjectFromCSS` (it is an alias).
 
@@ -1500,7 +1500,7 @@ This file also ships in the `lexical` package as
 
 ### Behavior changes
 
-- **@lexical/code, @lexical/code-core**: Code block "Enter three times to exit" moved to `CodeExtension` ([#8360](https://github.com/facebook/lexical/pull/8360))
+- **@lexical/code, @lexical/code-core**: Code block "Enter three times to exit" moved to `CodeExtension` ([#8360](https://github.com/meta/lexical/pull/8360))
 
   The logic moved from `CodeNode.insertNewAfter` to a
   `KEY_ENTER_COMMAND` listener in `CodeExtension`. Without `CodeExtension`,
@@ -1516,31 +1516,31 @@ This file also ships in the `lexical` package as
 
 ### Deprecations
 
-- **lexical, @lexical/offset**: `OffsetView` and `$createOffsetView` deprecated; `$createChildrenArray` moved to `lexical` ([#8350](https://github.com/facebook/lexical/pull/8350))
+- **lexical, @lexical/offset**: `OffsetView` and `$createOffsetView` deprecated; `$createChildrenArray` moved to `lexical` ([#8350](https://github.com/meta/lexical/pull/8350))
 
   Replacement: import `$createChildrenArray` from `lexical` (the `@lexical/offset` export is a deprecated alias). `OffsetView` never worked correctly and has no replacement.
 
   Removal: not scheduled.
 
-- **@lexical/code-shiki**: `CodeHighlighterShikiExtension` and `CodeHighlighterShikiConfig` deprecated ([#8346](https://github.com/facebook/lexical/pull/8346))
+- **@lexical/code-shiki**: `CodeHighlighterShikiExtension` and `CodeHighlighterShikiConfig` deprecated ([#8346](https://github.com/meta/lexical/pull/8346))
 
   Replacement: `CodeShikiExtension` from `@lexical/code-shiki`.
 
-  Removal: no earlier than v0.53.0; [#9316](https://github.com/facebook/lexical/pull/9316) removes it after v0.52.0.
+  Removal: no earlier than v0.53.0; [#9316](https://github.com/meta/lexical/pull/9316) removes it after v0.52.0.
 
-- **@lexical/code**: Using `CodeNode` without `CodeExtension` deprecated ([#8360](https://github.com/facebook/lexical/pull/8360))
+- **@lexical/code**: Using `CodeNode` without `CodeExtension` deprecated ([#8360](https://github.com/meta/lexical/pull/8360))
 
   Replacement: register `CodeExtension`.
 
   Removal: not scheduled.
 
-- **@lexical/text**: `$findTextIntersectionFromCharacters` deprecated ([#8364](https://github.com/facebook/lexical/pull/8364))
+- **@lexical/text**: `$findTextIntersectionFromCharacters` deprecated ([#8364](https://github.com/meta/lexical/pull/8364))
 
   Replacement: none; it never worked correctly.
 
   Removal: not scheduled.
 
-- **@lexical/selection**: `getStyleObjectFromCSS` moved to `lexical`; `$addNodeStyle` deprecated ([#8372](https://github.com/facebook/lexical/pull/8372))
+- **@lexical/selection**: `getStyleObjectFromCSS` moved to `lexical`; `$addNodeStyle` deprecated ([#8372](https://github.com/meta/lexical/pull/8372))
 
   Replacement: import `getStyleObjectFromCSS` from `lexical`. `$addNodeStyle` is no longer needed: node styles are parsed on demand.
 
@@ -1613,7 +1613,7 @@ This file also ships in the `lexical` package as
 
 ### Behavior changes
 
-- **@lexical/react**: Nested editors delegate to the parent asynchronously when needed ([#8308](https://github.com/facebook/lexical/pull/8308))
+- **@lexical/react**: Nested editors delegate to the parent asynchronously when needed ([#8308](https://github.com/meta/lexical/pull/8308))
 
   Nested editors use asynchronous parent editor delegation when
   needed, matching behavior before v0.42.0.
@@ -1663,7 +1663,7 @@ This file also ships in the `lexical` package as
 
 ### Breaking changes
 
-- **@lexical/react**: `LexicalContextMenuPlugin` removed ([#8199](https://github.com/facebook/lexical/pull/8199))
+- **@lexical/react**: `LexicalContextMenuPlugin` removed ([#8199](https://github.com/meta/lexical/pull/8199))
 
   `@lexical/react/LexicalContextMenuPlugin`, deprecated since v0.32.0, is removed.
   `menuRenderFn` becomes optional on `LexicalTypeaheadMenuPlugin`,
@@ -1674,10 +1674,10 @@ This file also ships in the `lexical` package as
 
   Migration: use `LexicalNodeContextMenuPlugin` from
   `@lexical/react/LexicalNodeContextMenuPlugin`. The playground's
-  [ContextMenuPlugin](https://github.com/facebook/lexical/tree/main/packages/lexical-playground/src/plugins/ContextMenuPlugin)
+  [ContextMenuPlugin](https://github.com/meta/lexical/tree/main/packages/lexical-playground/src/plugins/ContextMenuPlugin)
   is an example.
 
-- **@lexical/code, @lexical/code-prism, @lexical/code-core**: Prism highlighting moved to `@lexical/code-prism` ([#8198](https://github.com/facebook/lexical/pull/8198))
+- **@lexical/code, @lexical/code-prism, @lexical/code-core**: Prism highlighting moved to `@lexical/code-prism` ([#8198](https://github.com/meta/lexical/pull/8198))
 
   Prism highlighting lives in `@lexical/code-prism`; the Prism
   exports of `@lexical/code` are deprecated re-exports (removed in v0.51.0).
@@ -1689,7 +1689,7 @@ This file also ships in the `lexical` package as
   Migration: add `@lexical/code-prism` and import these from it. See the v0.51.0 entry
   "Prism re-exports removed from `@lexical/code`" for the full list.
 
-- **@lexical/table, @lexical/react**: `hasFitNestedTables` removed ([#8210](https://github.com/facebook/lexical/pull/8210))
+- **@lexical/table, @lexical/react**: `hasFitNestedTables` removed ([#8210](https://github.com/meta/lexical/pull/8210))
 
   The experimental `hasFitNestedTables` option moved to the
   playground.
@@ -1701,7 +1701,7 @@ This file also ships in the `lexical` package as
 
 ### Deprecations
 
-- **@lexical/react**: `HorizontalRulePlugin` deprecated ([#8202](https://github.com/facebook/lexical/pull/8202))
+- **@lexical/react**: `HorizontalRulePlugin` deprecated ([#8202](https://github.com/meta/lexical/pull/8202))
 
   Replacement: `HorizontalRuleExtension` from `@lexical/extension`.
 
@@ -1762,7 +1762,7 @@ This file also ships in the `lexical` package as
 
 ### Behavior changes
 
-- **lexical**: `--lexical-indent-base-value` read from the root element ([#8132](https://github.com/facebook/lexical/pull/8132))
+- **lexical**: `--lexical-indent-base-value` read from the root element ([#8132](https://github.com/meta/lexical/pull/8132))
 
   The CSS custom property is only read from the editor's root
   element.
@@ -1823,7 +1823,7 @@ This file also ships in the `lexical` package as
 
 ### Deprecations
 
-- **@lexical/utils**: `$filter` deprecated ([#8106](https://github.com/facebook/lexical/pull/8106))
+- **@lexical/utils**: `$filter` deprecated ([#8106](https://github.com/meta/lexical/pull/8106))
 
   Replacement: `Array.prototype.filter` or `flatMap`.
 
@@ -1870,7 +1870,7 @@ This file also ships in the `lexical` package as
 
 ### Behavior changes
 
-- **lexical**: ElementNode JSON only includes `textFormat` / `textStyle` when needed ([#7971](https://github.com/facebook/lexical/pull/7971))
+- **lexical**: ElementNode JSON only includes `textFormat` / `textStyle` when needed ([#7971](https://github.com/meta/lexical/pull/7971))
 
   These properties are serialized only for an `ElementNode` with
   no direct `TextNode` children that is not a root or shadow root.
@@ -1929,7 +1929,7 @@ This file also ships in the `lexical` package as
 
 ### Breaking changes
 
-- **@lexical/code-shiki**: `CodeHighlighterShikiExtension` config flattened ([#7936](https://github.com/facebook/lexical/pull/7936))
+- **@lexical/code-shiki**: `CodeHighlighterShikiExtension` config flattened ([#7936](https://github.com/meta/lexical/pull/7936))
 
   Tokenizer options are top-level config keys.
 
@@ -1948,7 +1948,7 @@ This file also ships in the `lexical` package as
 
 ### Behavior changes
 
-- **lexical**: Static transforms from superclasses always apply ([#7926](https://github.com/facebook/lexical/pull/7926))
+- **lexical**: Static transforms from superclasses always apply ([#7926](https://github.com/meta/lexical/pull/7926))
 
   Static `transform()` methods and `$config` `$transform` from
   every superclass are registered automatically.
@@ -1961,7 +1961,7 @@ This file also ships in the `lexical` package as
 
   Verify: transforms of subclassed nodes such as `ListNode` / `ListItemNode`.
 
-- **@lexical/table**: Table selection handler priorities lowered ([#7933](https://github.com/facebook/lexical/pull/7933))
+- **@lexical/table**: Table selection handler priorities lowered ([#7933](https://github.com/meta/lexical/pull/7933))
 
   Table selection command listeners use
   `COMMAND_PRIORITY_HIGH` instead of `COMMAND_PRIORITY_CRITICAL`.
@@ -2002,7 +2002,7 @@ This file also ships in the `lexical` package as
 
 ### Deprecations
 
-- **@lexical/yjs**: `getAnchorAndFocusCollabNodesForUserState` deprecated ([#7616](https://github.com/facebook/lexical/pull/7616))
+- **@lexical/yjs**: `getAnchorAndFocusCollabNodesForUserState` deprecated ([#7616](https://github.com/meta/lexical/pull/7616))
 
   Replacement: `$getAnchorAndFocusForUserState`.
 
@@ -2087,7 +2087,7 @@ This file also ships in the `lexical` package as
 
 ### Breaking changes
 
-- **lexical**: `DecoratorNode.decorate()` is optional and may return `null` ([#7706](https://github.com/facebook/lexical/pull/7706))
+- **lexical**: `DecoratorNode.decorate()` is optional and may return `null` ([#7706](https://github.com/meta/lexical/pull/7706))
 
   `decorate()` is no longer required and its type is
   `decorate(): null | T`.
@@ -2097,7 +2097,7 @@ This file also ships in the `lexical` package as
 
   Migration: handle `null`.
 
-- **@lexical/react**: `LexicalCollaboration` provider required ([#7818](https://github.com/facebook/lexical/pull/7818))
+- **@lexical/react**: `LexicalCollaboration` provider required ([#7818](https://github.com/meta/lexical/pull/7818))
 
   `CollaborationPlugin` and `useCollaborationContext` require a
   `LexicalCollaboration` provider around the top-level `LexicalComposer`.
@@ -2118,7 +2118,7 @@ This file also ships in the `lexical` package as
 
   Use one provider for the top-level editor only; nested editors share it.
 
-- **@lexical/react, @lexical/yjs**: `clientID` removed from the collaboration context ([#7816](https://github.com/facebook/lexical/pull/7816))
+- **@lexical/react, @lexical/yjs**: `clientID` removed from the collaboration context ([#7816](https://github.com/meta/lexical/pull/7816))
 
   `useCollaborationContext()` no longer returns `clientID`.
 
@@ -2129,7 +2129,7 @@ This file also ships in the `lexical` package as
 
 ### Deprecations
 
-- **@lexical/react**: `HorizontalRuleNode` and `$createHorizontalRuleNode` from `@lexical/react/LexicalHorizontalRuleNode` deprecated ([#7706](https://github.com/facebook/lexical/pull/7706))
+- **@lexical/react**: `HorizontalRuleNode` and `$createHorizontalRuleNode` from `@lexical/react/LexicalHorizontalRuleNode` deprecated ([#7706](https://github.com/meta/lexical/pull/7706))
 
   Replacement: `HorizontalRuleExtension` from `@lexical/extension`.
 
@@ -2172,7 +2172,7 @@ This file also ships in the `lexical` package as
 
 ### Breaking changes
 
-- **@lexical/selection**: `$isParentElementRTL` needs an active editor ([#7727](https://github.com/facebook/lexical/pull/7727))
+- **@lexical/selection**: `$isParentElementRTL` needs an active editor ([#7727](https://github.com/meta/lexical/pull/7727))
 
   `$isParentElementRTL` reads the DOM, so it requires an active
   editor.
@@ -2191,7 +2191,7 @@ This file also ships in the `lexical` package as
 
 ### Behavior changes
 
-- **lexical**: `ltr` / `rtl` theme classes no longer applied ([#7727](https://github.com/facebook/lexical/pull/7727))
+- **lexical**: `ltr` / `rtl` theme classes no longer applied ([#7727](https://github.com/meta/lexical/pull/7727))
 
   The `ltr` and `rtl` theme classes are no longer added to DOM
   elements; the `dir` attribute is used instead.
@@ -2204,7 +2204,7 @@ This file also ships in the `lexical` package as
 
   Verify: RTL content visually.
 
-- **@lexical/yjs**: `__dir` synced through Yjs again ([#7727](https://github.com/facebook/lexical/pull/7727))
+- **@lexical/yjs**: `__dir` synced through Yjs again ([#7727](https://github.com/meta/lexical/pull/7727))
 
   The `ElementNode` `__dir` property is synced, and the value
   stored by documents created before v0.30.0 is applied again.
@@ -2269,7 +2269,7 @@ This file also ships in the `lexical` package as
 
 ### Behavior changes
 
-- **lexical**: `$copyNode` calls `afterCloneFrom` ([#7609](https://github.com/facebook/lexical/pull/7609))
+- **lexical**: `$copyNode` calls `afterCloneFrom` ([#7609](https://github.com/meta/lexical/pull/7609))
 
   `$copyNode(prevNode)` calls `newNode.afterCloneFrom(prevNode)`.
 
@@ -2279,7 +2279,7 @@ This file also ships in the `lexical` package as
 
   Verify: features using `$copyNode`, such as splitting.
 
-- **@lexical/react**: `role` kept on read-only `ContentEditable` ([#7647](https://github.com/facebook/lexical/pull/7647))
+- **@lexical/react**: `role` kept on read-only `ContentEditable` ([#7647](https://github.com/meta/lexical/pull/7647))
 
   The `role` attribute is no longer removed when the editor is
   read-only.
@@ -2292,7 +2292,7 @@ This file also ships in the `lexical` package as
 
 ### Deprecations
 
-- **@lexical/selection**: `$wrapNodes` deprecated ([#7634](https://github.com/facebook/lexical/pull/7634))
+- **@lexical/selection**: `$wrapNodes` deprecated ([#7634](https://github.com/meta/lexical/pull/7634))
 
   Replacement: `$setBlocksType`.
 
@@ -2345,11 +2345,11 @@ This file also ships in the `lexical` package as
 
 ### Deprecations
 
-- **@lexical/react**: `LexicalContextMenuPlugin` deprecated ([#7509](https://github.com/facebook/lexical/pull/7509))
+- **@lexical/react**: `LexicalContextMenuPlugin` deprecated ([#7509](https://github.com/meta/lexical/pull/7509))
 
-  Replacement: `LexicalNodeContextMenuPlugin`. v0.41.0 also marked its `menuRenderFn` prop deprecated ([#8001](https://github.com/facebook/lexical/pull/8001)).
+  Replacement: `LexicalNodeContextMenuPlugin`. v0.41.0 also marked its `menuRenderFn` prop deprecated ([#8001](https://github.com/meta/lexical/pull/8001)).
 
-  Removal: v0.42.0 ([#8199](https://github.com/facebook/lexical/pull/8199)).
+  Removal: v0.42.0 ([#8199](https://github.com/meta/lexical/pull/8199)).
 
 ### All changes
 
@@ -2408,7 +2408,7 @@ This file also ships in the `lexical` package as
 
 ### Deprecations
 
-- **lexical**: `KEY_MODIFIER_COMMAND` deprecated ([#7472](https://github.com/facebook/lexical/pull/7472))
+- **lexical**: `KEY_MODIFIER_COMMAND` deprecated ([#7472](https://github.com/meta/lexical/pull/7472))
 
   Replacement: `KEY_DOWN_COMMAND`, checking the modifier keys on the event.
 
@@ -2444,7 +2444,7 @@ This file also ships in the `lexical` package as
 
 ### Behavior changes
 
-- **lexical**: Listeners are always called with the editor they were registered on ([#7378](https://github.com/facebook/lexical/pull/7378))
+- **lexical**: Listeners are always called with the editor they were registered on ([#7378](https://github.com/meta/lexical/pull/7378))
 
   `updateEditorSync` always uses the correct active editor when
   triggering listeners, which changes how nested editors delegate to listeners
@@ -2458,7 +2458,7 @@ This file also ships in the `lexical` package as
 
   Verify: commands dispatched inside nested editors.
 
-- **@lexical/markdown**: Markdown import preserves block separation with `shouldPreserveNewLines` ([#7386](https://github.com/facebook/lexical/pull/7386))
+- **@lexical/markdown**: Markdown import preserves block separation with `shouldPreserveNewLines` ([#7386](https://github.com/meta/lexical/pull/7386))
 
   With `shouldPreserveNewLines = true`, paragraph merging after
   block elements matches GitHub's behavior.
@@ -2469,7 +2469,7 @@ This file also ships in the `lexical` package as
 
   Verify: markdown import with lists and paragraphs.
 
-- **@lexical/markdown**: Markdown export encodes leading/trailing whitespace of formatted text ([#7400](https://github.com/facebook/lexical/pull/7400))
+- **@lexical/markdown**: Markdown export encodes leading/trailing whitespace of formatted text ([#7400](https://github.com/meta/lexical/pull/7400))
 
   Leading or trailing whitespace inside formatted text is exported
   as HTML entities (for example `&#32;`).
@@ -2482,7 +2482,7 @@ This file also ships in the `lexical` package as
 
 ### Deprecations
 
-- **@lexical/table**: `$insertTableRow`, `$insertTableColumn`, `$deleteTableColumn` and the `__EXPERIMENTAL` table helpers deprecated ([#7415](https://github.com/facebook/lexical/pull/7415))
+- **@lexical/table**: `$insertTableRow`, `$insertTableColumn`, `$deleteTableColumn` and the `__EXPERIMENTAL` table helpers deprecated ([#7415](https://github.com/meta/lexical/pull/7415))
 
   Replacement: `$insertTableRowAtSelection`, `$insertTableColumnAtSelection`, `$deleteTableRowAtSelection` and `$deleteTableColumnAtSelection`, which support merged cells. `$insertTableRow__EXPERIMENTAL`, `$insertTableColumn__EXPERIMENTAL`, `$deleteTableRow__EXPERIMENTAL` and `$deleteTableColumn__EXPERIMENTAL` are the same functions under their old names.
 
@@ -2526,7 +2526,7 @@ This file also ships in the `lexical` package as
 
 ### Breaking changes
 
-- **@lexical/react**: `LexicalNestedComposer` no longer sets the nested editor's namespace ([#7357](https://github.com/facebook/lexical/pull/7357))
+- **@lexical/react**: `LexicalNestedComposer` no longer sets the nested editor's namespace ([#7357](https://github.com/meta/lexical/pull/7357))
 
   The nested editor's `namespace` is no longer inherited implicitly, and the new `skipEditableListener` prop controls whether editable state follows the parent. (The `initialNodes` prop is deprecated at the same time; see Deprecations.)
 
@@ -2544,7 +2544,7 @@ This file also ships in the `lexical` package as
 
 ### Behavior changes
 
-- **lexical**: RootNode selected on removal of last child only if there was a selection ([#7351](https://github.com/facebook/lexical/pull/7351))
+- **lexical**: RootNode selected on removal of last child only if there was a selection ([#7351](https://github.com/meta/lexical/pull/7351))
 
   Removing the last child of the root only creates a selection on
   the `RootNode` if a selection already existed.
@@ -2555,7 +2555,7 @@ This file also ships in the `lexical` package as
 
   Verify: clearing the editor while it is not focused.
 
-- **@lexical/markdown**: Markdown escaping on import and export ([#7353](https://github.com/facebook/lexical/pull/7353))
+- **@lexical/markdown**: Markdown escaping on import and export ([#7353](https://github.com/meta/lexical/pull/7353))
 
   Import strips the backslash from escaped characters (`\*`
   becomes `*`); export escapes markdown characters in plain text (`**` becomes
@@ -2568,7 +2568,7 @@ This file also ships in the `lexical` package as
 
   Verify: markdown round trips.
 
-- **@lexical/table**: Frozen row/column classes move to the table wrapper ([#7372](https://github.com/facebook/lexical/pull/7372))
+- **@lexical/table**: Frozen row/column classes move to the table wrapper ([#7372](https://github.com/meta/lexical/pull/7372))
 
   The `tableFrozenColumn` and `tableFrozenRow` theme classes are
   set on the scrollable wrapper, not on the `<table>`.
@@ -2582,7 +2582,7 @@ This file also ships in the `lexical` package as
 
 ### Deprecations
 
-- **@lexical/react**: `LexicalNestedComposer` `initialNodes` prop deprecated ([#7357](https://github.com/facebook/lexical/pull/7357))
+- **@lexical/react**: `LexicalNestedComposer` `initialNodes` prop deprecated ([#7357](https://github.com/meta/lexical/pull/7357))
 
   Replacement: pass `nodes` (and `namespace`) to the nested `createEditor()` call.
 
@@ -2607,7 +2607,7 @@ This file also ships in the `lexical` package as
 
 ### Breaking changes
 
-- **lexical**: Default delete handler for `NodeSelection` ([#7323](https://github.com/facebook/lexical/pull/7323))
+- **lexical**: Default delete handler for `NodeSelection` ([#7323](https://github.com/meta/lexical/pull/7323))
 
   The default `KEY_DELETE_COMMAND` / `KEY_BACKSPACE_COMMAND`
   handlers call `DELETE_CHARACTER_COMMAND` for a `NodeSelection`, which calls
@@ -2619,7 +2619,7 @@ This file also ships in the `lexical` package as
 
   Migration: delete those handlers; leaving them in keeps their old bugs.
 
-- **lexical, @lexical/list**: `RootNode` and `ListNode` child rules enforced in `splice` ([#7341](https://github.com/facebook/lexical/pull/7341))
+- **lexical, @lexical/list**: `RootNode` and `ListNode` child rules enforced in `splice` ([#7341](https://github.com/meta/lexical/pull/7341))
 
   The `RootNode` check that throws for leaf children, and the
   `ListNode` automatic `ListItemNode` wrapping, apply to every insertion
@@ -2634,7 +2634,7 @@ This file also ships in the `lexical` package as
 
   Verify: paths that build the tree programmatically.
 
-- **@lexical/list**: `ListItemNode` marker styling uses CSS custom properties ([#7325](https://github.com/facebook/lexical/pull/7325))
+- **@lexical/list**: `ListItemNode` marker styling uses CSS custom properties ([#7325](https://github.com/meta/lexical/pull/7325))
 
   The text style of a list item is no longer set inline on the
   `<li>`; it is exposed as `--listitem-marker-<property>` custom properties.
@@ -2653,7 +2653,7 @@ This file also ships in the `lexical` package as
   }
   ```
 
-- **lexical**: `ElementDOMSlot` has a type parameter ([#7336](https://github.com/facebook/lexical/pull/7336))
+- **lexical**: `ElementDOMSlot` has a type parameter ([#7336](https://github.com/meta/lexical/pull/7336))
 
   The internal `getDOMSlot` API's `ElementDOMSlot` gained a type
   parameter for its `element` property.
@@ -2664,7 +2664,7 @@ This file also ships in the `lexical` package as
 
 ### Behavior changes
 
-- **lexical, @lexical/utils**: `$insertNodeToNearestRoot` / `$splitNodes` respect `canBeEmpty()` ([#7342](https://github.com/facebook/lexical/pull/7342))
+- **lexical, @lexical/utils**: `$insertNodeToNearestRoot` / `$splitNodes` respect `canBeEmpty()` ([#7342](https://github.com/meta/lexical/pull/7342))
 
   Splitting no longer creates an empty `ElementNode` whose
   `canBeEmpty()` returns false (for example `ListNode`).
@@ -2676,7 +2676,7 @@ This file also ships in the `lexical` package as
 
   Verify: inserting block decorators inside lists.
 
-- **@lexical/table**: `TableCellNode.importDOM` handles `<br>` and inline runs like other roots ([#7318](https://github.com/facebook/lexical/pull/7318))
+- **@lexical/table**: `TableCellNode.importDOM` handles `<br>` and inline runs like other roots ([#7318](https://github.com/meta/lexical/pull/7318))
 
   `<br>` in pasted cells becomes `LineBreakNode`, top-level inline
   runs are wrapped in `ParagraphNode`, and a lone `<td><br></td>` becomes an
@@ -2733,7 +2733,7 @@ This file also ships in the `lexical` package as
 
 ### Behavior changes
 
-- **lexical, @lexical/table**: Lexical handles more arrow-key navigation across element boundaries ([#7270](https://github.com/facebook/lexical/pull/7270))
+- **lexical, @lexical/table**: Lexical handles more arrow-key navigation across element boundaries ([#7270](https://github.com/meta/lexical/pull/7270))
 
   Arrow key movement of a `RangeSelection` across element
   boundaries is handled by Lexical in more cases instead of by the browser.
@@ -2762,7 +2762,7 @@ This file also ships in the `lexical` package as
 
 ### Breaking changes
 
-- **@lexical/react**: `@lexical/react` default exports removed ([#7219](https://github.com/facebook/lexical/pull/7219))
+- **@lexical/react**: `@lexical/react` default exports removed ([#7219](https://github.com/meta/lexical/pull/7219))
 
   Default exports deprecated since v0.16.0 are removed; use the
   named exports.
@@ -2786,7 +2786,7 @@ This file also ships in the `lexical` package as
   import {useLexicalSubscription} from '@lexical/react/useLexicalSubscription';
   ```
 
-- **@lexical/react**: `LexicalTableOfContents` renamed to `LexicalTableOfContentsPlugin` ([#7219](https://github.com/facebook/lexical/pull/7219))
+- **@lexical/react**: `LexicalTableOfContents` renamed to `LexicalTableOfContentsPlugin` ([#7219](https://github.com/meta/lexical/pull/7219))
 
   The module `@lexical/react/LexicalTableOfContents` is removed.
 
@@ -2803,7 +2803,7 @@ This file also ships in the `lexical` package as
 
 ### Behavior changes
 
-- **lexical, @lexical/list**: `collapseAtStart` continues through non-inline ancestors ([#7248](https://github.com/facebook/lexical/pull/7248))
+- **lexical, @lexical/list**: `collapseAtStart` continues through non-inline ancestors ([#7248](https://github.com/meta/lexical/pull/7248))
 
   `collapseAtStart` propagation continues through inline and
   non-inline ancestors while there are no previous siblings, roots, or shadow
@@ -2821,17 +2821,17 @@ This file also ships in the `lexical` package as
 
 ### Deprecations
 
-- **@lexical/code**: `getFirstCodeNodeOfLine`, `getLastCodeNodeOfLine`, `getStartOfCodeInLine`, `getEndOfCodeInLine` deprecated ([#7135](https://github.com/facebook/lexical/pull/7135))
+- **@lexical/code**: `getFirstCodeNodeOfLine`, `getLastCodeNodeOfLine`, `getStartOfCodeInLine`, `getEndOfCodeInLine` deprecated ([#7135](https://github.com/meta/lexical/pull/7135))
 
   Replacement: the `$`-prefixed functions of the same names (`$getFirstCodeNodeOfLine`, ...).
 
   Removal: not scheduled.
 
-- **lexical**: `LexicalNode.getCommonAncestor` deprecated ([#7135](https://github.com/facebook/lexical/pull/7135))
+- **lexical**: `LexicalNode.getCommonAncestor` deprecated ([#7135](https://github.com/meta/lexical/pull/7135))
 
   Replacement: `$getCommonAncestor`.
 
-  Removal: v0.52.0 ([#9238](https://github.com/facebook/lexical/pull/9238)).
+  Removal: v0.52.0 ([#9238](https://github.com/meta/lexical/pull/9238)).
 
 ### All changes
 
@@ -2867,7 +2867,7 @@ This file also ships in the `lexical` package as
 
 ### Behavior changes
 
-- **lexical, @lexical/link**: `collapseAtStart` is also called on ancestors ([#7180](https://github.com/facebook/lexical/pull/7180))
+- **lexical, @lexical/link**: `collapseAtStart` is also called on ancestors ([#7180](https://github.com/meta/lexical/pull/7180))
 
   `ElementNode.collapseAtStart(range)` may be called on parents of
   the anchor's direct parent, so an inline element such as `LinkNode` no
@@ -2880,13 +2880,13 @@ This file also ships in the `lexical` package as
 
   Verify: Backspace at the start of blocks containing links or other inline elements.
 
-- **lexical**: `deleteCharacter` traverses the node tree ([#7155](https://github.com/facebook/lexical/pull/7155))
+- **lexical**: `deleteCharacter` traverses the node tree ([#7155](https://github.com/meta/lexical/pull/7155))
 
   `RangeSelection.deleteCharacter` merges blocks and deletes
   decorators by walking the node tree instead of using browser selection
   APIs.
 
-  See also [#7204](https://github.com/facebook/lexical/pull/7204).
+  See also [#7204](https://github.com/meta/lexical/pull/7204).
 
   Detect: custom handling of `DELETE_CHARACTER_COMMAND` or
   `KEY_BACKSPACE_COMMAND` / `KEY_DELETE_COMMAND` around decorators or shadow
@@ -2896,7 +2896,7 @@ This file also ships in the `lexical` package as
 
   Verify: Backspace/Delete next to decorators, tables, and collapsible sections.
 
-- **@lexical/table**: Nested tables are blocked by default ([#7192](https://github.com/facebook/lexical/pull/7192))
+- **@lexical/table**: Nested tables are blocked by default ([#7192](https://github.com/meta/lexical/pull/7192))
 
   Normal UI actions (insert, paste) no longer create a table inside
   a table cell.
@@ -2951,7 +2951,7 @@ This file also ships in the `lexical` package as
 
 ### Behavior changes
 
-- **lexical**: `editor.focus()` is synchronous inside an update ([#7037](https://github.com/facebook/lexical/pull/7037))
+- **lexical**: `editor.focus()` is synchronous inside an update ([#7037](https://github.com/meta/lexical/pull/7037))
 
   Calling `editor.focus()` from inside an update changes the
   selection synchronously instead of deferring.
@@ -2963,7 +2963,7 @@ This file also ships in the `lexical` package as
 
   Verify: selection right after `focus()` inside updates.
 
-- **@lexical/list**: List commands update synchronously inside an update ([#7037](https://github.com/facebook/lexical/pull/7037))
+- **@lexical/list**: List commands update synchronously inside an update ([#7037](https://github.com/meta/lexical/pull/7037))
 
   `INSERT_CHECK_LIST_COMMAND`, `INSERT_ORDERED_LIST_COMMAND`,
   `INSERT_UNORDERED_LIST_COMMAND` and `REMOVE_LIST_COMMAND` apply synchronously
@@ -2976,7 +2976,7 @@ This file also ships in the `lexical` package as
 
   Verify: list toggling from toolbars and shortcuts.
 
-- **all packages**: CommonJS production builds are minified with terser ([#7047](https://github.com/facebook/lexical/pull/7047))
+- **all packages**: CommonJS production builds are minified with terser ([#7047](https://github.com/meta/lexical/pull/7047))
 
   Production CommonJS builds use terser instead of Closure
   Compiler.
@@ -2987,11 +2987,11 @@ This file also ships in the `lexical` package as
 
 ### Deprecations
 
-- **@lexical/list**: `insertList` and `removeList` deprecated ([#7037](https://github.com/facebook/lexical/pull/7037))
+- **@lexical/list**: `insertList` and `removeList` deprecated ([#7037](https://github.com/meta/lexical/pull/7037))
 
   Replacement: `$insertList` / `$removeList`, called from an update or a command listener.
 
-  Removal: v0.46.0 ([#8704](https://github.com/facebook/lexical/pull/8704)).
+  Removal: v0.46.0 ([#8704](https://github.com/meta/lexical/pull/8704)).
 
 ### All changes
 
@@ -3046,7 +3046,7 @@ This file also ships in the `lexical` package as
 
 ### Behavior changes
 
-- **lexical**: `editor.setRootElement(null)` commits pending updates ([#7023](https://github.com/facebook/lexical/pull/7023))
+- **lexical**: `editor.setRootElement(null)` commits pending updates ([#7023](https://github.com/meta/lexical/pull/7023))
 
   Pending updates are committed when the root element is set to
   `null`, so update listeners may be called during unmount.
@@ -3070,7 +3070,7 @@ This file also ships in the `lexical` package as
 
 ### Breaking changes
 
-- **lexical**: ElementNode serializes `textFormat` / `textStyle`; `updateFromJSON` added ([#6970](https://github.com/facebook/lexical/pull/6970))
+- **lexical**: ElementNode serializes `textFormat` / `textStyle`; `updateFromJSON` added ([#6970](https://github.com/meta/lexical/pull/6970))
 
   `SerializedElementNode` gained optional `textFormat` and
   `textStyle` properties, and nodes gained an `updateFromJSON(serializedNode)`
@@ -4856,14 +4856,14 @@ editor.setReadyOnly -> editor.setEditable()
 editor.registerReadOnlyListener -> editor.registerEditableListener()
 editor config { readOnly: true } -> { editable: boolean }
 
-https://github.com/facebook/lexical/pull/2912
+https://github.com/meta/lexical/pull/2912
 
 #### Markdown Transformers Require Dependencies
 
 The "dependencies" property is now required for custom markdown Element and TextMatch Transformers. It takes an array of LexicalNode subclasses and
 asserts that they're available in the editor when transforms are registered.
 
-https://github.com/facebook/lexical/pull/2910
+https://github.com/meta/lexical/pull/2910
 
 #### Selection Updates when isEditable is false (previous ReadOnly mode)
 
@@ -4975,7 +4975,7 @@ Commits:
 - Selection#formatText to retain selection and handle all text nodes (#2770) Maksim Horbachevsky
 - Fixed scrolling bar view (#2772) Karam Qaoud
 - Add LexicalAutoEmbedPlugin and (Playground)AutoEmbedPlugin. (#2704) Tyler Bainbridge
-- Bug: Undo command after creating a Quote removes text after Quote element (https://github.com/facebook/lexical/issues/2750) (#2767) Alexandru Pavaloi
+- Bug: Undo command after creating a Quote removes text after Quote element (https://github.com/meta/lexical/issues/2750) (#2767) Alexandru Pavaloi
 - Handle insertTranspose for beforeinput event (#2764) Maksim Horbachevsky
 - Fix selection format for empty paragraphs (#2759) Maksim Horbachevsky
 - Remove unused keys from evens and utils (#2763) John Flockton
@@ -4996,7 +4996,7 @@ Commits:
 - fix: `timeoutId` type (#2735) Shanmughapriyan S
 - fix: some typo (#2737) 子瞻 Luci
 - docs: readme improvements (#2734) GJunior
-- Bug: typo in Documentation. It should be ReactNode instead of React (https://github.com/facebook/lexical/issues/2731) (#2732) Alexandru Pavaloi
+- Bug: typo in Documentation. It should be ReactNode instead of React (https://github.com/meta/lexical/issues/2731) (#2732) Alexandru Pavaloi
 - Added table of contents documentation (#2720) Karam Qaoud
 - Fix: Minor Typo on Lexical Playground ActionsPlugin (#2717) Yamil García Hernández
 - Excalidraw fixes (#2711) John Flockton
@@ -5430,5 +5430,5 @@ Playground
 
 ## 0.1.8 (February 11, 2022)
 
-- `Lexical{Plain/Rich}TextPlugin` and `DEPRECATED_use{Plain/Rich}TextPlugin` no longer create a ParagraphNode for you. This logic has been decoupled into a separate plugin <BootstrapPlugin />. The Bootstrap plugin also accepts an initialPayloadFn and clearEditorFn for custom initialization (i.e. edit behavior from server data). `<BootstrapPlugin /> <RichTextPlugin .. />`. If you're using the `DEPRECATED_{Plain/Rich}Text` version you may also want to copy-paste this hook and run it before the RichText initialization - https://github.com/facebook/lexical/blob/main/packages/lexical/src/__tests__/utils/DEPRECATED__useLexicalBootstrap.js
+- `Lexical{Plain/Rich}TextPlugin` and `DEPRECATED_use{Plain/Rich}TextPlugin` no longer create a ParagraphNode for you. This logic has been decoupled into a separate plugin <BootstrapPlugin />. The Bootstrap plugin also accepts an initialPayloadFn and clearEditorFn for custom initialization (i.e. edit behavior from server data). `<BootstrapPlugin /> <RichTextPlugin .. />`. If you're using the `DEPRECATED_{Plain/Rich}Text` version you may also want to copy-paste this hook and run it before the RichText initialization - https://github.com/meta/lexical/blob/main/packages/lexical/src/__tests__/utils/DEPRECATED__useLexicalBootstrap.js
 - Bugfixes.

@@ -13,7 +13,7 @@ depends on the matching `lexical` version, and an app must resolve exactly
 one copy of each package; see [One Lexical per app](./concepts/one-lexical-per-app.md).
 
 **Read the changelog between your version and the target.**
-[CHANGELOG.md](https://github.com/facebook/lexical/blob/main/CHANGELOG.md)
+[CHANGELOG.md](https://github.com/meta/lexical/blob/main/CHANGELOG.md)
 lists every release. From v0.23.0 on, each version starts with what an
 upgrade has to act on: **Breaking changes**, each with **Detect** (what
 identifies affected code) and **Migration** (what to change, often with

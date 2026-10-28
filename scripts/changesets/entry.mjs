@@ -490,7 +490,7 @@ export function sortPackages(names) {
   );
 }
 
-export const REPO_URL = 'https://github.com/facebook/lexical';
+export const REPO_URL = 'https://github.com/meta/lexical';
 
 /**
  * @typedef {object} ReleaseEntry

@@ -99,15 +99,15 @@ or use the template below):
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/facebook/lexical.git",
+    "url": "git+https://github.com/meta/lexical.git",
     "directory": "packages/lexical-eslint-plugin"
   },
   "main": "LexicalEslintPlugin.js",
   "types": "index.d.ts",
   "bugs": {
-    "url": "https://github.com/facebook/lexical/issues"
+    "url": "https://github.com/meta/lexical/issues"
   },
-  "homepage": "https://github.com/facebook/lexical#readme"
+  "homepage": "https://github.com/meta/lexical#readme"
 }
 ```
 </details>
@@ -417,7 +417,7 @@ will also push the tag and branch.
 
 Preview the CHANGELOG.md block that the pending changesets in `.changeset/`
 would produce, without changing anything. See
-[.changeset/README.md](https://github.com/facebook/lexical/blob/main/.changeset/README.md)
+[.changeset/README.md](https://github.com/meta/lexical/blob/main/.changeset/README.md)
 for the changeset format and `pnpm run check-changesets` to validate them.
 
 ### pnpm run changelog:range
@@ -525,7 +525,7 @@ Useful flags:
 - `--package <name>` (or a positional `<name>`, repeatable) — restrict the run to the given package(s), matched by full npm name (`@lexical/a11y`) or unscoped short name (`a11y`). Omit to process every public package.
 - `--dry-run` — print what would happen without touching the registry (works with both `--bootstrap` and `--setup-trust`)
 - `--workflow <filename>` — override the workflow filename (default `pre-release.yml`)
-- `--repo <owner/name>` — override the GitHub repo (default `facebook/lexical`)
+- `--repo <owner/name>` — override the GitHub repo (default `meta/lexical`)
 - `--stub-version <semver>` — override the placeholder version (default `0.0.0-bootstrap.0`)
 - `--registry <url>` — override the npm registry
 
@@ -607,11 +607,11 @@ packages use for each other, or you get more than one copy of `lexical`. pnpm
 
 ```sh
 pnpm add --config.block-exotic-subdeps=false \
-  lexical@https://pkg.pr.new/facebook/lexical/lexical@4282a68 \
-  @lexical/react@https://pkg.pr.new/facebook/lexical/@lexical/react@4282a68
+  lexical@https://pkg.pr.new/meta/lexical/lexical@4282a68 \
+  @lexical/react@https://pkg.pr.new/meta/lexical/@lexical/react@4282a68
 yarn add \
-  lexical@https://pkg.pr.new/facebook/lexical/lexical@4282a68 \
-  @lexical/react@https://pkg.pr.new/facebook/lexical/@lexical/react@4282a68
+  lexical@https://pkg.pr.new/meta/lexical/lexical@4282a68 \
+  @lexical/react@https://pkg.pr.new/meta/lexical/@lexical/react@4282a68
 ```
 
 On a cold cache, yarn 1 can fail with "the file appears to be corrupt" while

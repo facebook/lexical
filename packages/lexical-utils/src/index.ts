@@ -936,7 +936,7 @@ function needsManualZoom(): boolean {
     // If the browser implements standardized CSS zoom, then the client rect
     // will be wider after zoom is applied
     // https://chromestatus.com/feature/5198254868529152
-    // https://github.com/facebook/lexical/issues/6863
+    // https://github.com/meta/lexical/issues/6863
     // eslint-disable-next-line no-restricted-syntax
     const div = document.createElement('div');
     div.style.position = 'absolute';

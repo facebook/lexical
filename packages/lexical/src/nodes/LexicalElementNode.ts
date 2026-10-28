@@ -878,7 +878,7 @@ export class ElementNode
         // to use `padding-right` in RTL languages, `padding-left` in `LTR` languages, or
         // `text-indent` if you are ok with first-line indents.
         // We recommend keeping multiples of 40px to maintain consistency with list-items
-        // (see https://github.com/facebook/lexical/pull/4025)
+        // (see https://github.com/meta/lexical/pull/4025)
         element.style.paddingInlineStart = `${indent * 40}px`;
         // Authoritative round-trip signal. padding-inline-start can be a
         // non-40px multiple (custom `--lexical-indent-base-value`) or a

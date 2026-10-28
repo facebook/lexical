@@ -226,6 +226,24 @@ describe('literal Markdown text', () => {
     });
   });
 
+  it('preserves existing literal prefix text before an unbalanced link', () => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    const prefix = '[`\\`';
+    editor.update(() => $convertFromMarkdownString(prefix + '[x](u)'), {
+      discrete: true,
+    });
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isElementNode(paragraph));
+      const [text, link] = paragraph.getChildren();
+      assert($isTextNode(text));
+      expect(text.getTextContent()).toBe(prefix);
+      assert($isLinkNode(link));
+      expect(link.getURL()).toBe('u');
+      expect(link.getTextContent()).toBe('x');
+    });
+  });
+
   it('keeps the existing raw-source newline mode', () => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
     const source = '\\&#65; \\<b> \\[x](u)';

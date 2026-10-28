@@ -1302,7 +1302,7 @@ export const LINK: TextMatchTransformer = {
       return;
     } else if (openBracketAmount > closeBracketAmount) {
       const openBracketIndex = brackets.indexOf('[');
-      outsideLinkText = '[' + unescapeText(linkText.slice(0, openBracketIndex));
+      outsideLinkText = '[' + linkText.slice(0, openBracketIndex);
       parsedLinkText = linkText.slice(openBracketIndex + 1);
     }
     // Both new nodes stand in for the TextNode being replaced, so the text

@@ -582,6 +582,55 @@ describe('literal Markdown text', () => {
     },
   );
 
+  it.each(['code', 'custom'] as const)(
+    'runs import transformers after escaped link text: %s',
+    kind => {
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      let calls = 0;
+      const custom: TextMatchTransformer = {
+        dependencies: [],
+        importRegExp: /@\w+/,
+        regExp: /@\w+$/,
+        replace: node => {
+          calls++;
+          node.setTextContent('MENTION');
+          return node;
+        },
+        type: 'text-match',
+      };
+      const middle = kind === 'code' ? '`code`' : '@name';
+      editor.update(
+        () =>
+          $convertFromMarkdownString(
+            '[a\\]\\](u) ' + middle + ' [link](v)',
+            kind === 'custom' ? [custom, ...TRANSFORMERS] : TRANSFORMERS,
+          ),
+        {discrete: true},
+      );
+      editor.read(() => {
+        const root = $getRoot();
+        expect(root.getTextContent()).toBe(
+          '[a]](u) ' + (kind === 'code' ? 'code' : 'MENTION') + ' link',
+        );
+        if (kind === 'code') {
+          expect(
+            root
+              .getAllTextNodes()
+              .find(node => node.hasFormat('code'))
+              ?.getTextContent(),
+          ).toBe('code');
+        }
+        const paragraph = root.getFirstChildOrThrow();
+        assert($isElementNode(paragraph));
+        const link = paragraph.getLastChildOrThrow();
+        assert($isLinkNode(link));
+        expect(link.getURL()).toBe('v');
+        expect(link.getTextContent()).toBe('link');
+      });
+      expect(calls).toBe(kind === 'custom' ? 1 : 0);
+    },
+  );
+
   it('preserves existing literal prefix text before an unbalanced link', () => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
     const prefix = '[`\\`';

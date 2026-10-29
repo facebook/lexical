@@ -1688,7 +1688,7 @@ describe('Markdown', () => {
     });
   });
 
-  describe('formatted whitespace before a link (#9403)', () => {
+  describe('formatted whitespace-only text (#9403)', () => {
     type Char = [char: string, format: number, url: string | null];
 
     function importMarkdown(markdown: string): LexicalEditor {
@@ -1742,6 +1742,60 @@ describe('Markdown', () => {
       expect(second.read($chars)).toEqual(chars);
       expect(second.read($text)).toBe(first.read($text));
       expect(second.read($exportMarkdown)).toBe(exported);
+    });
+
+    // A whitespace-only text node needs a format the nodes around it lack to
+    // stay separate, which markdown import alone cannot produce.
+    const BOLD = TEXT_TYPE_TO_FORMAT.bold;
+    const ITALIC = TEXT_TYPE_TO_FORMAT.italic;
+    const $formatted = (text: string, format: number) =>
+      $createTextNode(text).setFormat(format);
+
+    it.each<[name: string, $nodes: () => LexicalNode[], expected: string]>([
+      [
+        'closes before unformatted text',
+        () => [
+          $formatted('a', BOLD | ITALIC),
+          $formatted(' ', BOLD),
+          $formatted('b', 0),
+        ],
+        '***a*** b',
+      ],
+      [
+        'closes at the end of a link',
+        () => [
+          $createLinkNode('u').append(
+            $formatted('a', BOLD | ITALIC),
+            $formatted(' ', BOLD),
+          ),
+          $formatted('c', 0),
+        ],
+        '[***a*** ](u)c',
+      ],
+      [
+        'does not reopen a tag it kept open',
+        () => [
+          $formatted('a', BOLD),
+          $formatted(' ', BOLD | ITALIC),
+          $formatted('c', BOLD),
+        ],
+        '**a c**',
+      ],
+    ])('%s', (_name, $nodes, expected) => {
+      const editor = createTestEditor();
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append(...$nodes()));
+        },
+        {discrete: true},
+      );
+      const exported = editor.read($exportMarkdown);
+      expect(exported).toBe(expected);
+      expect(importMarkdown(exported).read($chars)).toEqual(
+        editor.read($chars),
+      );
     });
   });
 

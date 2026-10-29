@@ -570,9 +570,11 @@ function exportTextFormat(
       applied.add(format);
 
       // append the tag to openingTags, if it's not applied to the previous nodes,
-      // or the nodes before that (which would result in an unclosed tag)
+      // or the nodes before that (which would result in an unclosed tag).
+      // A whitespace-only previous node with the format keeps the tag open
+      // without emitting it, so it counts as applied here.
       if (
-        !checkHasFormat(prevNode, format) ||
+        !hasFormat(prevNode, format) ||
         !unclosedTags.find(element => element.tag === tag)
       ) {
         unclosedTags.push({format, tag});

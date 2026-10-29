@@ -470,7 +470,8 @@ export class CodeNode extends ElementNode {
    * `true` when this code block soft wraps lines that are wider than it,
    * instead of scrolling sideways. Wrapping is visual only: no LineBreakNode
    * is added and the text is unchanged. The theme does the wrapping, with CSS
-   * on the `data-lexical-code-word-wrap` attribute (see the package README).
+   * on the `data-lexical-code-word-wrap` attribute (see the
+   * `@lexical/code-core` README).
    */
   getWordWrap(): boolean {
     return this.getLatest().__wordWrap === true;
@@ -512,7 +513,7 @@ export function $isCodeNode(
 
 /**
  * @internal Creates the CodeNode for an imported <pre> or multi line <code>
- * from the attributes exportDOM writes, so none are dropped on an HTML
+ * from the data attributes exportDOM writes, so none are dropped on an HTML
  * round trip. Shared with CodeImportExtension.
  */
 export function $createCodeNodeFromDOM(element: HTMLElement): CodeNode {

@@ -198,8 +198,8 @@ function allLineNumberOverrides() {
  *
  * The `data-gutter` attribute written by the highlighter extensions is not
  * touched, so a theme that wants per line numbers has to hide its old
- * gutter under `[data-lexical-code-line-numbers]`. See the package README
- * for a CSS recipe.
+ * gutter under `[data-lexical-code-line-numbers]`. See the
+ * `@lexical/code-core` README for a CSS recipe.
  */
 export const CodeLineNumbersExtension = defineExtension({
   build: (editor, config) => namedSignals(config),

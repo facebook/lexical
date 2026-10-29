@@ -12,8 +12,8 @@ functionality is still available in `@lexical/code`.
 attribute (`"1\n2\n3"`), which a theme can show with `content: attr(data-gutter)`. That gutter is a single block of
 text, so it can't follow a line that wraps.
 
-`CodeLineNumbersExtension`, which `@lexical/code` also exports, is an opt in alternative that gives every logical line
-its own element to hang a number on:
+`CodeLineNumbersExtension`, which `@lexical/code` also exports, is an opt in alternative that gives a theme an element to
+hang the number of every logical line on:
 
 - the DOM of every `CodeNode` gets `data-lexical-code-line-numbers`
 - the `<br>` of each `LineBreakNode` in a code block is wrapped in `<span data-lexical-code-line-break>`
@@ -103,8 +103,8 @@ it goes all the way back. That shows the whole indentation, which Home and Enter
 scrolls just far enough, and keeps the caret out of the code element's `scroll-padding`. A gutter that stays in place
 while the code scrolls should set that padding to its width, so the caret isn't left under it. A `float: left` gutter,
 like the one the playground theme draws from `data-gutter`, is on the left in both directions, so use
-`scroll-padding-left` for it. A sticky gutter at the inline start, like the line numbers above, is on the right in a
-right to left block, so use `scroll-padding-inline-start` for it.
+`scroll-padding-left` for it. A sticky gutter at the inline start, like the playground theme's per line numbers, is on
+the right in a right to left block, so use `scroll-padding-inline-start` for it.
 
 At the end of the longest line the block is scrolled as far as it goes, and a browser can draw the caret a fraction of a
 pixel past that edge. A few pixels of `padding-inline-end` on the code element leave room for it. The playground theme

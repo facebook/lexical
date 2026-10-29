@@ -362,6 +362,13 @@ export function registerTableSelectionObserver(
           for (const [nodeKey, mutation] of nodeMutations) {
             const tableSelection = tableObservers.observers.get(nodeKey);
             if (mutation === 'created' || mutation === 'updated') {
+              if (editor.getElementByKey(nodeKey) === null) {
+                // The table is not rendered, as when the editor has no root
+                // element yet. The reconciler reports it as created when it
+                // renders it, and the observer attaches then.
+                tableObservers.removeObserver(nodeKey);
+                continue;
+              }
               const {tableNode, tableElement} =
                 $getTableAndElementByKey(nodeKey);
               if (tableSelection === undefined) {

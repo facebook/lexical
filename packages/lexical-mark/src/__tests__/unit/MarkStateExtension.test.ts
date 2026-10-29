@@ -2241,6 +2241,168 @@ describe('MarkStateExtension', () => {
     });
   });
 
+  describe('composition over a selection', () => {
+    function startComposition(editor: LexicalEditor) {
+      update(editor, () => {
+        editor.dispatchCommand(COMPOSITION_START_COMMAND, {
+          data: '',
+          timeStamp: Number.MAX_SAFE_INTEGER,
+        } as CompositionEvent);
+      });
+      expect(editor.isComposing()).toBe(true);
+    }
+
+    /** The input method writes `composed` at the caret, over the placeholder. */
+    function compose(editor: LexicalEditor, composed: string) {
+      update(editor, () => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          throw new Error('no selection');
+        }
+        const target = selection.anchor.getNode() as TextNode;
+        const content = target.getTextContent();
+        let at = selection.anchor.offset;
+        if (content[at] !== '\u200b' && content[at - 1] === '\u200b') {
+          at--;
+        }
+        target.spliceText(at, content[at] === '\u200b' ? 1 : 0, composed, true);
+      });
+    }
+
+    function setupMarked(
+      text: string,
+      marks: [number, number, string][],
+      [start, end]: [number, number],
+    ): LexicalEditor {
+      const editor = createTestEditor();
+      update(editor, () => $init(text));
+      for (const [markStart, markEnd, id] of marks) {
+        mark(editor, markStart, markEnd, id);
+      }
+      update(editor, () => $select(start, end));
+      return editor;
+    }
+
+    test.each([
+      // label, text, marked, replaced, composed, result
+      [
+        'the end of a run, by longer text',
+        'abcd',
+        [0, 4],
+        [2, 4],
+        'cde',
+        'paragraph("abcde"[c1])',
+      ],
+      [
+        'the end of a run followed by plain text, by longer text',
+        'abcd xy',
+        [0, 4],
+        [2, 4],
+        'cde',
+        'paragraph("abcde"[c1] " xy")',
+      ],
+      [
+        'a word inside a run',
+        'x teh y',
+        [0, 7],
+        [2, 5],
+        'the',
+        'paragraph("x the y"[c1])',
+      ],
+      [
+        'text only partly in the run',
+        'abcd xy',
+        [0, 4],
+        [2, 6],
+        'zz',
+        'paragraph("ab"[c1] "zzy")',
+      ],
+    ] as [
+      string,
+      string,
+      [number, number],
+      [number, number],
+      string,
+      string,
+    ][])(
+      'replacing %s gives the text the ids all of the replaced text had',
+      (_label, text, [markStart, markEnd], replaced, composed, result) => {
+        const editor = setupMarked(
+          text,
+          [[markStart, markEnd, 'c1']],
+          replaced,
+        );
+        startComposition(editor);
+        compose(editor, composed);
+        update(editor, () => $setCompositionKey(null));
+        expect(tree(editor)).toBe(result);
+      },
+    );
+
+    test('a selection that a handler collapsed before the composition started was not replaced', () => {
+      const editor = setupMarked('abcd', [[0, 4, 'c1']], [2, 4]);
+      editor.registerCommand(
+        COMPOSITION_START_COMMAND,
+        () => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            const {key, offset, type} = selection.focus;
+            selection.anchor.set(key, offset, type);
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_HIGH,
+      );
+      startComposition(editor);
+      compose(editor, 'X');
+      update(editor, () => $setCompositionKey(null));
+      expect(tree(editor)).toBe('paragraph("abcd"[c1] "X")');
+    });
+
+    test('a selection that a handler of the composition placeholder kept was not replaced', () => {
+      const editor = setupMarked(
+        'x teh y',
+        [
+          [0, 7, 'c1'],
+          [2, 4, 'c2'],
+        ],
+        [2, 5],
+      );
+      // Quotes the selection instead of replacing it with the placeholder
+      editor.registerCommand(
+        CONTROLLED_TEXT_INSERTION_COMMAND,
+        payload => {
+          const selection = $getSelection();
+          if (
+            payload !== '\u200b' ||
+            !$isRangeSelection(selection) ||
+            selection.isCollapsed()
+          ) {
+            return false;
+          }
+          const [start, end] = selection.isBackward()
+            ? [selection.focus, selection.anchor]
+            : [selection.anchor, selection.focus];
+          const startNode = start.getNode() as TextNode;
+          const endNode = end.getNode() as TextNode;
+          const startAt = start.offset;
+          const endAt = end.offset;
+          endNode.spliceText(endAt, 0, '"');
+          startNode.spliceText(startAt, 0, '"');
+          const offset = endAt + (startNode.is(endNode) ? 2 : 1);
+          endNode.select(offset, offset);
+          return true;
+        },
+        COMMAND_PRIORITY_HIGH,
+      );
+      startComposition(editor);
+      update(editor, () => $setCompositionKey(null));
+      expect(tree(editor)).toBe(
+        'paragraph("x \\""[c1] "te"[c1,c2] "h\\" y"[c1])',
+      );
+    });
+  });
+
   describe('output', () => {
     test('after loading JSON, and $removeMarkID(id) through it', () => {
       const source = createTestEditor();

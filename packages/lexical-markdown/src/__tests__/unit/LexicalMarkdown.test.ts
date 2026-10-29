@@ -4218,19 +4218,20 @@ describe('text after a link', () => {
   }
 });
 
-describe('link title import', () => {
+describe('link import', () => {
   // Export only writes double-quoted titles, so the other spellings are read
-  // here. A backslash escapes the character after it, itself included.
-  const CASES: [md: string, title: string][] = [
-    ["[x](/uri 'a\\\\')", 'a\\'],
-    ["[x](/uri 'it\\'s')", "it's"],
-    ['[x](/uri (a\\)))', 'a)'],
-    ['[x](/uri (a\\\u2028b))', 'a\\\u2028b'],
-    ['[x](/uri "a\\\u2028b")', 'a\\\u2028b'],
-    ['[x](</a\\\u2028b> "t")', 't'],
+  // here, along with a pointy destination holding an escaped U+2028. A
+  // backslash escapes the character after it, itself included.
+  const CASES: [md: string, url: string, title: string][] = [
+    ["[x](/uri 'a\\\\')", '/uri', 'a\\'],
+    ["[x](/uri 'it\\'s')", '/uri', "it's"],
+    ['[x](/uri (a\\)))', '/uri', 'a)'],
+    ['[x](/uri (a\\\u2028b))', '/uri', 'a\\\u2028b'],
+    ['[x](/uri "a\\\u2028b")', '/uri', 'a\\\u2028b'],
+    ['[x](</a\\\u2028b> "t")', '/a\\\u2028b', 't'],
   ];
 
-  for (const [md, title] of CASES) {
+  for (const [md, url, title] of CASES) {
     it(`reads ${JSON.stringify(md)}`, () => {
       const editor = createTestEditor({nodes: [LinkNode]});
       editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
@@ -4239,10 +4240,26 @@ describe('link title import', () => {
       editor.read('latest', () => {
         const link = $getRoot().getAllTextNodes()[0].getParent();
         assert($isLinkNode(link), 'Expected a link');
-        expect(link.getTitle()).toBe(title);
+        expect([link.getURL(), link.getTitle()]).toEqual([url, title]);
       });
     });
   }
+  it('reads no link when a pointy destination holds a carriage return', () => {
+    // A CR is a line ending in CommonMark, escaped or not.
+    for (const md of ['[x](</a\rb>)', '[x](</a\\\rb>)']) {
+      const editor = createTestEditor({nodes: [LinkNode]});
+      editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+        discrete: true,
+      });
+      expect(
+        editor.read('latest', () =>
+          $getRoot()
+            .getAllTextNodes()
+            .some(node => $isLinkNode(node.getParent())),
+        ),
+      ).toBe(false);
+    }
+  });
 });
 
 describe('decimal character references that name no character', () => {

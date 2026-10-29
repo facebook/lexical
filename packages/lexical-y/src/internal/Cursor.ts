@@ -190,6 +190,20 @@ function lastOwnItemBefore(doc: Doc, item: Item, key: string): Item | null {
   return null;
 }
 
+/**
+ * Whether null `item` is the end its client gave a run it opened in the
+ * same write (see changeEnd): the item of its key its client made last
+ * before it opens a run that ends at `item`.
+ */
+function isChangeEnd(doc: Doc, item: Item): boolean {
+  const opener = lastOwnItemBefore(doc, item, keyOf(item));
+  return (
+    opener !== null &&
+    valueOf(opener) !== null &&
+    changeEnd(doc, opener) === item
+  );
+}
+
 /** The nearest live item of `key` before `item`, among the 4096 before it. */
 function liveItemBefore(item: Item, key: string): Item | null {
   let steps = 0;
@@ -511,6 +525,9 @@ export class Cursor {
    * (see format, rule 5).
    */
   private insertNegatedFormats(negated: Formats, closers = false): void {
+    // The keys whose run, which this write opens, ends at another client's
+    // change end it reuses (see format, rule 5).
+    const reusedEnds: string[] = [];
     while (this.right !== null) {
       const r = this.right;
       if (!r.deleted) {
@@ -536,7 +553,23 @@ export class Cursor {
             break;
           }
         }
+        if (
+          valueOf(r) === null &&
+          r.id.client !== this.tr.doc.clientID &&
+          isChangeEnd(this.tr.doc, r)
+        ) {
+          reusedEnds.push(keyOf(r));
+        }
         negated.delete(keyOf(r));
+      }
+      this.forward();
+    }
+    for (const key of reusedEnds) {
+      this.right = this.newItem(
+        new ContentFormat(key, null as unknown as object),
+      );
+      if (closers) {
+        formatClosers.add(this.right);
       }
       this.forward();
     }
@@ -1042,7 +1075,11 @@ export class Cursor {
    *    same time lands before the end, inside the run, and keeps the run's
    *    value. A null by which a change made text inside the run plain (typed
    *    plain text, a removal) is no such end: the undo of that change brings
-   *    the value back after it.
+   *    the value back after it. Likewise, where the run this write opens (its
+   *    range's value, or inserted text's) ends at another client's change end
+   *    that it reuses as its own closer, it writes a null of its own right
+   *    after it (a link a collaborator undid while another linked the text
+   *    up to its end ran on to the end of the document).
    */
   format(n: number, formats: Record<string, unknown>): void {
     const passed = new Set<string>();

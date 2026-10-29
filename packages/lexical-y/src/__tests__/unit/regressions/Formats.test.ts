@@ -1487,6 +1487,22 @@ describe('a value one client restates ‖ the undo of the change that gave it', 
       sel.insertNodes(blocks.map(block => block()));
       $setSelection(null);
     };
+  // Each line's links' text.
+  const $links = () =>
+    $getRoot()
+      .getChildren()
+      .map(p =>
+        ($isElementNode(p) ? p.getChildren() : [])
+          .filter($isLinkNode)
+          .map(link => link.getTextContent())
+          .join(' '),
+      )
+      .join(' / ');
+  const $link = (from: number, to: number) => () => {
+    $setSelection($selectLine(from, to));
+    $toggleLink('https://u1.test');
+    $setSelection(null);
+  };
   const $list = () =>
     $createListNode('bullet').append(
       $createListItemNode().append($createTextNode('t20z t67z')),
@@ -1699,22 +1715,38 @@ describe('a value one client restates ‖ the undo of the change that gave it', 
         t.a.update($format(format, 16, 27));
         t.b.undo();
         await merged(t);
-        const $links = () =>
-          $getRoot()
-            .getChildren()
-            .map(p =>
-              ($isElementNode(p) ? p.getChildren() : [])
-                .filter($isLinkNode)
-                .map(link => link.getTextContent())
-                .join(' '),
-            )
-            .join(' / ');
         const fresh = await freshReader(t.a);
         for (const p of [t.a, t.b, fresh]) {
           expect(p.read($links)).toBe('t7z t8z t9z / ');
         }
       });
     }
+  }
+  // S7-26, links only: the run a write opens ends at another client's
+  // change end, which it reuses as its own closer: it gets a null of its own
+  // after it too, so that change's undo does not take the run's end away.
+  for (const ids of [
+    [1, 2, 3],
+    [3, 2, 1],
+  ]) {
+    test(`S7-26: B links "t2z t3z t4z" ‖ C links "t3z"; then B undoes it ‖ C links "t2z t3z t4z" (ids ${ids})`, async () => {
+      const t = await setup(
+        twoLines('t1z t2z t3z t4z t5z t6z t7z t8z t9z', 'tail line'),
+        {ids},
+      );
+      t.offline();
+      t.b.update($link(4, 15));
+      t.c.update($link(8, 11));
+      await t.sync();
+      t.offline();
+      t.b.undo();
+      t.c.update($link(4, 15));
+      await merged(t);
+      const fresh = await freshReader(t.a);
+      for (const p of [t.a, t.b, t.c, fresh]) {
+        expect(p.read($links)).toBe('t3z t4z / ');
+      }
+    });
   }
 });
 

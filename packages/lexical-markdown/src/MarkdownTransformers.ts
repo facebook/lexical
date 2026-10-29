@@ -1169,14 +1169,15 @@ function escapeCharacterReferences(value: string): string {
 }
 
 // A link destination or title is read back through `unescapeText`, so after
-// `escapeCharacterReferences` the characters its shape treats as syntax get a
-// backslash. Neither may hold a line ending either: a literal one would leave
-// it unclosed and split the paragraph in two. It goes out as the character
-// reference that `unescapeText` and a CommonMark reader both turn back into
-// the line ending, written after the `&` escape so that one leaves it alone.
+// `escapeCharacterReferences` every match of `syntax`, a global regular
+// expression for the characters its shape treats as syntax, gets a backslash.
+// Neither may hold a line ending either: a literal one would leave it unclosed
+// and split the paragraph in two. It goes out as the character reference that
+// `unescapeText` and a CommonMark reader both turn back into the line ending,
+// written after the `&` escape so that one leaves it alone.
 function escapeLinkPart(value: string, syntax: RegExp): string {
   return escapeCharacterReferences(value)
-    .replace(syntax, '\\$1')
+    .replace(syntax, '\\$&')
     .replace(/[\r\n]/g, lineEnding => `&#${lineEnding.charCodeAt(0)};`);
 }
 
@@ -1244,15 +1245,15 @@ export const LINK: TextMatchTransformer = {
     // parenthesis would close it early, a backslash would start an escape, and
     // only a `<` in first place turns it into the pointy form. An angle
     // bracket anywhere else is an ordinary character and goes out as it is.
-    // In the double-quoted title only `"` and a backslash need an escape.
     const rawUrl = node.getURL();
     const url =
       rawUrl === '' || /\s/.test(rawUrl)
-        ? `<${escapeLinkPart(rawUrl, /([\\<>])/g)}>`
-        : escapeLinkPart(rawUrl, /([\\()])/g).replace(/^</, '\\<');
+        ? `<${escapeLinkPart(rawUrl, /[\\<>]/g)}>`
+        : escapeLinkPart(rawUrl, /[\\()]/g).replace(/^</, '\\<');
 
+    // In the double-quoted title only `"` and a backslash need an escape.
     const linkContent = title
-      ? `[${textContent}](${url} "${escapeLinkPart(title, /([\\"])/g)}")`
+      ? `[${textContent}](${url} "${escapeLinkPart(title, /[\\"]/g)}")`
       : `[${textContent}](${url})`;
 
     return linkContent;

@@ -268,7 +268,7 @@ function $setCodeTextOffset(
 }
 
 // Wrapping update function into selection retainer, that tries to keep the
-// selection at the same text position as before.
+// caret at the same text position as before.
 function $updateAndRetainSelection(
   nodeKey: NodeKey,
   updateFn: () => boolean,
@@ -285,20 +285,21 @@ function $updateAndRetainSelection(
     return;
   }
 
-  // Only the points inside this code node are restored. A point elsewhere is
-  // left where the user put it, rather than dragged into the code block.
-  const anchorOffset = $getCodeTextOffset(node, selection.anchor);
-  const focusOffset = $getCodeTextOffset(node, selection.focus);
-
+  // The selection is restored as a caret at the anchor, and only when the
+  // anchor is inside this code node: a selection elsewhere is left where the
+  // user put it, rather than dragged into the code block. MarkStateExtension
+  // relies on that collapsed caret to carry comment ids onto the new tokens.
+  const textOffset = $getCodeTextOffset(node, selection.anchor);
+  if (textOffset === null) {
+    updateFn();
+    return;
+  }
   if (!updateFn()) {
     return;
   }
-  if (anchorOffset !== null) {
-    $setCodeTextOffset(node, selection.anchor, anchorOffset);
-  }
-  if (focusOffset !== null) {
-    $setCodeTextOffset(node, selection.focus, focusOffset);
-  }
+  const {anchor, focus} = selection;
+  $setCodeTextOffset(node, anchor, textOffset);
+  focus.set(anchor.key, anchor.offset, anchor.type);
 }
 
 // Finds minimal diff range between two nodes lists. It returns from/to range boundaries of prevNodes

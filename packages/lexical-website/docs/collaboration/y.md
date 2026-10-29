@@ -125,7 +125,9 @@ provider.once('sync', () => {
   local update waiting to be written; so does one made while the binding
   has updates of its own waiting. A remote change a provider applies
   synchronously in the same task as updates made before any commit is
-  integrated before them, and they are written after it (providers that
+  integrated before them, and they are written after it, on the document as
+  it was before that change, which they were made on: their edits land
+  where they were made, and the change is read after them (providers that
   apply changes from network or channel events never do this).
 - To seed or convert a document on a server, use `seedYState` (see
   [Server-side editing](./y-server.md)).

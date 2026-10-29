@@ -9,8 +9,8 @@
 // @vitest-environment node
 
 // Regression cases for IME composition findings (#9492, the soak7 findings
-// S7-8, S7-9, S7-12, S7-15 and S7-28, and findings R-1 to R-4 of the review
-// of the hold-back): what a collaborator changes in the
+// S7-8, S7-9, S7-12, S7-15, S7-28 and S7-37, and findings R-1 to R-4 of the
+// review of the hold-back): what a collaborator changes in the
 // line being composed is held back until the composition ends, the line
 // keeps its nodes meanwhile, and nothing held is lost when the hold ends.
 // Each case is named after its finding; the general promise is checked over
@@ -436,6 +436,45 @@ describe('S7-28: a peer pastes paragraphs into the composed line, then types in 
       await t.sync();
       await expectConverged(t.peers);
       for (const word of ['[ka15]', '[kd14]', '[kd6]']) {
+        expect(count(t.a, word)).toBe(1);
+      }
+    });
+  }
+});
+
+describe('S7-37: a peer types a word in the composed line and deletes text after it, then another types inside the word', () => {
+  for (const ids of [
+    [1, 2, 3],
+    [3, 2, 1],
+    [2, 1, 3],
+  ]) {
+    test(`every word is stored once (ids ${ids})`, async () => {
+      const t = await setup(
+        () =>
+          $getRoot().append(
+            $p('[s1] [s2] '),
+            $p('[s4] ').append(
+              $createTextNode('xyzw yy ').toggleFormat('italic'),
+              $createTextNode('[s5] [s6] [s7] '),
+            ),
+          ),
+        {ids},
+      );
+      // A composes at the start of the line; B types a word in it (held
+      // back) and deletes text after the italic run (read at once).
+      const key = compose(t.a, keyOf(t.a, [1]), 0);
+      t.b.update(() => $selectIn([1], 5).insertText('[ke5] '));
+      t.b.update(() => $selectIn([1], 11, 16).removeText());
+      await t.sync();
+      // C types inside B's word, and A composes a step.
+      t.c.update(() => $selectIn([1], 6).insertText('[kd10] '));
+      await t.sync();
+      step(t.a, key, 0, '', 'n');
+      await t.sync();
+      endComposition(t.a);
+      await t.sync();
+      await expectConverged(t.peers);
+      for (const word of ['[kd10]', '[s5]', 'ke5]']) {
         expect(count(t.a, word)).toBe(1);
       }
     });

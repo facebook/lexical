@@ -1749,7 +1749,6 @@ describe('Markdown', () => {
     const BOLD = TEXT_TYPE_TO_FORMAT.bold;
     const ITALIC = TEXT_TYPE_TO_FORMAT.italic;
     const STRIKE = TEXT_TYPE_TO_FORMAT.strikethrough;
-    const INLINE_CODE = TEXT_TYPE_TO_FORMAT.code;
     const $formatted = (text: string, format: number) =>
       $createTextNode(text).setFormat(format);
 
@@ -1836,29 +1835,6 @@ describe('Markdown', () => {
       expect(importMarkdown(exported).read($chars)).toEqual(
         editor.read($chars),
       );
-    });
-
-    it('keeps a tag on inline code that holds only a space', () => {
-      const editor = createTestEditor();
-      editor.update(
-        () => {
-          $getRoot()
-            .clear()
-            .append(
-              $createParagraphNode().append(
-                $formatted('a', BOLD),
-                $formatted(' ', BOLD | INLINE_CODE),
-              ),
-            );
-        },
-        {discrete: true},
-      );
-      const formats = importMarkdown(editor.read($exportMarkdown)).read(() =>
-        $getRoot()
-          .getAllTextNodes()
-          .map(node => node.getFormat()),
-      );
-      expect(formats).toEqual([BOLD, BOLD | INLINE_CODE]);
     });
   });
 

@@ -507,7 +507,7 @@ function $exportTextFormat(
         );
   }
 
-  const holdsTag = canHoldTag(node, textContent);
+  const holdsTag = canHoldTag(textContent);
 
   // the opening tags to be added to the result
   let openingTags = '';
@@ -586,13 +586,7 @@ function $exportTextFormat(
     }
     break;
   }
-  // If the node is entirely whitespace (or empty inline code), we don't apply
-  // opening/closing tags around it, but it must still output any closing tags.
-  if (!holdsTag) {
-    return closingTagsBefore + closingTagsAfter + output;
-  }
-
-  if (isCode) {
+  if (isCode && textContent !== '') {
     // Inline code is an atomic literal span with a content-derived fence, so
     // its whitespace stays inside the fence and other formats wrap around it.
     const {fence, padded} = getCodeSpanDelimiter(textContent);
@@ -604,6 +598,12 @@ function $exportTextFormat(
       fence +
       closingTagsAfter
     );
+  }
+
+  // If the node is entirely whitespace, we don't apply opening/closing tags
+  // around it, but it must still output any closing tags.
+  if (!holdsTag) {
+    return closingTagsBefore + closingTagsAfter + output;
   }
 
   // Flanking Compliance: CommonMark flanking rules require formatting tags to be
@@ -649,7 +649,7 @@ function $continuesFormat(
       return false;
     }
     const text = $exportedText(next, selection);
-    if (canHoldTag(next, text)) {
+    if (canHoldTag(text)) {
       return true;
     }
     // Markdown import matches a tag within one line.
@@ -677,8 +677,8 @@ function hasFormat(
 
 /**
  * Whether exported text can carry a format's tag: CommonMark flanking rules
- * keep tags off whitespace, but inline code is a fenced span.
+ * keep tags off whitespace.
  */
-function canHoldTag(node: TextNode, text: string): boolean {
-  return node.hasFormat('code') ? text !== '' : /\S/.test(text);
+function canHoldTag(text: string): boolean {
+  return /\S/.test(text);
 }

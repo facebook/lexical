@@ -2069,19 +2069,18 @@ export class Writer {
       const [nd, no] = k < n ? anchors[k] : [desired.length, old.length];
       return nd - pd > 1 || no - po > 1;
     };
-    // A line without a marker that this update did not change, and that
-    // nothing follows, stays without one (see $implicitChanged); any other
-    // is given one. Nothing may follow it before the update either: the
-    // block node it ran up to, and what came after, are deleted by the
-    // segment after it, which starts at its content's end only when a marker
-    // ends it (with none, it started at the container's start, and deleted
-    // everything before).
+    // A line without a marker that this update did not change, and right
+    // after which it writes nothing (the end of the container, or the block
+    // node it runs up to, kept as it is), stays without one (see
+    // $implicitChanged); any other is given one. Why nothing right after it:
+    // a segment written there starts at the end of the unit before it, which
+    // is a marker only when one ends this line (with none, it started at the
+    // container's start, and deleted everything before).
     const keepsImplicit = (k: number) => {
       const [di, oi] = anchors[k];
       return (
         old[oi].kind === 'implicit' &&
-        di === desired.length - 1 &&
-        oi === old.length - 1 &&
+        !gapNonEmpty(k + 1) &&
         !this.$implicitChanged(desired[di].key!)
       );
     };

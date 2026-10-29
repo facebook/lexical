@@ -87,8 +87,9 @@ code[data-lexical-code-word-wrap][data-lexical-code-line-numbers] [data-lexical-
 ```
 
 Keep `top: auto` and an inline `display` such as `inline-block`, so each number stays on the first row of its line, and
-give the code element `position: relative`. `margin-inline: 0` drops any margin that placed the number in the line, which
-would now move it out of the gutter. Keep `overflow-x: auto` rather than `visible` on the code element, because
+give the code element `position: relative` and a `padding-inline-start` as wide as the numbers, so the text starts after
+them. `margin-inline: 0` drops any margin that placed the number in the line, which would now move it out of the
+gutter. Keep `overflow-x: auto` rather than `visible` on the code element, because
 `visible` would change the scroll container the numbers are placed against.
 
 ## Caret scrolling

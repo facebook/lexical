@@ -567,7 +567,6 @@ function $exportTextFormat(
       // If tag is unclosable, don't close it and leave it in the original array,
       // So that it can be closed when it's no longer unclosable
       if (
-        unclosableTags &&
         unclosedTag &&
         unclosableTags.find(element => element.tag === unclosedTag.tag)
       ) {
@@ -592,19 +591,10 @@ function $exportTextFormat(
     // Inline code is an atomic literal span with a content-derived fence, so
     // its whitespace stays inside the fence and other formats wrap around it.
     const {fence, padded} = getCodeSpanDelimiter(textContent);
-    return (
-      closingTagsBefore +
-      openingTags +
-      fence +
-      padded +
-      fence +
-      closingTagsAfter
-    );
-  }
-
-  // If the node is entirely whitespace, we don't apply opening/closing tags
-  // around it, but it must still output any closing tags.
-  if (!holdsTag) {
+    output = fence + padded + fence;
+  } else if (!holdsTag) {
+    // If the node is entirely whitespace, we don't apply opening/closing tags
+    // around it, but it must still output any closing tags.
     return closingTagsBefore + closingTagsAfter + output;
   }
 

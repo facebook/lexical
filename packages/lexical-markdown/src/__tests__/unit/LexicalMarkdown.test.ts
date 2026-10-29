@@ -4117,6 +4117,38 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
     expect(result).toBe('[***a*** ](u)c');
   });
 
+  it('keeps a tag open across consecutive formatted spaces in a selection', () => {
+    const editor = createTestEditor({nodes: [LinkNode]});
+    editor.update(
+      () => {
+        const bold = TEXT_TYPE_TO_FORMAT.bold;
+        const first = $createTextNode('a').setFormat(bold);
+        const last = $createTextNode('cd').setFormat(bold);
+        $getRoot().append(
+          $createParagraphNode().append(
+            first,
+            $createTextNode(' ').setFormat(bold | TEXT_TYPE_TO_FORMAT.italic),
+            $createTextNode(' ').setFormat(
+              bold | TEXT_TYPE_TO_FORMAT.strikethrough,
+            ),
+            last,
+          ),
+        );
+        $setSelectionFromCaretRange(
+          $getCaretRange(
+            $getTextPointCaret(first, 'next', 0),
+            $getTextPointCaret(last, 'next', 1),
+          ),
+        );
+      },
+      {discrete: true},
+    );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
+    expect(result).toBe('**a  c**');
+  });
+
   it.each<
     [
       name: string,

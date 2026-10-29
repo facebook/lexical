@@ -7,6 +7,7 @@
  */
 
 import {blockIdState} from '@lexical/extension';
+import invariant from '@lexical/internal/invariant';
 import {
   ContentFormat,
   ContentString,
@@ -99,7 +100,7 @@ import {
   wrappersFromAttrs,
   type WrapperValue,
 } from './Schema';
-import {$readSlots, $replaceStored, SLOT_PREFIX} from './Slots';
+import {$holds, $readSlots, $replaceStored, SLOT_PREFIX} from './Slots';
 import {
   type CS,
   EMPTY_FORMATS,
@@ -931,22 +932,18 @@ export class Reader {
         continue;
       }
       const old = units.slice(i, Math.min(j + 1, len));
-      const oldFirst = old.length > 0 ? old[0].first : null;
-      const oldLast = old.length > 0 ? old[old.length - 1].last : null;
-      const prevLast = i > 0 ? units[i - 1].last : null;
-      // The Lexical children the old units cover (before materializing,
-      // which may move pooled nodes).
-      let prev: LexicalNode | null = null;
+      // The Lexical children the old units cover, and the node before them,
+      // before materializing (which may move pooled nodes). A unit the
+      // editor holds no node for (a node of a type it cannot build, read
+      // only) covers none.
       const oldTops: LexicalNode[] = [];
+      let prev: LexicalNode | null = null;
+      const oldFirst = firstChildKey(old);
+      const oldLast = lastChildKey(old);
       if (oldFirst !== null && oldLast !== null) {
         const first = $getNodeByKey(oldFirst);
         const last = $getNodeByKey(oldLast);
-        if (
-          first !== null &&
-          last !== null &&
-          first.getParent() !== null &&
-          first.getParent()!.is(el)
-        ) {
+        if (first !== null && last !== null && el.is(first.getParent())) {
           prev = first.getPreviousSibling();
           for (
             let n: LexicalNode | null = first;
@@ -959,9 +956,6 @@ export class Reader {
             }
           }
         }
-      }
-      if (prev === null && oldTops.length === 0 && prevLast !== null) {
-        prev = $getNodeByKey(prevLast);
       }
       const {units: fresh, tops} = this.$materialize(
         cs,
@@ -979,8 +973,22 @@ export class Reader {
           $keepingSelection(() => n.remove(true));
         }
       }
-      let cursor = prev;
+      // The region's children go after the node that preceded the old ones
+      // if `el` still holds it once the read is done and the read does not
+      // place it; else after the last child of the nearest unit before the
+      // region that `el` holds, or first. The read may have moved that node
+      // into one it places (a stored node an unwritten update moved out of
+      // the line that stores it): placed next to it, that one would end up
+      // inside itself.
+      let cursor =
+        prev !== null && el.is(prev.getParent()) && !keep.has(prev.getKey())
+          ? prev
+          : $lastChildIn(el, units, i);
       for (const t of tops) {
+        invariant(
+          !$holds(t, el),
+          '@lexical/y: a read would place a node inside itself',
+        );
         if (cursor === null) {
           const firstChild = el.getFirstChild();
           if (firstChild === null) {
@@ -1486,10 +1494,9 @@ export class Reader {
         for (const n of e.nodes) {
           tops.push(n);
         }
-        if (e.nodes.length > 0) {
-          e.unit.first = e.nodes[0].getKey();
-          e.unit.last = e.nodes[e.nodes.length - 1].getKey();
-        }
+        e.unit.first = e.nodes.length > 0 ? e.nodes[0].getKey() : null;
+        e.unit.last =
+          e.nodes.length > 0 ? e.nodes[e.nodes.length - 1].getKey() : null;
         k++;
         continue;
       }
@@ -3171,6 +3178,46 @@ function collectPool(node: ElementNode, pool: Pool, state: State): void {
       }
     }
   }
+}
+
+/** The first child the units cover, or null when they cover none. */
+function firstChildKey(units: readonly Unit[]): NodeKey | null {
+  for (const u of units) {
+    if (u.first !== null) {
+      return u.first;
+    }
+  }
+  return null;
+}
+
+/** The last child the units cover, or null when they cover none. */
+function lastChildKey(units: readonly Unit[]): NodeKey | null {
+  for (let k = units.length - 1; k >= 0; k--) {
+    const last = units[k].last;
+    if (last !== null) {
+      return last;
+    }
+  }
+  return null;
+}
+
+/**
+ * The last child of `el` that the units before index `end` cover, or null
+ * when they cover none that `el` holds.
+ */
+function $lastChildIn(
+  el: ElementNode,
+  units: readonly Unit[],
+  end: number,
+): LexicalNode | null {
+  for (let k = end - 1; k >= 0; k--) {
+    const key = units[k].last;
+    const node = key === null ? null : $getNodeByKey(key);
+    if (node !== null && el.is(node.getParent())) {
+      return node;
+    }
+  }
+  return null;
 }
 
 function sameWrappers(a: WrapperValue[], b: WrapperValue[]): boolean {

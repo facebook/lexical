@@ -1241,23 +1241,24 @@ export const LINK: TextMatchTransformer = {
     const title = node.getTitle();
 
     // A raw destination cannot hold whitespace, so a URL that has any is
-    // written in the pointy form, where only `<`, `>` and a backslash need an
-    // escape. An empty URL goes there too, since the raw form has nothing left
-    // to match. Everywhere else the destination is written raw, where a
+    // written in the pointy form, where `<`, `>` and a backslash are syntax.
+    // An empty URL goes there too, since the raw form has nothing left to
+    // match. Everywhere else the destination is written raw, where a
     // parenthesis would close it early, a backslash would start an escape, and
     // only a `<` in first place turns it into the pointy form. An angle
     // bracket anywhere else is an ordinary character and goes out as it is.
     //
     // Code spans are read before links, so a backtick anywhere in the link
     // could pair with one in the text after it and swallow the link. Every
-    // part escapes a backtick on top of its own syntax.
+    // part escapes a backtick on top of its own syntax, here and in the title.
     const rawUrl = node.getURL();
     const url =
       rawUrl === '' || /\s/.test(rawUrl)
         ? `<${escapeLinkPart(rawUrl, /[\\<>`]/g)}>`
         : escapeLinkPart(rawUrl, /[\\()`]|^</g);
 
-    // In the double-quoted title only `"` and a backslash are syntax.
+    // In the double-quoted title `"` and a backslash are syntax, and a
+    // backtick is escaped as above.
     const linkContent = title
       ? `[${textContent}](${url} "${escapeLinkPart(title, /[\\"`]/g)}")`
       : `[${textContent}](${url})`;

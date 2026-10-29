@@ -21,6 +21,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   defineExtension,
+  type ElementNode,
   type LexicalEditor,
   UNDO_COMMAND,
 } from 'lexical';
@@ -139,6 +140,33 @@ describe('LINK', () => {
       assert($isLinkNode(linkNode), 'First child must be a LinkNode');
       expect(linkNode.getTextContent()).toBe('test');
       expect(linkNode.getURL()).toBe('https://example.com/a b');
+    });
+  });
+
+  test('a title ending in an escaped backslash closes at the next quote', () => {
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    typeMarkdown(editor, '[test](url "a\\\\")');
+
+    editor.read(() => {
+      const linkNode = $getRoot()
+        .getFirstChildOrThrow<ElementNode>()
+        .getFirstChild();
+      assert($isLinkNode(linkNode), 'First child must be a LinkNode');
+      expect([linkNode.getURL(), linkNode.getTitle()]).toEqual(['url', 'a\\']);
+    });
+  });
+
+  test('a title whose closing quote is escaped makes no link', () => {
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    typeMarkdown(editor, '[test](url "a\\")');
+
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('[test](url "a\\")');
+      expect(
+        $getRoot()
+          .getAllTextNodes()
+          .some(node => $isLinkNode(node.getParent())),
+      ).toBe(false);
     });
   });
 

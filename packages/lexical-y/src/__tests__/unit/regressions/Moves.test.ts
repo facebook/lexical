@@ -37,6 +37,7 @@ import {describe, expect, test} from 'vitest';
 
 import {
   $block,
+  $createBoxNode,
   $p,
   $selectIn,
   expectConverged,
@@ -340,6 +341,41 @@ describe('a recorded move rewrites the block that moved, not the blocks it passe
         /^list.*table.*paragraph\("AnotherX line"\)$/,
       );
     });
+  }
+});
+
+// A container written in place (a list given an item, in a box it moves
+// into) and then given new storage by the move of its node, in one update:
+// the self-check compares the box as stored now.
+describe('a block written, then moved, in one update', () => {
+  for (const ids of IDS) {
+    for (const inside of [false, true]) {
+      test(`a list given an item, moved into ${inside ? 'a' : 'an empty'} box that moves too (ids ${ids})`, async () => {
+        const t = await setup(
+          () => {
+            const box = $createBoxNode();
+            if (inside) {
+              box.append($p('inside'));
+            }
+            $getRoot().append($list('a', 'b'), box, $p('gap'));
+          },
+          {ids},
+        );
+        t.a.update(() => {
+          const [list, box] = [$block([0]), $block([1])];
+          list.splice(0, 0, [
+            $createListItemNode().append($createTextNode('z')),
+          ]);
+          box.append(list);
+          $block([1]).insertAfter(box);
+        });
+        await t.sync();
+        await expectConverged(t.peers);
+        expect(t.b.read(() => $block([1]).getTextContent())).toBe(
+          `${inside ? 'inside\n\n' : ''}z\n\na\n\nb`,
+        );
+      });
+    }
   }
 });
 

@@ -3035,8 +3035,12 @@ export class YBinding {
         containers.add(cs);
       }
     }
+    // A container whose node this write gave new storage after writing it
+    // (a block moved after its content changed) is compared as stored now.
     for (const cs of writer.groupWrites) {
-      containers.add(cs);
+      if (state.csByKey.get(cs.key) === cs) {
+        containers.add(cs);
+      }
     }
     for (const cs of containers) {
       if (

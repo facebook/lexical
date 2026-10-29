@@ -74,6 +74,8 @@ import {
   describeNode,
   EquationNode,
   flush,
+  NODES,
+  setup,
   WidgetNode,
 } from '../utils/harness';
 
@@ -266,6 +268,128 @@ describe.each([false, true])('blockIds %s', blockIds => {
     a.editor.dispose();
     b.editor.dispose();
   });
+  // #9513: the read that finds the drift (the self-check's read of the
+  // container again) placed box d in box c, which the editor held inside d:
+  // c was taken out of the tree with everything in it, and nothing placed
+  // it again. A shows only "top" until it reloads.
+  for (const selfCheck of [true, false]) {
+    test(`a block inserted after a box that a skipped update made hold the box storing it (self-check ${selfCheck}): nothing goes missing`, async () => {
+      const [a, b] = clients(2, blockIds, {selfCheck});
+      b.editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append(
+              $p('top'),
+              $createBoxNode('c').append(
+                $p('c1'),
+                $createBoxNode('d').append($p('d1')),
+                $p('c2'),
+              ),
+            );
+        },
+        {discrete: true},
+      );
+      b.binding.initialize();
+      await flush();
+      a.editor.update(
+        () => {
+          const c = $getRoot().getChildAtIndex(1) as ElementNode;
+          const d = c.getChildAtIndex(1) as ElementNode;
+          c.insertBefore(d);
+          d.append(c);
+        },
+        {discrete: true, tag: SKIP_COLLAB_TAG},
+      );
+      b.editor.update(
+        () => {
+          const c = $getRoot().getChildAtIndex(1) as ElementNode;
+          c.getChildAtIndex(1)!.insertAfter($p('new'));
+        },
+        {discrete: true},
+      );
+      await flush();
+      const expected =
+        'paragraph("top") / test_box[c](paragraph("c1") test_box[d](paragraph("d1")) paragraph("new") paragraph("c2"))';
+      expect(show(b)).toBe(expected);
+      if (selfCheck) {
+        // The self-check finds box c different and reads it again, which
+        // would drop box c: the whole document is read again instead.
+        expect(show(a)).toBe(expected);
+        expect(recovered(a.warnings)).toEqual([['remote-change', false]]);
+        expect(
+          a.warnings
+            .filter(isYWarning)
+            .some(w =>
+              w.message.includes(
+                'a read would drop a node the document still holds',
+              ),
+            ),
+        ).toBe(true);
+      } else {
+        // A keeps its unwritten nesting, with the insert read into it.
+        expect(show(a)).toBe(
+          'paragraph("top") / test_box[d](paragraph("d1") test_box[c](paragraph("c1") paragraph("new") paragraph("c2")))',
+        );
+        expect(a.warnings).toEqual([]);
+      }
+      // A's next edit reaches B, and A shows every block.
+      a.editor.update(
+        () => {
+          ($getRoot().getFirstChildOrThrow() as ElementNode).append(
+            $createTextNode('!'),
+          );
+        },
+        {discrete: true},
+      );
+      await flush();
+      expect(show(b)).toBe(expected.replace('"top"', '"top!"'));
+      a.editor.dispose();
+      b.editor.dispose();
+    });
+  }
+
+  // #9513, the same for a line: A moves paragraph t1 before t0 in an update
+  // tagged SKIP_COLLAB_TAG; B removes t1. The read of B's change took out
+  // every node between the first and the last node of the lines it read
+  // (t0 among them, as A held it after t1), and t0 was gone from A's editor
+  // (without the self-check, which reads that container again).
+  test('a line removed after a skipped update moved it before another: the other stays', async () => {
+    const [a, b] = clients(2, blockIds, {selfCheck: false});
+    b.editor.update(
+      () => {
+        $getRoot().clear().append($p('top'), $p('t0'), $p('t1'), $p('t2'));
+      },
+      {discrete: true},
+    );
+    b.binding.initialize();
+    await flush();
+    const $find = (text: string) =>
+      $getRoot()
+        .getChildren()
+        .find(n => n.getTextContent() === text)!;
+    a.editor.update(() => $find('t0').insertBefore($find('t1')), {
+      discrete: true,
+      tag: SKIP_COLLAB_TAG,
+    });
+    b.editor.update(() => $find('t1').remove(), {discrete: true});
+    await flush();
+    expect(show(b)).toBe(
+      'paragraph("top") / paragraph("t0") / paragraph("t2")',
+    );
+    expect(
+      a.editor.read(() =>
+        $getRoot()
+          .getChildren()
+          .map(n => n.getTextContent())
+          .sort(),
+      ),
+    ).toEqual(['t0', 't2', 'top']);
+    expect(a.warnings).toEqual([]);
+    a.editor.dispose();
+    b.editor.dispose();
+  });
+
   test('a block inserted after a run whose last node a skipped update moved: placed after what stays', async () => {
     // Without the self-check, which reads such a container again.
     const [a, b] = clients(2, blockIds, {selfCheck: false});
@@ -662,3 +786,71 @@ describe.each([false, true])('blockIds %s', blockIds => {
     });
   });
 });
+
+/** An inline element that cannot be empty, stored as a node of its own. */
+class NonEmptyInline extends ElementNode {
+  $config() {
+    return this.config('test_nonempty_inline', {
+      children: 'inline',
+      extends: ElementNode,
+    });
+  }
+  isInline(): true {
+    return true;
+  }
+  canBeEmpty(): false {
+    return false;
+  }
+  createDOM(): HTMLElement {
+    throw new Error('headless');
+  }
+  updateDOM(): false {
+    return false;
+  }
+}
+
+// A stored inline element that cannot be empty is left out of the editor
+// once collaborators empty it, as Lexical would remove it, while its
+// Y.Node stays: that is no loss, and the read stands (#9513 review).
+test.each(['a raw Yjs delete', 'a peer deleting its text'])(
+  'an emptied stored inline element that cannot be empty is left out without a recovery (%s)',
+  async how => {
+    const t = await setup(
+      () =>
+        $getRoot().append(
+          $p('pre').append(
+            $create(NonEmptyInline).append($createTextNode('x')),
+            $createTextNode('post'),
+          ),
+        ),
+      {nodes: [...NODES, NonEmptyInline]},
+    );
+    for (const peer of t.peers) {
+      peer.warnings.length = 0;
+    }
+    if (how === 'a raw Yjs delete') {
+      const state = (
+        t.a.binding as unknown as {state: {csByKey: Map<string, {y: Y.Node}>}}
+      ).state;
+      const y = [...state.csByKey.values()]
+        .map(cs => cs.y)
+        .find(n => n.name === 'i:test_nonempty_inline')!;
+      t.a.doc.transact(() => y.delete(0, 1), t.a.net);
+    } else {
+      t.b.update(() => {
+        const line = $getRoot().getFirstChildOrThrow() as ElementNode;
+        const inline = line.getChildAtIndex(1) as ElementNode;
+        (inline.getFirstChildOrThrow() as TextNode).select(0, 1).removeText();
+      });
+    }
+    await t.sync();
+    // A raw delete applied to A's document as a remote change (not relayed).
+    for (const peer of how === 'a raw Yjs delete' ? [t.a] : t.peers) {
+      expect(peer.describe()).toBe('paragraph("prepost")');
+      expect(peer.warnings).toEqual([]);
+    }
+    for (const peer of t.peers) {
+      peer.stop();
+    }
+  },
+);

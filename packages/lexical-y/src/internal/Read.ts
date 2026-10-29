@@ -288,6 +288,17 @@ export class Reader {
    */
   private depth = 0;
   /**
+   * The nodes this read took out of where the editor held them (see
+   * $checkTakenOut).
+   */
+  private readonly takenOut = new Set<NodeKey>();
+  /**
+   * The stored inline elements this read leaves out on purpose: emptied,
+   * and unable to be empty (see $readInline). Their Y.Node is still held, and
+   * they are no loss (see $checkTakenOut).
+   */
+  private readonly leftOut = new Set<NodeKey>();
+  /**
    * The line or inline container the local editor is composing in (set by
    * the binding): what a remote change does to it is held back where Yjs
    * keeps it (see Hidden and $hold), and every read shows it without what
@@ -374,6 +385,9 @@ export class Reader {
     this.depth++;
     try {
       this.$readFullInner(cs, el);
+      if (this.depth === 1) {
+        this.$checkTakenOut();
+      }
     } finally {
       if (--this.depth === 0) {
         this.settler.$settleIds();
@@ -444,12 +458,53 @@ export class Reader {
     this.changedAttrs = attrKeys;
     try {
       this.$applyInner(childItems, attrKeys);
+      if (this.depth === 1) {
+        this.$checkTakenOut();
+      }
     } finally {
       this.changedAttrs = changedAttrs;
       if (--this.depth === 0) {
         this.settler.$settleIds();
       }
     }
+  }
+
+  /**
+   * A read never drops a node the document still holds. A read takes nodes
+   * out of a container it reads where the document no longer has them
+   * there, and places every node the document moved where it now is: in a
+   * container this read reads, as a change moves a node by deleting it in
+   * one container and inserting it in another. A node it took out that is
+   * still out of the tree at the end, and that the document still holds (a
+   * stored node whose item is not deleted, other than an inline element
+   * this read left out because it is empty and cannot be), is one the editor held
+   * elsewhere than the document stores it: an update tagged SKIP_COLLAB_TAG
+   * moved it there, into the content read, or put the content that stores
+   * it inside it (see $setChildren). Left out, it would be dropped with everything it holds,
+   * and the editor would miss a part of the document until it reloads. The
+   * read throws instead, which reads the whole document again (see
+   * YBinding#recoverRead).
+   */
+  private $checkTakenOut(): void {
+    const state = this.state;
+    for (const key of this.takenOut) {
+      const node = $getNodeByKey(key);
+      if (node === null || node.isAttached()) {
+        continue;
+      }
+      const y = state.yByKey.get(key);
+      const held =
+        y !== undefined &&
+        state.keyByY.get(y) === key &&
+        !isDeleted(y) &&
+        !this.leftOut.has(key);
+      invariant(
+        !held,
+        '@lexical/y: a read would drop a node the document still holds',
+      );
+    }
+    this.takenOut.clear();
+    this.leftOut.clear();
   }
 
   /**
@@ -1070,24 +1125,41 @@ export class Reader {
       // before materializing (which may move pooled nodes). A unit the
       // editor holds no node for (a node of a type it cannot build, read
       // only) covers none.
+      // Each unit's own nodes: the editor holds them in the units' order,
+      // unless an update the binding did not write (SKIP_COLLAB_TAG) moved
+      // one: then a node between them is not theirs, and stays.
       const oldTops: LexicalNode[] = [];
       let prev: LexicalNode | null = null;
-      const oldFirst = firstChildKey(old);
-      const oldLast = lastChildKey(old);
-      if (oldFirst !== null && oldLast !== null) {
-        const first = $getNodeByKey(oldFirst);
-        const last = $getNodeByKey(oldLast);
-        if (first !== null && last !== null && el.is(first.getParent())) {
+      const covered = new Set<NodeKey>();
+      for (const u of old) {
+        if (u.first === null || u.last === null) {
+          continue;
+        }
+        const first = $getNodeByKey(u.first);
+        const last = $getNodeByKey(u.last);
+        if (first === null || last === null || !el.is(first.getParent())) {
+          continue;
+        }
+        if (covered.size === 0) {
           prev = first.getPreviousSibling();
-          for (
-            let n: LexicalNode | null = first;
-            n !== null;
-            n = n.getNextSibling()
-          ) {
+        }
+        const span: LexicalNode[] = [];
+        let reached = false;
+        for (
+          let n: LexicalNode | null = first;
+          n !== null;
+          n = n.getNextSibling()
+        ) {
+          span.push(n);
+          if (n.is(last)) {
+            reached = true;
+            break;
+          }
+        }
+        for (const n of reached ? span : [first]) {
+          if (!covered.has(n.getKey())) {
+            covered.add(n.getKey());
             oldTops.push(n);
-            if (n.is(last)) {
-              break;
-            }
           }
         }
       }
@@ -1104,6 +1176,7 @@ export class Reader {
         const parent = n.getParent();
         // Nodes the read moved elsewhere (reused groups) stay where they are.
         if (!keep.has(n.getKey()) && parent !== null && parent.is(el)) {
+          this.takenOut.add(n.getKey());
           $keepingSelection(() => n.remove(true));
         }
       }
@@ -2609,12 +2682,12 @@ export class Reader {
         // deleted concurrently) is not shown, as Lexical would remove it.
         if (
           node !== null &&
-          !(
-            $isElementNode(node) &&
-            !node.canBeEmpty() &&
-            node.getChildrenSize() === 0
-          )
+          $isElementNode(node) &&
+          !node.canBeEmpty() &&
+          node.getChildrenSize() === 0
         ) {
+          this.leftOut.add(node.getKey());
+        } else if (node !== null) {
           push(node);
         }
       }
@@ -2746,9 +2819,13 @@ export class Reader {
     ) {
       this.state.refresh.add(holder!.getKey());
     }
+    for (let i = left; i < prev.length - right; i++) {
+      this.takenOut.add(prev[i].getKey());
+    }
     // A reused node can hold `el` (concurrent edits moved a list into the
     // line of an item that list held): take `el` out first, or the tree
-    // would get a cycle. Its own container's read places it again.
+    // would get a cycle. Its own container's read places it again (see
+    // $checkTakenOut).
     if (middle.some($isElementNode)) {
       const ancestors = new Set<NodeKey>();
       for (let p = el.getParent(); p !== null; p = p.getParent()) {
@@ -2756,6 +2833,7 @@ export class Reader {
       }
       if (middle.some(c => ancestors.has(c.getKey()))) {
         writable.remove(true);
+        this.takenOut.add(el.getKey());
       }
     }
     const removeCount = prev.length - left - right;
@@ -3384,27 +3462,6 @@ function collectPool(node: ElementNode, pool: Pool, state: State): void {
       }
     }
   }
-}
-
-/** The first child the units cover, or null when they cover none. */
-function firstChildKey(units: readonly Unit[]): NodeKey | null {
-  for (const u of units) {
-    if (u.first !== null) {
-      return u.first;
-    }
-  }
-  return null;
-}
-
-/** The last child the units cover, or null when they cover none. */
-function lastChildKey(units: readonly Unit[]): NodeKey | null {
-  for (let k = units.length - 1; k >= 0; k--) {
-    const last = units[k].last;
-    if (last !== null) {
-      return last;
-    }
-  }
-  return null;
 }
 
 /**

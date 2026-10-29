@@ -2305,12 +2305,23 @@ export class YBinding {
       {error, reason: 'unreadable', types: []},
     );
     this.setStatus('readonly');
+    this.showAgain(shown);
+  }
+
+  /**
+   * Have the editor show `shown` again, a state it showed before, without
+   * reading the document: the state is set whole, or, where it is empty (an
+   * editor that showed nothing yet, before the first read; Lexical does not
+   * set an empty state), the root is cleared. Either way the update is
+   * tagged as a remote change, so nothing of it is written or refused (see
+   * onUpdate).
+   */
+  private showAgain(shown: EditorState): void {
     const editor = this._editor;
     if (editor.getEditorState() === shown) {
       return;
     }
     if (shown.isEmpty()) {
-      // Before the first read: an editor that showed nothing yet.
       editor.update(() => $getRoot().clear(), {
         discrete: true,
         skipTransforms: true,
@@ -2318,12 +2329,12 @@ export class YBinding {
       });
     } else {
       editor.setEditorState(shown, {tag: COLLABORATION_TAG});
-      if (editor._updating) {
-        // Set from a commit's $onUpdate callbacks (the recovery of a read
-        // nested in an update, see guardedRead), where nothing commits it:
-        // the update queued here, which runs right after them, does.
-        editor.update(() => {}, {discrete: true});
-      }
+    }
+    if (editor._updating) {
+      // Set from a commit's $onUpdate callbacks (the recovery of a read
+      // nested in an update, see guardedRead), where nothing commits it:
+      // the update queued here, which runs right after them, does.
+      editor.update(() => {}, {discrete: true});
     }
   }
 
@@ -4047,13 +4058,6 @@ export class YBinding {
   }
 
   /**
-   * Read again the containers where a follow-up changed what it may not
-   * write (see Writer#followUp): the editor goes back to what is stored,
-   * so that it never differs from the document (and from every other
-   * client). Normally this runs as the next update (see queueReread); here
-   * when the editor is idle (see runPending).
-   */
-  /**
    * Show again what the editor showed before the local updates made once
    * the binding failed closed (see onUpdate): the binding reads nothing
    * more, so it cannot read what they changed again.
@@ -4061,11 +4065,18 @@ export class YBinding {
   private restoreShown(): void {
     const shown = this.restoreTo;
     this.restoreTo = null;
-    if (shown !== null && this._editor.getEditorState() !== shown) {
-      this._editor.setEditorState(shown, {tag: COLLABORATION_TAG});
+    if (shown !== null) {
+      this.showAgain(shown);
     }
   }
 
+  /**
+   * Read again the containers where a follow-up changed what it may not
+   * write (see Writer#followUp): the editor goes back to what is stored,
+   * so that it never differs from the document (and from every other
+   * client). Normally this runs as the next update (see queueReread); here
+   * when the editor is idle (see runPending).
+   */
   private rereadRefused(): void {
     let after: (() => void) | null = null;
     this.guardedRead({

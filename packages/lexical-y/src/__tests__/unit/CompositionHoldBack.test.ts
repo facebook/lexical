@@ -40,9 +40,14 @@ describe('@lexical/y composition hold-back', () => {
           [1, 2],
           [2, 1],
         ]) {
-          test(`${shapeName} line, remote ${remoteName}, ${end} (ids ${ids})`, async () => {
-            await runCase(shape, remote, end, ids);
-          });
+          const limited =
+            remote.limit !== undefined && remote.limit(shape, end);
+          (limited ? test.skip : test)(
+            `${shapeName} line, remote ${remoteName}, ${end} (ids ${ids})`,
+            async () => {
+              await runCase(shape, remote, end, ids);
+            },
+          );
         }
       }
     }

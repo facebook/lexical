@@ -6,6 +6,8 @@
  *
  */
 
+import type {Hidden} from './Hidden';
+
 import {
   type BlockIdExtension,
   getPeerDependencyFromEditor,
@@ -85,7 +87,7 @@ import {
   markFormatCloser,
 } from './Cursor';
 import {$canonicalizeGroup, $switchesWrapper} from './Groups';
-import {Hidden, shownLength} from './Hidden';
+import {shownLength} from './Hidden';
 import {$applyStoredAttrs, Reader} from './Read';
 import {
   $isGroupNode,
@@ -111,6 +113,7 @@ import {$unstorableSlotHosts, $wrapSlotShadowRootInline} from './Slots';
 import {
   type CS,
   isEndItem,
+  isShownEnd,
   nameOf,
   prevLiveEnd,
   Roles,
@@ -118,7 +121,7 @@ import {
   typeOf,
   type Unit,
 } from './State';
-import {emptyView, isGone, seenBy, type Unread} from './Unread';
+import {attrsBefore, emptyView, isGone, seenBy, type Unread} from './Unread';
 import {
   NESTED_FALLBACK_WARNING,
   notesSince,
@@ -835,9 +838,10 @@ export class YBinding {
             queueMicrotask(endOfTask(this.task));
           }
           withPins(this._pins, () => this.onUpdate(payload));
+          const hidden = this.state.hidden;
           if (
-            this.state.hidden !== null &&
-            this._editor._compositionKey === null
+            hidden !== null &&
+            !payload.editorState.read(() => this.$holds(hidden))
           ) {
             this.pending.add('hidden');
           }
@@ -1991,8 +1995,17 @@ export class YBinding {
   ): void {
     const reader = new Reader(state);
     setRebuilt(reader.rebuilt);
-    const composing = this.$composingOwner();
-    reader.composingKey = composing;
+    // What a composition held back whose hold has ended (see $holds) shows
+    // first, before this change is read with the composition now going on.
+    if (state.hidden !== null && !this.$holds(state.hidden)) {
+      this.$release(state, reader);
+    }
+    reader.composingKey = this.$composingOwner();
+    reader.composedAt = this.$composedCharacter(cursor);
+    reader.attrsBefore = (y, keys) => {
+      const before = attrsBefore(y, tr);
+      return new Map([...keys].map(key => [key, before[key]]));
+    };
     // A container that still shows a follow-up's change the binding did not
     // write is read in full first: the reader changes only what the
     // transaction touched, on an editor it takes to show the document.
@@ -2012,34 +2025,13 @@ export class YBinding {
       state.ids.touchedIds.add(id);
     }
     this.toSettle.clear();
+    // What this change does to the line being composed is held back where
+    // Yjs keeps it (see Hidden); it shows when the hold ends.
     reader.$apply(childItems, attrKeys);
-    // Remote inserts into the line being composed are shown when the
-    // composition ends (see Hidden).
-    let hidden = state.hidden;
-    if (hidden !== null && hidden.ownerKey !== composing) {
-      // The composition it was held back for has ended (another may have
-      // started since, its own update waiting for the editor to be idle):
-      // what it held back shows now.
-      state.hidden = null;
-      if (!reader.$refreshComposed(hidden.ownerKey)) {
-        // The composed line is gone (a local edit removed or moved it):
-        // what was hidden in it is read where it is now (see flushHidden).
-        new Reader(state).$apply(this.hiddenItems(hidden), new Map());
-      }
-      hidden = null;
-    } else if (hidden !== null && reader.composingRead) {
-      // The composed line was read in full: everything in it shows.
-      hidden = null;
+    if (state.hidden !== null && !this.$holds(state.hidden)) {
+      // This change ended the hold (it removed the line being composed).
+      this.$release(state, reader);
     }
-    if (!reader.composingRead && reader.deferred.length > 0) {
-      if (hidden === null) {
-        hidden = new Hidden(composing!);
-      }
-      for (const it of reader.deferred) {
-        hidden.add(it.id.client, it.id.clock, it.length);
-      }
-    }
-    state.hidden = hidden;
     if (cursor !== null) {
       // A caret whose line the transaction replaced keeps its offset in the
       // line that replaced it (see $replacedLineCaret); any other selection
@@ -2291,33 +2283,169 @@ export class YBinding {
     return cs !== undefined && cs.kind === 'i' ? ownerKey : null;
   }
 
-  /** Show the remote content hidden during a composition that has ended. */
+  /**
+   * Show what a composition held back once its hold has ended (see $holds),
+   * in an update of the binding's own: after a local update that ended it
+   * (the composition ended, or moved, or a local edit took held content out
+   * of its line).
+   */
   private flushHidden(): void {
-    const hidden = this.state.hidden;
-    if (hidden === null) {
+    if (this.state.hidden === null) {
       return;
     }
     const cursor = this.getCursor();
-    // Cleared before the read, which shows what it held; a read that throws
-    // reads the whole document again (see recoverRead).
-    this.state.hidden = null;
+    let rebuilt: ReadonlySet<CS> = new Set();
+    // The release clears the hold before its read, which shows what it held
+    // (see $release); a read that throws reads the whole document again
+    // (see recoverRead).
     this.guardedRead({
       $read: () => {
-        const reader = new Reader(this.state);
-        if (!reader.$refreshComposed(hidden.ownerKey)) {
-          // A local edit removed the composed line: what was hidden in it is
-          // read where it is now (a line of its own, or joined into another).
-          reader.$apply(this.hiddenItems(hidden), new Map());
+        const state = this.state;
+        if (state.hidden === null || this.$holds(state.hidden)) {
+          return;
         }
+        const reader = new Reader(state);
+        rebuilt = reader.rebuilt;
+        reader.composedAt = this.$composedCharacter(cursor);
+        this.$release(state, reader);
         if (cursor !== null) {
           this.$restoreSelection(cursor, true);
         }
         this.$caretOnText();
         this.$quietSelection();
       },
+      // As after any remote read (see onAfterTransaction).
+      after: () => {
+        this.checkUnknownTypes();
+        this.checkRead(rebuilt);
+        this.flushRefresh(true);
+      },
       recover: (error, shown) => this.recoverRead(error, shown),
       tag: REMOTE_TAGS,
     });
+  }
+
+  /**
+   * The id of the character before the caret in the node being composed,
+   * from `cursor`, the selection captured before the change (see
+   * Reader#composedAt).
+   */
+  private $composedCharacter(
+    cursor: YCursor | null,
+  ): {client: number; clock: number} | null {
+    const key = this._editor._compositionKey;
+    const selection = $getSelection();
+    if (
+      key === null ||
+      cursor === null ||
+      !$isRangeSelection(selection) ||
+      !selection.isCollapsed() ||
+      selection.anchor.key !== key ||
+      selection.anchor.type !== 'text' ||
+      selection.anchor.offset === 0
+    ) {
+      return null;
+    }
+    const rel = createRelativePositionFromJSON(cursor.anchor);
+    return rel.assoc < 0 ? rel.item : null;
+  }
+
+  /**
+   * Whether `hidden`'s hold goes on (see Hidden): the editor is composing in
+   * the line or inline container it holds for, and every held item is still
+   * in it (a local edit, as Enter or Backspace across lines, can take held
+   * content out of it).
+   */
+  private $holds(hidden: Hidden): boolean {
+    const owner = this.$composingOwner();
+    if (owner === null || owner !== hidden.ownerKey) {
+      return false;
+    }
+    const state = this.state;
+    const unit = state.unitByKey.get(owner);
+    const cs = unit !== undefined ? unit.cs : state.csByKey.get(owner);
+    const y = cs === undefined ? null : cs.y;
+    // Items known to be in the line: each item is walked once.
+    const inLine = new Set<Item>();
+    for (const [parent, items] of this.hiddenItems(hidden)) {
+      for (const it of items) {
+        if (isGone(it)) {
+          continue;
+        }
+        if (parent !== y) {
+          return false;
+        }
+        if (unit === undefined) {
+          continue;
+        }
+        const path: Item[] = [];
+        let end: Item | null = it;
+        while (end !== null && !inLine.has(end) && !isShownEnd(end, hidden)) {
+          path.push(end);
+          end = end.right;
+        }
+        if (
+          end === null
+            ? unit.end !== null
+            : !inLine.has(end) && end !== unit.end
+        ) {
+          return false;
+        }
+        for (const p of path) {
+          inLine.add(p);
+        }
+      }
+    }
+    return (
+      hidden.marker === null ||
+      (unit !== undefined &&
+        [...hidden.marker.ends].every(end => end === unit.end || isGone(end)))
+    );
+  }
+
+  /**
+   * End the hold of what a composition held back (see Hidden): every held
+   * change is read by `reader` where its content now is, the line it was
+   * held in or wherever local edits took it, as a remote change that just
+   * arrived; nothing is held any more.
+   */
+  private $release(state: State, reader: Reader): void {
+    const hidden = state.hidden;
+    if (hidden === null) {
+      return;
+    }
+    state.hidden = null;
+    const items = this.hiddenItems(hidden);
+    // A local split can inherit a held format at its new boundary. Its
+    // shown start was kept separate from storage (see Writer#$writeSegment):
+    // render that successor too, even where the stored start already agrees.
+    for (const [unit, {stored}] of hidden.starts) {
+      if (
+        unit.end !== null &&
+        state.unitByEnd.get(unit.end) === unit &&
+        !unit.end.deleted
+      ) {
+        unit.start = stored;
+        const list = items.get(unit.cs.y);
+        if (list === undefined) {
+          items.set(unit.cs.y, [unit.end]);
+        } else {
+          list.push(unit.end);
+        }
+      }
+    }
+    const markers = new Map<YNode, Set<string>>();
+    if (hidden.marker !== null) {
+      for (const end of hidden.marker.ends) {
+        if (!end.deleted) {
+          markers.set(typeOf(end), new Set(hidden.marker.was.keys()));
+        }
+      }
+    }
+    const composing = reader.composingKey;
+    reader.composingKey = null;
+    reader.$apply(items, markers);
+    reader.composingKey = composing;
   }
 
   /** The items of the binding's containers that `hidden` holds. */
@@ -4871,7 +4999,7 @@ export class YBinding {
     const unit = state.unitByKey.get(owner.getKey());
     let start: Item | null;
     if (unit !== undefined && unit.end !== null) {
-      const left = prevLiveEnd(unit.end);
+      const left = prevLiveEnd(unit.end, state.hidden);
       start = left === null ? unit.cs.y._start : left.right;
     } else {
       const cs = state.csByKey.get(owner.getKey());
@@ -4898,7 +5026,7 @@ export class YBinding {
     for (let it = start; it !== null; it = it.right) {
       const len = shownLength(it, hidden);
       if (len === 0) {
-        if (isEndItem(it) && !isGone(it)) {
+        if (isShownEnd(it, hidden)) {
           break;
         }
         continue;
@@ -4915,7 +5043,7 @@ export class YBinding {
       offset -= len;
       lastLive = it;
       lastLen = len;
-      if (isEndItem(it)) {
+      if (isShownEnd(it, hidden)) {
         break;
       }
     }
@@ -4973,7 +5101,7 @@ export class YBinding {
       last: boolean,
       inside: boolean,
     ): LexicalNode | null => {
-      if (it.deleted || !isEndItem(it)) {
+      if (!isShownEnd(it, state.hidden)) {
         return null;
       }
       const unit = state.unitByEnd.get(it);
@@ -5014,7 +5142,7 @@ export class YBinding {
     diff: number,
   ): {key: NodeKey; offset: number; type: 'text' | 'element'} | null {
     const hidden = this.state.hidden;
-    const liveEnd = (x: Item) => !x.deleted && isEndItem(x);
+    const liveEnd = (x: Item) => isShownEnd(x, hidden);
     let offset = 0;
     let it = start;
     for (; it !== null && it !== item && !liveEnd(it); it = it.right) {
@@ -5109,7 +5237,7 @@ export class YBinding {
           ? null
           : implicitUnitAt(cs, undefined);
       if (implicit !== null) {
-        const left = prevLiveEnd(found);
+        const left = prevLiveEnd(found, hidden);
         return this.$pointInLine(
           implicit.key!,
           left === null ? (found.parent as YNode)._start : left.right,
@@ -5125,7 +5253,7 @@ export class YBinding {
     }
     // Walk to the unit end; count atoms from the unit start.
     let end: Item | null = item;
-    while (end !== null && (end.deleted || !isEndItem(end))) {
+    while (end !== null && !isShownEnd(end, hidden)) {
       end = end.right;
     }
     const parentY = item.parent as YNode;
@@ -5134,7 +5262,7 @@ export class YBinding {
     let start: Item | null;
     if (unit !== undefined && unit.key !== null && unit.kind === 'line') {
       ownerKey = unit.key;
-      const left = prevLiveEnd(end);
+      const left = prevLiveEnd(end, hidden);
       start = left === null ? parentY._start : left.right;
     } else {
       const cs = this.state.containers.get(parentY);
@@ -5144,7 +5272,8 @@ export class YBinding {
       const implicit =
         cs !== undefined && cs.kind === 'b' ? implicitUnitAt(cs, unit) : null;
       if (implicit !== null) {
-        const left = end === null ? prevLiveEnd(item) : prevLiveEnd(end);
+        const left =
+          end === null ? prevLiveEnd(item, hidden) : prevLiveEnd(end, hidden);
         return this.$pointInLine(
           implicit.key!,
           left === null ? parentY._start : left.right,

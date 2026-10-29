@@ -100,8 +100,8 @@ import {$writeSlots} from './Slots';
 import {
   type CS,
   EMPTY_FORMATS,
-  isEndItem,
   isPartKey,
+  isShownEnd,
   nameOf,
   prevLiveEnd,
   type Roles,
@@ -2187,13 +2187,21 @@ export class Writer {
   /**
    * Set every unit's start formats (the formats in effect where it starts)
    * from the shared items: deletes and inserts start from them, and a stale
-   * value would leave a format open or close one early.
+   * value would leave a format open or close one early. A locally split
+   * unit still covered by a hold keeps its shown start until release, with
+   * the stored start recorded separately (see Hidden#starts).
    */
   private $recomputeStarts(cs: CS): void {
     const formats = new Map<string, unknown>();
     let it: Item | null = cs.y._start;
     for (const u of cs.units) {
       u.start = formats.size > 0 ? new Map(formats) : null;
+      const hidden = this.state.hidden;
+      const held = hidden === null ? undefined : hidden.starts.get(u);
+      if (held !== undefined) {
+        held.stored = u.start;
+        u.start = held.shown;
+      }
       if (u.end === null) {
         break;
       }
@@ -2222,7 +2230,7 @@ export class Writer {
       if (unit.end === null || isGone(unit.end)) {
         return;
       }
-      const left = prevLiveEnd(unit.end);
+      const left = prevLiveEnd(unit.end, this.state.hidden);
       const formats = new Map(unit.start || EMPTY_FORMATS);
       for (
         let it: Item | null = left === null ? unit.cs.y._start : left.right;
@@ -2242,7 +2250,7 @@ export class Writer {
         }
       }
       let next: Item | null = unit.end.right;
-      while (next !== null && (isGone(next) || !isEndItem(next))) {
+      while (next !== null && !isShownEnd(next, this.state.hidden)) {
         next = next.right;
       }
       const nextUnit: Unit | undefined =
@@ -2458,7 +2466,7 @@ export class Writer {
         deleteItem(u.end, this.tr);
       }
     } else {
-      const left = unitLeft(old, idx);
+      const left = unitLeft(old, idx, this.state.hidden);
       const stop = unitStop(old, idx);
       const startItem = left === null ? u.cs.y._start : left.right;
       const cursor = this.cursor(u.cs.y, left, u.start || EMPTY_FORMATS);
@@ -2505,6 +2513,12 @@ export class Writer {
       remaining.push(oi);
     }
     const lines = newSeg.filter(di => desired[di].kind !== 'node');
+    const hidden = this.state.hidden;
+    const heldSegment =
+      hidden !== null &&
+      remaining.some(
+        oi => old[oi].key === hidden.ownerKey || hidden.starts.has(old[oi]),
+      );
     // The formats in effect at `left`, where the content is diffed from: the
     // first remaining unit's start, also when node units before it were
     // deleted above (see $deleteUnit).
@@ -2512,6 +2526,17 @@ export class Writer {
       remaining.length > 0
         ? old[remaining[0]].start || EMPTY_FORMATS
         : this.formatsAfter(left);
+    // A previously split successor already has distinct inherited starts.
+    // Keep its shown start for the diff/cursor, but seed raw scans from its
+    // stored start: the held opener may be before this segment's first item.
+    const inherited =
+      hidden === null || remaining.length === 0
+        ? undefined
+        : hidden.starts.get(old[remaining[0]]);
+    const storedStartFormats =
+      inherited === undefined
+        ? startFormats
+        : inherited.stored || EMPTY_FORMATS;
     const startItem = left === null ? cs.y._start : left.right;
     const lineItems = new Map<number, Item>();
     if (remaining.length > 0 || lines.length > 0) {
@@ -2633,6 +2658,8 @@ export class Writer {
       after = end;
     }
     // Formats in effect at each unit start (a format can span a marker).
+    // New halves of the held line inherit the shown lane, not evidence that
+    // they already rendered a held opener in an earlier half.
     if (lines.length > 0) {
       const byEnd = new Map<Item, Unit>();
       const segUnits = newUnits.slice(newUnits.length - newSeg.length);
@@ -2641,8 +2668,10 @@ export class Writer {
           byEnd.set(u.end, u);
         }
       }
-      const current = new Map(startFormats);
+      const current = new Map(storedStartFormats);
+      const shown = new Map(startFormats);
       let pendingStart: Formats = new Map(current);
+      let pendingShown: Formats = new Map(shown);
       let k = 0;
       for (
         let it = startItem;
@@ -2653,17 +2682,23 @@ export class Writer {
           continue;
         }
         if (it.content instanceof ContentFormat) {
-          if (it.content.value === null) {
-            current.delete(it.content.key);
-          } else {
-            current.set(it.content.key, it.content.value);
+          applyFormat(current, it.content);
+          if (hidden === null || !hidden.hides(it)) {
+            applyFormat(shown, it.content);
           }
           continue;
         }
         const u = byEnd.get(it);
         if (u !== undefined) {
           u.start = pendingStart.size > 0 ? pendingStart : null;
+          if (heldSegment && !sameFormatMaps(pendingStart, pendingShown)) {
+            hidden!.starts.set(u, {
+              shown: pendingShown.size > 0 ? pendingShown : null,
+              stored: u.start,
+            });
+          }
           pendingStart = new Map(current);
+          pendingShown = new Map(shown);
           k++;
         }
       }
@@ -2675,7 +2710,7 @@ export class Writer {
     // Reader#$readLineInPlace and $fixStartsAfter): before, its start took
     // them up to its end item, so a closer an outside writer left in it
     // could be judged redundant and deleted.
-    const formats = new Map(startFormats);
+    const formats = new Map(storedStartFormats);
     let it: Item | null = startItem;
     if (after !== left) {
       for (; it !== null; it = it.right) {
@@ -2689,10 +2724,7 @@ export class Writer {
       }
     }
     for (; it !== null; it = it.right) {
-      if (isGone(it)) {
-        continue;
-      }
-      if (it.countable && isEndItem(it)) {
+      if (isShownEnd(it, this.state.hidden)) {
         const next = this.state.unitByEnd.get(it);
         if (
           next !== undefined &&
@@ -2721,7 +2753,7 @@ export class Writer {
       return EMPTY_FORMATS;
     }
     const unit = this.state.unitByEnd.get(item);
-    const start = prevLiveEnd(item);
+    const start = prevLiveEnd(item, this.state.hidden);
     const atoms = new Atoms();
     return readAtoms(
       start === null ? (item.parent as YNode)._start : start.right,
@@ -2929,11 +2961,11 @@ export class Writer {
     let left: Item | null;
     let stop: Item | null;
     if (u.end !== null) {
-      left = prevLiveEnd(u.end);
+      left = prevLiveEnd(u.end, this.state.hidden);
       stop = u.end.right;
     } else {
       const idx = old.indexOf(u);
-      left = unitLeft(old, idx);
+      left = unitLeft(old, idx, this.state.hidden);
       stop = unitStop(old, idx);
     }
     const atoms = new Atoms();
@@ -3150,7 +3182,7 @@ export class Writer {
   ): void {
     const c = this.cursor(
       u.cs.y,
-      prevLiveEnd(u.end!),
+      prevLiveEnd(u.end!, this.state.hidden),
       u.start || EMPTY_FORMATS,
     );
     c.advance(offset);
@@ -3944,8 +3976,47 @@ export class Writer {
 
   /** Write the marker attributes of desired line `d` on marker `item`. */
   private $writeMarker(item: Item, d: Desired): void {
-    const desired = this.$marker(d);
+    let desired = this.$marker(d);
     const line = d.node;
+    const hidden = this.state.hidden;
+    const held = hidden === null ? null : hidden.marker;
+    if (
+      held !== null &&
+      line !== null &&
+      ((held.ends.has(item) && !this.prevState._nodeMap.has(line.getKey())) ||
+        this.$isComposedLine(line))
+    ) {
+      // Attributes of the composed line a collaborator changed are held
+      // back (see Hidden#marker): one this edit left as the editor shows it
+      // keeps the collaborator's value; one it changed takes its value, and
+      // is no longer held. So does the line a split of it makes while
+      // composing (the composed line ends at a new marker, the new line
+      // holding the rest of it at the old one). A line it was joined into
+      // keeps its own, though it ends at the old marker; an empty line
+      // Enter makes at its end has the attributes the editor shows.
+      const composed = this.$isComposedLine(line);
+      desired = {...desired};
+      for (const [k, was] of [...held.was]) {
+        if (equalValue(desired[k], was)) {
+          const now = held.now.get(k);
+          if (now === undefined) {
+            delete desired[k];
+          } else {
+            desired[k] = now;
+          }
+        } else if (composed) {
+          held.was.delete(k);
+          held.now.delete(k);
+        }
+      }
+      held.ends.add(item);
+      if (composed) {
+        hidden!.ownerKey = line.getKey();
+      }
+      if (held.was.size === 0) {
+        hidden!.marker = null;
+      }
+    }
     const y = typeOf(item);
     const current = attrsOf(y) as Attrs;
     const storedText = $isElementNode(line) && !$holdsText(line);
@@ -3992,6 +4063,33 @@ export class Writer {
         this.groupWrites.add(cs);
       }
     }
+  }
+
+  /**
+   * Whether `line` is the line being composed that a held change is for
+   * (see Hidden): that line, or a line this edit made to replace it (a
+   * change of its type) holding the composition, not one it was joined
+   * into.
+   */
+  private $isComposedLine(line: LexicalNode): boolean {
+    const ownerKey = this.state.hidden!.ownerKey;
+    if (line.getKey() === ownerKey) {
+      return true;
+    }
+    const owner = $getNodeByKey(ownerKey);
+    if (
+      (owner !== null && owner.isAttached()) ||
+      this.prevState._nodeMap.has(line.getKey())
+    ) {
+      return false;
+    }
+    const key = this.state.editor._compositionKey;
+    const composed = key === null ? null : $getNodeByKey(key);
+    return (
+      composed !== null &&
+      $isElementNode(line) &&
+      (composed.is(line) || line.isParentOf(composed))
+    );
   }
 
   /**
@@ -4799,14 +4897,18 @@ function wrapperOnly(attrs: Attrs): Attrs {
 }
 
 /** The live end item before an old unit (after earlier deletions too). */
-function unitLeft(units: Unit[], idx: number): Item | null {
+function unitLeft(
+  units: Unit[],
+  idx: number,
+  hidden: Hidden | null,
+): Item | null {
   const u = units[idx];
   if (u.end !== null) {
-    return prevLiveEnd(u.end);
+    return prevLiveEnd(u.end, hidden);
   }
   let e = idx > 0 ? units[idx - 1].end : null;
   while (e !== null && isGone(e)) {
-    e = prevLiveEnd(e);
+    e = prevLiveEnd(e, hidden);
   }
   return e;
 }

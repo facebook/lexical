@@ -229,6 +229,7 @@ export class Peer {
     readonly nodes: Klass<LexicalNode>[] = NODES,
     /** Runs on the editor before the binding starts. */
     readonly prepare?: (editor: LexicalEditor) => void,
+    readonly withBlockIds: boolean = WITH_BLOCK_IDS,
   ) {
     this.doc = new Y.Doc({gc: false});
     this.doc.clientID = clientID;
@@ -246,6 +247,7 @@ export class Peer {
       // turn the self-check on (it is off by default), so that a mismatch
       // fails them (expectConverged); benchmarks measure without it.
       selfCheck: process.env.LEXICAL_Y_BENCH !== '1',
+      withBlockIds,
     });
     this.editor = bound.editor;
     this.binding = bound.binding;
@@ -353,6 +355,7 @@ export async function setup(
     delivery?: Delivery;
     nodes?: Klass<LexicalNode>[];
     prepare?: (editor: LexicalEditor) => void;
+    withBlockIds?: boolean;
   } = {},
 ): Promise<Setup> {
   const net: Network = {
@@ -363,7 +366,8 @@ export async function setup(
   };
   const ids = options.ids ?? [1, 2];
   const peers = ids.map(
-    id => new Peer(id, net, options.nodes, options.prepare),
+    id =>
+      new Peer(id, net, options.nodes, options.prepare, options.withBlockIds),
   );
   const [a] = peers;
   a.update(() => {
@@ -440,7 +444,13 @@ export async function freshReader(
     pumping: false,
     queue: [],
   };
-  const peer = new Peer(99, net, nodes || from.nodes, from.prepare);
+  const peer = new Peer(
+    99,
+    net,
+    nodes || from.nodes,
+    from.prepare,
+    from.withBlockIds,
+  );
   Y.applyUpdate(peer.doc, Y.encodeStateAsUpdate(from.doc), 'load');
   peer.binding.initialize();
   await flush();
@@ -554,9 +564,10 @@ export function createBoundEditor(
     onError: (e: Error) => void;
     onWarn: (e: Error) => void;
     selfCheck: boolean;
+    withBlockIds?: boolean;
   },
 ): {editor: LexicalEditor; binding: YBinding; start: () => () => void} {
-  if (!WITH_BLOCK_IDS) {
+  if (!(config.withBlockIds ?? WITH_BLOCK_IDS)) {
     const editor = createEditor({
       namespace: config.namespace,
       nodes: [...config.nodes],

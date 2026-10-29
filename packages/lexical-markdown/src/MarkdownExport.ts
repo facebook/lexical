@@ -224,12 +224,12 @@ function $processNodeForSelection(
   }
 }
 
-type OpenTag = {
+interface OpenTag {
   format: TextFormatType;
   tag: string;
   /** `$continuesTag`'s answers so far, by node key. */
   answers: Map<NodeKey, boolean>;
-};
+}
 
 function $exportChildrenForSelection(
   node: ElementNode,

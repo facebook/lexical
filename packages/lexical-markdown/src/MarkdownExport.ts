@@ -253,22 +253,16 @@ function $exportChildrenForSelection(
             unclosedTags,
             [...unclosableTags, ...unclosedTags],
           ).markdown,
-        (textNode, textContent) => {
-          const slicedNode = $sliceSelectedTextNodeContent(
-            selection,
+        textNode =>
+          $exportTextFormat(
             textNode,
-            'clone',
-          );
-          return $exportTextFormat(
-            textNode,
-            slicedNode.getTextContent(),
+            $exportedText(textNode, selection),
             textFormatTransformers,
             unclosedTags,
             unclosableTags,
             shouldPreserveNewLines,
             selection,
-          );
-        },
+          ),
       );
 
       if (result != null) {
@@ -296,11 +290,10 @@ function $exportChildrenForSelection(
       }
     } else if ($isTextNode(child)) {
       if (childIncluded) {
-        const target = $sliceSelectedTextNodeContent(selection, child, 'clone');
         output.push(
           $exportTextFormat(
             child,
-            target.getTextContent(),
+            $exportedText(child, selection),
             textFormatTransformers,
             unclosedTags,
             unclosableTags,
@@ -655,19 +648,24 @@ function $continuesFormat(
     if (selection && !next.isSelected(selection)) {
       return false;
     }
-    const text = selection
-      ? $sliceSelectedTextNodeContent(selection, next, 'clone').getTextContent()
-      : next.getTextContent();
+    const text = $exportedText(next, selection);
+    if (canHoldTag(next, text)) {
+      return true;
+    }
     // Markdown import matches a tag within one line.
     if (text.includes('\n')) {
       return false;
     }
-    if (canHoldTag(next, text)) {
-      return true;
-    }
     next = getTextSibling(next, false);
   }
   return false;
+}
+
+/** The text of `node` that the export emits: its selected slice, if any. */
+function $exportedText(node: TextNode, selection: BaseSelection | null) {
+  return selection
+    ? $sliceSelectedTextNodeContent(selection, node, 'clone').getTextContent()
+    : node.getTextContent();
 }
 
 function hasFormat(

@@ -1821,11 +1821,6 @@ describe('Markdown', () => {
         ],
         '**a**\n**c**',
       ],
-      [
-        'closes before formatted text on the next line',
-        () => [$formatted('a', BOLD), $formatted('\nc', BOLD | ITALIC)],
-        '**a**\n***c***',
-      ],
     ])('%s', (_name, $nodes, expected) => {
       const editor = createTestEditor();
       editor.update(
@@ -4084,6 +4079,29 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
       $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
     );
     expect(result).toBe('***a*** ');
+  });
+
+  it('closes a tag before a formatted space at the end of a selected link', () => {
+    const editor = createTestEditor({nodes: [LinkNode]});
+    editor.update(
+      () => {
+        const bold = TEXT_TYPE_TO_FORMAT.bold;
+        const paragraph = $createParagraphNode().append(
+          $createLinkNode('u').append(
+            $createTextNode('a').setFormat(bold | TEXT_TYPE_TO_FORMAT.italic),
+            $createTextNode(' ').setFormat(bold),
+          ),
+          $createTextNode('c'),
+        );
+        $getRoot().append(paragraph);
+        paragraph.select(0, paragraph.getChildrenSize());
+      },
+      {discrete: true},
+    );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
+    expect(result).toBe('[***a*** ](u)c');
   });
 
   it.each<

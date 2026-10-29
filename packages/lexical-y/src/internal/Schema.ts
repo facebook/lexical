@@ -1700,8 +1700,9 @@ function writesOwnJSON(klass: Klass<LexicalNode>): boolean {
  * type. Otherwise those its class of the type declares in its `$config`
  * schema, and none where it does not register the type. Where the location
  * holds the class's own exportJSON (`json`: a node stored as its own Y.Node,
- * a text run), a class that writes its JSON by hand (see writesOwnJSON) owns
- * every field: which ones it writes cannot be known.
+ * a text run), its flat NodeState too (see jsonFieldsOf), and a class that
+ * writes its JSON by hand (see writesOwnJSON) owns every field: which ones
+ * it writes cannot be known.
  */
 export function ownedFields(
   editor: LexicalEditor,
@@ -1722,7 +1723,29 @@ export function ownedFieldsOf(
   klass: Klass<LexicalNode>,
   json: boolean,
 ): OwnedFields {
-  return json && writesOwnJSON(klass) ? EVERY_FIELD : schemaFieldsOf(klass);
+  if (!json) {
+    return schemaFieldsOf(klass);
+  }
+  return writesOwnJSON(klass) ? EVERY_FIELD : jsonFieldsOf(klass);
+}
+
+const jsonFieldSets = new WeakMap<Klass<LexicalNode>, ReadonlySet<string>>();
+
+/**
+ * The fields a node of `klass` stores where it holds its exportJSON (see
+ * $nodeAttrs, $textAttrs): its schema's (see schemaFieldsOf) and every flat
+ * NodeState it declares, whether or not that state has a schema.
+ */
+function jsonFieldsOf(klass: Klass<LexicalNode>): ReadonlySet<string> {
+  let fields = jsonFieldSets.get(klass);
+  if (fields === undefined) {
+    fields = new Set([
+      ...schemaFieldsOf(klass),
+      ...createSharedNodeState(klass).flatKeys,
+    ]);
+    jsonFieldSets.set(klass, fields);
+  }
+  return fields;
 }
 
 const itemFieldSets = new WeakMap<GroupSpec, OwnedFields>();

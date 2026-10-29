@@ -1548,3 +1548,115 @@ describe('S6-5: Enter inside a code token the highlighter makes again', () => {
     });
   }
 });
+
+// S7-39: a line's children made again as one plain node with one word
+// changed (an agent's rewrite of the block), where a node that held the
+// changed word was deleted whole (a removed node's text is aligned whole or
+// not at all). The check that keeps only what both diffs keep read the text
+// that left without that node, so the characters on its two sides (or the
+// last characters before it and the end of the line) were next to each
+// other, and it took the end of the word before as possibly a part of the
+// new word: the rewrite wrote it again, and a peer's concurrent edit of the
+// changed word landed inside the word before ("t16t83zz t80z  t19z").
+describe('S7-39: a line made again as one node, where a node that held the changed word went whole', () => {
+  // The line's text nodes (italic or not), the word changed and its new
+  // text, and what the rewrite deletes and inserts.
+  const cases: [[string, boolean][], string, string, string, string][] = [
+    [
+      [
+        ['t16z ', false],
+        ['t63z ', true],
+        [' t19z', false],
+      ],
+      't63z',
+      't80z',
+      't63z ',
+      't80z ',
+    ],
+    [
+      [
+        ['ab ', false],
+        ['cd ', true],
+        [' ef', false],
+      ],
+      'cd',
+      'gh',
+      'cd ',
+      'gh ',
+    ],
+    [
+      [
+        ['t58z t59z', true],
+        [' t60z t61z', false],
+      ],
+      't60z',
+      't70z',
+      ' t60z t61z',
+      ' t70z t61z',
+    ],
+  ];
+  for (const [nodes, word, next, del, ins] of cases) {
+    const shown = nodes
+      .map(([text, italic]) => (italic ? `_"${text}"_` : `"${text}"`))
+      .join(' | ');
+    for (const ids of IDS) {
+      test(`${shown} made again with "${next}" ‖ a peer replaces "${word}" (ids ${ids})`, async () => {
+        const t = await setup(
+          () => {
+            $getRoot().append(
+              $createParagraphNode().append($createTextNode('Title')),
+              $createParagraphNode().append(
+                ...nodes.map(([text, italic]) =>
+                  italic
+                    ? $createTextNode(text).toggleFormat('italic')
+                    : $createTextNode(text),
+                ),
+              ),
+            );
+          },
+          {ids},
+        );
+        const writes = track(t.a.doc);
+        t.offline();
+        t.a.update(() => {
+          const line = $line();
+          const text = line.getTextContent().replace(word, next);
+          for (const child of line.getChildren()) {
+            child.remove();
+          }
+          line.append($createTextNode(text));
+          $setSelection(null);
+        });
+        t.b.update(() => {
+          for (const node of $line().getChildren()) {
+            const at = node.getTextContent().indexOf(word);
+            if ($isTextNode(node) && at >= 0) {
+              node.spliceText(at, word.length, 'XY', false);
+              break;
+            }
+          }
+          $setSelection(null);
+        });
+        // The rewrite writes again only the node that held the word (a
+        // removed node's text is matched whole or not at all), and keeps
+        // every character of the nodes around it.
+        expect(writes).toEqual({del, ins});
+        await t.sync();
+        // The text of the nodes before the one that held the word stays
+        // whole, on every client.
+        const start = nodes
+          .slice(
+            0,
+            nodes.findIndex(([text]) => text.includes(word)),
+          )
+          .map(([text]) => text)
+          .join('');
+        const fresh = await freshReader(t.a);
+        for (const p of [...t.peers, fresh]) {
+          expect(lineText(p).startsWith(start)).toBe(true);
+        }
+        await expectConverged(t.peers);
+      });
+    }
+  }
+});

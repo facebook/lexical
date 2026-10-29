@@ -256,7 +256,9 @@ export function $checkWrite(writer: Writer): string[] {
     const hidden = writer.state.hidden;
     if (
       d.kind === 'line' &&
-      (hidden === null || hidden.marker === null || hidden.marker.end !== end)
+      (hidden === null ||
+        hidden.marker === null ||
+        !hidden.marker.ends.has(end))
     ) {
       const attrs = (end.content as ContentType).type.getAttrs() as Record<
         string,

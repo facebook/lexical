@@ -25,6 +25,7 @@ import {
   $createTableNode,
   $createTableRowNode,
 } from '@lexical/table';
+import {$findMatchingParent} from '@lexical/utils';
 import {
   $createTextNode,
   $getNodeByKey,
@@ -579,16 +580,33 @@ export async function runCase(
   if (made.bold !== '') {
     expect(texts(t.a, bold)).toContain('beta');
   }
-  // Backspace at the line's start makes it part of the line before, which
-  // keeps its own type and alignment.
+  // B's alignment or type, on the composed line and nowhere else: on the
+  // line that holds its text (Backspace at its start makes it part of the
+  // line before, which keeps its own), not on the lines around it (the line
+  // after joins it with Delete at its end).
   const joined = end === 'Backspace across lines';
-  if (made.heading) {
-    expect(t.a.read(() => $hasLine($isHeadingNode))).toBe(!joined);
-  }
-  if (made.centered) {
-    expect(t.a.read(() => $hasLine(n => n.getFormatType() === 'center'))).toBe(
-      !joined,
-    );
+  const lineOf = (word: string, test: (line: ElementNode) => boolean) =>
+    t.a.read(() => {
+      const text = $getRoot()
+        .getAllTextNodes()
+        .find(n => n.getTextContent().includes(word));
+      const line =
+        text === undefined
+          ? null
+          : $findMatchingParent(text, n => $isElementNode(n) && !n.isInline());
+      return line !== null && test(line as ElementNode);
+    });
+  for (const [made_, test] of [
+    [made.heading, (line: ElementNode) => $isHeadingNode(line)],
+    [made.centered, (line: ElementNode) => line.getFormatType() === 'center'],
+  ] as const) {
+    if (made_) {
+      expect(lineOf('alpha', test)).toBe(!joined);
+      expect(lineOf('pre', test)).toBe(false);
+      if (end !== 'Delete across lines') {
+        expect(lineOf('omega', test)).toBe(false);
+      }
+    }
   }
   if (end === 'completed') {
     expect(has('漢')).toBe(true);

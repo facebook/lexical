@@ -61,6 +61,7 @@ import {
   decodeFormatValue,
   eachOuterLevel,
   FIELD_PREFIX,
+  fieldsOfTypes,
   getContainerGroupSpec,
   getGroupSpec,
   getLineSpec,
@@ -831,14 +832,15 @@ export class Reader {
     const held = items.filter(
       it => !it.deleted && (before === null || !before.has(it)),
     );
-    // The marker's attributes, with the values they had (the line is read
-    // for lines made before it, its marker too).
-    const end = unit === null ? null : unit.end;
-    const heldEnd =
-      attrs && before === null && end !== null && this.attrsBefore !== null
-        ? end
+    // The marker's attributes this client owns, with the values they had
+    // (the line is read for lines made before it, its marker too); a change
+    // of attributes it does not own changes nothing it shows.
+    const end = unit === null || before !== null ? null : unit.end;
+    const changed =
+      attrs && end !== null && this.attrsBefore !== null
+        ? this.$ownedChanges(end, hidden)
         : null;
-    if (held.length > 0 || heldEnd !== null) {
+    if (held.length > 0 || (changed !== null && changed.size > 0)) {
       if (hidden === null) {
         hidden = new Hidden(this.composingKey!);
         state.hidden = hidden;
@@ -846,24 +848,64 @@ export class Reader {
       for (const it of held) {
         hidden.add(it.id.client, it.id.clock, it.length);
       }
-      if (heldEnd !== null) {
-        const y = typeOf(heldEnd);
-        const marker =
-          hidden.marker !== null && hidden.marker.end === heldEnd
-            ? hidden.marker
-            : {end: heldEnd, now: new Map(), was: new Map()};
-        const keys = this.changedAttrs.get(y) || new Set<string>();
-        const now = y.getAttrs() as Attrs;
-        for (const [k, v] of this.attrsBefore!(y, keys)) {
+      if (changed !== null && changed.size > 0) {
+        const marker = hidden.marker || {
+          ends: new Set<Item>(),
+          now: new Map<string, unknown>(),
+          was: new Map<string, unknown>(),
+        };
+        const now = typeOf(end!).getAttrs() as Attrs;
+        for (const [k, v] of changed) {
           if (!marker.was.has(k)) {
             marker.was.set(k, v);
           }
           marker.now.set(k, now[k]);
         }
+        marker.ends.add(end!);
         hidden.marker = marker;
       }
     }
-    return before === null && (!attrs || heldEnd !== null);
+    return before === null && (!attrs || changed !== null);
+  }
+
+  /**
+   * Of the attributes of marker `end` the change read set, those this
+   * client owns (see ownsMarkerAttr), with the values they had: of the
+   * fields, those its classes of the line's type and group declare, of the
+   * types the change goes from and to, and of the type the editor shows (a
+   * held change of it). A field no class of this client declares is another
+   * client's, which this one neither shows nor writes.
+   */
+  private $ownedChanges(
+    end: Item,
+    hidden: Hidden | null,
+  ): Map<string, unknown> {
+    const y = typeOf(end);
+    const keys = this.changedAttrs.get(y) || new Set<string>();
+    const was = this.attrsBefore!(y, keys);
+    const now = y.getAttrs() as Attrs;
+    const shown =
+      hidden !== null && hidden.marker !== null && hidden.marker.ends.has(end)
+        ? hidden.marker.was
+        : null;
+    const valuesOf = (key: string) => [
+      was.has(key) ? was.get(key) : now[key],
+      now[key],
+      ...(shown !== null && shown.has(key) ? [shown.get(key)] : []),
+    ];
+    const editor = this.state.editor;
+    const fields = fieldsOfTypes(editor, valuesOf(TYPE_KEY));
+    const groupFields = fieldsOfTypes(
+      editor,
+      valuesOf(GROUP_KEY).filter(g => typeof g === 'string'),
+    );
+    const out = new Map<string, unknown>();
+    for (const [k, v] of was) {
+      if (ownsMarkerAttr(k, fields, groupFields)) {
+        out.set(k, v);
+      }
+    }
+    return out;
   }
 
   /**

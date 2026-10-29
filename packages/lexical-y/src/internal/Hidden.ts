@@ -39,13 +39,15 @@ export class Hidden {
   /** Sorted, merged [start, end) clock ranges per client. */
   private readonly ranges = new Map<number, [number, number][]>();
   /**
-   * The marker of the line being composed, when a held change set its
-   * attributes: `was` holds the values they had before (undefined: not
-   * set), which the editor goes on showing, and `now` the values the change
-   * set (see Writer#$writeMarker).
+   * The attributes of the line being composed that held changes set (only
+   * those this client owns, see ownsMarkerKey): `was` holds the values they
+   * had before (undefined: not set), which the editor goes on showing, and
+   * `now` the values the changes set. `ends` are the markers that store
+   * them: the line's, and those of the lines a local split of it made
+   * while composing, which keep them too (see Writer#$writeMarker).
    */
   marker: {
-    end: Item;
+    ends: Set<Item>;
     was: Map<string, unknown>;
     now: Map<string, unknown>;
   } | null = null;

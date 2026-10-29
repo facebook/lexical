@@ -36,6 +36,7 @@ import {$isRootNode} from '../nodes/LexicalRootNode';
 import {
   $createTextNode,
   $isTextNode,
+  $recordDeleted,
   type TextNode,
 } from '../nodes/LexicalTextNode';
 import {
@@ -300,6 +301,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
     if (parent !== null && !seenStart.has(parent.getKey())) {
       removedParents.add(parent);
     }
+    $recordDeleted(node);
     $removeFromParent(node);
   }
   // Remove inline wrappers (canBeEmpty=false) that became empty
@@ -335,6 +337,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
       (mode === 'token' && slice.distance !== 0)
     ) {
       // anchorCandidates[1] should still be valid, it is caretBefore
+      $recordDeleted(origin);
       caretBefore.remove();
     } else if (slice.distance !== 0) {
       sliceState = 'removeEmptySlices';

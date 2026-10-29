@@ -153,6 +153,7 @@ const thirdPartyExternals = [
   'react',
   'react-dom',
   'yjs',
+  '@y/y',
   'y-websocket',
   'happy-dom',
   'jsdom',

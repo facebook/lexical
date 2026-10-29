@@ -9,6 +9,7 @@
 import {initPegasusTransport} from '@webext-pegasus/transport/content-script';
 
 import {CHANNEL_NAMESPACE_PARAM} from '../../constants';
+import {isContentScriptPing} from '../../contentScriptPing';
 import {extensionStoreReady} from '../../store.ts';
 import injectScript from './injectScript';
 
@@ -38,6 +39,14 @@ export default defineContentScript({
     const namespace = generateChannelNamespace();
 
     initPegasusTransport({allowWindowMessagingForNamespace: namespace});
+
+    // Lets the background detect that this page is not a restricted browser
+    // page; see contentScriptPing.ts.
+    browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+      if (isContentScriptPing(message)) {
+        sendResponse(true);
+      }
+    });
 
     // Init store for relay between injected script and the rest of the extension to work
     extensionStoreReady()

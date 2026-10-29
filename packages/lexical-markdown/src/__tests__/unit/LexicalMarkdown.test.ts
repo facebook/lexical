@@ -4109,7 +4109,10 @@ describe('link destination round trip', () => {
 
 describe('link title round trip', () => {
   // A title is read back through `unescapeText` too, so a character reference
-  // in one survives only if it goes out as a reference of its own.
+  // in one survives only if it goes out as a reference of its own, and a `"`
+  // or backslash only with a backslash in front. A line ending cannot be
+  // written raw, since it would split the paragraph and lose the link, so it
+  // goes out as a character reference.
   // https://spec.commonmark.org/0.31.2/#link-title
   const CASES: [title: string, md: string][] = [
     ['a\nb', '[x](/uri "a&#10;b")'],
@@ -4121,6 +4124,8 @@ describe('link title round trip', () => {
     ['a&amp;b', '[x](/uri "a&#38;amp;b")'],
     ['a&b', '[x](/uri "a&b")'],
     ['a"b', '[x](/uri "a\\"b")'],
+    ['a\\b', '[x](/uri "a\\\\b")'],
+    ['a\\"b', '[x](/uri "a\\\\\\"b")'],
     ['plain', '[x](/uri "plain")'],
   ];
 

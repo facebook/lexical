@@ -209,6 +209,10 @@ function $codeNodeTransform(
   });
 }
 
+function textOffsetBefore(nodes: LexicalNode[]): number {
+  return nodes.reduce((offset, node) => offset + node.getTextContentSize(), 0);
+}
+
 // Wrapping update function into selection retainer, that tries to keep cursor at the same
 // position as before.
 function $updateAndRetainSelection(
@@ -243,8 +247,6 @@ function $updateAndRetainSelection(
   // before it, plus its offset in its own text node. An element point (on the
   // code node, e.g. after a line break) is a child index, which goes stale
   // once an earlier line is split into more tokens, so it is converted too.
-  const textOffsetBefore = (nodes: LexicalNode[]) =>
-    nodes.reduce((offset, child) => offset + child.getTextContentSize(), 0);
   let textOffset =
     anchor.type === 'element'
       ? textOffsetBefore(node.getChildren().slice(0, anchor.offset))

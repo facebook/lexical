@@ -477,9 +477,10 @@ export class CodeNode extends ElementNode {
   }
 
   /**
-   * Turns soft wrapping of long lines on or off. This only sets the flag and
-   * the `data-lexical-code-word-wrap` attribute; the theme's CSS wraps the
-   * lines.
+   * Turns soft wrapping of long lines on or off. This sets the flag and the
+   * `data-lexical-code-word-wrap` attribute; the theme's CSS wraps the lines.
+   * With `CodeLineNumbersExtension`'s `onlyWordWrapped`, it also recreates
+   * the block's DOM to add or remove the line number markup.
    */
   setWordWrap(wordWrap: boolean): this {
     const writable = this.getWritable();

@@ -4016,13 +4016,15 @@ describe('link destination whitespace does not backtrack', () => {
   }
 });
 
-// Exports a paragraph holding a link labelled `x` and then `after`, expects
-// `md`, and expects reading that back to give the same link and text.
+// Exports a paragraph holding a link labelled `x` and then `after`, in inline
+// code when `afterIsCode` is set, expects `md`, and expects reading that back
+// to give the same link and text.
 function expectLinkRoundTrip(
   url: string,
   title: string | null,
   md: string,
   after = '',
+  afterIsCode = false,
 ): void {
   const editor = createTestEditor({nodes: [LinkNode]});
   editor.update(
@@ -4031,7 +4033,10 @@ function expectLinkRoundTrip(
         $createLinkNode(url, {title}).append($createTextNode('x')),
       );
       if (after) {
-        paragraph.append($createTextNode(after));
+        const afterNode = $createTextNode(after);
+        paragraph.append(
+          afterIsCode ? afterNode.toggleFormat('code') : afterNode,
+        );
       }
       $getRoot().clear().append(paragraph);
     },
@@ -4168,6 +4173,12 @@ describe('text after a link', () => {
       expectLinkRoundTrip(url, title, md, AFTER);
     });
   }
+
+  it('keeps a backtick in the link apart from inline code after it', () => {
+    // The code span's own backticks cannot be escaped, so only the escape in
+    // the link keeps the two apart.
+    expectLinkRoundTrip('/a`b', null, '[x](/a\\`b)`c`', 'c', true);
+  });
 });
 
 describe('link import', () => {

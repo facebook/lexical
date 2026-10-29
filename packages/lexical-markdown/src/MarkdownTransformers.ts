@@ -1251,14 +1251,13 @@ export const LINK: TextMatchTransformer = {
     const textContent = exportChildren(node);
     const title = node.getTitle();
 
-    // A raw destination cannot hold whitespace or a control character, so a
-    // URL that has any is written in the pointy form, where `<`, `>` and a
-    // backslash are syntax. An empty URL goes there too, since the raw form
-    // has nothing left to match. Everywhere else the destination is written
-    // raw, where a parenthesis would close it early, a backslash would start
-    // an escape, and only a `<` in first place turns it into the pointy form.
-    // An angle bracket anywhere else is an ordinary character and goes out as
-    // it is.
+    // A URL that `NOT_RAW_DESTINATION` matches goes in the pointy form, where
+    // `<`, `>` and a backslash are syntax. An empty URL goes there too, since
+    // the raw form has nothing left to match. Everywhere else the destination
+    // is written raw, where a parenthesis would close it early, a backslash
+    // would start an escape, and only a `<` in first place turns it into the
+    // pointy form. An angle bracket anywhere else is an ordinary character and
+    // goes out as it is.
     const rawUrl = node.getURL();
     const url =
       rawUrl === '' || NOT_RAW_DESTINATION.test(rawUrl)

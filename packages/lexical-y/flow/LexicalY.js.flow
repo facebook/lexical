@@ -62,16 +62,15 @@ export type YStorageMismatchData =
       readonly stored: YStoredAs,
       readonly declared: YStoredAs,
     };
-export type YUnknownNodeTypesData =
-  | {
-      readonly reason: 'unregistered' | 'malformed-slot',
-      readonly types: ReadonlyArray<string>,
-    }
-  | {
-      readonly reason: 'unreadable',
-      readonly types: ReadonlyArray<string>,
-      readonly error: unknown,
-    };
+export type YUnknownNodeTypesData = {
+  readonly reason: 'unregistered' | 'malformed-slot',
+  readonly types: ReadonlyArray<string>,
+};
+export type YUnreadableContentData = {
+  readonly reason: 'unreadable',
+  readonly types: ReadonlyArray<string>,
+  readonly error: unknown,
+};
 export type YUnsupportedSlotsData = {
   readonly reason: 'stored-host' | 'root',
   readonly types: ReadonlyArray<string>,
@@ -129,7 +128,10 @@ declare export class YWarningOf<out C extends YWarningCode, out D>
 }
 export type YWarning =
   | YWarningOf<typeof UNSUPPORTED_LAYOUT_WARNING, YUnsupportedLayoutData>
-  | YWarningOf<typeof UNKNOWN_NODE_TYPES_WARNING, YUnknownNodeTypesData>
+  | YWarningOf<
+      typeof UNKNOWN_NODE_TYPES_WARNING,
+      YUnknownNodeTypesData | YUnreadableContentData,
+    >
   | YWarningOf<typeof STORAGE_MISMATCH_WARNING, YStorageMismatchData>
   | YWarningOf<typeof SELF_CHECK_WARNING, YSelfCheckData>
   | YWarningOf<typeof RECOVERED_READ_WARNING, YRecoveredReadData>

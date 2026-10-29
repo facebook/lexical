@@ -720,6 +720,15 @@ not merge as a user might expect:
   stays outside, and a collaborator's concurrent delete of a character there
   does not apply to the moved text. Store comments as NodeState instead,
   with [`MarkStateExtension`](./comments.md).
+- **Input method composition.** While the editor composes with an input
+  method (IME) in a line, what collaborators add to that line (text,
+  formats and comments, a split, pasted lines, a change of its type) waits
+  until the composition ends, and the line keeps its nodes, so the browser's
+  composition is not disturbed. Then all of it shows where it is, also after
+  Enter or a paste made while composing. What removes something from the
+  line (a deletion, a join, a `MarkNode` comment, which moves the text into
+  it) shows at once: the text node being composed keeps its key, unless its
+  class changes (a code block made a heading).
 - **Set-valued NodeState** (`arraySetValue`, which `MarkStateExtension` uses)
   merges per member on text, line breaks and nodes stored as their own Yjs
   node (such as decorators), so two collaborators commenting on the same

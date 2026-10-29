@@ -100,8 +100,8 @@ import {$writeSlots} from './Slots';
 import {
   type CS,
   EMPTY_FORMATS,
-  isEndItem,
   isPartKey,
+  isShownEnd,
   nameOf,
   prevLiveEnd,
   type Roles,
@@ -417,6 +417,16 @@ export class Writer {
   ) {
     const editor = state.editor;
     this.wrapperFields = type => wrapperFieldsOf(editor, type);
+    // The values a held change set (see Hidden#marker), as stored now: a
+    // remote change applied while this local update waited to be written
+    // is not read yet.
+    const held = state.hidden === null ? null : state.hidden.marker;
+    if (held !== null && !held.end.deleted) {
+      const attrs = typeOf(held.end).getAttrs() as Attrs;
+      for (const k of held.was.keys()) {
+        held.now.set(k, attrs[k]);
+      }
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -2167,7 +2177,7 @@ export class Writer {
       if (unit.end === null || unit.end.deleted) {
         return;
       }
-      const left = prevLiveEnd(unit.end);
+      const left = prevLiveEnd(unit.end, this.state.hidden);
       const formats = new Map(unit.start || EMPTY_FORMATS);
       for (
         let it: Item | null = left === null ? unit.cs.y._start : left.right;
@@ -2187,7 +2197,7 @@ export class Writer {
         }
       }
       let next: Item | null = unit.end.right;
-      while (next !== null && (next.deleted || !isEndItem(next))) {
+      while (next !== null && !isShownEnd(next, this.state.hidden)) {
         next = next.right;
       }
       const nextUnit: Unit | undefined =
@@ -2403,7 +2413,7 @@ export class Writer {
         u.end.delete(this.tr);
       }
     } else {
-      const left = unitLeft(old, idx);
+      const left = unitLeft(old, idx, this.state.hidden);
       const stop = unitStop(old, idx);
       const startItem = left === null ? u.cs.y._start : left.right;
       const cursor = this.cursor(u.cs.y, left, u.start || EMPTY_FORMATS);
@@ -2633,10 +2643,7 @@ export class Writer {
       }
     }
     for (; it !== null; it = it.right) {
-      if (it.deleted) {
-        continue;
-      }
-      if (it.countable && isEndItem(it)) {
+      if (isShownEnd(it, this.state.hidden)) {
         const next = this.state.unitByEnd.get(it);
         if (
           next !== undefined &&
@@ -2665,7 +2672,7 @@ export class Writer {
       return EMPTY_FORMATS;
     }
     const unit = this.state.unitByEnd.get(item);
-    const start = prevLiveEnd(item);
+    const start = prevLiveEnd(item, this.state.hidden);
     const atoms = new Atoms();
     return readAtoms(
       start === null ? (item.parent as YNode)._start : start.right,
@@ -2872,11 +2879,11 @@ export class Writer {
     let left: Item | null;
     let stop: Item | null;
     if (u.end !== null) {
-      left = prevLiveEnd(u.end);
+      left = prevLiveEnd(u.end, this.state.hidden);
       stop = u.end.right;
     } else {
       const idx = old.indexOf(u);
-      left = unitLeft(old, idx);
+      left = unitLeft(old, idx, this.state.hidden);
       stop = unitStop(old, idx);
     }
     const atoms = new Atoms();
@@ -3092,7 +3099,7 @@ export class Writer {
   ): void {
     const c = this.cursor(
       u.cs.y,
-      prevLiveEnd(u.end!),
+      prevLiveEnd(u.end!, this.state.hidden),
       u.start || EMPTY_FORMATS,
     );
     c.advance(offset);
@@ -3890,6 +3897,35 @@ export class Writer {
     desired: Attrs,
     line: LexicalNode | null,
   ): void {
+    const hidden = this.state.hidden;
+    const held = hidden === null ? null : hidden.marker;
+    if (held !== null && line !== null && this.$isComposedLine(line)) {
+      // A collaborator's change of the composed line's attributes is held
+      // back (see Hidden#marker): an attribute this edit left as the editor
+      // shows it keeps the collaborator's value, written to the marker that
+      // ends the line now; one it changed takes its value, and is no longer
+      // held. (A held marker that now ends another line, as one the line
+      // was joined into, is written as that line's.)
+      desired = {...desired};
+      for (const [k, was] of [...held.was]) {
+        if (equalValue(desired[k], was)) {
+          const now = held.now.get(k);
+          if (now === undefined) {
+            delete desired[k];
+          } else {
+            desired[k] = now;
+          }
+        } else {
+          held.was.delete(k);
+          held.now.delete(k);
+        }
+      }
+      held.end = item;
+      hidden!.ownerKey = line.getKey();
+      if (held.was.size === 0) {
+        hidden!.marker = null;
+      }
+    }
     const y = typeOf(item);
     const current = y.getAttrs() as Attrs;
     const storedText = $isElementNode(line) && !$holdsText(line);
@@ -3921,6 +3957,33 @@ export class Writer {
         this.groupWrites.add(cs);
       }
     }
+  }
+
+  /**
+   * Whether `line` is the line being composed that a held change is for
+   * (see Hidden): that line, or a line this edit made to replace it (a
+   * change of its type) holding the composition, not one it was joined
+   * into.
+   */
+  private $isComposedLine(line: LexicalNode): boolean {
+    const ownerKey = this.state.hidden!.ownerKey;
+    if (line.getKey() === ownerKey) {
+      return true;
+    }
+    const owner = $getNodeByKey(ownerKey);
+    if (
+      (owner !== null && owner.isAttached()) ||
+      this.prevState._nodeMap.has(line.getKey())
+    ) {
+      return false;
+    }
+    const key = this.state.editor._compositionKey;
+    const composed = key === null ? null : $getNodeByKey(key);
+    return (
+      composed !== null &&
+      $isElementNode(line) &&
+      (composed.is(line) || line.isParentOf(composed))
+    );
   }
 
   /**
@@ -4485,14 +4548,18 @@ function wrapperOnly(attrs: Attrs): Attrs {
 }
 
 /** The live end item before an old unit (after earlier deletions too). */
-function unitLeft(units: Unit[], idx: number): Item | null {
+function unitLeft(
+  units: Unit[],
+  idx: number,
+  hidden: Hidden | null,
+): Item | null {
   const u = units[idx];
   if (u.end !== null) {
-    return prevLiveEnd(u.end);
+    return prevLiveEnd(u.end, hidden);
   }
   let e = idx > 0 ? units[idx - 1].end : null;
   while (e !== null && e.deleted) {
-    e = prevLiveEnd(e);
+    e = prevLiveEnd(e, hidden);
   }
   return e;
 }

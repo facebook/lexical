@@ -40,7 +40,8 @@ import {
 import {$inNamedSlot} from './Slots';
 import {
   type CS,
-  isEndItem,
+  isShownEnd,
+  shownAttrs,
   type State,
   typeOf,
   type Unit,
@@ -492,7 +493,9 @@ export class BlockIdSettler {
       (u.kind === 'implicit' ||
         (u.kind === 'line' &&
           u.end !== null &&
-          typeOf(u.end).getAttr(STATE_PREFIX + blockIdState.key) === undefined))
+          shownAttrs(u.end, this.state.hidden)[
+            STATE_PREFIX + blockIdState.key
+          ] === undefined))
     ) {
       const line = $getNodeByKey(u.key);
       if (
@@ -1208,7 +1211,7 @@ export class BlockIdSettler {
       holder = $getNodeByKey(cs.key);
     } else {
       for (let it = item.right; it !== null; it = it.right) {
-        if (!it.deleted && isEndItem(it)) {
+        if (isShownEnd(it, state.hidden)) {
           const u = state.unitByEnd.get(it);
           holder =
             u === undefined || u.key === null ? null : $getNodeByKey(u.key);
@@ -1443,7 +1446,9 @@ function $storedIdNow(state: State, node: LexicalNode): unknown {
   const k = STATE_PREFIX + blockIdState.key;
   const unit = state.unitByKey.get(key);
   if (unit !== undefined && unit.key === key) {
-    return unit.end === null ? undefined : typeOf(unit.end).getAttr(k);
+    return unit.end === null
+      ? undefined
+      : shownAttrs(unit.end, state.hidden)[k];
   }
   const isGroup = $isElementNode(node) && getGroupSpec(klassOf(node)) !== null;
   const y = state.yByKey.get(key);
@@ -1483,7 +1488,7 @@ function $storedIdNow(state: State, node: LexicalNode): unknown {
   if (line === undefined || line.end === null) {
     return state.ids.storedIdOf.get(key);
   }
-  const attrs = typeOf(line.end).getAttrs() as Attrs;
+  const attrs = shownAttrs(line.end, state.hidden);
   // Only a marker that puts its line in a group records group ids (see
   // Reader#$groupOf): an item whose group key concurrent edits removed is
   // read in a group of its own class's, which stores none.

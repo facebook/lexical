@@ -31,6 +31,7 @@ import {
   $isLine,
   $isWrapper,
   $nestedGroupOf,
+  type Attrs,
   BLOCK_PREFIX,
   getGroupSpec,
   getLineSpec,
@@ -117,10 +118,43 @@ export function isEndItem(it: Item): boolean {
   );
 }
 
-/** The previous live end item before `it` in its container, or null. */
-export function prevLiveEnd(it: Item | null): Item | null {
+/**
+ * Whether `it` ends a unit as the editor shows its container: a live end
+ * item that is not held back (see Hidden).
+ */
+export function isShownEnd(it: Item, hidden: Hidden | null): boolean {
+  return !it.deleted && isEndItem(it) && (hidden === null || !hidden.hides(it));
+}
+
+/**
+ * Marker `end`'s attributes as the editor shows them: those a held change
+ * set have the values they had (see Hidden#marker).
+ */
+export function shownAttrs(end: Item, hidden: Hidden | null): Attrs {
+  const attrs = typeOf(end).getAttrs() as Attrs;
+  const held = hidden === null ? null : hidden.marker;
+  if (held !== null && held.end === end) {
+    for (const [k, v] of held.was) {
+      if (v === undefined) {
+        delete attrs[k];
+      } else {
+        attrs[k] = v;
+      }
+    }
+  }
+  return attrs;
+}
+
+/**
+ * The end item before `it` in its container that the editor shows (see
+ * isShownEnd), or null.
+ */
+export function prevLiveEnd(
+  it: Item | null,
+  hidden: Hidden | null,
+): Item | null {
   for (let p = it === null ? null : it.left; p !== null; p = p.left) {
-    if (!p.deleted && isEndItem(p)) {
+    if (isShownEnd(p, hidden)) {
       return p;
     }
   }

@@ -8,11 +8,10 @@
 
 // Other shared types in the same document.
 // @vitest-environment node
-import * as Y from '@y/y';
 import {$getRoot, createEditor} from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {YBinding} from '../..';
+import {createYDoc, YBinding} from '../..';
 import {$p, NODES} from '../utils/harness';
 
 const mk = (warnings: string[] = []) =>
@@ -27,7 +26,7 @@ const mk = (warnings: string[] = []) =>
 
 describe('other roots in the same doc', () => {
   test('app metadata root written before initialize', () => {
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     doc.get('meta').setAttr('title', 'My doc');
     const warnings: string[] = [];
     const ed = mk(warnings);
@@ -39,7 +38,7 @@ describe('other roots in the same doc', () => {
     expect(warnings).toEqual([]);
   });
   test('two bindings on two roots of one doc (main editor + a second editor)', () => {
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     const e1 = mk();
     e1.update(() => $getRoot().clear().append($p('main')), {discrete: true});
     const b1 = new YBinding(e1, doc, {root: doc.get('main'), selfCheck: true});

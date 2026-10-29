@@ -23,6 +23,7 @@ import {
 import {afterEach, describe, expect, test, vi} from 'vitest';
 
 import {
+  createYDoc,
   LAYOUT_VERSION,
   NESTED_FALLBACK_WARNING,
   RECOVERED_READ_WARNING,
@@ -86,7 +87,7 @@ function peer(
   options: YBindingOptions = {selfCheck: true},
   onWarn?: ((error: Error) => void) | null,
 ) {
-  const doc = new Y.Doc({gc: false});
+  const doc = createYDoc(null, {gc: false});
   doc.clientID = clientID;
   const seen: Seen[] = [];
   const editor: LexicalEditor = createEditor({
@@ -422,7 +423,7 @@ describe('@lexical/y warnings: every code and its data', () => {
   });
 
   test('unknown node types and storage mismatches name the types', () => {
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     const writer = new YBinding(
       createEditor({
         namespace: 'w',
@@ -454,7 +455,7 @@ describe('@lexical/y warnings: every code and its data', () => {
         },
         onWarn: e => seen.push(e as LexicalWarning),
       }),
-      new Y.Doc(),
+      createYDoc(),
     );
     reader.start();
     Y.applyUpdate(reader.doc, Y.encodeStateAsUpdate(doc));
@@ -515,7 +516,7 @@ describe('@lexical/y warnings: every code and its data', () => {
           seen.push([(e as LexicalWarning).code, (e as LexicalWarning).data]);
         },
       });
-      const binding = new YBinding(editor, new Y.Doc());
+      const binding = new YBinding(editor, createYDoc());
       binding.start();
       for (let edit = 0; edit < 2; edit++) {
         editor.update(

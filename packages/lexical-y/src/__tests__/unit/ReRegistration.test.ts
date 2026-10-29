@@ -32,7 +32,7 @@ import {
 } from 'lexical';
 import {expect, test} from 'vitest';
 
-import {YBinding} from '../..';
+import {createYDoc, YBinding} from '../..';
 import {$p, NODES} from '../utils/harness';
 
 const idle = async () => {
@@ -42,7 +42,7 @@ const idle = async () => {
 };
 
 function client(id: number, state?: Uint8Array) {
-  const doc = new Y.Doc({gc: false});
+  const doc = createYDoc(null, {gc: false});
   doc.clientID = id;
   if (state !== undefined) {
     Y.applyUpdate(doc, state, 'load');

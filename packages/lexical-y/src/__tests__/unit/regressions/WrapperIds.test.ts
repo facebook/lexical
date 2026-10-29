@@ -57,7 +57,7 @@ import {
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
-import {type YBinding, YCollabExtension} from '../../..';
+import {createYDoc, type YBinding, YCollabExtension} from '../../..';
 
 const NET = 'net';
 
@@ -102,7 +102,7 @@ function client(
   predicate: Predicate | null,
   state: Uint8Array | null = null,
 ): Client {
-  const doc = new Y.Doc();
+  const doc = createYDoc();
   doc.clientID = id;
   if (state !== null) {
     Y.applyUpdate(doc, state, NET);

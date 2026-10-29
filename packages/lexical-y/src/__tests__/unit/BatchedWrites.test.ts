@@ -26,7 +26,7 @@ import {
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {YBinding} from '../..';
+import {createYDoc, YBinding} from '../..';
 import {
   $block,
   $p,
@@ -274,7 +274,7 @@ describe('another binding writing meanwhile', () => {
   });
 
   test('on another root of the same document, sees it as it is', async () => {
-    const doc = new Y.Doc({gc: false});
+    const doc = createYDoc(null, {gc: false});
     doc.clientID = 1;
     const warnings: string[] = [];
     const bind = (name: string) => {
@@ -349,7 +349,7 @@ test('another editor on the same root keeps its selection', async () => {
     [false, false],
     [true, false],
   ]) {
-    const doc = new Y.Doc({gc});
+    const doc = createYDoc(null, {gc});
     doc.clientID = 1;
     const root = doc.get('root');
     const bind = (namespace: string) => {
@@ -401,7 +401,7 @@ test('another editor on the same root keeps its selection', async () => {
 });
 
 test('a change another binding writes while the remote change is applied is not in the view either', async () => {
-  const doc = new Y.Doc({gc: false});
+  const doc = createYDoc(null, {gc: false});
   doc.clientID = 1;
   const warnings: string[] = [];
   const bind = (namespace: string) => {
@@ -463,7 +463,7 @@ test('a change another binding writes while the remote change is applied is not 
 test.fails(
   "a selection taken between reads of two changes is the editor's (known limit)",
   async () => {
-    const doc = new Y.Doc({gc: false});
+    const doc = createYDoc(null, {gc: false});
     doc.clientID = 1;
     const bind = (namespace: string) => {
       const editor = createEditor({

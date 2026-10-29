@@ -44,7 +44,7 @@ import {
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {YCollabExtension} from '../../..';
+import {createYDoc, YCollabExtension} from '../../..';
 import {
   expectConverged,
   flush,
@@ -1421,7 +1421,7 @@ describe('Text entity edits: grows and remakes keep their characters', () => {
 // delete in it came back.
 describe('S6-5: Enter inside a code token the highlighter makes again', () => {
   function codePeer(id: number) {
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     doc.clientID = id;
     const editor = buildEditorFromExtensions(
       defineExtension({

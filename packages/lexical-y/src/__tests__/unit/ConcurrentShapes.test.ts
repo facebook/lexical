@@ -35,7 +35,7 @@ import {
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {YBinding} from '../..';
+import {createYDoc, YBinding} from '../..';
 import {
   $block,
   $selectIn,
@@ -135,7 +135,7 @@ describe('@lexical/y a table left ragged', () => {
 });
 
 function client(id: number, state?: Uint8Array) {
-  const doc = new Y.Doc({gc: false});
+  const doc = createYDoc(null, {gc: false});
   doc.clientID = id;
   if (state !== undefined) {
     Y.applyUpdate(doc, state, 'load');

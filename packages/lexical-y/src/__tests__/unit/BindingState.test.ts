@@ -34,13 +34,13 @@ import {
 } from 'lexical';
 import {expect, test} from 'vitest';
 
-import {UNKNOWN_NODE_TYPES_WARNING, YCollabExtension} from '../..';
+import {createYDoc, UNKNOWN_NODE_TYPES_WARNING, YCollabExtension} from '../..';
 import {Reader} from '../../internal/Read';
 import {BoxNode, describeNode, NODES} from '../utils/harness';
 
 type Client = ReturnType<typeof client>;
 
-function client(id: number, blockIds: boolean, doc = new Y.Doc()) {
+function client(id: number, blockIds: boolean, doc = createYDoc()) {
   doc.clientID = id;
   const warnings: {code: unknown; message: string}[] = [];
   const editor = buildEditorFromExtensions(
@@ -330,7 +330,7 @@ test('a read that recovers keeps the text nodes it writes next apart from those 
 
 for (const nested of [false, true]) {
   test(`a line of a type the editor does not register makes the binding read only (${nested ? 'inside a list stored as a node' : 'in the root'})`, async () => {
-    const doc = new Y.Doc({gc: false});
+    const doc = createYDoc(null, {gc: false});
     doc.clientID = 700;
     const root = doc.get('lexical-y');
     root.setAttr('lexical-y:1', true);

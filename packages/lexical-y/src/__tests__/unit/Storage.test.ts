@@ -39,7 +39,7 @@ import {
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {LAYOUT_VERSION, YBinding, YCollabExtension} from '../..';
+import {createYDoc, LAYOUT_VERSION, YBinding, YCollabExtension} from '../..';
 import {
   $block,
   $createBoxNode,
@@ -291,7 +291,7 @@ describe('@lexical/y storage', () => {
   });
 
   test('a document marked with a newer layout version is read only', async () => {
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     doc.get('lexical-y').setAttr('lexical-y:' + (LAYOUT_VERSION + 1), true);
     const warnings: string[] = [];
     const editor = createEditor({
@@ -309,7 +309,7 @@ describe('@lexical/y storage', () => {
   });
 
   test('initialization refuses a document with content in another root', async () => {
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     doc.get('root-v2').insert(0, 'old layout');
     const warnings: string[] = [];
     const editor = createEditor({
@@ -327,7 +327,7 @@ describe('@lexical/y storage', () => {
   });
 
   test('nothing is written before initialization', async () => {
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     const editor = createEditor({
       nodes: NODES,
       onError: e => {
@@ -358,9 +358,9 @@ describe('@lexical/y storage', () => {
         ),
       {discrete: true},
     );
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     writeEditorToYDoc(source, doc);
-    const peerDoc = new Y.Doc();
+    const peerDoc = createYDoc();
     Y.applyUpdate(peerDoc, Y.encodeStateAsUpdate(doc));
     const reader = buildEditorFromExtensions(
       defineExtension({

@@ -24,7 +24,7 @@ import {
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {LAYOUT_VERSION, YBinding} from '../..';
+import {createYDoc, LAYOUT_VERSION, YBinding} from '../..';
 import {
   $block,
   $p,
@@ -68,7 +68,7 @@ describe('version gate', () => {
   test('foreign root content arriving by update (not doc.get) is detected', () => {
     const old = new Y.Doc();
     old.get('root').insert(0, 'old layout text');
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     Y.applyUpdate(doc, Y.encodeStateAsUpdate(old));
     const warnings: string[] = [];
     const editor = mkEditor(warnings);
@@ -84,7 +84,7 @@ describe('version gate', () => {
     // content written under the v2 root name used by @lexical/yjs
     const old = new Y.Doc();
     old.get('root-v2').insert(0, [new Y.Node('paragraph')]);
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     Y.applyUpdate(doc, Y.encodeStateAsUpdate(old));
     const warnings: string[] = [];
     const b = new YBinding(mkEditor(warnings), doc, {
@@ -107,7 +107,7 @@ describe('version gate', () => {
       ['lexical-y:1', 'true'],
       ['lexical-y:1', null],
     ] as const) {
-      const doc = new Y.Doc();
+      const doc = createYDoc();
       doc.get('lexical-y').setAttr(k, v as never);
       const warnings: string[] = [];
       const editor = mkEditor(warnings);
@@ -123,7 +123,7 @@ describe('version gate', () => {
 
   test('dispose of a read-only binding gives the editor back its editability', () => {
     for (const editable of [true, false]) {
-      const doc = new Y.Doc();
+      const doc = createYDoc();
       doc.get('lexical-y').setAttr('lexical-y:999', true);
       const warnings: string[] = [];
       const editor = mkEditor(warnings);
@@ -141,7 +141,7 @@ describe('version gate', () => {
   });
 
   test('root content without version, version arrives later', async () => {
-    const src = new Y.Doc();
+    const src = createYDoc();
     src.clientID = 5;
     const warnings: string[] = [];
     const e1 = mkEditor(warnings);
@@ -150,7 +150,7 @@ describe('version gate', () => {
     e1.update(() => $getRoot().clear().append($p('hello')), {discrete: true});
     b1.initialize();
     // Strip the version: copy the doc and delete the attr on a copy.
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     doc.clientID = 6;
     Y.applyUpdate(doc, Y.encodeStateAsUpdate(src));
     doc.get('lexical-y').deleteAttr('lexical-y:1');
@@ -215,7 +215,7 @@ describe('version gate', () => {
       });
     }
     const warnings: string[] = [];
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     Y.applyUpdate(doc, Y.encodeStateAsUpdate(t.b.doc));
     const fresh = new YBinding(mkEditor(warnings), doc);
     fresh.start();
@@ -460,7 +460,7 @@ describe('document settings', () => {
         const editor = mkEditor([]);
         editor._recordNodeMoves = moves;
         editor._recordTextEdits = edits;
-        const b = new YBinding(editor, new Y.Doc(), {selfCheck: true});
+        const b = new YBinding(editor, createYDoc(), {selfCheck: true});
         const stop = b.start();
         expect(editor._recordNodeMoves).toBe(true);
         expect(editor._recordTextEdits).toBe(true);
@@ -473,7 +473,7 @@ describe('document settings', () => {
   });
 
   test('the binding leaves the document formatting cleanup alone', () => {
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     const before = doc.cleanupFormatting;
     const b = new YBinding(mkEditor([]), doc, {selfCheck: true});
     const stop = b.start();

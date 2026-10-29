@@ -7,7 +7,8 @@
  */
 
 import type {ClientIDRange} from './ClientID';
-import type {Doc, Node as YNode} from '@y/y';
+import type {YDoc} from './YDoc';
+import type {Node as YNode} from '@y/y';
 
 import {
   type BlockIdExtension,
@@ -30,7 +31,7 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 
-import {YBinding, type YBindingStatus} from './Binding';
+import {isSchemaVersion, YBinding, type YBindingStatus} from './Binding';
 
 // YCollabExtension: the binding as an extension. It builds a YBinding for
 // the editor, wires collaborative undo to UNDO_COMMAND and REDO_COMMAND, and
@@ -38,8 +39,21 @@ import {YBinding, type YBindingStatus} from './Binding';
 
 /** @experimental The configuration of {@link YCollabExtension}. */
 export interface YCollabConfig {
-  /** The shared document. Required. */
-  doc: Doc | null;
+  /**
+   * The shared document, made by `createYDoc` (with a stored state:
+   * `createYDoc(state)`). Required.
+   */
+  doc: YDoc | null;
+  /**
+   * The version of the app's document schema: its node types and the fields
+   * they store. Required: start at 1 and increase it whenever a node's
+   * stored fields or node types change. The document records the highest
+   * version that wrote to it, and a client whose version is lower opens it
+   * read only (`UNSUPPORTED_SCHEMA_WARNING`), so an out-of-date client never
+   * edits content it cannot read in full. An integer from 1; the extension
+   * throws without one.
+   */
+  schemaVersion: number;
   /** The shared root; defaults to `doc.get('lexical-y')`. */
   root: YNode | null;
   /**
@@ -81,6 +95,14 @@ export interface YCollabConfig {
 export const YCollabExtension = defineExtension({
   build(editor, config) {
     invariant(config.doc !== null, '@lexical/y: YCollabExtension needs a doc');
+    // A config key cannot be required by its type (configExtension takes a
+    // partial config), so the app's decision is checked here.
+    invariant(
+      isSchemaVersion(config.schemaVersion),
+      "@lexical/y: YCollabExtension needs schemaVersion (got %s): start at 1 and increase it whenever a node's stored fields or node types change",
+      // 0 is the default, which no app sets.
+      config.schemaVersion === 0 ? 'none' : String(config.schemaVersion),
+    );
     const status = signal<YBindingStatus>('pending');
     return {
       binding: new YBinding(editor, config.doc, {
@@ -91,6 +113,7 @@ export const YCollabExtension = defineExtension({
           status.value = value;
         },
         root: config.root || undefined,
+        schemaVersion: config.schemaVersion,
         selfCheck: config.selfCheck ?? undefined,
         selfCheckSample: config.selfCheckSample ?? undefined,
       }),
@@ -133,6 +156,8 @@ export const YCollabExtension = defineExtension({
     convert: false,
     doc: null,
     root: null,
+    // Not a version: the app must set its own (see build).
+    schemaVersion: 0,
     selfCheck: null,
     selfCheckSample: null,
     synced: false,

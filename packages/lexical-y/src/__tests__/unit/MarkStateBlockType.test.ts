@@ -41,9 +41,9 @@ import {
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {YCollabExtension} from '../..';
+import {createYDoc, YCollabExtension, type YDoc} from '../..';
 
-function buildEditor(doc: Y.Doc) {
+function buildEditor(doc: YDoc) {
   const editor = buildEditorFromExtensions(
     defineExtension({
       $initialEditorState: null,
@@ -51,7 +51,11 @@ function buildEditor(doc: Y.Doc) {
         RichTextExtension,
         ListExtension,
         MarkStateExtension,
-        configExtension(YCollabExtension, {doc, selfCheck: true}),
+        configExtension(YCollabExtension, {
+          doc,
+          schemaVersion: 1,
+          selfCheck: true,
+        }),
       ],
       name: '@lexical/y/test/mark-state-block-type',
       onError: (e: Error) => {
@@ -97,7 +101,7 @@ describe('MarkStateExtension with @lexical/y', () => {
   test.each(TARGETS)(
     'a list item with a comment turned into a %s keeps the comment',
     async (type, $createBlock) => {
-      const doc = new Y.Doc();
+      const doc = createYDoc();
       const {binding, editor} = buildEditor(doc);
       editor.update(
         () => {
@@ -125,8 +129,7 @@ describe('MarkStateExtension with @lexical/y', () => {
       const expected = `${type}("alpha "[] "beta"["c1"])`;
       expect(marks(editor)).toBe(expected);
 
-      const loaded = new Y.Doc();
-      Y.applyUpdate(loaded, Y.encodeStateAsUpdate(doc));
+      const loaded = createYDoc(Y.encodeStateAsUpdate(doc));
       const reader = buildEditor(loaded);
       reader.binding.initialize();
       await Promise.resolve();

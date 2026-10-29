@@ -141,6 +141,9 @@ export function isGone(item: Item): boolean {
   return !deleted(view, item) || view.removed.hasId(item.id);
 }
 
+/** What each write only noted as deleted (see deleteItem), by transaction. */
+const notedIn = new WeakMap<Transaction, IdSet>();
+
 /**
  * Delete `item` (not gone, see isGone): an item an unread change deleted is
  * only noted as deleted by this write.
@@ -150,6 +153,12 @@ export function deleteItem(item: Item, tr: Transaction): void {
     const view = viewOf(item.parent as YNode);
     if (view !== null) {
       view.removed.add(item.id.client, item.id.clock, item.length);
+      let noted = notedIn.get(tr);
+      if (noted === undefined) {
+        noted = createIdSet();
+        notedIn.set(tr, noted);
+      }
+      noted.add(item.id.client, item.id.clock, item.length);
       return;
     }
   }
@@ -192,6 +201,45 @@ export function attrsOf(y: YNode): Record<string, unknown> {
     const value = attrOf(y, key);
     if (value !== undefined) {
       out[key] = value;
+    }
+  });
+  return out;
+}
+
+/**
+ * The attributes `y` had before transaction `tr`, in the document the write
+ * sees: of each name, the value of its latest item that neither `tr` nor an
+ * unread change inserted, unless that item was gone before `tr`. Yjs keeps
+ * the content of the items `tr` deletes until `tr` ends, so this also reads
+ * a node `tr` deleted (a block it moved). With nothing unread, these are the
+ * values every other client still has.
+ */
+export function attrsBefore(
+  y: YNode,
+  tr: Transaction,
+): Record<string, unknown> {
+  const view = viewOf(y);
+  const out: Record<string, unknown> = {};
+  y._map.forEach((latest, key) => {
+    let v: Item | null = latest;
+    while (
+      v !== null &&
+      (tr.insertSet.hasId(v.id) || (view !== null && inserted(view, v)))
+    ) {
+      v = v.left;
+    }
+    // Deleted by `tr`, or only noted as deleted by it where an unread change
+    // deleted it too (see deleteItem): there before `tr`. What an earlier
+    // write noted was gone before it.
+    const noted = notedIn.get(tr);
+    if (
+      v !== null &&
+      (!isGone(v) ||
+        tr.deleteSet.hasId(v.id) ||
+        (noted !== undefined && noted.hasId(v.id)))
+    ) {
+      const content = v.content.getContent();
+      out[key] = content[content.length - 1];
     }
   });
   return out;

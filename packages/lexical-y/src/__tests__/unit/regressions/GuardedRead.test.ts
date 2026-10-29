@@ -21,13 +21,24 @@ import {afterEach, describe, expect, test, vi} from 'vitest';
 import {Reader} from '../../../internal/Read';
 import {
   $block,
+  $createBoxNode,
   $p,
   $selectIn,
+  BoxNode,
   flush,
   freshReader,
-  type Peer,
+  NODES,
+  Peer,
   setup,
 } from '../../utils/harness';
+
+/** A network of its own, for a peer the case connects by hand. */
+const network = (): ConstructorParameters<typeof Peer>[1] => ({
+  delivery: 'causal',
+  peers: [],
+  pumping: false,
+  queue: [],
+});
 
 /**
  * Run every microtask as usual, and collect what those that throw threw
@@ -212,5 +223,77 @@ describe('N5: a recovery nested in an update settles on the rebuild it runs', ()
     expect(shownAtWarning).toEqual([
       'a remote change could not be read: reader failure: paragraph("hello remote")',
     ]);
+  });
+});
+
+describe('N6: a read admitted before the binding failed closed reads nothing after it', () => {
+  test('N6: a remote change an update listener applies while a failing read of the whole document waits', async () => {
+    const author = new Peer(2, network());
+    author.update(() =>
+      $getRoot()
+        .clear()
+        .append($p('hello'), $createBoxNode('t').append($p('inside'))),
+    );
+    author.binding.initialize();
+    await flush();
+    // A reader without the box class: read only, still reading what changes.
+    const reader = new Peer(
+      1,
+      network(),
+      NODES.filter(k => k !== BoxNode),
+    );
+    Y.applyUpdate(reader.doc, Y.encodeStateAsUpdate(author.doc));
+    reader.binding.initialize();
+    await flush();
+    expect(reader.binding.status).toBe('readonly');
+    // A layout record this reader reads, which makes it read the whole
+    // document again, and a content change after it.
+    const seen = Y.encodeStateVector(reader.doc);
+    author.doc.transact(() =>
+      (author.doc.get('lexical-y') as Y.Node).setAttr('lexical-y:2', true),
+    );
+    const layout = Y.encodeStateAsUpdate(author.doc, seen);
+    const afterLayout = Y.encodeStateVector(author.doc);
+    author.update(() => void $block([0]).append($createTextNode(' remote')));
+    await flush();
+    const content = Y.encodeStateAsUpdate(author.doc, afterLayout);
+    const shown = reader.describe();
+    // The whole read fails once (the binding fails closed); before that
+    // settles, an update listener applies the content change.
+    const proto = Reader.prototype;
+    const {$readFull} = proto;
+    let failed = false;
+    proto.$readFull = function (this: Reader, ...args) {
+      if (!failed && this.state.doc === reader.doc) {
+        failed = true;
+        throw new Error('reader failure');
+      }
+      return $readFull.apply(this, args);
+    };
+    let applied = false;
+    const off = reader.editor.registerUpdateListener(() => {
+      if (failed && !applied) {
+        applied = true;
+        Y.applyUpdate(reader.doc, content);
+      }
+    });
+    try {
+      expect(() =>
+        reader.editor.update(() => Y.applyUpdate(reader.doc, layout), {
+          discrete: true,
+        }),
+      ).not.toThrow();
+      await flush();
+    } finally {
+      off();
+      proto.$readFull = $readFull;
+    }
+    expect(applied).toBe(true);
+    expect(reader.warnings).toContain(
+      'the document cannot be read: reader failure',
+    );
+    expect(reader.binding.status).toBe('readonly');
+    expect(reader.describe()).toBe(shown);
+    expect(shown).not.toContain('remote');
   });
 });

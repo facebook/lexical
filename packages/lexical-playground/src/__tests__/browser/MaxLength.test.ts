@@ -88,7 +88,8 @@ describe.each([true, false])('MaxLength (rich text: %s)', isRichText => {
     );
 
     await assertCaret(editor, 'p > span', 29);
-    await typeText('💏');
+    // Firefox needs the keypress delay to settle rejected non-BMP input.
+    await typeText('💏', {delay: 100});
 
     await assertHTML(
       root,

@@ -244,6 +244,7 @@ async function typeText(
   {frame}: BrowserCommandContext,
   text: string,
   selector: string,
+  {delay = 0}: {delay?: number} = {},
 ): Promise<void> {
   // Capture the element once: type() fails immediately if it detaches,
   // instead of resolving another fixture's editor.
@@ -253,7 +254,7 @@ async function typeText(
   assert(target !== null, 'typeText target was removed');
   try {
     for (const character of text) {
-      await target.type(character, {timeout: 5000});
+      await target.type(character, {delay, timeout: 5000});
     }
   } finally {
     await target.dispose();

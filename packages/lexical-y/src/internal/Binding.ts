@@ -1458,8 +1458,14 @@ export class YBinding {
         {found: version, reason: 'newer', supported: LAYOUT_VERSION},
       );
       this.setStatus('readonly');
-    } else {
+    } else if (this._status === 'active' || this.staysReadOnly()) {
+      // Still active, or read only for good (see setStatus).
       this.setStatus('active');
+    } else {
+      // Active once the read found nothing that keeps it read only (see
+      // readAll).
+      this.readAll(cursor, kept, deep, true);
+      return;
     }
     this.readAll(cursor, kept, deep);
   }
@@ -1612,11 +1618,17 @@ export class YBinding {
 
   /**
    * Fail closed when a read found node types this editor lacks, or stored
-   * content its classes throw on (see Reader#$readStored).
+   * content its classes throw on (see Reader#$readStored): warn, and go
+   * read only. Only a binding that is active, or becomes active with this
+   * read (`activating`, see activateAfterRead), does: a read-only one warned
+   * already, or stays read only for a reason it warned about.
    */
-  private checkUnknownTypes(): void {
+  private checkUnknownTypes(activating = false): void {
+    if (!activating && this._status !== 'active') {
+      return;
+    }
     const unreadable = this.state.unreadable;
-    if (unreadable.size > 0 && this._status === 'active') {
+    if (unreadable.size > 0) {
       const types = [...unreadable.keys()].sort();
       this.warn(
         UNKNOWN_NODE_TYPES_WARNING,
@@ -1628,9 +1640,10 @@ export class YBinding {
         },
       );
       this.setStatus('readonly');
+      return;
     }
     const unknown = this.state.unknownTypes;
-    if (unknown.size > 0 && this._status === 'active') {
+    if (unknown.size > 0) {
       const slots = this.state.malformedSlots;
       const types = [...unknown].filter(t => !slots.has(t)).sort();
       if (types.length > 0) {
@@ -1655,13 +1668,14 @@ export class YBinding {
   /**
    * Whether something keeps the binding read only for good: a configuration
    * it does not support, node types it cannot build (or slots it cannot
-   * read), a local change it cannot store and keeps showing, or a document
-   * it cannot read (see failClosed).
+   * read), stored content its classes throw on, a local change it cannot
+   * store and keeps showing, or a document it cannot read (see failClosed).
    */
   private staysReadOnly(): boolean {
     return (
       this.unsupportedConfig.length > 0 ||
       this.state.unknownTypes.size > 0 ||
+      this.state.unreadable.size > 0 ||
       this.keepsUnstored ||
       this.unreadable
     );
@@ -1797,13 +1811,28 @@ export class YBinding {
     }
   }
 
+  /**
+   * Read the whole document. With `activate`, the binding becomes active
+   * once the read is done, where it found nothing that keeps it read only
+   * (see activateAfterRead): never before, so the editor is never editable
+   * for a document the binding cannot write.
+   */
   private readAll(
     cursor: YCursor | null = null,
     kept: SelectionState | null = null,
     deep = false,
+    activate = false,
   ): void {
     this.guardedRead({
-      $read: () => this.$readAllInner(cursor, kept, deep),
+      $read: () => {
+        this.$readAllInner(cursor, kept, deep);
+        if (activate) {
+          // In the read's update: the editor is editable for its commit,
+          // which puts the selection the read restored on the DOM, and an
+          // update made in reply to it (from an update listener) is written.
+          this.activateAfterRead();
+        }
+      },
       after: () => {
         this.checkUnknownTypes();
         this.flushRefresh(true);
@@ -1813,6 +1842,17 @@ export class YBinding {
       replacesPending: true,
       tag: REMOTE_TAGS,
     });
+  }
+
+  /**
+   * Become active after a read of the whole document, unless it found
+   * something that keeps the binding read only: node types the editor
+   * lacks or stored content its classes throw on (warned here, see
+   * checkUnknownTypes), or another lasting cause (see setStatus).
+   */
+  private activateAfterRead(): void {
+    this.checkUnknownTypes(true);
+    this.setStatus('active');
   }
 
   private $readAllInner(

@@ -64,6 +64,12 @@ export const UNSUPPORTED_SLOTS_WARNING = '@lexical/y/unsupported-slots';
  * YUnsupportedConfigData.
  */
 export const UNSUPPORTED_CONFIG_WARNING = '@lexical/y/unsupported-config';
+/**
+ * @experimental A local update changed the editor while the binding is read
+ * only: nothing is written, and what it changed is read again, so the editor
+ * keeps showing the document. `data`: YUnsupportedEditData.
+ */
+export const UNSUPPORTED_EDIT_WARNING = '@lexical/y/unsupported-edit';
 
 /**
  * @experimental The codes of the `LexicalWarning`s the binding passes to the
@@ -80,7 +86,8 @@ export type YWarningCode =
   | typeof NESTED_FALLBACK_WARNING
   | typeof UNSYNCED_VALUE_WARNING
   | typeof UNSUPPORTED_SLOTS_WARNING
-  | typeof UNSUPPORTED_CONFIG_WARNING;
+  | typeof UNSUPPORTED_CONFIG_WARNING
+  | typeof UNSUPPORTED_EDIT_WARNING;
 
 /**
  * @experimental `data` of an `UNSUPPORTED_LAYOUT_WARNING` (the binding is read
@@ -194,6 +201,15 @@ export type YUnsupportedConfigData =
   | {readonly reason: 'cleanup-formatting'};
 
 /**
+ * @experimental `data` of an `UNSUPPORTED_EDIT_WARNING`: a local update
+ * (code that edits the editor, which is not editable) changed content while
+ * the binding is read only (`'read-only'`).
+ */
+export interface YUnsupportedEditData {
+  readonly reason: 'read-only';
+}
+
+/**
  * @experimental `data` of a `SELF_CHECK_WARNING`: the self-check found the
  * editor and the document disagree after a local change (`'local'`) or a
  * remote one (`'remote'`, read again in full).
@@ -290,6 +306,7 @@ interface YWarningDataByCode {
   [UNSYNCED_VALUE_WARNING]: YUnsyncedValueData;
   [UNSUPPORTED_SLOTS_WARNING]: YUnsupportedSlotsData;
   [UNSUPPORTED_CONFIG_WARNING]: YUnsupportedConfigData;
+  [UNSUPPORTED_EDIT_WARNING]: YUnsupportedEditData;
 }
 
 /** @experimental The `data` of the warnings with code `C`. */
@@ -318,6 +335,7 @@ const CODES: ReadonlySet<string> = new Set<YWarningCode>([
   UNSYNCED_VALUE_WARNING,
   UNSUPPORTED_SLOTS_WARNING,
   UNSUPPORTED_CONFIG_WARNING,
+  UNSUPPORTED_EDIT_WARNING,
 ]);
 
 /**

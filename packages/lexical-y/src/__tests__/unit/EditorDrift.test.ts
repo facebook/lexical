@@ -17,13 +17,24 @@
 // that paragraph, inside itself: Lexical's next walk up the tree never
 // ended, and the tab hung). A read that would still place a node inside
 // itself, as a child or as a named slot's value, throws instead: the binding
-// warns and reads the document again.
+// warns and reads the document again. A read-only binding's editor never
+// shows a change it did not read: what a local update changes there (code
+// that edits the editor, which is not editable) is read again, with a
+// warning (S7-25 came from such updates on a client read only for a node
+// type it does not register).
 
 import {
   BlockIdExtension,
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
+import {
+  $createListItemNode,
+  $createListNode,
+  ListExtension,
+  type ListItemNode,
+  type ListNode,
+} from '@lexical/list';
 import {$createQuoteNode, RichTextExtension} from '@lexical/rich-text';
 import * as Y from '@y/y';
 import {
@@ -33,12 +44,14 @@ import {
   $getRoot,
   $getSlot,
   $removeSlot,
+  $setCompositionKey,
   $setSlot,
   configExtension,
   defineExtension,
   ElementNode,
   type LexicalEditorWithDispose,
   SKIP_COLLAB_TAG,
+  type TextNode,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
@@ -46,6 +59,8 @@ import {
   createYDoc,
   isYWarning,
   RECOVERED_READ_WARNING,
+  UNSUPPORTED_EDIT_WARNING,
+  UNSUPPORTED_SLOTS_WARNING,
   type YBinding,
   YCollabExtension,
 } from '../..';
@@ -57,6 +72,7 @@ import {
   describeNode,
   EquationNode,
   flush,
+  WidgetNode,
 } from '../utils/harness';
 
 /** A block container with two named slots. */
@@ -85,11 +101,17 @@ type Client = {
   warnings: unknown[];
 };
 
-/** Clients that relay every update to each other at once. */
+/**
+ * Clients that relay every update to each other at once; those for which
+ * `widgets(i)` is false do not register WidgetNode (`test_widget`).
+ */
 function clients(
   n: number,
   blockIds: boolean,
-  {selfCheck = true}: {selfCheck?: boolean} = {},
+  {
+    selfCheck = true,
+    widgets = () => true,
+  }: {selfCheck?: boolean; widgets?: (i: number) => boolean} = {},
 ): Client[] {
   const all: Client[] = [];
   for (let i = 0; i < n; i++) {
@@ -100,11 +122,17 @@ function clients(
       defineExtension({
         dependencies: [
           RichTextExtension,
+          ListExtension,
           configExtension(YCollabExtension, {doc, selfCheck}),
           ...(blockIds ? [BlockIdExtension] : []),
         ],
         name: `@lexical/y/test/drift-${i}`,
-        nodes: () => [BoxNode, ChannelNode, EquationNode],
+        nodes: () => [
+          BoxNode,
+          ChannelNode,
+          EquationNode,
+          ...(widgets(i) ? [WidgetNode] : []),
+        ],
         onWarn: warning => {
           warnings.push(warning);
         },
@@ -329,5 +357,234 @@ describe.each([false, true])('blockIds %s', blockIds => {
     expect(recovered(a.warnings)).toEqual([['remote-change', true]]);
     a.editor.dispose();
     b.editor.dispose();
+  });
+
+  describe('a client read only for a node type it does not register', () => {
+    /** B registers WidgetNode; A does not, and is read only. */
+    async function readOnly(): Promise<{a: Client; b: Client}> {
+      const [b, a] = clients(2, blockIds, {widgets: i => i === 0});
+      b.editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append(
+              $p('one'),
+              $createQuoteNode({shadowRoot: true}).append($p('inner')),
+              $create(WidgetNode),
+            );
+        },
+        {discrete: true},
+      );
+      b.binding.initialize();
+      await flush();
+      expect(a.binding.status).toBe('readonly');
+      a.warnings.length = 0;
+      return {a, b};
+    }
+
+    const edits = (warnings: unknown[]) =>
+      warnings
+        .filter(isYWarning)
+        .filter(warning => warning.code === UNSUPPORTED_EDIT_WARNING)
+        .map(warning => warning.data);
+
+    test('a local update is read again, with a warning, and nothing is written', async () => {
+      const {a, b} = await readOnly();
+      const vector = Y.encodeStateVector(a.doc);
+      a.editor.update(
+        () => {
+          const quote = $getRoot().getChildAtIndex(1) as ElementNode;
+          quote.insertBefore(quote.getFirstChildOrThrow());
+          ($getRoot().getFirstChildOrThrow() as ElementNode).append($p('x'));
+        },
+        {discrete: true},
+      );
+      await flush();
+      expect(show(a)).toBe('paragraph("one") / quote(paragraph("inner"))');
+      expect(edits(a.warnings)).toEqual([{reason: 'read-only'}]);
+      expect(Y.encodeStateVector(a.doc)).toEqual(vector);
+      a.editor.dispose();
+      b.editor.dispose();
+    });
+
+    test('remote changes after a local update show as a fresh reader shows them (S7-25)', async () => {
+      const {a, b} = await readOnly();
+      a.editor.update(
+        () => {
+          const quote = $getRoot().getChildAtIndex(1) as ElementNode;
+          quote.insertBefore(quote.getFirstChildOrThrow());
+        },
+        {discrete: true},
+      );
+      await flush();
+      b.editor.update(
+        () => {
+          const quote = $getRoot().getChildAtIndex(1) as ElementNode;
+          quote.insertBefore($create(WidgetNode));
+          quote.insertAfter($p('after'));
+        },
+        {discrete: true},
+      );
+      await flush();
+      expect(show(b)).toBe(
+        'paragraph("one") / test_widget / quote(paragraph("inner")) / paragraph("after") / test_widget',
+      );
+      const [fresh] = clients(1, blockIds, {widgets: () => false});
+      Y.applyUpdate(fresh.doc, Y.encodeStateAsUpdate(a.doc), RELAY);
+      fresh.binding.initialize();
+      await flush();
+      const expected =
+        'paragraph("one") / quote(paragraph("inner")) / paragraph("after")';
+      expect(show(fresh)).toBe(expected);
+      expect(show(a)).toBe(expected);
+      expect(edits(a.warnings)).toEqual([{reason: 'read-only'}]);
+      for (const c of [a, b, fresh]) {
+        c.editor.dispose();
+      }
+    });
+
+    test('local updates in separate tasks are each read again, list numbering included', async () => {
+      const [b, a] = clients(2, blockIds, {widgets: i => i === 0});
+      b.editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append(
+              $createListNode('number').append(
+                $createListItemNode().append($createTextNode('one')),
+                $createListItemNode().append($createTextNode('two')),
+              ),
+              $create(WidgetNode),
+            );
+        },
+        {discrete: true},
+      );
+      b.binding.initialize();
+      await flush();
+      expect(a.binding.status).toBe('readonly');
+      const values = () =>
+        a.editor.read(() =>
+          ($getRoot().getFirstChildOrThrow() as ListNode)
+            .getChildren()
+            .map(item => (item as ListItemNode).getValue()),
+        );
+      const seen: number[][] = [];
+      for (let i = 0; i < 6; i++) {
+        a.editor.update(
+          () =>
+            (
+              (
+                $getRoot().getFirstChildOrThrow() as ListNode
+              ).getFirstChild() as ListItemNode
+            ).setValue(100 + i),
+          {discrete: true},
+        );
+        await flush();
+        seen.push(values());
+      }
+      expect(seen).toEqual(Array.from({length: 6}, () => [1, 2]));
+      expect(edits(a.warnings)).toHaveLength(6);
+      a.editor.dispose();
+      b.editor.dispose();
+    });
+
+    test('a local update during a composition is read again once it ends', async () => {
+      const [b, a] = clients(2, blockIds, {widgets: i => i === 0});
+      b.editor.update(
+        () => {
+          $getRoot().clear().append($p('abc'), $p('other'));
+        },
+        {discrete: true},
+      );
+      b.binding.initialize();
+      await flush();
+      const $firstText = () =>
+        (
+          $getRoot().getFirstChildOrThrow() as ElementNode
+        ).getFirstChildOrThrow() as TextNode;
+      a.editor.update(
+        () => {
+          const text = $firstText();
+          text.select(1, 1);
+          $setCompositionKey(text.getKey());
+        },
+        {discrete: true},
+      );
+      // What b types into the composed line waits for the composition.
+      b.editor.update(() => $firstText().spliceText(3, 0, 'X'), {
+        discrete: true,
+      });
+      await flush();
+      b.editor.update(() => $getRoot().append($create(WidgetNode)), {
+        discrete: true,
+      });
+      await flush();
+      expect(a.binding.status).toBe('readonly');
+      a.editor.update(() => $getRoot().append($p('refused')), {
+        discrete: true,
+      });
+      await flush();
+      // Still composing: nothing is read into the composed line.
+      expect(show(a)).toBe(
+        'paragraph("abc") / paragraph("other") / paragraph("refused")',
+      );
+      a.editor.update(() => $setCompositionKey(null), {discrete: true});
+      await flush();
+      expect(show(a)).toBe('paragraph("abcX") / paragraph("other")');
+      expect(edits(a.warnings)).toEqual([{reason: 'read-only'}]);
+      a.editor.dispose();
+      b.editor.dispose();
+    });
+
+    test('a change the binding cannot store stays, and so do local updates after it', async () => {
+      const [c] = clients(1, blockIds);
+      c.editor.update(
+        () => {
+          $getRoot().clear().append($p('stored'));
+        },
+        {discrete: true},
+      );
+      c.binding.initialize();
+      await flush();
+      const vector = Y.encodeStateVector(c.doc);
+      // A slot on a paragraph cannot be stored: read only, the change kept.
+      c.editor.update(
+        () => {
+          const host = $p('host');
+          $setSlot(host, 'note', $p('note'));
+          $getRoot().append(host);
+        },
+        {discrete: true},
+      );
+      await flush();
+      expect(c.binding.status).toBe('readonly');
+      c.editor.update(() => $getRoot().append($p('later')), {discrete: true});
+      await flush();
+      // Each block's own text, and its note slot's.
+      const shown = c.editor.read(() =>
+        $getRoot()
+          .getChildren()
+          .map(node => [
+            (node as ElementNode)
+              .getChildren()
+              .map(child => child.getTextContent())
+              .join(''),
+            $getSlot(node, 'note')?.getTextContent() ?? null,
+          ]),
+      );
+      expect(shown).toEqual([
+        ['stored', null],
+        ['host', 'note'],
+        ['later', null],
+      ]);
+      expect(
+        c.warnings
+          .filter(isYWarning)
+          .map(warning => warning.code)
+          .filter(code => code !== UNSUPPORTED_SLOTS_WARNING),
+      ).toEqual([]);
+      expect(Y.encodeStateVector(c.doc)).toEqual(vector);
+      c.editor.dispose();
+    });
   });
 });

@@ -21,6 +21,7 @@ import {
   STORAGE_MISMATCH_WARNING,
   UNKNOWN_NODE_TYPES_WARNING,
   UNSUPPORTED_CONFIG_WARNING,
+  UNSUPPORTED_EDIT_WARNING,
   UNSUPPORTED_LAYOUT_WARNING,
   UNSUPPORTED_SLOTS_WARNING,
   UNSYNCED_VALUE_WARNING,
@@ -56,6 +57,8 @@ function banner(warning: YWarning): string {
       return warning.data.reason === 'repair-transforms'
         ? warning.data.options.join(',')
         : warning.data.reason;
+    case UNSUPPORTED_EDIT_WARNING:
+      return warning.data.reason;
     case SELF_CHECK_WARNING:
       return `${warning.data.reason}:${warning.data.problems.length}`;
     case RECOVERED_READ_WARNING:
@@ -123,6 +126,7 @@ describe('typed warnings', () => {
       UNSYNCED_VALUE_WARNING,
       UNSUPPORTED_SLOTS_WARNING,
       UNSUPPORTED_CONFIG_WARNING,
+      UNSUPPORTED_EDIT_WARNING,
     ];
     for (const code of codes) {
       expect(isYWarning(new LexicalWarning(code, 'm', {}))).toBe(true);

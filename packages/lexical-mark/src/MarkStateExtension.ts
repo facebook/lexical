@@ -1196,6 +1196,7 @@ function $getReplacedRange(
 function $collectSegments(
   windows: readonly BlockWindow[],
   points: readonly PointLike[],
+  $isUnchangedBlock: (node: ElementNode) => boolean,
 ): Segments {
   const out: Segments = {
     codes: new Map(),
@@ -1205,6 +1206,10 @@ function $collectSegments(
     text: '',
   };
   const texts: string[] = [];
+  // The first segment of the current window, and whether the units that
+  // follow need a boundary from a nested block before them
+  let windowStart = 0;
+  let afterNested = false;
   const add = (
     node: LexicalNode,
     kind: Kind,
@@ -1212,6 +1217,12 @@ function $collectSegments(
     text: string,
     ids: readonly string[],
   ) => {
+    if (afterNested) {
+      afterNested = false;
+      if (kind !== BREAK) {
+        separate(node);
+      }
+    }
     out.segs.push({code, ids, kind, node, text});
     if (kind !== CHAR) {
       out.codes.set(out.length, code);
@@ -1219,6 +1230,13 @@ function $collectSegments(
     }
     texts.push(text);
     out.length += text.length;
+  };
+  // A boundary between blocks, where units of the window precede it
+  const separate = (node: LexicalNode) => {
+    const last = out.segs.length > windowStart ? out.segs.at(-1) : undefined;
+    if (last !== undefined && last.kind !== BREAK) {
+      add(node, BREAK, '\u0000', '', NO_IDS);
+    }
   };
   const locateElementPoints = (key: NodeKey, index: number) => {
     points.forEach((point, i) => {
@@ -1280,14 +1298,26 @@ function $collectSegments(
       add(node, LEAF, '\u0002' + key, '', $readNodeMarkIDs(node));
     } else if ($isElementNode(node) && node.isInline()) {
       $visitChildren(node, null, null);
+    } else if ($isElementNode(node) && !$isUnchangedBlock(node)) {
+      // A nested block that the update changed (the items of a list, a list
+      // in a list item): its text is compared like the text of the blocks
+      // around it, so that text that an edit moves out of it or into it, or
+      // re-creates there, is found. Boundaries separate it from the units
+      // around it, as they separate the windows, and not from the start or
+      // end of the window. An unchanged one is a unit of its own.
+      separate(node);
+      $visitChildren(node, null, null);
+      afterNested = true;
     } else {
       add(node, OPAQUE, '\u0001' + key, '', NO_IDS);
     }
   };
   windows.forEach(({block, from, to}, i) => {
+    afterNested = false;
     if (i > 0) {
       add(block, BREAK, '\u0000', '', NO_IDS);
     }
+    windowStart = out.segs.length;
     $visitChildren(block, from, to);
   });
   out.text = texts.join('');
@@ -1601,6 +1631,52 @@ function $setUnitIDs(
 }
 
 /**
+ * The offsets `[start, end)` of `text` that are not in `prevText`, the text
+ * that the same TextNode had: what an edit inserted between the text it kept
+ * at each end. With `caret` (an offset in `text`, -1 when the caret is
+ * elsewhere), the insertion ends at the caret when the text after the caret
+ * is the end of `prevText`. Neither end splits a surrogate pair.
+ */
+function getInsertedRange(
+  prevText: string,
+  text: string,
+  caret: number,
+): readonly [number, number] {
+  let end = -1;
+  let maxStart = Math.min(prevText.length, text.length);
+  if (caret >= 0 && prevText.endsWith(text.slice(caret))) {
+    end = caret;
+    maxStart = Math.min(caret, prevText.length - (text.length - caret));
+  }
+  let start = 0;
+  while (
+    start < maxStart &&
+    prevText.charCodeAt(start) === text.charCodeAt(start)
+  ) {
+    start++;
+  }
+  if (start > 0 && isHighSurrogate(text.charCodeAt(start - 1))) {
+    start--;
+  }
+  if (end < 0) {
+    let suffix = 0;
+    const maxSuffix = Math.min(prevText.length, text.length) - start;
+    while (
+      suffix < maxSuffix &&
+      prevText.charCodeAt(prevText.length - 1 - suffix) ===
+        text.charCodeAt(text.length - 1 - suffix)
+    ) {
+      suffix++;
+    }
+    end = text.length - suffix;
+    if (end < text.length && isLowSurrogate(text.charCodeAt(end))) {
+      end++;
+    }
+  }
+  return [start, end];
+}
+
+/**
  * Give the text a local edit inserted the ids the documented rule says it
  * has, whatever TextNode the core put it in, and give text that the edit
  * re-created back its ids:
@@ -1614,14 +1690,23 @@ function $setUnitIDs(
  *   transform split it off into a copy of that node (`$isSplitOffEntity`).
  * - Text that was not deleted keeps its ids, also when the core or a
  *   transform moved it into a new TextNode that has none (a hashtag, a
- *   segmented node turned into text, the text around a replaced selection).
+ *   segmented node turned into text, the text around a replaced selection),
+ *   and when the update moved a leaf that existed (a block type or list
+ *   change moving its text into another block): a leaf that kept its text
+ *   keeps its ids, and a TextNode that also changed keeps them on the text
+ *   it kept at each end (see {@link getInsertedRange}).
  * - None of this gives back an id in `removed` (removed with
  *   {@link $removeMarkID} in this update).
  *
  * The change is found by comparing the units around the caret with the same
  * units in `prevState`. Only the children of the blocks that the update
  * changed are compared: a child that is the same object in both states is
- * unchanged, and one on each side bounds the comparison. Within them, the
+ * unchanged, and one on each side bounds the comparison. A nested block
+ * among them (the items of a list) is compared by its text, like the blocks
+ * around it. Text in a leaf that existed and that the comparison cannot
+ * line up with its previous place, because the update moved it from a
+ * block outside the compared ones, keeps its ids (see `$isKeptUnit`). Within
+ * them, the
  * text both states share at the start and at the end is a few units (see
  * {@link flattenSide}), so the cost is a scan of the changed TextNodes and
  * units for the changed text only. The change ends at the caret (what
@@ -1728,7 +1813,21 @@ function $applyInsertedTextMarkIDs(
   const to = $expand(right, 'next');
   // The blocks around the caret that may have changed: from the nearest one
   // at or before it that existed before the update, up to the next one that
-  // did
+  // did and did not lose its first children to the blocks before it (as a
+  // list does when its first item is turned into a paragraph: the list
+  // holds the previous place of their text)
+  const $isNextBoundary = (node: LexicalNode): boolean => {
+    const key = node.getKey();
+    if (!prevNodes.has(key)) {
+      return false;
+    }
+    const firstChild = $isElementNode(node) ? node.getFirstChild() : null;
+    return (
+      prevNodes.get(key) === node ||
+      firstChild === null ||
+      prevNodes.get(firstChild.getKey()) === firstChild
+    );
+  };
   const parent = block.getParent();
   let first: null | LexicalNode = block;
   let next: null | LexicalNode = null;
@@ -1737,7 +1836,7 @@ function $applyInsertedTextMarkIDs(
       first = first.getPreviousSibling();
     }
     next = block.getNextSibling();
-    while (next !== null && !prevNodes.has(next.getKey())) {
+    while (next !== null && !$isNextBoundary(next)) {
       next = next.getNextSibling();
     }
   } else if (!prevNodes.has(block.getKey())) {
@@ -1770,7 +1869,22 @@ function $applyInsertedTextMarkIDs(
       break;
     }
   }
-  const afterSegments = $collectSegments(windows, [caret]);
+  // A nested block that is the same object in both states, with nothing in
+  // it changed by this update: compared as one unit, without reading it
+  // @internal access: the elements this update changed or changed inside
+  const dirtyElements = editor._dirtyElements;
+  // @internal access: the node map of the pending state
+  const nextNodes = editor._pendingEditorState!._nodeMap;
+  const $isUnchangedBlock = (node: ElementNode) => {
+    const key = node.getKey();
+    const prevNode = prevNodes.get(key);
+    return (
+      prevNode !== undefined &&
+      prevNode === nextNodes.get(key) &&
+      !dirtyElements.has(key)
+    );
+  };
+  const afterSegments = $collectSegments(windows, [caret], $isUnchangedBlock);
   const firstKey = first !== null ? first.getKey() : null;
   const nextKey = next !== null ? next.getKey() : null;
   const parentKey = parent !== null ? parent.getKey() : null;
@@ -1833,7 +1947,7 @@ function $applyInsertedTextMarkIDs(
       if (toKey !== null ? !reachedTo : nextKey !== null && current === null) {
         return null;
       }
-      return $collectSegments(prevWindows, replaced || []);
+      return $collectSegments(prevWindows, replaced || [], $isUnchangedBlock);
     },
     {editor},
   );
@@ -2012,11 +2126,64 @@ function $applyInsertedTextMarkIDs(
   }
   const unitIDs = (i: number): readonly string[] =>
     i >= 0 && i < n && after.kinds[i] <= LEAF ? ids[i] : NO_IDS;
+  // The leaves whose text in `prevState` is part of `before`
+  const compared = new Set<NodeKey>();
+  for (const node of before.nodes) {
+    compared.add(node.getKey());
+  }
+  // For a TextNode that existed, with other text, outside the compared
+  // blocks: the offsets [start, end) of its text that are not in the text it
+  // had, anchored at the caret when it holds the caret
+  const insertedRanges = new Map<NodeKey, readonly [number, number]>();
+  const $getInsertedRange = (node: TextNode, prevText: string) => {
+    const key = node.getKey();
+    let range = insertedRanges.get(key);
+    if (range === undefined) {
+      range = getInsertedRange(
+        prevText,
+        node.getTextContent(),
+        caret.type === 'text' && caret.key === key ? caret.offset : -1,
+      );
+      insertedRanges.set(key, range);
+    }
+    return range;
+  };
+  // Whether unit `i`, in a gap, is text that was there before the update
+  // rather than inserted by it. A leaf that existed (with the same text, for
+  // a TextNode) holds no inserted text wherever the update moved it, and the
+  // comparison takes it for inserted text when it moved in from a block that
+  // is not compared (out of a list item, into a list it merges with) or lines
+  // up with equal text elsewhere. A TextNode that also changed and comes from
+  // outside the compared blocks keeps the text at its ends that it had.
+  const $isKeptUnit = (i: number): boolean => {
+    const node = after.nodes[i];
+    const prevNode = prevNodes.get(node.getKey());
+    if (prevNode === undefined) {
+      return false;
+    }
+    if (!$isTextNode(node) || !$isTextNode(prevNode)) {
+      return true;
+    }
+    // @internal access: the text of the node in `prevState` (its methods
+    // read the pending version)
+    const prevText = prevNode.__text;
+    if (prevText === node.getTextContent()) {
+      return true;
+    }
+    if (compared.has(node.getKey())) {
+      return false;
+    }
+    const [start, end] = $getInsertedRange(node, prevText);
+    return after.offsets[i] < start || after.offsets[i] >= end;
+  };
   for (const [g0, g1, r0, r1] of gaps) {
     if (g1 === g0) {
       continue;
     }
-    let shared = intersect(unitIDs(g0 - 1), unitIDs(g1));
+    const kept: boolean[] = [];
+    for (let i = g0; i < g1; i++) {
+      kept.push(after.kinds[i] <= LEAF && $isKeptUnit(i));
+    }
     // The ids every replaced unit had (line breaks between blocks aside)
     let replacedIDs: null | readonly string[] = null;
     for (let j = r0; j < r1; j++) {
@@ -2026,22 +2193,36 @@ function $applyInsertedTextMarkIDs(
           replacedIDs === null ? unit : intersect(replacedIDs, unit);
       }
     }
-    if (replacedIDs !== null) {
-      shared = union(shared, without(replacedIDs, removed));
-    }
-    for (let i = g0; i < g1; i++) {
-      if (after.kinds[i] <= LEAF) {
-        // Text inserted into a node that existed, or split off one, has no
-        // ids of its own
-        const node = after.nodes[i];
-        const own =
-          $isNewText(node) &&
-          after.ids[i].length > 0 &&
-          !$isSplitOffEntity(node)
-            ? after.ids[i]
-            : NO_IDS;
-        ids[i] = union(own, shared);
+    // Each run of inserted units between kept ones (the whole gap, when it
+    // holds none) is an insertion
+    for (let start = g0; start < g1; ) {
+      if (kept[start - g0]) {
+        start++;
+        continue;
       }
+      let end = start + 1;
+      while (end < g1 && !kept[end - g0]) {
+        end++;
+      }
+      let shared = intersect(unitIDs(start - 1), unitIDs(end));
+      if (replacedIDs !== null) {
+        shared = union(shared, without(replacedIDs, removed));
+      }
+      for (let i = start; i < end; i++) {
+        if (after.kinds[i] <= LEAF) {
+          // Text inserted into a node that existed, or split off one, has no
+          // ids of its own
+          const node = after.nodes[i];
+          const own =
+            $isNewText(node) &&
+            after.ids[i].length > 0 &&
+            !$isSplitOffEntity(node)
+              ? after.ids[i]
+              : NO_IDS;
+          ids[i] = union(own, shared);
+        }
+      }
+      start = end;
     }
   }
   for (let i = 0; i < n; ) {

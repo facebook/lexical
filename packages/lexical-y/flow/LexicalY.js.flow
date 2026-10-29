@@ -33,6 +33,7 @@ declare export var NESTED_FALLBACK_WARNING: '@lexical/y/nested-fallback';
 declare export var UNSYNCED_VALUE_WARNING: '@lexical/y/unsynced-value';
 declare export var UNSUPPORTED_SLOTS_WARNING: '@lexical/y/unsupported-slots';
 declare export var UNSUPPORTED_CONFIG_WARNING: '@lexical/y/unsupported-config';
+declare export var UNSUPPORTED_EDIT_WARNING: '@lexical/y/unsupported-edit';
 export type YWarningCode =
   | typeof UNSUPPORTED_LAYOUT_WARNING
   | typeof UNKNOWN_NODE_TYPES_WARNING
@@ -43,7 +44,8 @@ export type YWarningCode =
   | typeof NESTED_FALLBACK_WARNING
   | typeof UNSYNCED_VALUE_WARNING
   | typeof UNSUPPORTED_SLOTS_WARNING
-  | typeof UNSUPPORTED_CONFIG_WARNING;
+  | typeof UNSUPPORTED_CONFIG_WARNING
+  | typeof UNSUPPORTED_EDIT_WARNING;
 
 export type YUnsupportedLayoutData =
   | {readonly reason: 'newer', readonly found: number, readonly supported: number}
@@ -78,6 +80,7 @@ export type YUnsupportedSlotsData = {
 export type YUnsupportedConfigData =
   | {readonly reason: 'repair-transforms', readonly options: ReadonlyArray<string>}
   | {readonly reason: 'cleanup-formatting'};
+export type YUnsupportedEditData = {readonly reason: 'read-only'};
 export type YSelfCheckData = {
   readonly reason: 'local' | 'remote',
   readonly problems: ReadonlyArray<string>,
@@ -138,7 +141,8 @@ export type YWarning =
   | YWarningOf<typeof NESTED_FALLBACK_WARNING, YNestedFallbackData>
   | YWarningOf<typeof UNSYNCED_VALUE_WARNING, YUnsyncedValueData>
   | YWarningOf<typeof UNSUPPORTED_SLOTS_WARNING, YUnsupportedSlotsData>
-  | YWarningOf<typeof UNSUPPORTED_CONFIG_WARNING, YUnsupportedConfigData>;
+  | YWarningOf<typeof UNSUPPORTED_CONFIG_WARNING, YUnsupportedConfigData>
+  | YWarningOf<typeof UNSUPPORTED_EDIT_WARNING, YUnsupportedEditData>;
 declare export function isYWarning(error: unknown): error is YWarning;
 
 export type YBindingOptions = {

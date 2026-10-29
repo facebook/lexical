@@ -173,8 +173,21 @@ type Failure = {readonly error: unknown} | null;
 
 /** A read of the shared document into the editor (see YBinding#guardedRead). */
 type GuardedRead = {
+  /**
+   * Runs right before the read's update, once the local updates still
+   * pending have committed (see commitPending): what the read takes from
+   * the editor as those updates left it.
+   */
+  readonly before?: () => void;
   /** The read, inside the update. */
   readonly $read: () => void;
+  /**
+   * Whether the read's update takes over the local updates still pending
+   * instead of committing them first (see commitPending): a read of the
+   * whole document, which replaces what they show (the initial state an
+   * app sets before the binding opens a document that has content).
+   */
+  readonly replacesPending?: true;
   /**
    * Where a throw goes, of the read or of committing it, with what the
    * editor showed before the read: recoverRead, which reads the whole
@@ -1465,7 +1478,6 @@ export class YBinding {
   }
 
   private rereadContainers(list: CS[], extraTags: string[] = []): void {
-    this.commitPending();
     this.guardedRead({
       $read: () => {
         const cursor = this.$cursorBeforeRead();
@@ -1691,6 +1703,7 @@ export class YBinding {
       },
       // The whole document: read again, it would throw again.
       recover: (error, shown) => this.failClosed(error, shown),
+      replacesPending: true,
       tag: REMOTE_TAGS,
     });
   }
@@ -1861,25 +1874,15 @@ export class YBinding {
       return;
     }
     // Invariant: a local update still pending (an editor.update() made in
-    // the same task) is committed, and written, before a remote read. Why:
-    // committed with the read, it would carry the read's tags and never be
-    // written. It is written on the document as it was before this change,
-    // which it was made on (see Unread).
+    // the same task) is committed, and written, before a remote read (see
+    // guardedRead). Why: committed with the read, it would carry the read's
+    // tags and never be written. It is written on the document as it was
+    // before this change, which it was made on (see Unread).
     if (this.unread === null || !this.unread.changes.includes(tr)) {
       this.noteChange(tr);
     }
     const committed = this._editor.getEditorState();
-    this.commitPending();
-    // The selection the read keeps is the one those updates left, on the
-    // document they were made on.
-    if (this._editor.getEditorState() !== committed) {
-      this.pendingCursor = this.getCursor();
-    }
-    // The read sees the document as it is: this change, and those applied
-    // since, which are read after it (see Reader).
-    this.reading = true;
-    let cursor = this.pendingCursor;
-    this.pendingCursor = null;
+    let cursor: YCursor | null = null;
     // An undo puts back the selection of its step (a range, after typing
     // over one); any other read keeps the user's caret a caret. The nulls an
     // undo writes after itself (see closeRestoredRuns) are read as part of
@@ -1888,18 +1891,13 @@ export class YBinding {
     const undoing =
       (tr.origin === this._undoManager && this._undoManager !== null) ||
       tr.origin === this.runEndOrigin;
-    if (undoing) {
-      if (tr.origin !== this.runEndOrigin) {
-        this.undoneCursor = cursor;
-      }
-      cursor = this.stepCursor ?? cursor;
-    }
     let rebuilt: ReadonlySet<CS> = new Set();
-    // A re-read of a naming update's change is tagged as that update (see
-    // rereadRefused).
-    const naming = this.refused.size > 0 && this.refusedNaming;
+    let naming = false;
     this.guardedRead({
-      $read: () =>
+      $read: () => {
+        if (naming) {
+          $addUpdateTag(BLOCK_ID_REPAIR_TAG);
+        }
         this.$readRemote(
           state,
           childItems,
@@ -1910,7 +1908,8 @@ export class YBinding {
             rebuilt = r;
           },
           tr,
-        ),
+        );
+      },
       after: () => {
         this.checkUnknownTypes();
         this.checkRead(rebuilt);
@@ -1920,8 +1919,29 @@ export class YBinding {
         // would take what the editor does not show yet for deleted.
         this.runPending();
       },
+      before: () => {
+        // The selection the read keeps is the one those updates left, on the
+        // document they were made on.
+        if (this._editor.getEditorState() !== committed) {
+          this.pendingCursor = this.getCursor();
+        }
+        // The read sees the document as it is: this change, and those
+        // applied since, which are read after it (see Reader).
+        this.reading = true;
+        cursor = this.pendingCursor;
+        this.pendingCursor = null;
+        if (undoing) {
+          if (tr.origin !== this.runEndOrigin) {
+            this.undoneCursor = cursor;
+          }
+          cursor = this.stepCursor ?? cursor;
+        }
+        // A re-read of a naming update's change is tagged as that update
+        // (see rereadRefused).
+        naming = this.refused.size > 0 && this.refusedNaming;
+      },
       recover: (error, shown) => this.recoverRead(error, shown),
-      tag: naming ? [...REMOTE_TAGS, BLOCK_ID_REPAIR_TAG] : REMOTE_TAGS,
+      tag: REMOTE_TAGS,
     });
   }
 
@@ -2034,9 +2054,14 @@ export class YBinding {
    * go through it can neither recover nor fail closed.
    *
    * - Nothing is read once the binding failed closed (see failClosed).
+   * - The local updates still pending commit first, on their own (see
+   *   commitPending), where the read is not nested in an update and does
+   *   not replace them (`read.replacesPending`).
    * - A throw, of the read or of committing it, never reaches Yjs, a
    *   provider or `initialize()`: it goes to `read.recover`, with what the
-   *   editor showed before the read.
+   *   editor showed before the read. A throw committing the pending
+   *   updates is the app's (an update or a listener of its own): it is
+   *   rethrown in a microtask, and the read goes on.
    * - `read.after` runs once the read has committed and nothing threw: after
    *   the update the read is part of, where it is nested in one (an undo the
    *   binding runs in an update of its own, see undo).
@@ -2051,6 +2076,12 @@ export class YBinding {
     }
     const editor = this._editor;
     const nested = editor._updating;
+    if (read.replacesPending !== true) {
+      this.commitPending();
+    }
+    if (read.before !== undefined) {
+      read.before();
+    }
     const shown = editor.getEditorState();
     let failure = null as Failure;
     const settle = () => {
@@ -2149,7 +2180,6 @@ export class YBinding {
    * it throws is passed on (see recoverRead).
    */
   private rebuildFromDocument(): void {
-    this.commitPending();
     this.guardedRead({
       $read: () => this.$rebuild(),
       after: () => {
@@ -3509,9 +3539,18 @@ export class YBinding {
       i++
     ) {
       const pending = editor._pendingEditorState;
-      editor.update(() => {}, {discrete: true});
-      if (editor._pendingEditorState === pending) {
-        editor.read(() => {});
+      try {
+        editor.update(() => {}, {discrete: true});
+        if (editor._pendingEditorState === pending) {
+          editor.read(() => {});
+        }
+      } catch (error) {
+        // An update or a listener of the app's threw: its error is rethrown
+        // in a microtask (an uncaught error), never into Yjs or a provider,
+        // and the updates still pending commit.
+        queueMicrotask(() => {
+          throw error;
+        });
       }
     }
   }

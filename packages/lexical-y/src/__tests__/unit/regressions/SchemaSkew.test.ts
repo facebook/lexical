@@ -2012,6 +2012,62 @@ describe('S7-21: a read that throws on every attempt fails closed', () => {
     ]);
     expect(b.describe()).toBe('');
   });
+
+  test.each([
+    ['nothing, as opening the room failed', false],
+    ['what it read before', true],
+  ])(
+    'N3: a local update goes back to what the editor showed (%s), reading nothing',
+    async (_name, opened) => {
+      const net = newNet();
+      const a = new Peer(2, net as never);
+      const b = new Peer(1, (opened ? net : newNet()) as never);
+      a.update(() => $getRoot().clear().append($p('hello')));
+      a.binding.initialize();
+      await flush();
+      const proto = Reader.prototype as unknown as {
+        $apply: (...args: unknown[]) => void;
+        $readFull: (...args: unknown[]) => void;
+      };
+      const {$apply, $readFull} = proto;
+      let reads = 0;
+      proto.$apply = proto.$readFull = () => {
+        reads++;
+        throw new Error('simulated reader failure');
+      };
+      const uncaught: unknown[] = [];
+      const onUncaught = (error: unknown) => uncaught.push(error);
+      process.on('uncaughtException', onUncaught);
+      try {
+        if (opened) {
+          a.update(() => $block([0]).append($createTextNode(' there')));
+        } else {
+          Y.applyUpdate(b.doc, Y.encodeStateAsUpdate(a.doc));
+          b.binding.initialize();
+        }
+        await flush();
+        expect(b.binding.status).toBe('readonly');
+        const shown = b.describe();
+        expect(shown).toBe(opened ? 'paragraph("hello")' : '');
+        reads = 0;
+        const vector = Y.encodeStateVector(b.doc);
+        b.update(() => $getRoot().append($p('local edit')));
+        await flush();
+        expect(uncaught).toEqual([]);
+        expect(b.errors).toEqual([]);
+        expect(b.describe()).toBe(shown);
+        expect(reads).toBe(0);
+        expect(Y.encodeStateVector(b.doc)).toEqual(vector);
+        expect(
+          b.warnings.filter(w => w.includes('not written while read only')),
+        ).toEqual(['a local change is not written while read only']);
+      } finally {
+        process.off('uncaughtException', onUncaught);
+        proto.$apply = $apply;
+        proto.$readFull = $readFull;
+      }
+    },
+  );
 });
 
 type SerializedRequired = SerializedElementNode & {mode: string};

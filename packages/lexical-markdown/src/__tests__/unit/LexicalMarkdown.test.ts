@@ -1645,6 +1645,26 @@ describe('Markdown', () => {
       );
     });
 
+    it('round-trips bold italic followed by italic (Issue #9443)', () => {
+      expectRoundTrip(
+        [
+          ['Disclaimer', BOLD | ITALIC],
+          [': once accepted.', ITALIC],
+        ],
+        '***Disclaimer**: once accepted.*',
+      );
+    });
+
+    it('round-trips bold italic followed by bold', () => {
+      expectRoundTrip(
+        [
+          ['Disclaimer', BOLD | ITALIC],
+          [': once accepted.', BOLD],
+        ],
+        '***Disclaimer*: once accepted.**',
+      );
+    });
+
     it('round-trips strikethrough overlapping bold', () => {
       expectRoundTrip(
         [

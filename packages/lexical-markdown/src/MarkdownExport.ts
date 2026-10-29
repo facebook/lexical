@@ -19,7 +19,6 @@ import {
   type ElementNode,
   type LexicalNode,
   type LineBreakNode,
-  type NodeKey,
   type TextFormatType,
   type TextNode,
 } from 'lexical';
@@ -124,7 +123,6 @@ export function createSelectionMarkdownExport(
     if ($isRangeSelection(selection)) {
       selection._cachedIsBackward = exportedSelection.isBackward();
     }
-    boundaryTextKeys.set(selection, $getBoundaryTextKeys(selection));
     const output = [];
     // The separator depends on the previously *emitted* block, not on the
     // previous root child: unselected children produce no output, so keying
@@ -575,7 +573,10 @@ function $exportTextFormat(
   for (let i = 0; i < unclosedTags.length; i++) {
     const nodeHasFormat = hasFormat(node, unclosedTags[i].format);
     // prevent adding closing tag if later text with the format will do it
-    if (nodeHasFormat && $continuesTag(node, unclosedTags[i], selection)) {
+    if (
+      nodeHasFormat &&
+      $continuesTag(node, prevNode, unclosedTags[i], selection)
+    ) {
       continue;
     }
 
@@ -656,15 +657,12 @@ function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
  */
 function $continuesTag(
   node: TextNode,
+  prevNode: TextNode | null,
   tag: OpenTag,
   selection: BaseSelection | null,
 ): boolean {
   const {continues} = tag;
-  if (
-    continues &&
-    continues.from.is(node.getPreviousSibling()) &&
-    !node.is(continues.until)
-  ) {
+  if (continues && continues.from.is(prevNode) && !node.is(continues.until)) {
     continues.from = node;
     return continues.result;
   }
@@ -691,32 +689,16 @@ function $continuesTag(
 }
 
 /**
- * The text nodes at the ends of each exported selection, the only ones whose
- * selected slice can differ from their whole text.
- */
-const boundaryTextKeys = new WeakMap<BaseSelection, Set<NodeKey>>();
-
-function $getBoundaryTextKeys(selection: BaseSelection): Set<NodeKey> {
-  const keys = new Set<NodeKey>();
-  for (const point of selection.getStartEndPoints() || []) {
-    keys.add(point.key);
-  }
-  return keys;
-}
-
-/**
  * The text of `node` that the export emits: its selected slice, if any.
- * Slicing works out the selection's range, so it is only done for the nodes
- * at its ends, which keeps a selection export linear.
+ * Only the node of a text point can be cut short, and slicing works out the
+ * selection's range, so only those nodes are sliced, keeping export linear.
  */
 function $exportedText(node: TextNode, selection: BaseSelection | null) {
-  if (selection === null) {
-    return node.getTextContent();
-  }
-  const boundary = boundaryTextKeys.get(selection);
-  return boundary && !boundary.has(node.getKey())
-    ? node.getTextContent()
-    : $sliceSelectedTextNodeContent(selection, node, 'clone').getTextContent();
+  const key = node.getKey();
+  return selection &&
+    (selection.getStartEndPoints() || []).some(point => point.key === key)
+    ? $sliceSelectedTextNodeContent(selection, node, 'clone').getTextContent()
+    : node.getTextContent();
 }
 
 function hasFormat(

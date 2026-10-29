@@ -1171,10 +1171,12 @@ function escapeCharacterReferences(value: string): string {
 // A link destination or title is read back through `unescapeText`, so after
 // `escapeCharacterReferences` every match of `syntax`, a global regular
 // expression for the characters its shape treats as syntax, gets a backslash.
-// Neither may hold a line ending either: a literal one would leave it unclosed
-// and split the paragraph in two. It goes out as the character reference that
-// `unescapeText` and a CommonMark reader both turn back into the line ending,
-// written after the `&` escape so that one leaves it alone.
+// Neither may hold a line ending either. A destination cannot hold one at all,
+// and a title cannot hold a blank line, but even a single one would split the
+// link across the lines the importer reads one at a time. It goes out as the
+// character reference that `unescapeText` and a CommonMark reader both turn
+// back into the line ending, written after the `&` escape so that one leaves
+// it alone.
 function escapeLinkPart(value: string, syntax: RegExp): string {
   return escapeCharacterReferences(value)
     .replace(syntax, '\\$&')
@@ -1249,7 +1251,7 @@ export const LINK: TextMatchTransformer = {
     const url =
       rawUrl === '' || /\s/.test(rawUrl)
         ? `<${escapeLinkPart(rawUrl, /[\\<>]/g)}>`
-        : escapeLinkPart(rawUrl, /[\\()]/g).replace(/^</, '\\<');
+        : escapeLinkPart(rawUrl, /[\\()]|^</g);
 
     // In the double-quoted title only `"` and a backslash need an escape.
     const linkContent = title
@@ -1286,9 +1288,9 @@ export const LINK: TextMatchTransformer = {
   // are characters, which costs a quadratic walk of every run that never
   // reaches the closing parenthesis.
   importRegExp:
-    /(?:\[(.+?)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:[^"]*\\")*[^"]*)"|'((?:[^']*\\')*[^']*)'|\(((?:\\.|[^()\\])*)\)))?\s*)?\))/,
+    /(?:\[(.+?)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:\\.|[^"\\])*)"|'((?:\\.|[^'\\])*)'|\(((?:\\.|[^()\\])*)\)))?\s*)?\))/,
   regExp:
-    /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:[^"]*\\")*[^"]*)"|'((?:[^']*\\')*[^']*)'|\(((?:\\.|[^()\\])*)\)))?\s*)?\))$/,
+    /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:\\.|[^"\\])*)"|'((?:\\.|[^'\\])*)'|\(((?:\\.|[^()\\])*)\)))?\s*)?\))$/,
   replace: (textNode, match) => {
     // https://spec.commonmark.org/0.31.2/#inline-link
     const source = match.input || '';

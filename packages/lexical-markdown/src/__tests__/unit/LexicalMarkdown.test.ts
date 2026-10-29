@@ -4068,7 +4068,7 @@ describe('link destination round trip', () => {
   ];
 
   for (const [url, md] of CASES) {
-    it(`preserves "${url}"`, () => {
+    it(`preserves ${JSON.stringify(url)}`, () => {
       const editor = createTestEditor({nodes: [LinkNode]});
       editor.update(
         () => {
@@ -4130,7 +4130,7 @@ describe('link title round trip', () => {
   ];
 
   for (const [title, md] of CASES) {
-    it(`preserves "${title}"`, () => {
+    it(`preserves ${JSON.stringify(title)}`, () => {
       const editor = createTestEditor({nodes: [LinkNode]});
       editor.update(
         () => {
@@ -4167,6 +4167,44 @@ describe('link title round trip', () => {
       ).toEqual([title]);
     });
   }
+
+  it('keeps a title that ends in a backslash closed', () => {
+    // The `"` written after the escaped backslash closes the title, so a `")`
+    // in the text after the link must stay out of it.
+    const editor = createTestEditor({nodes: [LinkNode]});
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $createLinkNode('/uri', {title: 'a\\'}).append(
+                $createTextNode('x'),
+              ),
+              $createTextNode(' ")'),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+
+    const exported = editor.read('latest', () =>
+      $convertToMarkdownString(TRANSFORMERS),
+    );
+    expect(exported).toBe('[x](/uri "a\\\\") ")');
+
+    const reimported = createTestEditor({nodes: [LinkNode]});
+    reimported.update(
+      () => $convertFromMarkdownString(exported, TRANSFORMERS),
+      {discrete: true},
+    );
+    reimported.read('latest', () => {
+      const link = $getRoot().getAllTextNodes()[0].getParent();
+      assert($isLinkNode(link), 'Expected a link');
+      expect(link.getTitle()).toBe('a\\');
+      expect($getRoot().getTextContent()).toBe('x ")');
+    });
+  });
 });
 
 describe('decimal character references that name no character', () => {

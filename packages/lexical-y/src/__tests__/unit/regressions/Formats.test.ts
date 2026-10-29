@@ -1860,3 +1860,60 @@ describe('a format or comment removed ‖ an edit inside its range', () => {
     }
   }
 });
+
+// L1B-1: J typed plain text right after a word two comments cover, which
+// ends each comment with a null of J's own after the end its author wrote
+// (see Cursor#format, rule 5). C pasted over J's word, and the delete
+// collapsed the format items after it keeping only J's null of the first
+// comment; J's concurrent undo of its typing deleted that null, and the
+// comment covered the rest of the document.
+describe('L1B-1: undo of plain text typed after a word two comments cover ‖ a paste over that text', () => {
+  for (const ids of [
+    [1, 2, 3, 4],
+    [4, 3, 2, 1],
+    [2, 4, 1, 3],
+    [3, 1, 4, 2],
+  ]) {
+    for (const sameClient of [true, false]) {
+      test(`L1B-1: the comments end after the word, from ${sameClient ? 'one client' : 'two clients'} (ids ${ids})`, async () => {
+        const t = await setup(
+          () =>
+            $getRoot().append(
+              $createParagraphNode().append($createTextNode('t1z t2')),
+              $createParagraphNode().append($createTextNode('t3z')),
+            ),
+          {ids},
+        );
+        const [a, b, c, j] = t.peers;
+        const $comment = (id: string) => () => {
+          $addMarkID(id, $selectLine(0, 3));
+          $setSelection(null);
+        };
+        a.update($comment('c4'));
+        await t.sync();
+        (sameClient ? a : b).update($comment('c12'));
+        await t.sync();
+        for (const peer of t.peers) {
+          peer.binding.undoManager?.clear();
+        }
+        // Plain text typed right after "t1z", a text node of its own.
+        j.update(() => {
+          const [word] = (
+            $getRoot().getFirstChildOrThrow() as ElementNode
+          ).getAllTextNodes();
+          word.splitText(3)[0].insertAfter($createTextNode(' t1011z'));
+        });
+        await t.sync();
+        t.offline();
+        j.undo();
+        c.update(() => {
+          const sel = $selectLine(4, 10);
+          $setSelection(sel);
+          sel.insertText('t1013z');
+          $setSelection(null);
+        });
+        expect(await merged(t)).toBe('"t1zt1013z"[c12+c4] " t2" / "t3z"');
+      });
+    }
+  }
+});

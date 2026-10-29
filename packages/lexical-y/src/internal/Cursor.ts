@@ -754,7 +754,10 @@ export class Cursor {
    * there: a format change keeps the item before its opener at a place (see
    * format), and with several keys a whole value's item there gives every key
    * its value. Delete the items of the rest, except, of each key, the last item
-   * where without it the key would have another value after the run. Invariant:
+   * where without it the key would have another value after the run, and,
+   * where the key's last item is kept, the last item before it of that key with
+   * the same value (no other value between them) that another client wrote.
+   * Invariant:
    * such a run holds, besides the units of the last delete in it, at most five
    * units per family, the items that give a family its value at the end of the
    * places of those, and items that change a key's value between the content
@@ -777,7 +780,14 @@ export class Cursor {
    * at once each left the space's own item, which the other relied on); and the
    * one before it gives that content the value it falls back to where a
    * concurrent format change of it removes its item (a comment resolved on a
-   * character took the comment of the text deleted before it). The items a kept
+   * character took the comment of the text deleted before it). The other
+   * client's item with the key's last value stays as each client's undo deletes
+   * its own items only: a run's end and the null another client wrote right
+   * after it (see format, rule 5) each end the run where the other's writer
+   * removes theirs (a paste over plain text typed after a word two comments
+   * cover kept only the typist's null of one comment, and the typist's
+   * concurrent undo left that comment on to the end of the document). The
+   * items a kept
    * unit's place holds for the other keys of its family give content restored
    * there, as an undo of its delete restores it, the value it had: a word two
    * clients gave a comment each, deleted, kept one comment's opener once a
@@ -924,14 +934,26 @@ export class Cursor {
           i = j;
         }
       }
-      // The value of each key after the run stays.
+      // The value of each key after the run stays; where the key's last item
+      // stays, so does the last item before it with the same value that
+      // another client wrote.
       const lastOf = new Map<string, Item>();
       const lastKept = new Map<string, Item>();
+      const otherClient = new Map<string, Item>();
       for (const unit of units) {
         for (const it of unit) {
-          lastOf.set(keyOf(it), it);
+          const key = keyOf(it);
+          const before = lastOf.get(key);
+          if (before !== undefined) {
+            if (!equalFormatValue(valueOf(before), valueOf(it))) {
+              otherClient.delete(key);
+            } else if (before.id.client !== it.id.client) {
+              otherClient.set(key, before);
+            }
+          }
+          lastOf.set(key, it);
           if (keep.has(it)) {
-            lastKept.set(keyOf(it), it);
+            lastKept.set(key, it);
           }
         }
       }
@@ -944,6 +966,10 @@ export class Cursor {
           )
         ) {
           keep.add(it);
+        }
+        const other = otherClient.get(key);
+        if (keep.has(it) && other !== undefined) {
+          keep.add(other);
         }
       }
       const values = new Map<string, unknown>();

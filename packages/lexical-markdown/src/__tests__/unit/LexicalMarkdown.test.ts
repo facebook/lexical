@@ -4109,6 +4109,15 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
       1,
       '**a*b***',
     ],
+    [
+      'leaves out inline code the selection only touches',
+      [
+        ['a', TEXT_TYPE_TO_FORMAT.bold],
+        ['xy', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.code],
+      ],
+      0,
+      '**a**',
+    ],
   ])('%s', (_name, formats, end, expected) => {
     const editor = createTestEditor({nodes: [LinkNode]});
     editor.update(

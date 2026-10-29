@@ -519,16 +519,15 @@ function $exportTextFormat(
   let leadingSpace: string;
   let trimmedOutput: string;
   let trailingSpace: string;
-  let isWhitespaceOnly: boolean;
+  const isWhitespaceOnly = !canHoldTag(node, textContent);
 
-  if (isCode) {
+  if (isCode && !isWhitespaceOnly) {
     // Inline code is an atomic literal span with a content-derived fence, so
     // its whitespace stays inside the fence and other formats wrap around it.
     const {fence, padded} = getCodeSpanDelimiter(textContent);
     leadingSpace = '';
     trailingSpace = '';
     trimmedOutput = fence + padded + fence;
-    isWhitespaceOnly = false;
   } else {
     // Extract leading and trailing whitespaces.
     // CommonMark flanking rules require formatting tags to be adjacent to non-whitespace characters.
@@ -536,7 +535,6 @@ function $exportTextFormat(
     leadingSpace = match[1];
     trimmedOutput = match[2];
     trailingSpace = match[3];
-    isWhitespaceOnly = trimmedOutput === '';
   }
 
   // the opening tags to be added to the result
@@ -559,17 +557,8 @@ function $exportTextFormat(
     }
 
     // dedup applied formats
-    // `checkHasFormat` reads the node's whole text, but the text being
-    // exported may be a selection slice of it. When the slice is entirely
-    // whitespace the tags are dropped by the early return below, so
-    // registering them here would leave an unclosed tag for a later node to
-    // close. In the full-document path `checkHasFormat` already rejects
-    // whitespace-only nodes, so this guard only affects sliced content.
-    if (
-      !isWhitespaceOnly &&
-      checkHasFormat(node, format) &&
-      !applied.has(format)
-    ) {
+    // Whitespace-only text cannot hold a tag (see the early return below).
+    if (!isWhitespaceOnly && node.hasFormat(format) && !applied.has(format)) {
       applied.add(format);
 
       // append the tag to openingTags, if it's not applied to the previous nodes,
@@ -589,12 +578,11 @@ function $exportTextFormat(
   // close any tags in the same order they were applied, if necessary
   for (let i = 0; i < unclosedTags.length; i++) {
     const nodeHasFormat = hasFormat(node, unclosedTags[i].format);
-    const nextNodeHasFormat =
-      nodeHasFormat &&
-      $continuesFormat(node, unclosedTags[i].format, selection);
-
     // prevent adding closing tag if next sibling will do it
-    if (nodeHasFormat && nextNodeHasFormat) {
+    if (
+      nodeHasFormat &&
+      $continuesFormat(node, unclosedTags[i].format, selection)
+    ) {
       continue;
     }
 
@@ -618,7 +606,7 @@ function $exportTextFormat(
           // Handles cases where the tag has not been closed before, e.g. if the previous node
           // was a text match transformer that did not account for closing tags of the next node (e.g. a link)
           closingTagsBefore += unclosedTag.tag;
-        } else if (!nextNodeHasFormat) {
+        } else {
           closingTagsAfter += unclosedTag.tag;
         }
       }
@@ -628,9 +616,7 @@ function $exportTextFormat(
     break;
   }
   // If the node is entirely whitespace, we don't apply opening/closing tags around it.
-  // However, it must still output the closing tags: those left open by
-  // previous nodes, and those that close here because the next sibling is not
-  // formatted (e.g. a link), which would otherwise be dropped from the output.
+  // However, it must still output any closing tags, before the whitespace.
   if (isWhitespaceOnly) {
     return closingTagsBefore + closingTagsAfter + output;
   }
@@ -675,7 +661,7 @@ function $continuesFormat(
     const text = selection
       ? $sliceSelectedTextNodeContent(selection, next, 'clone').getTextContent()
       : next.getTextContent();
-    if (next.hasFormat('code') || /\S/.test(text)) {
+    if (canHoldTag(next, text)) {
       return true;
     }
     next = getTextSibling(next, false);
@@ -690,16 +676,10 @@ function hasFormat(
   return $isTextNode(node) && node.hasFormat(format);
 }
 
-function checkHasFormat(n: TextNode | null, f: TextFormatType): boolean {
-  if (!hasFormat(n, f)) {
-    return false;
-  }
-  // Inline code is a fenced span, which can hold a tag whatever its text.
-  if (n && n.hasFormat('code')) {
-    return true;
-  }
-  if (n && /^\s*$/.test(n.getTextContent())) {
-    return false;
-  }
-  return true;
+/**
+ * Whether exported text can carry a format's tag: CommonMark flanking rules
+ * keep tags off whitespace, but inline code is a fenced span.
+ */
+function canHoldTag(node: TextNode, text: string): boolean {
+  return node.hasFormat('code') ? text !== '' : /\S/.test(text);
 }

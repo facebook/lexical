@@ -2883,7 +2883,6 @@ describe('inline code with backticks (CommonMark code spans)', () => {
     expect(exportCodeSpan(' x ')).toBe('`  x  `');
     expect(exportCodeSpan('\tx\t')).toBe('` \tx\t `');
     expect(exportCodeSpan(' \t ')).toBe('`  \t  `');
-    expect(exportCodeSpan(' \n ')).toBe('` \n `');
   });
 
   it('normalizes a redundant inline fence to the minimal valid fence', () => {

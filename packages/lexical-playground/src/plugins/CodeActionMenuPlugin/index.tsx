@@ -151,7 +151,10 @@ function CodeActionMenuContainer({
               case 'updated':
                 if (key === codeKeyRef.current) {
                   const node = $getNodeByKey(key);
-                  setWrapped($isCodeNode(node) && node.getWordWrap());
+                  if ($isCodeNode(node)) {
+                    setLang(node.getLanguage() || '');
+                    setWrapped(node.getWordWrap());
+                  }
                 }
                 break;
 

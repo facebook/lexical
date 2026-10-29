@@ -178,6 +178,27 @@ describe('CodeActionMenuPlugin wrap button', () => {
     expect(getCodeElements()[1]).toBe(second);
   });
 
+  it('follows changes to the hovered code block', async () => {
+    const [first] = getCodeElements();
+    await hover(first);
+    const label = anchorElem.querySelector('.code-highlight-language');
+    assert(label !== null, 'expected the menu to show the language');
+    expect(label.textContent).toBe('JavaScript');
+
+    await act(async () => {
+      editor.update(
+        () => {
+          const code = $getRoot().getFirstChildOrThrow();
+          assert($isCodeNode(code));
+          code.setLanguage('python').setWordWrap(true);
+        },
+        {discrete: true},
+      );
+    });
+    expect(label.textContent).toBe('Python');
+    expect(getWrapButton().getAttribute('aria-pressed')).toBe('true');
+  });
+
   it('hides the menu when the hovered code block is removed', async () => {
     const [first] = getCodeElements();
     await hover(first);

@@ -241,8 +241,15 @@ const BLOCK_ID_REPAIR_TAG = 'block-id-repair';
  * The binding's own updates that wait for the editor to be idle (see
  * runPending), in the order they run.
  */
-type PendingWork = 'hidden' | 'reread' | 'normalize' | 'refresh' | 'register';
+type PendingWork =
+  | 'restore'
+  | 'hidden'
+  | 'reread'
+  | 'normalize'
+  | 'refresh'
+  | 'register';
 const PENDING_ORDER: readonly PendingWork[] = [
+  'restore',
   'hidden',
   'reread',
   'normalize',
@@ -592,6 +599,11 @@ export class YBinding {
    * went read only: once per read-only period.
    */
   private warnedEdit = false;
+  /**
+   * What the editor showed before a local update made once the binding
+   * failed closed: shown again (see onUpdate).
+   */
+  private restoreTo: EditorState | null = null;
   /** Re-reads in a row (see MAX_REREADS). */
   private rereads = 0;
   /**
@@ -1030,6 +1042,7 @@ export class YBinding {
     this.refusedComposing.clear();
     this.keepsUnstored = false;
     this.warnedEdit = false;
+    this.restoreTo = null;
     this.toSettle.clear();
     this.untransformed.clear();
     this.untransformedText.clear();
@@ -1642,13 +1655,15 @@ export class YBinding {
   /**
    * Whether something keeps the binding read only for good: a configuration
    * it does not support, node types it cannot build (or slots it cannot
-   * read), or a local change it cannot store and keeps showing.
+   * read), a local change it cannot store and keeps showing, or a document
+   * it cannot read (see failClosed).
    */
   private staysReadOnly(): boolean {
     return (
       this.unsupportedConfig.length > 0 ||
       this.state.unknownTypes.size > 0 ||
-      this.keepsUnstored
+      this.keepsUnstored ||
+      this.unreadable
     );
   }
 
@@ -2731,21 +2746,39 @@ export class YBinding {
     ) {
       // Read only, nothing is written, and what a local update changed
       // (code that edits the editor, which is not editable) is read again,
-      // once a composition ends. Invariant: while read only, a local update
+      // once a composition ends; once the binding failed closed, which reads
+      // nothing more (see failClosed), the editor shows what it showed
+      // before the update again. Invariant: while read only, a local update
       // leaves the editor showing what the binding read. Why: a remote
       // change is read into the editor as the binding's units describe it,
       // and read into an editor that shows something else it can misplace
       // content.
       const composing = this._editor._compositionKey !== null;
-      if (
-        this.$refuseChanged(
+      let refused = false;
+      if (this.unreadable) {
+        refused =
+          this.$changedNodes(
+            dirtyElements,
+            dirtyLeaves,
+            editorState,
+            prevEditorState,
+          ).length > 0;
+        if (refused) {
+          if (this.restoreTo === null) {
+            this.restoreTo = prevEditorState;
+          }
+          this.pending.add('restore');
+        }
+      } else {
+        refused = this.$refuseChanged(
           dirtyElements,
           dirtyLeaves,
           editorState,
           prevEditorState,
           composing ? this.refusedComposing : this.refused,
-        )
-      ) {
+        );
+      }
+      if (refused) {
         if (commit.naming) {
           this.refusedNaming = true;
         }
@@ -3973,6 +4006,7 @@ export class YBinding {
       this.remoteRefresh.clear();
       this.refused.clear();
       this.refusedComposing.clear();
+      this.restoreTo = null;
       this.toSettle.clear();
       this.untransformed.clear();
       this.untransformedText.clear();
@@ -3994,7 +4028,9 @@ export class YBinding {
       }
       this.pending.delete(work);
       withPins(this._pins, () => {
-        if (work === 'hidden') {
+        if (work === 'restore') {
+          this.restoreShown();
+        } else if (work === 'hidden') {
           this.flushHidden();
         } else if (work === 'reread') {
           this.rereadRefused();
@@ -4017,6 +4053,19 @@ export class YBinding {
    * client). Normally this runs as the next update (see queueReread); here
    * when the editor is idle (see runPending).
    */
+  /**
+   * Show again what the editor showed before the local updates made once
+   * the binding failed closed (see onUpdate): the binding reads nothing
+   * more, so it cannot read what they changed again.
+   */
+  private restoreShown(): void {
+    const shown = this.restoreTo;
+    this.restoreTo = null;
+    if (shown !== null && this._editor.getEditorState() !== shown) {
+      this._editor.setEditorState(shown, {tag: COLLABORATION_TAG});
+    }
+  }
+
   private rereadRefused(): void {
     let after: (() => void) | null = null;
     this.guardedRead({

@@ -24,11 +24,12 @@ import {
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
-import {YCollabExtension} from '@lexical/y';
-import * as Y from '@y/y';
+import {createYDoc, YCollabExtension} from '@lexical/y';
 import {configExtension, defineExtension} from 'lexical';
 
-const doc = new Y.Doc();
+// Yjs's format cleanup off (createYDoc(stored) for a stored state): the
+// binding takes no other document.
+const doc = createYDoc();
 const editor = buildEditorFromExtensions(
   defineExtension({
     dependencies: [RichTextExtension, configExtension(YCollabExtension, {doc})],
@@ -57,10 +58,10 @@ binding.initialize();
 
 A server or relay that loads a document into a plain Yjs `Doc` and stores
 its state must set `doc.cleanupFormatting = false` before it applies
-updates (`createYDoc(state)` from `@lexical/y/headless` makes such a
-document). Otherwise Yjs's format cleanup deletes format items the clients
-keep (the binding stops that cleanup in its own containers on the clients),
-and the stored state reads differently from what the clients show. See
+updates (`createYDoc(state)`, from `@lexical/y` or `@lexical/y/headless`,
+makes such a document, as the clients do). Otherwise Yjs's format cleanup
+deletes format items the clients keep, and the stored state reads
+differently from what the clients show. See
 [Servers](https://lexical.dev/docs/collaboration/y#servers) for the other
 requirements (yrs versions, 32-bit client ids).
 

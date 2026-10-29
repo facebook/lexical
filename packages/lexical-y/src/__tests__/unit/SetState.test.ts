@@ -33,7 +33,7 @@ import {
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {YBinding} from '../..';
+import {createYDoc, YBinding} from '../..';
 import {editYState, readYState, seedYState} from '../../headless';
 import {Writer} from '../../internal/Write';
 import {
@@ -745,7 +745,7 @@ describe('the layout record', () => {
   test('an initial write that throws part way still sends layout 2 with the member entries it wrote', () => {
     // A root inside another shared type is written in place (not as a seed
     // built in a scratch document first).
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     const root = new Y.Node('editor-root');
     doc.get('app').setAttr('editor', root);
     const editor = createEditor({

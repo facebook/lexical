@@ -36,7 +36,7 @@ import {
 } from 'lexical';
 import {expect, test} from 'vitest';
 
-import {YCollabExtension} from '../..';
+import {createYDoc, YCollabExtension, type YDoc} from '../..';
 
 class CaptionedNode extends DecoratorNode<null> {
   __caption: LexicalEditor;
@@ -73,7 +73,7 @@ class CaptionedNode extends DecoratorNode<null> {
   }
 }
 
-function build(doc: Y.Doc, warnings: string[]) {
+function build(doc: YDoc, warnings: string[]) {
   return buildEditorFromExtensions(
     defineExtension({
       dependencies: [
@@ -92,7 +92,7 @@ function build(doc: Y.Doc, warnings: string[]) {
 const tick = () => new Promise(r => setTimeout(r, 0));
 
 test('a node that builds a nested editor in its constructor: no self-check warning', async () => {
-  const docA = new Y.Doc();
+  const docA = createYDoc();
   const wa: string[] = [];
   const wb: string[] = [];
   const a = build(docA, wa);
@@ -106,7 +106,7 @@ test('a node that builds a nested editor in its constructor: no self-check warni
   );
   await tick();
   // B opens the document, then both stay connected.
-  const docB = new Y.Doc();
+  const docB = createYDoc();
   Y.applyUpdate(docB, Y.encodeStateAsUpdate(docA));
   docA.on('update', u => Y.applyUpdate(docB, u));
   docB.on('update', u => Y.applyUpdate(docA, u));

@@ -13,7 +13,7 @@ import {
   type BlockIdExtension,
   buildEditorFromExtensions,
 } from '@lexical/extension';
-import {applyUpdate, Doc} from '@y/y';
+import {applyUpdate, type Doc} from '@y/y';
 import {
   type AnyLexicalExtensionArgument,
   type CreateEditorArgs,
@@ -26,6 +26,7 @@ import {
 
 import {
   type ClientIDRange,
+  createYDoc,
   DEFAULT_ROOT_NAME,
   isYWarning,
   YBinding,
@@ -357,13 +358,11 @@ export function openHeadlessYEditor(
   // (editYState) can resolve deleted items: this document is temporary, and
   // the states the helpers return are garbage collected. The binding keeps
   // the client id in range (`clientIDRange`) from `start()`; nothing is
-  // written before that.
-  const doc = new Doc({gc: false});
-  // No format cleanup, as on the clients (the binding opts its containers
-  // out of it): loading the state would otherwise delete format items the
-  // clients keep, and those deletions would be in the returned state but
-  // not in the update.
-  doc.cleanupFormatting = false;
+  // written before that. No format cleanup either, as on every document the
+  // binding writes (see createYDoc): loading the state would otherwise
+  // delete format items the clients keep, and those deletions would be in
+  // the returned state but not in the update.
+  const doc = createYDoc(null, {gc: false});
   const writes: Uint8Array<ArrayBuffer>[] = [];
   const collect = (update: Uint8Array) => {
     writes.push(new Uint8Array(update));

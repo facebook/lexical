@@ -31,7 +31,7 @@ import {
 } from 'lexical';
 import {expect, test} from 'vitest';
 
-import {YBinding} from '../..';
+import {createYDoc, YBinding} from '../..';
 import {$p, NODES} from '../utils/harness';
 
 class BlockBox extends ElementNode {
@@ -65,7 +65,7 @@ type Client = {
 // A client whose paragraphs turn text written as `TOKEN…` into token-mode
 // text (a deterministic transform, which a reader's normalization would run).
 function client(id: number, state?: Uint8Array): Client {
-  const doc = new Y.Doc({gc: false});
+  const doc = createYDoc(null, {gc: false});
   doc.clientID = id;
   if (state !== undefined) {
     Y.applyUpdate(doc, state, 'load');
@@ -152,7 +152,7 @@ function initialized(
   $init: () => void,
   history?: (doc: Y.Doc) => void,
 ): Client {
-  const doc = new Y.Doc({gc});
+  const doc = createYDoc(null, {gc});
   doc.clientID = id;
   if (history !== undefined) {
     history(doc);

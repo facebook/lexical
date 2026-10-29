@@ -45,7 +45,7 @@ import {
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {type YBinding, YCollabExtension} from '../..';
+import {createYDoc, type YBinding, YCollabExtension} from '../..';
 import {$p, describeNode, NODES} from '../utils/harness';
 
 type P = {
@@ -58,7 +58,7 @@ type P = {
 };
 
 function peer(name: string, clientID: number): P {
-  const doc = new Y.Doc({gc: false});
+  const doc = createYDoc(null, {gc: false});
   doc.clientID = clientID;
   let n = 0;
   const p = {doc, name, updates: 0, warnings: []} as unknown as P;
@@ -217,7 +217,7 @@ describe('@lexical/y with BlockIdExtension', () => {
   test("the update that names the blocks a remote change brings stays out of the client's undo history", async () => {
     const A = peer('A', 1);
     // B has no BlockIdExtension: the blocks it writes have no id.
-    const doc = new Y.Doc({gc: false});
+    const doc = createYDoc(null, {gc: false});
     doc.clientID = 2;
     const B = {
       binding: null as unknown as YBinding,

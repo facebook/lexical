@@ -39,7 +39,7 @@ import {
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {YBinding, YCollabExtension} from '../../..';
+import {createYDoc, YBinding, YCollabExtension} from '../../..';
 
 class ChipNode extends DecoratorNode<null> {
   $config() {
@@ -82,7 +82,7 @@ function seed(): Uint8Array {
     }),
   );
   editor.update($build, {discrete: true});
-  const doc = new Y.Doc();
+  const doc = createYDoc();
   doc.clientID = 7;
   const binding = new YBinding(editor, doc, {captureTimeout: null});
   binding.start();
@@ -92,7 +92,7 @@ function seed(): Uint8Array {
 }
 
 function openY(state: Uint8Array): LexicalEditor {
-  const doc = new Y.Doc();
+  const doc = createYDoc();
   doc.clientID = 1;
   Y.applyUpdate(doc, state, 'load');
   const editor = buildEditorFromExtensions(

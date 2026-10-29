@@ -38,9 +38,9 @@ import {
 } from 'lexical';
 import {expect, test} from 'vitest';
 
-import {YCollabExtension} from '../..';
+import {createYDoc, YCollabExtension, type YDoc} from '../..';
 
-function headless(doc: Y.Doc) {
+function headless(doc: YDoc) {
   const editor = buildEditorFromExtensions(
     defineExtension({
       $initialEditorState: null,
@@ -95,7 +95,7 @@ const $build = () => {
 
 for (const when of ['before initialize', 'after initialize']) {
   test(`content built with transforms ${when}: written normalized, and a read shows what the editor shows`, async () => {
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     const {binding, editor} = headless(doc);
     if (when === 'before initialize') {
       editor.update($build);
@@ -106,7 +106,7 @@ for (const when of ['before initialize', 'after initialize']) {
     }
     await new Promise(resolve => setTimeout(resolve, 0));
     expect(mixedItems(editor)).toBe(0);
-    const copy = new Y.Doc();
+    const copy = createYDoc();
     Y.applyUpdate(copy, Y.encodeStateAsUpdate(doc));
     const reader = headless(copy);
     reader.binding.initialize();

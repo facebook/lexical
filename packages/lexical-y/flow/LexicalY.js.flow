@@ -75,10 +75,9 @@ export type YUnsupportedSlotsData = {
   readonly reason: 'stored-host' | 'root',
   readonly types: ReadonlyArray<string>,
 };
-export type YUnsupportedConfigData = {
-  readonly reason: 'repair-transforms',
-  readonly options: ReadonlyArray<string>,
-};
+export type YUnsupportedConfigData =
+  | {readonly reason: 'repair-transforms', readonly options: ReadonlyArray<string>}
+  | {readonly reason: 'cleanup-formatting'};
 export type YSelfCheckData = {
   readonly reason: 'local' | 'remote',
   readonly problems: ReadonlyArray<string>,
@@ -154,9 +153,36 @@ export type YBindingOptions = {
 
 export type YCursor = {anchor: unknown, focus: unknown};
 
+// A Y.Doc made by createYDoc: Yjs's format cleanup is off from its creation.
+declare export opaque type YDoc: Doc;
+
+// The options of new Y.Doc(options), which createYDoc passes on. gcFilter
+// is called with the Yjs Item about to be garbage collected (false keeps it).
+export type YDocOptions = {
+  autoLoad?: boolean,
+  collectionid?: string | null,
+  gc?: boolean,
+  gcFilter?: (item: {
+    readonly deleted: boolean,
+    readonly id: {readonly client: number, readonly clock: number, ...},
+    ...
+  }) => boolean,
+  guid?: string,
+  isSuggestionDoc?: boolean,
+  meta?: unknown,
+  shouldLoad?: boolean,
+};
+
+// A Y.Doc for @lexical/y (a client's, a relay's or a server's), with Yjs's
+// format cleanup turned off before `state` is applied (when given).
+declare export function createYDoc(
+  state?: Uint8Array | null,
+  options?: YDocOptions,
+): YDoc;
+
 declare export class YBinding {
   get editor(): LexicalEditor;
-  get doc(): Doc;
+  get doc(): YDoc;
   get root(): YNode;
   get status(): YBindingStatus;
   get pins(): ReadonlyMap<
@@ -164,7 +190,7 @@ declare export class YBinding {
     {readonly kind: StorageKind, readonly by?: ReadonlyArray<string>},
   >;
   get undoManager(): UndoManager | null;
-  constructor(editor: LexicalEditor, doc: Doc, options?: YBindingOptions): void;
+  constructor(editor: LexicalEditor, doc: YDoc, options?: YBindingOptions): void;
   start(): () => void;
   dispose(): void;
   initialize(): void;
@@ -185,7 +211,7 @@ declare export function describeStorage(
 ): {[type: string]: StorageKind | 'text'};
 
 export type YCollabConfig = {
-  doc: Doc | null,
+  doc: YDoc | null,
   root: YNode | null,
   synced: boolean,
   captureTimeout: number | null,

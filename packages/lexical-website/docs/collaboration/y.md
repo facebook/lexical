@@ -63,12 +63,11 @@ import {
 } from '@lexical/extension';
 import {ListExtension} from '@lexical/list';
 import {RichTextExtension} from '@lexical/rich-text';
-import {YCollabExtension} from '@lexical/y';
+import {createYDoc, YCollabExtension} from '@lexical/y';
 import {WebsocketProvider} from '@y/websocket';
-import * as Y from '@y/y';
 import {configExtension, defineExtension} from 'lexical';
 
-const doc = new Y.Doc();
+const doc = createYDoc();
 
 const editor = buildEditorFromExtensions(
   defineExtension({
@@ -95,6 +94,14 @@ provider.once('sync', () => {
 });
 ```
 
+- Create the document with **`createYDoc`** (`createYDoc(stored)` for a
+  stored state) and hand it to the provider: it turns Yjs's format cleanup
+  off before anything is applied to it. In a plain `new Y.Doc()` the
+  cleanup deletes format items the binding keeps for concurrent edits
+  (already before the binding is attached, when a state is applied first),
+  and that write reaches every client. So `doc` takes no other document,
+  and the binding is read only on one that has the cleanup on (see
+  [Warnings](#warnings)).
 - The editor stays **read only** until the document's layout record has
   been read. `status` is a signal: `'pending'`, then `'active'`, or
   `'readonly'` when the binding cannot write the document safely (a newer
@@ -115,8 +122,8 @@ provider.once('sync', () => {
   does nothing on a document that already has content, and it refuses a
   document whose `@lexical/yjs` roots hold content.
 - Pass `synced: true` instead when the document is already loaded (a test,
-  an editor bound to a stored state): the extension initializes as soon as
-  it registers.
+  an editor bound to a stored state, `createYDoc(stored)`): the extension
+  initializes as soon as it registers.
 - Several `editor.update()` calls made in one task are committed, written
   and sent together, as in any Lexical editor. Once the editor has
   committed in a task (an update an app's listener queues after a commit),
@@ -132,7 +139,7 @@ provider.once('sync', () => {
 
 | Option | Default | |
 | -- | -- | -- |
-| `doc` | (required) | The Yjs document. |
+| `doc` | (required) | The Yjs document, from `createYDoc`. |
 | `root` | `doc.get('lexical-y')` | The shared root to bind. |
 | `synced` | `false` | Initialize as soon as the extension registers. |
 | `captureTimeout` | `500` | Undo capture timeout in ms; `null` turns collaborative undo off. |
@@ -238,7 +245,7 @@ a short note for developers: render your own text from `code` and `data`.
 | `UNKNOWN_NODE_TYPES_WARNING` | The document has node types the editor cannot build: types it does not register, however they are stored (a link class it lacks too), or content its classes throw on. Read only. | `'unregistered'`, `'malformed-slot'`: `types`; `'unreadable'`: `types`, `error` |
 | `STORAGE_MISMATCH_WARNING` | A node type is stored in a way its class cannot be (one warning per type). Read only. | `'declaration-changed'`: `type`, `stored`, `declared`; `'malformed'`: `type`, `key`, `found` |
 | `UNSUPPORTED_SLOTS_WARNING` | Named slots where the document cannot store them. Not written; read only. | `'stored-host'`, `'root'`: `types` |
-| `UNSUPPORTED_CONFIG_WARNING` | `BlockIdExtension` with `repairTransforms: true` (see [Set up an editor](#set-up-an-editor)). Nothing is written; read only. | `'repair-transforms'`: `options` |
+| `UNSUPPORTED_CONFIG_WARNING` | `BlockIdExtension` with `repairTransforms: true`, or a document with Yjs's format cleanup on (not from `createYDoc`), see [Set up an editor](#set-up-an-editor). Nothing is written; read only. | `'repair-transforms'`: `options`; `'cleanup-formatting'` |
 | `NESTED_FALLBACK_WARNING` | A class that declares a line, format or group is stored as a node of its own (see [How content is stored](#how-content-is-stored)). Once per binding, class and reason. | `type`, and `method` (`'merge-override'`) or `properties` (`'undeclared-properties'`) |
 | `UNSYNCED_VALUE_WARNING` | A property or NodeState value is not plain JSON, so it is not synchronized. Once per binding and property. | `'not-json'`: `property` |
 | `SELF_CHECK_WARNING` | The self-check (`selfCheck`) found the editor and the document disagree. | `'local'`, `'remote'`: `problems` |
@@ -614,8 +621,9 @@ person's:
 - **Apply an edit to the state it was computed from, then merge.** An edit
   planned from an older read (a model's answer arrives seconds later) can
   land in the wrong place if it is applied to the current state. Load that
-  read's update into a new `Y.Doc`, bind a headless editor to it with
-  `YBinding`, apply the edit there, and apply the update it produced
+  read's update into a document (`createYDoc(readState)`), bind a headless
+  editor to it with `YBinding`, apply the edit there, and apply the update
+  it produced
   (`Y.encodeStateAsUpdate(copy, readStateVector)`) to the live document:
   Yjs merges it with what changed since. The copy's writes go into the live
   document, so give its `YBinding` the same `clientIDRange` as the other
@@ -637,8 +645,8 @@ To seed, edit or read documents on the server, see
 
 A server or relay that loads a document into a Yjs `Doc` and stores its
 state must turn off Yjs's format cleanup on that document before it applies
-updates. `createYDoc` from `@lexical/y/headless` makes such a document, with
-the stored state applied:
+updates, as the clients do. `createYDoc` (from `@lexical/y`, or
+`@lexical/y/headless`) makes such a document, with the stored state applied:
 
 ```ts
 import {createYDoc} from '@lexical/y/headless';
@@ -650,9 +658,8 @@ A relay that cannot import it sets the flag on a new document itself
 (`doc.cleanupFormatting = false`).
 
 Otherwise, when Yjs applies an update there it deletes format items that
-it finds redundant but the clients keep (the binding stops that cleanup on
-the clients, and the headless entry turns it off on its documents), and the
-state the server stores reads differently from what the clients show.
+it finds redundant but the clients keep, and the state the server stores
+reads differently from what the clients show.
 
 Servers built on **yrs before 0.28** (y-crdt) read client ids as 32-bit
 numbers, while Yjs 14 draws 53-bit ones: an author can receive its own

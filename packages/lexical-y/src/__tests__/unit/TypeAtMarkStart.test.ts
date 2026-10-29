@@ -33,12 +33,12 @@ import {
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {YCollabExtension} from '../..';
+import {createYDoc, YCollabExtension} from '../..';
 
 const flush = () => new Promise(resolve => setTimeout(resolve, 0));
 
 function peer() {
-  const doc = new Y.Doc();
+  const doc = createYDoc();
   const editor = buildEditorFromExtensions(
     defineExtension({
       $initialEditorState: null,

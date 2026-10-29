@@ -13,7 +13,7 @@ import {$getRoot, createEditor} from 'lexical';
 import {describe, expect, test} from 'vitest';
 import * as Y13 from 'yjs';
 
-import {YBinding} from '../..';
+import {createYDoc, YBinding} from '../..';
 import {inspectUpdateRoots} from '../../internal/UpdateRoots';
 import {$p, $selectIn, NODES, setup} from '../utils/harness';
 
@@ -45,7 +45,7 @@ describe('@lexical/y on a server', () => {
   });
 
   test('the editor is not editable until the layout record is read', () => {
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     const editor = createEditor({
       nodes: NODES,
       onError: e => {

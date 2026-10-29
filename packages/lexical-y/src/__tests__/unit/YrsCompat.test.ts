@@ -14,7 +14,7 @@ import {describe, expect, test} from 'vitest';
 import * as yrs028 from 'ywasm';
 import * as yrs023 from 'ywasm-0.23';
 
-import {type ClientIDRange, YBinding} from '../..';
+import {type ClientIDRange, createYDoc, YBinding, type YDoc} from '../..';
 import {
   createYWriter,
   editYState,
@@ -34,9 +34,9 @@ type Yrs = {
   encodeStateAsUpdate: (doc: never, vector?: Uint8Array) => Uint8Array;
 };
 
-function session(yrs: Yrs, options: {range?: ClientIDRange; doc?: Y.Doc}) {
+function session(yrs: Yrs, options: {range?: ClientIDRange; doc?: YDoc}) {
   const relay = new yrs.YDoc({}) as never;
-  const doc = options.doc || new Y.Doc();
+  const doc = options.doc || createYDoc();
   doc.on('update', (u: Uint8Array) => yrs.applyUpdate(relay, u, null));
   const editor = createEditor({
     nodes: NODES,
@@ -93,7 +93,7 @@ describe('@lexical/y with yrs relays', () => {
   });
 
   test('uint32 range survives Yjs drawing a new client id', () => {
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     const editor = createEditor({
       nodes: NODES,
       onError: e => {
@@ -137,7 +137,7 @@ describe('@lexical/y/headless with yrs relays', () => {
       null,
     );
     // A browser loads it from the relay, binds and types.
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     Y.applyUpdate(doc, yrs.encodeStateAsUpdate(relay), 'relay');
     doc.on('update', (u: Uint8Array, origin: unknown) => {
       if (origin !== 'relay') {

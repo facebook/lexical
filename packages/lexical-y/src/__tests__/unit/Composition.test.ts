@@ -29,7 +29,7 @@ import {
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {YBinding} from '../..';
+import {createYDoc, YBinding} from '../..';
 import {
   $block,
   $p,
@@ -398,7 +398,7 @@ describe('@lexical/y a composition that starts before the last one showed what i
 describe('@lexical/y a held-back insert survives a read that keeps the composed line', () => {
   type Client = {doc: Y.Doc; editor: LexicalEditor; binding: YBinding};
   const client = (id: number, state?: Uint8Array): Client => {
-    const doc = new Y.Doc({gc: false});
+    const doc = createYDoc(null, {gc: false});
     doc.clientID = id;
     if (state !== undefined) {
       Y.applyUpdate(doc, state, 'load');

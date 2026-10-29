@@ -26,7 +26,7 @@ import {
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {YBinding} from '../..';
+import {createYDoc, YBinding} from '../..';
 import {
   $block,
   $p,
@@ -274,7 +274,7 @@ describe('another binding writing meanwhile', () => {
   });
 
   test('on another root of the same document, sees it as it is', async () => {
-    const doc = new Y.Doc({gc: false});
+    const doc = createYDoc(null, {gc: false});
     doc.clientID = 1;
     const warnings: string[] = [];
     const bind = (name: string) => {
@@ -288,6 +288,7 @@ describe('another binding writing meanwhile', () => {
       });
       const binding = new YBinding(editor, doc, {
         root: doc.get(name),
+        schemaVersion: 1,
         selfCheck: true,
       });
       binding.start();
@@ -349,7 +350,7 @@ test('another editor on the same root keeps its selection', async () => {
     [false, false],
     [true, false],
   ]) {
-    const doc = new Y.Doc({gc});
+    const doc = createYDoc(null, {gc});
     doc.clientID = 1;
     const root = doc.get('root');
     const bind = (namespace: string) => {
@@ -362,7 +363,11 @@ test('another editor on the same root keeps its selection', async () => {
         },
         onWarn: e => void warnings.push(String(e)),
       });
-      const binding = new YBinding(editor, doc, {root, selfCheck: true});
+      const binding = new YBinding(editor, doc, {
+        root,
+        schemaVersion: 1,
+        selfCheck: true,
+      });
       binding.start();
       return {binding, editor, warnings};
     };
@@ -401,7 +406,7 @@ test('another editor on the same root keeps its selection', async () => {
 });
 
 test('a change another binding writes while the remote change is applied is not in the view either', async () => {
-  const doc = new Y.Doc({gc: false});
+  const doc = createYDoc(null, {gc: false});
   doc.clientID = 1;
   const warnings: string[] = [];
   const bind = (namespace: string) => {
@@ -415,6 +420,7 @@ test('a change another binding writes while the remote change is applied is not 
     });
     const binding = new YBinding(editor, doc, {
       root: doc.get('root'),
+      schemaVersion: 1,
       selfCheck: true,
     });
     binding.start();
@@ -463,7 +469,7 @@ test('a change another binding writes while the remote change is applied is not 
 test.fails(
   "a selection taken between reads of two changes is the editor's (known limit)",
   async () => {
-    const doc = new Y.Doc({gc: false});
+    const doc = createYDoc(null, {gc: false});
     doc.clientID = 1;
     const bind = (namespace: string) => {
       const editor = createEditor({
@@ -475,6 +481,7 @@ test.fails(
       });
       const binding = new YBinding(editor, doc, {
         root: doc.get('root'),
+        schemaVersion: 1,
         selfCheck: true,
       });
       binding.start();

@@ -448,3 +448,79 @@ describe('R-1: an update listener of the app that throws on the commit of a read
     },
   );
 });
+
+describe("R-1: a binding that fails closed ends read only whatever the app's listeners throw", () => {
+  test("R-1: a document B cannot read, and an update listener of B's that throws on every commit", async () => {
+    const t = await setup(() => $getRoot().append($p('t1z t2z t3z')));
+    let throwing = true;
+    t.b.editor.registerUpdateListener(() => {
+      if (throwing) {
+        throw new Error('app failure');
+      }
+    });
+    const proto = Reader.prototype;
+    const {$apply, $readFull} = proto;
+    proto.$apply = () => {
+      throw new Error('reader failure');
+    };
+    proto.$readFull = () => {
+      throw new Error('reader failure');
+    };
+    const caught = catchMicrotasks();
+    try {
+      t.a.update(() => void $selectIn([0], 3).insertText(' one'));
+      await expect(t.sync()).resolves.toBeUndefined();
+    } finally {
+      proto.$apply = $apply;
+      proto.$readFull = $readFull;
+    }
+    throwing = false;
+    expect(t.b.binding.status).toBe('readonly');
+    expect(caught.length).toBeGreaterThan(0);
+    // B's next edit is refused, not written from what B no longer reads.
+    const stored = Y.encodeStateVector(t.b.doc);
+    t.b.update(() => void $selectIn([0], 0, 3).removeText());
+    await t.sync();
+    expect(Y.encodeStateVector(t.b.doc)).toEqual(stored);
+    const expected = 'paragraph("t1z one t2z t3z")';
+    expect(t.a.describe()).toBe(expected);
+    expect((await freshReader(t.a)).describe()).toBe(expected);
+  });
+});
+
+describe("R-1: a binding opened through the provider's sync becomes active whatever its first read's listeners throw", () => {
+  test("R-1: opened through the provider's sync, an update listener that throws on the first read's commit: the binding becomes active and the edit is written", async () => {
+    const author = new Peer(1, network());
+    author.update(() => $getRoot().clear().append($p('hello')));
+    author.binding.initialize();
+    await flush();
+    let left = 1;
+    const reader = new Peer(2, network(), NODES, editor => {
+      editor.registerUpdateListener(() => {
+        if (left > 0) {
+          left--;
+          throw new Error('app failure');
+        }
+      });
+    });
+    const caught = catchMicrotasks();
+    // No initialize(): the provider's first sync opens the document.
+    expect(() =>
+      Y.applyUpdate(reader.doc, Y.encodeStateAsUpdate(author.doc)),
+    ).not.toThrow();
+    await flush();
+    expect(left).toBe(0);
+    expect(reader.binding.status).toBe('active');
+    expect(reader.editor.isEditable()).toBe(true);
+    expect(reader.describe()).toBe('paragraph("hello")');
+    expect(caught.length).toBeGreaterThan(0);
+    reader.update(() => void $selectIn([0], 5).insertText(' world'));
+    await flush();
+    Y.applyUpdate(
+      author.doc,
+      Y.encodeStateAsUpdate(reader.doc, Y.encodeStateVector(author.doc)),
+    );
+    await flush();
+    expect(author.describe()).toBe('paragraph("hello world")');
+  });
+});

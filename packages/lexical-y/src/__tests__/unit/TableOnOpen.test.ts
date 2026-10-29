@@ -22,7 +22,6 @@ import {
   $createTableRowNode,
   TableExtension,
 } from '@lexical/table';
-import * as Y from '@y/y';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -32,7 +31,7 @@ import {
 } from 'lexical';
 import {expect, test} from 'vitest';
 
-import {YCollabExtension} from '../..';
+import {createYDoc, YCollabExtension} from '../..';
 import {seedYState} from '../../headless';
 
 function $appendTable() {
@@ -51,15 +50,13 @@ function $appendTable() {
 test.each(['YCollabExtension', 'TableExtension'] as const)(
   'opens a document that holds a table with %s listed first',
   first => {
-    const doc = new Y.Doc();
-    Y.applyUpdate(
-      doc,
+    const doc = createYDoc(
       seedYState(
-        {extensions: [RichTextExtension, TableExtension]},
+        {extensions: [RichTextExtension, TableExtension], schemaVersion: 1},
         $appendTable,
       ),
     );
-    const collab = configExtension(YCollabExtension, {doc});
+    const collab = configExtension(YCollabExtension, {doc, schemaVersion: 1});
     const editor = buildEditorFromExtensions(
       defineExtension({
         dependencies:

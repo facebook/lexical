@@ -32,8 +32,9 @@ import {
 } from 'lexical';
 
 // The clients' extensions (or `nodes`): the server must register every node
-// type the clients use.
-const config = {extensions: [AppNodesExtension]};
+// type the clients use. `schemaVersion` is the version of the app's schema
+// this server's code has, as on the clients (required).
+const config = {extensions: [AppNodesExtension], schemaVersion: 3};
 
 // Who the server's edits are by: one writer per agent or integration,
 // created once per process (see Writers below).
@@ -65,9 +66,18 @@ const json = readYState(next, config, () =>
 ## API
 
 Each function takes a config with the editor's `extensions` (or `nodes`),
-and optionally `root` (default `'lexical-y'`), `clientIDRange` (see
+a required `schemaVersion` (the version of the app's schema this code has,
+see [Versioning your schema](./y.md#versioning-your-schema)), and
+optionally `root` (default `'lexical-y'`), `clientIDRange` (see
 [Servers](./y.md#servers)), `onWarn` and `selfCheck`. `editYState` also
 takes options with a required `writer` (see [Writers](#writers)).
+
+A seed records its config's `schemaVersion`, and so does an edit that
+writes. A document a newer version wrote to is read only for an older
+server, as for an older client: `editYState` and `readYState` throw a
+`YHeadlessError` (`'read-only'`) whose `warnings` hold the
+`UNSUPPORTED_SCHEMA_WARNING`, and nothing is written. Deploy servers with
+(or before) the clients whose version they serve.
 
 | Function | Returns |
 | --- | --- |
@@ -75,13 +85,13 @@ takes options with a required `writer` (see [Writers](#writers)).
 | `editYState(state, config, $edit, {writer, ...})` | `{update, state, warnings, clientID}` after one edit. |
 | `readYState(state, config, $read)` | What `$read` returns. Nothing is written. |
 | `createYWriter(author)` | A writer for `editYState`: who its edits are by. |
-| `createYDoc(state?)` | A `Y.Doc` for a relay or server that loads a stored state, with Yjs's format cleanup turned off as on the clients. |
+| `createYDoc(state?, options?)` | A `Y.Doc` for a relay or server that loads a stored state, with Yjs's format cleanup turned off as on the clients (the same function as `@lexical/y`'s, which clients bind). |
 
 - **`seedYState`** creates a document's content outside a client: from a
   template, an import, or a converter. It writes as a client's
   `initialize()` writes its initial content, with a client id derived from
-  the content, so seeding identical content twice gives the same bytes and
-  two seeds merge into one copy. Content with random parts (such as ids an
+  the content, so seeding identical content twice (with the same
+  `schemaVersion`) gives the same bytes and two seeds merge into one copy. Content with random parts (such as ids an
   extension draws for new blocks) is not identical: seed a document once.
   With `BlockIdExtension`, a seed and a client's initialization of the same
   content do not merge either, unless the content gives its blocks fixed
@@ -120,7 +130,7 @@ update refers to, and compacts the state after that check.
 
 The documents that load a state (the headless editor's, and the one that
 compacts) turn off Yjs's format cleanup (`doc.cleanupFormatting = false`),
-as the binding does on the clients: it would delete format items that the
+as the clients' documents do: it would delete format items that the
 clients keep, and the stored document would then read differently from
 theirs once someone types there. A relay or server that loads a stored
 state into a `Doc` of its own (to apply clients' updates to it, compact or

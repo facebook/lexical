@@ -13,13 +13,13 @@ import {
   getPeerDependencyFromEditor,
   registerNodeStructure,
 } from '@lexical/extension';
+import invariant from '@lexical/internal/invariant';
 import {
   applyUpdate,
   ContentFormat,
   ContentType,
   createID,
   createRelativePositionFromJSON,
-  Doc,
   encodeStateAsUpdate,
   findIndexSS,
   Item,
@@ -78,6 +78,7 @@ import {
   BASE_LAYOUT_VERSION,
   DEFAULT_ROOT_NAME,
   LEGACY_ROOTS,
+  SCHEMA_PREFIX,
   SET_MEMBERS_LAYOUT_VERSION,
 } from './constants';
 import {
@@ -131,14 +132,19 @@ import {
   STORAGE_MISMATCH_WARNING,
   UNKNOWN_NODE_TYPES_WARNING,
   UNSUPPORTED_CONFIG_WARNING,
+  UNSUPPORTED_EDIT_WARNING,
   UNSUPPORTED_LAYOUT_WARNING,
+  UNSUPPORTED_SCHEMA_WARNING,
   UNSUPPORTED_SLOTS_WARNING,
   type YRecoveredReadData,
   type YStorageMismatchData,
+  type YUnsupportedConfigData,
+  type YUnsupportedSchemaData,
   type YWarningCode,
   type YWarningData,
 } from './Warnings';
 import {$holdsLines, type WritePlan, Writer} from './Write';
+import {createYDoc, type YDoc} from './YDoc';
 
 // YBinding: one editor bound to one shared root. It owns the lifecycle (the
 // layout gate, pins, initialization, dispose), the local pipeline (onUpdate:
@@ -239,8 +245,17 @@ const BLOCK_ID_REPAIR_TAG = 'block-id-repair';
  * The binding's own updates that wait for the editor to be idle (see
  * runPending), in the order they run.
  */
-type PendingWork = 'hidden' | 'reread' | 'normalize' | 'refresh' | 'register';
+type PendingWork =
+  | 'replies'
+  | 'restore'
+  | 'hidden'
+  | 'reread'
+  | 'normalize'
+  | 'refresh'
+  | 'register';
 const PENDING_ORDER: readonly PendingWork[] = [
+  'replies',
+  'restore',
   'hidden',
   'reread',
   'normalize',
@@ -336,6 +351,14 @@ export type YBindingStatus =
 
 /** @experimental Options of {@link YBinding} (and `YCollabExtension`). */
 export interface YBindingOptions {
+  /**
+   * The version of the app's document schema: its node types and the fields
+   * they store. Required: start at 1 and increase it whenever a node's
+   * stored fields or node types change. The document records the highest
+   * version that wrote to it; a binding whose version is lower opens it read
+   * only (UNSUPPORTED_SCHEMA_WARNING). An integer from 1.
+   */
+  schemaVersion: number;
   /** The shared root to bind; defaults to `doc.get('lexical-y')`. */
   root?: YNode;
   /** Undo capture timeout in ms (default 500); null disables undo. */
@@ -384,6 +407,97 @@ export interface YBindingOptions {
 export interface YCursor {
   anchor: unknown;
   focus: unknown;
+}
+
+/**
+ * @internal Whether `value` is a schema version: an integer from 1 (see
+ * YBindingOptions.schemaVersion).
+ */
+export function isSchemaVersion(value: unknown): value is number {
+  return Number.isSafeInteger(value) && (value as number) >= 1;
+}
+
+/** The first `lexical-y-schema:<n>` attribute of `root` that is not a version. */
+function malformedSchema(root: YNode): {key: string; found: unknown} | null {
+  const attrs = root.getAttrs() as Record<string, unknown>;
+  for (const key in attrs) {
+    if (key.startsWith(SCHEMA_PREFIX)) {
+      const n = key.slice(SCHEMA_PREFIX.length);
+      if (!/^[1-9][0-9]*$/.test(n) || attrs[key] !== true) {
+        return {found: attrs[key], key};
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * The highest schema version `root` records (see SCHEMA_PREFIX), null when
+ * it records none.
+ */
+function newestSchema(root: YNode): number | null {
+  let version: number | null = null;
+  const attrs = root.getAttrs() as Record<string, unknown>;
+  for (const k in attrs) {
+    if (k.startsWith(SCHEMA_PREFIX)) {
+      version = Math.max(version ?? 0, Number(k.slice(SCHEMA_PREFIX.length)));
+    }
+  }
+  return version;
+}
+
+/**
+ * The schema records of `root` that keep a binding of `supported` read only
+ * (see SCHEMA_PREFIX): those of a higher version, and malformed ones.
+ */
+function gatingSchemaKeys(root: YNode, supported: number): string[] {
+  const out: string[] = [];
+  const attrs = root.getAttrs() as Record<string, unknown>;
+  for (const key in attrs) {
+    if (key.startsWith(SCHEMA_PREFIX)) {
+      const n = key.slice(SCHEMA_PREFIX.length);
+      if (
+        !/^[1-9][0-9]*$/.test(n) ||
+        attrs[key] !== true ||
+        Number(n) > supported
+      ) {
+        out.push(key);
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Record schema `version` on `root` (see SCHEMA_PREFIX) when `tr` changed
+ * something under it (`under`: whether a type is `root` or inside it),
+ * unless it is recorded already: a client's first write to a document
+ * carries its version, so no client receives that write without it. Writes
+ * an app's own transaction makes to other shared types do not count (the
+ * binding's write can be part of such a transaction). The record only
+ * grows: undo never deletes it (see YBinding#isKeptByUndo).
+ *
+ * Invariant: called in a `finally` inside every transaction that writes a
+ * local edit (as recordSetMembersLayout). Why: Yjs commits and sends what a
+ * transaction wrote even when its callback throws.
+ */
+function recordSchema(
+  root: YNode,
+  version: number,
+  tr: Transaction,
+  under: (type: YNode) => boolean,
+): void {
+  const key = SCHEMA_PREFIX + version;
+  if (root.getAttr(key) === true) {
+    return;
+  }
+  let wrote = false;
+  tr.changed.forEach((_subs, type) => {
+    wrote = wrote || under(type);
+  });
+  if (wrote) {
+    root.setAttr(key, true);
+  }
 }
 
 /**
@@ -510,7 +624,7 @@ function recordSetMembersLayout(root: YNode, tr: Transaction): void {
  */
 export class YBinding {
   private readonly _editor: LexicalEditor;
-  private readonly _doc: Doc;
+  private readonly _doc: YDoc;
   private readonly _root: YNode;
   private _status: YBindingStatus = 'pending';
   private readonly _pins = new Map<string, Pin>();
@@ -574,6 +688,37 @@ export class YBinding {
    * Writer#followUp): read again, so the editor shows what is stored.
    */
   private readonly refused = new Set<CS>();
+  /**
+   * Containers a local update changed while read only during a composition:
+   * read again once it ends (see onUpdate).
+   */
+  private readonly refusedComposing = new Set<CS>();
+  /**
+   * Whether the binding went read only to keep a local change it cannot
+   * store (see refuseUnstorableSlots): the editor shows that change, and
+   * later local updates too, as reading their containers again could drop it.
+   */
+  private keepsUnstored = false;
+  /**
+   * Whether UNSUPPORTED_EDIT_WARNING was reported since the binding last
+   * went read only: once per read-only period.
+   */
+  private warnedEdit = false;
+  /**
+   * What the editor showed before a local update made once the binding
+   * failed closed: shown again (see onUpdate).
+   */
+  private restoreTo: EditorState | null = null;
+  /**
+   * Updates the app's listeners queued while notified of a status change,
+   * held until they commit on their own (see notifyApart).
+   */
+  private replies: LexicalEditor['_updates'] = [];
+  /**
+   * The updates that were queued already when `replies` were made: the
+   * replies go back after them (see handBackReplies).
+   */
+  private queuedBeforeReplies = new Set<LexicalEditor['_updates'][number]>();
   /** Re-reads in a row (see MAX_REREADS). */
   private rereads = 0;
   /**
@@ -613,11 +758,29 @@ export class YBinding {
     ReadonlySet<Transform<LexicalNode>>
   >();
   /**
-   * Options of the editor's extensions the binding cannot write safely with
-   * (see UNSUPPORTED_CONFIG_WARNING): while there are any, the binding is
-   * read only.
+   * The configuration the binding cannot write safely with, one entry per
+   * reason (see UNSUPPORTED_CONFIG_WARNING): while there is any, the binding
+   * is read only.
    */
-  private unsupportedConfig: string[] = [];
+  private unsupportedConfig: YUnsupportedConfigData[] = [];
+  /**
+   * Why the document's schema record keeps the binding read only (see
+   * checkSchema): a newer version wrote to it, or a record is malformed.
+   * Sticky, like the record, which only grows.
+   */
+  private schemaGate: YUnsupportedSchemaData | null = null;
+  /**
+   * The pending state of the update that was running when a remote change
+   * brought a schema record that gates the binding: the gate waits until it
+   * has committed, and been written (see gateSchema).
+   */
+  private schemaGateAfter: EditorState | null = null;
+  /**
+   * A remote transaction whose schema record the app's Yjs observers could
+   * see while no local update was pending: an update they make is made on
+   * that record, and refused (see schemaGatesWrite).
+   */
+  private schemaSeenIn: Transaction | null = null;
   /** A status change not reported to `onStatus` yet (see flushWarnings). */
   private pendingStatus: YBindingStatus | null = null;
   /** How many of the class and value notes this binding has reported. */
@@ -643,9 +806,27 @@ export class YBinding {
   private readonly afterTransaction: (tr: Transaction) => void;
   private readonly beforeTransaction: (tr: Transaction) => void;
   private readonly beforeObserverCalls = (tr: Transaction): void => {
-    tr.changed.forEach((_subs, type) => {
+    tr.changed.forEach((subs, type) => {
       if (this.state.containers.has(type) || this.isUnderRoot(type)) {
         type._hasFormatting = false;
+      }
+      // The app's observers run next, before the binding reads `tr`: a
+      // schema record that gates the binding is visible to them. The local
+      // updates pending before it are committed (written) first, as a read
+      // commits them (see guardedRead), so that an update an observer makes
+      // is not merged into them; then what is made is made on the record.
+      if (
+        type === this._root &&
+        this._status === 'active' &&
+        [...subs].some(k => k !== null && k.startsWith(SCHEMA_PREFIX)) &&
+        gatingSchemaKeys(this._root, this.options.schemaVersion).length > 0
+      ) {
+        if (!this._editor._updating && this.localPending()) {
+          this.guard(() => withPins(this._pins, () => this.commitPending()));
+        }
+        if (!this.localPending()) {
+          this.schemaSeenIn = tr;
+        }
       }
     });
   };
@@ -713,7 +894,7 @@ export class YBinding {
   }
 
   /** The shared document. */
-  get doc(): Doc {
+  get doc(): YDoc {
     return this._doc;
   }
 
@@ -740,7 +921,12 @@ export class YBinding {
     return this._undoManager;
   }
 
-  constructor(editor: LexicalEditor, doc: Doc, options: YBindingOptions = {}) {
+  constructor(editor: LexicalEditor, doc: YDoc, options: YBindingOptions) {
+    invariant(
+      options != null && isSchemaVersion(options.schemaVersion),
+      "@lexical/y: YBinding needs options.schemaVersion (got %s): start at 1 and increase it whenever a node's stored fields or node types change",
+      String(options == null ? undefined : options.schemaVersion),
+    );
     this._editor = editor;
     this._doc = doc;
     this.options = options;
@@ -786,11 +972,23 @@ export class YBinding {
     // With transforms, BlockIdExtension's naming update changes what remote
     // changes bring, in ways the binding does not write; what they derive
     // (the start of a list they split) can differ between clients, which
-    // then show different content. Fail closed rather than diverge.
-    this.unsupportedConfig =
-      blockIds !== undefined && blockIds.config.repairTransforms
-        ? ['BlockIdExtension.repairTransforms']
-        : [];
+    // then show different content. A document that runs Yjs's format
+    // cleanup (one createYDoc did not make) deletes format items the binding
+    // keeps, and may have deleted some already, before the binding attached
+    // (see createYDoc). Fail closed rather than diverge.
+    this.unsupportedConfig = [];
+    if (blockIds !== undefined && blockIds.config.repairTransforms) {
+      this.unsupportedConfig.push({
+        options: ['BlockIdExtension.repairTransforms'],
+        reason: 'repair-transforms',
+      });
+    }
+    if (this._doc.cleanupFormatting !== false) {
+      this.unsupportedConfig.push({reason: 'cleanup-formatting'});
+    }
+    this.schemaGate = null;
+    this.schemaGateAfter = null;
+    this.schemaSeenIn = null;
     // Lexical records explicit node moves (read by the writer, which then
     // rewrites what moved rather than what it passed) and text edits (see
     // TextReplay), each restored to what it was when the binding goes.
@@ -809,9 +1007,11 @@ export class YBinding {
     // type that has formats (whole containers here, so O(document) per remote
     // bold). The binding keeps format items a write leaves redundant that
     // a concurrent write may rely on (see Cursor#collapseGap), so its
-    // containers opt out: they are marked as
-    // having no formats before Yjs decides whether to clean up. The
-    // document's flag and the app's other types are left alone.
+    // containers opt out: they are marked as having no formats before Yjs
+    // decides whether to clean up. A document createYDoc made never cleans
+    // up; this keeps one that does (read only, see unsupportedConfig) from
+    // cleaning up the binding's containers while it is bound. The document's
+    // flag and the app's other types are left alone.
     this._doc.on('beforeObserverCalls', this.beforeObserverCalls);
     this.disposers.push(() =>
       this._doc.off('beforeObserverCalls', this.beforeObserverCalls),
@@ -844,6 +1044,16 @@ export class YBinding {
             !payload.editorState.read(() => this.$holds(hidden))
           ) {
             this.pending.add('hidden');
+          }
+          if (
+            this.refusedComposing.size > 0 &&
+            this._editor._compositionKey === null
+          ) {
+            for (const cs of this.refusedComposing) {
+              this.refused.add(cs);
+            }
+            this.refusedComposing.clear();
+            this.pending.add('reread');
           }
           // The binding's own updates wait until the listeners are done
           // (see runPending), also work held back while composing or behind
@@ -976,6 +1186,8 @@ export class YBinding {
   dispose(): void {
     this.started = false;
     this.initializeOnStart = false;
+    this.schemaGateAfter = null;
+    this.schemaSeenIn = null;
     for (const d of this.disposers.splice(0)) {
       d();
     }
@@ -988,6 +1200,21 @@ export class YBinding {
     this.pending.clear();
     this.localRefresh.clear();
     this.refused.clear();
+    this.refusedComposing.clear();
+    this.keepsUnstored = false;
+    this.warnedEdit = false;
+    this.restoreTo = null;
+    // The app's updates still held (see notifyApart) are the editor's, which
+    // outlives the binding: handed back, they commit as any update of an
+    // editor no binding listens to any more.
+    this.handBackReplies();
+    if (!this._editor._updating && this._editor._updates.length > 0) {
+      try {
+        this._editor.update(() => {}, {discrete: true});
+      } catch (error) {
+        rethrowLater(error);
+      }
+    }
     this.toSettle.clear();
     this.untransformed.clear();
     this.untransformedText.clear();
@@ -1054,7 +1281,7 @@ export class YBinding {
         this.setStatus('readonly');
         return;
       }
-      if (this.unsupportedConfig.length > 0) {
+      if (this.unsupportedConfig.length > 0 || this.checkSchema()) {
         // Read only (see setStatus): the initial content is not written.
         this.setStatus('active');
         return;
@@ -1112,8 +1339,9 @@ export class YBinding {
   }
 
   /**
-   * Write the layout record and the editor's content into an empty root, the
-   * record first (see LAYOUT_PREFIX), and layout 2 when the content holds a
+   * Write the layout record, the schema record (see SCHEMA_PREFIX) and the
+   * editor's content into an empty root, the records first (see
+   * LAYOUT_PREFIX), and layout 2 when the content holds a
    * member entry of a set (see recordSetMembersLayout).
    */
   private $writeInitial(
@@ -1123,6 +1351,7 @@ export class YBinding {
     editorState: EditorState,
   ): void {
     root.setAttr(LAYOUT_PREFIX + BASE_LAYOUT_VERSION, true);
+    root.setAttr(SCHEMA_PREFIX + this.options.schemaVersion, true);
     try {
       // Every element type of the initial content (into `root`, which may
       // be a scratch document's: this._pins is filled when the real one is
@@ -1184,7 +1413,7 @@ export class YBinding {
     }
     const rootName: string = name;
     const write = (clientID: number) => {
-      const scratch = new Doc({gc: false});
+      const scratch = createYDoc(null, {gc: false});
       scratch.clientID = clientID;
       const sroot = scratch.get(rootName);
       const sstate = this.state.configuredLike(scratch, sroot);
@@ -1364,6 +1593,10 @@ export class YBinding {
     kept: SelectionState | null = null,
     deep = false,
   ): void {
+    // First, so that its warning comes before those a newer version's
+    // content explains (node types this one lacks, storage it declares
+    // otherwise).
+    const newerSchema = this.checkSchema();
     if (!this.loadPins()) {
       this.readAll(cursor, kept, deep);
       return;
@@ -1403,10 +1636,139 @@ export class YBinding {
         {found: version, reason: 'newer', supported: LAYOUT_VERSION},
       );
       this.setStatus('readonly');
-    } else {
+    } else if (newerSchema) {
+      this.setStatus('readonly');
+    } else if (this._status === 'active' || this.staysReadOnly()) {
+      // Still active, or read only for good (see setStatus).
       this.setStatus('active');
+    } else {
+      // Active once the read found nothing that keeps it read only (see
+      // readAll).
+      this.readAll(cursor, kept, deep, true);
+      return;
     }
     this.readAll(cursor, kept, deep);
+  }
+
+  /**
+   * Whether the document's schema record keeps the binding read only: a
+   * client whose `schemaVersion` is higher wrote to it, or a record is
+   * malformed (see SCHEMA_PREFIX). Warns (UNSUPPORTED_SCHEMA_WARNING) when
+   * that is new, or a higher version than the one warned about. Sticky: once
+   * found, it keeps the binding read only (see staysReadOnly) until it is
+   * disposed.
+   */
+  private checkSchema(): boolean {
+    const supported = this.options.schemaVersion;
+    const malformed = malformedSchema(this._root);
+    let data: YUnsupportedSchemaData | null = null;
+    if (malformed !== null) {
+      data = {...malformed, reason: 'malformed', supported};
+    } else {
+      const found = newestSchema(this._root);
+      if (found !== null && found > supported) {
+        data = {found, reason: 'newer', supported};
+      }
+    }
+    const gate = this.schemaGate;
+    if (
+      data !== null &&
+      (gate === null ||
+        gate.reason !== data.reason ||
+        (gate.reason === 'newer' &&
+          data.reason === 'newer' &&
+          data.found > gate.found))
+    ) {
+      this.schemaGate = data;
+      this.warn(
+        UNSUPPORTED_SCHEMA_WARNING,
+        data.reason === 'newer'
+          ? `schema ${data.found} is newer than ${supported}`
+          : `the schema record ${data.key} is malformed`,
+        data,
+      );
+    }
+    return this.schemaGate !== null;
+  }
+
+  /**
+   * Read only once a remote change brought a schema record that keeps the
+   * binding so (see checkSchema). Invariant: run once the local updates
+   * pending before the change are committed (see guardedRead), and, where
+   * the change was applied while an update was running, once that update
+   * has committed (deferred). Why: they were made while the binding could
+   * write, and are written; committed read only, they would be refused and
+   * lost.
+   */
+  private gateSchema(): void {
+    const editor = this._editor;
+    if (editor._updating && editor._pendingEditorState !== null) {
+      if (this.schemaGateAfter === null) {
+        const after = editor._pendingEditorState;
+        this.schemaGateAfter = after;
+        editor._deferred.push(() =>
+          this.guard(() => {
+            // Not after dispose() (which clears it), nor for a later update.
+            if (this.started && this.schemaGateAfter === after) {
+              this.schemaGateAfter = null;
+              this.gateSchema();
+            }
+          }),
+        );
+      }
+      return;
+    }
+    this.schemaGateAfter = null;
+    if (this.checkSchema() && this._status !== 'readonly') {
+      this.setStatus('readonly');
+    }
+  }
+
+  /** Whether a local update is running, pending or queued. */
+  private localPending(): boolean {
+    const editor = this._editor;
+    return (
+      editor._updating ||
+      editor._pendingEditorState !== null ||
+      editor._updates.length > 0 ||
+      this.replies.length > 0
+    );
+  }
+
+  /**
+   * Whether the local update that committed `editorState` was made on a
+   * schema record that keeps the binding read only, so that it is refused
+   * rather than written (see onUpdate). A record a remote change brought is
+   * one the update was made on unless the change is still unread (applied
+   * by Yjs, not yet read: the update was made before it, see Unread), and
+   * its transaction's observers did not see it with nothing pending (see
+   * beforeObserverCalls). The update that was running when the change
+   * arrived is written (see gateSchema).
+   */
+  private schemaGatesWrite(editorState: EditorState): boolean {
+    if (this.schemaGateAfter !== null) {
+      if (this.schemaGateAfter === editorState) {
+        return false;
+      }
+      // The update the gate waited for never committed (it threw).
+      this.schemaGateAfter = null;
+    }
+    const keys = gatingSchemaKeys(this._root, this.options.schemaVersion);
+    if (keys.length === 0) {
+      return false;
+    }
+    if (this.schemaSeenIn !== null) {
+      return true;
+    }
+    const view = this.unread;
+    return keys.some(key => {
+      const item = this._root._map.get(key);
+      return (
+        view === null ||
+        item === undefined ||
+        !view.changes.some(change => change.insertSet.hasId(item.id))
+      );
+    });
   }
 
   /**
@@ -1550,17 +1912,24 @@ export class YBinding {
         types: ['root'],
       });
     }
+    this.keepsUnstored = true;
     this.setStatus('readonly');
     return true;
   }
 
   /**
    * Fail closed when a read found node types this editor lacks, or stored
-   * content its classes throw on (see Reader#$readStored).
+   * content its classes throw on (see Reader#$readStored): warn, and go
+   * read only. Only a binding that is active, or becomes active with this
+   * read (`activating`, see activateAfterRead), does: a read-only one warned
+   * already, or stays read only for a reason it warned about.
    */
-  private checkUnknownTypes(): void {
+  private checkUnknownTypes(activating = false): void {
+    if (!activating && this._status !== 'active') {
+      return;
+    }
     const unreadable = this.state.unreadable;
-    if (unreadable.size > 0 && this._status === 'active') {
+    if (unreadable.size > 0) {
       const types = [...unreadable.keys()].sort();
       this.warn(
         UNKNOWN_NODE_TYPES_WARNING,
@@ -1572,9 +1941,10 @@ export class YBinding {
         },
       );
       this.setStatus('readonly');
+      return;
     }
     const unknown = this.state.unknownTypes;
-    if (unknown.size > 0 && this._status === 'active') {
+    if (unknown.size > 0) {
       const slots = this.state.malformedSlots;
       const types = [...unknown].filter(t => !slots.has(t)).sort();
       if (types.length > 0) {
@@ -1596,29 +1966,120 @@ export class YBinding {
     }
   }
 
+  /**
+   * Whether something keeps the binding read only for good: a configuration
+   * it does not support, a newer schema version (see checkSchema), node types it cannot build (or slots it cannot
+   * read), stored content its classes throw on, a local change it cannot
+   * store and keeps showing, or a document it cannot read (see failClosed).
+   */
+  private staysReadOnly(): boolean {
+    return (
+      this.unsupportedConfig.length > 0 ||
+      this.schemaGate !== null ||
+      this.state.unknownTypes.size > 0 ||
+      this.state.unreadable.size > 0 ||
+      this.keepsUnstored ||
+      this.unreadable
+    );
+  }
+
+  /**
+   * Invariant: while staysReadOnly, the status is `'readonly'`, even for
+   * the moment a change to the layout record has the document read again.
+   * Why: an editor made editable for that moment takes edits that are not
+   * written.
+   */
   private setStatus(status: YBindingStatus): void {
-    if (status === 'active' && this.unsupportedConfig.length > 0) {
-      const options = this.unsupportedConfig;
+    if (status === 'active' && this.staysReadOnly()) {
       if (this._status !== 'readonly') {
-        this.warn(
-          UNSUPPORTED_CONFIG_WARNING,
-          `unsupported options: ${options.join(', ')}`,
-          {options, reason: 'repair-transforms'},
-        );
+        for (const data of this.unsupportedConfig) {
+          this.warn(
+            UNSUPPORTED_CONFIG_WARNING,
+            data.reason === 'repair-transforms'
+              ? `unsupported options: ${data.options.join(', ')}`
+              : 'the document cleans up formats: create it with createYDoc',
+            data,
+          );
+        }
       }
       status = 'readonly';
+    }
+    if (status === 'active') {
+      this.warnedEdit = false;
     }
     if (this._status !== status && this.options.onStatus) {
       // Reported with the warnings, once Yjs is idle (see flushWarnings).
       this.pendingStatus = status;
     }
     this._status = status;
-    this._editor.setEditable(status === 'active' && this.wasEditable);
+    this.notifyApart(() =>
+      this._editor.setEditable(status === 'active' && this.wasEditable),
+    );
     // Nothing is written while read only, an undo or redo included: the
     // undo history goes, which a direct UndoManager call could still apply.
     if (status === 'readonly' && this._undoManager !== null) {
       this._undoManager.clear();
     }
+  }
+
+  /**
+   * Notify the app's listeners (`notify`, such as `editor.setEditable`)
+   * apart from the binding's own updates.
+   *
+   * - An update a listener makes in reply (Lexical queues it while it
+   *   notifies) is held (`replies`), never run inside an update of the
+   *   binding's, tagged as a remote change, where it would be neither
+   *   written nor refused (see onUpdate). It is handed back to the front of
+   *   Lexical's queue (see handBackReplies) right after the update that runs
+   *   now commits, ahead of any later update of the app's; where a listener
+   *   of that commit threw (Lexical then skips its callbacks), once the
+   *   editor is idle (see runPending) or before the binding's next update
+   *   (see commitPending).
+   * - What a listener throws is rethrown in a microtask (an uncaught error,
+   *   as for the app's updates, see commitPending): it never fails the
+   *   binding's work.
+   */
+  private notifyApart(notify: () => void): void {
+    const editor = this._editor;
+    const queued = editor._updates.length;
+    try {
+      notify();
+    } catch (error) {
+      rethrowLater(error);
+    }
+    const replies = editor._updates.splice(queued);
+    if (replies.length === 0) {
+      return;
+    }
+    this.replies.push(...replies);
+    for (const update of editor._updates.slice(0, queued)) {
+      this.queuedBeforeReplies.add(update);
+    }
+    if (editor._updating && editor._pendingEditorState === null) {
+      // In a commit's listeners or callbacks: Lexical runs its queue right
+      // after them.
+      this.handBackReplies();
+    } else if (editor._updating) {
+      // In an update: with its callbacks, once it committed.
+      editor._deferred.push(() => this.handBackReplies());
+    }
+    this.pending.add('replies');
+    this.schedulePending();
+  }
+
+  /**
+   * Put the held replies (see notifyApart) back in Lexical's queue, in their
+   * order and with their options: after the updates queued before them that
+   * are still queued, ahead of any queued after them.
+   */
+  private handBackReplies(): void {
+    const updates = this._editor._updates;
+    let at = updates.length;
+    while (at > 0 && !this.queuedBeforeReplies.has(updates[at - 1])) {
+      at--;
+    }
+    this.queuedBeforeReplies.clear();
+    updates.splice(at, 0, ...this.replies.splice(0));
   }
 
   /**
@@ -1714,14 +2175,43 @@ export class YBinding {
     }
   }
 
+  /**
+   * Read the whole document. With `activate`, the binding becomes active
+   * once the read is done, where it found nothing that keeps it read only
+   * (see activateAfterRead): never before, so the editor is never editable
+   * for a document the binding cannot write.
+   */
   private readAll(
     cursor: YCursor | null = null,
     kept: SelectionState | null = null,
     deep = false,
+    activate = false,
   ): void {
+    // Whether activation is still owed (see activateAfterRead).
+    let toActivate = activate;
+    const activateOnce = () => {
+      if (toActivate) {
+        toActivate = false;
+        this.activateAfterRead();
+      }
+    };
     this.guardedRead({
-      $read: () => this.$readAllInner(cursor, kept, deep),
+      $read: () => {
+        this.$readAllInner(cursor, kept, deep);
+        if (activate) {
+          // Right after the read's commit, and only after one: nothing the
+          // app does when the editor becomes editable runs inside the read
+          // (an editable listener's update or command), and an update made
+          // in reply to the read (an update listener's), which Lexical runs
+          // after this, is written.
+          $onUpdate(() => this.guard(() => withPins(this._pins, activateOnce)));
+        }
+      },
       after: () => {
+        // Where an app listener threw on the read's commit, Lexical skipped
+        // its $onUpdate callbacks, and the read stands (see guardedRead):
+        // the binding becomes active here, after the commit all the same.
+        activateOnce();
         this.checkUnknownTypes();
         this.flushRefresh(true);
       },
@@ -1730,6 +2220,38 @@ export class YBinding {
       replacesPending: true,
       tag: REMOTE_TAGS,
     });
+  }
+
+  /**
+   * Become active after a read of the whole document, unless it found
+   * something that keeps the binding read only: node types the editor
+   * lacks or stored content its classes throw on (warned here, see
+   * checkUnknownTypes), or another lasting cause (see setStatus).
+   */
+  private activateAfterRead(): void {
+    this.checkUnknownTypes(true);
+    this.setStatus('active');
+    // The read committed while the editor was not editable, so Lexical left
+    // its selection off the DOM: an update sets it again, which puts it
+    // there (Lexical sets the DOM selection only of a focused editor). It
+    // runs ahead of the updates the app queued in reply to the read, whose
+    // selection then stands, and not where the app set an editor state of
+    // its own in reply (pending now).
+    const editor = this._editor;
+    const selection = editor.getEditorState()._selection;
+    if (
+      selection !== null &&
+      this._status === 'active' &&
+      editor.isEditable() &&
+      editor.getRootElement() !== null &&
+      editor._pendingEditorState === null &&
+      editor._updating
+    ) {
+      editor._updates.unshift([
+        () => $setSelection(selection.clone()),
+        {discrete: true},
+      ]);
+    }
   }
 
   private $readAllInner(
@@ -1817,6 +2339,9 @@ export class YBinding {
     } finally {
       this.reading = false;
       this.dropChange(tr);
+      if (this.schemaSeenIn === tr) {
+        this.schemaSeenIn = null;
+      }
     }
   }
 
@@ -1876,6 +2401,8 @@ export class YBinding {
     iterateStructsByIdSet(tr, tr.insertSet, add);
     iterateStructsByIdSet(tr, tr.deleteSet, add);
     const attrKeys = new Map<YNode, Set<string>>();
+    // Whether the change brought a schema record (see gateSchema).
+    let schemaChanged = false;
     tr.changed.forEach((subs, type) => {
       const keys = new Set<string>();
       subs.forEach(k => {
@@ -1892,7 +2419,12 @@ export class YBinding {
           !this.readsRecordedLayout()
         ) {
           this.evaluate();
-        } else if ([...keys].some(k => k.startsWith(PIN_PREFIX))) {
+          return;
+        }
+        // Read only once the pending local updates are written (see
+        // gateSchema), before the change is read: its content is shown.
+        schemaChanged = [...keys].some(k => k.startsWith(SCHEMA_PREFIX));
+        if ([...keys].some(k => k.startsWith(PIN_PREFIX))) {
           this.loadPins();
         }
         return;
@@ -1907,6 +2439,10 @@ export class YBinding {
       }
     });
     if (childItems.size === 0 && attrKeys.size === 0) {
+      if (schemaChanged) {
+        this.commitPending();
+        this.gateSchema();
+      }
       // Nothing to read: the binding's own updates waiting for the editor
       // can run now (see runPending).
       this.runPending();
@@ -1950,6 +2486,10 @@ export class YBinding {
         );
       },
       after: () => {
+        // Also where `before` gated already (a no-op then).
+        if (schemaChanged) {
+          this.gateSchema();
+        }
         this.checkUnknownTypes();
         this.checkRead(rebuilt);
         this.flushRefresh(true);
@@ -1959,6 +2499,9 @@ export class YBinding {
         this.runPending();
       },
       before: () => {
+        if (schemaChanged) {
+          this.gateSchema();
+        }
         // The selection the read keeps is the one those updates left, on the
         // document they were made on.
         if (this._editor.getEditorState() !== committed) {
@@ -1979,7 +2522,14 @@ export class YBinding {
         // (see rereadRefused).
         naming = this.refused.size > 0 && this.refusedNaming;
       },
-      recover: (error, shown) => this.recoverRead(error, shown),
+      recover: (error, shown) => {
+        // The local updates still pending are written by the recovery
+        // first; `before` did not run where they kept the read from running.
+        this.recoverRead(error, shown);
+        if (schemaChanged) {
+          this.gateSchema();
+        }
+      },
       tag: REMOTE_TAGS,
     });
   }
@@ -2221,13 +2771,33 @@ export class YBinding {
       `the document cannot be read: ${errorText(error)}`,
       {error, reason: 'unreadable', types: []},
     );
+    // Shown again first: an update an app makes when the editor stops being
+    // editable commits after it, and is refused (see setStatus).
+    try {
+      this.showAgain(shown);
+    } catch (restoreError) {
+      // An update listener of the app's threw on the restore: its error is
+      // rethrown in a microtask, and the binding opens read only all the
+      // same, so that nothing is written from what it no longer reads.
+      rethrowLater(restoreError);
+    }
     this.setStatus('readonly');
+  }
+
+  /**
+   * Have the editor show `shown` again, a state it showed before, without
+   * reading the document: the state is set whole, or, where it is empty (an
+   * editor that showed nothing yet, before the first read; Lexical does not
+   * set an empty state), the root is cleared. Either way the update is
+   * tagged as a remote change, so nothing of it is written or refused (see
+   * onUpdate).
+   */
+  private showAgain(shown: EditorState): void {
     const editor = this._editor;
     if (editor.getEditorState() === shown) {
       return;
     }
     if (shown.isEmpty()) {
-      // Before the first read: an editor that showed nothing yet.
       editor.update(() => $getRoot().clear(), {
         discrete: true,
         skipTransforms: true,
@@ -2235,12 +2805,12 @@ export class YBinding {
       });
     } else {
       editor.setEditorState(shown, {tag: COLLABORATION_TAG});
-      if (editor._updating) {
-        // Set from a commit's $onUpdate callbacks (the recovery of a read
-        // nested in an update, see guardedRead), where nothing commits it:
-        // the update queued here, which runs right after them, does.
-        editor.update(() => {}, {discrete: true});
-      }
+    }
+    if (editor._updating) {
+      // Set from a commit's $onUpdate callbacks (the recovery of a read
+      // nested in an update, see guardedRead), where nothing commits it:
+      // the update queued here, which runs right after them, does.
+      editor.update(() => {}, {discrete: true});
     }
   }
 
@@ -2653,6 +3223,74 @@ export class YBinding {
     if (commit.refresh && !commit.registration) {
       // See $refreshGroups: only users' own edits write.
       this.state.refresh.clear();
+      return;
+    }
+    if (
+      this._status === 'active' &&
+      !commit.remote &&
+      !commit.skip &&
+      this.schemaGatesWrite(editorState)
+    ) {
+      // Made on a schema record a newer version wrote: read only first, so
+      // that it is refused below.
+      this.gateSchema();
+    }
+    if (
+      this._status !== 'active' &&
+      !this.keepsUnstored &&
+      !commit.remote &&
+      !commit.skip
+    ) {
+      // Read only, nothing is written, and what a local update changed
+      // (code that edits the editor, which is not editable) is read again,
+      // once a composition ends; once the binding failed closed, which reads
+      // nothing more (see failClosed), the editor shows what it showed
+      // before the update again. Invariant: while read only, a local update
+      // leaves the editor showing what the binding read. Why: a remote
+      // change is read into the editor as the binding's units describe it,
+      // and read into an editor that shows something else it can misplace
+      // content.
+      const composing = this._editor._compositionKey !== null;
+      let refused = false;
+      if (this.unreadable) {
+        refused =
+          this.$changedNodes(
+            dirtyElements,
+            dirtyLeaves,
+            editorState,
+            prevEditorState,
+          ).length > 0;
+        if (refused) {
+          if (this.restoreTo === null) {
+            this.restoreTo = prevEditorState;
+          }
+          this.pending.add('restore');
+        }
+      } else {
+        refused = this.$refuseChanged(
+          dirtyElements,
+          dirtyLeaves,
+          editorState,
+          prevEditorState,
+          composing ? this.refusedComposing : this.refused,
+        );
+      }
+      if (refused) {
+        if (commit.naming) {
+          this.refusedNaming = true;
+        }
+        if (commit.userEdit) {
+          this.rereads = 0;
+          if (!this.warnedEdit) {
+            this.warnedEdit = true;
+            this.warn(
+              UNSUPPORTED_EDIT_WARNING,
+              'a local change is not written while read only',
+              {reason: 'read-only'},
+            );
+          }
+        }
+      }
       return;
     }
     if (
@@ -3208,6 +3846,13 @@ export class YBinding {
           writer.followUp = commit.followUp;
           writer.$run();
         } finally {
+          // A local edit (not a follow-up, which is no one's edit) carries
+          // this client's schema version.
+          if (origin === this) {
+            recordSchema(this._root, this.options.schemaVersion, tr, t =>
+              this.isUnderRoot(t),
+            );
+          }
           // In the same transaction as the first member entry of a set, even
           // when the write throws part way: clients that only read layout 1
           // never get one without the version that tells them they cannot
@@ -3260,6 +3905,11 @@ export class YBinding {
             rewriter.$run();
             this.noteRefused(rewriter, commit.naming);
           } finally {
+            if (origin === this) {
+              recordSchema(this._root, this.options.schemaVersion, tr, t =>
+                this.isUnderRoot(t),
+              );
+            }
             recordSetMembersLayout(this._root, tr);
           }
         }, origin);
@@ -3459,14 +4109,16 @@ export class YBinding {
   /**
    * Queue the re-read of every container holding a node a commit changed
    * (its fields, NodeState, text or children), for a commit that is not
-   * written (see onUpdate).
+   * written (see onUpdate); in `into` (refusedComposing: not queued until
+   * the composition ends). Returns whether there is any such container.
    */
   private $refuseChanged(
     dirtyElements: Map<NodeKey, boolean>,
     dirtyLeaves: Set<NodeKey>,
     editorState: EditorState,
     prevEditorState: EditorState,
-  ): void {
+    into: Set<CS> = this.refused,
+  ): boolean {
     const state = this.state;
     const changed = this.$changedNodes(
       dirtyElements,
@@ -3475,10 +4127,11 @@ export class YBinding {
       prevEditorState,
     );
     if (changed.length === 0) {
-      return;
+      return false;
     }
     const prevMap = prevEditorState._nodeMap;
     const nowMap = editorState._nodeMap;
+    let found = false;
     const containerOf = (key: NodeKey, map: Map<NodeKey, LexicalNode>) => {
       for (let n = map.get(key); n !== undefined; ) {
         // A slot's value is held by its host (its up-link), not a parent.
@@ -3492,7 +4145,8 @@ export class YBinding {
             ? state.containers.get(this._root)
             : state.csByKey.get(parent);
         if (cs !== undefined) {
-          this.refused.add(cs);
+          into.add(cs);
+          found = true;
           return;
         }
         n = map.get(parent);
@@ -3501,14 +4155,16 @@ export class YBinding {
     for (const key of changed) {
       const own = state.csByKey.get(key);
       if (own !== undefined) {
-        this.refused.add(own);
+        into.add(own);
+        found = true;
       }
       containerOf(key, nowMap);
       containerOf(key, prevMap);
     }
-    if (this.refused.size > 0) {
+    if (into === this.refused && this.refused.size > 0) {
       this.pending.add('reread');
     }
+    return found;
   }
 
   /** Containers a write did not write a follow-up's change to (see refused). */
@@ -3739,6 +4395,10 @@ export class YBinding {
    */
   private commitPending(): boolean {
     const editor = this._editor;
+    if (!editor._updating) {
+      // Held app updates (see notifyApart) commit like the others.
+      this.handBackReplies();
+    }
     const left = () =>
       !editor._updating &&
       (editor._pendingEditorState !== null || editor._updates.length > 0);
@@ -3836,11 +4496,13 @@ export class YBinding {
   }
 
   /**
-   * Run the binding's own updates, in PENDING_ORDER: showing what was held
-   * back during a composition, reading containers again after a follow-up's
-   * change was not written, the author's normalization of an update that ran
-   * no transforms, the refresh after a local change, and Lexical's update for
-   * a registered transform (see noteRegistrations).
+   * Run the binding's own updates, in PENDING_ORDER: committing the updates
+   * the app's listeners made when notified of a status change (see
+   * notifyApart), showing what was held back during a composition, reading
+   * containers again after a follow-up's change was not written, the
+   * author's normalization of an update that ran no transforms, the refresh
+   * after a local change, and Lexical's update for a registered transform
+   * (see noteRegistrations).
    *
    * Invariant: each commits alone, once the editor is idle, and never before
    * the editor shows the latest remote change. Why: Lexical runs the updates
@@ -3858,6 +4520,9 @@ export class YBinding {
       this.localRefresh.clear();
       this.remoteRefresh.clear();
       this.refused.clear();
+      this.refusedComposing.clear();
+      this.restoreTo = null;
+      this.replies.length = 0;
       this.toSettle.clear();
       this.untransformed.clear();
       this.untransformedText.clear();
@@ -3879,7 +4544,11 @@ export class YBinding {
       }
       this.pending.delete(work);
       withPins(this._pins, () => {
-        if (work === 'hidden') {
+        if (work === 'replies') {
+          this.commitPending();
+        } else if (work === 'restore') {
+          this.restoreShown();
+        } else if (work === 'hidden') {
           this.flushHidden();
         } else if (work === 'reread') {
           this.rereadRefused();
@@ -3892,6 +4561,19 @@ export class YBinding {
           this.flushRefresh(false, this.localRefresh);
         }
       });
+    }
+  }
+
+  /**
+   * Show again what the editor showed before the local updates made once
+   * the binding failed closed (see onUpdate): the binding reads nothing
+   * more, so it cannot read what they changed again.
+   */
+  private restoreShown(): void {
+    const shown = this.restoreTo;
+    this.restoreTo = null;
+    if (shown !== null) {
+      this.showAgain(shown);
     }
   }
 
@@ -4230,11 +4912,12 @@ export class YBinding {
       }
       return false;
     }
-    // The layout record only grows.
+    // The layout and schema records only grow.
     if (
       item.parent === this._root &&
       typeof item.parentSub === 'string' &&
-      item.parentSub.startsWith(LAYOUT_PREFIX)
+      (item.parentSub.startsWith(LAYOUT_PREFIX) ||
+        item.parentSub.startsWith(SCHEMA_PREFIX))
     ) {
       return true;
     }

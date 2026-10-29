@@ -418,6 +418,8 @@ test('with repairTransforms: true, the binding fails closed: a warning, read onl
   send(a, b);
   await idle();
   expect(describe(b)).toBe('paragraph("base") / paragraph("more")');
+  // A local update is not written either: what it changed is read again,
+  // with a warning.
   b.editor.update(
     () =>
       $getRoot().append($createParagraphNode().append($createTextNode('x'))),
@@ -425,7 +427,9 @@ test('with repairTransforms: true, the binding fails closed: a warning, read onl
   );
   await idle();
   expect(written).toEqual([]);
-  expect(b.warnings).toHaveLength(1);
+  expect(describe(b)).toBe('paragraph("base") / paragraph("more")');
+  expect(b.warnings).toHaveLength(2);
+  expect(b.warnings[1]).toContain('read only');
 });
 
 test('with repairTransforms: true, the initial content is not written', async () => {

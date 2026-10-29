@@ -19,13 +19,22 @@ import {
   $getNearestNodeFromDOMNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   defineExtension,
   type ElementNode,
   isDOMUnmanaged,
   type LexicalEditorWithDispose,
 } from 'lexical';
-import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
+import {
+  afterEach,
+  assert,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from 'vitest';
 
 // `vi.mock` is hoisted above all imports, so @lexical/table sees iOS.
 vi.mock('lexical/src/environment', async importOriginal => ({
@@ -68,9 +77,7 @@ describe('iOS empty table cell overlay', () => {
     // Cell 0 stays empty; cell 1 has text.
     editor.update(
       () => {
-        $cell(1)
-          .getFirstChildOrThrow<ElementNode>()
-          .append($createTextNode('word'));
+        $paragraph(1).append($createTextNode('word'));
       },
       {discrete: true},
     );
@@ -92,6 +99,12 @@ describe('iOS empty table cell overlay', () => {
 
   function $cell(index: number): TableCellNode {
     return $getNearestNodeFromDOMNode(cellDOM(index)) as TableCellNode;
+  }
+
+  function $paragraph(index: number): ElementNode {
+    const paragraph = $cell(index).getFirstChildOrThrow();
+    assert($isElementNode(paragraph), 'expected the cell to hold a block');
+    return paragraph;
   }
 
   function pointer(
@@ -196,7 +209,7 @@ describe('iOS empty table cell overlay', () => {
     expect(overlayOf(1)).toBe(null);
     editor.update(
       () => {
-        $cell(1).getFirstChildOrThrow<ElementNode>().clear();
+        $paragraph(1).clear();
       },
       {discrete: true},
     );
@@ -242,9 +255,7 @@ describe('iOS empty table cell overlay', () => {
     expect(html).toMatch(/<td[^>]*>\s*<p/);
     editor.update(
       () => {
-        $cell(0)
-          .getFirstChildOrThrow<ElementNode>()
-          .append($createTextNode('typed'));
+        $paragraph(0).append($createTextNode('typed'));
       },
       {discrete: true},
     );

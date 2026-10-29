@@ -26,17 +26,25 @@ import {
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
 import {BlockIdHTMLExtension} from '@lexical/html/BlockIdHTMLExtension';
+import {
+  $createListItemNode,
+  $createListNode,
+  ListExtension,
+} from '@lexical/list';
 import {RichTextExtension} from '@lexical/rich-text';
 import {$isTableCellNode, TableExtension} from '@lexical/table';
 import {
+  $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   $setState,
   configExtension,
   type LexicalEditor,
+  type LexicalNode,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
 
@@ -80,6 +88,60 @@ function applyOps(editor: LexicalEditor, ops: Op[]): void {
       {discrete: true},
     );
   }
+}
+
+// Changes a block's text in place: only the characters that differ, in the
+// block's own text nodes. block.replace(newBlock) would re-create the block,
+// and what a collaborator types in it meanwhile would not stay where they
+// typed it. Returns false, changing nothing, for a block whose text is not
+// just its text nodes (line breaks, nested blocks, inline decorators).
+function $setBlockText(block: LexicalNode, text: string): boolean {
+  if (!$isElementNode(block)) {
+    return false;
+  }
+  const nodes = block.getAllTextNodes();
+  const old = nodes.map(node => node.getTextContent()).join('');
+  if (old !== block.getTextContent()) {
+    return false;
+  }
+  let start = 0;
+  while (start < old.length && old[start] === text[start]) {
+    start++;
+  }
+  let end = 0;
+  while (
+    end < old.length - start &&
+    end < text.length - start &&
+    old[old.length - 1 - end] === text[text.length - 1 - end]
+  ) {
+    end++;
+  }
+  const inserted = text.slice(start, text.length - end);
+  const deleteEnd = old.length - end;
+  let offset = 0;
+  let done = false;
+  for (const node of nodes) {
+    const size = node.getTextContentSize();
+    const from = Math.max(start - offset, 0);
+    const to = Math.min(deleteEnd - offset, size);
+    if (
+      !done &&
+      (start - offset < size ||
+        (start - offset === size && start === deleteEnd))
+    ) {
+      // The node where the change starts (for an insert at a node boundary,
+      // the node before it): delete and insert there.
+      node.spliceText(from, Math.max(to - from, 0), inserted);
+      done = true;
+    } else if (to > from) {
+      node.spliceText(from, to - from, '');
+    }
+    offset += size;
+  }
+  if (!done && inserted !== '') {
+    block.append($createTextNode(inserted));
+  }
+  return true;
 }
 
 describe('Block IDs documentation examples', () => {
@@ -323,31 +385,35 @@ describe('Block IDs documentation examples', () => {
       name: 'my-editor',
     });
 
-    // 1. What the model reads.
-    const blocks = editor.read(() =>
+    // 1. What the model reads, and the handles it is shown (id → handle).
+    const [blocks, shown] = editor.read(() => [
       $getRoot()
         .getChildren()
         .map(node => ({
           block: $getBlockHandle(node),
           text: node.getTextContent(),
         })),
-    );
+      $getBlockHandles(),
+    ]);
     expect(blocks).toEqual([
       {block: 'V1St', text: 'Q3 plan'},
       {block: '9xQe', text: 'Revenue grew 4%.'},
     ]);
+    const keyBefore = editor.read(() => $getBlockById(ids[1])!.getKey());
 
     // 2. What the model answers, then 3. applying it, in its own update.
     const feedback: string[] = [];
     const apply = (op: {block: string; text: string}) =>
       editor.update(
         () => {
-          const result = $resolveBlockHandle(op.block);
+          const result = $resolveBlockHandle(op.block, {read: shown});
           switch (result.status) {
             case 'found':
-              result.node.replace(
-                $createParagraphNode().append($createTextNode(op.text)),
-              );
+              if (!$setBlockText(result.node, op.text)) {
+                feedback.push(
+                  `${op.block} holds line breaks or other blocks: edit its parts.`,
+                );
+              }
               break;
             case 'not-found':
               feedback.push(
@@ -356,20 +422,32 @@ describe('Block IDs documentation examples', () => {
               break;
             case 'ambiguous':
               feedback.push(
-                `${result.handle} now names several blocks: use one of ${result.candidates.join(', ')}.`,
+                `${result.handle} names several blocks: use one of ${result.candidates.join(', ')}.`,
               );
               break;
             case 'invalid':
-              feedback.push(`${result.handle} is not a block handle.`);
+              feedback.push(
+                result.reason === 'too-short'
+                  ? `${result.handle} is too short: block handles have at least 4 characters.`
+                  : `${result.handle} is not a block handle.`,
+              );
               break;
           }
         },
         {discrete: true},
       );
     apply({block: '9xQe', text: 'Revenue grew 6%.'});
+    editor.read(() => {
+      const block = $getBlockById(ids[1])!;
+      expect(block.getTextContent()).toBe('Revenue grew 6%.');
+      // Changed in place: the same block, not a new one.
+      expect(block.getKey()).toBe(keyBefore);
+    });
     apply({block: '9xQf', text: 'typo'});
+    apply({block: '9xQ', text: 'too short'});
     apply({block: '9xQe!', text: 'invalid'});
-    // A collaborator adds a block whose id shares V1St.
+    // A collaborator adds a block whose id shares V1St: the handle still
+    // names the block the model read.
     editor.update(
       () => {
         const node = $createParagraphNode();
@@ -378,23 +456,133 @@ describe('Block IDs documentation examples', () => {
       },
       {discrete: true},
     );
-    apply({block: 'V1St', text: 'stale'});
+    apply({block: 'V1St', text: 'Q4 plan'});
+    // And deletes the other one.
+    editor.update(
+      () => {
+        $getBlockById(ids[1])!.remove();
+      },
+      {discrete: true},
+    );
+    apply({block: '9xQe', text: 'Revenue grew 7%.'});
+    // A paragraph with a line break is not changed in place.
+    editor.update(
+      () => {
+        const block = $getBlockById(ids[0]);
+        assert($isElementNode(block));
+        block.append($createLineBreakNode());
+      },
+      {discrete: true},
+    );
+    apply({block: 'V1St', text: 'Q5 plan'});
     expect(feedback).toEqual([
       'No block 9xQf: it may have been deleted.',
+      '9xQ is too short: block handles have at least 4 characters.',
       '9xQe! is not a block handle.',
-      'V1St now names several blocks: use one of V1StG, V1StQ.',
+      'No block 9xQe: it may have been deleted.',
+      'V1St holds line breaks or other blocks: edit its parts.',
     ]);
     editor.read(() => {
-      expect($getBlockById(ids[1])!.getTextContent()).toBe('Revenue grew 6%.');
-      expect($getBlockHandle($getBlockById(ids[0])!)).toBe('V1StG');
+      expect($getBlockById(ids[0])!.getTextContent()).toBe('Q4 plan\n');
     });
   });
 
-  test('Handles and collaboration: checking the id read', () => {
-    const ids = ['abcd1111', 'wxyz2222'];
+  test('Showing blocks to a model: $setBlockText refuses blocks that are not just text', () => {
+    using editor = buildEditorFromExtensions({
+      $initialEditorState: null,
+      dependencies: [RichTextExtension, ListExtension, BlockIdExtension],
+      name: 'set-block-text-refuses',
+    });
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $createTextNode('a'),
+              $createLineBreakNode(),
+              $createTextNode('b'),
+            ),
+            $createListNode('bullet').append(
+              $createListItemNode().append($createTextNode('one')),
+              $createListItemNode().append($createTextNode('two')),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+    const before = editor.read(() => $getRoot().getTextContent());
+    editor.update(
+      () => {
+        const [paragraph, list] = $getRoot().getChildren();
+        expect($setBlockText(paragraph, 'a\nb')).toBe(false);
+        expect($setBlockText(paragraph, '')).toBe(false);
+        expect($setBlockText(list, 'one\n\ntwo')).toBe(false);
+      },
+      {discrete: true},
+    );
+    expect(editor.read(() => $getRoot().getTextContent())).toBe(before);
+  });
+
+  test('Showing blocks to a model: $setBlockText edits only what differs', () => {
+    using editor = buildEditorFromExtensions({
+      $initialEditorState: null,
+      dependencies: [RichTextExtension, BlockIdExtension],
+      name: 'set-block-text',
+    });
+    const cases: [string[], string, string[]][] = [
+      // [text nodes before, new text, text nodes after]
+      [['Revenue grew 4%.'], 'Revenue grew 6%.', ['Revenue grew 6%.']],
+      [
+        ['Revenue ', 'grew', ' 4%.'],
+        'Revenue fell 4%.',
+        ['Revenue ', 'fell', ' 4%.'],
+      ],
+      [['Revenue ', 'grew', ' 4%.'], 'Revenue 4%.', ['Revenue 4%.']],
+      [['ab', 'cd', 'ef'], 'aXf', ['aXf']],
+      [['ab', 'cd'], 'abXcd', ['abX', 'cd']],
+      [['ab', 'cd'], 'abd', ['ab', 'd']],
+      [['abc'], 'abc', ['abc']],
+      [['abc'], '', []],
+      [['abc'], 'abcdef', ['abcdef']],
+      [['abc'], 'Xabc', ['Xabc']],
+      [[], 'new', ['new']],
+    ];
+    for (const [before, next, after] of cases) {
+      editor.update(
+        () => {
+          const block = $createParagraphNode();
+          for (const [i, text] of before.entries()) {
+            // Alternate formats, so that Lexical keeps the nodes apart.
+            block.append($createTextNode(text).setFormat(i % 2 ? 'bold' : 0));
+          }
+          $getRoot().clear().append(block);
+        },
+        {discrete: true},
+      );
+      const key = editor.read(() => $getRoot().getFirstChildOrThrow().getKey());
+      editor.update(
+        () => {
+          $setBlockText($getRoot().getFirstChildOrThrow(), next);
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        const block = $getRoot().getFirstChildOrThrow();
+        assert($isElementNode(block));
+        expect(block.getKey(), JSON.stringify(before)).toBe(key);
+        expect(
+          block.getAllTextNodes().map(node => node.getTextContent()),
+          `${JSON.stringify(before)} → ${next}`,
+        ).toEqual(after);
+      });
+    }
+  });
+
+  test('Handles and collaboration: a handle a deleted block prefixed', () => {
     using editor = buildEditorFromExtensions({
       $initialEditorState: () => {
-        for (const id of ids) {
+        for (const id of ['b123', 'b123456']) {
           const node = $createParagraphNode().append($createTextNode(id));
           $setState(node, blockIdState, id);
           $getRoot().append(node);
@@ -403,38 +591,22 @@ describe('Block IDs documentation examples', () => {
       dependencies: [RichTextExtension, BlockIdExtension],
       name: 'my-editor',
     });
-    // At the read.
-    const handleOf = editor.read(() => $getBlockHandles()); // id → handle
-    const idOf = new Map(Array.from(handleOf, ([id, handle]) => [handle, id]));
-    expect(idOf.get('abcd')).toBe('abcd1111');
-    // The block is deleted and a block whose id shares its prefix is added.
+    const shown = editor.read(() => $getBlockHandles());
     editor.update(
       () => {
-        $getBlockById('abcd1111')!.remove();
-        const node = $createParagraphNode();
-        $setState(node, blockIdState, 'abcd2222');
-        $getRoot().append(node);
+        $getBlockById('b123')!.remove();
       },
       {discrete: true},
     );
-    const op = {block: 'abcd'};
-    // When applying an edit by handle.
-    editor.update(
-      () => {
-        const result = $resolveBlockHandle(op.block);
-        expect(result.status).toBe('found');
-        if (
-          result.status === 'found' &&
-          $getBlockId(result.node) === idOf.get(op.block)
-        ) {
-          result.node.remove();
-        }
-      },
-      {discrete: true},
-    );
-    // The new block was not the one read: it is kept.
     editor.read(() => {
-      expect($getBlockById('abcd2222')).not.toBeNull();
+      // Without the read, b123 deleted and b123456 kept: b123 takes it.
+      const now = $resolveBlockHandle('b123');
+      assert(now.status === 'found');
+      expect($getBlockId(now.node)).toBe('b123456');
+      // With it, the block the model read is gone.
+      expect($resolveBlockHandle('b123', {read: shown}).status).toBe(
+        'not-found',
+      );
     });
   });
 

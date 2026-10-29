@@ -10,6 +10,7 @@
 export type {AutoFocusConfig} from '@lexical/extension/AutoFocusExtension';
 export {AutoFocusExtension} from '@lexical/extension/AutoFocusExtension';
 export type {
+  BlockHandleOptions,
   BlockHandleResult,
   BlockIdConfig,
   BlockIdOutput,

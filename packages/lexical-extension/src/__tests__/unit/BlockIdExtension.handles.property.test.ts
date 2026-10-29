@@ -17,6 +17,8 @@
 // - each block's handle is the brute-force shortest unique prefix of at least
 //   MIN_BLOCK_HANDLE_LENGTH characters (or its whole id);
 // - each handle, and each whole id, resolves to its own block;
+// - the handles of the previous step's read, resolved with that read, name
+//   the blocks they named then, or are not found once those are deleted;
 // - typo safety: no one-character change of a handle (substitute, drop,
 //   add) resolves to a different block, unless the changed string is that
 //   block's id or starts with that block's current handle (a handle it could
@@ -28,6 +30,7 @@
 // (default 1) and prints the rate.
 
 import {
+  $getBlockById,
   $getBlockHandle,
   $getBlockHandles,
   $getBlockId,
@@ -252,6 +255,7 @@ function runSeed(seed: number): void {
     {discrete: true},
   );
   let text = 0;
+  let previous = editor.read($getBlockHandles);
   for (let step = 0; step < STEPS; step++) {
     const kind = pick([
       'insert',
@@ -307,6 +311,25 @@ function runSeed(seed: number): void {
       },
       {discrete: true},
     );
+    // The handles of the previous read name the blocks they named then,
+    // while those exist.
+    editor.read(() => {
+      for (const [id, handle] of previous) {
+        const result = $resolveBlockHandle(handle, {read: previous});
+        const node = $getBlockById(id);
+        if (node === null) {
+          expect(result.status, `seed ${seed} step ${step} ${handle}`).toBe(
+            'not-found',
+          );
+        } else {
+          assert(
+            result.status === 'found' && result.node.is(node),
+            `seed ${seed} step ${step} ${handle} → ${result.status}`,
+          );
+        }
+      }
+    });
+    previous = editor.read($getBlockHandles);
     const last = step === STEPS - 1;
     check(
       editor,

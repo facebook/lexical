@@ -15,6 +15,7 @@ export {
   $getBlockId,
   $isRootChildBlock,
   $resolveBlockHandle,
+  type BlockHandleOptions,
   type BlockHandleResult,
   type BlockIdConfig,
   BlockIdExtension,

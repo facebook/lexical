@@ -150,68 +150,144 @@ turns.
 (Measured over 20,000 random ids in 1,000-block documents, where almost
 every handle is 4 characters long.)
 
-The round trip has three steps: export handles, let the model answer with
-them, and resolve each one back to a block before applying the edit:
+The round trip has three steps: export handles (and keep them), let the
+model answer with them, and resolve each one back to a block in the update
+that applies the edit:
 
 ```ts
-import {$getBlockHandle, $resolveBlockHandle} from '@lexical/extension';
-import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
+import {
+  $getBlockHandle,
+  $getBlockHandles,
+  $resolveBlockHandle,
+} from '@lexical/extension';
+import {
+  $createTextNode,
+  $getRoot,
+  $isElementNode,
+  type LexicalNode,
+} from 'lexical';
 
-// 1. What the model reads.
-const blocks = editor.read(() =>
+// 1. What the model reads, and the handles it is shown (id → handle).
+const [blocks, shown] = editor.read(() => [
   $getRoot()
     .getChildren()
     .map(node => ({block: $getBlockHandle(node), text: node.getTextContent()})),
-);
+  $getBlockHandles(),
+]);
 // [{block: 'V1St', text: 'Q3 plan'}, {block: '9xQe', text: 'Revenue grew 4%.'}]
 
 // 2. What the model answers, e.g. {block: '9xQe', text: 'Revenue grew 6%.'}
 
-// 3. Applying it, in its own update.
+// 3. Applying it, in its own update: the handle names the block it named in
+//    the read, if that block still exists now.
 const feedback: string[] = [];
 editor.update(
   () => {
-    const result = $resolveBlockHandle(op.block);
+    const result = $resolveBlockHandle(op.block, {read: shown});
     switch (result.status) {
       case 'found':
-        result.node.replace(
-          $createParagraphNode().append($createTextNode(op.text)),
-        );
+        if (!$setBlockText(result.node, op.text)) {
+          feedback.push(
+            `${op.block} holds line breaks or other blocks: edit its parts.`,
+          );
+        }
         break;
       case 'not-found':
         feedback.push(`No block ${result.handle}: it may have been deleted.`);
         break;
       case 'ambiguous':
         feedback.push(
-          `${result.handle} now names several blocks: use one of ${result.candidates.join(', ')}.`,
+          `${result.handle} names several blocks: use one of ${result.candidates.join(', ')}.`,
         );
         break;
       case 'invalid':
-        feedback.push(`${result.handle} is not a block handle.`);
+        feedback.push(
+          result.reason === 'too-short'
+            ? `${result.handle} is too short: block handles have at least 4 characters.`
+            : `${result.handle} is not a block handle.`,
+        );
         break;
     }
   },
   {discrete: true},
 );
+
+// Changes a block's text in place: only the characters that differ, in the
+// block's own text nodes. block.replace(newBlock) would re-create the block,
+// and what a collaborator types in it meanwhile would not stay where they
+// typed it. Returns false, changing nothing, for a block whose text is not
+// just its text nodes (line breaks, nested blocks, inline decorators).
+function $setBlockText(block: LexicalNode, text: string): boolean {
+  if (!$isElementNode(block)) {
+    return false;
+  }
+  const nodes = block.getAllTextNodes();
+  const old = nodes.map(node => node.getTextContent()).join('');
+  if (old !== block.getTextContent()) {
+    return false;
+  }
+  let start = 0;
+  while (start < old.length && old[start] === text[start]) {
+    start++;
+  }
+  let end = 0;
+  while (
+    end < old.length - start &&
+    end < text.length - start &&
+    old[old.length - 1 - end] === text[text.length - 1 - end]
+  ) {
+    end++;
+  }
+  const inserted = text.slice(start, text.length - end);
+  const deleteEnd = old.length - end;
+  let offset = 0;
+  let done = false;
+  for (const node of nodes) {
+    const size = node.getTextContentSize();
+    const from = Math.max(start - offset, 0);
+    const to = Math.min(deleteEnd - offset, size);
+    if (
+      !done &&
+      (start - offset < size ||
+        (start - offset === size && start === deleteEnd))
+    ) {
+      // The node where the change starts (for an insert at a node boundary,
+      // the node before it): delete and insert there.
+      node.spliceText(from, Math.max(to - from, 0), inserted);
+      done = true;
+    } else if (to > from) {
+      node.spliceText(from, to - from, '');
+    }
+    offset += size;
+  }
+  if (!done && inserted !== '') {
+    block.append($createTextNode(inserted));
+  }
+  return true;
+}
 ```
 
 `$resolveBlockHandle` never throws for bad input, since a model's answer
-cannot be trusted, and returns a block only when exactly one block's id
-starts with the handle (or equals it). Its result says what to tell the
+cannot be trusted. With `read`, the handles the model was shown, a handle
+names the block it named in that read: `found` while that block still
+exists, `not-found` once it is deleted, even if another block's id now
+starts with the same characters, and never `ambiguous` because of a block
+added since. Pass it whenever the document can change between the read and
+the edit (with collaboration, always). The result says what to tell the
 model:
 
 | Status | Meaning | Tell the model |
 | --- | --- | --- |
 | `found` | `result.node` is the block | Nothing: apply the edit |
-| `not-found` | No block's id starts with the handle: a typo, or the block was deleted since the model read it | The block does not exist; send the current document if it needs one |
-| `ambiguous` | Several blocks' ids start with it: a block whose id shares the prefix was added since | Retry with one of `result.candidates`, their current handles |
-| `invalid` | Not 1 to 64 characters of `A`–`Z`, `a`–`z`, `0`–`9`, `-`, `_` | It sent something that is not a handle |
+| `not-found` | The block was deleted since the read, or no block's id starts with the handle (a typo) | The block does not exist; send the current document if it needs one |
+| `ambiguous` | Several blocks' ids start with it: a handle shorter than the one shown (or, without `read`, a block whose id shares the prefix was added since) | Retry with one of `result.candidates` |
+| `invalid` | `reason: 'too-short'`: fewer than 4 characters and not a whole id. `reason: 'malformed'`: not 1 to 64 characters of `A`–`Z`, `a`–`z`, `0`–`9`, `-`, `_` | Too short: handles have at least 4 characters. Malformed: it is not a handle |
 
 A whole id is accepted too, and an exact id wins: with ids `b1` and `b12`,
 `b1` finds `b1`. A prefix longer than the current handle still finds its
 block, so a handle read while another id shared more of its prefix keeps
-working after that block is deleted. A prefix shorter than 4 characters finds
-nothing unless it is a whole id.
+working after that block is deleted. A prefix shorter than 4 characters is
+`invalid` (`'too-short'`) unless it is a whole id.
 
 Random ids leave almost every short prefix unused, so a mistyped handle
 almost never names another block: over 30 documents of 1,000 blocks, 2.6 in
@@ -229,39 +305,64 @@ While the extension is disabled, each call scans the document.
 
 ### Handles and collaboration
 
-A handle names whichever block's id starts with it now, not the block it was
-read from. Handles are computed from the local document, so after local or
-remote changes a handle from an earlier read can become `ambiguous` (a block
-whose id shares the prefix was added) or `not-found` (the block was deleted).
-That is the intended failure: report it to the model and let it read the
-document again. Because handles are never stored, two replicas can show
-different handles for the same block while they have different blocks; the
-ids underneath are the same.
+Handles are computed from one state of the document and never stored, so
+two replicas can show different handles for the same block while they have
+different blocks; the ids underneath are the same. Resolve a handle against
+the latest state, with the `read` it was shown in: a block deleted since
+then is `not-found`, the intended failure. Report it to the model and let it
+read the document again. Without `read`, a handle names whichever block's id
+starts with it now: once its block is deleted, a block added since whose id
+shares the prefix, or a block whose id the deleted one's prefixed (`b123`
+deleted, `b123456` kept), would take it.
 
-A prefix freed by a deletion can be taken again: if the block of `V1St` is
-deleted and a block whose id also starts with `V1St` is added, the old handle
-names the new block. With random ids that needs a new id sharing the first 4
-characters, about one chance in 16.7 million per new block. Where an edit
-must reach exactly the block that was read (a long-running agent, a queue of
-edits applied later), keep the map that `$getBlockHandles()` returned at the
-read and check the id of what a handle resolves to, or look the id up with
-`$getBlockById`:
+With [`@lexical/y`](/docs/collaboration/y) on a server, an agent's edit is
+applied to the state the model read and merged into the stored state (see
+[Edits by agents and tools](/docs/collaboration/y-server#edits-by-agents-and-tools)),
+so that what collaborators changed since is kept. Resolving the handle inside
+that edit would always find the block: the read still has it. Resolve it
+against the stored state, then apply the edit to the read by id:
 
 ```ts
-// At the read.
-const handleOf = editor.read(() => $getBlockHandles()); // id → handle
-const idOf = new Map(Array.from(handleOf, ([id, handle]) => [handle, id]));
+import {
+  $getBlockById,
+  $getBlockHandles,
+  $getBlockId,
+  $resolveBlockHandle,
+} from '@lexical/extension';
+import {createYWriter, editYState, readYState} from '@lexical/y/headless';
 
-// When applying an edit by handle.
-editor.update(() => {
-  const result = $resolveBlockHandle(op.block);
-  if (
-    result.status === 'found' &&
-    $getBlockId(result.node) === idOf.get(op.block)
-  ) {
-    result.node.remove();
-  }
+// BlockIdExtension is among config.extensions, as on the clients.
+const agent = createYWriter('Writing assistant');
+
+// At the read: `seen` is the state the model reads; keep the handles it is
+// shown with it.
+const shown = readYState(seen, config, () => $getBlockHandles());
+
+// When the answer arrives (`stored`: the document's state now):
+// 1. Resolve against the stored state, with the handles the model was shown.
+const target = readYState(stored, config, () => {
+  const result = $resolveBlockHandle(op.block, {read: shown});
+  return result.status === 'found'
+    ? {id: $getBlockId(result.node)!, status: result.status}
+    : result;
 });
+if (target.status !== 'found') {
+  // Tell the model, as in the table above.
+} else {
+  // 2. Apply it to the state the model read, by id, in place.
+  let applied = false;
+  const {update} = editYState(
+    seen,
+    config,
+    () => {
+      applied = $setBlockText($getBlockById(target.id)!, op.text);
+    },
+    {writer: agent},
+  );
+  if (applied && update !== null) {
+    // 3. Merge `update` into the stored state and send it to the clients.
+  }
+}
 ```
 
 ### Handles in HTML

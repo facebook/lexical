@@ -458,23 +458,28 @@ describe('$resolveBlockHandle', () => {
     });
   });
 
-  test('a typo, or a prefix shorter than 4 characters, is not found', () => {
-    using editor = build([V1ST, XQE, RK8P]);
-    appendParagraphs(editor, ['a', 'b', 'c']);
+  test('a typo is not found; a prefix shorter than 4 characters is too short', () => {
+    using editor = build([V1ST, XQE, RK8P, 'b1']);
+    appendParagraphs(editor, ['a', 'b', 'c', 'd']);
     expect(resolve(editor, '9xQf')).toEqual({
       handle: '9xQf',
       status: 'not-found',
     });
-    expect(resolve(editor, '9xQ')).toEqual({
-      handle: '9xQ',
-      status: 'not-found',
-    });
-    expect(resolve(editor, '9')).toEqual({handle: '9', status: 'not-found'});
     // Case matters.
     expect(resolve(editor, '9XQE')).toEqual({
       handle: '9XQE',
       status: 'not-found',
     });
+    // Never a handle: a dropped character, not a deleted block.
+    for (const short of ['9xQ', '9x', '9', 'b']) {
+      expect(resolve(editor, short)).toEqual({
+        handle: short,
+        reason: 'too-short',
+        status: 'invalid',
+      });
+    }
+    // A whole id shorter than 4 characters is still found.
+    expect(resolve(editor, 'b1')).toEqual({id: 'b1', status: 'found'});
   });
 
   test('invalid input', () => {
@@ -492,6 +497,7 @@ describe('$resolveBlockHandle', () => {
     ]) {
       expect(resolve(editor, input), JSON.stringify(input)).toEqual({
         handle: input,
+        reason: 'malformed',
         status: 'invalid',
       });
     }
@@ -506,15 +512,14 @@ describe('$resolveBlockHandle', () => {
       Object.create(null),
     ]) {
       expect(
-        editor.read(() => $resolveBlockHandle(input as unknown as string))
-          .status,
-      ).toBe('invalid');
+        editor.read(() => $resolveBlockHandle(input as unknown as string)),
+      ).toMatchObject({reason: 'malformed', status: 'invalid'});
     }
     expect(
       editor.read(() =>
         $resolveBlockHandle(JSON.parse('{"toString":null}') as string),
       ),
-    ).toEqual({handle: '', status: 'invalid'});
+    ).toEqual({handle: '', reason: 'malformed', status: 'invalid'});
   });
 
   test('a deleted block is not found', () => {
@@ -595,6 +600,148 @@ describe('$resolveBlockHandle', () => {
       'same3',
       'same4',
     ]);
+  });
+});
+
+describe('$resolveBlockHandle with the handles of a read', () => {
+  function readOf(editor: LexicalEditor): Map<string, string> {
+    return editor.read($getBlockHandles);
+  }
+  function resolveRead(
+    editor: LexicalEditor,
+    handle: string,
+    read: Map<string, string>,
+  ) {
+    return editor.read(() => {
+      const result = $resolveBlockHandle(handle, {read});
+      return result.status === 'found'
+        ? {id: $getBlockId(result.node), status: result.status}
+        : result;
+    });
+  }
+
+  test('a block deleted since the read is not found, even if another id now starts with the handle', () => {
+    using editor = build(['b123', 'b123456', XQE]);
+    appendParagraphs(editor, ['a', 'b', 'c']);
+    const read = readOf(editor);
+    expect(read.get('b123')).toBe('b123');
+    expect(read.get('b123456')).toBe('b1234');
+    update(editor, () => {
+      $getBlockById('b123')!.remove();
+    });
+    // Without the read, the handle now names the surviving block.
+    expect(resolve(editor, 'b123')).toEqual({id: 'b123456', status: 'found'});
+    // With it, the block the model read is gone.
+    expect(resolveRead(editor, 'b123', read)).toEqual({
+      handle: 'b123',
+      status: 'not-found',
+    });
+    expect(resolveRead(editor, 'b1234', read)).toEqual({
+      id: 'b123456',
+      status: 'found',
+    });
+  });
+
+  test('a block added since cannot take the handle or make it ambiguous', () => {
+    using editor = build([V1ST, XQE, 'V1StQ9mWc0-bE3rT7yLpA', 'Rk8pNEW']);
+    appendParagraphs(editor, ['a', 'b']);
+    const read = readOf(editor);
+    appendParagraphs(editor, ['c']);
+    expect(resolve(editor, 'V1St').status).toBe('ambiguous');
+    expect(resolveRead(editor, 'V1St', read)).toEqual({
+      id: V1ST,
+      status: 'found',
+    });
+    // A prefix freed by a deletion and taken by a block added since.
+    update(editor, () => {
+      $getBlockById(XQE)!.remove();
+      const node = $createParagraphNode();
+      $setState(node, blockIdState, '9xQeNEW');
+      $getRoot().append(node);
+    });
+    expect(resolve(editor, '9xQe')).toEqual({id: '9xQeNEW', status: 'found'});
+    expect(resolveRead(editor, '9xQe', read)).toEqual({
+      handle: '9xQe',
+      status: 'not-found',
+    });
+    // The whole id of a block the model did not read is not one of its blocks.
+    expect(resolveRead(editor, '9xQeNEW', read)).toEqual({
+      handle: '9xQeNEW',
+      status: 'not-found',
+    });
+  });
+
+  test('typos fail against the ids of the read', () => {
+    using editor = build([
+      'V1StGaaaaaaaaaaaaaaaa',
+      'V1StQbbbbbbbbbbbbbbbb',
+      XQE,
+    ]);
+    appendParagraphs(editor, ['a', 'b', 'c']);
+    const read = readOf(editor);
+    expect(resolveRead(editor, '9xQf', read)).toEqual({
+      handle: '9xQf',
+      status: 'not-found',
+    });
+    // Shorter than the handles shown: the read's handles as candidates.
+    expect(resolveRead(editor, 'V1St', read)).toEqual({
+      candidates: ['V1StG', 'V1StQ'],
+      handle: 'V1St',
+      status: 'ambiguous',
+    });
+    expect(resolveRead(editor, '9xQ', read)).toEqual({
+      handle: '9xQ',
+      reason: 'too-short',
+      status: 'invalid',
+    });
+    expect(resolveRead(editor, '9xQe!', read)).toEqual({
+      handle: '9xQe!',
+      reason: 'malformed',
+      status: 'invalid',
+    });
+    // A longer prefix and the whole id work.
+    expect(resolveRead(editor, '9xQeLm', read)).toEqual({
+      id: XQE,
+      status: 'found',
+    });
+    expect(resolveRead(editor, XQE, read)).toEqual({id: XQE, status: 'found'});
+  });
+
+  test('a map changed between calls is read as it is now', () => {
+    using editor = build(['abcd1111', 'wxyz2222', 'abcd9999']);
+    appendParagraphs(editor, ['a', 'b']);
+    const shown = readOf(editor);
+    expect(resolveRead(editor, 'abcd', shown)).toEqual({
+      id: 'abcd1111',
+      status: 'found',
+    });
+    // The same map, refilled from a later read.
+    appendParagraphs(editor, ['c']);
+    shown.clear();
+    for (const [id, handle] of readOf(editor)) {
+      shown.set(id, handle);
+    }
+    const fresh = new Map(shown);
+    for (const read of [shown, fresh]) {
+      expect(resolveRead(editor, 'abcd', read)).toEqual({
+        candidates: ['abcd1', 'abcd9'],
+        handle: 'abcd',
+        status: 'ambiguous',
+      });
+    }
+  });
+
+  test('works with a read of another editor state of the same document', () => {
+    using editor = build([V1ST, XQE]);
+    appendParagraphs(editor, ['a', 'b']);
+    const json = editor.getEditorState().toJSON();
+    const read = readOf(editor);
+    using other = build([]);
+    other.setEditorState(other.parseEditorState(json));
+    expect(resolveRead(other, '9xQe', read)).toEqual({
+      id: XQE,
+      status: 'found',
+    });
   });
 });
 

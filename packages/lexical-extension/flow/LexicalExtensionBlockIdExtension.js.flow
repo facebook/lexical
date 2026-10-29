@@ -26,13 +26,24 @@ export type BlockHandleResult =
       readonly handle: string,
       readonly candidates: ReadonlyArray<string>,
     }
-  | {readonly status: 'invalid', readonly handle: string};
+  | {
+      readonly status: 'invalid',
+      readonly handle: string,
+      readonly reason: 'too-short' | 'malformed',
+    };
 
 declare export function $getBlockHandle(node: LexicalNode): string | null;
 
 declare export function $getBlockHandles(): Map<string, string>;
 
-declare export function $resolveBlockHandle(handle: string): BlockHandleResult;
+export type BlockHandleOptions = {
+  read?: ReadonlyMap<string, string>,
+};
+
+declare export function $resolveBlockHandle(
+  handle: string,
+  options?: BlockHandleOptions,
+): BlockHandleResult;
 
 declare export function $defaultIsIdentifiedBlock(node: LexicalNode): boolean;
 
@@ -52,7 +63,10 @@ export interface BlockIdOutput {
   $getBlockById: (id: string) => LexicalNode | null;
   $getBlockHandle: (node: LexicalNode) => string | null;
   $getBlockHandles: () => Map<string, string>;
-  $resolveBlockHandle: (handle: string) => BlockHandleResult;
+  $resolveBlockHandle: (
+    handle: string,
+    options?: BlockHandleOptions,
+  ) => BlockHandleResult;
   $isIdentifiedBlock: (node: LexicalNode) => boolean;
 }
 

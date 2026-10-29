@@ -343,9 +343,13 @@ export type YBindingStatus =
   /** Reading and writing. */
   | 'active'
   /**
-   * The binding cannot write the document safely: a layout this version
-   * does not support, a node type the editor does not register, or a type
-   * stored in a way its class cannot be (a warning says which). Read only.
+   * Read only: the binding writes nothing, and the editor is not editable.
+   * A warning says why: a layout or schema version this version does not
+   * read, a node type the editor does not register, content a node class
+   * throws on, an unsupported configuration (a document not made with
+   * `createYDoc`, or options the binding does not support), a local change
+   * it cannot store, or a document it cannot read at all, after which it
+   * reads nothing more either.
    */
   | 'readonly';
 
@@ -1966,6 +1970,30 @@ export class YBinding {
     }
   }
 
+  /*
+   * Read only answers three questions, kept apart because their callers
+   * differ: whether a remote change is read into the editor (readsChanges),
+   * whether a local update is written (writesEdits), and whether the editor
+   * and the document are compared (State#differsOnPurpose).
+   */
+
+  /**
+   * Whether a remote change is read into the editor: not once the binding
+   * failed closed (see failClosed), whatever its status.
+   */
+  private readsChanges(): boolean {
+    return !this.unreadable;
+  }
+
+  /**
+   * Whether a local update is written (and an undo or redo applied, and the
+   * author's normalization run): only while the binding is active (see
+   * YBindingStatus, and staysReadOnly for what keeps it read only).
+   */
+  private writesEdits(): boolean {
+    return this._status === 'active';
+  }
+
   /**
    * Whether something keeps the binding read only for good: a configuration
    * it does not support, a newer schema version (see checkSchema), node types it cannot build (or slots it cannot
@@ -2370,7 +2398,7 @@ export class YBinding {
       return;
     }
     this.remoteSeq++;
-    if (this.unreadable) {
+    if (!this.readsChanges()) {
       return;
     }
     if (this._status === 'pending') {
@@ -2663,7 +2691,7 @@ export class YBinding {
    * held, and a recovery reads the whole document again.
    */
   private guardedRead(read: GuardedRead): void {
-    if (this.unreadable) {
+    if (!this.readsChanges()) {
       return;
     }
     const editor = this._editor;
@@ -2683,7 +2711,7 @@ export class YBinding {
     }
     const shown = editor.getEditorState();
     const settle = () => {
-      if (this.unreadable) {
+      if (!this.readsChanges()) {
         return;
       }
       if (failure !== null) {
@@ -2705,7 +2733,7 @@ export class YBinding {
           // Admitted before the binding failed closed and run after it (an
           // update queued behind the one that failed, or drained by the
           // restore of what the editor showed): nothing is read.
-          if (this.unreadable) {
+          if (!this.readsChanges()) {
             return;
           }
           readState = editor._pendingEditorState;
@@ -3226,7 +3254,7 @@ export class YBinding {
       return;
     }
     if (
-      this._status === 'active' &&
+      this.writesEdits() &&
       !commit.remote &&
       !commit.skip &&
       this.schemaGatesWrite(editorState)
@@ -3236,7 +3264,7 @@ export class YBinding {
       this.gateSchema();
     }
     if (
-      this._status !== 'active' &&
+      !this.writesEdits() &&
       !this.keepsUnstored &&
       !commit.remote &&
       !commit.skip
@@ -3252,7 +3280,7 @@ export class YBinding {
       // content.
       const composing = this._editor._compositionKey !== null;
       let refused = false;
-      if (this.unreadable) {
+      if (!this.readsChanges()) {
         refused =
           this.$changedNodes(
             dirtyElements,
@@ -3294,7 +3322,7 @@ export class YBinding {
       return;
     }
     if (
-      this._status !== 'active' ||
+      !this.writesEdits() ||
       commit.remote ||
       commit.skip ||
       (dirtyElements.size === 0 && dirtyLeaves.size === 0)
@@ -3652,10 +3680,8 @@ export class YBinding {
     // self-check, see selfCheckWrite), nor with types the editor cannot
     // show (read only).
     if (
-      this._status !== 'active' ||
-      state.hidden !== null ||
-      state.unknownTypes.size > 0 ||
-      state.unreadable.size > 0 ||
+      !this.writesEdits() ||
+      state.differsOnPurpose() ||
       this.untransformed.size > 0 ||
       this.untransformedText.size > 0 ||
       this.storedHoles.size > 0
@@ -4278,7 +4304,7 @@ export class YBinding {
       klass: Klass<LexicalNode>,
       listener: Transform<LexicalNode>,
     ) {
-      if (binding._status !== 'active') {
+      if (!binding.writesEdits()) {
         // Nothing is written yet (or at all): the pass commits as Lexical
         // makes it, and is noted for isRegistrationPass.
         registeredTypes.add(klass.getType());
@@ -4773,7 +4799,7 @@ export class YBinding {
   /** The author's normalization itself, inside an update. */
   private $normalize(): void {
     if (
-      this._status !== 'active' ||
+      !this.writesEdits() ||
       (this.untransformed.size === 0 &&
         this.untransformedText.size === 0 &&
         this.storedHoles.size === 0)
@@ -4977,7 +5003,7 @@ export class YBinding {
     const um = this._undoManager;
     // Nothing is written while the binding is not active (see
     // YBindingStatus): an undo or redo would write.
-    if (um === null || this._status !== 'active') {
+    if (um === null || !this.writesEdits()) {
       return false;
     }
     const editor = this._editor;

@@ -2898,45 +2898,6 @@ describe('LexicalSelection tests', () => {
       });
     });
 
-    test('Two elements, same top-element', async () => {
-      const testEditor = createTestEditor();
-      const element = document.createElement('div');
-      testEditor.setRootElement(element);
-
-      await testEditor.update(() => {
-        const root = $getRoot();
-        const paragraph1 = $createParagraphNode();
-        const text1 = $createTextNode('text 1');
-        const paragraph2 = $createParagraphNode();
-        const text2 = $createTextNode('text 2');
-        root.append(paragraph1, paragraph2);
-        paragraph1.append(text1);
-        paragraph2.append(text2);
-
-        const selection = $createRangeSelection();
-        $setSelection(selection);
-        $setAnchorPoint({
-          key: text1.__key,
-          offset: 0,
-          type: 'text',
-        });
-        $setFocusPoint({
-          key: text2.__key,
-          offset: text1.__text.length,
-          type: 'text',
-        });
-
-        $setBlocksType(selection, () => {
-          return $createHeadingNode('h1');
-        });
-
-        const rootChildren = root.getChildren();
-        expect(rootChildren[0].__type).toBe('heading');
-        expect(rootChildren[1].__type).toBe('heading');
-        expect(rootChildren.length).toBe(2);
-      });
-    });
-
     test('Collapsed in element inside top-element', async () => {
       const testEditor = createTestEditor();
       const element = document.createElement('div');

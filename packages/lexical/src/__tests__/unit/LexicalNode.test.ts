@@ -1254,7 +1254,7 @@ describe('LexicalNode tests', () => {
         );
 
         await editor.update(() => {
-          const barTextNode = new TextNode('bar').setMode('token');
+          const barTextNode = new TextNode('bar').setMode('segmented');
           textNode.insertAfter(barTextNode);
         });
 

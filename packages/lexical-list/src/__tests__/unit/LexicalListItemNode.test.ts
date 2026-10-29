@@ -1248,7 +1248,7 @@ describe('LexicalListItemNode tests', () => {
         const {editor} = testEnv;
 
         await editor.update(() => {
-          listItemNode3.insertNewAfter($createRangeSelection());
+          listItemNode2.insertNewAfter($createRangeSelection());
         });
 
         expectHtmlToBeEqual(
@@ -1266,9 +1266,11 @@ describe('LexicalListItemNode tests', () => {
                   <span data-lexical-text="true">two</span>
                 </li>
                 <li value="3">
+                  <br data-lexical-managed-linebreak="true" />
+                </li>
+                <li value="4">
                   <span data-lexical-text="true">three</span>
                 </li>
-                <li value="4"><br data-lexical-managed-linebreak="true" /></li>
               </ul>
             </div>
           `,

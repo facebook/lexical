@@ -209,7 +209,7 @@ describe('LexicalBuilder', () => {
     });
     it('peer-first', () => {
       const builder = LexicalBuilder.fromEditor(
-        buildEditorFromExtensions(ExtensionA, ConfigExtension),
+        buildEditorFromExtensions(ConfigExtension, ExtensionA),
       );
       const reps = builder.sortedExtensionReps();
       expect(reps.map(rep => rep.extension.name)).toEqual([

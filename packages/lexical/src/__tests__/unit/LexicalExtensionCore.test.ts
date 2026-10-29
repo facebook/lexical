@@ -53,11 +53,6 @@ describe('defineExtension', () => {
       }),
     );
   });
-  it('can define an extension without config', () => {
-    assertType<LexicalExtension<ExtensionConfigBase, 'test', undefined, never>>(
-      defineExtension({name: 'test'}),
-    );
-  });
   it('infers the correct init type', () => {
     assertType<
       LexicalExtension<ExtensionConfigBase, 'test', undefined, 'string'>

@@ -167,7 +167,9 @@ describe('schema version gate', () => {
       supported: 1,
     });
     // A short developer note, no product text.
-    expect(older.warnings[0].message).toBe('schema 2 is newer than 1');
+    expect(older.warnings[0].message).toBe(
+      `schema 2 is newer than 1. A newer version of your app (a higher schemaVersion) wrote this document, so this editor is read only: load the newer app version to edit it`,
+    );
 
     // A local edit is refused (#9510): nothing is written, and the editor
     // shows the document again.
@@ -650,6 +652,19 @@ describe('schema version: headless', () => {
 describe('schema version: required', () => {
   const FIX =
     "start at 1 and increase it whenever a node's stored fields or node types change";
+
+  test('YCollabExtension throws without a doc, with the fix', () => {
+    expect(() =>
+      buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [configExtension(YCollabExtension, {schemaVersion: 1})],
+          name: 'test-doc-required',
+        }),
+      ),
+    ).toThrow(
+      'YCollabExtension needs a doc: pass doc: createYDoc() in its config, the document your provider syncs',
+    );
+  });
 
   test('YCollabExtension throws without schemaVersion, with the fix', () => {
     for (const schemaVersion of [undefined, 0, 1.5, -1, NaN]) {

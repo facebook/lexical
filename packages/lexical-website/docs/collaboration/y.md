@@ -262,13 +262,14 @@ extension, see [Errors and warnings](/docs/extensions/defining-extensions#errors
 Each warning is a `LexicalWarning` with a stable `code` and typed `data`;
 `isYWarning(error)` narrows it to the `YWarning` union, where `code` decides
 the type of `data`, and `data.reason` says which case it is. The `message` is
-a short note for developers: render your own text from `code` and `data`.
+for developers (what happened and what to do): render your own text from
+`code` and `data`.
 
 | Constant | Reported when | `data` (`reason`: other fields) |
 | -- | -- | -- |
 | `UNSUPPORTED_SCHEMA_WARNING` | A client of a newer version of your app (a higher `schemaVersion`) wrote to the document, on open or mid-session; see [Versioning your schema](#versioning-your-schema). Read only. | `'newer'`: `found`; `'malformed'`: `key`, `found`. All: `supported` (your `schemaVersion`) |
 | `UNSUPPORTED_LAYOUT_WARNING` | The layout is one this version cannot read. Read only. | `'newer'`: `found`; `'malformed'`: `key`, `found`; `'missing'`, `'removed'`; `'legacy-roots'`: `roots`. All: `supported` |
-| `UNKNOWN_NODE_TYPES_WARNING` | The document has node types the editor cannot build: types it does not register, however they are stored (a link class it lacks too), or content its classes throw on. Read only. | `'unregistered'`, `'malformed-slot'`: `types`; `'unreadable'`: `types`, `error` |
+| `UNKNOWN_NODE_TYPES_WARNING` | The document has node types the editor cannot build: types it does not register, however they are stored (a link class it lacks too), or content its classes throw on; or the document could not be read at all (`'unreadable'` with empty `types`, the cause in `error`). Read only. | `'unregistered'`, `'malformed-slot'`: `types`; `'unreadable'`: `types`, `error` |
 | `STORAGE_MISMATCH_WARNING` | A node type is stored in a way its class cannot be (one warning per type). Read only. | `'declaration-changed'`: `type`, `stored`, `declared`; `'malformed'`: `type`, `key`, `found` |
 | `UNSUPPORTED_SLOTS_WARNING` | Named slots where the document cannot store them. Not written; read only. | `'stored-host'`, `'root'`: `types` |
 | `UNSUPPORTED_CONFIG_WARNING` | `BlockIdExtension` with `repairTransforms: true`, or a document with Yjs's format cleanup on (not from `createYDoc`), see [Set up an editor](#set-up-an-editor). Nothing is written; read only. | `'repair-transforms'`: `options`; `'cleanup-formatting'` |
@@ -368,7 +369,7 @@ release's clients with the version of the schema they were built with.
   older client then only loses the ability to edit documents a newer one
   wrote to, never what they hold. An app that never bumps keeps today's
   behavior between versions (see "Older app versions" in [Limits](#limits)).
-- **Rendering the warning.** The message is a short note for developers.
+- **Rendering the warning.** The message is for developers.
   Render your own banner from `code` and `data`, for example "This document
   was edited with a newer version of the app. Reload to get the latest
   version." (see the banner example in [Warnings](#warnings)). Where the

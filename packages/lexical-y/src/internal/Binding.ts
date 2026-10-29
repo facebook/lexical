@@ -2110,8 +2110,8 @@ export class YBinding {
    *   editor showed before the read. A throw committing the pending
    *   updates is the app's (an update or a listener of its own): it is
    *   rethrown in a microtask, and the read goes on. So is a throw once the
-   *   read committed (the editor shows what it read, and an update listener
-   *   of the app's threw): the read stands.
+   *   read is committed and rendered (a listener of the app's threw): the
+   *   read stands.
    * - `read.after` runs once the read has committed and nothing threw: after
    *   the update the read is part of, where it is nested in one (an undo the
    *   binding runs in an update of its own, see undo).
@@ -2188,9 +2188,17 @@ export class YBinding {
         // The update the read is part of threw: not the read's to recover.
         throw error;
       }
-      if (readState !== null && editor.getEditorState() === readState) {
-        // Thrown once the read had committed, by a listener of the app's:
-        // the read stands.
+      if (
+        readState !== null &&
+        (readState as EditorState)._readOnly &&
+        editor.getEditorState() === readState
+      ) {
+        // Thrown by a listener of the app's on the read's own commit, once
+        // Lexical had committed and rendered the read (it marks the state
+        // read only after reconciling it, before its listeners run): the
+        // read stands. Thrown before (rendering what was read), or on the
+        // commit of an update queued behind the read (where the throw can
+        // have skipped writing that update), it is recovered from.
         rethrowLater(error);
       } else {
         // Thrown committing what was read.

@@ -9,10 +9,12 @@
 import {$createCodeNode} from '@lexical/code';
 import {registerCodeHighlighting} from '@lexical/code-prism';
 import {
+  $createLineBreakNode,
   $createTextNode,
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  type ElementNode,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
@@ -53,6 +55,49 @@ describe('CodeHighlighterPrism $updateAndRetainSelection', () => {
             }
           }
         });
+
+        await editor.update(() => {
+          const selection = $getSelection();
+          expect($isRangeSelection(selection)).toBe(true);
+          if ($isRangeSelection(selection)) {
+            selection.insertText('X');
+          }
+        });
+
+        expect(
+          editor.read(() => $getRoot().getFirstChild()!.getTextContent()),
+        ).toBe(expectedText);
+      },
+    );
+
+    // An element point after a line break is a child index, which goes
+    // stale when the highlighter splits an earlier line into more tokens.
+    // The caret must stay on its own line.
+    test.each([
+      [['const a = 1', '\n', 'b'], 2, 'const a = 1\nXb'],
+      [['const a = 1', '\n'], 2, 'const a = 1\nX'],
+      [['const a = 1', '\n', '\n', 'b'], 3, 'const a = 1\n\nXb'],
+    ])(
+      'keeps an element caret on its line when an earlier line is split: %j at %i',
+      async (parts, offset, expectedText) => {
+        const {editor} = testEnv;
+        registerCodeHighlighting(editor);
+
+        await editor.update(() => {
+          const code = $createCodeNode('javascript');
+          $getRoot().clear().append(code);
+          code.append(
+            ...parts.map(part =>
+              part === '\n' ? $createLineBreakNode() : $createTextNode(part),
+            ),
+          );
+          code.select(offset, offset);
+        });
+        expect(
+          editor.read(() =>
+            $getRoot().getFirstChildOrThrow<ElementNode>().getChildrenSize(),
+          ),
+        ).toBeGreaterThan(parts.length);
 
         await editor.update(() => {
           const selection = $getSelection();

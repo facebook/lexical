@@ -1,6 +1,8 @@
 ---
 '@lexical/code-core': patch
 '@lexical/code': patch
+'@lexical/code-prism': patch
+'@lexical/code-shiki': patch
 ---
 
 [feature] Add a word wrap flag to `CodeNode` (`setWordWrap`/`getWordWrap`) and an experimental `CodeLineNumbersExtension` that marks where each logical line of a code block starts, so a theme can draw line numbers that follow wrapped lines
@@ -12,3 +14,5 @@ Verify: `CodeNode.exportJSON()` now has an own `wordWrap` key on every code bloc
 `CodeLineNumbersExtension` sets `data-lexical-code-line-numbers` on each code block and wraps the `<br>` of each of its line breaks in a `<span data-lexical-code-line-break>`, so a theme can draw the numbers with a CSS counter. Exported and copied HTML is unchanged. Set `onlyWordWrapped` to limit this to blocks with word wrap on. The `@lexical/code-core` README has the CSS recipe.
 
 The Flow types now declare the theme next to the language as TypeScript does: `CodeNode.getTheme`/`setTheme`, the `theme` argument of `$createCodeNode` and the `theme` key of `SerializedCodeNode`. `CodeNode.setLanguage` takes a nullable language and returns the node.
+
+The Prism and Shiki highlighters no longer move a caret that sits right after a line break into an earlier line when they split that line into more tokens (for example when Shiki's grammar finishes loading just after Enter), so the next characters typed land on the right line.

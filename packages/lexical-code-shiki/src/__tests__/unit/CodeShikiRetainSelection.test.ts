@@ -19,12 +19,14 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {$convertFromMarkdownString, TRANSFORMERS} from '@lexical/markdown';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
+  $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $getSelection,
   $isRangeSelection,
   defineExtension,
+  type ElementNode,
 } from 'lexical';
 import {beforeAll, describe, expect, test} from 'vitest';
 
@@ -81,6 +83,54 @@ describe('CodeHighlighterShiki $updateAndRetainSelection', () => {
           }
         }
       });
+
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          expect($isRangeSelection(selection)).toBe(true);
+          if ($isRangeSelection(selection)) {
+            selection.insertText('X');
+          }
+        },
+        {discrete: true},
+      );
+
+      expect(
+        editor.read(() => $getRoot().getFirstChild()!.getTextContent()),
+      ).toBe(expectedText);
+    },
+  );
+
+  // An element point after a line break is a child index, which goes stale
+  // when the highlighter splits an earlier line into more tokens, e.g. when
+  // the grammar loads after Enter. The caret must stay on its own line.
+  test.each([
+    [['const a = 1', '\n', 'b'], 2, 'const a = 1\nXb'],
+    [['const a = 1', '\n'], 2, 'const a = 1\nX'],
+    [['const a = 1', '\n', '\n', 'b'], 3, 'const a = 1\n\nXb'],
+  ])(
+    'keeps an element caret on its line when an earlier line is split: %j at %i',
+    (parts, offset, expectedText) => {
+      using editor = createEditor();
+
+      editor.update(
+        () => {
+          const code = $createCodeNode('javascript');
+          $getRoot().clear().append(code);
+          code.append(
+            ...parts.map(part =>
+              part === '\n' ? $createLineBreakNode() : $createTextNode(part),
+            ),
+          );
+          code.select(offset, offset);
+        },
+        {discrete: true},
+      );
+      expect(
+        editor.read(() =>
+          $getRoot().getFirstChildOrThrow<ElementNode>().getChildrenSize(),
+        ),
+      ).toBeGreaterThan(parts.length);
 
       editor.update(
         () => {

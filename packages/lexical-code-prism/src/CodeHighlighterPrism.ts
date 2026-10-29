@@ -209,39 +209,27 @@ function $updateAndRetainSelection(
     return;
   }
 
-  const anchorOffset = anchor.offset;
-  const isNewLineAnchor =
-    anchor.type === 'element' &&
-    $isLineBreakNode(node.getChildAtIndex(anchor.offset - 1));
-  let textOffset = 0;
-
-  // Calculating previous text offset (all text node prior to anchor + anchor own text offset)
-  if (!isNewLineAnchor) {
-    textOffset =
-      anchorOffset +
-      anchorNode.getPreviousSiblings().reduce((offset, _node) => {
-        return offset + _node.getTextContentSize();
-      }, 0);
-  }
+  // The text offset of the anchor in the code block: the text of everything
+  // before it, plus its offset in its own text node. An element point (on the
+  // code node, e.g. after a line break) is a child index, which goes stale
+  // once an earlier line is split into more tokens, so it is converted too.
+  const textOffsetBefore = (nodes: LexicalNode[]) =>
+    nodes.reduce((offset, child) => offset + child.getTextContentSize(), 0);
+  let textOffset =
+    anchor.type === 'element'
+      ? textOffsetBefore(node.getChildren().slice(0, anchor.offset))
+      : anchor.offset + textOffsetBefore(anchorNode.getPreviousSiblings());
 
   const hasChanges = updateFn();
   if (!hasChanges) {
     return;
   }
 
-  // Non-text anchors only happen for line breaks, otherwise
-  // selection will be within text node (code highlight node)
-  if (isNewLineAnchor) {
-    anchor.getNode().select(anchorOffset, anchorOffset);
-    return;
-  }
-
-  // If it was non-element anchor then we walk through child nodes
-  // and looking for a position of original text offset. A LineBreakNode
-  // consumes one unit of the offset but can't host a text point, so when the
-  // offset lands on one we use an element point on the code node instead of
-  // letting the offset go negative and selecting the next text node at an
-  // out-of-range position.
+  // Walk through the child nodes looking for the original text offset. A
+  // LineBreakNode consumes one unit of the offset but can't host a text
+  // point, so when the offset lands on one we use an element point on the
+  // code node instead of letting the offset go negative and selecting the
+  // next text node at an out-of-range position.
   const children = node.getChildren();
   for (let index = 0; index < children.length; index++) {
     const child = children[index];

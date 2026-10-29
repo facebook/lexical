@@ -52,7 +52,8 @@ import {
   TYPE_KEY,
   WRAPPER_PREFIX,
 } from './Schema';
-import {type CS, EMPTY_FORMATS, prevLiveEnd, State} from './State';
+import {prevLiveEnd} from './Seen';
+import {type CS, EMPTY_FORMATS, State} from './State';
 
 // The opt-in self-check (YBindingOptions.selfCheck): the lines a local
 // write touched, read back from Yjs and compared with the editor

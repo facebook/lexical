@@ -96,21 +96,6 @@ import {
   WRAPPER_PREFIX,
   wrapperFieldsOf,
 } from './Schema';
-import {$writeSlots} from './Slots';
-import {
-  type CS,
-  EMPTY_FORMATS,
-  isPartKey,
-  isShownEnd,
-  nameOf,
-  prevLiveEnd,
-  type Roles,
-  type State,
-  typeOf,
-  type Unit,
-} from './State';
-import {$isHeldInline} from './Structure';
-import {type Segment, type TextEditLog, TextReplay} from './TextEdits';
 import {
   attrOf,
   attrsBefore,
@@ -118,8 +103,25 @@ import {
   deleteAttr,
   deleteItem,
   isGone,
+  isHeld,
+  isShownEnd,
+  prevLiveEnd,
   setAttr,
-} from './Unread';
+  unheldLength,
+} from './Seen';
+import {$writeSlots} from './Slots';
+import {
+  type CS,
+  EMPTY_FORMATS,
+  isPartKey,
+  nameOf,
+  type Roles,
+  type State,
+  typeOf,
+  type Unit,
+} from './State';
+import {$isHeldInline} from './Structure';
+import {type Segment, type TextEditLog, TextReplay} from './TextEdits';
 
 /** storedTypeOf, in the document the write sees (see Unread). */
 const storedType = (y: YNode): string =>
@@ -2683,7 +2685,7 @@ export class Writer {
         }
         if (it.content instanceof ContentFormat) {
           applyFormat(current, it.content);
-          if (hidden === null || !hidden.hides(it)) {
+          if (!isHeld(it, hidden)) {
             applyFormat(shown, it.content);
           }
           continue;
@@ -4937,7 +4939,7 @@ function readAtomsLimited(
   let n = 0;
   while (stop !== null && n < limit) {
     if (isLiveContent(stop)) {
-      n += hidden === null ? stop.length : hidden.shownLength(stop);
+      n += unheldLength(stop, hidden);
     }
     stop = stop.right;
   }

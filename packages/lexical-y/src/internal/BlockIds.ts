@@ -37,16 +37,9 @@ import {
   TYPE_KEY,
   WRAPPER_FIELDS_KEY,
 } from './Schema';
+import {isShownEnd, shownAttrs} from './Seen';
 import {$inNamedSlot} from './Slots';
-import {
-  type CS,
-  isShownEnd,
-  shownAttrs,
-  type State,
-  typeOf,
-  type Unit,
-  type UnitKind,
-} from './State';
+import {type CS, type State, typeOf, type Unit, type UnitKind} from './State';
 
 // Block ids (BlockIdExtension's), as the binding reads them: the grammar of
 // derived ids, the index of which blocks store which id, and the settlement

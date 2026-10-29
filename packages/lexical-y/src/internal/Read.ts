@@ -44,7 +44,7 @@ import {$appendAll, spliceAll} from './Arrays';
 import {$innerBlockIdsOf, BlockIdSettler, NO_IDS} from './BlockIds';
 import {type Formats} from './Cursor';
 import {groupKeySig, groupSig} from './Groups';
-import {Hidden, isShown, shownText} from './Hidden';
+import {Hidden} from './Hidden';
 import {
   $foreignFlatKeys,
   $groupFields,
@@ -102,16 +102,21 @@ import {
   wrappersFromAttrs,
   type WrapperValue,
 } from './Schema';
+import {
+  isHeld,
+  isShown,
+  isShownEnd,
+  prevLiveEnd,
+  shownAttrs,
+  shownText,
+} from './Seen';
 import {$holds, $readSlots, $replaceStored, SLOT_PREFIX} from './Slots';
 import {
   type CS,
   EMPTY_FORMATS,
   isEndItem,
-  isShownEnd,
   type Kind,
   nameOf,
-  prevLiveEnd,
-  shownAttrs,
   type State,
   typeOf,
   type Unit,
@@ -218,7 +223,7 @@ function parseRange(
       }
       continue;
     }
-    if (!it.countable || (hidden !== null && hidden.hides(it))) {
+    if (!it.countable || isHeld(it, hidden)) {
       continue;
     }
     if (isEndItem(it)) {
@@ -639,7 +644,7 @@ export class Reader {
         break;
       }
       passed.push(p);
-      if (isEndItem(p) && (hidden === null || !hidden.hides(p))) {
+      if (isEndItem(p) && !isHeld(p, hidden)) {
         const u = this.state.unitByEnd.get(p);
         if (u !== undefined && u.cs === cs) {
           // Content before a node unit (concurrent typing next to an
@@ -833,7 +838,7 @@ export class Reader {
     }
     let hidden = state.hidden;
     for (const it of items) {
-      if (it.deleted && (hidden === null || !hidden.hides(it))) {
+      if (it.deleted && !isHeld(it, hidden)) {
         return false;
       }
     }

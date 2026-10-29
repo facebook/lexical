@@ -4016,6 +4016,49 @@ describe('link destination whitespace does not backtrack', () => {
   }
 });
 
+// Exports a paragraph holding a link labelled `x` and then `after`, expects
+// `md`, and expects reading that back to give the same link and text.
+function expectLinkRoundTrip(
+  url: string,
+  title: string | null,
+  md: string,
+  after = '',
+): void {
+  const editor = createTestEditor({nodes: [LinkNode]});
+  editor.update(
+    () => {
+      const paragraph = $createParagraphNode().append(
+        $createLinkNode(url, {title}).append($createTextNode('x')),
+      );
+      if (after) {
+        paragraph.append($createTextNode(after));
+      }
+      $getRoot().clear().append(paragraph);
+    },
+    {discrete: true},
+  );
+
+  const exported = editor.read('latest', () =>
+    $convertToMarkdownString(TRANSFORMERS),
+  );
+  expect(exported).toBe(md);
+
+  const reimported = createTestEditor({nodes: [LinkNode]});
+  reimported.update(() => $convertFromMarkdownString(exported, TRANSFORMERS), {
+    discrete: true,
+  });
+  reimported.read('latest', () => {
+    expect(
+      $getRoot()
+        .getAllTextNodes()
+        .map(node => node.getParent())
+        .filter($isLinkNode)
+        .map(node => [node.getURL(), node.getTitle()]),
+    ).toEqual([[url, title]]);
+    expect($getRoot().getTextContent()).toBe(`x${after}`);
+  });
+}
+
 describe('link destination round trip', () => {
   // Export has to write a destination that import can read back: escapes in
   // the raw form, and the pointy form for a URL the raw form cannot hold.
@@ -4040,6 +4083,9 @@ describe('link destination round trip', () => {
     ['https://example.com/a b<c', '[x](<https://example.com/a b\\<c>)'],
     ['https://example.com/a b\\', '[x](<https://example.com/a b\\\\>)'],
     ['https://example.com/a\tb', '[x](<https://example.com/a\tb>)'],
+    // Nor a control character, which the pointy form can hold.
+    ['/a\u0001b', '[x](</a\u0001b>)'],
+    ['/a\u007fb', '[x](</a\u007fb>)'],
     // No destination may hold a line ending, and writing one raw would end the
     // paragraph in the middle of the link.
     ['https://example.com/a\nb', '[x](<https://example.com/a&#10;b>)'],
@@ -4069,40 +4115,7 @@ describe('link destination round trip', () => {
 
   for (const [url, md] of CASES) {
     it(`preserves ${JSON.stringify(url)}`, () => {
-      const editor = createTestEditor({nodes: [LinkNode]});
-      editor.update(
-        () => {
-          $getRoot()
-            .clear()
-            .append(
-              $createParagraphNode().append(
-                $createLinkNode(url).append($createTextNode('x')),
-              ),
-            );
-        },
-        {discrete: true},
-      );
-
-      const exported = editor.read('latest', () =>
-        $convertToMarkdownString(TRANSFORMERS),
-      );
-      expect(exported).toBe(md);
-
-      const reimported = createTestEditor({nodes: [LinkNode]});
-      reimported.update(
-        () => $convertFromMarkdownString(exported, TRANSFORMERS),
-        {discrete: true},
-      );
-
-      expect(
-        reimported.read('latest', () =>
-          $getRoot()
-            .getAllTextNodes()
-            .map(node => node.getParent())
-            .filter($isLinkNode)
-            .map(node => node.getURL()),
-        ),
-      ).toEqual([url]);
+      expectLinkRoundTrip(url, null, md);
     });
   }
 });
@@ -4131,40 +4144,7 @@ describe('link title round trip', () => {
 
   for (const [title, md] of CASES) {
     it(`preserves ${JSON.stringify(title)}`, () => {
-      const editor = createTestEditor({nodes: [LinkNode]});
-      editor.update(
-        () => {
-          $getRoot()
-            .clear()
-            .append(
-              $createParagraphNode().append(
-                $createLinkNode('/uri', {title}).append($createTextNode('x')),
-              ),
-            );
-        },
-        {discrete: true},
-      );
-
-      const exported = editor.read('latest', () =>
-        $convertToMarkdownString(TRANSFORMERS),
-      );
-      expect(exported).toBe(md);
-
-      const reimported = createTestEditor({nodes: [LinkNode]});
-      reimported.update(
-        () => $convertFromMarkdownString(exported, TRANSFORMERS),
-        {discrete: true},
-      );
-
-      expect(
-        reimported.read('latest', () =>
-          $getRoot()
-            .getAllTextNodes()
-            .map(node => node.getParent())
-            .filter($isLinkNode)
-            .map(node => node.getTitle()),
-        ),
-      ).toEqual([title]);
+      expectLinkRoundTrip('/uri', title, md);
     });
   }
 });
@@ -4183,37 +4163,7 @@ describe('text after a link', () => {
 
   for (const [url, title, md] of CASES) {
     it(`keeps ${JSON.stringify([url, title])} apart from it`, () => {
-      const editor = createTestEditor({nodes: [LinkNode]});
-      editor.update(
-        () => {
-          $getRoot()
-            .clear()
-            .append(
-              $createParagraphNode().append(
-                $createLinkNode(url, {title}).append($createTextNode('x')),
-                $createTextNode(AFTER),
-              ),
-            );
-        },
-        {discrete: true},
-      );
-
-      const exported = editor.read('latest', () =>
-        $convertToMarkdownString(TRANSFORMERS),
-      );
-      expect(exported).toBe(md);
-
-      const reimported = createTestEditor({nodes: [LinkNode]});
-      reimported.update(
-        () => $convertFromMarkdownString(exported, TRANSFORMERS),
-        {discrete: true},
-      );
-      reimported.read('latest', () => {
-        const link = $getRoot().getAllTextNodes()[0].getParent();
-        assert($isLinkNode(link), 'Expected a link');
-        expect([link.getURL(), link.getTitle()]).toEqual([url, title]);
-        expect($getRoot().getTextContent()).toBe(`x${AFTER}`);
-      });
+      expectLinkRoundTrip(url, title, md, AFTER);
     });
   }
 });

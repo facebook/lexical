@@ -1171,6 +1171,8 @@ function escapeCharacterReferences(value: string): string {
 // A link destination or title is read back through `unescapeText`, so after
 // `escapeCharacterReferences` every match of `syntax`, a global regular
 // expression for the characters its shape treats as syntax, gets a backslash.
+// So does a backtick: code spans are read before links, so one anywhere in the
+// link could pair with one in the text after it and swallow the link.
 // Neither may hold a line ending either. CommonMark allows none in a
 // destination and no blank line in a title, where two CRs make one as surely
 // as two LFs, and the importer reads one LF-separated line at a time, so even
@@ -1180,6 +1182,7 @@ function escapeCharacterReferences(value: string): string {
 function escapeLinkPart(value: string, syntax: RegExp): string {
   return escapeCharacterReferences(value)
     .replace(syntax, '\\$&')
+    .replace(/`/g, '\\`')
     .replace(/[\r\n]/g, lineEnding => `&#${lineEnding.charCodeAt(0)};`);
 }
 
@@ -1240,27 +1243,24 @@ export const LINK: TextMatchTransformer = {
     const textContent = exportChildren(node);
     const title = node.getTitle();
 
-    // A raw destination cannot hold whitespace, so a URL that has any is
-    // written in the pointy form, where `<`, `>` and a backslash are syntax.
-    // An empty URL goes there too, since the raw form has nothing left to
-    // match. Everywhere else the destination is written raw, where a
-    // parenthesis would close it early, a backslash would start an escape, and
-    // only a `<` in first place turns it into the pointy form. An angle
-    // bracket anywhere else is an ordinary character and goes out as it is.
-    //
-    // Code spans are read before links, so a backtick anywhere in the link
-    // could pair with one in the text after it and swallow the link. Every
-    // part escapes a backtick on top of its own syntax, here and in the title.
+    // A raw destination cannot hold whitespace or a control character, so a
+    // URL that has any is written in the pointy form, where `<`, `>` and a
+    // backslash are syntax. An empty URL goes there too, since the raw form
+    // has nothing left to match. Everywhere else the destination is written
+    // raw, where a parenthesis would close it early, a backslash would start
+    // an escape, and only a `<` in first place turns it into the pointy form.
+    // An angle bracket anywhere else is an ordinary character and goes out as
+    // it is.
     const rawUrl = node.getURL();
     const url =
-      rawUrl === '' || /\s/.test(rawUrl)
-        ? `<${escapeLinkPart(rawUrl, /[\\<>`]/g)}>`
-        : escapeLinkPart(rawUrl, /[\\()`]|^</g);
+      // eslint-disable-next-line no-control-regex
+      rawUrl === '' || /[\s\0-\x1f\x7f]/.test(rawUrl)
+        ? `<${escapeLinkPart(rawUrl, /[\\<>]/g)}>`
+        : escapeLinkPart(rawUrl, /[\\()]|^</g);
 
-    // In the double-quoted title `"` and a backslash are syntax, and a
-    // backtick is escaped as above.
+    // In the double-quoted title only `"` and a backslash are syntax.
     const linkContent = title
-      ? `[${textContent}](${url} "${escapeLinkPart(title, /[\\"`]/g)}")`
+      ? `[${textContent}](${url} "${escapeLinkPart(title, /[\\"]/g)}")`
       : `[${textContent}](${url})`;
 
     return linkContent;

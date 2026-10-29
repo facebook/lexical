@@ -1821,6 +1821,11 @@ describe('Markdown', () => {
         ],
         '**a**\n**c**',
       ],
+      [
+        'closes before formatted text on the next line',
+        () => [$formatted('a', BOLD), $formatted('\nc', BOLD | ITALIC)],
+        '**a**\n***c***',
+      ],
     ])('%s', (_name, $nodes, expected) => {
       const editor = createTestEditor();
       editor.update(

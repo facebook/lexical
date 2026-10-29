@@ -516,26 +516,7 @@ function $exportTextFormat(
         );
   }
 
-  let leadingSpace: string;
-  let trimmedOutput: string;
-  let trailingSpace: string;
-  const isWhitespaceOnly = !canHoldTag(node, textContent);
-
-  if (isCode && !isWhitespaceOnly) {
-    // Inline code is an atomic literal span with a content-derived fence, so
-    // its whitespace stays inside the fence and other formats wrap around it.
-    const {fence, padded} = getCodeSpanDelimiter(textContent);
-    leadingSpace = '';
-    trailingSpace = '';
-    trimmedOutput = fence + padded + fence;
-  } else {
-    // Extract leading and trailing whitespaces.
-    // CommonMark flanking rules require formatting tags to be adjacent to non-whitespace characters.
-    const match = output.match(/^(\s*)(.*?)(\s*)$/s) || ['', '', output, ''];
-    leadingSpace = match[1];
-    trimmedOutput = match[2];
-    trailingSpace = match[3];
-  }
+  const cannotHoldTag = !canHoldTag(node, textContent);
 
   // the opening tags to be added to the result
   let openingTags = '';
@@ -557,8 +538,7 @@ function $exportTextFormat(
     }
 
     // dedup applied formats
-    // Whitespace-only text cannot hold a tag (see the early return below).
-    if (!isWhitespaceOnly && node.hasFormat(format) && !applied.has(format)) {
+    if (!cannotHoldTag && node.hasFormat(format) && !applied.has(format)) {
       applied.add(format);
 
       // append the tag to openingTags, if it's not applied to the previous nodes,
@@ -615,13 +595,32 @@ function $exportTextFormat(
     }
     break;
   }
-  // If the node is entirely whitespace, we don't apply opening/closing tags around it.
-  // However, it must still output any closing tags, before the whitespace.
-  if (isWhitespaceOnly) {
+  // If the node is entirely whitespace (or empty inline code), we don't apply
+  // opening/closing tags around it, but it must still output any closing tags.
+  if (cannotHoldTag) {
     return closingTagsBefore + closingTagsAfter + output;
   }
 
-  // Flanking Compliance: Notice how openingTags and closingTagsAfter are placed INSIDE the whitespace boundaries!
+  if (isCode) {
+    // Inline code is an atomic literal span with a content-derived fence, so
+    // its whitespace stays inside the fence and other formats wrap around it.
+    const {fence, padded} = getCodeSpanDelimiter(textContent);
+    return (
+      closingTagsBefore +
+      openingTags +
+      fence +
+      padded +
+      fence +
+      closingTagsAfter
+    );
+  }
+
+  // Flanking Compliance: CommonMark flanking rules require formatting tags to be
+  // adjacent to non-whitespace characters, so openingTags and closingTagsAfter
+  // are placed INSIDE the whitespace boundaries!
+  const [, leadingSpace, trimmedOutput, trailingSpace] = output.match(
+    /^(\s*)(.*?)(\s*)$/s,
+  ) || ['', '', output, ''];
   return (
     closingTagsBefore +
     leadingSpace +
@@ -661,12 +660,12 @@ function $continuesFormat(
     const text = selection
       ? $sliceSelectedTextNodeContent(selection, next, 'clone').getTextContent()
       : next.getTextContent();
-    if (canHoldTag(next, text)) {
-      return true;
-    }
     // Markdown import matches a tag within one line.
     if (text.includes('\n')) {
       return false;
+    }
+    if (canHoldTag(next, text)) {
+      return true;
     }
     next = getTextSibling(next, false);
   }

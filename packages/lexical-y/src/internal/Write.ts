@@ -424,7 +424,7 @@ export class Writer {
    * where it does not store the type as one (see wrapperFieldsOf).
    */
   readonly wrapperFields: (type: string) => OwnedFields | null;
-  /** Per item, the stored item found from it (see $groupReference). */
+  /** Per item, the stored item found from it (see $groupSource). */
   private readonly storedBefore = new Map<NodeKey, LexicalNode | null>();
   private readonly storedAfter = new Map<NodeKey, LexicalNode | null>();
   /**
@@ -442,7 +442,7 @@ export class Writer {
    */
   private readonly markersBefore = new Map<NodeKey, Attrs | null>();
   private readonly nodesBefore = new Map<NodeKey, [string, Attrs] | null>();
-  /** Per item, the item found from it (see $priorGroupItem). */
+  /** Per item, the item found from it as before (see $groupSource). */
   private readonly priorBefore = new Map<NodeKey, LexicalNode | null>();
   private readonly priorAfter = new Map<NodeKey, LexicalNode | null>();
   private readonly priorOfGroup = new Map<
@@ -4158,9 +4158,8 @@ export class Writer {
    * `owners`): the members of the outer levels (OUTER_KEY) it does not own
    * kept as stored, and, for an item new to its group (`line`), the group's
    * fields it does not own taken from another item of the group, as every
-   * item stores them (see $groupReference), or, where none kept its
-   * marker, as an item of the group stored them before this write (see
-   * $priorGroupItem). Where this write made the marker anew for a line that
+   * item stores them, or as an item of the group stored them before this
+   * write (see $groupSource). Where this write made the marker anew for a line that
    * had one (`before`, what that one stored, see $markerBefore), the line's
    * fields it does not own are those, and its group's are found as for an
    * item new to its group.
@@ -4207,13 +4206,7 @@ export class Writer {
       GROUP_KEY in desired &&
       (before !== null || current[GROUP_KEY] === undefined)
     ) {
-      const gtype = desired[GROUP_KEY];
-      const item = this.$groupReference(line, gtype);
-      const ref = item === null ? null : this.storedItemAttrs(item, gtype);
-      const source =
-        item !== null && ref !== null
-          ? {asBefore: false, attrs: ref, key: item.getKey()}
-          : this.$priorGroupItem(line, gtype);
+      const source = this.$groupSource(line, desired[GROUP_KEY]);
       if (source !== null) {
         // Owned as at the other item, whose group has the item's type.
         const of = this.markerOwners(desired, source.attrs);
@@ -4355,38 +4348,43 @@ export class Writer {
   }
 
   /**
-   * The item of `line`'s group (of type `gtype`) nearest before it, else
-   * after it, that was in the group before this update and whose stored
-   * marker this write did not make (see storedItemAttrs), or null. Its
-   * neighbor, not any item: a client that does not own a group field shows
-   * one group where another client shows two that differ in it, and the
-   * item goes into the one it is next to.
+   * Where item `line`, new to its group (of type `gtype`) or with a marker
+   * this write made anew, takes the group's fields it does not own from: the
+   * first of these, in this order, with what it stores (`asBefore`: what it
+   * stored before this write), or null.
+   *
+   * 1. The item of the group nearest before it, else after it, that was in
+   *    the group before this update and whose stored marker this write did
+   *    not make (see storedItemAttrs). Its neighbor, not any item: a client
+   *    that does not own a group field shows one group where another client
+   *    shows two that differ in it, and the item goes into the one it is
+   *    next to.
+   * 2. Where no item kept its marker, an item of the group whose marker
+   *    before this write held the group's fields: `line` itself where it
+   *    was in the same group then (its group moved with it),
+   * 3. else the item nearest before it, else after it, that was (the group
+   *    moved, and `line` is new to it),
+   * 4. else the first item the group had then whose marker held them (its
+   *    items replaced).
+   *
+   * Null where none was (a group new in this write). The order matters: a
+   * nearest-item rule alone takes another source where a group moves or
+   * its items are replaced, and stores other values of the fields.
    */
-  private $groupReference(
+  private $groupSource(
     line: LexicalNode,
     gtype: unknown,
-  ): LexicalNode | null {
-    return this.$nearestItem(
+  ): {asBefore: boolean; attrs: Attrs; key: NodeKey} | null {
+    const stored = this.$nearestItem(
       line,
       c => this.$inGroupBefore(c) && this.storedItemAttrs(c, gtype) !== null,
       this.storedBefore,
       this.storedAfter,
     );
-  }
-
-  /**
-   * Where no other item of `line`'s group kept its marker (see
-   * $groupReference), an item of the group whose marker before this write
-   * held the group's fields, with what it stored then: `line` itself where
-   * it was in the same group then (its group moved with it), else the item
-   * nearest before it, else after it, that was (the group moved, and `line`
-   * is new to it), else any item the group had then (its items replaced).
-   * Null where none was (a group new in this write).
-   */
-  private $priorGroupItem(
-    line: LexicalNode,
-    gtype: unknown,
-  ): {asBefore: boolean; attrs: Attrs; key: NodeKey} | null {
+    const ref = stored === null ? null : this.storedItemAttrs(stored, gtype);
+    if (stored !== null && ref !== null) {
+      return {asBefore: false, attrs: ref, key: stored.getKey()};
+    }
     const own = this.$priorItemAttrs(line, gtype);
     if (own !== null) {
       return {asBefore: true, attrs: own, key: line.getKey()};

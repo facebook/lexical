@@ -1634,13 +1634,20 @@ export function textJSONFromAttrs(text: string, encoded: Attrs): Attrs {
 // ---------------------------------------------------------------------------
 // Ownership
 //
-// Invariant: a write sets and deletes only the stored names its client owns
-// (ownsNodeAttr, ownsMarkerAttr, ownsFormat, and ownsMember for the members
-// of a value that holds a node's fields); every other name keeps its stored
-// value. Why: a document outlives app versions, and clients of several
-// versions edit it at once (during a rollout): a name a client does not
-// know, such as a field a newer version of a class declares, is another
-// client's data, which this one can neither show nor write back.
+// Invariant, in two clauses:
+// - A write changes the value a stored name gives content only where its
+//   client owns the name (ownsNodeAttr, ownsMarkerAttr, ownsFormat, and
+//   ownsMember for the members of a value that holds a node's fields);
+//   every other name keeps the value it gives content.
+// - Format items that keep every name's value on the content around a write
+//   (the negations and restores around inserted content, run ends, gap
+//   cleanup, the copies an undo brings back) are written for any name: they
+//   change no value, and filtering them by owner would let a value run on
+//   past its content.
+// Why: a document outlives app versions, and clients of several versions
+// edit it at once (during a rollout): a name a client does not know, such
+// as a field a newer version of a class declares, is another client's data,
+// which this one can neither show nor write back.
 
 /**
  * The fields a client owns at one stored location: those its classes for

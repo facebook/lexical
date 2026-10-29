@@ -15,7 +15,7 @@
 import {$create, $getRoot, ElementNode} from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {$p, NODES, type Peer, setup} from '../../utils/harness';
+import {$p, flush, NODES, type Peer, setup} from '../../utils/harness';
 
 /** A block whose class throws rendering it, as on a client that cannot. */
 class UnrenderableNode extends ElementNode {
@@ -43,10 +43,22 @@ describe('R-1: a read the editor cannot render', () => {
       nodes: [...NODES, UnrenderableNode],
     });
     attach(t.b);
-    t.a.update(() =>
-      $getRoot().append($create(UnrenderableNode).append($p('inside'))),
-    );
-    await expect(t.sync()).resolves.toBeUndefined();
+    // Showing again what B showed renders through the DOM the failed render
+    // left broken, and can throw too: failing closed rethrows that in a
+    // microtask (an uncaught error), and still ends read only.
+    const uncaught: unknown[] = [];
+    const onUncaught = (error: unknown) => uncaught.push(error);
+    process.on('uncaughtException', onUncaught);
+    try {
+      t.a.update(() =>
+        $getRoot().append($create(UnrenderableNode).append($p('inside'))),
+      );
+      await expect(t.sync()).resolves.toBeUndefined();
+      await flush();
+    } finally {
+      process.off('uncaughtException', onUncaught);
+    }
+    expect(uncaught.length).toBeLessThanOrEqual(1);
     expect(t.b.binding.status).toBe('readonly');
     expect(t.b.warnings).toEqual([
       expect.stringMatching(/^the document cannot be read: /),

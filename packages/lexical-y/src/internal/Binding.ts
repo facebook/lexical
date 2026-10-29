@@ -2458,7 +2458,14 @@ export class YBinding {
     );
     // Shown again first: an update an app makes when the editor stops being
     // editable commits after it, and is refused (see setStatus).
-    this.showAgain(shown);
+    try {
+      this.showAgain(shown);
+    } catch (restoreError) {
+      // An update listener of the app's threw on the restore: its error is
+      // rethrown in a microtask, and the binding opens read only all the
+      // same, so that nothing is written from what it no longer reads.
+      rethrowLater(restoreError);
+    }
     this.setStatus('readonly');
   }
 

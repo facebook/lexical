@@ -495,9 +495,7 @@ function $exportTextFormat(
 ): string {
   // This function handles the case of a string looking like this: "   foo   "
   // Where it would be invalid markdown to generate: "**   foo   **"
-  // If the node has no format, we use the original text.
-  // Otherwise, we escape leading and trailing whitespaces to their corresponding code points,
-  // ensuring the returned string maintains its original formatting, e.g., "**&#32;&#32;&#32;foo&#32;&#32;&#32;**".
+  // so the tags go inside the whitespace instead: "   **foo**   ".
 
   const isCode = node.hasFormat('code');
 
@@ -516,7 +514,7 @@ function $exportTextFormat(
         );
   }
 
-  const cannotHoldTag = !canHoldTag(node, textContent);
+  const holdsTag = canHoldTag(node, textContent);
 
   // the opening tags to be added to the result
   let openingTags = '';
@@ -532,13 +530,13 @@ function $exportTextFormat(
     const format = transformer.format[0];
     const tag = transformer.tag;
 
-    // Inline code uses a content-derived fence handled above, not a static tag.
+    // Inline code uses a content-derived fence handled below, not a static tag.
     if (format === 'code') {
       continue;
     }
 
     // dedup applied formats
-    if (!cannotHoldTag && node.hasFormat(format) && !applied.has(format)) {
+    if (holdsTag && node.hasFormat(format) && !applied.has(format)) {
       applied.add(format);
 
       // append the tag to openingTags, if it's not applied to the previous nodes,
@@ -597,7 +595,7 @@ function $exportTextFormat(
   }
   // If the node is entirely whitespace (or empty inline code), we don't apply
   // opening/closing tags around it, but it must still output any closing tags.
-  if (cannotHoldTag) {
+  if (!holdsTag) {
     return closingTagsBefore + closingTagsAfter + output;
   }
 

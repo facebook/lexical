@@ -2173,7 +2173,16 @@ export class Reader {
     );
     if ($isElementNode(node)) {
       const kind: Kind = attrs[KIND_KEY] === 'i' ? 'i' : 'b';
-      const cs = this.state.newCS(y, node.getKey(), kind);
+      // One container state per Y.Node: a stored node made again (its
+      // editor node was dropped by an update the binding did not write, say)
+      // keeps the one its earlier node had, which mapNode moved to it. A
+      // second one would leave two states claiming the same items, and a
+      // read of the older one would take them from the one the binding
+      // reads remote changes with.
+      const known = this.state.containers.get(y);
+      const cs =
+        known === undefined ? this.state.newCS(y, node.getKey(), kind) : known;
+      cs.kind = kind;
       this.$readFull(cs, node);
     }
     $readSlots(this, node, y, attrs);

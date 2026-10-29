@@ -283,6 +283,9 @@ export class State {
     this.inlineRunStart.delete(key);
     const cs = this.containers.get(y);
     if (cs !== undefined) {
+      if (cs.key !== key && this.csByKey.get(cs.key) === cs) {
+        this.csByKey.delete(cs.key);
+      }
       cs.key = key;
       this.csByKey.set(key, cs);
     }

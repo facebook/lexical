@@ -75,7 +75,7 @@ takes options with a required `writer` (see [Writers](#writers)).
 | `editYState(state, config, $edit, {writer, ...})` | `{update, state, warnings, clientID}` after one edit. |
 | `readYState(state, config, $read)` | What `$read` returns. Nothing is written. |
 | `createYWriter(author)` | A writer for `editYState`: who its edits are by. |
-| `createYDoc(state?)` | A `Y.Doc` for a relay or server that loads a stored state, with Yjs's format cleanup turned off as on the clients. |
+| `createYDoc(state?, options?)` | A `Y.Doc` for a relay or server that loads a stored state, with Yjs's format cleanup turned off as on the clients (the same function as `@lexical/y`'s, which clients bind). |
 
 - **`seedYState`** creates a document's content outside a client: from a
   template, an import, or a converter. It writes as a client's
@@ -120,7 +120,7 @@ update refers to, and compacts the state after that check.
 
 The documents that load a state (the headless editor's, and the one that
 compacts) turn off Yjs's format cleanup (`doc.cleanupFormatting = false`),
-as the binding does on the clients: it would delete format items that the
+as the clients' documents do: it would delete format items that the
 clients keep, and the stored document would then read differently from
 theirs once someone types there. A relay or server that loads a stored
 state into a `Doc` of its own (to apply clients' updates to it, compact or

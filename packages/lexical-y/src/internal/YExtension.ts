@@ -7,7 +7,8 @@
  */
 
 import type {ClientIDRange} from './ClientID';
-import type {Doc, Node as YNode} from '@y/y';
+import type {YDoc} from './YDoc';
+import type {Node as YNode} from '@y/y';
 
 import {
   type BlockIdExtension,
@@ -38,8 +39,11 @@ import {YBinding, type YBindingStatus} from './Binding';
 
 /** @experimental The configuration of {@link YCollabExtension}. */
 export interface YCollabConfig {
-  /** The shared document. Required. */
-  doc: Doc | null;
+  /**
+   * The shared document, made by `createYDoc` (with a stored state:
+   * `createYDoc(state)`). Required.
+   */
+  doc: YDoc | null;
   /** The shared root; defaults to `doc.get('lexical-y')`. */
   root: YNode | null;
   /**

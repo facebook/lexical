@@ -46,10 +46,12 @@ import {createRoot} from 'react-dom/client';
 import {describe, expect, onTestFinished, test} from 'vitest';
 
 import {
+  createYDoc,
   isYWarning,
   UNSUPPORTED_CONFIG_WARNING,
   YBinding,
   YCollabExtension,
+  type YDoc,
 } from '../../..';
 import {seedYState} from '../../../headless';
 import {$p, describeNode, flush} from '../../utils/harness';
@@ -98,7 +100,7 @@ function template(kind: Kind): InitialEditorStateType {
 }
 
 function open(
-  doc: Y.Doc,
+  doc: YDoc,
   initial: InitialEditorStateType,
   options: {
     synced?: boolean;
@@ -159,7 +161,7 @@ function shows(editor: LexicalEditor): string {
 
 /** What a fresh reader of `doc` shows. */
 function stored(doc: Y.Doc): string {
-  const copy = new Y.Doc();
+  const copy = createYDoc();
   Y.applyUpdate(copy, Y.encodeStateAsUpdate(doc));
   const editor = createEditor({
     onError: error => {
@@ -188,8 +190,8 @@ function countWrites(doc: Y.Doc): {count: number} {
   return writes;
 }
 
-function copyOf(doc: Y.Doc): Y.Doc {
-  const copy = new Y.Doc();
+function copyOf(doc: Y.Doc): YDoc {
+  const copy = createYDoc();
   Y.applyUpdate(copy, Y.encodeStateAsUpdate(doc), REMOTE);
   return copy;
 }
@@ -197,8 +199,8 @@ function copyOf(doc: Y.Doc): Y.Doc {
 /** A document opened with `initial`, whose content a user then replaced. */
 async function documentWithContent(
   initial: InitialEditorStateType,
-): Promise<Y.Doc> {
-  const doc = new Y.Doc();
+): Promise<YDoc> {
+  const doc = createYDoc();
   const {binding, editor} = open(doc, initial);
   binding.initialize();
   await flush();
@@ -255,7 +257,7 @@ describe('S7-23: the initial state on a document that has content', () => {
 
   test('the document synced after the editor is built: the editor shows it and writes nothing', async () => {
     const source = await documentWithContent($appendTemplate);
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     const writes = countWrites(doc);
     const {binding, editor, warnings} = open(doc, $appendTemplate);
     Y.applyUpdate(doc, Y.encodeStateAsUpdate(source), REMOTE);
@@ -283,7 +285,7 @@ describe('S7-23: the initial state on a document that has content', () => {
 
   test('a remote change applied while initialize() commits a pending update is read, not written', async () => {
     const source = await documentWithContent($appendTemplate);
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     const editor = createEditor({
       onError: error => {
         throw error;
@@ -312,7 +314,7 @@ describe('S7-23: the initial state on a document that has content', () => {
   });
 
   test('content of an older layout root that arrives while initialize() commits a pending update is refused, not written next to', async () => {
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     const warned: string[] = [];
     const editor = createEditor({
       onError: error => {
@@ -366,7 +368,7 @@ describe('S7-23: the initial state on a document that has content', () => {
   test('a state HMRExtension restores is initial state too, wherever it is listed', async () => {
     const hot: HotContext = {data: {}};
     const hmr = configExtension(HMRExtension, {hot});
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     const first = open(doc, $appendTemplate, {dependencies: [hmr]});
     first.binding.initialize();
     await flush();
@@ -485,7 +487,7 @@ describe('S7-23: the initial state on a document that has content', () => {
       const seed = seedYState(SEED_CONFIG, () => {
         $getRoot().append($p('seeded'));
       });
-      const doc = new Y.Doc();
+      const doc = createYDoc();
       if (when === 'before') {
         Y.applyUpdate(doc, seed, REMOTE);
       }
@@ -504,7 +506,7 @@ describe('S7-23: the initial state on a document that has content', () => {
   }
 
   test('a document whose root is empty: the editor shows it empty and writes nothing until an edit', async () => {
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     Y.applyUpdate(
       doc,
       seedYState(SEED_CONFIG, () => {}),
@@ -536,7 +538,7 @@ describe('S7-23: the initial state on an empty document', () => {
   for (const kind of KINDS) {
     for (const synced of [false, true]) {
       test(`${kind}, synced: ${synced}: two clients that open an empty document at once write it once`, async () => {
-        const docs = [new Y.Doc(), new Y.Doc()];
+        const docs = [createYDoc(), createYDoc()];
         const clients = docs.map(doc => open(doc, template(kind), {synced}));
         if (!synced) {
           for (const {binding} of clients) {
@@ -583,7 +585,7 @@ describe('S7-23: the initial state on an empty document', () => {
   for (const [when, register] of Object.entries(EARLY)) {
     for (const synced of [false, true]) {
       test(`initialize() called ${when} (a provider that syncs at once), synced: ${synced}: the initial state is written once, as a seed`, async () => {
-        const docs = [new Y.Doc(), new Y.Doc()];
+        const docs = [createYDoc(), createYDoc()];
         const clients = docs.map(doc =>
           open(doc, $appendTemplate, {register, synced}),
         );
@@ -607,7 +609,7 @@ describe('S7-23: the initial state on an empty document', () => {
   }
 
   test('an edit a listener makes in reply to the initialization is announced to CAN_UNDO_COMMAND listeners', async () => {
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     const canUndo: boolean[] = [];
     const {binding, editor} = open(doc, $appendTemplate, {
       before: [
@@ -643,7 +645,7 @@ describe('S7-23: the initial state on an empty document', () => {
   });
 
   test('initialize() called while extensions register, with an option the binding cannot write with: read only, nothing written', async () => {
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     const writes = countWrites(doc);
     const {binding, editor, warnings} = open(doc, $appendTemplate, {
       before: [configExtension(BlockIdExtension, {repairTransforms: true})],
@@ -658,7 +660,7 @@ describe('S7-23: the initial state on an empty document', () => {
 
   for (const synced of [false, true]) {
     test(`synced: ${synced}: a client that initializes an empty document with its template, and a seedYState seed of that template, merge into one copy`, async () => {
-      const doc = new Y.Doc();
+      const doc = createYDoc();
       const {binding, editor} = open(doc, $appendTemplate, {synced});
       if (!synced) {
         binding.initialize();

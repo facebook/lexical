@@ -59,8 +59,9 @@ export const UNSYNCED_VALUE_WARNING = '@lexical/y/unsynced-value';
  */
 export const UNSUPPORTED_SLOTS_WARNING = '@lexical/y/unsupported-slots';
 /**
- * @experimental The editor is configured in a way the binding cannot write
- * with: nothing is written, read only. `data`: YUnsupportedConfigData.
+ * @experimental The editor or the document is configured in a way the
+ * binding cannot write with: nothing is written, read only. `data`:
+ * YUnsupportedConfigData.
  */
 export const UNSUPPORTED_CONFIG_WARNING = '@lexical/y/unsupported-config';
 
@@ -178,13 +179,19 @@ export interface YUnsupportedSlotsData {
 
 /**
  * @experimental `data` of an `UNSUPPORTED_CONFIG_WARNING` (nothing is written
- * and the binding is read only): `options` (`'<extension>.<option>'`) are set
- * to a value the binding cannot write with.
+ * and the binding is read only), one warning per reason.
  */
-export interface YUnsupportedConfigData {
-  readonly reason: 'repair-transforms';
-  readonly options: readonly string[];
-}
+export type YUnsupportedConfigData =
+  /**
+   * `options` (`'<extension>.<option>'`) are set to a value the binding
+   * cannot write with.
+   */
+  | {readonly reason: 'repair-transforms'; readonly options: readonly string[]}
+  /**
+   * The document runs Yjs's format cleanup (`doc.cleanupFormatting` is not
+   * false): it was not made by `createYDoc`.
+   */
+  | {readonly reason: 'cleanup-formatting'};
 
 /**
  * @experimental `data` of a `SELF_CHECK_WARNING`: the self-check found the

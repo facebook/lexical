@@ -55,7 +55,7 @@ import {
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {afterEach, beforeEach, expect, test} from 'vitest';
 
-import {type YBinding, YCollabExtension} from '../..';
+import {createYDoc, type YBinding, YCollabExtension} from '../..';
 import {BoxNode, describeNode, NODES} from '../utils/harness';
 
 type Client = {
@@ -83,7 +83,7 @@ function client(
   id: number,
   options: {blockIds?: boolean; repairTransforms?: boolean} = {},
 ): Client {
-  const doc = new Y.Doc({gc: false});
+  const doc = createYDoc(null, {gc: false});
   doc.clientID = id;
   const warnings: string[] = [];
   let n = 0;

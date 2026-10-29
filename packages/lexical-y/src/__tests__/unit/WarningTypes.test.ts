@@ -53,7 +53,9 @@ function banner(warning: YWarning): string {
     case UNSUPPORTED_SLOTS_WARNING:
       return `${warning.data.reason}:${warning.data.types.join(',')}`;
     case UNSUPPORTED_CONFIG_WARNING:
-      return warning.data.options.join(',');
+      return warning.data.reason === 'repair-transforms'
+        ? warning.data.options.join(',')
+        : warning.data.reason;
     case SELF_CHECK_WARNING:
       return `${warning.data.reason}:${warning.data.problems.length}`;
     case RECOVERED_READ_WARNING:
@@ -101,6 +103,10 @@ export function fields(warning: YWarning): void {
   if (warning.code === STORAGE_MISMATCH_WARNING) {
     // @ts-expect-error `stored` is only on a declaration change
     void warning.data.stored;
+  }
+  if (warning.code === UNSUPPORTED_CONFIG_WARNING) {
+    // @ts-expect-error `options` are only on 'repair-transforms'
+    void warning.data.options;
   }
 }
 

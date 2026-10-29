@@ -19,7 +19,6 @@ import {
   ContentType,
   createID,
   createRelativePositionFromJSON,
-  Doc,
   encodeStateAsUpdate,
   findIndexSS,
   Item,
@@ -135,10 +134,12 @@ import {
   UNSUPPORTED_SLOTS_WARNING,
   type YRecoveredReadData,
   type YStorageMismatchData,
+  type YUnsupportedConfigData,
   type YWarningCode,
   type YWarningData,
 } from './Warnings';
 import {$holdsLines, type WritePlan, Writer} from './Write';
+import {createYDoc, type YDoc} from './YDoc';
 
 // YBinding: one editor bound to one shared root. It owns the lifecycle (the
 // layout gate, pins, initialization, dispose), the local pipeline (onUpdate:
@@ -510,7 +511,7 @@ function recordSetMembersLayout(root: YNode, tr: Transaction): void {
  */
 export class YBinding {
   private readonly _editor: LexicalEditor;
-  private readonly _doc: Doc;
+  private readonly _doc: YDoc;
   private readonly _root: YNode;
   private _status: YBindingStatus = 'pending';
   private readonly _pins = new Map<string, Pin>();
@@ -613,11 +614,11 @@ export class YBinding {
     ReadonlySet<Transform<LexicalNode>>
   >();
   /**
-   * Options of the editor's extensions the binding cannot write safely with
-   * (see UNSUPPORTED_CONFIG_WARNING): while there are any, the binding is
-   * read only.
+   * The configuration the binding cannot write safely with, one entry per
+   * reason (see UNSUPPORTED_CONFIG_WARNING): while there is any, the binding
+   * is read only.
    */
-  private unsupportedConfig: string[] = [];
+  private unsupportedConfig: YUnsupportedConfigData[] = [];
   /** A status change not reported to `onStatus` yet (see flushWarnings). */
   private pendingStatus: YBindingStatus | null = null;
   /** How many of the class and value notes this binding has reported. */
@@ -713,7 +714,7 @@ export class YBinding {
   }
 
   /** The shared document. */
-  get doc(): Doc {
+  get doc(): YDoc {
     return this._doc;
   }
 
@@ -740,7 +741,7 @@ export class YBinding {
     return this._undoManager;
   }
 
-  constructor(editor: LexicalEditor, doc: Doc, options: YBindingOptions = {}) {
+  constructor(editor: LexicalEditor, doc: YDoc, options: YBindingOptions = {}) {
     this._editor = editor;
     this._doc = doc;
     this.options = options;
@@ -786,11 +787,20 @@ export class YBinding {
     // With transforms, BlockIdExtension's naming update changes what remote
     // changes bring, in ways the binding does not write; what they derive
     // (the start of a list they split) can differ between clients, which
-    // then show different content. Fail closed rather than diverge.
-    this.unsupportedConfig =
-      blockIds !== undefined && blockIds.config.repairTransforms
-        ? ['BlockIdExtension.repairTransforms']
-        : [];
+    // then show different content. A document that runs Yjs's format
+    // cleanup (one createYDoc did not make) deletes format items the binding
+    // keeps, and may have deleted some already, before the binding attached
+    // (see createYDoc). Fail closed rather than diverge.
+    this.unsupportedConfig = [];
+    if (blockIds !== undefined && blockIds.config.repairTransforms) {
+      this.unsupportedConfig.push({
+        options: ['BlockIdExtension.repairTransforms'],
+        reason: 'repair-transforms',
+      });
+    }
+    if (this._doc.cleanupFormatting !== false) {
+      this.unsupportedConfig.push({reason: 'cleanup-formatting'});
+    }
     // Lexical records explicit node moves (read by the writer, which then
     // rewrites what moved rather than what it passed) and text edits (see
     // TextReplay), each restored to what it was when the binding goes.
@@ -809,9 +819,11 @@ export class YBinding {
     // type that has formats (whole containers here, so O(document) per remote
     // bold). The binding keeps format items a write leaves redundant that
     // a concurrent write may rely on (see Cursor#collapseGap), so its
-    // containers opt out: they are marked as
-    // having no formats before Yjs decides whether to clean up. The
-    // document's flag and the app's other types are left alone.
+    // containers opt out: they are marked as having no formats before Yjs
+    // decides whether to clean up. A document createYDoc made never cleans
+    // up; this keeps one that does (read only, see unsupportedConfig) from
+    // cleaning up the binding's containers while it is bound. The document's
+    // flag and the app's other types are left alone.
     this._doc.on('beforeObserverCalls', this.beforeObserverCalls);
     this.disposers.push(() =>
       this._doc.off('beforeObserverCalls', this.beforeObserverCalls),
@@ -1184,7 +1196,7 @@ export class YBinding {
     }
     const rootName: string = name;
     const write = (clientID: number) => {
-      const scratch = new Doc({gc: false});
+      const scratch = createYDoc(null, {gc: false});
       scratch.clientID = clientID;
       const sroot = scratch.get(rootName);
       const sstate = this.state.configuredLike(scratch, sroot);
@@ -1598,13 +1610,16 @@ export class YBinding {
 
   private setStatus(status: YBindingStatus): void {
     if (status === 'active' && this.unsupportedConfig.length > 0) {
-      const options = this.unsupportedConfig;
       if (this._status !== 'readonly') {
-        this.warn(
-          UNSUPPORTED_CONFIG_WARNING,
-          `unsupported options: ${options.join(', ')}`,
-          {options, reason: 'repair-transforms'},
-        );
+        for (const data of this.unsupportedConfig) {
+          this.warn(
+            UNSUPPORTED_CONFIG_WARNING,
+            data.reason === 'repair-transforms'
+              ? `unsupported options: ${data.options.join(', ')}`
+              : 'the document cleans up formats: create it with createYDoc',
+            data,
+          );
+        }
       }
       status = 'readonly';
     }

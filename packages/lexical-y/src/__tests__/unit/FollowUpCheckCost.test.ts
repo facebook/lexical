@@ -15,7 +15,6 @@ import {
   defineExtension,
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
-import * as Y from '@y/y';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -27,7 +26,7 @@ import {
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {YBinding, YCollabExtension} from '../..';
+import {createYDoc, YBinding, YCollabExtension} from '../..';
 
 // The follow-up check (YBinding#$checkFollowUp) reads only the part of a
 // container the follow-up changed: in a long document, a follow-up after
@@ -42,7 +41,7 @@ const proto = YBinding.prototype as unknown as {$checkFollowUp: Check};
 const original = proto.$checkFollowUp;
 
 function build(): {editor: LexicalEditor; binding: YBinding} {
-  const doc = new Y.Doc();
+  const doc = createYDoc();
   const editor = buildEditorFromExtensions(
     defineExtension({
       dependencies: [

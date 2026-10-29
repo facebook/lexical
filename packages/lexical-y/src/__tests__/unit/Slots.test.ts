@@ -58,6 +58,7 @@ import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
 import {
+  createYDoc,
   describeStorage,
   UNKNOWN_NODE_TYPES_WARNING,
   UNSUPPORTED_SLOTS_WARNING,
@@ -557,7 +558,7 @@ describe('named slots', () => {
 
   test('a slot value of a type a peer does not register opens it read only', async () => {
     const t = await setup($initial, opts);
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     Y.applyUpdate(doc, Y.encodeStateAsUpdate(t.a.doc));
     const codes: string[] = [];
     const editor = createEditorWith(
@@ -592,7 +593,7 @@ function createEditorWith(
 
 describe('named slots where the document cannot store them', () => {
   function bound(state: Uint8Array | null) {
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     if (state !== null) {
       Y.applyUpdate(doc, state);
     }
@@ -732,7 +733,7 @@ describe('named slots with BlockIdExtension and MarkStateExtension', () => {
     warnings: string[];
   };
   function peer(name: string, clientID: number): E {
-    const doc = new Y.Doc({gc: false});
+    const doc = createYDoc(null, {gc: false});
     doc.clientID = clientID;
     const warnings: string[] = [];
     let n = 0;

@@ -8,7 +8,7 @@
 
 // The implementation lives under ./internal and is bundled into this entry;
 // `@lexical/y` stays an external sibling.
-import {applyUpdate, Doc, encodeStateAsUpdate, mergeUpdates} from '@y/y';
+import {type Doc, encodeStateAsUpdate, mergeUpdates} from '@y/y';
 import {
   $getRoot,
   COLLABORATION_TAG,
@@ -16,7 +16,7 @@ import {
   SKIP_COLLAB_TAG,
 } from 'lexical';
 
-import {DEFAULT_ROOT_NAME} from '.';
+import {createYDoc, DEFAULT_ROOT_NAME} from '.';
 import {
   closeHeadlessYEditor,
   EDITOR_WARNING,
@@ -44,6 +44,7 @@ export type {
   YWriter,
 };
 export {
+  createYDoc,
   createYWriter,
   EDITOR_WARNING,
   FOLLOW_UPS_EXHAUSTED_WARNING,
@@ -127,30 +128,6 @@ export interface EditYStateOptions {
    * write an update that carries them, so the edit would be lost.
    */
   tag?: string | string[];
-}
-
-/**
- * @experimental A `Y.Doc` for a relay or a server that loads a document's
- * state (to store, compact or merge it), with `state` applied when given.
- * It has Yjs's format cleanup turned off (`cleanupFormatting = false`), as
- * the binding has on the clients: applying an update there would otherwise
- * delete format items the clients keep, and the state it stores would read
- * differently from what the clients show once someone types there. Garbage
- * collected, as clients store a document. Merging updates with
- * `mergeUpdates` needs no document.
- */
-export function createYDoc(state?: Uint8Array | null): Doc {
-  const doc = new Doc();
-  doc.cleanupFormatting = false;
-  if (state != null) {
-    try {
-      applyUpdate(doc, state);
-    } catch (error) {
-      doc.destroy();
-      throw error;
-    }
-  }
-  return doc;
 }
 
 /**

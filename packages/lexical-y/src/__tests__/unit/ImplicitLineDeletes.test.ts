@@ -38,11 +38,11 @@ import {
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {YCollabExtension} from '../..';
+import {createYDoc, YCollabExtension} from '../..';
 import {WidgetNode} from '../utils/harness';
 
 function peer(id: number) {
-  const doc = new Y.Doc({gc: false});
+  const doc = createYDoc(null, {gc: false});
   doc.clientID = id;
   const errors: unknown[] = [];
   const warnings: string[] = [];

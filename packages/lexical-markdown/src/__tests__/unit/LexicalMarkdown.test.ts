@@ -1812,6 +1812,15 @@ describe('Markdown', () => {
         ],
         '**a  c**',
       ],
+      [
+        'closes before a formatted line break',
+        () => [
+          $formatted('a', BOLD),
+          $formatted('\n', BOLD | ITALIC),
+          $formatted('c', BOLD),
+        ],
+        '**a**\n**c**',
+      ],
     ])('%s', (_name, $nodes, expected) => {
       const editor = createTestEditor();
       editor.update(
@@ -4076,7 +4085,7 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
     [
       name: string,
       formats: [text: string, format: number][],
-      end: number,
+      offsets: [start: number, end: number],
       expected: string,
     ]
   >([
@@ -4086,7 +4095,7 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
         ['a ', TEXT_TYPE_TO_FORMAT.bold],
         [' b', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.italic],
       ],
-      1,
+      [0, 1],
       '**a**  ',
     ],
     [
@@ -4096,7 +4105,7 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
         [' x', TEXT_TYPE_TO_FORMAT.bold],
         ['c', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.italic],
       ],
-      1,
+      [0, 1],
       '***a*** ',
     ],
     [
@@ -4106,7 +4115,7 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
         ['bc', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.italic],
         ['d', TEXT_TYPE_TO_FORMAT.bold],
       ],
-      1,
+      [0, 1],
       '**a*b***',
     ],
     [
@@ -4115,10 +4124,19 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
         ['a', TEXT_TYPE_TO_FORMAT.bold],
         ['xy', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.code],
       ],
-      0,
+      [0, 0],
       '**a**',
     ],
-  ])('%s', (_name, formats, end, expected) => {
+    [
+      'leaves out inline code the selection starts at the end of',
+      [
+        ['xy', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.code],
+        ['a', TEXT_TYPE_TO_FORMAT.bold],
+      ],
+      [2, 1],
+      '**a**',
+    ],
+  ])('%s', (_name, formats, [start, end], expected) => {
     const editor = createTestEditor({nodes: [LinkNode]});
     editor.update(
       () => {
@@ -4128,7 +4146,7 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
         $getRoot().append($createParagraphNode().append(...nodes));
         $setSelectionFromCaretRange(
           $getCaretRange(
-            $getTextPointCaret(nodes[0], 'next', 0),
+            $getTextPointCaret(nodes[0], 'next', start),
             $getTextPointCaret(nodes[1], 'next', end),
           ),
         );

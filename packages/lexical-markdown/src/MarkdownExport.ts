@@ -664,6 +664,10 @@ function $continuesFormat(
     if (canHoldTag(next, text)) {
       return true;
     }
+    // Markdown import matches a tag within one line.
+    if (text.includes('\n')) {
+      return false;
+    }
     next = getTextSibling(next, false);
   }
   return false;

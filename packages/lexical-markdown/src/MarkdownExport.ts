@@ -658,7 +658,9 @@ function checkHasFormat(n: TextNode | null, f: TextFormatType): boolean {
   if (!hasFormat(n, f)) {
     return false;
   }
-  if (f === 'code') {
+  // Inline code keeps its whitespace inside the fence, so other formats can
+  // wrap a code span made only of spaces.
+  if (f === 'code' || hasFormat(n, 'code')) {
     return true;
   }
   if (n && /^\s*$/.test(n.getTextContent())) {

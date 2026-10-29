@@ -18,7 +18,7 @@ import {
   $isRangeSelection,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 describe('CodeHighlighterPrism $updateAndRetainSelection', () => {
   initializeUnitTest(testEnv => {
@@ -121,5 +121,69 @@ describe('CodeHighlighterPrism $updateAndRetainSelection', () => {
         ).toBe(expectedText);
       },
     );
+
+    test.each([
+      ['forward', false],
+      ['backward', true],
+    ])(
+      'keeps a range selection inside the code block (%s)',
+      async (_name, isBackward) => {
+        const {editor} = testEnv;
+        registerCodeHighlighting(editor);
+
+        await editor.update(() => {
+          const first = $createTextNode('const a = 1');
+          const last = $createTextNode('let b = 2');
+          $getRoot()
+            .clear()
+            .append(
+              $createCodeNode('javascript').append(
+                first,
+                $createLineBreakNode(),
+                last,
+              ),
+            );
+          const selection = first.select(2, 2);
+          selection.focus.set(last.getKey(), 3, 'text');
+          if (isBackward) {
+            selection.setTextNodeRange(last, 3, first, 2);
+          }
+        });
+
+        editor.read(() => {
+          const selection = $getSelection();
+          assert($isRangeSelection(selection));
+          expect(selection.getTextContent()).toBe('nst a = 1\nlet');
+          expect(selection.isBackward()).toBe(isBackward);
+        });
+      },
+    );
+
+    test('keeps a range selection from a paragraph above into the code block', async () => {
+      const {editor} = testEnv;
+      registerCodeHighlighting(editor);
+
+      await editor.update(() => {
+        const above = $createTextNode('above');
+        const last = $createTextNode('let b = 2');
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(above),
+            $createCodeNode('javascript').append(
+              $createTextNode('const a = 1'),
+              $createLineBreakNode(),
+              last,
+            ),
+          );
+        above.select(2, 2).focus.set(last.getKey(), 3, 'text');
+      });
+
+      editor.read(() => {
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        expect(selection.getTextContent()).toBe('ove\nconst a = 1\nlet');
+      });
+    });
   });
 });

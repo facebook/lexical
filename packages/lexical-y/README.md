@@ -9,12 +9,25 @@ layouts, and a document uses one or the other. Every export is
 ## Install
 
 ```sh
-npm i @lexical/y @lexical/extension lexical @y/y@14.0.0-rc.29
+npm i --save-exact @lexical/y@nightly @lexical/extension@nightly \
+  @lexical/rich-text@nightly lexical@nightly @y/y@14.0.0-rc.29
 ```
 
 `@y/y` is a peer dependency pinned to the release candidate this package is
 tested with. Its type declarations do not type-check on their own (an
 upstream issue): projects that run `tsc` need `skipLibCheck: true`.
+
+Until a Lexical release includes `@lexical/y`, npm's `latest` for it is a
+placeholder (`0.0.0-bootstrap.0`): install every Lexical package from the
+same nightly, in one command, as above; once a release includes it, install
+that release instead.
+Name the version of the `@y/*` packages you add too: the `latest` tags of
+`@y/websocket` and `@y/protocols` are builds for the earlier `yjs@14.0.0-*`
+prereleases, so npm installs a second copy of Yjs next to `@y/y`. Use the
+release candidates that peer on `@y/y` (`@y/websocket@4.0.0-rc.2`,
+`@y/protocols@1.0.6-rc.1`). The published `@y/websocket-server` does not fit
+as a relay either (see
+[Servers](https://lexical.dev/docs/collaboration/y#servers)).
 
 ## Usage
 

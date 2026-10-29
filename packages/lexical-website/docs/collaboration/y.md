@@ -41,13 +41,39 @@ other clients cannot move to Yjs 14, or when you need the
 ## Install
 
 ```bash
-npm i @lexical/y @lexical/extension lexical @y/y@14.0.0-rc.29
+# @lexical/rich-text, @lexical/list and @y/websocket are for the example
+# below; use the extensions and the provider your app needs.
+npm i --save-exact @lexical/y@nightly @lexical/extension@nightly \
+  lexical@nightly @lexical/rich-text@nightly @lexical/list@nightly \
+  @y/y@14.0.0-rc.29 @y/websocket@4.0.0-rc.2
 ```
 
 `@y/y` is a peer dependency pinned to the release candidate `@lexical/y` is
 tested with; npm's `latest` tag points at an older one, so name the version.
 The type declarations `@y/y` ships do not type-check on their own (an
-upstream issue): if you run `tsc`, set `skipLibCheck: true`.
+upstream issue): if you run `tsc`, set `skipLibCheck: true`. Lexical's types
+also need TypeScript 5.2 or later with `moduleResolution` set to `bundler`,
+`node16` or `nodenext`. With an older setting (`node`, `node10`), TypeScript
+reads a stub instead, and every import fails with "Module '@lexical/y' has
+no exported member" rather than an error that names the setting.
+
+- **`@nightly` until a Lexical release includes `@lexical/y`.** Until then,
+  npm's `latest` for `@lexical/y` is a placeholder (`0.0.0-bootstrap.0`)
+  that does not work, so install every Lexical package of your app from the
+  same nightly, in one command so that they resolve to the same version.
+  Each nightly `@lexical/y` depends on the `lexical` of its own nightly, so
+  a `lexical` from another version puts
+  [two copies of Lexical](/docs/concepts/one-lexical-per-app) in the app.
+  Once a release includes it, install that release (without `@nightly`).
+- **Name the version of the `@y/*` packages you install.** The `latest`
+  tags of `@y/websocket` (4.0.0-0) and `@y/protocols` (1.0.6-0) are builds
+  for the earlier `yjs@14.0.0-*` prereleases, not `@y/y`: npm installs that
+  `yjs` next to `@y/y`, and the provider then applies updates to your
+  document with a second copy of Yjs that `@lexical/y` is not tested with.
+  The release candidates that peer on `@y/y` (`@y/websocket@4.0.0-rc.2`,
+  `@y/protocols@1.0.6-rc.1`) are the ones the Lexical playground is tested
+  with. `npm ls yjs` should show no `yjs@14.0.0-*` (a Yjs 13 `yjs` for
+  `@lexical/yjs` documents is fine).
 
 ## Set up an editor
 
@@ -721,7 +747,9 @@ merge the `update` it returns into the live document (see
 
 ## Servers
 
-Any Yjs 14 server or relay can host the documents. Clients of
+A Yjs 14 (`@y/y`) server or relay can host the documents when it meets
+the requirements below (format cleanup off, updates delivered in order, and
+for yrs, its version and client ids). Clients of
 `@lexical/yjs` write to other roots (`root`, `root-v2`), never to
 `DEFAULT_ROOT_NAME` (`'lexical-y'`), so they cannot change a `@lexical/y`
 document's content and the server needs no check to keep them out.
@@ -745,6 +773,31 @@ A relay that cannot import it sets the flag on a new document itself
 Otherwise, when Yjs applies an update there it deletes format items that
 it finds redundant but the clients keep, and the state the server stores
 reads differently from what the clients show.
+
+**A relay for `@y/websocket` clients.** The published
+`@y/websocket-server` does not fit: its latest version, 0.1.5, depends on
+the `yjs@14.0.0-*` prereleases, not `@y/y`, and keeps each room in a plain
+`Doc`, with the format cleanup on. The Lexical playground's development
+relay,
+[`collab-y-server.mjs`](https://github.com/meta/lexical/blob/main/packages/lexical-playground/scripts/collab-y-server.mjs),
+is a complete in-memory example (no persistence or authentication) that
+`@y/websocket` clients connect to at `ws://host:port/<room>`. It keeps one
+document per room, applies what each connection sends to it, and sends the
+updates the document emits to the room's connections, in the order it
+applied them. It uses `@y/y`, `@y/protocols` (the sync and awareness
+messages), `lib0` (their encoding) and `ws`; create each room's document
+with `createYDoc()` from `@lexical/y` (or set
+`doc.cleanupFormatting = false`, as that script does):
+
+```bash
+npm i --save-exact @y/y@14.0.0-rc.29 @y/protocols@1.0.6-rc.1 \
+  lib0@1.0.0-rc.36 ws @lexical/y@nightly
+```
+
+To persist a room, load its stored state with `createYDoc(stored)` before
+the first connection syncs, and store `encodeStateAsUpdate(doc)` (from
+`@y/y`) after the updates it applies, one write at a time per room, so that
+an older snapshot never replaces a newer one.
 
 Servers built on **yrs before 0.28** (y-crdt) read client ids as 32-bit
 numbers, while Yjs 14 draws 53-bit ones: an author can receive its own

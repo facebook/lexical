@@ -65,7 +65,11 @@ function peer(name: string, clientID: number): P {
   p.editor = buildEditorFromExtensions(
     defineExtension({
       dependencies: [
-        configExtension(YCollabExtension, {doc, selfCheck: true}),
+        configExtension(YCollabExtension, {
+          doc,
+          schemaVersion: 1,
+          selfCheck: true,
+        }),
         // Ids each client makes differently, as random ids are.
         configExtension(BlockIdExtension, {generateId: () => `${name}${++n}`}),
       ],
@@ -224,7 +228,9 @@ describe('@lexical/y with BlockIdExtension', () => {
       doc,
       editor: buildEditorFromExtensions(
         defineExtension({
-          dependencies: [configExtension(YCollabExtension, {doc})],
+          dependencies: [
+            configExtension(YCollabExtension, {doc, schemaVersion: 1}),
+          ],
           name: 'block-ids-without',
           nodes: NODES,
           onError: (e: Error) => {

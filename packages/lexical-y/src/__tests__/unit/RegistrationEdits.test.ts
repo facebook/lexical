@@ -281,7 +281,11 @@ test('an extension that registers a transform while editable: setEditable(true) 
       $initialEditorState: null,
       dependencies: [
         EditableOnlyTransform,
-        configExtension(YCollabExtension, {doc, selfCheck: false}),
+        configExtension(YCollabExtension, {
+          doc,
+          schemaVersion: 1,
+          selfCheck: false,
+        }),
       ],
       name: '@lexical/y/test/EditableRegistration',
       onError: e => {

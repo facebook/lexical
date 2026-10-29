@@ -435,7 +435,7 @@ describe.each([[[1, 2]], [[2, 1]]])(
 );
 
 test('the headless API seeds, reads and edits a set used without registration', () => {
-  const config = {nodes: NODES, selfCheck: true};
+  const config = {nodes: NODES, schemaVersion: 1, selfCheck: true};
   const $hText = () => {
     const text = $getRoot().getFirstDescendant();
     if (!$isTextNode(text)) {
@@ -661,7 +661,7 @@ describe('the layout record', () => {
   });
 
   test('the headless API records layout 2 with the first member entry only', () => {
-    const config = {nodes: NODES, selfCheck: true};
+    const config = {nodes: NODES, schemaVersion: 1, selfCheck: true};
     const $hText = () => {
       const text = $getRoot().getFirstDescendant();
       if (!$isTextNode(text)) {
@@ -762,7 +762,7 @@ describe('the layout record', () => {
       },
       {discrete: true},
     );
-    const binding = new YBinding(editor, doc, {root});
+    const binding = new YBinding(editor, doc, {root, schemaVersion: 1});
     binding.start();
     const before = Y.encodeStateAsUpdate(doc);
     const updates: Uint8Array[] = [];

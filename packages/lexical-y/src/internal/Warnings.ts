@@ -72,6 +72,12 @@ export const UNSUPPORTED_CONFIG_WARNING = '@lexical/y/unsupported-config';
  * the binding goes read only. `data`: YUnsupportedEditData.
  */
 export const UNSUPPORTED_EDIT_WARNING = '@lexical/y/unsupported-edit';
+/**
+ * @experimental A client of a newer version of the app (a higher
+ * `schemaVersion`) wrote to the document: read only. `data`:
+ * YUnsupportedSchemaData.
+ */
+export const UNSUPPORTED_SCHEMA_WARNING = '@lexical/y/unsupported-schema';
 
 /**
  * @experimental The codes of the `LexicalWarning`s the binding passes to the
@@ -89,7 +95,8 @@ export type YWarningCode =
   | typeof UNSYNCED_VALUE_WARNING
   | typeof UNSUPPORTED_SLOTS_WARNING
   | typeof UNSUPPORTED_CONFIG_WARNING
-  | typeof UNSUPPORTED_EDIT_WARNING;
+  | typeof UNSUPPORTED_EDIT_WARNING
+  | typeof UNSUPPORTED_SCHEMA_WARNING;
 
 /**
  * @experimental `data` of an `UNSUPPORTED_LAYOUT_WARNING` (the binding is read
@@ -119,6 +126,29 @@ export type YUnsupportedLayoutData =
   | {
       readonly reason: 'legacy-roots';
       readonly roots: readonly string[];
+      readonly supported: number;
+    };
+
+/**
+ * @experimental `data` of an `UNSUPPORTED_SCHEMA_WARNING` (the binding is read
+ * only). `supported`: the binding's `schemaVersion`.
+ */
+export type YUnsupportedSchemaData =
+  /**
+   * A client whose `schemaVersion` is `found`, higher than `supported`, wrote
+   * to the document: the app is out of date (render your own banner, such as
+   * one that asks to reload).
+   */
+  | {
+      readonly reason: 'newer';
+      readonly found: number;
+      readonly supported: number;
+    }
+  /** The record at `key` is not a schema record; `found` is its value. */
+  | {
+      readonly reason: 'malformed';
+      readonly key: string;
+      readonly found: unknown;
       readonly supported: number;
     };
 
@@ -309,6 +339,7 @@ interface YWarningDataByCode {
   [UNSUPPORTED_SLOTS_WARNING]: YUnsupportedSlotsData;
   [UNSUPPORTED_CONFIG_WARNING]: YUnsupportedConfigData;
   [UNSUPPORTED_EDIT_WARNING]: YUnsupportedEditData;
+  [UNSUPPORTED_SCHEMA_WARNING]: YUnsupportedSchemaData;
 }
 
 /** @experimental The `data` of the warnings with code `C`. */
@@ -338,6 +369,7 @@ const CODES: ReadonlySet<string> = new Set<YWarningCode>([
   UNSUPPORTED_SLOTS_WARNING,
   UNSUPPORTED_CONFIG_WARNING,
   UNSUPPORTED_EDIT_WARNING,
+  UNSUPPORTED_SCHEMA_WARNING,
 ]);
 
 /**

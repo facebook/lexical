@@ -296,7 +296,11 @@ function mixedPeer(id: number, blockIds: boolean, update: Uint8Array | null) {
       $initialEditorState: null,
       dependencies: [
         ...(blockIds ? [BlockIdExtension] : []),
-        configExtension(YCollabExtension, {doc, selfCheck: true}),
+        configExtension(YCollabExtension, {
+          doc,
+          schemaVersion: 1,
+          selfCheck: true,
+        }),
       ],
       name: `cell-quote/${id}`,
       nodes: NODES,

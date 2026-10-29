@@ -630,7 +630,7 @@ test('a setEditorState replacement is normalized by its author, who matches a fr
         throw e;
       },
     });
-    const binding = new YBinding(editor, doc);
+    const binding = new YBinding(editor, doc, {schemaVersion: 1});
     binding.start();
     return {binding, editor};
   };

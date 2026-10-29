@@ -84,7 +84,10 @@ function seed(): Uint8Array {
   editor.update($build, {discrete: true});
   const doc = createYDoc();
   doc.clientID = 7;
-  const binding = new YBinding(editor, doc, {captureTimeout: null});
+  const binding = new YBinding(editor, doc, {
+    captureTimeout: null,
+    schemaVersion: 1,
+  });
   binding.start();
   binding.initialize();
   binding.dispose();
@@ -99,7 +102,11 @@ function openY(state: Uint8Array): LexicalEditor {
     defineExtension({
       dependencies: [
         RichTextExtension,
-        configExtension(YCollabExtension, {captureTimeout: 0, doc}),
+        configExtension(YCollabExtension, {
+          captureTimeout: 0,
+          doc,
+          schemaVersion: 1,
+        }),
       ],
       name: 'prod-undo-node',
       nodes: NODES,

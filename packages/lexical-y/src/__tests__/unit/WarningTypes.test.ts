@@ -23,6 +23,7 @@ import {
   UNSUPPORTED_CONFIG_WARNING,
   UNSUPPORTED_EDIT_WARNING,
   UNSUPPORTED_LAYOUT_WARNING,
+  UNSUPPORTED_SCHEMA_WARNING,
   UNSUPPORTED_SLOTS_WARNING,
   UNSYNCED_VALUE_WARNING,
   type YWarning,
@@ -46,6 +47,10 @@ function banner(warning: YWarning): string {
           return warning.data.reason;
       }
       break;
+    case UNSUPPORTED_SCHEMA_WARNING:
+      return warning.data.reason === 'newer'
+        ? `schema:${warning.data.found}>${warning.data.supported}`
+        : `schema-malformed:${warning.data.key}`;
     case STORAGE_MISMATCH_WARNING:
       return warning.data.reason === 'malformed'
         ? `malformed:${warning.data.key}`
@@ -103,6 +108,16 @@ export function fields(warning: YWarning): void {
       void found;
     }
   }
+  if (warning.code === UNSUPPORTED_SCHEMA_WARNING) {
+    // @ts-expect-error `key` is only on a malformed record
+    void warning.data.key;
+    if (warning.data.reason === 'newer') {
+      const found: number = warning.data.found;
+      const supported: number = warning.data.supported;
+      void found;
+      void supported;
+    }
+  }
   if (warning.code === STORAGE_MISMATCH_WARNING) {
     // @ts-expect-error `stored` is only on a declaration change
     void warning.data.stored;
@@ -127,6 +142,7 @@ describe('typed warnings', () => {
       UNSUPPORTED_SLOTS_WARNING,
       UNSUPPORTED_CONFIG_WARNING,
       UNSUPPORTED_EDIT_WARNING,
+      UNSUPPORTED_SCHEMA_WARNING,
     ];
     for (const code of codes) {
       expect(isYWarning(new LexicalWarning(code, 'm', {}))).toBe(true);
@@ -145,6 +161,12 @@ describe('typed warnings', () => {
     expect(isYWarning(warning) ? banner(warning) : '').toBe(
       `newer:9>${LAYOUT_VERSION}`,
     );
+    const schema = new LexicalWarning(
+      UNSUPPORTED_SCHEMA_WARNING,
+      'schema 3 is newer than 2',
+      {found: 3, reason: 'newer', supported: 2},
+    );
+    expect(isYWarning(schema) ? banner(schema) : '').toBe('schema:3>2');
   });
 
   test('messages name no package', () => {

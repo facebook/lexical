@@ -74,7 +74,8 @@ const editor = buildEditorFromExtensions(
     dependencies: [
       RichTextExtension,
       ListExtension,
-      configExtension(YCollabExtension, {doc}),
+      // schemaVersion is required: see "Versioning your schema".
+      configExtension(YCollabExtension, {doc, schemaVersion: 1}),
     ],
     name: 'my-app/editor',
   }),
@@ -105,8 +106,9 @@ provider.once('sync', () => {
 - The editor stays **read only** until the document has been read and
   found writable. `status` is a signal: `'pending'`, then `'active'`, or
   `'readonly'` when the binding cannot write the document safely (a newer
-  layout, a node type this editor does not register, stored content its
-  classes throw on; a [warning](#warnings) says why).
+  version of your app wrote to it, a newer layout, a node type this editor
+  does not register, stored content its classes throw on; a
+  [warning](#warnings) says why).
   Register the same node classes on every client. A read-only editor keeps
   showing the document: what a local update changes there (code that calls
   `editor.update()`, as the editor is not editable) is not written and is
@@ -120,8 +122,8 @@ provider.once('sync', () => {
   editor's content into an empty document (an `editor.update()` still
   pending is part of it). Two clients that initialize the same content in a
   new document at once write it once, when they would write the same items
-  (clients with different block id configurations write different ones, so
-  the content shows twice). The editor then shows the content as stored, as
+  (clients with different block id configurations, or different
+  `schemaVersion`s, write different ones, so the content shows twice). The editor then shows the content as stored, as
   every reader does (a line break written inside a text node shows as a
   line break node), with its selection kept (a node selection keeps its
   nodes, found by the Yjs identity they are stored or shown by: a node's
@@ -160,6 +162,7 @@ provider.once('sync', () => {
 | Option | Default | |
 | -- | -- | -- |
 | `doc` | (required) | The Yjs document, from `createYDoc`. |
+| `schemaVersion` | (required) | The version of your app's document schema, an integer from 1: see [Versioning your schema](#versioning-your-schema). The extension throws without one. |
 | `root` | `doc.get('lexical-y')` | The shared root to bind. |
 | `synced` | `false` | Initialize as soon as the binding starts. |
 | `captureTimeout` | `500` | Undo capture timeout in ms; `null` turns collaborative undo off. |
@@ -240,7 +243,7 @@ it shows. Every client reads these the same
 way, and the next edit there stores them.
 
 Without the extension API, `new YBinding(editor, doc, options)` does the
-same: call `binding.start()` to connect it once the editor has its initial
+same (`options.schemaVersion` is required there too): call `binding.start()` to connect it once the editor has its initial
 state (an update made after it, on a document that has content, is an
 edit), `binding.initialize()` after the first sync, and `binding.undo()` /
 `binding.redo()` for undo. An undo puts back the selection from before the
@@ -263,6 +266,7 @@ a short note for developers: render your own text from `code` and `data`.
 
 | Constant | Reported when | `data` (`reason`: other fields) |
 | -- | -- | -- |
+| `UNSUPPORTED_SCHEMA_WARNING` | A client of a newer version of your app (a higher `schemaVersion`) wrote to the document, on open or mid-session; see [Versioning your schema](#versioning-your-schema). Read only. | `'newer'`: `found`; `'malformed'`: `key`, `found`. All: `supported` (your `schemaVersion`) |
 | `UNSUPPORTED_LAYOUT_WARNING` | The layout is one this version cannot read. Read only. | `'newer'`: `found`; `'malformed'`: `key`, `found`; `'missing'`, `'removed'`; `'legacy-roots'`: `roots`. All: `supported` |
 | `UNKNOWN_NODE_TYPES_WARNING` | The document has node types the editor cannot build: types it does not register, however they are stored (a link class it lacks too), or content its classes throw on. Read only. | `'unregistered'`, `'malformed-slot'`: `types`; `'unreadable'`: `types`, `error` |
 | `STORAGE_MISMATCH_WARNING` | A node type is stored in a way its class cannot be (one warning per type). Read only. | `'declaration-changed'`: `type`, `stored`, `declared`; `'malformed'`: `type`, `key`, `found` |
@@ -278,10 +282,19 @@ a short note for developers: render your own text from `code` and `data`.
 A read-only banner of your own, from the fields:
 
 ```ts
-import {isYWarning, UNSUPPORTED_LAYOUT_WARNING, type YWarning} from '@lexical/y';
+import {
+  isYWarning,
+  UNSUPPORTED_LAYOUT_WARNING,
+  UNSUPPORTED_SCHEMA_WARNING,
+  type YWarning,
+} from '@lexical/y';
 
 function banner(warning: YWarning): string | null {
   switch (warning.code) {
+    case UNSUPPORTED_SCHEMA_WARNING:
+      return warning.data.reason === 'newer'
+        ? t('doc.reloadForNewerVersion')
+        : t('doc.cannotOpen');
     case UNSUPPORTED_LAYOUT_WARNING:
       return warning.data.reason === 'newer'
         ? t('doc.needsNewerApp')
@@ -314,6 +327,55 @@ defineExtension({
 - Codes are never renamed or reused; new ones may be added. A `default`
   that assigns the warning to `never` makes the compiler point at a code
   your `switch` does not handle.
+
+## Versioning your schema
+
+Your app's node types and the fields they store are its document schema.
+`schemaVersion` (required, on `YCollabExtension` and in the
+[headless config](./y-server.md#api)) is its version: start at 1 and
+increase it whenever a node's stored fields or node types change. Ship each
+release's clients with the version of the schema they were built with.
+
+- **What is recorded.** A client records its version in the document with
+  its first write there (an edit, `initialize()` of a new document, a
+  `seedYState` or an `editYState`), in the same Yjs update, so no one
+  receives that write without it. Opening a document records nothing; an
+  update your app or one of its extensions makes as the document opens (a
+  value it assigns on open) is a write, and records the version. The
+  record only grows (undo never removes it), and two versions that write at
+  once both record theirs: every client reads the highest.
+- **What an older client sees.** A client whose `schemaVersion` is lower
+  than the highest recorded opens the document read only (`status`
+  `'readonly'`, as for a newer layout) and reports
+  `UNSUPPORTED_SCHEMA_WARNING` with `{reason: 'newer', found, supported}`.
+  It keeps showing the document and the newer clients' edits, and what code
+  changes in its editor is not written (see
+  [Set up an editor](#set-up-an-editor)). This also happens mid-session,
+  the moment a newer client's first write arrives: the older client keeps
+  what it shows and its edits made until then, and turns read only. It is
+  read only for good; reloading the newer app makes it editable. Servers
+  behave the same way: an older `editYState` or `readYState` refuses with
+  a `YHeadlessError` (`'read-only'`) that carries the warning, and writes
+  nothing.
+- **What an equal or newer client does.** It edits as before. It keeps the
+  fields, text formats and NodeState it does not declare when it edits a
+  node, so a field you remove in a newer version is kept for the documents
+  that have it (see [Changing the layout and migrating](#changing-the-layout-and-migrating)).
+- **When to bump.** Adding, removing or renaming a node type, adding or
+  removing a stored field, changing what a field's values mean, or anything
+  else an older client would show or edit wrongly. A change that touches no
+  stored data (rendering, commands) needs no bump. When in doubt, bump: an
+  older client then only loses the ability to edit documents a newer one
+  wrote to, never what they hold. An app that never bumps keeps today's
+  behavior between versions (see "Older app versions" in [Limits](#limits)).
+- **Rendering the warning.** The message is a short note for developers.
+  Render your own banner from `code` and `data`, for example "This document
+  was edited with a newer version of the app. Reload to get the latest
+  version." (see the banner example in [Warnings](#warnings)). Where the
+  newer version also added node types or changed how one is stored, the
+  binding reports `UNKNOWN_NODE_TYPES_WARNING` or
+  `STORAGE_MISMATCH_WARNING` after it: prefer the schema warning in your
+  banner, it says what to do.
 
 ## How content is stored
 
@@ -899,8 +961,13 @@ not merge as a user might expect:
   keeps the format: the collaborator's undo brings it back.
 - **Large lists.** A structural edit in a list costs time proportional to
   the list on every client.
-- **Older app versions.** A client keeps the fields, text formats and
-  NodeState it does not know when it edits a node (see
+- **Older app versions.** Clients of different `schemaVersion`s never
+  edit a document together: the older one is read only (see
+  [Versioning your schema](#versioning-your-schema)). What follows applies
+  between clients of the same version whose classes differ (an app that did
+  not bump its version), and to a newer client editing fields an older
+  version wrote, such as one it removed. A client keeps the fields, text
+  formats and NodeState it does not know when it edits a node (see
   [Changing your own node types](#changing-the-layout-and-migrating)), and
   in a block it moves, which is written anew (see Moves): the new copy takes
   what the block stored, and an item that joins another group takes that
@@ -978,14 +1045,19 @@ hold one stay readable and editable by layout 1 clients.
   version to a room's record only when it first writes something that needs
   it, in the same transaction; from then on, older clients open that room
   read only. Upgrade every client of a room together.
-- **Changing your own node types:** fields are stored by name, so adding a
+- **Changing your own node types:** bump `schemaVersion` (see
+  [Versioning your schema](#versioning-your-schema)), so that clients still
+  on the older version open the rooms a newer one edited read only instead
+  of editing them. Fields are stored by name, so adding a
   field with a default, or dropping one, works as in
   [Lexical JSON](/docs/serialization/#versioning--breaking-changes): a field
   a room does not have reads as its default, and one your class no longer has
-  is ignored. Clients of both versions can edit a room at once (during a
-  rollout): a client writes only the fields its classes declare in
-  `$config`, so an older client's edit of a node keeps the fields a newer
-  version added, and a field a client knows and clears is deleted (see
+  is ignored. Where the versions are equal (an app that did not bump
+  `schemaVersion`, or a newer client editing what an older one wrote),
+  clients whose classes differ can edit a room at once: a client writes
+  only the fields its classes declare in `$config`, so its edit of a node
+  keeps the fields the other version declares, and a field a client knows
+  and clears is deleted (see
   "Older app versions" in the limits). A value an older class throws on (an
   `updateFromJSON` that rejects a value the newer version writes) opens the
   room read only for that client, as a type it does not register does. A
@@ -1018,7 +1090,7 @@ flowchart LR
    import {readYState, seedYState} from '@lexical/y/headless';
    import {$getEditor, $getRoot, $parseSerializedNode} from 'lexical';
 
-   const config = {extensions: [AppNodesExtension]};
+   const config = {extensions: [AppNodesExtension], schemaVersion: 1};
 
    // 1. The content as Lexical JSON (here read from an @lexical/y room).
    const json = readYState(oldState, config, () =>

@@ -99,7 +99,10 @@ test('a remote format change in a table this client deleted: no format cleanup, 
 });
 
 describe('a document that loads a stored state before the binding (S7-14)', () => {
-  const config: HeadlessYConfig = {extensions: [MarkStateExtension]};
+  const config: HeadlessYConfig = {
+    extensions: [MarkStateExtension],
+    schemaVersion: 1,
+  };
 
   function $show(node: LexicalNode = $getRoot()): string {
     const ids = $getNodeMarkIDs(node);
@@ -163,6 +166,7 @@ describe('a document that loads a stored state before the binding (S7-14)', () =
           MarkStateExtension,
           configExtension(YCollabExtension, {
             doc,
+            schemaVersion: 1,
             selfCheck: true,
             synced: true,
           }),
@@ -324,12 +328,12 @@ describe('a document that loads a stored state before the binding (S7-14)', () =
     const editor = createEditor({});
     expect(() =>
       // @ts-expect-error - a plain Y.Doc may have run Yjs's format cleanup
-      new YBinding(editor, new Y.Doc()).dispose(),
+      new YBinding(editor, new Y.Doc(), {schemaVersion: 1}).dispose(),
     ).not.toThrow();
     expect(() =>
       buildEditorFromExtensions(
         // @ts-expect-error - a plain Y.Doc may have run Yjs's format cleanup
-        configExtension(YCollabExtension, {doc: new Y.Doc()}),
+        configExtension(YCollabExtension, {doc: new Y.Doc(), schemaVersion: 1}),
       ).dispose(),
     ).not.toThrow();
     // @ts-expect-error - a Y.Doc is not a YDoc without createYDoc

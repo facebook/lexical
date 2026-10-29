@@ -46,7 +46,7 @@ function client(id: number, blockIds: boolean, doc = createYDoc()) {
   const editor = buildEditorFromExtensions(
     defineExtension({
       dependencies: [
-        configExtension(YCollabExtension, {doc}),
+        configExtension(YCollabExtension, {doc, schemaVersion: 1}),
         ...(blockIds ? [BlockIdExtension] : []),
       ],
       name: '@lexical/y/test/binding-state',

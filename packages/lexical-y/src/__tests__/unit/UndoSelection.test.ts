@@ -67,7 +67,10 @@ function seed($build: () => void): Uint8Array {
   );
   const doc = createYDoc();
   doc.clientID = 7;
-  const binding = new YBinding(editor, doc, {captureTimeout: null});
+  const binding = new YBinding(editor, doc, {
+    captureTimeout: null,
+    schemaVersion: 1,
+  });
   binding.start();
   binding.initialize();
   binding.dispose();
@@ -86,7 +89,11 @@ function open(
     defineExtension({
       dependencies: [
         ...EXTENSIONS,
-        configExtension(YCollabExtension, {captureTimeout: 0, doc}),
+        configExtension(YCollabExtension, {
+          captureTimeout: 0,
+          doc,
+          schemaVersion: 1,
+        }),
       ],
       name: 'undo-selection',
       onError: e => {
@@ -298,7 +305,11 @@ function openWithPictures(
     defineExtension({
       dependencies: [
         ...EXTENSIONS,
-        configExtension(YCollabExtension, {captureTimeout, doc}),
+        configExtension(YCollabExtension, {
+          captureTimeout,
+          doc,
+          schemaVersion: 1,
+        }),
       ],
       name: 'undo-selection-picture',
       nodes: () => [PictureNode],

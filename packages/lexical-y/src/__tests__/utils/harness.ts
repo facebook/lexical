@@ -565,6 +565,8 @@ export function createBoundEditor(
     onWarn: (e: Error) => void;
     selfCheck: boolean;
     withBlockIds?: boolean;
+    /** The binding's schemaVersion (default 1). */
+    schemaVersion?: number;
   },
 ): {editor: LexicalEditor; binding: YBinding; start: () => () => void} {
   if (!(config.withBlockIds ?? WITH_BLOCK_IDS)) {
@@ -574,13 +576,20 @@ export function createBoundEditor(
       onError: config.onError,
       onWarn: config.onWarn,
     });
-    const binding = new YBinding(editor, doc, {selfCheck: config.selfCheck});
+    const binding = new YBinding(editor, doc, {
+      schemaVersion: config.schemaVersion ?? 1,
+      selfCheck: config.selfCheck,
+    });
     return {binding, editor, start: () => binding.start()};
   }
   const editor = buildEditorFromExtensions(
     defineExtension({
       dependencies: [
-        configExtension(YCollabExtension, {doc, selfCheck: config.selfCheck}),
+        configExtension(YCollabExtension, {
+          doc,
+          schemaVersion: config.schemaVersion ?? 1,
+          selfCheck: config.selfCheck,
+        }),
         BlockIdExtension,
       ],
       name: '@lexical/y/test/' + config.namespace,

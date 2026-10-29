@@ -52,7 +52,10 @@ describe('@lexical/y on a server', () => {
         throw e;
       },
     });
-    const binding = new YBinding(editor, doc, {selfCheck: true});
+    const binding = new YBinding(editor, doc, {
+      schemaVersion: 1,
+      selfCheck: true,
+    });
     binding.start();
     expect(binding.status).toBe('pending');
     expect(editor.isEditable()).toBe(false);

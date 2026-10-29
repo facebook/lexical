@@ -79,7 +79,11 @@ function client(doc: YDoc, text: string | null, root?: Y.Node) {
   if (text !== null) {
     editor.update(() => $getRoot().clear().append($p(text)), {discrete: true});
   }
-  const binding = new YBinding(editor, doc, {root, selfCheck: true});
+  const binding = new YBinding(editor, doc, {
+    root,
+    schemaVersion: 1,
+    selfCheck: true,
+  });
   binding.start();
   return {binding, codes, editor, warnings};
 }
@@ -169,7 +173,11 @@ describe('@lexical/y initialization', () => {
                           $defaultIsIdentifiedBlock(node) || $isListNode(node),
                 }),
               ]),
-          configExtension(YCollabExtension, {doc, selfCheck: false}),
+          configExtension(YCollabExtension, {
+            doc,
+            schemaVersion: 1,
+            selfCheck: false,
+          }),
         ],
         name: '@lexical/y/test/seeder',
         nodes: [ListNode, ListItemNode, HeadingNode],
@@ -616,7 +624,10 @@ describe('@lexical/y initialization', () => {
         },
         {discrete: true},
       );
-      const binding = new YBinding(editor, doc, {selfCheck: true});
+      const binding = new YBinding(editor, doc, {
+        schemaVersion: 1,
+        selfCheck: true,
+      });
       binding.start();
       binding.initialize();
       await flush();
@@ -689,6 +700,7 @@ describe('@lexical/y initialization', () => {
           configExtension(YCollabExtension, {
             convert: true,
             doc,
+            schemaVersion: 1,
             selfCheck: false,
             selfCheckSample: 0.25,
             synced: true,
@@ -733,7 +745,9 @@ describe('@lexical/y initialization', () => {
     const canUndo: boolean[] = [];
     const editor = buildEditorFromExtensions(
       defineExtension({
-        dependencies: [configExtension(YCollabExtension, {doc})],
+        dependencies: [
+          configExtension(YCollabExtension, {doc, schemaVersion: 1}),
+        ],
         name: 'app',
         nodes: NODES,
         register: ed =>
@@ -763,7 +777,10 @@ describe('@lexical/y initialization', () => {
       buildEditorFromExtensions(
         defineExtension({
           dependencies: [
-            configExtension(YCollabExtension, {doc: createYDoc()}),
+            configExtension(YCollabExtension, {
+              doc: createYDoc(),
+              schemaVersion: 1,
+            }),
             HistoryExtension,
           ],
           name: 'conflict',

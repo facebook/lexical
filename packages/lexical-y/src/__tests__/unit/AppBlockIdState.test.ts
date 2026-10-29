@@ -83,7 +83,10 @@ function client(id: number, state: Uint8Array | null = null): Client {
       warnings.push(String(e && (e as Error).message));
     },
   });
-  const binding = new YBinding(editor, doc, {selfCheck: true});
+  const binding = new YBinding(editor, doc, {
+    schemaVersion: 1,
+    selfCheck: true,
+  });
   binding.start();
   return {binding, doc, editor, errors, warnings, writes};
 }

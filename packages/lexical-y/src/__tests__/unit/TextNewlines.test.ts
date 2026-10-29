@@ -125,7 +125,11 @@ for (const marks of [false, true]) {
       defineExtension({
         $initialEditorState: null,
         dependencies: [
-          configExtension(YCollabExtension, {doc, selfCheck: true}),
+          configExtension(YCollabExtension, {
+            doc,
+            schemaVersion: 1,
+            selfCheck: true,
+          }),
           ...(marks ? [MarkStateExtension] : []),
         ],
         name: 'newline-mark',
@@ -228,7 +232,10 @@ test('a text node holding 300,000 line feeds', async () => {
     });
     const doc = createYDoc(null, {gc: false});
     doc.clientID = id;
-    const binding = new YBinding(editor, doc, {selfCheck: false});
+    const binding = new YBinding(editor, doc, {
+      schemaVersion: 1,
+      selfCheck: false,
+    });
     binding.start();
     return {binding, doc, editor, errors};
   };

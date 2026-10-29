@@ -50,7 +50,11 @@ for (const gc of [false, true])
             defineExtension({
               $initialEditorState: null,
               dependencies: [
-                configExtension(YCollabExtension, {doc, selfCheck: false}),
+                configExtension(YCollabExtension, {
+                  doc,
+                  schemaVersion: 1,
+                  selfCheck: false,
+                }),
                 ...(ids ? [BlockIdExtension] : []),
               ],
               name: 'R6/caret/' + id,

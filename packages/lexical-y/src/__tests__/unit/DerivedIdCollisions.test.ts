@@ -89,7 +89,7 @@ function peer(
               }),
             ]
           : []),
-        configExtension(YCollabExtension, {doc, selfCheck}),
+        configExtension(YCollabExtension, {doc, schemaVersion: 1, selfCheck}),
       ],
       name: `peer${id}`,
       nodes: NODES,

@@ -32,7 +32,12 @@ import {configExtension, defineExtension} from 'lexical';
 const doc = createYDoc();
 const editor = buildEditorFromExtensions(
   defineExtension({
-    dependencies: [RichTextExtension, configExtension(YCollabExtension, {doc})],
+    dependencies: [
+      RichTextExtension,
+      // Required: your app's document schema version, bumped whenever a
+      // node's stored fields or node types change.
+      configExtension(YCollabExtension, {doc, schemaVersion: 1}),
+    ],
     name: 'app',
   }),
 );
@@ -114,6 +119,17 @@ of set-valued NodeState; layout 3 (planned, #9449) adds move records.
   recorded for each element type on its first write: `line`, `nested`,
   `group|<field>,…` or `format|<field>,…` (the group's or format's identity
   fields).
+- **Schema record.** Root attributes `lexical-y-schema:<n>` = `true`, one
+  for each version `n` of the app's own schema (`schemaVersion`) that wrote
+  to the document. A client records its version in the same transaction as
+  its first write to the document (a new document's with its layout
+  record), so no client receives that write without it; opening a document
+  records nothing (an update an app makes on open is a write). A reader takes the highest, and opens the document read
+  only when it is higher than its own `schemaVersion`, or when a
+  `lexical-y-schema:` attribute is not an integer from 1 set to `true`. Like
+  the layout record, it only grows: no client deletes one, and undo keeps
+  it. It is not part of the layout: a reader that ignores it reads the rest
+  as before.
 - **Layout record.** A reader takes the highest `lexical-y:<n>`, and opens
   the document read only when it is newer than its own layout, or when a
   `lexical-y:` attribute is not an integer from 1 set to `true`. The record

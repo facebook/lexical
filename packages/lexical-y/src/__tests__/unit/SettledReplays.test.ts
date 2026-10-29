@@ -89,7 +89,11 @@ function peer(
           name: 'replay/table',
           register: e => registerTablePlugin(e),
         }),
-        configExtension(YCollabExtension, {doc, selfCheck: false}),
+        configExtension(YCollabExtension, {
+          doc,
+          schemaVersion: 1,
+          selfCheck: false,
+        }),
         ...(ids
           ? [
               configExtension(BlockIdExtension, {

@@ -43,7 +43,11 @@ function peer() {
     defineExtension({
       $initialEditorState: null,
       dependencies: [
-        configExtension(YCollabExtension, {doc, selfCheck: true}),
+        configExtension(YCollabExtension, {
+          doc,
+          schemaVersion: 1,
+          selfCheck: true,
+        }),
         MarkStateExtension,
       ],
       name: 'type-at-mark-start',

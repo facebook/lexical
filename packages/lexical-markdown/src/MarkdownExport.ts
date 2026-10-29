@@ -561,7 +561,8 @@ function exportTextFormat(
     // whitespace the tags are dropped by the early return below, so
     // registering them here would leave an unclosed tag for a later node to
     // close. In the full-document path `checkHasFormat` already rejects
-    // whitespace-only nodes, so this guard only affects sliced content.
+    // whitespace-only nodes other than code, and code is never whitespace-only
+    // here, so this guard only affects sliced content.
     if (
       !isWhitespaceOnly &&
       checkHasFormat(node, format) &&
@@ -660,7 +661,7 @@ function checkHasFormat(n: TextNode | null, f: TextFormatType): boolean {
   }
   // Inline code keeps its whitespace inside the fence, so other formats can
   // wrap a code span made only of spaces.
-  if (f === 'code' || hasFormat(n, 'code')) {
+  if (hasFormat(n, 'code')) {
     return true;
   }
   if (n && /^\s*$/.test(n.getTextContent())) {

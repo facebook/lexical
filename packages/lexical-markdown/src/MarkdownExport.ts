@@ -228,7 +228,7 @@ type OpenTag = {
   format: TextFormatType;
   tag: string;
   /** `$continuesTag`'s answers so far, by node key. */
-  answers?: Map<NodeKey, boolean>;
+  answers: Map<NodeKey, boolean>;
 };
 
 function $exportChildrenForSelection(
@@ -561,7 +561,7 @@ function $exportTextFormat(
         !hasFormat(prevNode, format) ||
         !unclosedTags.find(element => element.tag === tag)
       ) {
-        unclosedTags.push({format, tag});
+        unclosedTags.push({answers: new Map(), format, tag});
         openingTags += tag;
       }
     }
@@ -655,12 +655,12 @@ function $continuesTag(
   tag: OpenTag,
   selection: BaseSelection | null,
 ): boolean {
-  const answers = tag.answers || (tag.answers = new Map());
+  const {answers} = tag;
   const known = answers.get(node.getKey());
   if (known !== undefined) {
     return known;
   }
-  const passed = [node];
+  const passed: TextNode[] = [];
   let next = getTextSibling(node, false);
   let result = false;
   while (
@@ -677,9 +677,16 @@ function $continuesTag(
     if (text.includes('\n')) {
       break;
     }
+    // A whitespace node already answered for shares the answer.
+    const passedAnswer = answers.get(next.getKey());
+    if (passedAnswer !== undefined) {
+      result = passedAnswer;
+      break;
+    }
     passed.push(next);
     next = getTextSibling(next, false);
   }
+  answers.set(node.getKey(), result);
   for (const passedNode of passed) {
     answers.set(passedNode.getKey(), result);
   }

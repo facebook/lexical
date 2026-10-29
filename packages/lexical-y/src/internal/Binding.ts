@@ -587,6 +587,11 @@ export class YBinding {
    * later local updates too, as reading their containers again could drop it.
    */
   private keepsUnstored = false;
+  /**
+   * Whether UNSUPPORTED_EDIT_WARNING was reported since the binding last
+   * went read only: once per read-only period.
+   */
+  private warnedEdit = false;
   /** Re-reads in a row (see MAX_REREADS). */
   private rereads = 0;
   /**
@@ -1024,6 +1029,7 @@ export class YBinding {
     this.refused.clear();
     this.refusedComposing.clear();
     this.keepsUnstored = false;
+    this.warnedEdit = false;
     this.toSettle.clear();
     this.untransformed.clear();
     this.untransformedText.clear();
@@ -1633,8 +1639,27 @@ export class YBinding {
     }
   }
 
+  /**
+   * Whether something keeps the binding read only for good: a configuration
+   * it does not support, node types it cannot build (or slots it cannot
+   * read), or a local change it cannot store and keeps showing.
+   */
+  private staysReadOnly(): boolean {
+    return (
+      this.unsupportedConfig.length > 0 ||
+      this.state.unknownTypes.size > 0 ||
+      this.keepsUnstored
+    );
+  }
+
+  /**
+   * Invariant: while staysReadOnly, the status is `'readonly'`, even for
+   * the moment a change to the layout record has the document read again.
+   * Why: an editor made editable for that moment takes edits that are not
+   * written.
+   */
   private setStatus(status: YBindingStatus): void {
-    if (status === 'active' && this.unsupportedConfig.length > 0) {
+    if (status === 'active' && this.staysReadOnly()) {
       if (this._status !== 'readonly') {
         for (const data of this.unsupportedConfig) {
           this.warn(
@@ -1647,6 +1672,9 @@ export class YBinding {
         }
       }
       status = 'readonly';
+    }
+    if (status === 'active') {
+      this.warnedEdit = false;
     }
     if (this._status !== status && this.options.onStatus) {
       // Reported with the warnings, once Yjs is idle (see flushWarnings).
@@ -2696,7 +2724,7 @@ export class YBinding {
       return;
     }
     if (
-      this._status === 'readonly' &&
+      this._status !== 'active' &&
       !this.keepsUnstored &&
       !commit.remote &&
       !commit.skip
@@ -2723,11 +2751,14 @@ export class YBinding {
         }
         if (commit.userEdit) {
           this.rereads = 0;
-          this.warn(
-            UNSUPPORTED_EDIT_WARNING,
-            'a local change while read only is not written: read again',
-            {reason: 'read-only'},
-          );
+          if (!this.warnedEdit) {
+            this.warnedEdit = true;
+            this.warn(
+              UNSUPPORTED_EDIT_WARNING,
+              'a local change is not written while read only',
+              {reason: 'read-only'},
+            );
+          }
         }
       }
       return;

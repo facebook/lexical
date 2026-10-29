@@ -103,8 +103,10 @@ declare export class CodeNode extends ElementNode {
     restoreSelection?: boolean,
   ): null | ParagraphNode | CodeHighlightNode | TabNode;
   collapseAtStart(): true;
-  setLanguage(language: string): void;
-  getLanguage(): string | void;
+  setLanguage(language: ?string): this;
+  getLanguage(): ?string;
+  setTheme(theme: ?string): this;
+  getTheme(): string | void;
   getWordWrap(): boolean;
   setWordWrap(valueOrUpdater: ValueOrUpdater<boolean>): this;
 }

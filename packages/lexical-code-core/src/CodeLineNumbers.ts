@@ -38,7 +38,7 @@ export interface CodeLineNumbersConfig {
   disabled: boolean;
   /**
    * When `true`, only code blocks with word wrap on
-   * ({@link CodeNode.getWordWrap}) get line number elements. Other blocks
+   * ({@link CodeNode.getWordWrap}) get the line number markup. Other blocks
    * render exactly as they do without the extension, so a theme can keep
    * numbering them with `data-gutter`, which can't follow wrapped rows.
    * Can be flipped at runtime through the `onlyWordWrapped` output signal.
@@ -46,7 +46,7 @@ export interface CodeLineNumbersConfig {
   onlyWordWrapped: boolean;
 }
 
-/** Set on the DOM of every CodeNode that has line number elements. */
+/** Set on the DOM of every CodeNode that has the line number markup. */
 const CODE_LINE_NUMBERS_ATTR = 'data-lexical-code-line-numbers';
 /** Set on the `<span>` wrapped around the `<br>` of a code LineBreakNode. */
 const CODE_LINE_BREAK_ATTR = 'data-lexical-code-line-break';

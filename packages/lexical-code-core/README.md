@@ -46,7 +46,7 @@ The numbers drawn by the wrappers stay. The playground theme has this limitation
 The extension can be switched off at runtime through its `disabled` signal, which puts back exactly the DOM a code
 block has without it.
 
-Set `onlyWordWrapped` to give line number elements only to code blocks with word wrap on (see below). The other blocks
+Set `onlyWordWrapped` to give the line number markup only to code blocks with word wrap on (see below). The other blocks
 render exactly as they do without the extension, so a theme can keep numbering them with `data-gutter`. It can also be
 switched at runtime through the `onlyWordWrapped` signal.
 

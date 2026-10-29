@@ -11,7 +11,7 @@
 // the editors are attached to DOM roots, so the reconciler derives elements'
 // text fields from the text it renders.
 
-import {$createLinkNode, $isLinkNode} from '@lexical/link';
+import {$createLinkNode, $isLinkNode, $toggleLink} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {$addMarkID, $removeMarkID} from '@lexical/mark';
 import {$patchStyleText} from '@lexical/selection';
@@ -21,7 +21,9 @@ import {
   $createRangeSelection,
   $createTextNode,
   $getRoot,
+  $getSelection,
   $isElementNode,
+  $isRangeSelection,
   $isTextNode,
   $setSelection,
   type ElementNode,
@@ -30,7 +32,13 @@ import {
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {freshReader, type Peer, setup, shape} from '../../utils/harness';
+import {
+  $selectIn,
+  freshReader,
+  type Peer,
+  setup,
+  shape,
+} from '../../utils/harness';
 
 function attach(peer: Peer) {
   const element = document.createElement('div');
@@ -1421,6 +1429,402 @@ describe('an undo of a format change ‖ its removal by a collaborator, undone',
         }
         expect(shown[0]).toBe(expected);
       });
+    }
+  }
+});
+
+// S7-24, S7-7, S7-10, S7-20, S7-26: a value one client restates (the restore
+// after its typed text or its format range, or a value its undo brings back)
+// ended at the closer of the change that gave it. The undo of that change by
+// its author deleted the closer, and the restated value ran on to the end of
+// the document. A run that one client restates now ends with an item of that
+// client's own, right after the closer it relied on (see Cursor#restatedEnd
+// and YBinding#closeRestoredRuns), for every kind of value: text formats,
+// styles, NodeState and its set members, and links.
+describe('a value one client restates ‖ the undo of the change that gave it', () => {
+  const twoLines = (first: string, second: string) => () =>
+    $getRoot().append(
+      $createParagraphNode().append($createTextNode(first)),
+      $createParagraphNode().append($createTextNode(second)),
+    );
+  // As the toolbar does: on where the first character lacks it, off otherwise.
+  const $format =
+    (format: 'bold' | 'italic' | 'underline', from: number, to: number) =>
+    () => {
+      const sel = $selectLine(from, to);
+      sel.format = (sel.anchor.getNode() as TextNode).getFormat();
+      $setSelection(sel);
+      sel.formatText(format);
+      $setSelection(null);
+    };
+  const $comment = (id: string, from: number, to: number) => () => {
+    $addMarkID(id, $selectLine(from, to));
+    $setSelection(null);
+  };
+  // Plain text typed at first-line offset `at`: a text node of its own, with
+  // no format or NodeState (as a comment's end does not extend to it).
+  const $typePlain = (at: number, text: string) => () => {
+    let acc = 0;
+    for (const node of (
+      $getRoot().getFirstChildOrThrow() as ElementNode
+    ).getAllTextNodes()) {
+      const size = node.getTextContentSize();
+      if (at <= acc + size) {
+        const [before] = at - acc < size ? node.splitText(at - acc) : [node];
+        before.insertAfter($createTextNode(text));
+        return;
+      }
+      acc += size;
+    }
+    throw new Error('offset');
+  };
+  // Blocks pasted at first-line offset `at`.
+  const $paste =
+    (at: number, ...blocks: (() => LexicalNode)[]) =>
+    () => {
+      const sel = $selectLine(at, at);
+      $setSelection(sel);
+      sel.insertNodes(blocks.map(block => block()));
+      $setSelection(null);
+    };
+  const $list = () =>
+    $createListNode('bullet').append(
+      $createListItemNode().append($createTextNode('t20z t67z')),
+      $createListItemNode().append($createTextNode('t23z')),
+    );
+  for (const ids of [
+    [1, 2],
+    [2, 1],
+  ]) {
+    // S7-24: A formats, then undoes, while B types inside the range.
+    for (const [name, $add, expected] of [
+      [
+        'italic',
+        $format('italic', 0, 9),
+        '"t56z t85z" " t57z"[I] " t59z t60z" / "t78z t79z"',
+      ],
+      [
+        'a comment',
+        $comment('c1', 0, 9),
+        '"t56z t85z" " t57z"[c1] " t59z t60z" / "t78z t79z"',
+      ],
+    ] as const) {
+      test(`S7-24: A adds ${name} on "t56z t57z" and undoes it ‖ B types plain text after "t56z" (ids ${ids})`, async () => {
+        const t = await setup(twoLines('t56z t57z t59z t60z', 't78z t79z'), {
+          ids,
+        });
+        t.a.update($add);
+        await t.sync();
+        t.offline();
+        t.a.undo();
+        t.b.update($typePlain(4, ' t85z'));
+        expect(await merged(t)).toBe(expected);
+      });
+    }
+    // S7-7: a comment's undo ‖ plain text typed right after it, where
+    // other values (a comment of a set's other member, bold) end too.
+    for (const [name, $others, expected] of [
+      [
+        'another comment',
+        [$comment('c5', 10, 14)],
+        '"t31z t32z " "t33z"[c5] " t1012z t1008z" / "t34z t35z t1005z"',
+      ],
+      [
+        'two other comments',
+        [$comment('c5', 10, 14), $comment('c6', 0, 14)],
+        '"t31z t32z "[c6] "t33z"[c5+c6] " t1012z t1008z" / "t34z t35z t1005z"',
+      ],
+      [
+        'bold',
+        [$format('bold', 10, 14)],
+        '"t31z t32z " "t33z"[B] " t1012z t1008z" / "t34z t35z t1005z"',
+      ],
+    ] as const) {
+      test(`S7-7: B comments "t32z t33z", where ${name} ends, and undoes it ‖ A types after "t33z" (ids ${ids})`, async () => {
+        const t = await setup(
+          twoLines('t31z t32z t33z t1008z', 't34z t35z t1005z'),
+          {ids},
+        );
+        for (const $other of $others) {
+          t.a.update($other);
+        }
+        await t.sync();
+        t.b.update($comment('c4', 5, 14));
+        await t.sync();
+        t.offline();
+        t.b.undo();
+        t.a.update($typePlain(14, ' t1012z'));
+        expect(await merged(t)).toBe(expected);
+      });
+    }
+    // S7-10: a format's undo ‖ its removal from part of the range (the part
+    // after it keeps the format, up to the end of the range), or from all of
+    // it, and then the removal's undo (which brings the format back on the
+    // range).
+    for (const [format, tag] of [
+      ['bold', 'B'],
+      ['underline', 'U'],
+    ] as const) {
+      test(`S7-10: B ${format}s "t6z t7z t8z" and undoes it ‖ A removes it from "t7z" (ids ${ids})`, async () => {
+        const t = await setup(twoLines('t5z t6z t7z t8z t9z', 'tail line'), {
+          ids,
+        });
+        t.b.update($format(format, 4, 15));
+        await t.sync();
+        t.offline();
+        t.a.update($format(format, 8, 11));
+        t.b.undo();
+        expect(await merged(t)).toBe(
+          `"t5z t6z t7z" " t8z"[${tag}] " t9z" / "tail line"`,
+        );
+      });
+      test(`S7-10: B ${format}s "t6z t7z t8z" and undoes it ‖ A removes it, then A undoes that (ids ${ids})`, async () => {
+        const t = await setup(twoLines('t5z t6z t7z t8z t9z', 'tail line'), {
+          ids,
+        });
+        t.b.update($format(format, 4, 15));
+        await t.sync();
+        t.offline();
+        t.a.update($format(format, 4, 15));
+        t.b.undo();
+        await t.sync();
+        t.a.undo();
+        expect(await merged(t)).toBe(
+          `"t5z " "t6z t7z t8z"[${tag}] " t9z" / "tail line"`,
+        );
+      });
+    }
+    test(`S7-10: B comments "t9z" and undoes it ‖ A resolves it, then A undoes that (ids ${ids})`, async () => {
+      const t = await setup(twoLines('t5z t6z t7z t8z t9z', 'tail line'), {
+        ids,
+      });
+      t.b.update($comment('c2', 16, 19));
+      await t.sync();
+      t.offline();
+      t.a.update(() => $removeMarkID('c2'));
+      t.b.undo();
+      await t.sync();
+      t.a.undo();
+      expect(await merged(t)).toBe(
+        '"t5z t6z t7z t8z " "t9z"[c2] / "tail line"',
+      );
+    });
+    // The nulls an undo writes after itself (see closeRestoredRuns) are read
+    // as part of that undo: the selection it puts back stays, also where the
+    // undo runs inside an editor update (as UNDO_COMMAND's handler does).
+    for (const nested of [false, true]) {
+      test(`S7-10: A's undo of a removal of B's undone bold puts back A's selection (${nested ? 'inside an update' : 'direct'}, ids ${ids})`, async () => {
+        const t = await setup(twoLines('t5z t6z t7z t8z t9z', 'tail line'), {
+          ids,
+        });
+        t.b.update(() => {
+          $selectIn([0], 4, 15).formatText('bold');
+          $setSelection(null);
+        });
+        await t.sync();
+        t.offline();
+        t.a.update(() => void $selectIn([0], 4, 15));
+        t.a.update(() => {
+          const sel = $getSelection();
+          if (!$isRangeSelection(sel)) {
+            throw new Error('no range selection');
+          }
+          sel.format = 1;
+          sel.formatText('bold');
+          $selectIn([0], 0, 0);
+        });
+        t.b.undo();
+        await t.sync();
+        if (nested) {
+          t.a.editor.update(() => void t.a.binding.undo(), {discrete: true});
+        } else {
+          t.a.binding.undo();
+        }
+        const offsets = t.a.read(() => {
+          const sel = $getSelection();
+          const texts = $getRoot().getAllTextNodes();
+          const at = (key: string, offset: number) => {
+            let acc = 0;
+            for (const text of texts) {
+              if (text.getKey() === key) {
+                return acc + offset;
+              }
+              acc += text.getTextContentSize();
+            }
+            return -1;
+          };
+          return $isRangeSelection(sel)
+            ? [
+                at(sel.anchor.key, sel.anchor.offset),
+                at(sel.focus.key, sel.focus.offset),
+              ]
+            : null;
+        });
+        expect(offsets).toEqual([4, 15]);
+        expect(await merged(t)).toBe(
+          '"t5z " "t6z t7z t8z"[B] " t9z" / "tail line"',
+        );
+      });
+    }
+    // S7-20: a comment's undo ‖ a list pasted inside the commented words.
+    test(`S7-20: A comments "t59z t60z t61z" and undoes it ‖ B pastes a list after "t60z" (ids ${ids})`, async () => {
+      const t = await setup(twoLines('t58z t59z t60z t61z t62z', 't78z t79z'), {
+        ids,
+      });
+      t.a.update($comment('c9', 5, 19));
+      await t.sync();
+      t.offline();
+      t.a.undo();
+      t.b.update($paste(14, $list));
+      expect(await merged(t)).toBe(
+        '"t58z t59z t60z" / "t20z t67z" "t23z" / " t61z"[c9] " t62z" / "t78z t79z"',
+      );
+    });
+    // S7-26: a link's undo ‖ a format change over the link's start, which
+    // also sets the link's textFormat (RangeSelection#formatText): that
+    // write restates the link over its text, which keeps it there.
+    for (const format of ['italic', 'bold'] as const) {
+      test(`S7-26: B links "t7z t8z t9z" and undoes it ‖ A makes "t5z t6z t7z" ${format} (ids ${ids})`, async () => {
+        const t = await setup(
+          twoLines('t1z t2z t3z t4z t5z t6z t7z t8z t9z', 'tail line'),
+          {ids},
+        );
+        t.b.update(() => {
+          $setSelection($selectLine(24, 35));
+          $toggleLink('https://u0.test');
+          $setSelection(null);
+        });
+        await t.sync();
+        t.offline();
+        t.a.update($format(format, 16, 27));
+        t.b.undo();
+        await merged(t);
+        const $links = () =>
+          $getRoot()
+            .getChildren()
+            .map(p =>
+              ($isElementNode(p) ? p.getChildren() : [])
+                .filter($isLinkNode)
+                .map(link => link.getTextContent())
+                .join(' '),
+            )
+            .join(' / ');
+        const fresh = await freshReader(t.a);
+        for (const p of [t.a, t.b, fresh]) {
+          expect(p.read($links)).toBe('t7z t8z t9z / ');
+        }
+      });
+    }
+  }
+});
+
+// The undo race matrix of soak7: A adds bold or a comment on "t56z t57z"
+// and removes it (an undo, or the opposite change) while B edits inside the
+// range. Nothing outside the range gets the value.
+describe('a format or comment removed ‖ an edit inside its range', () => {
+  const $outside = () =>
+    $getRoot()
+      .getAllTextNodes()
+      .filter(
+        n =>
+          /t(59|60|78|79)z/.test(n.getTextContent()) &&
+          (n.hasFormat('bold') ||
+            ((n.exportJSON() as {$?: {markIds?: string[]}}).$?.markIds ?? [])
+              .length > 0),
+      )
+      .map(n => n.getTextContent());
+  const $at = (at: number) => {
+    const sel = $selectLine(at, at);
+    $setSelection(sel);
+    return sel;
+  };
+  const edits: [string, () => void][] = [
+    [
+      'types plain text',
+      () => {
+        const sel = $at(4);
+        sel.format = 0;
+        sel.insertText(' t85z');
+      },
+    ],
+    ['presses Enter', () => void $at(4).insertParagraph()],
+    [
+      'pastes two paragraphs',
+      () =>
+        void $at(4).insertNodes([
+          $createParagraphNode().append($createTextNode('t20z')),
+          $createParagraphNode().append($createTextNode('t23z')),
+        ]),
+    ],
+    [
+      'pastes a list',
+      () =>
+        void $at(4).insertNodes([
+          $createListNode('bullet').append(
+            $createListItemNode().append($createTextNode('t20z')),
+            $createListItemNode().append($createTextNode('t23z')),
+          ),
+        ]),
+    ],
+    ['deletes "t56z"', () => void $selectLine(0, 5).removeText()],
+  ];
+  const kinds: [string, () => void, () => void][] = [
+    [
+      'bold',
+      () => $selectLine(0, 9).formatText('bold'),
+      () => {
+        const sel = $selectLine(0, 9);
+        sel.format = 1;
+        sel.formatText('bold');
+      },
+    ],
+    [
+      'a comment',
+      () => $addMarkID('c1', $selectLine(0, 9)),
+      () => $removeMarkID('c1'),
+    ],
+  ];
+  for (const [kind, $add, $remove] of kinds) {
+    for (const undo of [true, false]) {
+      for (const [edit, $edit] of edits) {
+        for (const ids of [
+          [1, 2],
+          [2, 1],
+        ]) {
+          test(`A adds ${kind} on "t56z t57z" and ${undo ? 'undoes it' : 'removes it'} ‖ B ${edit} after "t56z" (ids ${ids})`, async () => {
+            const t = await setup(
+              () =>
+                $getRoot().append(
+                  $createParagraphNode().append(
+                    $createTextNode('t56z t57z t59z t60z'),
+                  ),
+                  $createParagraphNode().append($createTextNode('t78z t79z')),
+                ),
+              {ids},
+            );
+            t.a.update(() => {
+              $add();
+              $setSelection(null);
+            });
+            await t.sync();
+            t.offline();
+            if (undo) {
+              t.a.undo();
+            } else {
+              t.a.update(() => {
+                $remove();
+                $setSelection(null);
+              });
+            }
+            t.b.update(() => {
+              $edit();
+              $setSelection(null);
+            });
+            await merged(t);
+            expect(t.a.read($outside)).toEqual([]);
+          });
+        }
+      }
     }
   }
 });

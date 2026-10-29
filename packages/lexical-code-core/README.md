@@ -29,6 +29,8 @@ code[data-lexical-code-line-numbers]::before,
 code[data-lexical-code-line-numbers] [data-lexical-code-line-break]::after {
   counter-increment: code-line;
   content: counter(code-line);
+  /* empty alternative text, so screen readers don't read the numbers */
+  content: counter(code-line) / '';
   /* size and place the number in a gutter */
 }
 ```

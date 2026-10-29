@@ -6,7 +6,7 @@
  *
  */
 
-import type {ElementNode, Klass, LexicalNode} from 'lexical';
+import type {BaseSelection, ElementNode, Klass, LexicalNode} from 'lexical';
 import type {
   BlockContent,
   Nodes as MdastNode,
@@ -156,13 +156,19 @@ export interface MdastExportContext {
   exportBlocks(source: ElementNode | readonly LexicalNode[]): BlockContent[];
   /**
    * Whether `node` belongs in the current export: always `true` for a
-   * whole-document export; during a selection export, `true` when the node
-   * or any descendant is selected. The `exportChildren`/`exportInline`/
-   * `exportBlocks` walks apply this automatically — handlers only need it
-   * when they iterate children manually (e.g. list items, table rows) to
-   * skip structural children the selection does not reach.
+   * whole-document export; during a selection export, `true` when the node or
+   * any descendant (named slots included) is selected. The
+   * `exportChildren`/`exportInline`/`exportBlocks` walks apply this
+   * automatically — handlers only need it when they iterate children manually
+   * (e.g. list items, table rows) to skip structural children the selection
+   * does not reach.
    */
   isIncluded(node: LexicalNode): boolean;
+  /**
+   * The selection this export is limited to, or `null` for a
+   * whole-document export (including one run during a selection export).
+   */
+  readonly selection: BaseSelection | null;
 }
 
 /**

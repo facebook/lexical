@@ -86,6 +86,7 @@ import {
   TextNode,
   UNDO_COMMAND,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {describe, expect, onTestFinished, test} from 'vitest';
 
 const P = 'Revenue grew 4% in Q3.';
@@ -1408,7 +1409,10 @@ describe('MarkStateExtension', () => {
       update(editor, () => $removeMarkID('c4', $select(1, 3)));
       expect(tree(editor)).toBe('paragraph("k"[c4] "ji" "sk"[c4])');
       update(editor, () =>
-        $paragraph().getFirstChildOrThrow<TextNode>().select(1, 1),
+        $assertNodeType(
+          $paragraph().getFirstChildOrThrow(),
+          $isTextNode,
+        ).select(1, 1),
       );
       typeText(editor, 'C');
       expect(tree(editor)).toBe('paragraph("k"[c4] "Cji" "sk"[c4])');
@@ -1444,8 +1448,12 @@ describe('MarkStateExtension', () => {
       mark(editor, 1, 3, 'c5');
       expect(tree(editor)).toBe('paragraph("a"[c2,c3] "ek"[c2,c5])');
       for (const $place of [
-        () => $paragraph().getLastChildOrThrow<TextNode>().select(0, 0),
-        () => $paragraph().getLastChildOrThrow<TextNode>().selectStart(),
+        () =>
+          $assertNodeType(
+            $paragraph().getLastChildOrThrow(),
+            $isTextNode,
+          ).select(0, 0),
+        () => $paragraph().getLastChildOrThrow().selectStart(),
       ]) {
         const copyEditor = createTestEditor({withRoot: true});
         copyEditor.setEditorState(
@@ -1459,7 +1467,10 @@ describe('MarkStateExtension', () => {
       }
       // And at the end of the first run
       update(editor, () =>
-        $paragraph().getFirstChildOrThrow<TextNode>().select(1, 1),
+        $assertNodeType(
+          $paragraph().getFirstChildOrThrow(),
+          $isTextNode,
+        ).select(1, 1),
       );
       typeText(editor, 'B');
       expect(tree(editor)).toBe('paragraph("a"[c2,c3] "B"[c2] "ek"[c2,c5])');
@@ -1471,7 +1482,10 @@ describe('MarkStateExtension', () => {
       mark(editor, 0, 3, 'c1');
       update(editor, () => $select(5));
       update(editor, () => {
-        $paragraph().getFirstChildOrThrow<TextNode>().select(3, 3);
+        $assertNodeType(
+          $paragraph().getFirstChildOrThrow(),
+          $isTextNode,
+        ).select(3, 3);
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
           selection.insertText('X');
@@ -1557,7 +1571,10 @@ describe('MarkStateExtension', () => {
       });
       mark(editor, 0, 4, 'c1');
       paste(editor, copy(editor, 2, 4), () =>
-        $paragraph().getFirstChildOrThrow<TextNode>().select(4, 4),
+        $assertNodeType(
+          $paragraph().getFirstChildOrThrow(),
+          $isTextNode,
+        ).select(4, 4),
       );
       expect(tree(editor)).toBe('paragraph("abcdcd"[c1] "zz")');
       // Other ids, at the start of a run
@@ -1566,7 +1583,10 @@ describe('MarkStateExtension', () => {
       mark(other, 0, 2, 'c2');
       mark(other, 3, 7, 'c1');
       paste(other, copy(other, 0, 2), () =>
-        $paragraph().getLastChildOrThrow<TextNode>().select(0, 0),
+        $assertNodeType($paragraph().getLastChildOrThrow(), $isTextNode).select(
+          0,
+          0,
+        ),
       );
       expect(tree(other)).toBe('paragraph("xy"[c2] " " "xy"[c2] "abcd"[c1])');
     });
@@ -1616,13 +1636,19 @@ describe('MarkStateExtension', () => {
         });
         editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
         update(editor, () =>
-          $paragraph().getFirstChildOrThrow<TextNode>().select(3, 3),
+          $assertNodeType(
+            $paragraph().getFirstChildOrThrow(),
+            $isTextNode,
+          ).select(3, 3),
         );
         update(editor, () => {
           editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
         });
         update(editor, () =>
-          $paragraph(1).getFirstChildOrThrow<TextNode>().select(0, 1),
+          $assertNodeType(
+            $paragraph(1).getFirstChildOrThrow(),
+            $isTextNode,
+          ).select(0, 1),
         );
         update(editor, () => {
           editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
@@ -2200,7 +2226,10 @@ describe('MarkStateExtension', () => {
       });
       mark(other, 8, 15, 'c1');
       compose(other, () => {
-        $paragraph(1).getFirstChildOrThrow<TextNode>().setTextContent('zz');
+        $assertNodeType(
+          $paragraph(1).getFirstChildOrThrow(),
+          $isTextNode,
+        ).setTextContent('zz');
       });
       expect(tree(other)).toBe(
         'paragraph("Revenue " "grew 4%"[c1] "日本 in Q3.") / paragraph("zz")',
@@ -2234,7 +2263,7 @@ describe('MarkStateExtension', () => {
       mark(editor, 0, 3, 'c1');
       update(editor, () => {
         const selection = $createRangeSelection();
-        const node = $paragraph(1).getFirstChildOrThrow<TextNode>();
+        const node = $paragraph(1).getFirstChildOrThrow();
         selection.anchor.set(node.getKey(), 0, 'text');
         selection.focus.set(node.getKey(), 3, 'text');
         $addMarkID('c1', selection);
@@ -2299,7 +2328,7 @@ describe('MarkStateExtension', () => {
       const editor = createTestEditor();
       update(editor, () => $init());
       update(editor, () => {
-        const node = $paragraph().getFirstChildOrThrow<TextNode>();
+        const node = $paragraph().getFirstChildOrThrow();
         // How a state from elsewhere is applied
         $getWritableNodeState(node.getWritable()).updateFromUnknown(
           MARK_STATE_KEY,
@@ -2348,7 +2377,7 @@ describe('MarkStateExtension', () => {
       mark(editor, 8, 15, 'c2');
       editor.read(() => {
         const [first] = $paragraph().getChildren() as TextNode[];
-        const last = $paragraph().getLastChildOrThrow<TextNode>();
+        const last = $paragraph().getLastChildOrThrow();
         const selection = $createRangeSelection();
         selection.anchor.set(last.getKey(), 0, 'text');
         selection.focus.set(first.getKey(), 0, 'text');
@@ -2828,7 +2857,10 @@ describe('MarkStateExtension', () => {
           $getRoot().getChildAtIndex(1)!,
           'caption',
         ) as ElementNode;
-        const text = caption.getFirstChildOrThrow<TextNode>();
+        const text = $assertNodeType(
+          caption.getFirstChildOrThrow(),
+          $isTextNode,
+        );
         const [, rest] = text.splitText(2);
         const markNode = $createMarkNode(['c2']);
         rest.replace(markNode);

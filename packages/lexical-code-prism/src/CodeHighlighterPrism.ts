@@ -129,7 +129,10 @@ function $codeNodeTransform(
         node.setIsSyntaxHighlightSupported(false);
       }
       loadCodeLanguage(language, editor, nodeKey);
-      return;
+      // Prism has no grammar for this language (e.g. "After" from the
+      // markdown shortcut "```After "). Don't return here: fall through and
+      // split the text into plain CodeHighlightNodes below, as with no
+      // language, so the indent and line-move handlers can work on it.
     }
   } else if (node.getIsSyntaxHighlightSupported()) {
     node.setIsSyntaxHighlightSupported(false);
@@ -159,10 +162,10 @@ function $codeNodeTransform(
       currentNode.getLanguage() || tokenizer.defaultLanguage;
     //const diffLanguageMatch = DIFF_LANGUAGE_REGEX.exec(currentLanguage);
 
-    const highlightNodes = tokenizer.$tokenize(
-      currentNode,
-      currentLanguage ?? undefined,
-    );
+    const highlightNodes =
+      currentLanguage && !isCodeLanguageLoaded(currentLanguage)
+        ? $plainifyCodeContent(currentNode.getTextContent())
+        : tokenizer.$tokenize(currentNode, currentLanguage ?? undefined);
 
     const diffRange = getDiffRange(currentNode.getChildren(), highlightNodes);
     const {from, to, nodesForReplacement} = diffRange;

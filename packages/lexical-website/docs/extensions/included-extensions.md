@@ -71,7 +71,7 @@ Framework-agnostic accessibility extensions. See [Keyboard Accessibility](/docs/
 
 [@lexical/html](/docs/api/modules/lexical_html)
 
-- [BlockIdHTMLExtension](/docs/api/modules/lexical_html#blockidhtmlextension) - Exports block ids as `data-block-id` and reads them back on import, through the uniqueness rule (experimental)
+- [BlockIdHTMLExtension](/docs/api/modules/lexical_html/BlockIdHTMLExtension#blockidhtmlextension) - Exports block ids as `data-block-id` and reads them back on import, through the uniqueness rule (experimental)
 - [CoreImportExtension](/docs/api/modules/lexical_html#coreimportextension) - DOM import rules for the core nodes, included implicitly by node-providing extensions (experimental)
 - [DOMImportExtension](/docs/api/modules/lexical_html#domimportextension) - Extension-based replacement for `importDOM`/`DOMConversion`, rules are compiled into a dispatcher at editor build time (experimental)
 - [DOMRenderExtension](/docs/api/modules/lexical_html#domrenderextension) - Overrides the DOM render and export behavior for an editor (experimental)
@@ -111,7 +111,7 @@ Experimental micromark/mdast-based Markdown support (every extension in this pac
 - [MdastCommonMarkExtension](/docs/api/modules/lexical_mdast#mdastcommonmarkextension) - Bundle of the six CommonMark extensions
 - [MdastGfmExtension](/docs/api/modules/lexical_mdast#mdastgfmextension) - Bundle of the four GFM extensions
 - [MdastShadowRootQuoteExtension](/docs/api/modules/lexical_mdast#mdastshadowrootquoteextension) - Opt-in: blockquotes as block containers with full-fidelity nested content
-- [MdastHtmlExtension](/docs/api/modules/lexical_mdast#mdasthtmlextension) - Opt-in: raw HTML in Markdown routed through the `@lexical/html` DOM import rules (Markdown inside the tags included, GitHub-style), plus generic HTML-encoded export via `$exportViaDOM` / `rawHtmlBlock`
+- [MdastHtmlExtension](/docs/api/modules/lexical_mdast#mdasthtmlextension) - Opt-in: raw HTML in Markdown routed through the `@lexical/html` DOM import rules (Markdown inside the tags included), plus generic HTML-encoded export via `$exportViaDOM` / `rawHtmlBlock`
 - [MdastShortcutsExtension](/docs/api/modules/lexical_mdast#mdastshortcutsextension) - Streaming Markdown typing shortcuts, driven by the same grammar as import
 
 [@lexical/overflow](/docs/api/modules/lexical_overflow)

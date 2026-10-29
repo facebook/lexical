@@ -545,6 +545,23 @@ export function $handleOutdent(listItemNode: ListItemNode): void {
     $isListItemNode(grandparentListItem) &&
     $isListNode(parentList)
   ) {
+    // The general outdent below assumes the wrapper item holds only the
+    // nested list: it removes or replaces the wrapper when the item is the
+    // list's only item or a middle one, which would delete what else the
+    // wrapper holds. Only those cases take the outdent that keeps it.
+    if (
+      grandparentListItem.getChildrenSize() > 1 &&
+      (parentList.getChildrenSize() === 1 ||
+        (!listItemNode.is(parentList.getFirstChild()) &&
+          !listItemNode.is(parentList.getLastChild())))
+    ) {
+      $outdentFromItemWithContent(
+        listItemNode,
+        parentList,
+        grandparentListItem,
+      );
+      return;
+    }
     // if it's the first child in it's parent list, insert it into the
     // great grandparent list before the grandparent
     const firstChild = parentList ? parentList.getFirstChild() : undefined;
@@ -582,6 +599,46 @@ export function $handleOutdent(listItemNode: ListItemNode): void {
       // replace the grandparent list item (now between the siblings) with the outdented list item.
       grandparentListItem.replace(listItemNode);
     }
+  }
+}
+
+/**
+ * Outdents `listItemNode` out of `parentList` when the item that wraps that
+ * list (`wrapper`) also holds other content (text beside the nested list, as a
+ * paste into a nested list item can leave, or another nested list). The
+ * general outdent assumes the wrapper holds only the nested list and
+ * replaces or removes it, which would delete that content; here the wrapper
+ * keeps what comes before the item, and the rest follows it in reading
+ * order: the item, then its next siblings in a new nested list, then the
+ * wrapper's content after `parentList` in a new item.
+ */
+function $outdentFromItemWithContent(
+  listItemNode: ListItemNode,
+  parentList: ListNode,
+  wrapper: ListItemNode,
+): void {
+  const nextSiblings = listItemNode.getNextSiblings();
+  const after = parentList.getNextSiblings();
+  wrapper.insertAfter(listItemNode);
+  let last: ListItemNode = listItemNode;
+  if (nextSiblings.length > 0) {
+    const nextSiblingsListItem = $copyNode(listItemNode);
+    const nextSiblingsList = $copyNode(parentList);
+    nextSiblingsListItem.append(nextSiblingsList);
+    append(nextSiblingsList, nextSiblings);
+    last.insertAfter(nextSiblingsListItem);
+    last = nextSiblingsListItem;
+  }
+  if (after.length > 0) {
+    const afterListItem = $copyNode(wrapper);
+    last.insertAfter(afterListItem);
+    append(afterListItem, after);
+  }
+  if (parentList.isEmpty()) {
+    parentList.remove();
+  }
+  if (wrapper.isEmpty()) {
+    wrapper.remove();
   }
 }
 

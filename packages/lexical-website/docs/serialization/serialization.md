@@ -604,7 +604,13 @@ class MentionNode extends ElementNode {
   block it holds (list items, table cells), is first wrapped in a copy of the
   element, so its URL or comment ids stay on all of it. A horizontal rule
   in a list item splits the list, wherever it sits in the item, and an
-  ordered list's second part starts at the next number.
+  ordered list's second part starts at the next number. A list item that
+  holds a nested list holds nothing else, as indent and HTML import build it:
+  next to other content (left by a paste into a nested list item), the
+  nested list is lifted out the same way and wrapped in an item of its own,
+  so what came before it, the list, and what came after it become
+  consecutive items. An update lifts it only out of an item it creates or
+  changes; `INTERNAL_$normalizeNodeStructure` lifts it out of every item.
 - `mergeAdjacent: {by}`: adjacent siblings of the class whose named schema
   fields (or `StateConfig`s) are equal are the same thing. NodeState counts
   only when named. With the

@@ -1289,8 +1289,6 @@ export class LexicalNode {
         return true;
       }
 
-      // Annotation breaks a circular inference through the loop (TS7022),
-      // remove when the deprecated generic signatures from #8661 are removed
       const node: LexicalNode | null = $getNodeByKey(nodeKey);
 
       if (node === null) {
@@ -1382,14 +1380,6 @@ export class LexicalNode {
   /**
    * Returns the parent of this node, or null if none is found.
    */
-  getParent(): ElementNode | null;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast,
-   * equivalent to `node.getParent() as T | null`, and will be removed
-   * in a future release. Call this method without a type argument and
-   * narrow the result with a type guard instead.
-   */
-  getParent<T extends ElementNode>(): T | null;
   getParent(): ElementNode | null {
     const parent = this.getLatest().__parent;
     if (parent === null) {
@@ -1402,14 +1392,6 @@ export class LexicalNode {
   /**
    * Returns the parent of this node, or throws if none is found.
    */
-  getParentOrThrow(): ElementNode;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast,
-   * equivalent to `node.getParentOrThrow() as T`, and will be removed
-   * in a future release. Call this method without a type argument and
-   * narrow the result with a type guard instead.
-   */
-  getParentOrThrow<T extends ElementNode>(): T;
   getParentOrThrow(): ElementNode {
     const parent = this.getParent();
     if (parent === null) {
@@ -1426,8 +1408,6 @@ export class LexicalNode {
   getTopLevelElement(): ElementNode | DecoratorNode<unknown> | null {
     let node: ElementNode | this | null = this;
     while (node !== null) {
-      // Annotation breaks a circular inference through the loop (TS7022),
-      // remove when the deprecated generic signatures from #8661 are removed
       const parent: ElementNode | null = node.getParent();
       // A slot value's host acts as a shadow root, so the slot boundary is
       // the top of the isolated scope and this node is its top-level element.
@@ -1494,14 +1474,6 @@ export class LexicalNode {
    * Returns the node before this one in the same parent, or null
    * if there is no such node.
    */
-  getPreviousSibling(): LexicalNode | null;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast,
-   * equivalent to `node.getPreviousSibling() as T | null`, and will be
-   * removed in a future release. Call this method without a type argument
-   * and narrow the result with a type guard instead.
-   */
-  getPreviousSibling<T extends LexicalNode>(): T | null;
   getPreviousSibling(): LexicalNode | null {
     const self = this.getLatest();
     const prevKey = self.__prev;
@@ -1512,14 +1484,6 @@ export class LexicalNode {
    * Returns all nodes before this one in the same parent,
    * in document order.
    */
-  getPreviousSiblings(): LexicalNode[];
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast,
-   * equivalent to `node.getPreviousSiblings() as T[]`, and will be
-   * removed in a future release. Call this method without a type argument
-   * and narrow the results with a type guard instead.
-   */
-  getPreviousSiblings<T extends LexicalNode>(): T[];
   getPreviousSiblings(): LexicalNode[] {
     return $collectSiblingNodes(
       this.getPreviousSibling(),
@@ -1531,14 +1495,6 @@ export class LexicalNode {
    * Returns the node after this one in the same parent, or null
    * if there is no such node.
    */
-  getNextSibling(): LexicalNode | null;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast,
-   * equivalent to `node.getNextSibling() as T | null`, and will be
-   * removed in a future release. Call this method without a type argument
-   * and narrow the result with a type guard instead.
-   */
-  getNextSibling<T extends LexicalNode>(): T | null;
   getNextSibling(): LexicalNode | null {
     const self = this.getLatest();
     const nextKey = self.__next;
@@ -1549,14 +1505,6 @@ export class LexicalNode {
    * Returns all nodes after this one in the same parent,
    * in document order.
    */
-  getNextSiblings(): LexicalNode[];
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast,
-   * equivalent to `node.getNextSiblings() as T[]`, and will be
-   * removed in a future release. Call this method without a type argument
-   * and narrow the results with a type guard instead.
-   */
-  getNextSiblings<T extends LexicalNode>(): T[];
   getNextSiblings(): LexicalNode[] {
     return $collectSiblingNodes(this.getNextSibling(), 'next');
   }

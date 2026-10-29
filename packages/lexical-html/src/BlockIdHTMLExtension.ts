@@ -28,14 +28,20 @@ import {
   safeCast,
 } from 'lexical';
 
-import {domOverride} from './domOverride';
-import {DOMRenderExtension} from './DOMRenderExtension';
-import {defineImportRule} from './import/defineImportRule';
-import {defineOverlayRules} from './import/defineOverlayRules';
-import {DOMImportExtension} from './import/DOMImportExtension';
-import {ImportOverlays} from './import/ImportContext';
-import {selBase as sel} from './import/sel';
-import {type DOMPreprocessFn} from './import/types';
+// Everything shared with the package root comes through it: the build keeps
+// a relative import of an entry point external, while any other module would
+// be bundled into this entry as a second copy, with its own
+// DOMImportExtension and ImportOverlays.
+import {
+  defineImportRule,
+  defineOverlayRules,
+  DOMImportExtension,
+  domOverride,
+  type DOMPreprocessFn,
+  DOMRenderExtension,
+  ImportOverlays,
+  sel,
+} from './index';
 
 /**
  * The attribute that carries a block id in HTML.

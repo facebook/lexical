@@ -1428,7 +1428,7 @@ describe('S6-5: Enter inside a code token the highlighter makes again', () => {
         $initialEditorState: null,
         dependencies: [
           CodePrismExtension,
-          configExtension(YCollabExtension, {doc}),
+          configExtension(YCollabExtension, {doc, schemaVersion: 1}),
         ],
         name: `s6-5/${id}`,
         onError: (e: Error) => {

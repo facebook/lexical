@@ -68,7 +68,11 @@ function peer(id: number, stored: Uint8Array | null = null) {
         configExtension(BlockIdExtension, {
           generateId: () => `b${id}x${next++}`,
         }),
-        configExtension(YCollabExtension, {doc, selfCheck: false}),
+        configExtension(YCollabExtension, {
+          doc,
+          schemaVersion: 1,
+          selfCheck: false,
+        }),
       ],
       name: `peer${id}`,
       nodes: NODES,

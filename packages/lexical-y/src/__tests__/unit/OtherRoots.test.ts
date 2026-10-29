@@ -31,7 +31,7 @@ describe('other roots in the same doc', () => {
     const warnings: string[] = [];
     const ed = mk(warnings);
     ed.update(() => $getRoot().clear().append($p('hello')), {discrete: true});
-    const b = new YBinding(ed, doc, {selfCheck: true});
+    const b = new YBinding(ed, doc, {schemaVersion: 1, selfCheck: true});
     b.start();
     b.initialize();
     expect(b.status).toBe('active');
@@ -41,7 +41,11 @@ describe('other roots in the same doc', () => {
     const doc = createYDoc();
     const e1 = mk();
     e1.update(() => $getRoot().clear().append($p('main')), {discrete: true});
-    const b1 = new YBinding(e1, doc, {root: doc.get('main'), selfCheck: true});
+    const b1 = new YBinding(e1, doc, {
+      root: doc.get('main'),
+      schemaVersion: 1,
+      selfCheck: true,
+    });
     b1.start();
     b1.initialize();
     const warnings: string[] = [];
@@ -49,6 +53,7 @@ describe('other roots in the same doc', () => {
     e2.update(() => $getRoot().clear().append($p('caption')), {discrete: true});
     const b2 = new YBinding(e2, doc, {
       root: doc.get('caption-1'),
+      schemaVersion: 1,
       selfCheck: true,
     });
     b2.start();

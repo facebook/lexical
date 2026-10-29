@@ -301,7 +301,10 @@ describe('@lexical/y storage', () => {
       },
       onWarn: e => warnings.push(e.message),
     });
-    const binding = new YBinding(editor, doc, {selfCheck: true});
+    const binding = new YBinding(editor, doc, {
+      schemaVersion: 1,
+      selfCheck: true,
+    });
     binding.start();
     expect(binding.status).toBe('readonly');
     expect(editor.isEditable()).toBe(false);
@@ -319,7 +322,10 @@ describe('@lexical/y storage', () => {
       },
       onWarn: e => warnings.push(e.message),
     });
-    const binding = new YBinding(editor, doc, {selfCheck: true});
+    const binding = new YBinding(editor, doc, {
+      schemaVersion: 1,
+      selfCheck: true,
+    });
     binding.start();
     binding.initialize();
     expect(binding.status).toBe('readonly');
@@ -334,7 +340,10 @@ describe('@lexical/y storage', () => {
         throw e;
       },
     });
-    const binding = new YBinding(editor, doc, {selfCheck: true});
+    const binding = new YBinding(editor, doc, {
+      schemaVersion: 1,
+      selfCheck: true,
+    });
     binding.start();
     editor.update(() => $getRoot().append($p('local')), {discrete: true});
     expect(doc.get('lexical-y').length).toBe(0);
@@ -365,7 +374,11 @@ describe('@lexical/y storage', () => {
     const reader = buildEditorFromExtensions(
       defineExtension({
         dependencies: [
-          configExtension(YCollabExtension, {doc: peerDoc, synced: true}),
+          configExtension(YCollabExtension, {
+            doc: peerDoc,
+            schemaVersion: 1,
+            synced: true,
+          }),
         ],
         name: 'reader',
         nodes: NODES,

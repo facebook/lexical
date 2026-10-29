@@ -212,7 +212,10 @@ test('a keystroke in a large document with a root element does not walk the node
     defineExtension({
       $initialEditorState: null,
       dependencies: [
-        configExtension(YCollabExtension, {doc: createYDoc()}),
+        configExtension(YCollabExtension, {
+          doc: createYDoc(),
+          schemaVersion: 1,
+        }),
         configExtension(BlockIdExtension, {generateId: () => `b${++k}`}),
       ],
       name: 'replaced-nodes/keystroke',

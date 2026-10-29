@@ -89,7 +89,10 @@ function client(id: number, state?: Uint8Array): Client {
       }
     }
   });
-  const binding = new YBinding(editor, doc, {selfCheck: true});
+  const binding = new YBinding(editor, doc, {
+    schemaVersion: 1,
+    selfCheck: true,
+  });
   const stopBinding = binding.start();
   if (state === undefined) {
     editor.update(() => $getRoot().append($p('base')), {discrete: true});
@@ -166,7 +169,7 @@ function initialized(
     onWarn: e => warnings.push(String(e)),
   });
   editor.update($init, {discrete: true});
-  const binding = new YBinding(editor, doc);
+  const binding = new YBinding(editor, doc, {schemaVersion: 1});
   const stop = binding.start();
   binding.initialize();
   return {

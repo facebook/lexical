@@ -207,7 +207,8 @@ function requireInitialized(opened: OpenedHeadlessYEditor): void {
  * template, an import, or a converter's editor). The content is written as
  * a client's `initialize()` writes its initial content: with a client id
  * derived from the content (53 bits under `'uint53'`, 32 under `'uint32'`)
- * and outside any undo history. Seeding identical content twice gives the
+ * and outside any undo history, with the config's `schemaVersion` recorded.
+ * Seeding identical content twice (with the same `schemaVersion`) gives the
  * same bytes, and the two seeds merge into one copy; content with random
  * parts (such as ids an extension draws for new blocks) is not identical.
  * With `BlockIdExtension`, a seed and a client's initialization of the same

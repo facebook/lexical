@@ -123,6 +123,7 @@ function open(
         ListExtension,
         configExtension(YCollabExtension, {
           doc,
+          schemaVersion: 1,
           selfCheck: true,
           synced: options.synced ?? false,
         }),
@@ -168,7 +169,7 @@ function stored(doc: Y.Doc): string {
       throw error;
     },
   });
-  const binding = new YBinding(editor, copy);
+  const binding = new YBinding(editor, copy, {schemaVersion: 1});
   const stop = binding.start();
   try {
     binding.initialize();
@@ -215,7 +216,10 @@ async function documentWithContent(
 }
 
 /** The configuration of the seeds, as the clients' extensions. */
-const SEED_CONFIG = {extensions: [RichTextExtension, ListExtension]};
+const SEED_CONFIG = {
+  extensions: [RichTextExtension, ListExtension],
+  schemaVersion: 1,
+};
 
 const WAYS = [
   'remount on the same document',
@@ -291,7 +295,7 @@ describe('S7-23: the initial state on a document that has content', () => {
         throw error;
       },
     });
-    const binding = new YBinding(editor, doc);
+    const binding = new YBinding(editor, doc, {schemaVersion: 1});
     const stop = binding.start();
     // A provider whose first sync lands in a listener of the next commit.
     let synced = false;
@@ -324,7 +328,7 @@ describe('S7-23: the initial state on a document that has content', () => {
         warned.push(isYWarning(warning) ? warning.code : warning.message);
       },
     });
-    const binding = new YBinding(editor, doc);
+    const binding = new YBinding(editor, doc, {schemaVersion: 1});
     const stop = binding.start();
     let synced = false;
     const unregister = editor.registerUpdateListener(() => {
@@ -434,7 +438,12 @@ describe('S7-23: the initial state on a document that has content', () => {
       dependencies: [
         RichTextExtension,
         ListExtension,
-        configExtension(YCollabExtension, {doc, selfCheck: true, synced: true}),
+        configExtension(YCollabExtension, {
+          doc,
+          schemaVersion: 1,
+          selfCheck: true,
+          synced: true,
+        }),
       ],
       name: '@lexical/y/test/initial-state-react',
       onError: error => {

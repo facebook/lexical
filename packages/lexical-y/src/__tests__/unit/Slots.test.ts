@@ -565,7 +565,7 @@ describe('named slots', () => {
       SLOT_NODES.filter(k => k !== SlotBodyNode),
       codes,
     );
-    const binding = new YBinding(editor, doc);
+    const binding = new YBinding(editor, doc, {schemaVersion: 1});
     binding.start();
     binding.initialize();
     expect(binding.status).toBe('readonly');
@@ -619,6 +619,7 @@ describe('named slots where the document cannot store them', () => {
       onStatus: s => {
         status = s;
       },
+      schemaVersion: 1,
     });
     binding.start();
     return {binding, codes, doc, editor, status: () => status, warnings};
@@ -740,7 +741,11 @@ describe('named slots with BlockIdExtension and MarkStateExtension', () => {
     const editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [
-          configExtension(YCollabExtension, {doc, selfCheck: true}),
+          configExtension(YCollabExtension, {
+            doc,
+            schemaVersion: 1,
+            selfCheck: true,
+          }),
           configExtension(BlockIdExtension, {
             generateId: () => `${name}${++n}`,
           }),

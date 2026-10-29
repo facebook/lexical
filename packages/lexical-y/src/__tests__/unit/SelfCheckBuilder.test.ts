@@ -78,7 +78,12 @@ function build(doc: YDoc, warnings: string[]) {
     defineExtension({
       dependencies: [
         RichTextExtension,
-        configExtension(YCollabExtension, {doc, selfCheck: true, synced: true}),
+        configExtension(YCollabExtension, {
+          doc,
+          schemaVersion: 1,
+          selfCheck: true,
+          synced: true,
+        }),
       ],
       name: 'soak3/s3-1',
       nodes: () => [CaptionedNode],

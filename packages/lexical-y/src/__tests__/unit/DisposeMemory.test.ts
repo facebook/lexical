@@ -57,7 +57,7 @@ test('40 editors bound, edited and disposed in a synchronous loop hold no docume
         throw e;
       },
     });
-    const binding = new YBinding(editor, doc);
+    const binding = new YBinding(editor, doc, {schemaVersion: 1});
     const stop = binding.start();
     editor.update(() => $getRoot().append($p('x')), {discrete: true});
     stop();

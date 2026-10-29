@@ -138,7 +138,11 @@ function reader(id: number, update: Uint8Array, blockIdsLate: boolean) {
   const blockIds = configExtension(BlockIdExtension, {
     generateId: () => `r${id}_${next++}`,
   });
-  const collab = configExtension(YCollabExtension, {doc, selfCheck: true});
+  const collab = configExtension(YCollabExtension, {
+    doc,
+    schemaVersion: 1,
+    selfCheck: true,
+  });
   const warnings: string[] = [];
   const editor = buildEditorFromExtensions(
     defineExtension({

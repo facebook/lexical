@@ -140,7 +140,10 @@ for (const used of [false, true]) {
         root.setAttr('probe', true);
         root.deleteAttr('probe');
       }
-      const binding = new YBinding(a.editor, doc, {selfCheck: true});
+      const binding = new YBinding(a.editor, doc, {
+        schemaVersion: 1,
+        selfCheck: true,
+      });
       const finish = binding.start();
       try {
         await idle();

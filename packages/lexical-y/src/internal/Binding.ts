@@ -13,6 +13,7 @@ import {
   getPeerDependencyFromEditor,
   registerNodeStructure,
 } from '@lexical/extension';
+import invariant from '@lexical/internal/invariant';
 import {
   applyUpdate,
   ContentFormat,
@@ -77,6 +78,7 @@ import {
   BASE_LAYOUT_VERSION,
   DEFAULT_ROOT_NAME,
   LEGACY_ROOTS,
+  SCHEMA_PREFIX,
   SET_MEMBERS_LAYOUT_VERSION,
 } from './constants';
 import {
@@ -132,10 +134,12 @@ import {
   UNSUPPORTED_CONFIG_WARNING,
   UNSUPPORTED_EDIT_WARNING,
   UNSUPPORTED_LAYOUT_WARNING,
+  UNSUPPORTED_SCHEMA_WARNING,
   UNSUPPORTED_SLOTS_WARNING,
   type YRecoveredReadData,
   type YStorageMismatchData,
   type YUnsupportedConfigData,
+  type YUnsupportedSchemaData,
   type YWarningCode,
   type YWarningData,
 } from './Warnings';
@@ -347,6 +351,14 @@ export type YBindingStatus =
 
 /** @experimental Options of {@link YBinding} (and `YCollabExtension`). */
 export interface YBindingOptions {
+  /**
+   * The version of the app's document schema: its node types and the fields
+   * they store. Required: start at 1 and increase it whenever a node's
+   * stored fields or node types change. The document records the highest
+   * version that wrote to it; a binding whose version is lower opens it read
+   * only (UNSUPPORTED_SCHEMA_WARNING). An integer from 1.
+   */
+  schemaVersion: number;
   /** The shared root to bind; defaults to `doc.get('lexical-y')`. */
   root?: YNode;
   /** Undo capture timeout in ms (default 500); null disables undo. */
@@ -395,6 +407,97 @@ export interface YBindingOptions {
 export interface YCursor {
   anchor: unknown;
   focus: unknown;
+}
+
+/**
+ * @internal Whether `value` is a schema version: an integer from 1 (see
+ * YBindingOptions.schemaVersion).
+ */
+export function isSchemaVersion(value: unknown): value is number {
+  return Number.isSafeInteger(value) && (value as number) >= 1;
+}
+
+/** The first `lexical-y-schema:<n>` attribute of `root` that is not a version. */
+function malformedSchema(root: YNode): {key: string; found: unknown} | null {
+  const attrs = root.getAttrs() as Record<string, unknown>;
+  for (const key in attrs) {
+    if (key.startsWith(SCHEMA_PREFIX)) {
+      const n = key.slice(SCHEMA_PREFIX.length);
+      if (!/^[1-9][0-9]*$/.test(n) || attrs[key] !== true) {
+        return {found: attrs[key], key};
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * The highest schema version `root` records (see SCHEMA_PREFIX), null when
+ * it records none.
+ */
+function newestSchema(root: YNode): number | null {
+  let version: number | null = null;
+  const attrs = root.getAttrs() as Record<string, unknown>;
+  for (const k in attrs) {
+    if (k.startsWith(SCHEMA_PREFIX)) {
+      version = Math.max(version ?? 0, Number(k.slice(SCHEMA_PREFIX.length)));
+    }
+  }
+  return version;
+}
+
+/**
+ * The schema records of `root` that keep a binding of `supported` read only
+ * (see SCHEMA_PREFIX): those of a higher version, and malformed ones.
+ */
+function gatingSchemaKeys(root: YNode, supported: number): string[] {
+  const out: string[] = [];
+  const attrs = root.getAttrs() as Record<string, unknown>;
+  for (const key in attrs) {
+    if (key.startsWith(SCHEMA_PREFIX)) {
+      const n = key.slice(SCHEMA_PREFIX.length);
+      if (
+        !/^[1-9][0-9]*$/.test(n) ||
+        attrs[key] !== true ||
+        Number(n) > supported
+      ) {
+        out.push(key);
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Record schema `version` on `root` (see SCHEMA_PREFIX) when `tr` changed
+ * something under it (`under`: whether a type is `root` or inside it),
+ * unless it is recorded already: a client's first write to a document
+ * carries its version, so no client receives that write without it. Writes
+ * an app's own transaction makes to other shared types do not count (the
+ * binding's write can be part of such a transaction). The record only
+ * grows: undo never deletes it (see YBinding#isKeptByUndo).
+ *
+ * Invariant: called in a `finally` inside every transaction that writes a
+ * local edit (as recordSetMembersLayout). Why: Yjs commits and sends what a
+ * transaction wrote even when its callback throws.
+ */
+function recordSchema(
+  root: YNode,
+  version: number,
+  tr: Transaction,
+  under: (type: YNode) => boolean,
+): void {
+  const key = SCHEMA_PREFIX + version;
+  if (root.getAttr(key) === true) {
+    return;
+  }
+  let wrote = false;
+  tr.changed.forEach((_subs, type) => {
+    wrote = wrote || under(type);
+  });
+  if (wrote) {
+    root.setAttr(key, true);
+  }
 }
 
 /**
@@ -660,6 +763,24 @@ export class YBinding {
    * is read only.
    */
   private unsupportedConfig: YUnsupportedConfigData[] = [];
+  /**
+   * Why the document's schema record keeps the binding read only (see
+   * checkSchema): a newer version wrote to it, or a record is malformed.
+   * Sticky, like the record, which only grows.
+   */
+  private schemaGate: YUnsupportedSchemaData | null = null;
+  /**
+   * The pending state of the update that was running when a remote change
+   * brought a schema record that gates the binding: the gate waits until it
+   * has committed, and been written (see gateSchema).
+   */
+  private schemaGateAfter: EditorState | null = null;
+  /**
+   * A remote transaction whose schema record the app's Yjs observers could
+   * see while no local update was pending: an update they make is made on
+   * that record, and refused (see schemaGatesWrite).
+   */
+  private schemaSeenIn: Transaction | null = null;
   /** A status change not reported to `onStatus` yet (see flushWarnings). */
   private pendingStatus: YBindingStatus | null = null;
   /** How many of the class and value notes this binding has reported. */
@@ -685,9 +806,27 @@ export class YBinding {
   private readonly afterTransaction: (tr: Transaction) => void;
   private readonly beforeTransaction: (tr: Transaction) => void;
   private readonly beforeObserverCalls = (tr: Transaction): void => {
-    tr.changed.forEach((_subs, type) => {
+    tr.changed.forEach((subs, type) => {
       if (this.state.containers.has(type) || this.isUnderRoot(type)) {
         type._hasFormatting = false;
+      }
+      // The app's observers run next, before the binding reads `tr`: a
+      // schema record that gates the binding is visible to them. The local
+      // updates pending before it are committed (written) first, as a read
+      // commits them (see guardedRead), so that an update an observer makes
+      // is not merged into them; then what is made is made on the record.
+      if (
+        type === this._root &&
+        this._status === 'active' &&
+        [...subs].some(k => k !== null && k.startsWith(SCHEMA_PREFIX)) &&
+        gatingSchemaKeys(this._root, this.options.schemaVersion).length > 0
+      ) {
+        if (!this._editor._updating && this.localPending()) {
+          this.guard(() => withPins(this._pins, () => this.commitPending()));
+        }
+        if (!this.localPending()) {
+          this.schemaSeenIn = tr;
+        }
       }
     });
   };
@@ -782,7 +921,12 @@ export class YBinding {
     return this._undoManager;
   }
 
-  constructor(editor: LexicalEditor, doc: YDoc, options: YBindingOptions = {}) {
+  constructor(editor: LexicalEditor, doc: YDoc, options: YBindingOptions) {
+    invariant(
+      options != null && isSchemaVersion(options.schemaVersion),
+      "@lexical/y: YBinding needs options.schemaVersion (got %s): start at 1 and increase it whenever a node's stored fields or node types change",
+      String(options == null ? undefined : options.schemaVersion),
+    );
     this._editor = editor;
     this._doc = doc;
     this.options = options;
@@ -842,6 +986,9 @@ export class YBinding {
     if (this._doc.cleanupFormatting !== false) {
       this.unsupportedConfig.push({reason: 'cleanup-formatting'});
     }
+    this.schemaGate = null;
+    this.schemaGateAfter = null;
+    this.schemaSeenIn = null;
     // Lexical records explicit node moves (read by the writer, which then
     // rewrites what moved rather than what it passed) and text edits (see
     // TextReplay), each restored to what it was when the binding goes.
@@ -1039,6 +1186,8 @@ export class YBinding {
   dispose(): void {
     this.started = false;
     this.initializeOnStart = false;
+    this.schemaGateAfter = null;
+    this.schemaSeenIn = null;
     for (const d of this.disposers.splice(0)) {
       d();
     }
@@ -1132,7 +1281,7 @@ export class YBinding {
         this.setStatus('readonly');
         return;
       }
-      if (this.unsupportedConfig.length > 0) {
+      if (this.unsupportedConfig.length > 0 || this.checkSchema()) {
         // Read only (see setStatus): the initial content is not written.
         this.setStatus('active');
         return;
@@ -1190,8 +1339,9 @@ export class YBinding {
   }
 
   /**
-   * Write the layout record and the editor's content into an empty root, the
-   * record first (see LAYOUT_PREFIX), and layout 2 when the content holds a
+   * Write the layout record, the schema record (see SCHEMA_PREFIX) and the
+   * editor's content into an empty root, the records first (see
+   * LAYOUT_PREFIX), and layout 2 when the content holds a
    * member entry of a set (see recordSetMembersLayout).
    */
   private $writeInitial(
@@ -1201,6 +1351,7 @@ export class YBinding {
     editorState: EditorState,
   ): void {
     root.setAttr(LAYOUT_PREFIX + BASE_LAYOUT_VERSION, true);
+    root.setAttr(SCHEMA_PREFIX + this.options.schemaVersion, true);
     try {
       // Every element type of the initial content (into `root`, which may
       // be a scratch document's: this._pins is filled when the real one is
@@ -1442,6 +1593,10 @@ export class YBinding {
     kept: SelectionState | null = null,
     deep = false,
   ): void {
+    // First, so that its warning comes before those a newer version's
+    // content explains (node types this one lacks, storage it declares
+    // otherwise).
+    const newerSchema = this.checkSchema();
     if (!this.loadPins()) {
       this.readAll(cursor, kept, deep);
       return;
@@ -1481,6 +1636,8 @@ export class YBinding {
         {found: version, reason: 'newer', supported: LAYOUT_VERSION},
       );
       this.setStatus('readonly');
+    } else if (newerSchema) {
+      this.setStatus('readonly');
     } else if (this._status === 'active' || this.staysReadOnly()) {
       // Still active, or read only for good (see setStatus).
       this.setStatus('active');
@@ -1491,6 +1648,127 @@ export class YBinding {
       return;
     }
     this.readAll(cursor, kept, deep);
+  }
+
+  /**
+   * Whether the document's schema record keeps the binding read only: a
+   * client whose `schemaVersion` is higher wrote to it, or a record is
+   * malformed (see SCHEMA_PREFIX). Warns (UNSUPPORTED_SCHEMA_WARNING) when
+   * that is new, or a higher version than the one warned about. Sticky: once
+   * found, it keeps the binding read only (see staysReadOnly) until it is
+   * disposed.
+   */
+  private checkSchema(): boolean {
+    const supported = this.options.schemaVersion;
+    const malformed = malformedSchema(this._root);
+    let data: YUnsupportedSchemaData | null = null;
+    if (malformed !== null) {
+      data = {...malformed, reason: 'malformed', supported};
+    } else {
+      const found = newestSchema(this._root);
+      if (found !== null && found > supported) {
+        data = {found, reason: 'newer', supported};
+      }
+    }
+    const gate = this.schemaGate;
+    if (
+      data !== null &&
+      (gate === null ||
+        gate.reason !== data.reason ||
+        (gate.reason === 'newer' &&
+          data.reason === 'newer' &&
+          data.found > gate.found))
+    ) {
+      this.schemaGate = data;
+      this.warn(
+        UNSUPPORTED_SCHEMA_WARNING,
+        data.reason === 'newer'
+          ? `schema ${data.found} is newer than ${supported}`
+          : `the schema record ${data.key} is malformed`,
+        data,
+      );
+    }
+    return this.schemaGate !== null;
+  }
+
+  /**
+   * Read only once a remote change brought a schema record that keeps the
+   * binding so (see checkSchema). Invariant: run once the local updates
+   * pending before the change are committed (see guardedRead), and, where
+   * the change was applied while an update was running, once that update
+   * has committed (deferred). Why: they were made while the binding could
+   * write, and are written; committed read only, they would be refused and
+   * lost.
+   */
+  private gateSchema(): void {
+    const editor = this._editor;
+    if (editor._updating && editor._pendingEditorState !== null) {
+      if (this.schemaGateAfter === null) {
+        const after = editor._pendingEditorState;
+        this.schemaGateAfter = after;
+        editor._deferred.push(() =>
+          this.guard(() => {
+            // Not after dispose() (which clears it), nor for a later update.
+            if (this.started && this.schemaGateAfter === after) {
+              this.schemaGateAfter = null;
+              this.gateSchema();
+            }
+          }),
+        );
+      }
+      return;
+    }
+    this.schemaGateAfter = null;
+    if (this.checkSchema() && this._status !== 'readonly') {
+      this.setStatus('readonly');
+    }
+  }
+
+  /** Whether a local update is running, pending or queued. */
+  private localPending(): boolean {
+    const editor = this._editor;
+    return (
+      editor._updating ||
+      editor._pendingEditorState !== null ||
+      editor._updates.length > 0 ||
+      this.replies.length > 0
+    );
+  }
+
+  /**
+   * Whether the local update that committed `editorState` was made on a
+   * schema record that keeps the binding read only, so that it is refused
+   * rather than written (see onUpdate). A record a remote change brought is
+   * one the update was made on unless the change is still unread (applied
+   * by Yjs, not yet read: the update was made before it, see Unread), and
+   * its transaction's observers did not see it with nothing pending (see
+   * beforeObserverCalls). The update that was running when the change
+   * arrived is written (see gateSchema).
+   */
+  private schemaGatesWrite(editorState: EditorState): boolean {
+    if (this.schemaGateAfter !== null) {
+      if (this.schemaGateAfter === editorState) {
+        return false;
+      }
+      // The update the gate waited for never committed (it threw).
+      this.schemaGateAfter = null;
+    }
+    const keys = gatingSchemaKeys(this._root, this.options.schemaVersion);
+    if (keys.length === 0) {
+      return false;
+    }
+    if (this.schemaSeenIn !== null) {
+      return true;
+    }
+    const view = this.unread;
+    return keys.some(key => {
+      const item = this._root._map.get(key);
+      return (
+        view === null ||
+        item === undefined ||
+        !view.changes.some(change => change.insertSet.hasId(item.id))
+      );
+    });
   }
 
   /**
@@ -1690,13 +1968,14 @@ export class YBinding {
 
   /**
    * Whether something keeps the binding read only for good: a configuration
-   * it does not support, node types it cannot build (or slots it cannot
+   * it does not support, a newer schema version (see checkSchema), node types it cannot build (or slots it cannot
    * read), stored content its classes throw on, a local change it cannot
    * store and keeps showing, or a document it cannot read (see failClosed).
    */
   private staysReadOnly(): boolean {
     return (
       this.unsupportedConfig.length > 0 ||
+      this.schemaGate !== null ||
       this.state.unknownTypes.size > 0 ||
       this.state.unreadable.size > 0 ||
       this.keepsUnstored ||
@@ -2060,6 +2339,9 @@ export class YBinding {
     } finally {
       this.reading = false;
       this.dropChange(tr);
+      if (this.schemaSeenIn === tr) {
+        this.schemaSeenIn = null;
+      }
     }
   }
 
@@ -2119,6 +2401,8 @@ export class YBinding {
     iterateStructsByIdSet(tr, tr.insertSet, add);
     iterateStructsByIdSet(tr, tr.deleteSet, add);
     const attrKeys = new Map<YNode, Set<string>>();
+    // Whether the change brought a schema record (see gateSchema).
+    let schemaChanged = false;
     tr.changed.forEach((subs, type) => {
       const keys = new Set<string>();
       subs.forEach(k => {
@@ -2135,7 +2419,12 @@ export class YBinding {
           !this.readsRecordedLayout()
         ) {
           this.evaluate();
-        } else if ([...keys].some(k => k.startsWith(PIN_PREFIX))) {
+          return;
+        }
+        // Read only once the pending local updates are written (see
+        // gateSchema), before the change is read: its content is shown.
+        schemaChanged = [...keys].some(k => k.startsWith(SCHEMA_PREFIX));
+        if ([...keys].some(k => k.startsWith(PIN_PREFIX))) {
           this.loadPins();
         }
         return;
@@ -2150,6 +2439,10 @@ export class YBinding {
       }
     });
     if (childItems.size === 0 && attrKeys.size === 0) {
+      if (schemaChanged) {
+        this.commitPending();
+        this.gateSchema();
+      }
       // Nothing to read: the binding's own updates waiting for the editor
       // can run now (see runPending).
       this.runPending();
@@ -2193,6 +2486,10 @@ export class YBinding {
         );
       },
       after: () => {
+        // Also where `before` gated already (a no-op then).
+        if (schemaChanged) {
+          this.gateSchema();
+        }
         this.checkUnknownTypes();
         this.checkRead(rebuilt);
         this.flushRefresh(true);
@@ -2202,6 +2499,9 @@ export class YBinding {
         this.runPending();
       },
       before: () => {
+        if (schemaChanged) {
+          this.gateSchema();
+        }
         // The selection the read keeps is the one those updates left, on the
         // document they were made on.
         if (this._editor.getEditorState() !== committed) {
@@ -2222,7 +2522,14 @@ export class YBinding {
         // (see rereadRefused).
         naming = this.refused.size > 0 && this.refusedNaming;
       },
-      recover: (error, shown) => this.recoverRead(error, shown),
+      recover: (error, shown) => {
+        // The local updates still pending are written by the recovery
+        // first; `before` did not run where they kept the read from running.
+        this.recoverRead(error, shown);
+        if (schemaChanged) {
+          this.gateSchema();
+        }
+      },
       tag: REMOTE_TAGS,
     });
   }
@@ -2919,6 +3226,16 @@ export class YBinding {
       return;
     }
     if (
+      this._status === 'active' &&
+      !commit.remote &&
+      !commit.skip &&
+      this.schemaGatesWrite(editorState)
+    ) {
+      // Made on a schema record a newer version wrote: read only first, so
+      // that it is refused below.
+      this.gateSchema();
+    }
+    if (
       this._status !== 'active' &&
       !this.keepsUnstored &&
       !commit.remote &&
@@ -3529,6 +3846,13 @@ export class YBinding {
           writer.followUp = commit.followUp;
           writer.$run();
         } finally {
+          // A local edit (not a follow-up, which is no one's edit) carries
+          // this client's schema version.
+          if (origin === this) {
+            recordSchema(this._root, this.options.schemaVersion, tr, t =>
+              this.isUnderRoot(t),
+            );
+          }
           // In the same transaction as the first member entry of a set, even
           // when the write throws part way: clients that only read layout 1
           // never get one without the version that tells them they cannot
@@ -3581,6 +3905,11 @@ export class YBinding {
             rewriter.$run();
             this.noteRefused(rewriter, commit.naming);
           } finally {
+            if (origin === this) {
+              recordSchema(this._root, this.options.schemaVersion, tr, t =>
+                this.isUnderRoot(t),
+              );
+            }
             recordSetMembersLayout(this._root, tr);
           }
         }, origin);
@@ -4583,11 +4912,12 @@ export class YBinding {
       }
       return false;
     }
-    // The layout record only grows.
+    // The layout and schema records only grow.
     if (
       item.parent === this._root &&
       typeof item.parentSub === 'string' &&
-      item.parentSub.startsWith(LAYOUT_PREFIX)
+      (item.parentSub.startsWith(LAYOUT_PREFIX) ||
+        item.parentSub.startsWith(SCHEMA_PREFIX))
     ) {
       return true;
     }

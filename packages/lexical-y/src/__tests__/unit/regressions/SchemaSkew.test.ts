@@ -2955,17 +2955,18 @@ describe('S7-3, S7-11, S7-21: a server agent with older classes', () => {
   };
 
   test('S7-3: its edit keeps the fields its classes do not declare', () => {
-    const seeded = seedYState({nodes: V2, onWarn: quiet}, () =>
-      $getRoot().append($card(), $p('after')),
+    const seeded = seedYState(
+      {nodes: V2, onWarn: quiet, schemaVersion: 1},
+      () => $getRoot().append($card(), $p('after')),
     );
     const {state} = editYState(
       seeded,
-      {nodes: V1, onWarn: quiet},
+      {nodes: V1, onWarn: quiet, schemaVersion: 1},
       () => $block([0]).setFormat('center'),
       {writer: null},
     );
     expect(
-      readYState(state, {nodes: V2, onWarn: quiet}, () => {
+      readYState(state, {nodes: V2, onWarn: quiet, schemaVersion: 1}, () => {
         const card = $block([0]) as CardV2;
         return [card.getFormatType(), card.__tone];
       }),
@@ -2974,7 +2975,7 @@ describe('S7-3, S7-11, S7-21: a server agent with older classes', () => {
 
   test('S7-11: it refuses a document with a link type it does not register', () => {
     const seeded = seedYState(
-      {nodes: [...NODES, UnknownLink], onWarn: quiet},
+      {nodes: [...NODES, UnknownLink], onWarn: quiet, schemaVersion: 1},
       () => {
         const link = $create(UnknownLink);
         link.__url = 'https://a.dev';
@@ -2984,7 +2985,7 @@ describe('S7-3, S7-11, S7-21: a server agent with older classes', () => {
     const error = refusal(() =>
       editYState(
         seeded,
-        {nodes: NODES, onWarn: quiet},
+        {nodes: NODES, onWarn: quiet, schemaVersion: 1},
         () => {
           const box = $createBoxNode('t');
           $block([0]).insertBefore(box);
@@ -3007,7 +3008,7 @@ describe('S7-3, S7-11, S7-21: a server agent with older classes', () => {
 
   test('S7-21: it refuses a document its classes throw on', () => {
     const seeded = seedYState(
-      {nodes: [...NODES, modeBox.ModeV2], onWarn: quiet},
+      {nodes: [...NODES, modeBox.ModeV2], onWarn: quiet, schemaVersion: 1},
       () => {
         const box = $create(modeBox.ModeV2).append($p('in the box'));
         box.__mode = 'v2only';
@@ -3017,7 +3018,7 @@ describe('S7-3, S7-11, S7-21: a server agent with older classes', () => {
     const error = refusal(() =>
       editYState(
         seeded,
-        {nodes: [...NODES, modeBox.ModeV1], onWarn: quiet},
+        {nodes: [...NODES, modeBox.ModeV1], onWarn: quiet, schemaVersion: 1},
         () => $getRoot().append($p('more')),
         {writer: null},
       ),

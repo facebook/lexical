@@ -47,6 +47,7 @@ function session(yrs: Yrs, options: {range?: ClientIDRange; doc?: YDoc}) {
   editor.update(() => $getRoot().append($p('hello')), {discrete: true});
   const binding = new YBinding(editor, doc, {
     clientIDRange: options.range,
+    schemaVersion: 1,
     selfCheck: true,
   });
   binding.start();
@@ -102,6 +103,7 @@ describe('@lexical/y with yrs relays', () => {
     });
     new YBinding(editor, doc, {
       clientIDRange: 'uint32',
+      schemaVersion: 1,
       selfCheck: true,
     }).start();
     expect(doc.clientID).toBeLessThanOrEqual(0xffffffff);
@@ -128,7 +130,7 @@ describe('@lexical/y/headless with yrs relays', () => {
     direct: boolean,
     serverRange: ClientIDRange = range,
   ) {
-    const config = {clientIDRange: serverRange, nodes: NODES};
+    const config = {clientIDRange: serverRange, nodes: NODES, schemaVersion: 1};
     const relay = new yrs.YDoc({}) as never;
     // The server seeds the document into the relay.
     yrs.applyUpdate(
@@ -152,6 +154,7 @@ describe('@lexical/y/headless with yrs relays', () => {
     });
     const binding = new YBinding(editor, doc, {
       clientIDRange: range,
+      schemaVersion: 1,
       selfCheck: true,
     });
     binding.start();
@@ -202,7 +205,11 @@ describe('@lexical/y/headless with yrs relays', () => {
     ['0.28', yrs028],
   ] as const) {
     test(`a writer continues its 32-bit client id on a ywasm ${version} relay's state`, () => {
-      const config = {clientIDRange: 'uint32' as const, nodes: NODES};
+      const config = {
+        clientIDRange: 'uint32' as const,
+        nodes: NODES,
+        schemaVersion: 1,
+      };
       const relay = new yrs.YDoc({}) as never;
       yrs.applyUpdate(
         relay,

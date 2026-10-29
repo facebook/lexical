@@ -148,7 +148,10 @@ function client(id: number, state?: Uint8Array) {
     },
     onWarn: () => {},
   });
-  const binding = new YBinding(editor, doc, {selfCheck: true});
+  const binding = new YBinding(editor, doc, {
+    schemaVersion: 1,
+    selfCheck: true,
+  });
   binding.start();
   return {binding, doc, editor};
 }

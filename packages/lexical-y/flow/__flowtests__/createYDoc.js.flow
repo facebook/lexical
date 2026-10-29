@@ -27,6 +27,7 @@ function configOf(doc: YDoc): YCollabConfig {
     convert: false,
     doc,
     root: null,
+    schemaVersion: 1,
     selfCheck: null,
     selfCheckSample: null,
     synced: false,
@@ -51,12 +52,16 @@ createYDoc(null, {cleanupFormatting: true});
 createRelayDoc(state, {gc: 'no'});
 // A YDoc is a Y.Doc.
 const plain: Doc = doc;
-const binding = new YBinding(editor, stored);
+const binding = new YBinding(editor, stored, {schemaVersion: 1});
+// $FlowExpectedError[incompatible-type] options, with a schemaVersion, are required
+new YBinding(editor, stored);
+// $FlowExpectedError[incompatible-type] schemaVersion is required
+new YBinding(editor, stored, {selfCheck: true});
 const shared: YDoc = binding.doc;
 const config: YCollabConfig = configOf(relay);
 
 // $FlowExpectedError[incompatible-type] a plain Y.Doc may clean up formats
-new YBinding(editor, new Doc());
+new YBinding(editor, new Doc(), {schemaVersion: 1});
 // $FlowExpectedError[incompatible-type] a plain Y.Doc may clean up formats
 const forged: YDoc = new Doc();
 // $FlowExpectedError[incompatible-type] a plain Y.Doc may clean up formats

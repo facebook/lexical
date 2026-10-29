@@ -42,7 +42,13 @@ function peer(id: number) {
   const editor = buildEditorFromExtensions(
     defineExtension({
       $initialEditorState: null,
-      dependencies: [configExtension(YCollabExtension, {doc, selfCheck: true})],
+      dependencies: [
+        configExtension(YCollabExtension, {
+          doc,
+          schemaVersion: 1,
+          selfCheck: true,
+        }),
+      ],
       name: 'r13a-seg/' + id,
       onError: e => {
         errors.push(e);

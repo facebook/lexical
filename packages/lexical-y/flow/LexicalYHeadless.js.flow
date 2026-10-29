@@ -44,6 +44,8 @@ declare export opaque type YWriter: {readonly author: string};
 declare export function createYWriter(author: string): YWriter;
 
 export type HeadlessYConfig = {
+  // Required: the version of the app's document schema, as on the clients.
+  schemaVersion: number,
   extensions?: ReadonlyArray<AnyLexicalExtensionArgument>,
   nodes?: CreateEditorArgs['nodes'],
   root?: string,

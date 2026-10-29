@@ -29,6 +29,7 @@ export function writeEditorToYDoc(
     clientIDRange: options.clientIDRange,
     convert: true,
     root: options.root,
+    schemaVersion: 1,
   });
   const stop = binding.start();
   try {

@@ -55,7 +55,10 @@ function client(id: number, state?: Uint8Array) {
     },
     onWarn: e => warnings.push(String(e)),
   });
-  const binding = new YBinding(editor, doc, {selfCheck: true});
+  const binding = new YBinding(editor, doc, {
+    schemaVersion: 1,
+    selfCheck: true,
+  });
   const stop = binding.start();
   return {
     binding,

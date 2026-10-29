@@ -2245,6 +2245,77 @@ describe('S7-21: what an older class does before it throws', () => {
   });
 });
 
+describe('N7: a room the binding cannot write is never editable', () => {
+  const $content = (mode: string) => () => {
+    const box = $create(RequiredV2).append($p('inside'));
+    box.__mode = mode;
+    $getRoot().clear().append($p('first'), box, $p('last'));
+  };
+
+  test.each([
+    ['content its class throws on', [...NODES, requiredV1(() => {})], 'c'],
+    ['a node type it does not register', NODES, 'a'],
+    ['content it reads (control)', [...NODES, RequiredV2], 'a'],
+  ])(
+    'N7: opening a room holding %s makes the editor editable only once the read validated',
+    async (name, nodes, mode) => {
+      const a = new Peer(2, newNet() as never, [...NODES, RequiredV2]);
+      a.update($content(mode));
+      a.binding.initialize();
+      await flush();
+      const editable: boolean[] = [];
+      const b = new Peer(1, newNet() as never, nodes, editor =>
+        editor.registerEditableListener(value => {
+          editable.push(value);
+        }),
+      );
+      editable.length = 0;
+      Y.applyUpdate(b.doc, Y.encodeStateAsUpdate(a.doc));
+      b.binding.initialize();
+      await flush();
+      expect(b.errors).toEqual([]);
+      expect(b.describe()).toContain('"first"');
+      if (name.endsWith('(control)')) {
+        expect(b.binding.status).toBe('active');
+        expect(editable).toEqual([true]);
+      } else {
+        expect(b.binding.status).toBe('readonly');
+        expect(editable).toEqual([]);
+      }
+    },
+  );
+
+  test('N7: a change to the layout record leaves it read only, with no local update shown and no warning again', async () => {
+    const net = newNet();
+    const a = new Peer(2, net as never, [...NODES, RequiredV2]);
+    const b = new Peer(1, net as never, [...NODES, requiredV1(() => {})]);
+    a.update($content('c'));
+    a.binding.initialize();
+    await flush();
+    const shown = b.describe();
+    expectUnreadable(b, 'test_required', shown);
+    // Code that edits the editor as soon as it is editable.
+    const editable: boolean[] = [];
+    const stop = b.editor.registerEditableListener(value => {
+      editable.push(value);
+      if (value) {
+        b.update(() => $getRoot().append($p('leak')));
+      }
+    });
+    const written = () =>
+      Y.decodeStateVector(Y.encodeStateVector(b.doc)).get(b.doc.clientID);
+    const before = written();
+    // A peer records a layout version this binding reads: the document is
+    // read again.
+    a.doc.transact(() => a.binding.root.setAttr('lexical-y:1', true));
+    await flush();
+    stop();
+    expect(editable).toEqual([]);
+    expectUnreadable(b, 'test_required', shown);
+    expect(written()).toBe(before);
+  });
+});
+
 describe('S7-21 (MF-2): every read goes through the one fail-closed path', () => {
   /** Make `method` of the reader throw `error` once. */
   const throwOnce = (

@@ -681,53 +681,69 @@ describe('B-2: a peer realigns or retypes the line A composes in, then A presses
 });
 
 describe('MF-1: a newer client sets a field A does not know on the line A composes in', () => {
+  // What A holds back while composing in the line, and what each marker
+  // stores (the field, and the alignment) once A has pressed Enter in the
+  // middle of the line and the room has converged.
+  const run = async (composing: boolean, withOwned: boolean, ids: number[]) => {
+    const t = await setup(
+      () => $getRoot().append($p('pre'), $p('alpha beta gamma'), $p('omega')),
+      {ids},
+    );
+    const key = keyOf(t.a, [1]);
+    if (composing) {
+      compose(t.a, key, 6);
+    }
+    step(t.a, key, 6, '', 'に');
+    await t.sync();
+    // B writes the field to the line's marker (as a client whose class
+    // declares it), and an alignment A knows.
+    const marker = markersOf(t.b)[1];
+    t.b.doc.transact(() => {
+      marker.setAttr('p:future', 'x');
+      if (withOwned) {
+        marker.setAttr('p:format', 'center');
+      }
+    });
+    await t.sync();
+    const hidden = (
+      t.a.binding as unknown as {
+        state: {
+          hidden: {marker: {was: Map<string, unknown>} | null} | null;
+        };
+      }
+    ).state.hidden;
+    const held =
+      hidden === null || hidden.marker === null
+        ? []
+        : [...hidden.marker.was.keys()];
+    t.a.update(() => {
+      ($getNodeByKey(key) as TextNode).select(7, 7).insertParagraph();
+    });
+    await t.sync();
+    if (composing) {
+      endComposition(t.a);
+      await t.sync();
+    }
+    await expectConverged(t.peers);
+    const markers = markersOf(t.a).map(m => [
+      m.getAttr('p:future'),
+      m.getAttr('p:format'),
+    ]);
+    return {held, markers};
+  };
   for (const ids of IDS) {
     for (const withOwned of [false, true]) {
-      test(`A holds nothing of it and stores it once after Enter (${withOwned ? 'with an alignment' : 'alone'}, ids ${ids})`, async () => {
-        const t = await setup(
-          () =>
-            $getRoot().append($p('pre'), $p('alpha beta gamma'), $p('omega')),
-          {ids},
-        );
-        const key = compose(t.a, keyOf(t.a, [1]), 6);
-        step(t.a, key, 6, '', 'に');
-        await t.sync();
-        // B writes the field to the line's marker (as a client whose class
-        // declares it), and an alignment A knows.
-        const marker = markersOf(t.b)[1];
-        t.b.doc.transact(() => {
-          marker.setAttr('p:future', 'x');
-          if (withOwned) {
-            marker.setAttr('p:format', 'center');
-          }
-        });
-        await t.sync();
-        const hidden = (
-          t.a.binding as unknown as {
-            state: {
-              hidden: {marker: {was: Map<string, unknown>} | null} | null;
-            };
-          }
-        ).state.hidden;
-        expect(
-          hidden === null || hidden.marker === null
-            ? []
-            : [...hidden.marker.was.keys()],
-        ).toEqual(withOwned ? ['p:format'] : []);
-        t.a.update(() => {
-          ($getNodeByKey(key) as TextNode).select(7, 7).insertParagraph();
-        });
-        await t.sync();
-        endComposition(t.a);
-        await t.sync();
-        await expectConverged(t.peers);
-        // The field stays on one line, as it does without a composition.
-        expect(
-          markersOf(t.a).filter(m => m.getAttr('p:future') === 'x'),
-        ).toHaveLength(1);
+      test(`A holds nothing of it, and Enter stores it as without a composition (${withOwned ? 'with an alignment' : 'alone'}, ids ${ids})`, async () => {
+        const composed = await run(true, withOwned, ids);
+        const plain = await run(false, withOwned, ids);
+        expect(composed.held).toEqual(withOwned ? ['p:format'] : []);
+        expect(plain.held).toEqual([]);
+        // The composition changes nothing A stores. The field is on both
+        // halves of the split either way (see N1 in SchemaSkew.test.ts).
+        expect(composed.markers).toEqual(plain.markers);
         if (withOwned) {
           expect(
-            markersOf(t.a).filter(m => m.getAttr('p:format') === 'center'),
+            composed.markers.filter(([, format]) => format === 'center'),
           ).toHaveLength(2);
         }
       });

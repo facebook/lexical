@@ -285,13 +285,18 @@ function $updateAndRetainSelection(
     return;
   }
 
-  // The selection is restored as a caret at the anchor, and only when the
-  // anchor is inside this code node: a selection elsewhere is left where the
-  // user put it, rather than dragged into the code block. MarkStateExtension
-  // relies on that collapsed caret to carry comment ids onto the new tokens.
+  // When the anchor is inside this code node, the selection is restored as a
+  // caret at the anchor: MarkStateExtension relies on that collapsed caret to
+  // carry comment ids onto the new tokens. A selection elsewhere is left where
+  // the user put it, rather than dragged into the code block.
   const textOffset = $getCodeTextOffset(node, selection.anchor);
   if (textOffset === null) {
-    updateFn();
+    // A range from outside into this code node keeps its anchor, and its
+    // focus moves back to the same text position.
+    const focusOffset = $getCodeTextOffset(node, selection.focus);
+    if (updateFn() && focusOffset !== null) {
+      $setCodeTextOffset(node, selection.focus, focusOffset);
+    }
     return;
   }
   if (!updateFn()) {

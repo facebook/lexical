@@ -121,5 +121,32 @@ describe('CodeHighlighterPrism $updateAndRetainSelection', () => {
         ).toBe(expectedText);
       },
     );
+
+    test('keeps the focus of a range from a paragraph above', async () => {
+      const {editor} = testEnv;
+      registerCodeHighlighting(editor);
+
+      await editor.update(() => {
+        const above = $createTextNode('above');
+        const last = $createTextNode('let b = 2');
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(above),
+            $createCodeNode('javascript').append(
+              $createTextNode('const a = 1'),
+              $createLineBreakNode(),
+              last,
+            ),
+          );
+        above.select(2, 2).focus.set(last.getKey(), 3, 'text');
+      });
+
+      editor.read(() => {
+        const selection = $getSelection();
+        expect($isRangeSelection(selection)).toBe(true);
+        expect(selection!.getTextContent()).toBe('ove\nconst a = 1\nlet');
+      });
+    });
   });
 });

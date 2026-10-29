@@ -45,24 +45,8 @@ async function createCodeBlock(page, lines) {
     if (lines[i] !== '') {
       await page.keyboard.insertText(lines[i]);
     }
-    if (i === 0) {
-      // Shiki loads the grammar and the theme asynchronously, and only then
-      // splits the text into tokens. When that lands after an Enter, the
-      // caret is put back by child index rather than by text offset, and
-      // the next line is typed into the first one. So wait for the tokens.
-      await expect.poll(() => countCodeChildren(page)).toBeGreaterThan(1);
-    }
   }
   await expect.poll(() => getCodeLines(page)).toEqual(lines);
-}
-
-/** How many nodes the first code block has, from the editor state. */
-async function countCodeChildren(page) {
-  return await evaluate(page, () => {
-    const code = window.lexicalEditor.getEditorState().toJSON().root
-      .children[0];
-    return code.type === 'code' ? code.children.length : 0;
-  });
 }
 
 /** The lines of the first code block, read from the editor state. */

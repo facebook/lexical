@@ -276,6 +276,8 @@ export class Reader {
   private readonly wrapperFields: (type: string) => OwnedFields | null;
   /** Item -> unit cache for one read. */
   private located = new Map<Item, Unit | null>();
+  /** Inline owners already read from the current document without a hold. */
+  private readonly consumed = new Set<NodeKey>();
   /** Formats in effect after the content last read by $pieces. */
   private lastFormats: Formats = EMPTY_FORMATS;
   readonly fresh = new Set<YNode>();
@@ -821,6 +823,13 @@ export class Reader {
    */
   private $hold(unit: Unit | null, items: Item[], attrs: boolean): boolean {
     const state = this.state;
+    const key = unit === null ? this.composingKey : unit.key;
+    // Releasing an invalid old hold can already have read this region from
+    // the integrated transaction. Its inserts are shown, not new hold-back
+    // candidates; the rest of the transaction must still be applied.
+    if (key !== null && this.consumed.has(key)) {
+      return false;
+    }
     let hidden = state.hidden;
     for (const it of items) {
       if (it.deleted && (hidden === null || !hidden.hides(it))) {
@@ -2301,6 +2310,9 @@ export class Reader {
     extraPool?: LexicalNode[],
   ): LexicalNode[] {
     const state = this.state;
+    if (el !== null && state.hidden === null) {
+      this.consumed.add(el.getKey());
+    }
     // Whether `el` (a list item) holds a nested group first before the read:
     // the wrappers built below can move that child into a link before `el`'s
     // children are set (see the end).

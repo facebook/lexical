@@ -2415,6 +2415,25 @@ export class YBinding {
       return;
     }
     state.hidden = null;
+    const items = this.hiddenItems(hidden);
+    // A local split can inherit a held format at its new boundary. Its
+    // shown start was kept separate from storage (see Writer#$writeSegment):
+    // render that successor too, even where the stored start already agrees.
+    for (const [unit, {stored}] of hidden.starts) {
+      if (
+        unit.end !== null &&
+        state.unitByEnd.get(unit.end) === unit &&
+        !unit.end.deleted
+      ) {
+        unit.start = stored;
+        const list = items.get(unit.cs.y);
+        if (list === undefined) {
+          items.set(unit.cs.y, [unit.end]);
+        } else {
+          list.push(unit.end);
+        }
+      }
+    }
     const markers = new Map<YNode, Set<string>>();
     if (hidden.marker !== null) {
       for (const end of hidden.marker.ends) {
@@ -2425,7 +2444,7 @@ export class YBinding {
     }
     const composing = reader.composingKey;
     reader.composingKey = null;
-    reader.$apply(this.hiddenItems(hidden), markers);
+    reader.$apply(items, markers);
     reader.composingKey = composing;
   }
 

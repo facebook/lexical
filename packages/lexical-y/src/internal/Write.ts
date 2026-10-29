@@ -2187,13 +2187,21 @@ export class Writer {
   /**
    * Set every unit's start formats (the formats in effect where it starts)
    * from the shared items: deletes and inserts start from them, and a stale
-   * value would leave a format open or close one early.
+   * value would leave a format open or close one early. A locally split
+   * unit still covered by a hold keeps its shown start until release, with
+   * the stored start recorded separately (see Hidden#starts).
    */
   private $recomputeStarts(cs: CS): void {
     const formats = new Map<string, unknown>();
     let it: Item | null = cs.y._start;
     for (const u of cs.units) {
       u.start = formats.size > 0 ? new Map(formats) : null;
+      const hidden = this.state.hidden;
+      const held = hidden === null ? undefined : hidden.starts.get(u);
+      if (held !== undefined) {
+        held.stored = u.start;
+        u.start = held.shown;
+      }
       if (u.end === null) {
         break;
       }
@@ -2505,6 +2513,12 @@ export class Writer {
       remaining.push(oi);
     }
     const lines = newSeg.filter(di => desired[di].kind !== 'node');
+    const hidden = this.state.hidden;
+    const heldSegment =
+      hidden !== null &&
+      remaining.some(
+        oi => old[oi].key === hidden.ownerKey || hidden.starts.has(old[oi]),
+      );
     // The formats in effect at `left`, where the content is diffed from: the
     // first remaining unit's start, also when node units before it were
     // deleted above (see $deleteUnit).
@@ -2512,6 +2526,17 @@ export class Writer {
       remaining.length > 0
         ? old[remaining[0]].start || EMPTY_FORMATS
         : this.formatsAfter(left);
+    // A previously split successor already has distinct inherited starts.
+    // Keep its shown start for the diff/cursor, but seed raw scans from its
+    // stored start: the held opener may be before this segment's first item.
+    const inherited =
+      hidden === null || remaining.length === 0
+        ? undefined
+        : hidden.starts.get(old[remaining[0]]);
+    const storedStartFormats =
+      inherited === undefined
+        ? startFormats
+        : inherited.stored || EMPTY_FORMATS;
     const startItem = left === null ? cs.y._start : left.right;
     const lineItems = new Map<number, Item>();
     if (remaining.length > 0 || lines.length > 0) {
@@ -2633,6 +2658,8 @@ export class Writer {
       after = end;
     }
     // Formats in effect at each unit start (a format can span a marker).
+    // New halves of the held line inherit the shown lane, not evidence that
+    // they already rendered a held opener in an earlier half.
     if (lines.length > 0) {
       const byEnd = new Map<Item, Unit>();
       const segUnits = newUnits.slice(newUnits.length - newSeg.length);
@@ -2641,8 +2668,10 @@ export class Writer {
           byEnd.set(u.end, u);
         }
       }
-      const current = new Map(startFormats);
+      const current = new Map(storedStartFormats);
+      const shown = new Map(startFormats);
       let pendingStart: Formats = new Map(current);
+      let pendingShown: Formats = new Map(shown);
       let k = 0;
       for (
         let it = startItem;
@@ -2653,17 +2682,23 @@ export class Writer {
           continue;
         }
         if (it.content instanceof ContentFormat) {
-          if (it.content.value === null) {
-            current.delete(it.content.key);
-          } else {
-            current.set(it.content.key, it.content.value);
+          applyFormat(current, it.content);
+          if (hidden === null || !hidden.hides(it)) {
+            applyFormat(shown, it.content);
           }
           continue;
         }
         const u = byEnd.get(it);
         if (u !== undefined) {
           u.start = pendingStart.size > 0 ? pendingStart : null;
+          if (heldSegment && !sameFormatMaps(pendingStart, pendingShown)) {
+            hidden!.starts.set(u, {
+              shown: pendingShown.size > 0 ? pendingShown : null,
+              stored: u.start,
+            });
+          }
           pendingStart = new Map(current);
+          pendingShown = new Map(shown);
           k++;
         }
       }
@@ -2675,7 +2710,7 @@ export class Writer {
     // Reader#$readLineInPlace and $fixStartsAfter): before, its start took
     // them up to its end item, so a closer an outside writer left in it
     // could be judged redundant and deleted.
-    const formats = new Map(startFormats);
+    const formats = new Map(storedStartFormats);
     let it: Item | null = startItem;
     if (after !== left) {
       for (; it !== null; it = it.right) {

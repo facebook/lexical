@@ -55,8 +55,7 @@ switched at runtime through the `onlyWordWrapped` signal.
 ## Word wrap
 
 `CodeNode.setWordWrap(true)` makes a code block soft wrap lines that are wider than it, instead of scrolling sideways,
-and `getWordWrap()` reads it back. `setWordWrap` also takes an updater, for example `wordWrap => !wordWrap`. Wrapping is
-visual only: no `LineBreakNode` is added and the text is unchanged.
+and `getWordWrap()` reads it back. Wrapping is visual only: no `LineBreakNode` is added and the text is unchanged.
 
 While it is on:
 

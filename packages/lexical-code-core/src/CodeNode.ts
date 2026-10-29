@@ -42,7 +42,6 @@ import {
   type Spread,
   stringValue,
   type TabNode,
-  type ValueOrUpdater,
   withAccessors,
   withField,
 } from 'lexical';
@@ -478,22 +477,13 @@ export class CodeNode extends ElementNode {
   }
 
   /**
-   * Turns soft wrapping of long lines on or off, or toggles it with an
-   * updater such as `wordWrap => !wordWrap`. The node is only marked dirty
-   * when the value changes. This only sets the flag and the
-   * `data-lexical-code-word-wrap` attribute; the theme's CSS wraps the lines.
+   * Turns soft wrapping of long lines on or off. This only sets the flag and
+   * the `data-lexical-code-word-wrap` attribute; the theme's CSS wraps the
+   * lines.
    */
-  setWordWrap(valueOrUpdater: ValueOrUpdater<boolean>): this {
-    const prevWordWrap = this.getWordWrap();
-    const wordWrap =
-      (typeof valueOrUpdater === 'function'
-        ? valueOrUpdater(prevWordWrap)
-        : valueOrUpdater) === true;
-    if (wordWrap === prevWordWrap) {
-      return this;
-    }
+  setWordWrap(wordWrap: boolean): this {
     const writable = this.getWritable();
-    writable.__wordWrap = wordWrap || undefined;
+    writable.__wordWrap = wordWrap === true || undefined;
     return writable;
   }
 }

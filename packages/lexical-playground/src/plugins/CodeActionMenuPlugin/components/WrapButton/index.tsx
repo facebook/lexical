@@ -25,7 +25,7 @@ export function WrapButton({editor, getCodeKey, isWrapped}: Props) {
     editor.update(() => {
       const codeNode = $getNodeByKey(key);
       if ($isCodeNode(codeNode)) {
-        codeNode.setWordWrap(wordWrap => !wordWrap);
+        codeNode.setWordWrap(!codeNode.getWordWrap());
       }
     });
   }

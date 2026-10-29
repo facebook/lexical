@@ -21,7 +21,6 @@ import type {
   TabNode,
   LexicalExtension,
   ExtensionConfigBase,
-  ValueOrUpdater,
 } from 'lexical';
 
 import type {NamedSignalsOutput} from '@lexical/extension';
@@ -117,7 +116,7 @@ declare export class CodeNode extends ElementNode {
   setTheme(theme: ?string): this;
   getTheme(): string | void;
   getWordWrap(): boolean;
-  setWordWrap(valueOrUpdater: ValueOrUpdater<boolean>): this;
+  setWordWrap(wordWrap: boolean): this;
 }
 
 /**

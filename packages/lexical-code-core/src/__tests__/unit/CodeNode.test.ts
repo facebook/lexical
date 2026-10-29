@@ -21,7 +21,6 @@ import {
   type EditorConfig,
   type LexicalEditor,
   type NodeKey,
-  type NodeMutation,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, it} from 'vitest';
@@ -62,13 +61,13 @@ function $importCodeJSON(json: SerializedCodeNode): CodeNode {
 function setWordWrap(
   editor: LexicalEditor,
   key: NodeKey,
-  valueOrUpdater: boolean | ((wordWrap: boolean) => boolean),
+  wordWrap: boolean,
 ): void {
   editor.update(
     () => {
       const node = $getNodeByKey(key);
       assert($isCodeNode(node), 'expected a CodeNode');
-      node.setWordWrap(valueOrUpdater);
+      node.setWordWrap(wordWrap);
     },
     {discrete: true},
   );
@@ -245,26 +244,6 @@ describe('CodeNode', () => {
           expect(editor.getElementByKey(key)).toBe(dom);
           expect(dom.hasAttribute(WORD_WRAP_ATTR)).toBe(false);
           expect(dom.textContent).toBe('ab');
-        });
-
-        it('an updater that keeps the value leaves the node clean', () => {
-          const {editor} = testEnv;
-          const key = appendTwoLineCode(editor);
-          const mutations: NodeMutation[] = [];
-          const unregister = editor.registerMutationListener(
-            CodeNode,
-            nodes => {
-              mutations.push(...nodes.values());
-            },
-            {skipInitialization: true},
-          );
-
-          setWordWrap(editor, key, wordWrap => wordWrap);
-          expect(mutations).toEqual([]);
-
-          setWordWrap(editor, key, wordWrap => !wordWrap);
-          expect(mutations).toEqual(['updated']);
-          unregister();
         });
 
         it('round trips through exportDOM and importDOM', () => {

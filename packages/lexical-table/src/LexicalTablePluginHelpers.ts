@@ -118,12 +118,18 @@ function $tableCellTransform(node: TableCellNode) {
 }
 
 function $tableRowTransform(node: TableRowNode) {
-  if (!$isTableNode(node.getParent())) {
+  const table = node.getParent();
+  if (!$isTableNode(table)) {
     // TableRowNode must be a child of TableNode.
     // TODO: Future support of tbody/thead/tfoot may change this
     node.remove();
   } else {
     $unwrapAndFilterDescendants(node, $isTableCellNode);
+    // A row whose cells changed (a delete across cells removes some) can
+    // leave the table ragged. The table's transform pads its rows, and
+    // Lexical runs it only on a table marked dirty itself, which a change
+    // to one of its rows does not do.
+    table.markDirty();
   }
 }
 

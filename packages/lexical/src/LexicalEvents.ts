@@ -657,7 +657,7 @@ const FOCUSABLE_SELECTOR =
 // iOS answers that focus by opening the keyboard and scrolling to reveal the
 // caret. A decorator is selected with a NodeSelection, which leaves no DOM
 // caret, so iOS reveals the top of the editor instead and the page jumps
-// (facebook/lexical#9112). Cancelling the mousedown keeps the keyboard closed;
+// (meta/lexical#9112). Cancelling the mousedown keeps the keyboard closed;
 // the click still follows, so CLICK_COMMAND handlers select the node as usual.
 //
 // When the editor did not have focus, it is focused from code instead, with
@@ -1670,8 +1670,8 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
   // Note that the MutationObserver may or may not have already fired,
   // but the DOM and selection may have already changed.
   // See also:
-  // - https://github.com/facebook/lexical/issues/7028
-  // - https://github.com/facebook/lexical/pull/794
+  // - https://github.com/meta/lexical/issues/7028
+  // - https://github.com/meta/lexical/pull/794
 
   // We don't want the onInput to bubble, in the case of nested editors.
   event.stopPropagation();

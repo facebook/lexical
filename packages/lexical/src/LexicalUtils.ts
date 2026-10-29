@@ -622,6 +622,7 @@ export function $setCompositionKey(compositionKey: null | NodeKey): void {
   const previousCompositionKey = editor._compositionKey;
   if (compositionKey !== previousCompositionKey) {
     editor._compositionKey = compositionKey;
+    editor._compositionMergeHeld = null;
     if (previousCompositionKey !== null) {
       const node = $getNodeByKey(previousCompositionKey);
       if (node !== null) {
@@ -660,20 +661,6 @@ export function $isEmptyCompositionTarget(node: TextNode): boolean {
  * Returns the node with the given key from the active EditorState
  * (or the given EditorState), or null if it does not exist.
  */
-export function $getNodeByKey(
-  key: NodeKey,
-  _editorState?: EditorState,
-): LexicalNode | null;
-/**
- * @deprecated The type parameter is an unchecked and unsafe cast,
- * equivalent to `$getNodeByKey(key) as T | null`, and will be removed
- * in a future release. Call this function without a type argument and
- * narrow the result with a type guard instead.
- */
-export function $getNodeByKey<T extends LexicalNode>(
-  key: NodeKey,
-  _editorState?: EditorState,
-): T | null;
 export function $getNodeByKey(
   key: NodeKey,
   _editorState?: EditorState,
@@ -2173,14 +2160,6 @@ export function errorOnInsertTextNodeOnRoot(
  * Returns the node with the given key from the active EditorState,
  * or throws if it does not exist.
  */
-export function $getNodeByKeyOrThrow(key: NodeKey): LexicalNode;
-/**
- * @deprecated The type parameter is an unchecked and unsafe cast,
- * equivalent to `$getNodeByKeyOrThrow(key) as N`, and will be removed
- * in a future release. Call this function without a type argument and
- * narrow the result with a type guard instead.
- */
-export function $getNodeByKeyOrThrow<N extends LexicalNode>(key: NodeKey): N;
 export function $getNodeByKeyOrThrow(key: NodeKey): LexicalNode {
   const node = $getNodeByKey(key);
   if (node === null) {

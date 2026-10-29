@@ -1,0 +1,98 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+// @vitest-environment node
+
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import {expect, test} from 'vitest';
+
+import * as mainEntry from '../..';
+import * as headlessEntry from '../../headless';
+
+// Bundlers replace only process.env.NODE_ENV: any other process.env read in
+// shipped source throws "process is not defined" in a browser.
+test('shipped source reads no process.env but NODE_ENV', () => {
+  const src = path.resolve(__dirname, '../..');
+  const offenders: string[] = [];
+  const visit = (dir: string) => {
+    for (const entry of fs.readdirSync(dir, {withFileTypes: true})) {
+      const p = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name !== '__tests__') {
+          visit(p);
+        }
+      } else if (/\.tsx?$/.test(entry.name)) {
+        const text = fs.readFileSync(p, 'utf8');
+        for (const m of text.matchAll(/process\.env\.(\w+)/g)) {
+          if (m[1] !== 'NODE_ENV') {
+            offenders.push(`${path.relative(src, p)}: process.env.${m[1]}`);
+          }
+        }
+      }
+    }
+  };
+  visit(src);
+  expect(offenders).toEqual([]);
+});
+
+// Old clients (@lexical/yjs) write other roots, so servers need no API of
+// their own: the package has no server entry, and the two constants a
+// server may want come from the main entry. `@lexical/y/headless` is plain
+// functions (`createYWriter` makes the writer `editYState` requires;
+// `createYDoc` the document a relay loads a state into), plus its warning
+// codes.
+test('public entries', () => {
+  const pkg = JSON.parse(
+    fs.readFileSync(path.resolve(__dirname, '../../../package.json'), 'utf8'),
+  ) as {exports: Record<string, unknown>};
+  expect(Object.keys(pkg.exports).sort()).toEqual([
+    '.',
+    './headless',
+    './headless.js',
+  ]);
+  expect(mainEntry.DEFAULT_ROOT_NAME).toBe('lexical-y');
+  expect(typeof mainEntry.LAYOUT_VERSION).toBe('number');
+  expect(Object.keys(mainEntry).sort()).toEqual([
+    'DEFAULT_ROOT_NAME',
+    'LAYOUT_VERSION',
+    'NESTED_FALLBACK_WARNING',
+    'RECOVERED_READ_WARNING',
+    'RECOVERED_WRITE_WARNING',
+    'SELF_CHECK_WARNING',
+    'STORAGE_MISMATCH_WARNING',
+    'UNKNOWN_NODE_TYPES_WARNING',
+    'UNSUPPORTED_CONFIG_WARNING',
+    'UNSUPPORTED_LAYOUT_WARNING',
+    'UNSUPPORTED_SLOTS_WARNING',
+    'UNSYNCED_VALUE_WARNING',
+    'YBinding',
+    'YCollabExtension',
+    'describeStorage',
+    'isYWarning',
+  ]);
+  expect(Object.keys(headlessEntry).sort()).toEqual([
+    'EDITOR_WARNING',
+    'FOLLOW_UPS_EXHAUSTED_WARNING',
+    'WRITER_NEW_CLIENT_ID_WARNING',
+    'YHeadlessError',
+    'createYDoc',
+    'createYWriter',
+    'editYState',
+    'readYState',
+    'seedYState',
+  ]);
+});
+
+// The headless helpers' hook into the binding is not part of its published
+// type (`private` to the type only, so the declarations do not offer it).
+test('YBinding does not offer flushPending', () => {
+  type Offered = 'flushPending' extends keyof mainEntry.YBinding ? true : false;
+  const offered: Offered = false;
+  expect(offered).toBe(false);
+});

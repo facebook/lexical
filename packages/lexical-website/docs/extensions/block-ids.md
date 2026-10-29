@@ -281,7 +281,7 @@ with.
 ## HTML
 
 Ids are not part of HTML by default. Add `BlockIdHTMLExtension` (from
-`@lexical/html`) to the editor's dependencies to opt in:
+`@lexical/html/BlockIdHTMLExtension`) to the editor's dependencies to opt in:
 
 - **Export:** every identified block's element gets a `data-block-id`
   attribute, in `$generateHtmlFromNodes` and in copied HTML.
@@ -311,6 +311,15 @@ export off in editors whose HTML must be byte-for-byte deterministic
 - `disabled`: stops assigning, repairing and indexing ids (also an output
   signal). Ids already in the document are kept, and `$getBlockById` scans
   the document. Enabling it again assigns and repairs ids in one update.
+- `repairTransforms` (default `true`): blocks that an update applied with
+  `skipTransforms`, or tagged `COLLABORATION_TAG` or `HISTORIC_TAG`, leaves
+  without a valid id (or with a repeated one) are named by a follow-up
+  update. By default it marks those blocks dirty, so every transform of the
+  editor runs on them in it (`NodeStructureExtension` repairs their
+  structure, for example). With `false` it sets their ids without running
+  transforms, so it changes nothing else: for code that applies such updates
+  and repairs what they bring in an update of its own. The ids are the same
+  either way for blocks the transforms would not change.
 - **Valid ids.** An id is 1 to 64 characters of the base64url alphabet
   (`A`–`Z`, `a`–`z`, `0`–`9`, `-`, `_`), so it is safe in URLs, HTML
   attributes and JSON without escaping. Any such value under `$.blockId` is
@@ -404,4 +413,4 @@ document key `9fa59b03bb40d3d4ac45b31a472f965a0825ffc10693d4165b1e4dcf956b5dfa`
 ## API reference
 
 [`BlockIdExtension`](/docs/api/modules/lexical_extension#blockidextension) ·
-[`BlockIdHTMLExtension`](/docs/api/modules/lexical_html#blockidhtmlextension)
+[`BlockIdHTMLExtension`](/docs/api/modules/lexical_html/BlockIdHTMLExtension#blockidhtmlextension)

@@ -140,6 +140,9 @@
       ],
       "@lexical/history": ["../lexical-history/src/index.ts"],
       "@lexical/html": ["../lexical-html/src/index.ts"],
+      "@lexical/html/BlockIdHTMLExtension": [
+        "../lexical-html/src/BlockIdHTMLExtension.ts"
+      ],
       "@lexical/internal/createDevError": [
         "../lexical-internal/src/createDevError.ts"
       ],
@@ -363,6 +366,8 @@
       "@lexical/tailwind": ["../lexical-tailwind/src/index.ts"],
       "@lexical/text": ["../lexical-text/src/index.ts"],
       "@lexical/utils": ["../lexical-utils/src/index.ts"],
+      "@lexical/y": ["../lexical-y/src/index.ts"],
+      "@lexical/y/headless": ["../lexical-y/src/headless.ts"],
       "@lexical/yjs": ["../lexical-yjs/src/index.ts"]
     }
   },

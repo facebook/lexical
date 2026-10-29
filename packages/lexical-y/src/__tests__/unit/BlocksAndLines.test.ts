@@ -349,7 +349,7 @@ describe('@lexical/y moves', () => {
         $create(ColTitleNode).append($createTextNode('t')),
         $create(ColContentNode).append($p('c1'), $p('c2')),
       );
-    test(`a collapsible dragged past a box ‖ typing inside it keeps the typing (ids ${ids})`, async () => {
+    test(`a collapsible dragged past a box ‖ typing in the box keeps the typing (ids ${ids})`, async () => {
       const t = await setup(
         () =>
           $getRoot().append(
@@ -361,26 +361,69 @@ describe('@lexical/y moves', () => {
       );
       t.offline();
       t.a.update(() => $block([1]).insertAfter($block([0])));
-      t.b.update(() => $selectIn([0, 1, 0], 2).insertText('TYPED'));
+      t.b.update(() => $selectIn([1, 0], 3).insertText('TYPED'));
       await t.sync();
       await expectConverged(t.peers);
-      expect(t.a.describe()).toContain('c1TYPED');
+      expect(t.a.describe()).toContain('boxTYPED');
     });
 
-    test(`moving a paragraph down one slot ‖ typing in it keeps the typing in it (ids ${ids})`, async () => {
+    // Moves limit (y.md): the dragged block is the one deleted and written
+    // again, so typing inside it at the same time is lost.
+    test.fails(
+      `a collapsible dragged past a box ‖ typing inside it keeps the typing (ids ${ids})`,
+      async () => {
+        const t = await setup(
+          () =>
+            $getRoot().append(
+              $col(),
+              $createBoxNode('o').append($p('box')),
+              $p('end'),
+            ),
+          {ids},
+        );
+        t.offline();
+        t.a.update(() => $block([1]).insertAfter($block([0])));
+        t.b.update(() => $selectIn([0, 1, 0], 2).insertText('TYPED'));
+        await t.sync();
+        await expectConverged(t.peers);
+        expect(t.a.describe()).toContain('c1TYPED');
+      },
+    );
+
+    test(`moving a paragraph down one slot ‖ typing in the paragraph it passed stays there (ids ${ids})`, async () => {
       const t = await setup(
         () => $getRoot().append($p('Revenue grew 4% in Q3.'), $p('Second.')),
         {ids},
       );
       t.offline();
-      t.a.update(() => $selectIn([0], 13).insertText('by '));
+      t.a.update(() => $selectIn([1], 6).insertText(' line'));
       t.b.update(() => $block([1]).insertAfter($block([0])));
       await t.sync();
       await expectConverged(
         t.peers,
-        'paragraph("Second.") / paragraph("Revenue grew by 4% in Q3.")',
+        'paragraph("Second line.") / paragraph("Revenue grew 4% in Q3.")',
       );
     });
+
+    // Moves limit (y.md): the moved paragraph is the one deleted and written
+    // again, so typing in it at the same time lands at its old place.
+    test.fails(
+      `moving a paragraph down one slot ‖ typing in it keeps the typing in it (ids ${ids})`,
+      async () => {
+        const t = await setup(
+          () => $getRoot().append($p('Revenue grew 4% in Q3.'), $p('Second.')),
+          {ids},
+        );
+        t.offline();
+        t.a.update(() => $selectIn([0], 13).insertText('by '));
+        t.b.update(() => $block([1]).insertAfter($block([0])));
+        await t.sync();
+        await expectConverged(
+          t.peers,
+          'paragraph("Second.") / paragraph("Revenue grew by 4% in Q3.")',
+        );
+      },
+    );
 
     test(`between equal blocks, the moved one is rewritten: typing in the other is kept (ids ${ids})`, async () => {
       const t = await setup(

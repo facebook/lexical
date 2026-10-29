@@ -102,6 +102,18 @@ import {
 } from './State';
 import {$isHeldInline} from './Structure';
 import {type Segment, type TextEditLog, TextReplay} from './TextEdits';
+import {
+  attrOf,
+  attrsOf,
+  deleteAttr,
+  deleteItem,
+  isGone,
+  setAttr,
+} from './Unread';
+
+/** storedTypeOf, in the document the write sees (see Unread). */
+const storedType = (y: YNode): string =>
+  storedTypeOf({getAttr: (key: string) => attrOf(y, key), name: y.name});
 
 // Writer: the editor to Yjs, for one commit. $plan finds what the commit
 // changed (structure, inline content, lines, attributes); $run writes it
@@ -638,7 +650,7 @@ export class Writer {
         unit === undefined ||
         !$isElementNode(node) ||
         this.written.has(unit.cs.key) ||
-        (unit.end !== null && unit.end.deleted)
+        (unit.end !== null && isGone(unit.end))
       ) {
         continue;
       }
@@ -688,7 +700,7 @@ export class Writer {
     for (const key of plan.attrs) {
       const y = state.yByKey.get(key);
       const node = $getNodeByKey(key);
-      if (y === undefined || node === null || (y._item && y._item.deleted)) {
+      if (y === undefined || node === null || (y._item && isGone(y._item))) {
         continue;
       }
       this.$writeNodeAttrs(y, node);
@@ -1940,16 +1952,22 @@ export class Writer {
           o.kind === 'node' &&
           o.end !== null &&
           nameOf(o.end).startsWith(BLOCK_PREFIX) &&
-          storedTypeOf(typeOf(o.end)) === d.node!.getType())
+          storedType(typeOf(o.end)) === d.node!.getType())
       ) {
         matches.push([di, oi]);
       }
     });
-    // Keep as many blocks in place as possible (a moved unit is deleted and
-    // written again, with any concurrent edit inside it). A list counts as
-    // one block, however many lines it has. Between equal counts, keep what
-    // costs most to rewrite: a block node (its whole subtree is copied, and
-    // what peers write inside it meanwhile dropped) outweighs lines.
+    // Anchors keep their items; every other unit is deleted and written
+    // again, and what peers write in it meanwhile is lost (in a block node)
+    // or stays at its old place. So what this update moved (Lexical's record
+    // of explicit moves, see $movedUnit) is rewritten, not the units it
+    // passed: those keep their order (only a move changes it), so all of them
+    // can stay in place. A moved unit stays too where it is still in order
+    // between them (put back where it was, indented). With no record (an
+    // editor state set whole), and among moved units, the cheaper rewrite
+    // wins: as many blocks as possible stay in place (a list counts as one
+    // block, however many lines it has), then what costs most to rewrite (a
+    // block node, whose whole subtree is copied, outweighs lines).
     const groupSize = new Map<NodeKey, number>();
     for (const d of desired) {
       groupSize.set(d.first, (groupSize.get(d.first) ?? 0) + 1);
@@ -1968,23 +1986,26 @@ export class Writer {
     matches.forEach(([di], k) =>
       weightOf.set(di, big / groupSize.get(desired[di].first)! + costs[k]),
     );
-    // Between choices that keep as many blocks and as much content in place
-    // (an exact tie), what the user moved (Lexical's record of explicit
-    // moves) is the one rewritten, not the block it passed. Otherwise the
-    // cheaper rewrite wins: a long move rewrites the moved block rather than
-    // every block it passed, and in an adjacent swap the smaller block is
-    // re-created (a container being dragged keeps a peer's typing inside
-    // it).
-    const moved = this.plan.moved;
-    if (moved !== null && moved !== undefined && moved.size > 0) {
-      matches.forEach(([di]) => {
-        const d = desired[di];
-        if ((d.key !== null && moved.has(d.key)) || moved.has(d.first)) {
-          weightOf.set(di, weightOf.get(di)! - 0.5);
-        }
-      });
+    const weight = ([di]: [number, number]) => weightOf.get(di)!;
+    const moved = this.plan.moved ?? null;
+    const unmoved: [number, number][] = [];
+    const movedMatches: [number, number][] = [];
+    for (const m of matches) {
+      if (
+        moved !== null &&
+        moved.size > 0 &&
+        $movedUnit(desired[m[0]], container, moved)
+      ) {
+        movedMatches.push(m);
+      } else {
+        unmoved.push(m);
+      }
     }
-    const anchors = longestIncreasing(matches, ([di]) => weightOf.get(di)!);
+    const anchors = addInOrder(
+      longestIncreasing(unmoved, weight),
+      movedMatches,
+      weight,
+    );
     const n = anchors.length;
     // Changed line anchors join a neighbouring gap (the following one first)
     // so that a split or join diffs their characters with it.
@@ -2117,7 +2138,7 @@ export class Writer {
         break;
       }
       for (; it !== null; it = it.right) {
-        if (!it.deleted && it.content instanceof ContentFormat) {
+        if (!isGone(it) && it.content instanceof ContentFormat) {
           const {key, value} = it.content;
           if (value === null) {
             formats.delete(key);
@@ -2138,7 +2159,7 @@ export class Writer {
     let unit: Unit | undefined = u;
     // Stops where the next unit's start already agrees (usually at once).
     while (unit !== undefined) {
-      if (unit.end === null || unit.end.deleted) {
+      if (unit.end === null || isGone(unit.end)) {
         return;
       }
       const left = prevLiveEnd(unit.end);
@@ -2148,7 +2169,7 @@ export class Writer {
         it !== null;
         it = it.right
       ) {
-        if (!it.deleted && it.content instanceof ContentFormat) {
+        if (!isGone(it) && it.content instanceof ContentFormat) {
           const {key, value} = it.content;
           if (value === null) {
             formats.delete(key);
@@ -2161,7 +2182,7 @@ export class Writer {
         }
       }
       let next: Item | null = unit.end.right;
-      while (next !== null && (next.deleted || !isEndItem(next))) {
+      while (next !== null && (isGone(next) || !isEndItem(next))) {
         next = next.right;
       }
       const nextUnit: Unit | undefined =
@@ -2373,8 +2394,8 @@ export class Writer {
   private $deleteUnit(old: Unit[], idx: number): void {
     const u = old[idx];
     if (u.kind === 'node') {
-      if (u.end !== null && !u.end.deleted) {
-        u.end.delete(this.tr);
+      if (u.end !== null && !isGone(u.end)) {
+        deleteItem(u.end, this.tr);
       }
     } else {
       const left = unitLeft(old, idx);
@@ -2567,7 +2588,7 @@ export class Writer {
         it !== null && k < segUnits.length;
         it = it.right
       ) {
-        if (it.deleted) {
+        if (isGone(it)) {
           continue;
         }
         if (it.content instanceof ContentFormat) {
@@ -2597,7 +2618,7 @@ export class Writer {
     let it: Item | null = startItem;
     if (after !== left) {
       for (; it !== null; it = it.right) {
-        if (!it.deleted && it.content instanceof ContentFormat) {
+        if (!isGone(it) && it.content instanceof ContentFormat) {
           applyFormat(formats, it.content);
         }
         if (it === after) {
@@ -2607,7 +2628,7 @@ export class Writer {
       }
     }
     for (; it !== null; it = it.right) {
-      if (it.deleted) {
+      if (isGone(it)) {
         continue;
       }
       if (it.countable && isEndItem(it)) {
@@ -2710,7 +2731,7 @@ export class Writer {
         }
         continue;
       }
-      if (unit.end.deleted) {
+      if (isGone(unit.end)) {
         continue;
       }
       if (this.$changed(d)) {
@@ -2818,7 +2839,7 @@ export class Writer {
         o.kind === 'node' &&
         o.end !== null &&
         nameOf(o.end).startsWith(BLOCK_PREFIX) &&
-        storedTypeOf(typeOf(o.end)) === d.node!.getType()
+        storedType(typeOf(o.end)) === d.node!.getType()
       );
     }
     // A run: the same inline children as before, unchanged.
@@ -2916,7 +2937,7 @@ export class Writer {
     if (
       u.kind !== 'line' ||
       u.end === null ||
-      u.end.deleted ||
+      isGone(u.end) ||
       d.part !== undefined
     ) {
       return false;
@@ -3173,7 +3194,7 @@ export class Writer {
         const oy = typeOf(a.item);
         const oldKey = state.keyByY.get(oy);
         if (oldKey === b.key) {
-          return storedTypeOf(oy) === b.node.getType();
+          return storedType(oy) === b.node.getType();
         }
         // A node Lexical replaced in place by a new one ($setBlocksType, a
         // split that recreates it): keep the shared node (and its content,
@@ -3185,15 +3206,15 @@ export class Writer {
         }
         const cs = state.containers.get(oy);
         if (
-          storedTypeOf(oy) !== b.node.getType() &&
-          newTypes.has(storedTypeOf(oy))
+          storedType(oy) !== b.node.getType() &&
+          newTypes.has(storedType(oy))
         ) {
           return false;
         }
         if ($isElementNode(b.node)) {
           return cs !== undefined && cs.kind === this.roles.$kind(b.node);
         }
-        return cs === undefined && storedTypeOf(oy) === b.node.getType();
+        return cs === undefined && storedType(oy) === b.node.getType();
       }
       return false;
     };
@@ -3507,8 +3528,7 @@ export class Writer {
     }
     const oy = typeOf(a.item);
     return (
-      this.state.keyByY.get(oy) === b.key &&
-      storedTypeOf(oy) === b.node.getType()
+      this.state.keyByY.get(oy) === b.key && storedType(oy) === b.node.getType()
     );
   }
 
@@ -3773,7 +3793,7 @@ export class Writer {
     line: LexicalNode | null,
   ): void {
     const y = typeOf(item);
-    const current = y.getAttrs() as Attrs;
+    const current = attrsOf(y) as Attrs;
     const storedText = $isElementNode(line) && !$holdsText(line);
     let changed = false;
     for (const k in desired) {
@@ -3781,7 +3801,7 @@ export class Writer {
         !equalValue(current[k], desired[k]) &&
         !this.keepsStored(k, current[k], desired[k], storedText)
       ) {
-        y.setAttr(k, desired[k]);
+        setAttr(y, k, desired[k], this.tr);
         changed = true;
       }
     }
@@ -3795,7 +3815,7 @@ export class Writer {
         this.isOwnedMarkerKey(k, types) &&
         !this.keepsStored(k, current[k], undefined, storedText)
       ) {
-        y.deleteAttr(k);
+        deleteAttr(y, k, this.tr);
         changed = true;
       }
     }
@@ -3871,11 +3891,11 @@ export class Writer {
     if (holes.length > 0) {
       this.holed.add(node.getKey());
     }
-    const current = y.getAttrs() as Attrs;
+    const current = attrsOf(y) as Attrs;
     if (String(y.name).slice(2) !== node.getType()) {
       desired[TYPE_KEY] = node.getType();
     } else if (TYPE_KEY in current) {
-      y.deleteAttr(TYPE_KEY);
+      deleteAttr(y, TYPE_KEY, this.tr);
     }
     const storedText = $isElementNode(node) && !$holdsText(node);
     for (const k in desired) {
@@ -3883,7 +3903,7 @@ export class Writer {
         !equalValue(current[k], desired[k]) &&
         !this.keepsStored(k, current[k], desired[k], storedText)
       ) {
-        y.setAttr(k, desired[k]);
+        setAttr(y, k, desired[k], this.tr);
       }
     }
     for (const k in current) {
@@ -3892,7 +3912,7 @@ export class Writer {
         (k.startsWith(FIELD_PREFIX) || k.startsWith(STATE_PREFIX)) &&
         !this.keepsStored(k, current[k], undefined, storedText)
       ) {
-        y.deleteAttr(k);
+        deleteAttr(y, k, this.tr);
       }
     }
     $writeSlots(this, y, node, current, followUpWarning);
@@ -3928,12 +3948,12 @@ export class Writer {
       this.holed.add(key);
     }
     for (const k in attrs) {
-      y.setAttr(k, attrs[k]);
+      setAttr(y, k, attrs[k], this.tr);
     }
     this.state.mapNode(key, y);
     if ($isElementNode(node)) {
       const kind = this.roles.$kind(node);
-      y.setAttr(KIND_KEY, kind);
+      setAttr(y, KIND_KEY, kind, this.tr);
       const cs = this.state.newCS(y, key, kind);
       this.written.add(key);
       if (kind === 'i') {
@@ -4136,7 +4156,7 @@ function unitLeft(units: Unit[], idx: number): Item | null {
     return prevLiveEnd(u.end);
   }
   let e = idx > 0 ? units[idx - 1].end : null;
-  while (e !== null && e.deleted) {
+  while (e !== null && isGone(e)) {
     e = prevLiveEnd(e);
   }
   return e;
@@ -4207,6 +4227,73 @@ function unitCost(d: Desired): number {
     }
   }
   return n;
+}
+
+/**
+ * Whether this update moved desired unit `d` of `container`: Lexical
+ * recorded its node, or an element between it and the container (the list
+ * of a list item, the item holding a nested list), as detached and inserted
+ * again (EditorState#_movedNodes).
+ */
+function $movedUnit(
+  d: Desired,
+  container: ElementNode,
+  moved: ReadonlySet<NodeKey>,
+): boolean {
+  for (
+    let node: LexicalNode | null = d.node;
+    node !== null && !node.is(container);
+    node = node.getParent()
+  ) {
+    if (moved.has(node.getKey())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * `anchors` (pairs whose both indices increase) and the heaviest
+ * subsequence of `pairs` (in order of their first index) that fits in order
+ * between them: each pair added lies, by both indices, in one gap between
+ * two consecutive anchors.
+ */
+function addInOrder(
+  anchors: [number, number][],
+  pairs: [number, number][],
+  weight: (pair: [number, number]) => number,
+): [number, number][] {
+  if (pairs.length === 0) {
+    return anchors;
+  }
+  const fits: [number, number][] = [];
+  let next = 0;
+  for (const pair of pairs) {
+    while (next < anchors.length && anchors[next][0] < pair[0]) {
+      next++;
+    }
+    if (
+      (next === 0 || anchors[next - 1][1] < pair[1]) &&
+      (next === anchors.length || pair[1] < anchors[next][1])
+    ) {
+      fits.push(pair);
+    }
+  }
+  const kept = longestIncreasing(fits, weight);
+  const out: [number, number][] = [];
+  let a = 0;
+  let k = 0;
+  while (a < anchors.length || k < kept.length) {
+    if (
+      k === kept.length ||
+      (a < anchors.length && anchors[a][0] < kept[k][0])
+    ) {
+      out.push(anchors[a++]);
+    } else {
+      out.push(kept[k++]);
+    }
+  }
+  return out;
 }
 
 /**

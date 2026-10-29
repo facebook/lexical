@@ -2191,13 +2191,20 @@ describe('S7-21: what an older class does before it throws', () => {
 
 describe('S7-21 (MF-2): every read goes through the one fail-closed path', () => {
   /** Make `method` of the reader throw `error` once. */
-  const throwOnce = (method: string, error: unknown) => {
+  const throwOnce = (
+    method: string,
+    error: unknown,
+    when: (reader: unknown) => boolean = () => true,
+  ) => {
     const proto = Reader.prototype as unknown as Record<
       string,
       (...args: unknown[]) => unknown
     >;
     const original = proto[method];
     proto[method] = function (this: unknown, ...args: unknown[]) {
+      if (!when(this)) {
+        return original.apply(this, args);
+      }
       proto[method] = original;
       throw error;
     };
@@ -2227,9 +2234,13 @@ describe('S7-21 (MF-2): every read goes through the one fail-closed path', () =>
       (node as TextNode).spliceText(0, 0, 'XY');
     });
     await t.sync();
+    // The release reads what was held where it is (see YBinding#$release),
+    // on the composing client.
+    const state = (t.a.binding as unknown as {state: unknown}).state;
     const restore = throwOnce(
-      '$refreshComposed',
+      '$apply',
       new Error('simulated reader failure'),
+      reader => (reader as {state: unknown}).state === state,
     );
     try {
       expect(() =>

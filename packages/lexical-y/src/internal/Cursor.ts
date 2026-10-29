@@ -270,7 +270,12 @@ export class Cursor {
   left: Item | null;
   right: Item | null;
   formats: Formats;
-  /** Remote content the editor does not show yet: not counted, not deleted. */
+  /**
+   * Remote changes the editor holds back (see Hidden): the cursor works on
+   * what the editor shows, so held content is not counted or deleted, and a
+   * held format gives nothing a value, is never deleted, and is stepped over
+   * wherever the cursor looks for format items.
+   */
   hidden: Hidden | null = null;
   /**
    * Where the run of items without live content that the cursor is in
@@ -312,9 +317,19 @@ export class Cursor {
     }
   }
 
+  /** Whether `item` is a format the editor holds back (see hidden). */
+  private isHeldFormat(item: Item): boolean {
+    return this.hidden !== null && isFormat(item) && this.hidden.hides(item);
+  }
+
   /** Step over `right`, tracking formats. */
   forward(): void {
     const item = this.right!;
+    if (this.isHeldFormat(item)) {
+      this.left = item;
+      this.right = item.right;
+      return;
+    }
     if (isLiveContent(item)) {
       this.gapStart = item;
       this.gapFormats.clear();
@@ -445,8 +460,9 @@ export class Cursor {
   private minimizeFormatChanges(formats: Record<string, unknown>): void {
     while (this.right !== null) {
       const r = this.right;
-      if (isGone(r)) {
-        // a deleted item has no length: step over it
+      if (isGone(r) || this.isHeldFormat(r)) {
+        // a deleted item has no length, and a held format is not there:
+        // step over it
       } else if (
         isFormat(r) &&
         this.unitGives(r, formats) &&
@@ -531,7 +547,7 @@ export class Cursor {
     const reusedEnds: string[] = [];
     while (this.right !== null) {
       const r = this.right;
-      if (!isGone(r)) {
+      if (!isGone(r) && !this.isHeldFormat(r)) {
         if (
           !isFormat(r) ||
           !equalFormatValue(negated.get(keyOf(r)), valueOf(r))
@@ -814,6 +830,9 @@ export class Cursor {
     for (let it = start; it !== null && !isLiveContent(it); it = it.right) {
       if (it === this.right) {
         leftOfCursor = false;
+      }
+      if (this.isHeldFormat(it)) {
+        continue;
       }
       if (it === first) {
         phase = 1;
@@ -1126,6 +1145,10 @@ export class Cursor {
         (negated.size > 0 && (isGone(this.right) || isFormat(this.right))))
     ) {
       const r = this.right;
+      if (this.isHeldFormat(r)) {
+        this.forward();
+        continue;
+      }
       if (!isGone(r)) {
         if (isFormat(r)) {
           const {key, value} = r.content as ContentFormat;

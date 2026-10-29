@@ -169,7 +169,7 @@ export function $checkWrite(writer: Writer): string[] {
       get: key => writer.state.segments.get(key),
     };
     $pushInline(want, nodes, ctx);
-    const left = prevLiveEnd(end);
+    const left = prevLiveEnd(end, writer.state.hidden);
     const have = new Atoms();
     readAtoms(
       left === null ? unit.cs.y._start : left.right,
@@ -251,7 +251,13 @@ export function $checkWrite(writer: Writer): string[] {
         }
       }
     }
-    if (d.kind === 'line') {
+    // (Not a marker whose attributes are held back: the line shows its old
+    // ones until the hold ends, see Hidden.)
+    const hidden = writer.state.hidden;
+    if (
+      d.kind === 'line' &&
+      (hidden === null || hidden.marker === null || hidden.marker.end !== end)
+    ) {
       const attrs = (end.content as ContentType).type.getAttrs() as Record<
         string,
         unknown

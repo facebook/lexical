@@ -630,6 +630,44 @@ export class ListItemNode extends ElementNode {
     return $isListItemNode(node) || $isParagraphNode(node);
   }
 
+  /**
+   * @internal Not public API: asked by the node structure normalization
+   * (`NodeStructureExtension`), which `lexical` implements and so cannot
+   * import list code, about each child it allows here. A nested list may only
+   * be all a list item holds: that is the shape indent, outdent and the HTML
+   * import build, and the one the list code reads (indent, outdent and the
+   * numbering treat an item whose first child is a list as a wrapper with no
+   * marker or number of its own). Next to other content (left by a paste
+   * into a nested list item) it is lifted out, the item split around it,
+   * and the list wraps it in an item of its own, so the content before it,
+   * it, and the content after it read in the same order, as consecutive
+   * items. In an update's normalization, only an item the update creates or
+   * changes itself (its children, its fields) is lifted: an item that
+   * already held this list next to other content (a document stored that
+   * way, by code that applied updates without the normalization) keeps it
+   * through an edit elsewhere, even one inside it (typing in its text), so
+   * that such an edit restructures only what it changes. The normalization
+   * of what code changed without transforms (`explicit`) lifts every such
+   * item it visits.
+   */
+  INTERNAL_$liftsFromStructure(
+    child: LexicalNode,
+    explicit: boolean = false,
+  ): boolean {
+    if (!$isListNode(child) || this.getChildrenSize() <= 1) {
+      return false;
+    }
+    if (explicit) {
+      return true;
+    }
+    const editor = $getEditor();
+    const key = this.getKey();
+    return (
+      !editor.getEditorState()._nodeMap.has(key) ||
+      editor._cloneNotNeeded.has(key)
+    );
+  }
+
   extractWithChild(child: LexicalNode, selection: BaseSelection): boolean {
     if (!$isRangeSelection(selection)) {
       return false;

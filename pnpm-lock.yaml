@@ -1250,6 +1250,9 @@ importers:
       '@lexical/utils':
         specifier: workspace:*
         version: link:../lexical-utils
+      '@lexical/y':
+        specifier: workspace:*
+        version: link:../lexical-y
       '@lexical/yjs':
         specifier: workspace:*
         version: link:../lexical-yjs
@@ -1259,6 +1262,12 @@ importers:
       '@vercel/speed-insights':
         specifier: ^2.0.0
         version: 2.0.0(react@19.2.5)
+      '@y/websocket':
+        specifier: 4.0.0-rc.2
+        version: 4.0.0-rc.2(@y/y@14.0.0-rc.29)
+      '@y/y':
+        specifier: 14.0.0-rc.29
+        version: 14.0.0-rc.29
       date-fns:
         specifier: ^4.4.0
         version: 4.4.0
@@ -1314,6 +1323,12 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^6.1.1
         version: 6.1.1(vite@8.3.3(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.0))
+      '@y/protocols':
+        specifier: 1.0.6-rc.1
+        version: 1.0.6-rc.1(@y/y@14.0.0-rc.29)
+      lib0:
+        specifier: 1.0.0-rc.36
+        version: 1.0.0-rc.36
       rollup-plugin-copy:
         specifier: ^3.5.0
         version: 3.5.0
@@ -1326,6 +1341,9 @@ importers:
       vite-plugin-static-copy:
         specifier: ^4.1.1
         version: 4.1.1(vite@8.3.3(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.0))
+      ws:
+        specifier: ^8.20.0
+        version: 8.21.3
 
   packages/lexical-react:
     dependencies:
@@ -1677,6 +1695,31 @@ importers:
       webpack:
         specifier: ^5.111.1
         version: 5.111.1(@swc/core@1.16.1(@swc/helpers@0.5.21))(@swc/html@1.16.1)(clean-css@5.3.3)(cssnano@6.1.2(postcss@8.5.15))(csso@5.0.5)(esbuild@0.28.2)(html-minifier-terser@7.2.0)(lightningcss@1.33.0)(postcss@8.5.15)(svgo@3.3.2)
+
+  packages/lexical-y:
+    dependencies:
+      '@lexical/extension':
+        specifier: workspace:*
+        version: link:../lexical-extension
+      '@lexical/internal':
+        specifier: workspace:*
+        version: link:../lexical-internal
+      lexical:
+        specifier: workspace:*
+        version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
+    devDependencies:
+      '@y/y':
+        specifier: 14.0.0-rc.29
+        version: 14.0.0-rc.29
+      ywasm:
+        specifier: 0.28.0
+        version: 0.28.0
+      ywasm-0.23:
+        specifier: npm:ywasm@0.23.5
+        version: ywasm@0.23.5
 
   packages/lexical-yjs:
     dependencies:
@@ -6410,6 +6453,22 @@ packages:
   '@xtuc/long@4.2.2':
     resolution: {integrity: sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==}
 
+  '@y/protocols@1.0.6-rc.1':
+    resolution: {integrity: sha512-e/qs7hXcLk/SeNitxMXv2ymozyWFTULwbJEi7cAf/K/iXw9nGwGXHrR5TNluQ/bMwOX1cwuUT0hjEojkfH0gsA==}
+    engines: {node: '>=16.0.0', npm: '>=8.0.0'}
+    peerDependencies:
+      '@y/y': '*'
+
+  '@y/websocket@4.0.0-rc.2':
+    resolution: {integrity: sha512-QhF3ehjAvrlTMwR16dKVLdFrq+8+rhfndvqHjx+83BpxRvgTuseg0ckq4hQ6tuEFA31VRos2x+cm9fyxlix7Nw==}
+    engines: {node: '>=16.0.0', npm: '>=8.0.0'}
+    peerDependencies:
+      '@y/y': '*'
+
+  '@y/y@14.0.0-rc.29':
+    resolution: {integrity: sha512-A4W9Bnrfj7N7IgampoaMSygJlzShLkWZ2uqKjx92tsEqGnbjpfr7jFP1i3zQ37h3L1cXIeipr9QDneUrZHuDjA==}
+    engines: {node: '>=22.0.0', npm: '>=8.0.0'}
+
   '@zag-js/accordion@1.40.0':
     resolution: {integrity: sha512-YDdyvZJ6fr92RZazyXQq+juT3ZA0ubjDISptb5YPgMoTPdnjKNiICPpMeCeVj1ncYRDkHXrOdChS/5CtuX/K6g==}
 
@@ -9578,6 +9637,11 @@ packages:
   lib0@0.2.117:
     resolution: {integrity: sha512-DeXj9X5xDCjgKLU/7RR+/HQEVzuuEUiwldwOGsHK/sfAfELGWEyTcf0x+uOvCvK3O2zPmZePXWL85vtia6GyZw==}
     engines: {node: '>=16'}
+    hasBin: true
+
+  lib0@1.0.0-rc.36:
+    resolution: {integrity: sha512-7t/I+PCQqakal22rhXq5giOUtDP/RfecQtdeKvzCtnAvPkxSLAE+/Zvzi/kJDopg+hBAYKo46qmxmlkhX0tYlQ==}
+    engines: {node: '>=22'}
     hasBin: true
 
   lightningcss-android-arm64@1.32.0:
@@ -13121,6 +13185,12 @@ packages:
   yocto-queue@1.2.2:
     resolution: {integrity: sha512-4LCcse/U2MHZ63HAJVE+v71o7yOdIe4cZ70Wpf8D/IyjDKYQLV5GD46B+hSTjJsvV5PztjvHoU580EftxjDZFQ==}
     engines: {node: '>=12.20'}
+
+  ywasm@0.23.5:
+    resolution: {integrity: sha512-AjUyKIK4q+x2wr+H3nxXMCpNZ9Xf5Wn4bXTwap219K7HXTNpZgJXRF6r4LsTnXCt4IwDtlFYDbEfpmTGpu7esA==}
+
+  ywasm@0.28.0:
+    resolution: {integrity: sha512-xwaf5n+9aLwmyNRKuDtspN7CnPQhV/so7a1O9e+Xa9gXs+3Dv4uZz6MgXKDlHuCQj+2ZczBEcW5NTKgPnmG7qQ==}
 
   zod-validation-error@4.0.2:
     resolution: {integrity: sha512-Q6/nZLe6jxuU80qb/4uJ4t5v2VEZ44lzQjPDhYJNztRQ4wyWc6VF3D3Kb/fAuPetZQnhS3hnajCf9CsWesghLQ==}
@@ -19576,6 +19646,21 @@ snapshots:
 
   '@xtuc/long@4.2.2': {}
 
+  '@y/protocols@1.0.6-rc.1(@y/y@14.0.0-rc.29)':
+    dependencies:
+      '@y/y': 14.0.0-rc.29
+      lib0: 1.0.0-rc.36
+
+  '@y/websocket@4.0.0-rc.2(@y/y@14.0.0-rc.29)':
+    dependencies:
+      '@y/protocols': 1.0.6-rc.1(@y/y@14.0.0-rc.29)
+      '@y/y': 14.0.0-rc.29
+      lib0: 1.0.0-rc.36
+
+  '@y/y@14.0.0-rc.29':
+    dependencies:
+      lib0: 1.0.0-rc.36
+
   '@zag-js/accordion@1.40.0':
     dependencies:
       '@zag-js/anatomy': 1.40.0
@@ -23670,6 +23755,8 @@ snapshots:
   lib0@0.2.117:
     dependencies:
       isomorphic.js: 0.2.5
+
+  lib0@1.0.0-rc.36: {}
 
   lightningcss-android-arm64@1.32.0:
     optional: true
@@ -27952,6 +28039,10 @@ snapshots:
   yocto-queue@0.1.0: {}
 
   yocto-queue@1.2.2: {}
+
+  ywasm@0.23.5: {}
+
+  ywasm@0.28.0: {}
 
   zod-validation-error@4.0.2(zod@4.4.2):
     dependencies:

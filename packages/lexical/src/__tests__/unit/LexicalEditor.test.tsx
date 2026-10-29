@@ -1082,7 +1082,7 @@ describe('LexicalEditor tests', () => {
   });
 
   it('transforms do not discard unintentional dirtyElements', () => {
-    // See https://github.com/facebook/lexical/issues/7333
+    // See https://github.com/meta/lexical/issues/7333
     // We are assuming that ListNode automatically registers a transform
     // to merge adjacent lists
     init(undefined, [ListItemNode, ListNode]);

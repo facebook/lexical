@@ -10,7 +10,7 @@
     "micromark"
   ],
   "license": "MIT",
-  "version": "0.52.0",
+  "version": "0.53.0",
   "main": "./dist/LexicalMdast.js",
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
@@ -41,7 +41,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/facebook/lexical.git",
+    "url": "git+https://github.com/meta/lexical.git",
     "directory": "packages/lexical-mdast"
   },
   "module": "./dist/LexicalMdast.js",

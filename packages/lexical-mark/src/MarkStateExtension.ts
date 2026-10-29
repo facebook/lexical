@@ -161,8 +161,9 @@ export interface MarkStateConfig {
    * To change it at runtime, for example when a thread is resolved or
    * reopened, update the app's state and assign a new function to the
    * `isMarkIDShown` output signal: the marked leaves are re-rendered (after
-   * the pending update commits, when assigned during one). Changing the state that the current function reads without assigning a
-   * new function does not re-render them.
+   * the pending update commits, when assigned during one). Changing the
+   * state that the current function reads without assigning a new function
+   * does not re-render them.
    */
   isMarkIDShown?: (id: string) => boolean;
 }
@@ -664,7 +665,7 @@ function filterShownMarkIDs(
   ids: readonly string[],
   isMarkIDShown: (id: string) => boolean,
 ): readonly string[] {
-  return ids.length === 0 || isMarkIDShown === isEveryMarkIDShown
+  return isMarkIDShown === isEveryMarkIDShown
     ? ids
     : ids.filter(id => isMarkIDShown(id));
 }
@@ -674,14 +675,16 @@ function $decorateMarkIDs(
   dom: HTMLElement,
   editor: LexicalEditor,
 ): void {
-  const dep = getPeerDependencyFromEditor<MarkStateExtensionType>(
-    editor,
-    MARK_STATE_EXTENSION_NAME,
-  );
-  const ids = filterShownMarkIDs(
-    $readNodeMarkIDs(node),
-    dep ? dep.output.isMarkIDShown.peek() : isEveryMarkIDShown,
-  );
+  let ids = $readNodeMarkIDs(node);
+  if (ids.length > 0) {
+    const dep = getPeerDependencyFromEditor<MarkStateExtensionType>(
+      editor,
+      MARK_STATE_EXTENSION_NAME,
+    );
+    if (dep) {
+      ids = filterShownMarkIDs(ids, dep.output.isMarkIDShown.peek());
+    }
+  }
   // @internal access with precedent (CodeNode, HorizontalRuleExtension): the
   // render overrides receive the editor, not its theme
   const {mark, markOverlap} = editor._config.theme;
@@ -2218,10 +2221,11 @@ export const MarkStateExtension: MarkStateExtensionType = defineExtension<
  *
  * The full reconcile is an update of its own: when the function is assigned
  * while an update is pending (inside `editor.update`, or before a batched
- * update commits), it waits for that update to commit, since a full
- * reconcile in an edit would make it look like a `setEditorState` to
- * {@link registerMarkState}. It does not move the DOM selection, which may
- * be in another editable (a comment reply box) when a thread is resolved.
+ * update commits), or in a listener that may queue edits, it waits for them
+ * to commit, since a full reconcile in an edit would make it look like a
+ * `setEditorState` to {@link registerMarkState}. It does not move the DOM
+ * selection, which may be in another editable (a comment reply box) when a
+ * thread is resolved.
  */
 function registerMarkIDShownRerender(
   editor: LexicalEditor,
@@ -2245,20 +2249,24 @@ function registerMarkIDShownRerender(
     // @internal access: whether an update is in progress or waiting to
     // commit, which the full reconcile would otherwise join
     if (editor._pendingEditorState !== null) {
-      schedule();
+      // Joins the pending update, and runs once it commits; the re-render
+      // is then queued as an update of its own
+      scheduled = true;
+      editor.update(() => {}, {onUpdate: rerender});
+      return;
+    }
+    // @internal access: in an update or command listener, or an `onUpdate`
+    // callback, an update is queued and joins the updates queued before it
+    // (an edit a listener makes): wait until they have run
+    if (editor._updating) {
+      scheduled = true;
+      Promise.resolve().then(rerender);
       return;
     }
     editor.update($fullReconcile, {
       discrete: true,
       tag: SKIP_DOM_SELECTION_TAG,
     });
-  };
-  const schedule = () => {
-    if (!scheduled) {
-      scheduled = true;
-      // After the commit of the pending update, which was scheduled first
-      Promise.resolve().then(rerender);
-    }
   };
   const unregister = effect(() => {
     const next = isMarkIDShown.value;

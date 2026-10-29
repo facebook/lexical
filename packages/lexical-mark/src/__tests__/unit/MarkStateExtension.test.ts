@@ -2632,6 +2632,82 @@ describe('MarkStateExtension', () => {
       ]);
     });
 
+    test('a filter assigned in an update listener with an edit re-renders after that edit, which keeps its caret update', async () => {
+      const editor = createTestEditor({withRoot: true});
+      update(editor, () => $init());
+      mark(editor, 8, 15, 'c1');
+      update(editor, () => $select(10));
+      let armed = true;
+      onTestFinished(
+        editor.registerUpdateListener(() => {
+          if (!armed) {
+            return;
+          }
+          armed = false;
+          // A listener (an app's thread store reacting to the document)
+          // resolves the thread and queues an edit of its own
+          isMarkIDShownSignal(editor).value = () => false;
+          editor.update(() => {
+            editor.dispatchCommand(CONTROLLED_TEXT_INSERTION_COMMAND, 'X');
+          });
+        }),
+      );
+      // Moving the caret commits an update that runs the listener
+      update(editor, () => $select(15));
+      await new Promise(resolve => setTimeout(resolve, 0));
+      // Text typed at the end of the run is still not marked
+      expect(tree(editor)).toBe(
+        'paragraph("Revenue " "grew 4%"[c1] "X in Q3.")',
+      );
+      expect(renderedSpans(editor)).toEqual([
+        ['Revenue ', null, ''],
+        ['grew 4%', null, ''],
+        ['X in Q3.', null, ''],
+      ]);
+      // The edit moved the DOM caret past the inserted text
+      const domSelection = window.getSelection()!;
+      expect(domSelection.anchorNode?.textContent).toBe('X in Q3.');
+      expect(domSelection.anchorOffset).toBe(1);
+    });
+
+    test('a filter assigned in an update listener after its edit re-renders after that edit, which keeps its caret update', async () => {
+      const editor = createTestEditor({withRoot: true});
+      update(editor, () => $init());
+      mark(editor, 8, 15, 'c1');
+      update(editor, () => $select(10));
+      let armed = true;
+      onTestFinished(
+        editor.registerUpdateListener(() => {
+          if (!armed) {
+            return;
+          }
+          armed = false;
+          // A listener (an app's thread store reacting to the document)
+          // queues an edit, then resolves the thread
+          editor.update(() => {
+            editor.dispatchCommand(CONTROLLED_TEXT_INSERTION_COMMAND, 'X');
+          });
+          isMarkIDShownSignal(editor).value = () => false;
+        }),
+      );
+      // Moving the caret commits an update that runs the listener
+      update(editor, () => $select(15));
+      await new Promise(resolve => setTimeout(resolve, 0));
+      // Text typed at the end of the run is still not marked
+      expect(tree(editor)).toBe(
+        'paragraph("Revenue " "grew 4%"[c1] "X in Q3.")',
+      );
+      expect(renderedSpans(editor)).toEqual([
+        ['Revenue ', null, ''],
+        ['grew 4%', null, ''],
+        ['X in Q3.', null, ''],
+      ]);
+      // The edit moved the DOM caret past the inserted text
+      const domSelection = window.getSelection()!;
+      expect(domSelection.anchorNode?.textContent).toBe('X in Q3.');
+      expect(domSelection.anchorOffset).toBe(1);
+    });
+
     test('a new filter does not move the DOM selection out of another editable', () => {
       const editor = createTestEditor({withRoot: true});
       update(editor, () => $init());

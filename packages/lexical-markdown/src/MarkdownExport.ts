@@ -111,7 +111,12 @@ export function createSelectionMarkdownExport(
       );
     });
 
-  return selection => {
+  return exportedSelection => {
+    // Every node asks whether it is selected, which reads the selection's
+    // nodes. A read-only selection doesn't cache them, so this works on a
+    // copy that does, instead of recomputing them for every node.
+    const selection = exportedSelection.clone();
+    selection.setCachedNodes(exportedSelection.getNodes());
     const output = [];
     // The separator depends on the previously *emitted* block, not on the
     // previous root child: unselected children produce no output, so keying
@@ -212,14 +217,21 @@ function $processNodeForSelection(
   }
 }
 
+type OpenTag = {
+  format: TextFormatType;
+  tag: string;
+  /** See `$continuesTag`: the last node it kept this tag open past, and the later text that holds the tag. */
+  continues?: {from: TextNode; to: TextNode};
+};
+
 function $exportChildrenForSelection(
   node: ElementNode,
   selection: BaseSelection,
   textFormatTransformers: TextFormatTransformer[],
   textMatchTransformers: TextMatchTransformer[],
   shouldPreserveNewLines: boolean,
-  unclosedTags?: {format: TextFormatType; tag: string}[],
-  unclosableTags?: {format: TextFormatType; tag: string}[],
+  unclosedTags?: OpenTag[],
+  unclosableTags?: OpenTag[],
 ): {shouldInclude: boolean; markdown: string} {
   const output = [];
   const children = node.getChildren();
@@ -385,8 +397,8 @@ function $exportChildren(
   node: ElementNode,
   textTransformersIndex: TextFormatTransformer[],
   textMatchTransformers: TextMatchTransformer[],
-  unclosedTags?: {format: TextFormatType; tag: string}[],
-  unclosableTags?: {format: TextFormatType; tag: string}[],
+  unclosedTags?: OpenTag[],
+  unclosableTags?: OpenTag[],
   shouldPreserveNewLines: boolean = false,
 ): string {
   const output = [];
@@ -482,8 +494,8 @@ function $exportTextFormat(
   textContent: string,
   textTransformers: TextFormatTransformer[],
   // unclosed tags include the markdown tags that haven't been closed yet, and their associated formats
-  unclosedTags: {format: TextFormatType; tag: string}[],
-  unclosableTags: {format: TextFormatType; tag: string}[],
+  unclosedTags: OpenTag[],
+  unclosableTags: OpenTag[],
   shouldPreserveNewLines: boolean,
   // the selection being exported, which ends the text a tag can extend over
   selection: BaseSelection | null,
@@ -552,10 +564,7 @@ function $exportTextFormat(
   for (let i = 0; i < unclosedTags.length; i++) {
     const nodeHasFormat = hasFormat(node, unclosedTags[i].format);
     // prevent adding closing tag if later text with the format will do it
-    if (
-      nodeHasFormat &&
-      $continuesFormat(node, unclosedTags[i].format, selection)
-    ) {
+    if (nodeHasFormat && $continuesTag(node, unclosedTags[i], selection)) {
       continue;
     }
 
@@ -625,23 +634,36 @@ function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
 }
 
 /**
- * Whether `format` carries on past `node` to exported text that can hold its
- * tag. Whitespace-only siblings cannot (the tag must close before the space),
- * so they are looked past while they keep the format. Text outside the
- * exported selection does not count.
+ * Whether `tag` carries on past `node`, which has its format, to exported
+ * text that can hold it. Whitespace-only siblings cannot (the tag must close
+ * before the space), so they are looked past while they keep the format.
+ * Text outside the exported selection does not count. The text found is
+ * remembered on the tag, so the nodes of a whitespace run before it reuse the
+ * answer instead of walking the rest of the run again.
  */
-function $continuesFormat(
+function $continuesTag(
   node: TextNode,
-  format: TextFormatType,
+  tag: OpenTag,
   selection: BaseSelection | null,
 ): boolean {
+  const {continues} = tag;
+  if (
+    continues &&
+    !node.is(continues.to) &&
+    continues.from.is(node.getPreviousSibling())
+  ) {
+    continues.from = node;
+    return true;
+  }
+  tag.continues = undefined;
   let next = getTextSibling(node, false);
-  while (next && next.hasFormat(format)) {
+  while (next && next.hasFormat(tag.format)) {
     if (selection && !next.isSelected(selection)) {
       return false;
     }
     const text = $exportedText(next, selection);
     if (canHoldTag(text)) {
+      tag.continues = {from: node, to: next};
       return true;
     }
     // Markdown import matches a tag within one line.

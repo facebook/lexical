@@ -68,9 +68,9 @@ import {
   type LexicalNode,
   TEXT_TYPE_TO_FORMAT,
   type TextFormatType,
-  type TextNode,
+  TextNode,
 } from 'lexical';
-import {assert, describe, expect, it} from 'vitest';
+import {assert, describe, expect, it, onTestFinished, vi} from 'vitest';
 
 import {
   hardLineBreakState,
@@ -4042,6 +4042,50 @@ describe('$generateNodesFromMarkdownString', () => {
     expect(nodes).toHaveLength(1);
     expect(nodes[0].getType()).toBe('paragraph');
   });
+});
+
+describe('Markdown export of long runs of formatted spaces', () => {
+  // Each space differs in format from its neighbours, so none of them merge.
+  // Visiting each sibling a bounded number of times keeps export linear; a
+  // look-ahead from every space to the end of the run is quadratic.
+  const SPACES = 500;
+
+  it.each<[name: string, $export: () => string]>([
+    ['the document', () => $convertToMarkdownString(TRANSFORMERS)],
+    [
+      'a selection',
+      () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    ],
+  ])(
+    'visits each sibling a bounded number of times exporting %s',
+    (_name, $export) => {
+      const editor = createTestEditor();
+      editor.update(
+        () => {
+          const {bold, italic, strikethrough} = TEXT_TYPE_TO_FORMAT;
+          const paragraph = $createParagraphNode().append(
+            $createTextNode('a').setFormat(bold),
+          );
+          for (let i = 0; i < SPACES; i++) {
+            paragraph.append(
+              $createTextNode(' ').setFormat(
+                bold | (i % 2 ? italic : strikethrough),
+              ),
+            );
+          }
+          paragraph.append($createTextNode('c').setFormat(bold));
+          $getRoot().append(paragraph);
+          paragraph.select(0, paragraph.getChildrenSize());
+        },
+        {discrete: true},
+      );
+      const getNextSibling = vi.spyOn(TextNode.prototype, 'getNextSibling');
+      onTestFinished(() => getNextSibling.mockRestore());
+      const markdown = editor.read($export);
+      expect(markdown).toBe(`**a${' '.repeat(SPACES)}c**`);
+      expect(getNextSibling.mock.calls.length).toBeLessThan(10 * SPACES);
+    },
+  );
 });
 
 describe('$convertSelectionToMarkdownString whitespace slices', () => {

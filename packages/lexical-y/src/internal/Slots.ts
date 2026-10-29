@@ -10,6 +10,7 @@ import type {Reader} from './Read';
 import type {Roles} from './State';
 import type {Writer} from './Write';
 
+import invariant from '@lexical/internal/invariant';
 import {Node as YNode} from '@y/y';
 import {
   $getNodeByKey,
@@ -173,6 +174,11 @@ export function $readSlots(
     }
     const current = $getSlot(host, name);
     if (current === null || !current.is(value)) {
+      // A node an unwritten update moved can hold its host by now.
+      invariant(
+        !$holds(value, host),
+        '@lexical/y: a read would place a node inside itself',
+      );
       $setSlot(host, name, value);
     }
   }
@@ -181,6 +187,24 @@ export function $readSlots(
       $removeSlot(host, name);
     }
   }
+}
+
+/**
+ * Whether `node` is `target` or holds it, through children or named slots
+ * (the way Lexical walks up the tree): placed in `target`, it would end up
+ * inside itself, and that walk would never end.
+ */
+export function $holds(node: LexicalNode, target: LexicalNode): boolean {
+  for (
+    let n: LexicalNode | null = target;
+    n !== null;
+    n = n.getParent() ?? $getSlotHost(n)
+  ) {
+    if (n.is(node)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**

@@ -2575,6 +2575,29 @@ describe('N2: a write before an unread remote change reads the document its edit
       expect(waiting).toBe(concurrent);
     }
   });
+  // A moved block keeps the fields it stored before the write (see
+  // attrsBefore), as the document the write sees has them.
+  type Toned = NoteV2 | CardV2 | ListV2;
+  test.each([
+    ['a note', () => $note()],
+    ['a card', () => $card()],
+    ['a list', () => $list('x', 'y')],
+  ])('%s that a remote change retones, moved down', async (_what, $make) => {
+    const $init = () => $getRoot().append($make(), $p('para'));
+    const $retone = () => {
+      const node = $getRoot().getFirstChildOrThrow() as Toned;
+      node.getWritable().__tone = 'cool';
+    };
+    const $move = () =>
+      $getRoot()
+        .getLastChildOrThrow()
+        .insertAfter($getRoot().getFirstChildOrThrow());
+    for (const nodes of [V1, V2]) {
+      const concurrent = await run(nodes, false, $init, $retone, $move);
+      const waiting = await run(nodes, true, $init, $retone, $move);
+      expect(waiting).toBe(concurrent);
+    }
+  });
 });
 
 // The data of the warning stays an interface an app can extend.

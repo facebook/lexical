@@ -113,6 +113,7 @@ import {$isHeldInline} from './Structure';
 import {type Segment, type TextEditLog, TextReplay} from './TextEdits';
 import {
   attrOf,
+  attrsBefore,
   attrsOf,
   deleteAttr,
   deleteItem,
@@ -4855,27 +4856,6 @@ function keysAt(
       out[i] = k;
     }
   }
-  return out;
-}
-
-/**
- * The attributes `y` had before transaction `tr`, as every other client
- * still has them: of each name, the value of its latest item `tr` did not
- * insert, unless an earlier transaction deleted it. Yjs keeps the content of
- * the items `tr` deletes until `tr` ends, so this also reads a node `tr`
- * deleted (a block it moved).
- */
-function attrsBefore(y: YNode, tr: Transaction): Attrs {
-  const out: Attrs = {};
-  y._map.forEach((latest, name) => {
-    let item: Item | null = latest;
-    while (item !== null && tr.insertSet.hasId(item.id)) {
-      item = item.left;
-    }
-    if (item !== null && (!item.deleted || tr.deleteSet.hasId(item.id))) {
-      out[name] = item.content.getContent()[item.length - 1];
-    }
-  });
   return out;
 }
 

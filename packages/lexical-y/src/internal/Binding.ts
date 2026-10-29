@@ -2059,7 +2059,9 @@ export class YBinding {
    * The one entry point for every read of the binding: a read that does not
    * go through it can neither recover nor fail closed.
    *
-   * - Nothing is read once the binding failed closed (see failClosed).
+   * - Nothing is read, recovered or followed up once the binding failed
+   *   closed (see failClosed), whenever the read was asked for: where it
+   *   runs, not only where it is admitted.
    * - The local updates still pending commit first, on their own (see
    *   commitPending), where the read is not nested in an update and does
    *   not replace them (`read.replacesPending`).
@@ -2091,6 +2093,9 @@ export class YBinding {
     const shown = editor.getEditorState();
     let failure = null as Failure;
     const settle = () => {
+      if (this.unreadable) {
+        return;
+      }
       if (failure !== null) {
         read.recover(failure.error, shown);
       } else if (read.after !== undefined) {
@@ -2100,6 +2105,12 @@ export class YBinding {
     try {
       editor.update(
         () => {
+          // Admitted before the binding failed closed and run after it (an
+          // update queued behind the one that failed, or drained by the
+          // restore of what the editor showed): nothing is read.
+          if (this.unreadable) {
+            return;
+          }
           try {
             read.$read();
           } catch (error) {

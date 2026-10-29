@@ -4086,10 +4086,12 @@ describe('link destination round trip', () => {
     // Nor a control character, which the pointy form can hold.
     ['/a\u0001b', '[x](</a\u0001b>)'],
     ['/a\u007fb', '[x](</a\u007fb>)'],
+    ['/a\u0000b', '[x](</a\u0000b>)'],
     // No destination may hold a line ending, and writing one raw would end the
     // paragraph in the middle of the link.
     ['https://example.com/a\nb', '[x](<https://example.com/a&#10;b>)'],
     ['https://example.com/a\r\nb', '[x](<https://example.com/a&#13;&#10;b>)'],
+    ['https://example.com/a\rb', '[x](<https://example.com/a&#13;b>)'],
     ['https://example.com/a b\nc', '[x](<https://example.com/a b&#10;c>)'],
     // Only a `<` in first place would turn the raw form into the pointy one,
     // so an angle bracket anywhere else goes out unescaped.

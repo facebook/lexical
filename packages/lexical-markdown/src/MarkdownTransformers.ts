@@ -1168,6 +1168,14 @@ function escapeCharacterReferences(value: string): string {
   );
 }
 
+// A raw link destination cannot hold whitespace or an ASCII control
+// character, so export writes a URL with any of them in the pointy form. Import
+// still reads control characters in a raw destination, as older exports wrote
+// them there. A NUL reads back as U+FFFD in a CommonMark reader whichever form
+// it is in, since no spelling of it avoids that.
+// eslint-disable-next-line no-control-regex
+const NOT_RAW_DESTINATION = /[\s\0-\x1f\x7f]/;
+
 // A link destination or title is read back through `unescapeText`, so after
 // `escapeCharacterReferences` every match of `syntax`, a global regular
 // expression for the characters its shape treats as syntax, gets a backslash.
@@ -1179,12 +1187,6 @@ function escapeCharacterReferences(value: string): string {
 // a single LF would split the link. Each goes out as the character reference
 // that `unescapeText` and a CommonMark reader both turn back into the line
 // ending, written after the `&` escape so that one leaves it alone.
-// Whitespace and the ASCII control characters, which a raw link destination
-// cannot hold. A NUL still reads back as U+FFFD in a CommonMark reader, which
-// no spelling of it avoids.
-// eslint-disable-next-line no-control-regex
-const NOT_RAW_DESTINATION = /[\s\0-\x1f\x7f]/;
-
 function escapeLinkPart(value: string, syntax: RegExp): string {
   return escapeCharacterReferences(value)
     .replace(syntax, '\\$&')

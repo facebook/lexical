@@ -9,4 +9,4 @@ A code block with word wrap on writes `"wordWrap": true` to its JSON and `data-l
 
 `CodeLineNumbersExtension` sets `data-lexical-code-line-numbers` on each code block and wraps the `<br>` of each of its line breaks in a `<span data-lexical-code-line-break>`, so a theme can draw the numbers with a CSS counter. Exported and copied HTML is unchanged. Set `onlyWordWrapped` to limit this to blocks with word wrap on. The `@lexical/code-core` README has the CSS recipe.
 
-The Flow types of `CodeNode` now match TypeScript for the neighbouring accessors too: `setLanguage` takes a nullable language and returns the node, and `getTheme`/`setTheme` are declared.
+The Flow types now declare the theme next to the language as TypeScript does: `CodeNode.getTheme`/`setTheme`, the `theme` argument of `$createCodeNode` and the `theme` key of `SerializedCodeNode`. `CodeNode.setLanguage` takes a nullable language and returns the node.

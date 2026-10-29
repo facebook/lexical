@@ -84,11 +84,15 @@ declare export function $getStartOfCodeInLine(
 export type SerializedCodeNode = {
   ...SerializedElementNode,
   language: string | null | void,
+  theme?: string,
   wordWrap?: boolean,
   ...
 };
 
-declare export function $createCodeNode(language: ?string): CodeNode;
+declare export function $createCodeNode(
+  language?: ?string,
+  theme?: ?string,
+): CodeNode;
 
 declare export function $isCodeNode(
   node: ?LexicalNode,
@@ -104,7 +108,7 @@ declare export class CodeNode extends ElementNode {
   ): null | ParagraphNode | CodeHighlightNode | TabNode;
   collapseAtStart(): true;
   setLanguage(language: ?string): this;
-  getLanguage(): ?string;
+  getLanguage(): string | void;
   setTheme(theme: ?string): this;
   getTheme(): string | void;
   getWordWrap(): boolean;

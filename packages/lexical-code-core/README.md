@@ -12,8 +12,8 @@ functionality is still available in `@lexical/code`.
 attribute (`"1\n2\n3"`), which a theme can show with `content: attr(data-gutter)`. That gutter is a single block of
 text, so it can't follow a line that wraps.
 
-`CodeLineNumbersExtension`, which `@lexical/code` also exports, is an opt in alternative that marks where each logical line
-starts, so a theme can hang a number on it:
+`CodeLineNumbersExtension`, which `@lexical/code` also exports, is an opt-in alternative that marks where each logical
+line starts, so a theme can hang a number on it:
 
 - the DOM of every `CodeNode` gets `data-lexical-code-line-numbers`
 - the `<br>` of each `LineBreakNode` in a code block is wrapped in `<span data-lexical-code-line-break>`

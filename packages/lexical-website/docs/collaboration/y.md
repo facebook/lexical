@@ -858,9 +858,16 @@ not merge as a user might expect:
   the list on every client.
 - **Older app versions.** A client keeps the fields, text formats and
   NodeState it does not know when it edits a node (see
-  [Changing your own node types](#changing-the-layout-and-migrating)), but a
-  block it moves is written anew from what it shows, so the moved block loses
-  them (see Moves). A link it replaces with another link of the same type over
+  [Changing your own node types](#changing-the-layout-and-migrating)), and
+  in a block it moves, which is written anew (see Moves): the new copy takes
+  what the block stored, and an item that joins another group takes that
+  group's fields. The text of a moved block is written anew from what the
+  client shows, so it loses the text formats it does not know, and the
+  fields of a text class or a link that the client's classes do not declare.
+  A nested list whose item it moves into another list does not take the
+  fields of that list it does not know, so where that item becomes the
+  list's first, every client reads the list without them.
+  A link it replaces with another link of the same type over
   the same text keeps the ones of the link it replaced: it cannot tell the
   new link from the old one edited. A class that writes its own `exportJSON`
   owns every field of its type, since which ones it writes cannot be known:

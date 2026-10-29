@@ -169,6 +169,12 @@ type Desired = {
  */
 const partKey = (key: NodeKey, i: number): NodeKey => key + '\u0001' + i;
 
+/** The key of the line whose marker unit key `key` is (see partKey). */
+const lineOfUnit = (key: NodeKey): NodeKey => {
+  const at = key.indexOf('\u0001');
+  return at === -1 ? key : key.slice(0, at);
+};
+
 /**
  * Whether a text node of a line stores the same attributes as a text node
  * next to it, both mergeable, not composing and not empty: every reader shows
@@ -405,9 +411,31 @@ export class Writer {
    * where it does not store the type as one (see wrapperFieldsOf).
    */
   readonly wrapperFields: (type: string) => OwnedFields | null;
-  /** Per item, the stored item found from it (see $storedItemFrom). */
+  /** Per item, the stored item found from it (see $groupReference). */
   private readonly storedBefore = new Map<NodeKey, LexicalNode | null>();
   private readonly storedAfter = new Map<NodeKey, LexicalNode | null>();
+  /**
+   * The end each line unit had before this write, and the unit key each end
+   * had then, noted when this write changes a unit's end, drops the unit or
+   * gives its key another (see noteEnd).
+   */
+  private readonly endsBefore = new Map<NodeKey, Item | null>();
+  private readonly ownersBefore = new Map<Item, NodeKey>();
+  /**
+   * What a line's marker and a node's shared node stored before this write,
+   * by key, kept once read (see $markerBefore, nodeBefore): a node this
+   * write gives new storage twice (a node moved into a container that is
+   * itself written anew) is written from what it had before the first.
+   */
+  private readonly markersBefore = new Map<NodeKey, Attrs | null>();
+  private readonly nodesBefore = new Map<NodeKey, [string, Attrs] | null>();
+  /** Per item, the item found from it (see $priorGroupItem). */
+  private readonly priorBefore = new Map<NodeKey, LexicalNode | null>();
+  private readonly priorAfter = new Map<NodeKey, LexicalNode | null>();
+  private readonly priorOfGroup = new Map<
+    NodeKey,
+    {asBefore: boolean; attrs: Attrs; key: NodeKey} | null
+  >();
   constructor(
     readonly state: State,
     readonly roles: Roles,
@@ -706,7 +734,7 @@ export class Writer {
           this.refuse(unit.cs, 'the content of', node);
         }
       } else {
-        this.$writeMarker(unit.end, this.$marker(d), d.node);
+        this.$writeMarker(unit.end, d);
         unit.sig = d.sig;
         this.touched.push({d, unit});
       }
@@ -2114,7 +2142,7 @@ export class Writer {
             // Left without a marker.
           } else if (u.sig !== d.sig || this.plan.lines.has(d.key!)) {
             // Only its attributes (or a derived field) may have changed.
-            this.$writeMarker(u.end!, this.$marker(d), d.node);
+            this.$writeMarker(u.end!, d);
             u.sig = d.sig;
             this.touched.push({d, unit: u});
           }
@@ -2128,10 +2156,15 @@ export class Writer {
     }
     for (const u of old) {
       if (!used.has(u)) {
+        this.noteEnd(u);
         this.state.dropUnit(u);
       }
     }
     for (const u of newUnits) {
+      const was = u.key === null ? undefined : this.state.unitByKey.get(u.key);
+      if (was !== undefined && was !== u) {
+        this.noteEnd(was);
+      }
       this.state.setUnit(u);
     }
     cs.units = newUnits;
@@ -2550,11 +2583,12 @@ export class Writer {
       } else {
         end = lineItems.get(di)!;
         if (d.kind === 'line') {
-          this.$writeMarker(end, this.$marker(d), d.node);
+          this.$writeMarker(end, d);
         }
       }
       let u = d.key !== null ? reuse.get(d.key) : undefined;
       if (u !== undefined && !used.has(u)) {
+        this.noteEnd(u);
         this.state.dropUnit(u);
         u.kind = d.kind;
         u.end = end;
@@ -2794,7 +2828,7 @@ export class Writer {
       return;
     }
     for (const [unit, d] of markers) {
-      this.$writeMarker(unit.end!, this.$marker(d), d.node);
+      this.$writeMarker(unit.end!, d);
       unit.sig = d.sig;
       this.touched.push({d, unit});
     }
@@ -2811,6 +2845,7 @@ export class Writer {
       for (const u of old) {
         const d = kept.get(u);
         if (d === undefined) {
+          this.noteEnd(u);
           this.state.dropUnit(u);
         } else {
           u.first = d.first;
@@ -2928,12 +2963,13 @@ export class Writer {
       end = items.get(at)!;
     }
     if (end !== u.end) {
+      this.noteEnd(u);
       this.state.dropUnit(u);
       u.end = end;
       u.kind = 'line';
       this.state.setUnit(u);
     }
-    this.$writeMarker(end, this.$marker(d), d.node);
+    this.$writeMarker(end, d);
     u.sig = d.sig;
     this.touched.push({d, unit: u});
     this.$fixStartsAfter(u);
@@ -3080,7 +3116,7 @@ export class Writer {
         );
       }
     }
-    this.$writeMarker(u.end, this.$marker(d), d.node);
+    this.$writeMarker(u.end, d);
     u.sig = d.sig;
     this.touched.push({d, unit: u});
     return true;
@@ -3894,16 +3930,30 @@ export class Writer {
   // -------------------------------------------------------------------------
   // Markers and nodes
 
-  private $writeMarker(
-    item: Item,
-    desired: Attrs,
-    line: LexicalNode | null,
-  ): void {
+  /** Write the marker attributes of desired line `d` on marker `item`. */
+  private $writeMarker(item: Item, d: Desired): void {
+    const desired = this.$marker(d);
+    const line = d.node;
     const y = typeOf(item);
     const current = y.getAttrs() as Attrs;
     const storedText = $isElementNode(line) && !$holdsText(line);
-    const owners = this.markerOwners(desired, current);
-    const want = this.$markerAsStored(desired, current, owners, line);
+    // A marker this write made, or one another line had that a diff of their
+    // container gave this line: where this line had a marker of its own,
+    // what that one stored is the line's, and what the other line's marker
+    // stores is not (see $markerAsStored). A line new in this write keeps
+    // what the marker it is given stores, as a line that keeps its marker
+    // does: it may be a copy of the other line (a split).
+    const made = this.tr.insertSet.hasId(item.id);
+    const owner = made ? null : this.ownerBefore(item);
+    const before =
+      line !== null &&
+      d.key !== null &&
+      (made || (owner !== null && lineOfUnit(owner) !== lineOfUnit(d.key)))
+        ? this.$markerBefore(d.key, line.getKey())
+        : null;
+    const taken = !made && before !== null;
+    const owners = this.markerOwners(desired, before ?? current);
+    const want = this.$markerAsStored(desired, current, owners, line, before);
     let changed = false;
     for (const k in want) {
       if (
@@ -3917,7 +3967,7 @@ export class Writer {
     for (const k in current) {
       if (
         !(k in want) &&
-        ownsMarkerAttr(k, owners.fields, owners.groupFields) &&
+        (taken || ownsMarkerAttr(k, owners.fields, owners.groupFields)) &&
         !this.keepsStored(k, current[k], undefined, storedText)
       ) {
         y.deleteAttr(k);
@@ -3998,13 +4048,19 @@ export class Writer {
    * `owners`): the members of the outer levels (OUTER_KEY) it does not own
    * kept as stored, and, for an item new to its group (`line`), the group's
    * fields it does not own taken from another item of the group, as every
-   * item stores them (see $groupReference).
+   * item stores them (see $groupReference), or, where none kept its
+   * marker, as an item of the group stored them before this write (see
+   * $priorGroupItem). Where this write made the marker anew for a line that
+   * had one (`before`, what that one stored, see $markerBefore), the line's
+   * fields it does not own are those, and its group's are found as for an
+   * item new to its group.
    */
   $markerAsStored(
     desired: Attrs,
     current: Attrs,
     owners: MarkerOwners,
     line: LexicalNode | null,
+    before: Attrs | null = null,
   ): Attrs {
     let want = desired;
     const keepOuter = (stored: unknown, of: MarkerOwners) => {
@@ -4022,81 +4078,124 @@ export class Writer {
         }
       }
     };
-    keepOuter(
-      line === null
-        ? current[OUTER_KEY]
-        : this.$alignedOuter(line, line, current[OUTER_KEY]),
-      owners,
-    );
+    // The fields `from` stores that this editor does not own (`of`) and
+    // `want` leaves out: the group's (`group`), or the line's.
+    const keepFields = (from: Attrs, of: MarkerOwners, group: boolean) => {
+      const prefix = group ? GROUP_FIELD_PREFIX : FIELD_PREFIX;
+      for (const k in from) {
+        if (
+          k.startsWith(prefix) &&
+          !(k in want) &&
+          !ownsMarkerAttr(k, of.fields, of.groupFields)
+        ) {
+          want = {...want, [k]: from[k]};
+        }
+      }
+    };
     if (
       line !== null &&
       GROUP_KEY in desired &&
-      current[GROUP_KEY] === undefined
+      (before !== null || current[GROUP_KEY] === undefined)
     ) {
-      const item = this.$groupReference(line, desired[GROUP_KEY]);
-      const ref =
-        item === null ? null : this.storedItemAttrs(item, desired[GROUP_KEY]);
-      if (item !== null && ref !== null) {
+      const gtype = desired[GROUP_KEY];
+      const item = this.$groupReference(line, gtype);
+      const ref = item === null ? null : this.storedItemAttrs(item, gtype);
+      const source =
+        item !== null && ref !== null
+          ? {asBefore: false, attrs: ref, key: item.getKey()}
+          : this.$priorGroupItem(line, gtype);
+      if (source !== null) {
         // Owned as at the other item, whose group has the item's type.
-        const of = this.markerOwners(desired, ref);
-        for (const k in ref) {
-          if (
-            k.startsWith(GROUP_FIELD_PREFIX) &&
-            !(k in want) &&
-            !ownsMarkerAttr(k, of.fields, of.groupFields)
-          ) {
-            want = {...want, [k]: ref[k]};
-          }
-        }
-        keepOuter(this.$alignedOuter(line, item, ref[OUTER_KEY]), of);
+        const of = this.markerOwners(desired, source.attrs);
+        keepFields(source.attrs, of, true);
+        keepOuter(
+          this.$alignedOuter(
+            line,
+            source.key,
+            source.attrs[OUTER_KEY],
+            source.asBefore,
+          ),
+          of,
+        );
       }
+    }
+    if (before === null) {
+      keepOuter(
+        line === null
+          ? current[OUTER_KEY]
+          : this.$alignedOuter(line, line.getKey(), current[OUTER_KEY]),
+        owners,
+      );
+    } else {
+      keepFields(before, owners, false);
     }
     return want;
   }
 
   /**
-   * `stored`, the outer levels (OUTER_KEY) the marker of `item` stores,
+   * `stored`, the outer levels (OUTER_KEY) the marker of item `key` stores,
    * aligned with the outer levels `line` is written with: at each, the
-   * level stored for the same group (see $outerGroupKeys), or none. Matched
+   * level stored for the same group (see $outerLevels), or none. Matched
    * by group, not by depth: an edit that removes or adds an outer group
-   * shifts the depths, and a level keeps the members of its own group only.
-   * Undefined where the stored levels cannot be matched to groups.
+   * shifts the depths, and a level keeps the members of its own group only;
+   * the fields of its wrapper item (WRAPPER_FIELDS_KEY) are those stored for
+   * the same item, wherever it is now. With `asBefore`, `stored` is what the
+   * marker stored before this write. Undefined where the stored levels
+   * cannot be matched to groups.
    */
   private $alignedOuter(
     line: LexicalNode,
-    item: LexicalNode,
+    key: NodeKey,
     stored: unknown,
+    asBefore = false,
   ): Attrs[] | undefined {
     if (!Array.isArray(stored)) {
       return undefined;
     }
-    // The groups `item`'s marker was written for: those before this update,
-    // unless this write already wrote its outer levels.
-    const unit = this.state.unitByKey.get(item.getKey());
-    const attr =
-      unit === undefined || unit.end === null
-        ? undefined
-        : typeOf(unit.end)._map.get(OUTER_KEY);
-    const was =
-      attr !== undefined && this.tr.insertSet.hasId(attr.id)
-        ? this.$outerGroupKeys(item)
-        : this.outerGroupKeysBefore(item.getKey());
+    // The levels the item's marker was written for: those before this
+    // update, unless this write already wrote its outer levels.
+    let was: OuterLevel[] | null;
+    if (asBefore) {
+      was = this.outerLevelsBefore(key);
+    } else {
+      const unit = this.state.unitByKey.get(key);
+      const attr =
+        unit === undefined || unit.end === null
+          ? undefined
+          : typeOf(unit.end)._map.get(OUTER_KEY);
+      const item = $getNodeByKey(key);
+      was =
+        attr !== undefined && this.tr.insertSet.hasId(attr.id) && item !== null
+          ? this.$outerLevels(item)
+          : this.outerLevelsBefore(key);
+    }
     if (was === null || was.length !== stored.length) {
       return undefined;
     }
-    return this.$outerGroupKeys(line).map(key => {
-      const at = was.indexOf(key);
-      return at === -1 ? undefined : stored[at];
+    const levels = was;
+    return this.$outerLevels(line).map(([group, wrapper]) => {
+      const byGroup = levels.findIndex(([g]) => g === group);
+      const byItem = levels.findIndex(([, w]) => w === wrapper);
+      if (byGroup !== -1 && byItem === byGroup) {
+        return stored[byGroup];
+      }
+      const level =
+        byGroup === -1 ? undefined : withoutWrapperFields(stored[byGroup]);
+      const fields =
+        byItem === -1 ? undefined : wrapperFieldsIn(stored[byItem]);
+      return fields === undefined
+        ? level
+        : {...(level as Attrs | undefined), [WRAPPER_FIELDS_KEY]: fields};
     });
   }
 
   /**
-   * The keys of the groups whose levels the marker of `line` stores as its
-   * outer levels (OUTER_KEY), outermost first: the groups that hold its
-   * group through level items, as $lineDesired finds them.
+   * The levels the marker of `line` stores as its outer levels (OUTER_KEY),
+   * outermost first: the groups that hold its group through level items, as
+   * $lineDesired finds them, each with that level item.
    */
-  private $outerGroupKeys(line: LexicalNode): NodeKey[] {
-    const keys: NodeKey[] = [];
+  private $outerLevels(line: LexicalNode): OuterLevel[] {
+    const levels: OuterLevel[] = [];
     for (let g = line.getParent(); g !== null; ) {
       const levelItem = g.getParent();
       if (levelItem === null || this.roles.$role(levelItem) !== 'level') {
@@ -4104,18 +4203,18 @@ export class Writer {
       }
       g = levelItem.getParent();
       if (g !== null) {
-        keys.push(g.getKey());
+        levels.push([g.getKey(), levelItem.getKey()]);
       }
     }
-    return keys.reverse();
+    return levels.reverse();
   }
 
   /**
-   * $outerGroupKeys for the node of `key` in the editor state before this
+   * $outerLevels for the node of `key` in the editor state before this
    * update (a level item there holds only the nested group, see
    * $nestedGroupOf), or null where it had no such node.
    */
-  private outerGroupKeysBefore(key: NodeKey): NodeKey[] | null {
+  private outerLevelsBefore(key: NodeKey): OuterLevel[] | null {
     const map = this.prevState._nodeMap;
     const node = map.get(key);
     if (node === undefined) {
@@ -4123,7 +4222,7 @@ export class Writer {
     }
     const parentOf = (n: LexicalNode) =>
       n.__parent === null ? undefined : map.get(n.__parent);
-    const keys: NodeKey[] = [];
+    const levels: OuterLevel[] = [];
     for (let g = parentOf(node); g !== undefined; ) {
       const levelItem = parentOf(g) as ElementNode | undefined;
       const outer = levelItem === undefined ? undefined : parentOf(levelItem);
@@ -4139,70 +4238,244 @@ export class Writer {
       ) {
         break;
       }
-      keys.push(outer.__key);
+      levels.push([outer.__key, levelItem.__key]);
       g = outer;
     }
-    return keys.reverse();
+    return levels.reverse();
   }
 
   /**
    * The item of `line`'s group (of type `gtype`) nearest before it, else
-   * after it, whose stored marker this write did not make (see
-   * storedItemAttrs), or null. Its neighbor, not any item: a client that
-   * does not own a group field shows one group where another client shows
-   * two that differ in it, and the item goes into the one it is next to.
+   * after it, that was in the group before this update and whose stored
+   * marker this write did not make (see storedItemAttrs), or null. Its
+   * neighbor, not any item: a client that does not own a group field shows
+   * one group where another client shows two that differ in it, and the
+   * item goes into the one it is next to.
    */
   private $groupReference(
     line: LexicalNode,
     gtype: unknown,
   ): LexicalNode | null {
-    const before = line.getPreviousSibling();
-    const ref =
-      before === null
-        ? null
-        : this.$storedItemFrom(before, gtype, this.storedBefore, n =>
-            n.getPreviousSibling(),
-          );
-    if (ref !== null) {
-      return ref;
-    }
-    const after = line.getNextSibling();
-    return after === null
-      ? null
-      : this.$storedItemFrom(after, gtype, this.storedAfter, n =>
-          n.getNextSibling(),
-        );
+    return this.$nearestItem(
+      line,
+      c => this.$inGroupBefore(c) && this.storedItemAttrs(c, gtype) !== null,
+      this.storedBefore,
+      this.storedAfter,
+    );
   }
 
   /**
-   * `item`, or the nearest item from it on (`step`), whose stored marker
-   * this write did not make, or null. Noted (`noted`) for each item walked:
-   * a run of new items finds it at once.
+   * Where no other item of `line`'s group kept its marker (see
+   * $groupReference), an item of the group whose marker before this write
+   * held the group's fields, with what it stored then: `line` itself where
+   * it was in the same group then (its group moved with it), else the item
+   * nearest before it, else after it, that was (the group moved, and `line`
+   * is new to it), else any item the group had then (its items replaced).
+   * Null where none was (a group new in this write).
    */
-  private $storedItemFrom(
-    item: LexicalNode,
+  private $priorGroupItem(
+    line: LexicalNode,
     gtype: unknown,
-    noted: Map<NodeKey, LexicalNode | null>,
-    step: (node: LexicalNode) => LexicalNode | null,
+  ): {asBefore: boolean; attrs: Attrs; key: NodeKey} | null {
+    const own = this.$priorItemAttrs(line, gtype);
+    if (own !== null) {
+      return {asBefore: true, attrs: own, key: line.getKey()};
+    }
+    const item = this.$nearestItem(
+      line,
+      c => this.$priorItemAttrs(c, gtype) !== null,
+      this.priorBefore,
+      this.priorAfter,
+    );
+    if (item !== null) {
+      return {
+        asBefore: true,
+        attrs: this.$priorItemAttrs(item, gtype)!,
+        key: item.getKey(),
+      };
+    }
+    const group = line.getParent();
+    return group === null ? null : this.priorGroupMarker(group.getKey(), gtype);
+  }
+
+  /**
+   * What the marker of the first item group `key` had before this write
+   * stored then, where that held the group's fields (of type `gtype`), with
+   * that item's key, or null.
+   */
+  private priorGroupMarker(
+    key: NodeKey,
+    gtype: unknown,
+  ): {asBefore: boolean; attrs: Attrs; key: NodeKey} | null {
+    let found = this.priorOfGroup.get(key);
+    if (found === undefined) {
+      found = null;
+      const map = this.prevState._nodeMap;
+      const group = map.get(key) as ElementNode | undefined;
+      for (
+        let child = group === undefined ? null : group.__first;
+        child !== null;
+        child = map.get(child)!.__next
+      ) {
+        const attrs = this.$markerBefore(child, child);
+        if (attrs !== null && attrs[GROUP_KEY] === gtype) {
+          found = {asBefore: true, attrs, key: child};
+          break;
+        }
+      }
+      this.priorOfGroup.set(key, found);
+    }
+    return found;
+  }
+
+  /**
+   * What the marker of item `item` stored before this write, where `item`
+   * was in the same group then, of type `gtype` (see $markerBefore), or
+   * null.
+   */
+  private $priorItemAttrs(item: LexicalNode, gtype: unknown): Attrs | null {
+    if (!this.$inGroupBefore(item)) {
+      return null;
+    }
+    const attrs = this.$markerBefore(item.getKey(), item.getKey());
+    return attrs !== null && attrs[GROUP_KEY] === gtype ? attrs : null;
+  }
+
+  /**
+   * Whether item `item` was in the group it is in before this update: what
+   * its marker stores of the group is that group's.
+   */
+  private $inGroupBefore(item: LexicalNode): boolean {
+    const prev = this.prevState._nodeMap.get(item.getKey());
+    const parent = item.getParent();
+    return (
+      prev !== undefined && parent !== null && prev.__parent === parent.getKey()
+    );
+  }
+
+  /**
+   * The sibling item of `line` nearest before it, else after it, that
+   * `accepts`, or null. Noted (`before`, `after`) for each item walked: a
+   * run of new items finds it at once.
+   */
+  private $nearestItem(
+    line: LexicalNode,
+    accepts: (item: LexicalNode) => boolean,
+    before: Map<NodeKey, LexicalNode | null>,
+    after: Map<NodeKey, LexicalNode | null>,
   ): LexicalNode | null {
-    const walked: NodeKey[] = [];
-    let ref: LexicalNode | null = null;
-    for (let c: LexicalNode | null = item; c !== null; c = step(c)) {
-      const known = noted.get(c.getKey());
-      if (known !== undefined) {
-        ref = known;
-        break;
+    const walk = (
+      from: LexicalNode | null,
+      noted: Map<NodeKey, LexicalNode | null>,
+      step: (node: LexicalNode) => LexicalNode | null,
+    ) => {
+      const walked: NodeKey[] = [];
+      let ref: LexicalNode | null = null;
+      for (let c = from; c !== null; c = step(c)) {
+        const known = noted.get(c.getKey());
+        if (known !== undefined) {
+          ref = known;
+          break;
+        }
+        walked.push(c.getKey());
+        if (accepts(c)) {
+          ref = c;
+          break;
+        }
       }
-      walked.push(c.getKey());
-      if (this.storedItemAttrs(c, gtype) !== null) {
-        ref = c;
-        break;
+      for (const key of walked) {
+        noted.set(key, ref);
       }
+      return ref;
+    };
+    return (
+      walk(line.getPreviousSibling(), before, n => n.getPreviousSibling()) ??
+      walk(line.getNextSibling(), after, n => n.getNextSibling())
+    );
+  }
+
+  /**
+   * Note the end line unit `u` has before this write changes it, drops the
+   * unit or gives its key another (see $markerBefore, ownerBefore): the
+   * end's unit key the first time the end is noted, and the unit's end the
+   * first time the unit's key is, where that end was its own.
+   */
+  private noteEnd(u: Unit): void {
+    const end = u.end;
+    if (
+      u.key === null ||
+      (u.kind !== 'line' && u.kind !== 'implicit') ||
+      (end !== null && this.tr.insertSet.hasId(end.id))
+    ) {
+      return;
     }
-    for (const key of walked) {
-      noted.set(key, ref);
+    if (end !== null && !this.ownersBefore.has(end)) {
+      this.ownersBefore.set(end, u.key);
     }
-    return ref;
+    if (
+      !this.endsBefore.has(u.key) &&
+      (end === null || this.ownersBefore.get(end) === u.key)
+    ) {
+      this.endsBefore.set(u.key, end);
+    }
+  }
+
+  /**
+   * The key of the unit whose end item `item` was before this write, or
+   * null where none was.
+   */
+  private ownerBefore(item: Item): NodeKey | null {
+    const noted = this.ownersBefore.get(item);
+    if (noted !== undefined) {
+      return noted;
+    }
+    const unit = this.state.unitByEnd.get(item);
+    return unit === undefined ? null : unit.key;
+  }
+
+  /**
+   * The attributes of the marker unit `key` (a line's, or a part's of line
+   * `whole` that holds lines, see $pushLine) ended with before this write,
+   * as they were then (see attrsBefore): for a part that had none, the
+   * marker of the whole line. Null where neither had one.
+   */
+  private $markerBefore(key: NodeKey, whole: NodeKey): Attrs | null {
+    let attrs = this.markersBefore.get(key);
+    if (attrs === undefined) {
+      const unit = this.state.unitByKey.get(key);
+      const end = this.endsBefore.has(key)
+        ? this.endsBefore.get(key)!
+        : unit === undefined
+          ? null
+          : unit.end;
+      attrs =
+        end === null ||
+        this.tr.insertSet.hasId(end.id) ||
+        this.ownerBefore(end) !== key
+          ? null
+          : attrsBefore(typeOf(end), this.tr);
+      if (attrs === null && key !== whole) {
+        attrs = this.$markerBefore(whole, whole);
+      }
+      this.markersBefore.set(key, attrs);
+    }
+    return attrs;
+  }
+
+  /**
+   * The type and attributes the shared node of node `key` had before this
+   * write, as they were then (see attrsBefore), or null where it had none:
+   * read the first time this write gives the node new storage (see
+   * $fillNode), from the one it had then.
+   */
+  private nodeBefore(key: NodeKey): [string, Attrs] | null {
+    let found = this.nodesBefore.get(key);
+    if (found === undefined) {
+      const y = this.state.yByKey.get(key);
+      found = y === undefined ? null : nodeBeforeTransaction(y, this.tr);
+      this.nodesBefore.set(key, found);
+    }
+    return found;
   }
 
   /**
@@ -4283,13 +4556,32 @@ export class Writer {
     }
   }
 
-  /** Write a new stored node: attributes, and its container. */
+  /**
+   * Write a new stored node: attributes, and its container. Where the node
+   * had a shared node before (a node moved, or written again), the fields
+   * that one stored that this editor does not own (see ownsNodeAttr) go
+   * into the new one.
+   */
   $fillNode(y: YNode, node: LexicalNode): void {
     const key = node.getKey();
     const holes: string[] = [];
     const attrs = $nodeAttrs(node, holes);
     if (holes.length > 0) {
       this.holed.add(key);
+    }
+    const prev = this.nodeBefore(key);
+    if (prev !== null) {
+      const [type, before] = prev;
+      const fields = ownedFields(this.state.editor, type, node.getType(), true);
+      for (const k in before) {
+        if (
+          k.startsWith(FIELD_PREFIX) &&
+          !(k in attrs) &&
+          !ownsNodeAttr(k, fields)
+        ) {
+          attrs[k] = before[k];
+        }
+      }
     }
     for (const k in attrs) {
       y.setAttr(k, attrs[k]);
@@ -4551,6 +4843,70 @@ function keysAt(
       out[i] = k;
     }
   }
+  return out;
+}
+
+/**
+ * The attributes `y` had before transaction `tr`, as every other client
+ * still has them: of each name, the value of its latest item `tr` did not
+ * insert, unless an earlier transaction deleted it. Yjs keeps the content of
+ * the items `tr` deletes until `tr` ends, so this also reads a node `tr`
+ * deleted (a block it moved).
+ */
+function attrsBefore(y: YNode, tr: Transaction): Attrs {
+  const out: Attrs = {};
+  y._map.forEach((latest, name) => {
+    let item: Item | null = latest;
+    while (item !== null && tr.insertSet.hasId(item.id)) {
+      item = item.left;
+    }
+    if (item !== null && (!item.deleted || tr.deleteSet.hasId(item.id))) {
+      out[name] = item.content.getContent()[item.length - 1];
+    }
+  });
+  return out;
+}
+
+/**
+ * The type and attributes shared node `y` had before transaction `tr` (see
+ * attrsBefore), or null where `tr` made it.
+ */
+function nodeBeforeTransaction(
+  y: YNode,
+  tr: Transaction,
+): [string, Attrs] | null {
+  if (y._item !== null && tr.insertSet.hasId(y._item.id)) {
+    return null;
+  }
+  const attrs = attrsBefore(y, tr);
+  return [storedTypeOf({getAttr: k => attrs[k], name: y.name}), attrs];
+}
+
+/** An outer level of a marker: its group's key, and its level item's. */
+type OuterLevel = [group: NodeKey, item: NodeKey];
+
+/** The fields of the wrapper item outer level `level` stores, if any. */
+function wrapperFieldsIn(level: unknown): unknown {
+  return level === null ||
+    typeof level !== 'object' ||
+    Array.isArray(level) ||
+    !(WRAPPER_FIELDS_KEY in level)
+    ? undefined
+    : (level as Attrs)[WRAPPER_FIELDS_KEY];
+}
+
+/** Outer level `level` (see OUTER_KEY) without its wrapper item's fields. */
+function withoutWrapperFields(level: unknown): unknown {
+  if (
+    level === null ||
+    typeof level !== 'object' ||
+    Array.isArray(level) ||
+    !(WRAPPER_FIELDS_KEY in level)
+  ) {
+    return level;
+  }
+  const out = {...(level as Attrs)};
+  delete out[WRAPPER_FIELDS_KEY];
   return out;
 }
 

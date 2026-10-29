@@ -29,11 +29,9 @@
 // warns (`'unreadable'`), keeps showing the rest of the document, and throws
 // nothing, into the provider or from initialize().
 
-import type {ListItemNode} from '@lexical/list';
-
 import {$createLinkNode, LinkNode} from '@lexical/link';
-import {$createListItemNode, ListNode} from '@lexical/list';
-import {HeadingNode} from '@lexical/rich-text';
+import {$createListItemNode, ListItemNode, ListNode} from '@lexical/list';
+import {$createHeadingNode, HeadingNode} from '@lexical/rich-text';
 import * as Y from '@y/y';
 import {
   $create,
@@ -375,6 +373,91 @@ class LegacyV2 extends ElementNode {
   }
 }
 
+// A group whose items v2 gives a field too (the wrapper item of a nested
+// group stores it with the outer level).
+class GroupItemV1 extends ListItemNode {
+  $config() {
+    return this.config('test_skew_group_item', {
+      children: ['inline', GroupV1],
+      extends: ListItemNode,
+    });
+  }
+}
+const groupItemV2Schema = nodeSchema<GroupItemV2>()({
+  badge: withField(stringValue(), {field: '__badge'}),
+});
+class GroupItemV2 extends ListItemNode {
+  __badge: string = '';
+  $config() {
+    return this.config('test_skew_group_item', {
+      children: ['inline', GroupV2],
+      extends: ListItemNode,
+      json: groupItemV2Schema,
+    });
+  }
+}
+class GroupV1 extends ListNode {
+  $config() {
+    return this.config('test_skew_group', {
+      children: [GroupItemV1],
+      extends: ListNode,
+    });
+  }
+}
+const groupV2Schema = nodeSchema<GroupV2>()({
+  tone: withField(stringValue(), {field: '__tone'}),
+});
+class GroupV2 extends ListNode {
+  __tone: string = '';
+  $config() {
+    return this.config('test_skew_group', {
+      children: [GroupItemV2],
+      extends: ListNode,
+      json: groupV2Schema,
+    });
+  }
+}
+
+// Both versions: a flat NodeState whose value has no schema (a plain parse
+// function), stored as a field of nodes stored as their own Y.Node.
+const memoState = createState('test_skew_memo', {
+  parse: (v: unknown) => (typeof v === 'string' ? v : ''),
+});
+class MemoBox extends ElementNode {
+  $config() {
+    return this.config('test_skew_memo_box', {
+      extends: ElementNode,
+      stateConfigs: [{flat: true, stateConfig: memoState}],
+    });
+  }
+  createDOM(): HTMLElement {
+    throw new Error('headless');
+  }
+  updateDOM(): boolean {
+    return false;
+  }
+}
+class MemoImage extends DecoratorNode<null> {
+  $config() {
+    return this.config('test_skew_memo_image', {
+      extends: DecoratorNode,
+      stateConfigs: [{flat: true, stateConfig: memoState}],
+    });
+  }
+  isInline(): boolean {
+    return false;
+  }
+  createDOM(): HTMLElement {
+    throw new Error('headless');
+  }
+  updateDOM(): false {
+    return false;
+  }
+  decorate(): null {
+    return null;
+  }
+}
+
 const V1: Klass<LexicalNode>[] = [
   ...NODES,
   CardV1,
@@ -385,6 +468,10 @@ const V1: Klass<LexicalNode>[] = [
   LinkV1,
   TagV1,
   LegacyV1,
+  GroupV1,
+  GroupItemV1,
+  MemoBox,
+  MemoImage,
 ];
 const V2: Klass<LexicalNode>[] = [
   ...NODES,
@@ -396,6 +483,10 @@ const V2: Klass<LexicalNode>[] = [
   LinkV2,
   TagV2,
   LegacyV2,
+  GroupV2,
+  GroupItemV2,
+  MemoBox,
+  MemoImage,
 ];
 
 // A NodeState only the v2 app uses, and a set-valued one (stored one entry
@@ -857,22 +948,19 @@ describe('S7-3: an older client keeps the fields a newer class added', () => {
     expect(docJSON(r.author)).not.toContain('"tone":"warm"');
   });
 
-  test.fails(
-    'limit: a block an older client moves keeps the fields it does not know',
-    async () => {
-      // A move writes the block anew from what the moving client shows
-      // (see "Moves" in y.md's limits): here into a container.
-      const r = await room(V1, () => $getRoot().append($note(), $p('after')));
-      r.editor.update(() => {
-        const note = $getRoot().getFirstChildOrThrow();
-        const box = $createBoxNode('t');
-        note.insertBefore(box);
-        box.append(note);
-      });
-      await flush();
-      expect(docJSON(r.author)).toContain('"tone":"warm"');
-    },
-  );
+  test('a block an older client moves keeps the fields it does not know', async () => {
+    // A move writes the block anew (see "Moves" in y.md's limits), with
+    // what it stored before the write: here into a container.
+    const r = await room(V1, () => $getRoot().append($note(), $p('after')));
+    r.editor.update(() => {
+      const note = $getRoot().getFirstChildOrThrow();
+      const box = $createBoxNode('t');
+      note.insertBefore(box);
+      box.append(note);
+    });
+    await flush();
+    expect(docJSON(r.author)).toContain('"tone":"warm"');
+  });
 });
 
 describe('S7-3: an older client restructuring a nested group', () => {
@@ -979,6 +1067,494 @@ describe('S7-3: an older client restructuring a nested group', () => {
       );
     },
   );
+});
+
+// F2: Yjs has no moves, so a block that moves is deleted and written again
+// (see "Moves" in y.md's limits). The new copy takes what its node stored
+// before the write, with what a client with older classes does not know: a
+// line's marker (its fields, and its group's as the group stores them), a
+// node of its own (and what it holds), an inline node. Most cases run the
+// move made by a v1 client and the same move made by a v2 client, and
+// require the same document.
+describe('F2: an older client that moves a block keeps the fields it does not know', () => {
+  const $toned = (tone: string, ...items: (string | ListNode)[]) => {
+    const list = $create(ListV2);
+    list.__listType = 'bullet';
+    list.__tag = 'ul';
+    list.__tone = tone;
+    for (const item of items) {
+      list.append(
+        $createListItemNode().append(
+          typeof item === 'string' ? $createTextNode(item) : item,
+        ),
+      );
+    }
+    return list;
+  };
+  const BLOCKS: [string, () => LexicalNode, string][] = [
+    ['a line', () => $note(), '"tone":"warm"'],
+    ['a group', () => $list('one', 'two'), '"tone":"warm"'],
+    ['a block node', () => $card(), '"tone":"warm"'],
+    ['a block decorator', () => $image(), '"alt":"A cat"'],
+    [
+      'a block node holding a line and a group',
+      () => $card().append($note('inner note'), $toned('cool', 'inner item')),
+      '"tone":"cool"',
+    ],
+    [
+      'a nested group',
+      () => $toned('out', 'a', $toned('in', 'x', 'y'), 'b'),
+      '"tone":"in"',
+    ],
+    [
+      'a line holding an inline decorator',
+      () => $p('hi ').append($chip()),
+      '"color":"teal"',
+    ],
+  ];
+  const MOVES: [
+    string,
+    (r: Room) => void,
+    ($make: () => LexicalNode) => void,
+  ][] = [
+    [
+      'down past a paragraph',
+      () => $block([1]).insertAfter($block([0])),
+      $make => $getRoot().append($make(), $p('after')),
+    ],
+    [
+      'up past a paragraph',
+      () => $block([0]).insertBefore($block([1])),
+      $make => $getRoot().append($p('before'), $make()),
+    ],
+    [
+      'into a new container',
+      () => {
+        const block = $block([0]);
+        const box = $createBoxNode('t');
+        block.insertBefore(box);
+        box.append(block);
+      },
+      $make => $getRoot().append($make(), $p('after')),
+    ],
+  ];
+  for (const [what, $make, kept] of BLOCKS) {
+    for (const [how, $move, $init] of MOVES) {
+      test(`${what} moved ${how}`, async () => {
+        const r = await expectSameAsV2(() => $init($make), $move);
+        expect(docJSON(r.author)).toContain(kept);
+      });
+    }
+  }
+
+  test.each([
+    ['at its start', 0],
+    ['in its middle', 2],
+    ['at its end', 6],
+  ] as const)('a line split %s', async (_where, at) => {
+    const r = await expectSameAsV2(
+      () => $getRoot().append($note('a note'), $p('after')),
+      () => $selectIn([0], at).insertParagraph(),
+    );
+    expect(docJSON(r.author)).toContain('"tone":"warm"');
+  });
+
+  test('a block node with a named slot', async () => {
+    const r = await expectSameAsV2(
+      () => {
+        const card = $card();
+        $setSlot(card, 'caption', $note('a caption'));
+        $getRoot().append(card, $p('after'));
+      },
+      () => $block([1]).insertAfter($block([0])),
+    );
+    expect(
+      r.author.read(() => $getSlot($block([1]), 'caption')?.getTextContent()),
+    ).toBe('a caption');
+    expect(docJSON(r.author).match(/"tone":"warm"/g)).toHaveLength(2);
+  });
+
+  test('an item moved within its group', async () => {
+    const r = await expectSameAsV2(
+      () => $getRoot().append($list('one', 'two', 'three')),
+      () =>
+        ($block([0]).getLastChildOrThrow() as ListItemNode).insertBefore(
+          $block([0]).getFirstChildOrThrow(),
+        ),
+    );
+    expect(docJSON(r.author).match(/"tone":"warm"/g)).toHaveLength(1);
+  });
+
+  test("an item moved into another group takes that group's fields", async () => {
+    const r = await expectSameAsV2(
+      () =>
+        $getRoot().append(
+          $toned('warm', 'a1', 'a2'),
+          $p('between'),
+          $toned('cool', 'b1'),
+        ),
+      () =>
+        ($block([2]).getFirstChildOrThrow() as ListItemNode).insertAfter(
+          $block([0]).getFirstChildOrThrow(),
+        ),
+    );
+    expect(
+      r.author.read(() =>
+        $getRoot()
+          .getChildren()
+          .map(c => `${(c as ListV2).__tone ?? '-'}:${c.getTextContent()}`),
+      ),
+    ).toEqual(['warm:a2', '-:between', 'cool:b1\n\na1']);
+  });
+
+  test('every item of two groups swapped: each group keeps its fields', async () => {
+    const r = await expectSameAsV2(
+      () =>
+        $getRoot().append(
+          $toned('warm', 'a1', 'a2'),
+          $p('between'),
+          $toned('cool', 'b1', 'b2'),
+        ),
+      () => {
+        const [a, b] = [$block([0]), $block([2])];
+        const items = a.getChildren();
+        a.splice(0, a.getChildrenSize(), b.getChildren());
+        b.append(...items);
+      },
+    );
+    expect(
+      r.author.read(() =>
+        $getRoot()
+          .getChildren()
+          .map(c => `${(c as ListV2).__tone ?? '-'}:${c.getTextContent()}`),
+      ),
+    ).toEqual(['warm:b1\n\nb2', '-:between', 'cool:a1\n\na2']);
+  });
+
+  test('groups a client shows as one, moved: each item keeps its own group', async () => {
+    // Once the paragraph between two lists that differ only in a field the
+    // v1 client does not own is removed, it shows them as one list (a v2
+    // client would merge them; none is online here). Moved whole, each item
+    // keeps its own list's fields.
+    const r = await room(V1, () =>
+      $getRoot().append(
+        $toned('warm', 'a1', 'a2'),
+        $p('between'),
+        $toned('cool', 'b1'),
+        $p('after'),
+      ),
+    );
+    r.author.online = false;
+    const tones = () => {
+      const out: string[] = [];
+      let text = '';
+      const root = r.editor.doc.get('lexical-y');
+      for (let it = root._start; it !== null; it = it.right) {
+        const content = it.content;
+        if (it.deleted) {
+          continue;
+        }
+        if (content instanceof Y.ContentString) {
+          text += content.str;
+        } else if (content instanceof Y.ContentType) {
+          out.push(`${text}:${content.type.getAttr('g:tone') ?? '-'}`);
+          text = '';
+        }
+      }
+      return out;
+    };
+    r.editor.update(() => $block([1]).remove());
+    await flush();
+    expect(r.editor.read(() => $getRoot().getChildrenSize())).toBe(2);
+    expect(tones()).toEqual(['a1:warm', 'a2:warm', 'b1:cool', 'after:-']);
+    r.editor.update(() => $block([1]).insertAfter($block([0])));
+    await flush();
+    expect(r.editor.errors).toEqual([]);
+    expect(r.editor.warnings).toEqual([]);
+    expect(tones()).toEqual(['after:-', 'a1:warm', 'a2:warm', 'b1:cool']);
+  });
+
+  test.each([
+    ['before its first item', 0],
+    ['after its last item', 2],
+  ] as const)('a group moved with an item added %s', async (_where, at) => {
+    const r = await expectSameAsV2(
+      () => $getRoot().append($list('a', 'b'), $p('gap')),
+      () => {
+        const list = $block([0]);
+        list.splice(at, 0, [
+          $createListItemNode().append($createTextNode('z')),
+        ]);
+        $block([1]).insertAfter(list);
+      },
+    );
+    expect(docJSON(r.author).match(/"tone":"warm"/g)).toHaveLength(1);
+  });
+
+  const $group = (tone: string, ...items: GroupItemV2[]) => {
+    const group = $create(GroupV2);
+    group.__listType = 'bullet';
+    group.__tag = 'ul';
+    group.__tone = tone;
+    return group.append(...items);
+  };
+  const $item = (text: string) =>
+    $create(GroupItemV2).append($createTextNode(text));
+  // A nested group (`in`) in an item of `out` that has a badge.
+  const $badged = () => {
+    const wrapper = $create(GroupItemV2).append($group('in', $item('x')));
+    wrapper.__badge = 'red';
+    return $group('out', wrapper, $item('m'));
+  };
+
+  test('a nested group whose item moves keeps the fields of that item', async () => {
+    const r = await expectSameAsV2(
+      () => $getRoot().append($badged()),
+      () => $block([0, 1]).insertAfter($block([0, 0])),
+    );
+    expect(docJSON(r.author)).toContain('"badge":"red"');
+  });
+
+  test("a nested group moved into a new item takes none of the old item's fields", async () => {
+    const r = await expectSameAsV2(
+      () => $getRoot().append($badged()),
+      () => {
+        const wrapper = $block([0, 0]);
+        const item = $create(wrapper.constructor as typeof GroupItemV1);
+        $block([0]).append(item.append($block([0, 0, 0])));
+        wrapper.remove();
+      },
+    );
+    expect(docJSON(r.author)).not.toContain('"badge":"red"');
+    expect(docJSON(r.author)).toContain('"tone":"in"');
+  });
+
+  // The item holding `in` moves into `dest`, before or after its item.
+  const $intoOtherGroup = (first: boolean) => () => {
+    const [wrapper, d] = [$block([0, 0]), $block([2, 0])];
+    if (first) {
+      d.insertBefore(wrapper);
+    } else {
+      d.insertAfter(wrapper);
+    }
+  };
+  const $withDest = () =>
+    $getRoot().append($badged(), $p('gap'), $group('dest', $item('d')));
+  test.each([
+    ['first', true],
+    ['last', false],
+  ] as const)(
+    'a nested group whose item moves into another group, %s, keeps the fields of that item',
+    async (_where, first) => {
+      const r = await edited(V1, $withDest, $intoOtherGroup(first));
+      expect(
+        r.author.read(
+          () => ($block([2, first ? 0 : 1]) as GroupItemV2).__badge,
+        ),
+      ).toBe('red');
+    },
+  );
+
+  // Its outer level does not take the fields of the group it moves into from
+  // the items of that group (see "Older app versions" in y.md's limits): a
+  // reader takes them from the group's first item.
+  test.fails(
+    'limit: a nested group whose item moves into another group takes the fields of that group',
+    async () => {
+      await expectSameAsV2($withDest, $intoOtherGroup(true));
+    },
+  );
+
+  // The container written first gives the block new storage, and then the
+  // root writes the container anew, with the block in it.
+  test.each([
+    ['a line', () => $note()],
+    [
+      'a block node with a named slot',
+      () => {
+        const card = $card();
+        $setSlot(card, 'caption', $note('a caption'));
+        return card;
+      },
+    ],
+    ['a line holding an inline decorator', () => $p('hi ').append($chip())],
+  ])('%s moved into a container that moves too', async (_what, $make) => {
+    const r = await expectSameAsV2(
+      () =>
+        $getRoot().append(
+          $make(),
+          $createBoxNode('t').append($p('in the box')),
+          $p('after'),
+        ),
+      () => {
+        const [block, box, after] = [$block([0]), $block([1]), $block([2])];
+        block.getWritable();
+        box.append(block);
+        after.insertAfter(box);
+      },
+    );
+    expect(docJSON(r.author)).toMatch(/"(tone|color)":"(warm|teal)"/);
+  });
+
+  // A diff of the container can give the moved line the marker of a line
+  // there that changes; the marker then stores the moved line's fields, and
+  // none of the other line's.
+  for (const tone of ['mine', '']) {
+    for (const boxMoves of [false, true]) {
+      test(`a line moved next to a line that changes keeps its own fields (${tone || 'none'}), where its container ${boxMoves ? 'moves too' : 'stays'}`, async () => {
+        const $tonedNote = (text: string, t: string) => {
+          const note = $note(text);
+          note.__tone = t;
+          return note;
+        };
+        const r = await expectSameAsV2(
+          () =>
+            $getRoot().append(
+              $tonedNote('moved', tone),
+              $createBoxNode('t').append(
+                $tonedNote('kept ', 'theirs').append($chip()),
+              ),
+              $p('after'),
+            ),
+          () => {
+            const [moved, box, after] = [$block([0]), $block([1]), $block([2])];
+            moved.getWritable();
+            $block([1, 0])
+              .getChildAtIndex(1)!
+              .replace($createTextNode('changed'));
+            box.append(moved);
+            if (boxMoves) {
+              after.insertAfter(box);
+            }
+          },
+        );
+        expect(
+          r.author.read(() =>
+            $block([boxMoves ? 1 : 0])
+              .getChildren()
+              .map(note => (note as NoteV2).__tone),
+          ),
+        ).toEqual(['theirs', tone]);
+      });
+    }
+  }
+
+  test('a line holding lines, moved before it is normalized, keeps its fields in each part', async () => {
+    // Without transforms, a line can hold a line: it is stored as parts, each
+    // with the marker of the line that holds them.
+    const tones = (peer: Peer) => {
+      const out: unknown[] = [];
+      const visit = (y: Y.Node) => {
+        for (let it = y._start; it !== null; it = it.right) {
+          const content = it.content;
+          if (!it.deleted && content instanceof Y.ContentType) {
+            const node = content.type as Y.Node;
+            if (node.getAttr('t') === 'test_skew_note') {
+              out.push(node.getAttr('p:tone'));
+            }
+            visit(node);
+          }
+        }
+      };
+      visit(peer.doc.get('lexical-y'));
+      return out;
+    };
+    const run = async (nodes: Klass<LexicalNode>[]) => {
+      const r = await room(nodes, () =>
+        $getRoot().append(
+          $note('head'),
+          $createHeadingNode('h2').append($createTextNode('held')),
+          $createBoxNode('t').append($p('in the box')),
+        ),
+      );
+      const $moveIntoBox = () => $block([1]).append($block([0]));
+      const stop = r.editor.editor.registerUpdateListener(() => {
+        stop();
+        r.editor.editor.update($moveIntoBox, {
+          discrete: true,
+          skipTransforms: true,
+        });
+      });
+      r.editor.editor.update(
+        () => $block([0]).append($block([1]), $createTextNode('tail')),
+        {discrete: true, skipTransforms: true},
+      );
+      await flush();
+      for (const peer of [r.author, r.editor]) {
+        expect(peer.errors).toEqual([]);
+        expect(peer.binding.status).toBe('active');
+      }
+      return r;
+    };
+    const byV1 = await run(V1);
+    const byV2 = await run(V2);
+    expect(tones(byV2.editor)).toEqual(['warm', 'warm']);
+    expect(tones(byV1.editor)).toEqual(tones(byV2.editor));
+    expect(shape(await freshReader(byV1.author))).toEqual(
+      shape(await freshReader(byV2.author)),
+    );
+  });
+
+  // The text of a moved line is written anew from what the client shows:
+  // the formats of its characters that the client does not own (a text
+  // class's field, a member of a link's value) are lost (see "Older app
+  // versions" in y.md's limits). The move converges all the same.
+  const TEXT: [string, () => LexicalNode, string][] = [
+    ['a text class', () => $p('before ').append($tag()), '"tag":"x1"'],
+    ['a link', () => $p('see ').append($link()), '"tone":"warm"'],
+  ];
+  const $movedText = ($make: () => LexicalNode) =>
+    edited(
+      V1,
+      () => $getRoot().append($make(), $p('after')),
+      () => $block([1]).insertAfter($block([0])),
+    );
+  test.each(TEXT)('a line holding %s moved', async (_what, $make) => {
+    await $movedText($make);
+  });
+  test.fails.each(TEXT)(
+    'limit: a moved line keeps the fields of %s in it',
+    async (_what, $make, kept) => {
+      const r = await $movedText($make);
+      expect(docJSON(r.author)).toContain(kept);
+    },
+  );
+});
+
+// Where a node is stored as its own Y.Node, a client writes a flat NodeState
+// as a field, so it owns it, with a schema for its value or not.
+describe('S7-3, F2: a flat NodeState with no schema', () => {
+  const NODES_WITH_MEMO: [string, () => LexicalNode][] = [
+    ['a block node', () => $create(MemoBox).append($p('in the box'))],
+    ['a block decorator', () => $create(MemoImage)],
+  ];
+  for (const [what, $make] of NODES_WITH_MEMO) {
+    for (const moved of [false, true]) {
+      test(`on ${what}, reset${moved ? ' as it moves' : ''}, stays reset`, async () => {
+        const r = await edited(
+          V2,
+          () => {
+            const node = $make();
+            $setState(node, memoState, 'old');
+            $getRoot().append(node, $p('after'));
+          },
+          ({editor}) => {
+            expect(editor.read(() => $getState($block([0]), memoState))).toBe(
+              'old',
+            );
+            const node = $block([0]);
+            $setState(node, memoState, '');
+            if (moved) {
+              $block([1]).insertAfter(node);
+            }
+          },
+        );
+        expect(
+          r.author.read(() => $getState($block([moved ? 1 : 0]), memoState)),
+        ).toBe('');
+      });
+    }
+  }
 });
 
 describe('S7-3: which stored names a client owns', () => {

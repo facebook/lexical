@@ -1752,7 +1752,11 @@ describe('Markdown', () => {
     const $formatted = (text: string, format: number) =>
       $createTextNode(text).setFormat(format);
 
-    it.each<[name: string, $nodes: () => LexicalNode[], expected: string]>([
+    // The code span's padding is not what the inline code cases test, so
+    // their expected export leaves it open.
+    it.each<
+      [name: string, $nodes: () => LexicalNode[], expected: string | RegExp]
+    >([
       [
         'closes before unformatted text',
         () => [
@@ -1820,25 +1824,6 @@ describe('Markdown', () => {
         ],
         '**a**\n**c**',
       ],
-    ])('%s', (_name, $nodes, expected) => {
-      const editor = createTestEditor();
-      editor.update(
-        () => {
-          $getRoot()
-            .clear()
-            .append($createParagraphNode().append(...$nodes()));
-        },
-        {discrete: true},
-      );
-      const exported = editor.read($exportMarkdown);
-      expect(exported).toBe(expected);
-      expect(importMarkdown(exported).read($chars)).toEqual(
-        editor.read($chars),
-      );
-    });
-
-    // The code span's padding is not what these test, so it is left open.
-    it.each<[name: string, $nodes: () => LexicalNode[], expected: RegExp]>([
       [
         'leaves the formats of inline code that holds only a space off',
         () => [
@@ -1868,7 +1853,11 @@ describe('Markdown', () => {
         {discrete: true},
       );
       const exported = editor.read($exportMarkdown);
-      expect(exported).toMatch(expected);
+      if (typeof expected === 'string') {
+        expect(exported).toBe(expected);
+      } else {
+        expect(exported).toMatch(expected);
+      }
       expect(importMarkdown(exported).read($chars)).toEqual(
         editor.read($chars),
       );
@@ -4069,31 +4058,6 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
     expect(result).toBe('  **b**');
   });
 
-  it('closes the tags of the previous node before a slice cut down to whitespace', () => {
-    const editor = createTestEditor({nodes: [LinkNode]});
-    editor.update(
-      () => {
-        const first = $createTextNode('a');
-        first.toggleFormat('bold');
-        first.toggleFormat('italic');
-        const second = $createTextNode(' b');
-        second.toggleFormat('bold');
-        $getRoot().append($createParagraphNode().append(first, second));
-        $setSelectionFromCaretRange(
-          $getCaretRange(
-            $getTextPointCaret(first, 'next', 0),
-            $getTextPointCaret(second, 'next', 1),
-          ),
-        );
-      },
-      {discrete: true},
-    );
-    const result = editor.read('latest', () =>
-      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-    );
-    expect(result).toBe('***a*** ');
-  });
-
   it('closes a tag before a formatted space at the end of a selected link', () => {
     const editor = createTestEditor({nodes: [LinkNode]});
     editor.update(
@@ -4117,53 +4081,46 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
     expect(result).toBe('[***a*** ](u)c');
   });
 
-  it('keeps a tag open across consecutive formatted spaces in a selection', () => {
-    const editor = createTestEditor({nodes: [LinkNode]});
-    editor.update(
-      () => {
-        const bold = TEXT_TYPE_TO_FORMAT.bold;
-        const first = $createTextNode('a').setFormat(bold);
-        const last = $createTextNode('cd').setFormat(bold);
-        $getRoot().append(
-          $createParagraphNode().append(
-            first,
-            $createTextNode(' ').setFormat(bold | TEXT_TYPE_TO_FORMAT.italic),
-            $createTextNode(' ').setFormat(
-              bold | TEXT_TYPE_TO_FORMAT.strikethrough,
-            ),
-            last,
-          ),
-        );
-        $setSelectionFromCaretRange(
-          $getCaretRange(
-            $getTextPointCaret(first, 'next', 0),
-            $getTextPointCaret(last, 'next', 1),
-          ),
-        );
-      },
-      {discrete: true},
-    );
-    const result = editor.read('latest', () =>
-      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-    );
-    expect(result).toBe('**a  c**');
-  });
-
   it.each<
     [
       name: string,
       formats: [text: string, format: number][],
-      offsets: [start: number, end: number],
+      selection: [
+        startNode: number,
+        startOffset: number,
+        endNode: number,
+        endOffset: number,
+      ],
       expected: string,
     ]
   >([
+    [
+      'closes the tags of the previous node before a slice cut down to whitespace',
+      [
+        ['a', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.italic],
+        [' b', TEXT_TYPE_TO_FORMAT.bold],
+      ],
+      [0, 0, 1, 1],
+      '***a*** ',
+    ],
+    [
+      'keeps a tag open across consecutive formatted spaces',
+      [
+        ['a', TEXT_TYPE_TO_FORMAT.bold],
+        [' ', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.italic],
+        [' ', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.strikethrough],
+        ['cd', TEXT_TYPE_TO_FORMAT.bold],
+      ],
+      [0, 0, 3, 1],
+      '**a  c**',
+    ],
     [
       'closes before a slice cut down to a formatted space',
       [
         ['a ', TEXT_TYPE_TO_FORMAT.bold],
         [' b', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.italic],
       ],
-      [0, 1],
+      [0, 0, 1, 1],
       '**a**  ',
     ],
     [
@@ -4173,7 +4130,7 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
         [' x', TEXT_TYPE_TO_FORMAT.bold],
         ['c', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.italic],
       ],
-      [0, 1],
+      [0, 0, 1, 1],
       '***a*** ',
     ],
     [
@@ -4183,7 +4140,7 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
         ['bc', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.italic],
         ['d', TEXT_TYPE_TO_FORMAT.bold],
       ],
-      [0, 1],
+      [0, 0, 1, 1],
       '**a*b***',
     ],
     [
@@ -4192,7 +4149,7 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
         ['a', TEXT_TYPE_TO_FORMAT.bold],
         ['xy', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.code],
       ],
-      [0, 0],
+      [0, 0, 1, 0],
       '**a**',
     ],
     [
@@ -4201,10 +4158,10 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
         ['xy', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.code],
         ['a', TEXT_TYPE_TO_FORMAT.bold],
       ],
-      [2, 1],
+      [0, 2, 1, 1],
       '**a**',
     ],
-  ])('%s', (_name, formats, [start, end], expected) => {
+  ])('%s', (_name, formats, [startNode, start, endNode, end], expected) => {
     const editor = createTestEditor({nodes: [LinkNode]});
     editor.update(
       () => {
@@ -4214,8 +4171,8 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
         $getRoot().append($createParagraphNode().append(...nodes));
         $setSelectionFromCaretRange(
           $getCaretRange(
-            $getTextPointCaret(nodes[0], 'next', start),
-            $getTextPointCaret(nodes[1], 'next', end),
+            $getTextPointCaret(nodes[startNode], 'next', start),
+            $getTextPointCaret(nodes[endNode], 'next', end),
           ),
         );
       },

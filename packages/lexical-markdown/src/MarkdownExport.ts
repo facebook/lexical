@@ -19,6 +19,7 @@ import {
   type ElementNode,
   type LexicalNode,
   type LineBreakNode,
+  type NodeKey,
   type TextFormatType,
   type TextNode,
 } from 'lexical';
@@ -226,11 +227,8 @@ function $processNodeForSelection(
 type OpenTag = {
   format: TextFormatType;
   tag: string;
-  /**
-   * See `$continuesTag`: the last node it answered for, its answer, and the
-   * sibling its walk stopped at, which every node in between shares.
-   */
-  continues?: {from: TextNode; result: boolean; until: TextNode | null};
+  /** `$continuesTag`'s answers so far, by node key. */
+  answers?: Map<NodeKey, boolean>;
 };
 
 function $exportChildrenForSelection(
@@ -573,10 +571,7 @@ function $exportTextFormat(
   for (let i = 0; i < unclosedTags.length; i++) {
     const nodeHasFormat = hasFormat(node, unclosedTags[i].format);
     // prevent adding closing tag if later text with the format will do it
-    if (
-      nodeHasFormat &&
-      $continuesTag(node, prevNode, unclosedTags[i], selection)
-    ) {
+    if (nodeHasFormat && $continuesTag(node, unclosedTags[i], selection)) {
       continue;
     }
 
@@ -651,21 +646,21 @@ function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
  * Whether `tag` carries on past `node`, which has its format, to exported
  * text that can hold it. Whitespace-only siblings cannot (the tag must close
  * before the space), so they are looked past while they keep the format.
- * Text outside the exported selection does not count. The answer and where
- * the walk stopped are remembered on the tag, so the rest of a whitespace run
- * reuses it instead of walking the run again.
+ * Text outside the exported selection does not count. Every whitespace node
+ * the walk passes over shares its answer, so that is remembered on the tag
+ * and each run is walked once, whatever order its nodes are asked in.
  */
 function $continuesTag(
   node: TextNode,
-  prevNode: TextNode | null,
   tag: OpenTag,
   selection: BaseSelection | null,
 ): boolean {
-  const {continues} = tag;
-  if (continues && continues.from.is(prevNode) && !node.is(continues.until)) {
-    continues.from = node;
-    return continues.result;
+  const answers = tag.answers || (tag.answers = new Map());
+  const known = answers.get(node.getKey());
+  if (known !== undefined) {
+    return known;
   }
+  const passed = [node];
   let next = getTextSibling(node, false);
   let result = false;
   while (
@@ -682,9 +677,12 @@ function $continuesTag(
     if (text.includes('\n')) {
       break;
     }
+    passed.push(next);
     next = getTextSibling(next, false);
   }
-  tag.continues = {from: node, result, until: next};
+  for (const passedNode of passed) {
+    answers.set(passedNode.getKey(), result);
+  }
   return result;
 }
 

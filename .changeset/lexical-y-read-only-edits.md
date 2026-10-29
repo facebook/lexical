@@ -12,7 +12,9 @@ cannot store) also made the editor editable for a moment whenever the
 layout record changed, and warned again; it now stays read only.
 
 Verify: code that calls `editor.update()` while the binding's `status` is
-`'readonly'` sees its change undone after the update, and `onWarn` receives
+`'readonly'` sees its change undone after the update (the editor reads what
+it changed again, or, once the document cannot be read, shows what it showed
+before), and `onWarn` receives
 `UNSUPPORTED_EDIT_WARNING` (`reason: 'read-only'`) once, unless the binding went
 read only to keep showing a change it cannot store
 (`UNSUPPORTED_SLOTS_WARNING`). Code that handles every `YWarningCode`

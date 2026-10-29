@@ -110,8 +110,10 @@ provider.once('sync', () => {
   Register the same node classes on every client. A read-only editor keeps
   showing the document: what a local update changes there (code that calls
   `editor.update()`, as the editor is not editable) is not written and is
-  read again, with a warning (`UNSUPPORTED_EDIT_WARNING`). A binding that
-  went read only to keep showing a change it cannot store (a slot, see
+  read again, with a warning (`UNSUPPORTED_EDIT_WARNING`); once the
+  document cannot be read at all, the editor shows what it showed before
+  the update again. A binding that went read only to keep showing a change
+  it cannot store (a slot, see
   [How content is stored](#how-content-is-stored)) leaves later updates as
   they are too.
 - `binding.initialize()`, called after the provider's first sync, writes the

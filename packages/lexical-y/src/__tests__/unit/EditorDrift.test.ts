@@ -65,6 +65,7 @@ import {
   type YBinding,
   YCollabExtension,
 } from '../..';
+import {Reader} from '../../internal/Read';
 import {
   $createBoxNode,
   $createEquation,
@@ -486,6 +487,53 @@ describe.each([false, true])('blockIds %s', blockIds => {
       expect(seen).toEqual(Array.from({length: 6}, () => [1, 2]));
       // Warned once while read only.
       expect(edits(a.warnings)).toEqual([{reason: 'read-only'}]);
+      a.editor.dispose();
+      b.editor.dispose();
+    });
+
+    test('once the document cannot be read, a local update goes back to what the editor showed', async () => {
+      const [b, a] = clients(2, blockIds);
+      b.editor.update(
+        () => {
+          $getRoot().clear().append($p('hello'));
+        },
+        {discrete: true},
+      );
+      b.binding.initialize();
+      await flush();
+      // Every read throws, and so does the fresh read after it: a fails
+      // closed and reads nothing more.
+      const proto = Reader.prototype as unknown as {
+        $apply: (...args: unknown[]) => void;
+        $readFull: (...args: unknown[]) => void;
+      };
+      const {$apply, $readFull} = proto;
+      proto.$apply = proto.$readFull = () => {
+        throw new Error('simulated reader failure');
+      };
+      try {
+        b.editor.update(
+          () =>
+            ($getRoot().getFirstChildOrThrow() as ElementNode).append(
+              $createTextNode(' there'),
+            ),
+          {discrete: true},
+        );
+        await flush();
+      } finally {
+        proto.$apply = $apply;
+        proto.$readFull = $readFull;
+      }
+      expect(a.binding.status).toBe('readonly');
+      expect(show(a)).toBe('paragraph("hello")');
+      const vector = Y.encodeStateVector(a.doc);
+      a.editor.update(() => $getRoot().append($p('local')), {
+        discrete: true,
+      });
+      await flush();
+      expect(show(a)).toBe('paragraph("hello")');
+      expect(edits(a.warnings)).toEqual([{reason: 'read-only'}]);
+      expect(Y.encodeStateVector(a.doc)).toEqual(vector);
       a.editor.dispose();
       b.editor.dispose();
     });

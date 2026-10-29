@@ -1168,8 +1168,9 @@ function escapeCharacterReferences(value: string): string {
   );
 }
 
-// A raw link destination cannot hold whitespace or an ASCII control
-// character, so export writes a URL with any of them in the pointy form. Import
+// A raw link destination cannot hold an ASCII control character or a space in
+// CommonMark, nor any Unicode whitespace in the raw branch of `LINK`'s import
+// patterns, so export writes a URL with any of them in the pointy form. Import
 // still reads control characters in a raw destination, as older exports wrote
 // them there. A NUL reads back as U+FFFD in a CommonMark reader whichever form
 // it is in, since no spelling of it avoids that.
@@ -1179,8 +1180,9 @@ const NOT_RAW_DESTINATION = /[\s\0-\x1f\x7f]/;
 // A link destination or title is read back through `unescapeText`, so after
 // `escapeCharacterReferences` every match of `syntax`, a global regular
 // expression for the characters its shape treats as syntax, gets a backslash.
-// So does a backtick: code spans are read before links, so one anywhere in the
-// link could pair with one in the text after it and swallow the link.
+// So does a backtick: this package's importer reads code spans before links,
+// so one anywhere in the link could pair with one in the text after it and
+// swallow the link, although a CommonMark reader would not let it.
 // Neither may hold a line ending either. CommonMark allows none in a
 // destination and no blank line in a title, where two CRs make one as surely
 // as two LFs, and the importer reads one LF-separated line at a time, so even

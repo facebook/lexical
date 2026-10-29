@@ -132,7 +132,7 @@ describe('CodeImportExtension', () => {
     editor.read(() => {
       const node = $rootCode();
       expect(node.getWordWrap()).toBe(false);
-      expect(node.exportJSON()).not.toHaveProperty('wordWrap');
+      expect(node.exportJSON(true)).not.toHaveProperty('wordWrap');
     });
   });
 

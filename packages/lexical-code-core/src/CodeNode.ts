@@ -17,15 +17,11 @@ import {
   $createTabNode,
   $getDocument,
   $getEditor,
-  $getState,
-  $getStateChange,
   $isLineBreakNode,
   $isTabNode,
   $isTextNode,
-  $setState,
   addClassNamesToElement,
   booleanValue,
-  createState,
   type DOMConversionOutput,
   type DOMExportOutput,
   type EditorConfig,
@@ -44,10 +40,11 @@ import {
   type SerializedPartial,
   setDOMStyleFromCSS,
   type Spread,
-  type StateValueOrUpdater,
   stringValue,
   type TabNode,
+  type ValueOrUpdater,
   withAccessors,
+  withField,
 } from 'lexical';
 
 import {
@@ -86,6 +83,11 @@ const codeNodeSchema = nodeSchema<CodeNode>()({
   theme: withAccessors(optional(stringValue()), {
     getter: {field: '__theme'},
   }),
+  // Left out of the JSON while it is off, so other code blocks' JSON is
+  // unchanged.
+  wordWrap: withField(optional(booleanValue(), {omitDefault: true}), {
+    field: '__wordWrap',
+  }),
 });
 
 export const DEFAULT_CODE_LANGUAGE = 'javascript';
@@ -109,13 +111,6 @@ const HIGHLIGHT_LANGUAGE_DATA_ATTRIBUTE = 'data-highlight-language';
 const THEME_DATA_ATTRIBUTE = 'data-theme';
 const WORD_WRAP_DATA_ATTRIBUTE = 'data-lexical-code-word-wrap';
 
-/**
- * Whether a code block soft wraps long lines. It is flat, so it serializes
- * as a top level `wordWrap` key next to `language` and `theme`, and only
- * while it is true.
- */
-const codeWordWrapState = createState('wordWrap', {parse: booleanValue()});
-
 const noExtensionDeprecation = warnOnlyOnce(
   'Using CodeNode without CodeExtension is deprecated',
 );
@@ -134,6 +129,8 @@ export class CodeNode extends ElementNode {
   __language: string | null | undefined;
   /** @internal */
   __theme: string | undefined;
+  /** @internal */
+  __wordWrap: boolean | undefined = undefined;
   /** @internal */
   __isSyntaxHighlightSupported: boolean;
 
@@ -207,7 +204,6 @@ export class CodeNode extends ElementNode {
         },
       },
       json: codeNodeSchema,
-      stateConfigs: [{flat: true, stateConfig: codeWordWrapState}],
     });
   }
 
@@ -306,9 +302,8 @@ export class CodeNode extends ElementNode {
 
     // Only the attribute changes. Keep the <code> element, with its scroll
     // position and line break wrappers, instead of recreating it.
-    const wordWrap = $getStateChange(this, prevNode, codeWordWrapState);
-    if (wordWrap !== null) {
-      if (wordWrap[0]) {
+    if (this.__wordWrap !== prevNode.__wordWrap) {
+      if (this.__wordWrap) {
         dom.setAttribute(WORD_WRAP_DATA_ATTRIBUTE, 'true');
       } else {
         dom.removeAttribute(WORD_WRAP_DATA_ATTRIBUTE);
@@ -476,19 +471,27 @@ export class CodeNode extends ElementNode {
    * on the `data-lexical-code-word-wrap` attribute (see the package README).
    */
   getWordWrap(): boolean {
-    return $getState(this, codeWordWrapState);
+    return this.getLatest().__wordWrap === true;
   }
 
   /**
-   * Turns soft wrapping of long lines on or off. With an updater function
-   * the node is only marked dirty when the value changes. This only sets the
-   * flag and the `data-lexical-code-word-wrap` attribute; the theme's CSS
-   * wraps the lines.
+   * Turns soft wrapping of long lines on or off, or toggles it with an
+   * updater such as `wordWrap => !wordWrap`. The node is only marked dirty
+   * when the value changes. This only sets the flag and the
+   * `data-lexical-code-word-wrap` attribute; the theme's CSS wraps the lines.
    */
-  setWordWrap(
-    valueOrUpdater: StateValueOrUpdater<typeof codeWordWrapState>,
-  ): this {
-    return $setState(this, codeWordWrapState, valueOrUpdater);
+  setWordWrap(valueOrUpdater: ValueOrUpdater<boolean>): this {
+    const prevWordWrap = this.getWordWrap();
+    const wordWrap =
+      typeof valueOrUpdater === 'function'
+        ? valueOrUpdater(prevWordWrap)
+        : valueOrUpdater;
+    if (wordWrap === prevWordWrap) {
+      return this;
+    }
+    const writable = this.getWritable();
+    writable.__wordWrap = wordWrap || undefined;
+    return writable;
   }
 }
 
@@ -516,7 +519,6 @@ export function $createCodeNodeFromDOM(element: HTMLElement): CodeNode {
     element.getAttribute(THEME_DATA_ATTRIBUTE),
   );
   const wordWrap = element.getAttribute(WORD_WRAP_DATA_ATTRIBUTE);
-  // Set only when on, so other code blocks don't allocate a NodeState.
   return wordWrap !== null && wordWrap !== 'false'
     ? node.setWordWrap(true)
     : node;

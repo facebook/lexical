@@ -159,8 +159,9 @@ describe('CodeNode', () => {
               const node = $createCodeNode('javascript');
               expect(node.getWordWrap()).toBe(false);
               const off = node.exportJSON();
-              expect(off).not.toHaveProperty('wordWrap');
-              expect(off).not.toHaveProperty('$');
+              expect(off.wordWrap).toBeUndefined();
+              expect(JSON.stringify(off)).not.toContain('wordWrap');
+              expect(node.exportJSON(true)).not.toHaveProperty('wordWrap');
 
               node.setWordWrap(true);
               expect(node.getWordWrap()).toBe(true);
@@ -175,19 +176,16 @@ describe('CodeNode', () => {
           );
         });
 
-        it('imports wordWrap from the top level or from $', () => {
+        it('imports wordWrap', () => {
           testEnv.editor.update(
             () => {
               const off = $createCodeNode('javascript').exportJSON();
-              const topLevel = $importCodeJSON({...off, wordWrap: true});
-              expect(topLevel.getWordWrap()).toBe(true);
-
-              const nested = $importCodeJSON({...off, $: {wordWrap: true}});
-              expect(nested.getWordWrap()).toBe(true);
-              expect(nested.exportJSON()).toStrictEqual({
-                ...off,
-                wordWrap: true,
-              });
+              const on = $importCodeJSON({...off, wordWrap: true});
+              expect(on.getWordWrap()).toBe(true);
+              expect(on.exportJSON()).toStrictEqual({...off, wordWrap: true});
+              expect(
+                $importCodeJSON({...off, wordWrap: false}).exportJSON(true),
+              ).not.toHaveProperty('wordWrap');
 
               const invalid = $importCodeJSON({
                 ...off,
@@ -303,7 +301,7 @@ describe('CodeNode', () => {
               const [node] = $generateNodesFromDOM(editor, doc);
               assert($isCodeNode(node), 'expected a CodeNode');
               expect(node.getWordWrap()).toBe(false);
-              expect(node.exportJSON()).not.toHaveProperty('wordWrap');
+              expect(node.exportJSON(true)).not.toHaveProperty('wordWrap');
             },
             {discrete: true},
           );

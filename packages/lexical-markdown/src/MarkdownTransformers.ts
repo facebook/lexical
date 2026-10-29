@@ -1168,6 +1168,18 @@ function escapeCharacterReferences(value: string): string {
   );
 }
 
+// A link destination or title is read back through `unescapeText`, so after
+// `escapeCharacterReferences` the characters its shape treats as syntax get a
+// backslash. Neither may hold a line ending either: a literal one would leave
+// it unclosed and split the paragraph in two. It goes out as the character
+// reference that `unescapeText` and a CommonMark reader both turn back into
+// the line ending, written after the `&` escape so that one leaves it alone.
+function escapeLinkPart(value: string, syntax: RegExp): string {
+  return escapeCharacterReferences(value)
+    .replace(syntax, '\\$1')
+    .replace(/[\r\n]/g, lineEnding => `&#${lineEnding.charCodeAt(0)};`);
+}
+
 // Mask escaped/code brackets without changing source offsets, then find an inner
 // opener after a literal prefix. Return -1 for balanced labels or null when
 // unmatched closers leave no recoverable opener.
@@ -1223,16 +1235,7 @@ export const LINK: TextMatchTransformer = {
       return null;
     }
     const textContent = exportChildren(node);
-    let title = node.getTitle();
-
-    // A title is read back through `unescapeText` as well, so a character
-    // reference in it needs the same treatment the destination gets below.
-    if (title != null) {
-      title = escapeCharacterReferences(title)
-        .replace(/([\\"])/g, '\\$1')
-        .replace(/\r/g, '&#13;')
-        .replace(/\n/g, '&#10;');
-    }
+    const title = node.getTitle();
 
     // A raw destination cannot hold whitespace, so a URL that has any is
     // written in the pointy form, where only `<`, `>` and a backslash need an
@@ -1241,28 +1244,15 @@ export const LINK: TextMatchTransformer = {
     // parenthesis would close it early, a backslash would start an escape, and
     // only a `<` in first place turns it into the pointy form. An angle
     // bracket anywhere else is an ordinary character and goes out as it is.
-    //
-    // Neither shape may hold a line ending, so a literal one would leave a
-    // destination that no reader can close and would split the paragraph in
-    // two. It goes out as the character reference that `unescapeText` and a
-    // CommonMark reader both turn back into the line ending.
-    //
-    // That spelling only survives because a reader decodes it, so an `&` that
-    // already begins a character reference has to go out as one itself, or the
-    // URL comes back as whatever the reference names. Escaping it first keeps
-    // the references written for the line endings below out of its way.
+    // In the double-quoted title only `"` and a backslash need an escape.
     const rawUrl = node.getURL();
-    const escapedUrl = escapeCharacterReferences(rawUrl);
     const url =
       rawUrl === '' || /\s/.test(rawUrl)
-        ? `<${escapedUrl
-            .replace(/([\\<>])/g, '\\$1')
-            .replace(/\r/g, '&#13;')
-            .replace(/\n/g, '&#10;')}>`
-        : escapedUrl.replace(/([\\()])/g, '\\$1').replace(/^</, '\\<');
+        ? `<${escapeLinkPart(rawUrl, /([\\<>])/g)}>`
+        : escapeLinkPart(rawUrl, /([\\()])/g).replace(/^</, '\\<');
 
     const linkContent = title
-      ? `[${textContent}](${url} "${title}")`
+      ? `[${textContent}](${url} "${escapeLinkPart(title, /([\\"])/g)}")`
       : `[${textContent}](${url})`;
 
     return linkContent;

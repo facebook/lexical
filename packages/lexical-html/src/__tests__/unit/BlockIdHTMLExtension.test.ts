@@ -7,8 +7,11 @@
  */
 
 import {
+  $getBlockById,
+  $getBlockHandle,
   $getBlockId,
   $isRootChildBlock,
+  $resolveBlockHandle,
   BlockIdExtension,
   buildEditorFromExtensions,
   configExtension,
@@ -21,6 +24,8 @@ import {
   DOMImportExtension,
 } from '@lexical/html';
 import {
+  BLOCK_HANDLE_ATTRIBUTE,
+  BLOCK_ID_ATTRIBUTE,
   type BlockIdHTMLConfig,
   BlockIdHTMLExtension,
 } from '@lexical/html/BlockIdHTMLExtension';
@@ -36,11 +41,16 @@ import {
   type LexicalEditor,
   type LexicalNode,
 } from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 function counter(prefix = 'b') {
   let n = 0;
   return () => `${prefix}${++n}`;
+}
+
+function withIds(ids: string[], then: () => string): () => string {
+  let i = 0;
+  return () => (i < ids.length ? ids[i++] : then());
 }
 
 /**
@@ -64,6 +74,8 @@ function build(
   options: {
     /** Skip {@link asEdited}: the first content the editor gets is a load. */
     fresh?: boolean;
+    /** Ids that `generateId` hands out first, before the counter. */
+    ids?: string[];
     html?: false | Partial<BlockIdHTMLConfig>;
     prefix?: string;
     /** Identify the root's children only. */
@@ -79,7 +91,7 @@ function build(
         RichTextExtension,
         ListExtension,
         configExtension(BlockIdExtension, {
-          generateId: counter(options.prefix),
+          generateId: withIds(options.ids || [], counter(options.prefix)),
           ...(options.rootOnly ? {$isIdentifiedBlock: $isRootChildBlock} : {}),
         }),
         ...(options.html === false
@@ -342,5 +354,168 @@ describe('BlockIdHTMLExtension: documents read without ids', () => {
     for (const id of html[0]) {
       expect(id).toMatch(/^[A-Za-z0-9_-]{21}$/);
     }
+  });
+});
+
+describe("BlockIdHTMLExtension: export: 'handle'", () => {
+  const IDS = [
+    'V1StGXR8_Z5jdHi6B-myT',
+    '9xQeLm2Pq0aK7cTb_wYuA',
+    'Rk8pZc41Uo-HsVd2NnFjB',
+    'V1StQ9mWc0-bE3rT7yLpA',
+    'u7NnPz2Kq0aK7cTb_wYuA',
+  ];
+
+  test('exports data-block-handle instead of data-block-id', () => {
+    using editor = build({html: {export: 'handle'}, ids: IDS});
+    append(
+      editor,
+      parseFixture(
+        '<h2>Q3 plan</h2><p>Revenue grew 4% in Q3.</p><ul><li>a</li><li>b</li></ul>',
+      ),
+    );
+    expect(exportHTML(editor)).toBe(
+      [
+        '<h2 data-block-handle="V1StG"><span style="white-space: pre-wrap;">Q3 plan</span></h2>',
+        '<p data-block-handle="9xQe"><span style="white-space: pre-wrap;">Revenue grew 4% in Q3.</span></p>',
+        '<ul data-block-handle="Rk8p">',
+        '<li value="1" data-block-handle="V1StQ"><span style="white-space: pre-wrap;">a</span></li>',
+        '<li value="2" data-block-handle="u7Nn"><span style="white-space: pre-wrap;">b</span></li>',
+        '</ul>',
+      ].join(''),
+    );
+    expect(BLOCK_HANDLE_ATTRIBUTE).toBe('data-block-handle');
+    expect(BLOCK_ID_ATTRIBUTE).toBe('data-block-id');
+  });
+
+  test('export: true and export: false are unchanged', () => {
+    const fixture =
+      '<h2>Q3 plan</h2><p>Revenue grew 4% in Q3.</p><ul><li>a</li><li>b</li></ul>';
+    const html: Record<string, string> = {};
+    for (const [name, config] of [
+      ['default', {}],
+      ['true', {export: true}],
+      ['false', {export: false}],
+      ['without', false],
+    ] as const) {
+      using editor = build({html: config, ids: IDS});
+      append(editor, parseFixture(fixture));
+      html[name] = exportHTML(editor);
+    }
+    expect(html.true).toBe(html.default);
+    expect(html.true).toBe(
+      [
+        '<h2 data-block-id="V1StGXR8_Z5jdHi6B-myT"><span style="white-space: pre-wrap;">Q3 plan</span></h2>',
+        '<p data-block-id="9xQeLm2Pq0aK7cTb_wYuA"><span style="white-space: pre-wrap;">Revenue grew 4% in Q3.</span></p>',
+        '<ul data-block-id="Rk8pZc41Uo-HsVd2NnFjB">',
+        '<li value="1" data-block-id="V1StQ9mWc0-bE3rT7yLpA"><span style="white-space: pre-wrap;">a</span></li>',
+        '<li value="2" data-block-id="u7NnPz2Kq0aK7cTb_wYuA"><span style="white-space: pre-wrap;">b</span></li>',
+        '</ul>',
+      ].join(''),
+    );
+    expect(html.false).toBe(html.without);
+    expect(html.false).not.toContain('data-block');
+  });
+
+  test('import never reads data-block-handle as an id', () => {
+    using editor = build({ids: ['abcdEFGH', 'V1StGXR8_Z5jdHi6B-myT']});
+    append(editor, parseFixture('<p>existing</p>'));
+    expect(tree(editor)).toEqual(['paragraph:abcdEFGH']);
+    append(
+      editor,
+      parseFixture(
+        // A handle of a block of this document, a handle that looks like a
+        // whole id, and a handle next to a real id.
+        '<p data-block-handle="abcd">handle of existing</p>' +
+          '<p data-block-handle="kept-if-read-as-id">no id</p>' +
+          '<h3 data-block-handle="zzzz" data-block-id="real-id">with id</h3>',
+      ),
+    );
+    expect(tree(editor)).toEqual([
+      'paragraph:abcdEFGH',
+      'paragraph:V1StGXR8_Z5jdHi6B-myT',
+      'paragraph:b1',
+      'heading:real-id',
+    ]);
+    // With the import on, as by default, and an export of handles.
+    using handles = build({html: {export: 'handle'}});
+    append(handles, parseFixture('<p data-block-handle="from-html">a</p>'));
+    expect(tree(handles)).toEqual(['paragraph:b1']);
+  });
+
+  test('round trip: export handles, edit by handle, resolve', () => {
+    using editor = build({html: {export: 'handle'}, ids: IDS});
+    append(
+      editor,
+      parseFixture(
+        '<h2>Q3 plan</h2><p>Revenue grew 4% in Q3.</p><p>Hiring is on track.</p>',
+      ),
+    );
+    // 1. What the model reads.
+    const exported = exportDocument(editor);
+    const elements = Array.from(
+      exported.querySelectorAll(`[${BLOCK_HANDLE_ATTRIBUTE}]`),
+    );
+    expect(exported.querySelectorAll(`[${BLOCK_ID_ATTRIBUTE}]`)).toHaveLength(
+      0,
+    );
+    expect(
+      elements.map(element => element.getAttribute(BLOCK_HANDLE_ATTRIBUTE)),
+    ).toEqual(['V1St', '9xQe', 'Rk8p']);
+    // 2. What the model answers.
+    const revenue = elements.find(element =>
+      element.textContent!.startsWith('Revenue'),
+    )!;
+    const ops = [
+      {
+        block: revenue.getAttribute(BLOCK_HANDLE_ATTRIBUTE)!,
+        op: 'replace',
+        text: 'Revenue grew 6%.',
+      },
+      {block: '9xQf', op: 'replace', text: 'a typo'},
+      {block: 'Rk8p', op: 'delete', text: ''},
+    ];
+    // 3. Applied by the app, one update per operation.
+    const statuses: string[] = [];
+    for (const op of ops) {
+      editor.update(
+        () => {
+          const result = $resolveBlockHandle(op.block);
+          statuses.push(result.status);
+          if (result.status !== 'found') {
+            return;
+          }
+          if (op.op === 'delete') {
+            result.node.remove();
+          } else {
+            result.node.replace(
+              $createParagraphNode().append($createTextNode(op.text)),
+            );
+          }
+        },
+        {discrete: true},
+      );
+    }
+    expect(statuses).toEqual(['found', 'not-found', 'found']);
+    editor.read(() => {
+      expect(
+        $getRoot()
+          .getChildren()
+          .map(node => [$getBlockHandle(node), node.getTextContent()]),
+      ).toEqual([
+        ['V1St', 'Q3 plan'],
+        ['9xQe', 'Revenue grew 6%.'],
+      ]);
+      // The replacement kept the id that the handle was derived from.
+      const block = $getBlockById(IDS[1]);
+      assert(block !== null);
+      expect(block.getTextContent()).toBe('Revenue grew 6%.');
+    });
+    expect(exportHTML(editor)).toBe(
+      [
+        '<h2 data-block-handle="V1St"><span style="white-space: pre-wrap;">Q3 plan</span></h2>',
+        '<p data-block-handle="9xQe"><span style="white-space: pre-wrap;">Revenue grew 6%.</span></p>',
+      ].join(''),
+    );
   });
 });

@@ -16,6 +16,24 @@ declare export function $getBlockId(node: LexicalNode): string | null;
 
 declare export function $getBlockById(id: string): LexicalNode | null;
 
+declare export var MIN_BLOCK_HANDLE_LENGTH: 4;
+
+export type BlockHandleResult =
+  | {readonly status: 'found', readonly node: LexicalNode}
+  | {readonly status: 'not-found', readonly handle: string}
+  | {
+      readonly status: 'ambiguous',
+      readonly handle: string,
+      readonly candidates: ReadonlyArray<string>,
+    }
+  | {readonly status: 'invalid', readonly handle: string};
+
+declare export function $getBlockHandle(node: LexicalNode): string | null;
+
+declare export function $getBlockHandles(): Map<string, string>;
+
+declare export function $resolveBlockHandle(handle: string): BlockHandleResult;
+
 declare export function $defaultIsIdentifiedBlock(node: LexicalNode): boolean;
 
 declare export function $isRootChildBlock(node: LexicalNode): boolean;
@@ -32,6 +50,9 @@ export type BlockIdConfig = {
 export interface BlockIdOutput {
   disabled: Signal<boolean>;
   $getBlockById: (id: string) => LexicalNode | null;
+  $getBlockHandle: (node: LexicalNode) => string | null;
+  $getBlockHandles: () => Map<string, string>;
+  $resolveBlockHandle: (handle: string) => BlockHandleResult;
   $isIdentifiedBlock: (node: LexicalNode) => boolean;
 }
 

@@ -15,11 +15,15 @@
 import {
   $defaultIsIdentifiedBlock,
   $getBlockById,
+  $getBlockHandle,
+  $getBlockHandles,
   $getBlockId,
   $isRootChildBlock,
+  $resolveBlockHandle,
   BlockIdExtension,
   blockIdState,
   buildEditorFromExtensions,
+  getExtensionDependencyFromEditor,
 } from '@lexical/extension';
 import {BlockIdHTMLExtension} from '@lexical/html/BlockIdHTMLExtension';
 import {RichTextExtension} from '@lexical/rich-text';
@@ -304,5 +308,148 @@ describe('Block IDs documentation examples', () => {
     editor.read(() => {
       expect($getBlockId($getRoot().getLastChildOrThrow())).toBe('b1');
     });
+  });
+  test('Showing blocks to a model', () => {
+    const ids = ['V1StGXR8_Z5jdHi6B-myT', '9xQeLm2Pq0aK7cTb_wYuA'];
+    using editor = buildEditorFromExtensions({
+      $initialEditorState: () => {
+        for (const [i, text] of ['Q3 plan', 'Revenue grew 4%.'].entries()) {
+          const node = $createParagraphNode().append($createTextNode(text));
+          $setState(node, blockIdState, ids[i]);
+          $getRoot().append(node);
+        }
+      },
+      dependencies: [RichTextExtension, BlockIdExtension],
+      name: 'my-editor',
+    });
+
+    // 1. What the model reads.
+    const blocks = editor.read(() =>
+      $getRoot()
+        .getChildren()
+        .map(node => ({
+          block: $getBlockHandle(node),
+          text: node.getTextContent(),
+        })),
+    );
+    expect(blocks).toEqual([
+      {block: 'V1St', text: 'Q3 plan'},
+      {block: '9xQe', text: 'Revenue grew 4%.'},
+    ]);
+
+    // 2. What the model answers, then 3. applying it, in its own update.
+    const feedback: string[] = [];
+    const apply = (op: {block: string; text: string}) =>
+      editor.update(
+        () => {
+          const result = $resolveBlockHandle(op.block);
+          switch (result.status) {
+            case 'found':
+              result.node.replace(
+                $createParagraphNode().append($createTextNode(op.text)),
+              );
+              break;
+            case 'not-found':
+              feedback.push(
+                `No block ${result.handle}: it may have been deleted.`,
+              );
+              break;
+            case 'ambiguous':
+              feedback.push(
+                `${result.handle} now names several blocks: use one of ${result.candidates.join(', ')}.`,
+              );
+              break;
+            case 'invalid':
+              feedback.push(`${result.handle} is not a block handle.`);
+              break;
+          }
+        },
+        {discrete: true},
+      );
+    apply({block: '9xQe', text: 'Revenue grew 6%.'});
+    apply({block: '9xQf', text: 'typo'});
+    apply({block: '9xQe!', text: 'invalid'});
+    // A collaborator adds a block whose id shares V1St.
+    editor.update(
+      () => {
+        const node = $createParagraphNode();
+        $setState(node, blockIdState, 'V1StQ9mWc0-bE3rT7yLpA');
+        $getRoot().append(node);
+      },
+      {discrete: true},
+    );
+    apply({block: 'V1St', text: 'stale'});
+    expect(feedback).toEqual([
+      'No block 9xQf: it may have been deleted.',
+      '9xQe! is not a block handle.',
+      'V1St now names several blocks: use one of V1StG, V1StQ.',
+    ]);
+    editor.read(() => {
+      expect($getBlockById(ids[1])!.getTextContent()).toBe('Revenue grew 6%.');
+      expect($getBlockHandle($getBlockById(ids[0])!)).toBe('V1StG');
+    });
+  });
+
+  test('Handles and collaboration: checking the id read', () => {
+    const ids = ['abcd1111', 'wxyz2222'];
+    using editor = buildEditorFromExtensions({
+      $initialEditorState: () => {
+        for (const id of ids) {
+          const node = $createParagraphNode().append($createTextNode(id));
+          $setState(node, blockIdState, id);
+          $getRoot().append(node);
+        }
+      },
+      dependencies: [RichTextExtension, BlockIdExtension],
+      name: 'my-editor',
+    });
+    // At the read.
+    const handleOf = editor.read(() => $getBlockHandles()); // id → handle
+    const idOf = new Map(Array.from(handleOf, ([id, handle]) => [handle, id]));
+    expect(idOf.get('abcd')).toBe('abcd1111');
+    // The block is deleted and a block whose id shares its prefix is added.
+    editor.update(
+      () => {
+        $getBlockById('abcd1111')!.remove();
+        const node = $createParagraphNode();
+        $setState(node, blockIdState, 'abcd2222');
+        $getRoot().append(node);
+      },
+      {discrete: true},
+    );
+    const op = {block: 'abcd'};
+    // When applying an edit by handle.
+    editor.update(
+      () => {
+        const result = $resolveBlockHandle(op.block);
+        expect(result.status).toBe('found');
+        if (
+          result.status === 'found' &&
+          $getBlockId(result.node) === idOf.get(op.block)
+        ) {
+          result.node.remove();
+        }
+      },
+      {discrete: true},
+    );
+    // The new block was not the one read: it is kept.
+    editor.read(() => {
+      expect($getBlockById('abcd2222')).not.toBeNull();
+    });
+  });
+
+  test('Handles in HTML', () => {
+    using editor = buildEditorFromExtensions({
+      dependencies: [
+        RichTextExtension,
+        BlockIdExtension,
+        configExtension(BlockIdHTMLExtension, {export: 'handle'}),
+      ],
+      name: 'my-editor',
+    });
+    expect(
+      getExtensionDependencyFromEditor(editor, BlockIdHTMLExtension).output
+        .export.value,
+    ).toBe('handle');
   });
 });

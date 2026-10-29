@@ -7,6 +7,7 @@
  */
 
 import {
+  $getBlockHandle,
   $getBlockId,
   $getExtensionDependency,
   $getExtensionOutput,
@@ -50,13 +51,39 @@ import {
  */
 export const BLOCK_ID_ATTRIBUTE = 'data-block-id';
 
+/**
+ * The attribute that carries a block handle (see `$getBlockHandle` in
+ * `@lexical/extension`) in HTML exported with `export: 'handle'`. Import
+ * never reads it.
+ *
+ * @experimental
+ */
+export const BLOCK_HANDLE_ATTRIBUTE = 'data-block-handle';
+
 /** @experimental */
 export interface BlockIdHTMLConfig {
   /**
-   * Write {@link BLOCK_ID_ATTRIBUTE} on the exported element of every
-   * identified block (`$generateHtmlFromNodes`, copy as HTML, …).
+   * With `true`, write {@link BLOCK_ID_ATTRIBUTE} on the exported element of
+   * every identified block (`$generateHtmlFromNodes`, copy as HTML, …).
+   *
+   * Showing blocks to a model? Use `'handle'`: it writes
+   * {@link BLOCK_HANDLE_ATTRIBUTE} with the block's handle, the shortest
+   * unique prefix of its id (4 characters or more), instead of the id. Resolve
+   * what the model answers with `$resolveBlockHandle`. Import does not read
+   * handles, so a handle is never mistaken for an id.
+   *
+   * ```ts
+   * configExtension(BlockIdHTMLExtension, {export: 'handle'});
+   * // <p data-block-handle="9xQe">Revenue grew 4% in Q3.</p>
+   * editor.update(() => {
+   *   const result = $resolveBlockHandle('9xQe');
+   *   if (result.status === 'found') {
+   *     result.node.remove();
+   *   }
+   * });
+   * ```
    */
-  export: boolean;
+  export: boolean | 'handle';
   /**
    * Read {@link BLOCK_ID_ATTRIBUTE} back when HTML is imported through
    * {@link DOMImportExtension}, onto the block that the element produced.
@@ -118,6 +145,9 @@ const $installBlockIdImportOverlay: DOMPreprocessFn = (dom, ctx, $next) => {
  * through {@link DOMImportExtension} reads it back (through the uniqueness
  * rule, so ids in pasted HTML never clash with ids in the document).
  *
+ * For HTML shown to a model, `export: 'handle'` writes short handles in
+ * `data-block-handle` instead (see {@link BlockIdHTMLConfig.export}).
+ *
  * This lives in `@lexical/html` rather than in {@link BlockIdExtension}
  * because `@lexical/html` depends on `@lexical/extension`. The legacy
  * `$generateNodesFromDOM` path (`importDOM`) does not read the attribute.
@@ -134,14 +164,23 @@ export const BlockIdHTMLExtension = defineExtension({
         domOverride('*', {
           $exportDOM(node, $next) {
             const output = $next();
+            const mode =
+              $getExtensionOutput(BlockIdHTMLExtension).export.peek();
             if (
               isHTMLElement(output.element) &&
-              $getExtensionOutput(BlockIdHTMLExtension).export.peek() &&
+              mode &&
               $getExtensionOutput(BlockIdExtension).$isIdentifiedBlock(node)
             ) {
-              const id = $getBlockId(node);
-              if (id !== null) {
-                output.element.setAttribute(BLOCK_ID_ATTRIBUTE, id);
+              if (mode === 'handle') {
+                const handle = $getBlockHandle(node);
+                if (handle !== null) {
+                  output.element.setAttribute(BLOCK_HANDLE_ATTRIBUTE, handle);
+                }
+              } else {
+                const id = $getBlockId(node);
+                if (id !== null) {
+                  output.element.setAttribute(BLOCK_ID_ATTRIBUTE, id);
+                }
               }
             }
             return output;

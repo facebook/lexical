@@ -46,6 +46,13 @@ import {
 
 import {$getExtensionOutput} from './getExtensionDependency';
 import {
+  buildHandleTable,
+  handleInTable,
+  type HandleTable,
+  idsWithPrefix,
+  MIN_BLOCK_HANDLE_LENGTH,
+} from './internal/blockHandles';
+import {
   $documentKey,
   deriveDuplicateId,
   derivePositionalId,
@@ -55,7 +62,15 @@ import {
 import {namedSignals} from './namedSignals';
 import {effect, type Signal} from './signals';
 
+export {MIN_BLOCK_HANDLE_LENGTH} from './internal/blockHandles';
+
 const __DEV__ = process.env.NODE_ENV !== 'production';
+
+/**
+ * The most candidates an ambiguous {@link BlockHandleResult} lists, so that
+ * a handle matching many blocks (of ids that are not random) stays short.
+ */
+const MAX_HANDLE_CANDIDATES = 10;
 
 /**
  * Attempts to find a valid, unused id before giving up, which only a broken
@@ -124,11 +139,128 @@ export function $getBlockId(node: LexicalNode): string | null {
  * stale node. A block created, replaced or re-keyed earlier in the same
  * update is found once that update has committed: after
  * `$getBlockById(id).replace(node)`, look the id up again in a later update.
+ * The match is exact: a prefix of an id finds nothing.
+ *
+ * Showing blocks to a model? Use handles, which cost a few tokens instead of
+ * a whole id: {@link $getBlockHandle} / {@link $resolveBlockHandle}, or
+ * `export: 'handle'` in `BlockIdHTMLExtension`.
+ *
+ * ```ts
+ * // What the model reads: [{block: 'V1St', text: 'Q3 plan'}, ...]
+ * const blocks = editor.read(() =>
+ *   $getRoot()
+ *     .getChildren()
+ *     .map(node => ({block: $getBlockHandle(node), text: node.getTextContent()})),
+ * );
+ * // What it answers: {block: 'V1St', text: 'Q4 plan'}
+ * editor.update(() => {
+ *   const result = $resolveBlockHandle(op.block);
+ *   if (result.status === 'found') {
+ *     result.node.replace($createParagraphNode().append($createTextNode(op.text)));
+ *   }
+ * });
+ * ```
  *
  * @experimental
  */
 export function $getBlockById(id: string): LexicalNode | null {
   return $getExtensionOutput(BlockIdExtension).$getBlockById(id);
+}
+
+/**
+ * What {@link $resolveBlockHandle} found for a handle:
+ *
+ * - `found`: the one identified block that the handle names.
+ * - `not-found`: no identified block's id starts with it (a mistyped handle,
+ *   or a block deleted since the handle was read).
+ * - `ambiguous`: several do (a block whose id shares the prefix was added
+ *   since the handle was read). `candidates` holds their current handles, in
+ *   ascending order, at most 10.
+ * - `invalid`: not 1 to 64 characters of the base64url alphabet, so neither a
+ *   handle nor an id.
+ *
+ * @experimental
+ */
+export type BlockHandleResult =
+  | {readonly status: 'found'; readonly node: LexicalNode}
+  | {readonly status: 'not-found'; readonly handle: string}
+  | {
+      readonly status: 'ambiguous';
+      readonly handle: string;
+      readonly candidates: readonly string[];
+    }
+  | {readonly status: 'invalid'; readonly handle: string};
+
+/**
+ * Returns the handle of an identified block: the shortest prefix of its id,
+ * at least {@link MIN_BLOCK_HANDLE_LENGTH} characters long, that no other
+ * identified block's id starts with, like a short git hash (`V1St` for
+ * `V1StGXR8_Z5jdHi6B-myT`). An id shorter than that, or one that another id
+ * starts with, is its own handle. Returns `null` for a node that has no id
+ * or that {@link $getBlockById} would not find by its id (one that is not
+ * attached or not an identified block, a block named since the last commit,
+ * or a copy whose repeated id awaits its repair). Requires
+ * {@link BlockIdExtension}.
+ *
+ * Handles are for showing blocks to a model at a fraction of the tokens of a
+ * whole id: {@link $resolveBlockHandle} takes them back. They are derived
+ * from the ids of the document, never stored, so a handle can grow longer
+ * when a block whose id shares its prefix is added. A handle read earlier
+ * then resolves as `ambiguous` rather than to either block, unless the new
+ * block's whole id is the handle (an exact id always wins).
+ *
+ * Handles are computed from the same blocks as {@link $getBlockById}: those
+ * of the last committed state while the extension is enabled (all of them at
+ * once, then cached until the next commit changes an id), and a scan of the
+ * document on each call while it is disabled.
+ *
+ * @experimental
+ */
+export function $getBlockHandle(node: LexicalNode): string | null {
+  return $getExtensionOutput(BlockIdExtension).$getBlockHandle(node);
+}
+
+/**
+ * Returns the handle of every identified block, by id (see
+ * {@link $getBlockHandle}). The map is a new one on each call.
+ * Requires {@link BlockIdExtension}.
+ *
+ * @experimental
+ */
+export function $getBlockHandles(): Map<string, string> {
+  return $getExtensionOutput(BlockIdExtension).$getBlockHandles();
+}
+
+/**
+ * Finds the identified block that a handle from {@link $getBlockHandle}
+ * names, for input that cannot be trusted (a language model's answer): it
+ * reports a mistyped, outdated or invalid handle in a
+ * {@link BlockHandleResult} instead of throwing. It returns a block only when
+ * exactly one block's id starts with the handle (or equals it). Requires
+ * {@link BlockIdExtension}.
+ *
+ * A whole id is accepted too, and an exact match wins (`b1` finds the block
+ * `b1` even when `b12` exists). Otherwise the handle must be at least
+ * {@link MIN_BLOCK_HANDLE_LENGTH} characters long and the start of exactly
+ * one block's id. A handle that was longer when it was read (another id
+ * shared its prefix then) still finds its block.
+ *
+ * A handle names whichever block's id starts with it now, not the block it
+ * was read from: after local, remote or concurrent changes, a handle read
+ * earlier resolves as `not-found` or `ambiguous`, or, if its block was
+ * deleted and a new block's id starts with the same prefix, as that new
+ * block. With random ids that takes a new id sharing the first 4 characters,
+ * about one chance in 16.7 million per new block. Where an edit must reach
+ * the block that was read, keep the ids of the read ({@link $getBlockHandles}
+ * maps them to handles) and check `$getBlockId(result.node)` against them,
+ * or look them up with {@link $getBlockById}. Like {@link $getBlockById}, a
+ * block created earlier in the same update is found once that update has
+ * committed.
+ *
+ * @experimental
+ */
+export function $resolveBlockHandle(handle: string): BlockHandleResult {
+  return $getExtensionOutput(BlockIdExtension).$resolveBlockHandle(handle);
 }
 
 /**
@@ -287,6 +419,12 @@ export interface BlockIdOutput {
   disabled: Signal<boolean>;
   /** The same as {@link $getBlockById} for this editor. */
   $getBlockById: (id: string) => LexicalNode | null;
+  /** The same as {@link $getBlockHandle} for this editor. */
+  $getBlockHandle: (node: LexicalNode) => string | null;
+  /** The same as {@link $getBlockHandles} for this editor. */
+  $getBlockHandles: () => Map<string, string>;
+  /** The same as {@link $resolveBlockHandle} for this editor. */
+  $resolveBlockHandle: (handle: string) => BlockHandleResult;
   /** The configured {@link BlockIdConfig.$isIdentifiedBlock}. */
   $isIdentifiedBlock: (node: LexicalNode) => boolean;
 }
@@ -299,10 +437,13 @@ export interface BlockIdOutput {
 class BlockIdIndex {
   readonly keysOfId = new Map<string, NodeKey | Set<NodeKey>>();
   readonly idOfKey = new Map<NodeKey, string>();
+  /** Changes whenever the set of indexed ids may have changed. */
+  version = 0;
 
   clear(): void {
     this.keysOfId.clear();
     this.idOfKey.clear();
+    this.version++;
   }
 
   holders(id: string): Iterable<NodeKey> {
@@ -317,6 +458,7 @@ class BlockIdIndex {
   set(key: NodeKey, id: string): void {
     if (this.idOfKey.get(key) !== id) {
       this.remove(key);
+      this.version++;
       this.idOfKey.set(key, id);
       const keys = this.keysOfId.get(id);
       if (keys === undefined) {
@@ -332,6 +474,7 @@ class BlockIdIndex {
   remove(key: NodeKey): void {
     const id = this.idOfKey.get(key);
     if (id !== undefined) {
+      this.version++;
       this.idOfKey.delete(key);
       const keys = this.keysOfId.get(id)!;
       if (typeof keys === 'string') {
@@ -371,6 +514,8 @@ interface BlockIdRuntime {
   /** The blocks named by any pass of that update. */
   provisionalSeen: Set<NodeKey>;
   provisionalState: EditorState | null;
+  /** The handles of the indexed ids, for the index version they were built at. */
+  handles: {readonly table: HandleTable; readonly version: number} | null;
   $getBlockById: (id: string) => LexicalNode | null;
 }
 
@@ -1364,8 +1509,133 @@ function registerBlockIds(
     runtime.provisional.clear();
     runtime.provisionalSeen.clear();
     runtime.provisionalState = null;
+    runtime.handles = null;
     candidates.clear();
   };
+}
+
+/**
+ * The handles of the blocks {@link $getBlockById} sees, and how to find the
+ * live block of an id among them.
+ */
+interface HandleView {
+  readonly table: HandleTable;
+  readonly $lookup: (id: string) => LexicalNode | null;
+}
+
+function $getHandleView(runtime: BlockIdRuntime): HandleView {
+  if (runtime.active) {
+    // The ids of the committed state. Ids of blocks that the active update
+    // removed are still in it: they can only make a handle longer, and
+    // $getBlockById, which verifies against the active state, skips them.
+    const {index} = runtime;
+    let {handles} = runtime;
+    if (handles === null || handles.version !== index.version) {
+      handles = {
+        table: buildHandleTable(index.keysOfId.keys()),
+        version: index.version,
+      };
+      runtime.handles = handles;
+    }
+    return {$lookup: runtime.$getBlockById, table: handles.table};
+  }
+  // Not indexed while disabled: a scan, the first holder of each id in
+  // document order, as $getBlockById finds it.
+  const {$isIdentifiedBlock} = runtime.config;
+  const firstOfId = new Map<string, LexicalNode>();
+  $walk(null, node => {
+    if ($isIdentifiedBlock(node)) {
+      const id = $getBlockId(node);
+      if (id !== null && !firstOfId.has(id)) {
+        firstOfId.set(id, node);
+      }
+    }
+    return null;
+  });
+  return {
+    $lookup: id => firstOfId.get(id) ?? null,
+    table: buildHandleTable(firstOfId.keys()),
+  };
+}
+
+function $getHandleOf(
+  runtime: BlockIdRuntime,
+  node: LexicalNode,
+): string | null {
+  if (!node.isAttached() || !runtime.config.$isIdentifiedBlock(node)) {
+    return null;
+  }
+  const id = $getBlockId(node);
+  if (id === null) {
+    return null;
+  }
+  const {table, $lookup} = $getHandleView(runtime);
+  const handle = table.handles.get(id);
+  // Only a block that its id finds has a handle that finds it: not one named
+  // after the last commit (its id could be a prefix of an indexed one), nor a
+  // later holder of a repeated id, nor a node of another state.
+  if (handle === undefined) {
+    return null;
+  }
+  const found = $lookup(id);
+  return found !== null && found.is(node) ? handle : null;
+}
+
+function $getAllHandles(runtime: BlockIdRuntime): Map<string, string> {
+  const {table, $lookup} = $getHandleView(runtime);
+  const result = new Map<string, string>();
+  for (const [id, handle] of table.handles) {
+    if ($lookup(id) !== null) {
+      result.set(id, handle);
+    }
+  }
+  return result;
+}
+
+/** A string for untrusted input that is not one, without throwing. */
+function describeInvalid(value: unknown): string {
+  try {
+    return String(value);
+  } catch (_error) {
+    return '';
+  }
+}
+
+function $resolveHandle(
+  runtime: BlockIdRuntime,
+  handle: string,
+): BlockHandleResult {
+  if (typeof handle !== 'string') {
+    return {handle: describeInvalid(handle), status: 'invalid'};
+  }
+  if (!BLOCK_ID_PATTERN.test(handle)) {
+    return {handle, status: 'invalid'};
+  }
+  const {table, $lookup} = $getHandleView(runtime);
+  const exact = $lookup(handle);
+  if (exact !== null) {
+    return {node: exact, status: 'found'};
+  }
+  if (handle.length < MIN_BLOCK_HANDLE_LENGTH) {
+    return {handle, status: 'not-found'};
+  }
+  let found: LexicalNode | null = null;
+  const candidates: string[] = [];
+  for (const id of idsWithPrefix(table, handle)) {
+    const node = $lookup(id);
+    if (node !== null) {
+      found = node;
+      if (candidates.length < MAX_HANDLE_CANDIDATES) {
+        candidates.push(handleInTable(table, id));
+      }
+    }
+  }
+  if (candidates.length > 1) {
+    return {candidates, handle, status: 'ambiguous'};
+  }
+  return found === null
+    ? {handle, status: 'not-found'}
+    : {node: found, status: 'found'};
 }
 
 function createRuntime(config: BlockIdConfig): BlockIdRuntime {
@@ -1396,6 +1666,7 @@ function createRuntime(config: BlockIdConfig): BlockIdRuntime {
     },
     active: false,
     config,
+    handles: null,
     hasContent: false,
     index: new BlockIdIndex(),
     placed: NO_PLACES,
@@ -1422,6 +1693,13 @@ function createRuntime(config: BlockIdConfig): BlockIdRuntime {
  * looks blocks up in an index maintained from the dirty nodes of each
  * update. See the Block IDs documentation page for the exact rules.
  *
+ * Showing blocks to a model? Use handles, the shortest unique prefix of each
+ * id (4 characters or more), instead of whole ids:
+ * {@link $getBlockHandle} / {@link $resolveBlockHandle}, or
+ * `export: 'handle'` in `BlockIdHTMLExtension`. A mistyped or outdated
+ * handle almost always resolves as not found or ambiguous rather than as
+ * another block.
+ *
  * @experimental
  */
 export const BlockIdExtension = defineExtension({
@@ -1430,7 +1708,10 @@ export const BlockIdExtension = defineExtension({
     const signals = namedSignals({disabled: config.disabled});
     return {
       $getBlockById: runtime.$getBlockById,
+      $getBlockHandle: node => $getHandleOf(runtime, node),
+      $getBlockHandles: () => $getAllHandles(runtime),
       $isIdentifiedBlock: config.$isIdentifiedBlock,
+      $resolveBlockHandle: handle => $resolveHandle(runtime, handle),
       disabled: signals.disabled,
     };
   },

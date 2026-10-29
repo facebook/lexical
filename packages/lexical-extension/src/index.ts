@@ -10,13 +10,18 @@ export {type AutoFocusConfig, AutoFocusExtension} from './AutoFocusExtension';
 export {
   $defaultIsIdentifiedBlock,
   $getBlockById,
+  $getBlockHandle,
+  $getBlockHandles,
   $getBlockId,
   $isRootChildBlock,
+  $resolveBlockHandle,
+  type BlockHandleResult,
   type BlockIdConfig,
   BlockIdExtension,
   type BlockIdOutput,
   blockIdState,
   generateBlockId,
+  MIN_BLOCK_HANDLE_LENGTH,
 } from './BlockIdExtension';
 export {
   type ClearEditorConfig,

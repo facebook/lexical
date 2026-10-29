@@ -132,6 +132,167 @@ again changes nothing, and the ids it assigns are
 [derived from the document](#documents-stored-without-ids), so a server that
 only reads gets the same ids without writing first.
 
+## Showing blocks to a model
+
+A whole id costs a language model about 14 tokens to read and to copy back.
+To show blocks to a model, give it **handles** instead: the shortest prefix of
+each id that no other block's id starts with, at least 4 characters long, like
+a short git hash. `V1StGXR8_Z5jdHi6B-myT` is shown as `V1St`, which costs 3 to
+4 tokens. The document keeps its ids; handles are derived from them when they
+are read and are never stored, so nothing has to be kept between an agent's
+turns.
+
+| | Tokens per block (o200k) |
+| --- | --- |
+| 21-character id | 14.4 on its own, 15.4 in an attribute or a JSON string |
+| Handle | 2.9 on its own, 3.9 in an attribute or a JSON string |
+
+(Measured over 20,000 random ids in 1,000-block documents, where almost
+every handle is 4 characters long.)
+
+The round trip has three steps: export handles, let the model answer with
+them, and resolve each one back to a block before applying the edit:
+
+```ts
+import {$getBlockHandle, $resolveBlockHandle} from '@lexical/extension';
+import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
+
+// 1. What the model reads.
+const blocks = editor.read(() =>
+  $getRoot()
+    .getChildren()
+    .map(node => ({block: $getBlockHandle(node), text: node.getTextContent()})),
+);
+// [{block: 'V1St', text: 'Q3 plan'}, {block: '9xQe', text: 'Revenue grew 4%.'}]
+
+// 2. What the model answers, e.g. {block: '9xQe', text: 'Revenue grew 6%.'}
+
+// 3. Applying it, in its own update.
+const feedback: string[] = [];
+editor.update(
+  () => {
+    const result = $resolveBlockHandle(op.block);
+    switch (result.status) {
+      case 'found':
+        result.node.replace(
+          $createParagraphNode().append($createTextNode(op.text)),
+        );
+        break;
+      case 'not-found':
+        feedback.push(`No block ${result.handle}: it may have been deleted.`);
+        break;
+      case 'ambiguous':
+        feedback.push(
+          `${result.handle} now names several blocks: use one of ${result.candidates.join(', ')}.`,
+        );
+        break;
+      case 'invalid':
+        feedback.push(`${result.handle} is not a block handle.`);
+        break;
+    }
+  },
+  {discrete: true},
+);
+```
+
+`$resolveBlockHandle` never throws for bad input, since a model's answer
+cannot be trusted, and returns a block only when exactly one block's id
+starts with the handle (or equals it). Its result says what to tell the
+model:
+
+| Status | Meaning | Tell the model |
+| --- | --- | --- |
+| `found` | `result.node` is the block | Nothing: apply the edit |
+| `not-found` | No block's id starts with the handle: a typo, or the block was deleted since the model read it | The block does not exist; send the current document if it needs one |
+| `ambiguous` | Several blocks' ids start with it: a block whose id shares the prefix was added since | Retry with one of `result.candidates`, their current handles |
+| `invalid` | Not 1 to 64 characters of `A`–`Z`, `a`–`z`, `0`–`9`, `-`, `_` | It sent something that is not a handle |
+
+A whole id is accepted too, and an exact id wins: with ids `b1` and `b12`,
+`b1` finds `b1`. A prefix longer than the current handle still finds its
+block, so a handle read while another id shared more of its prefix keeps
+working after that block is deleted. A prefix shorter than 4 characters finds
+nothing unless it is a whole id.
+
+Random ids leave almost every short prefix unused, so a mistyped handle
+almost never names another block: over 30 documents of 1,000 blocks, 2.6 in
+100,000 one-character typos of a handle (a character changed, dropped or
+added) named another block, nearly always by being exactly that block's
+handle. A sequential alias such as `b12` mistyped as `b13` names a real block
+every time. Ids that are not random (counters, `b` + a number) share long
+prefixes, so their handles are longer, up to the whole id.
+
+`$getBlockHandles()` returns every block's handle at once, keyed by id. Handles
+are computed from the same blocks as `$getBlockById`: the identified blocks of
+the last committed state, all at once and cached until a commit changes an
+id, so reading the handle of each of 10,000 blocks takes a few milliseconds.
+While the extension is disabled, each call scans the document.
+
+### Handles and collaboration
+
+A handle names whichever block's id starts with it now, not the block it was
+read from. Handles are computed from the local document, so after local or
+remote changes a handle from an earlier read can become `ambiguous` (a block
+whose id shares the prefix was added) or `not-found` (the block was deleted).
+That is the intended failure: report it to the model and let it read the
+document again. Because handles are never stored, two replicas can show
+different handles for the same block while they have different blocks; the
+ids underneath are the same.
+
+A prefix freed by a deletion can be taken again: if the block of `V1St` is
+deleted and a block whose id also starts with `V1St` is added, the old handle
+names the new block. With random ids that needs a new id sharing the first 4
+characters, about one chance in 16.7 million per new block. Where an edit
+must reach exactly the block that was read (a long-running agent, a queue of
+edits applied later), keep the map that `$getBlockHandles()` returned at the
+read and check the id of what a handle resolves to, or look the id up with
+`$getBlockById`:
+
+```ts
+// At the read.
+const handleOf = editor.read(() => $getBlockHandles()); // id → handle
+const idOf = new Map(Array.from(handleOf, ([id, handle]) => [handle, id]));
+
+// When applying an edit by handle.
+editor.update(() => {
+  const result = $resolveBlockHandle(op.block);
+  if (
+    result.status === 'found' &&
+    $getBlockId(result.node) === idOf.get(op.block)
+  ) {
+    result.node.remove();
+  }
+});
+```
+
+### Handles in HTML
+
+With [`BlockIdHTMLExtension`](#html), `export: 'handle'` writes handles
+instead of ids, in a `data-block-handle` attribute (`BLOCK_HANDLE_ATTRIBUTE`):
+
+```ts
+import {BlockIdExtension, buildEditorFromExtensions} from '@lexical/extension';
+import {BlockIdHTMLExtension} from '@lexical/html/BlockIdHTMLExtension';
+import {RichTextExtension} from '@lexical/rich-text';
+import {configExtension} from 'lexical';
+
+const editor = buildEditorFromExtensions({
+  dependencies: [
+    RichTextExtension,
+    BlockIdExtension,
+    configExtension(BlockIdHTMLExtension, {export: 'handle'}),
+  ],
+  name: 'my-editor',
+});
+// $generateHtmlFromNodes(editor):
+// <h2 data-block-handle="V1St">…</h2><p data-block-handle="9xQe">…</p>
+```
+
+Import reads only `data-block-id`, never `data-block-handle`, so a handle is
+never mistaken for an id: HTML with handles that is pasted back gives its
+blocks fresh ids. The setting applies to all HTML the editor exports, copied
+HTML included (copying between Lexical editors still carries ids, in the
+Lexical clipboard format).
+
 ## Which blocks get ids
 
 By default (`$defaultIsIdentifiedBlock`): every child of the root (a
@@ -295,7 +456,9 @@ Ids are not part of HTML by default. Add `BlockIdHTMLExtension` (from
 
 Set `export: false` or `import: false` to use only one direction. Keep the
 export off in editors whose HTML must be byte-for-byte deterministic
-(snapshot comparisons, content hashing).
+(snapshot comparisons, content hashing). `export: 'handle'` writes handles
+in `data-block-handle` instead of ids, for HTML shown to a model (see
+[Handles in HTML](#handles-in-html)).
 
 ## Configuration
 

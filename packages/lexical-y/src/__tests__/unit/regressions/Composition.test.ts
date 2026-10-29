@@ -19,7 +19,12 @@
 
 import {$createCodeNode} from '@lexical/code';
 import {registerCodeHighlighting} from '@lexical/code-prism';
-import {$createListItemNode, $createListNode} from '@lexical/list';
+import {
+  $getBlockId,
+  BlockIdExtension,
+  getExtensionDependencyFromEditor,
+} from '@lexical/extension';
+import {$createListItemNode, $createListNode, $isListNode} from '@lexical/list';
 import {$addMarkID} from '@lexical/mark';
 import {$createHeadingNode} from '@lexical/rich-text';
 import {$setBlocksType} from '@lexical/selection';
@@ -31,8 +36,10 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   $setCompositionKey,
+  $setSelection,
   type ElementNode,
   type NodeKey,
   type TextNode,
@@ -41,10 +48,12 @@ import {describe, expect, test} from 'vitest';
 
 import {
   $block,
+  $locateIn,
   $p,
   $selectIn,
   expectConverged,
   flush,
+  freshReader,
   type Peer,
   setup,
 } from '../../utils/harness';
@@ -310,6 +319,511 @@ describe('S7-15: a peer presses Enter later in the line A composes in', () => {
 /** How many times `word` is in the document. */
 const count = (peer: Peer, word: string) =>
   peer.read(() => $getRoot().getTextContent().split(word).length - 1);
+
+describe('L1C-3: ending composition after a held prefix insert and a mid-line paste', () => {
+  for (const ids of IDS) {
+    test(`L1C-3: every pasted token is stored once before and after the end (ids ${ids})`, async () => {
+      const t = await setup(() => $getRoot().append($p('[s1] [s2] [s3] ')), {
+        ids,
+      });
+      const key = compose(t.a, keyOf(t.a, [0]), 10);
+      t.b.update(() => $selectIn([0], 0).insertText('[ke4] '));
+      await t.sync();
+      // The prefix is stored remotely, but still held on the composer.
+      expect(textOf(t.a, key)).toBe('[s1] [s2] [s3] ');
+      expect(count(t.a, '[ke4]')).toBe(0);
+      expect(count(await freshReader(t.a), '[ke4]')).toBe(1);
+      t.b.update(() =>
+        $selectIn([0], 6).insertNodes([$p('[ke5] [ke6] '), $p('[ke7] [ke8] ')]),
+      );
+      await t.sync();
+      const words = [
+        '[ke4]',
+        '[ke5]',
+        '[ke6]',
+        '[ke7]',
+        '[ke8]',
+        '[s1]',
+        '[s2]',
+        '[s3]',
+      ];
+      for (const peer of [...t.peers, await freshReader(t.a)]) {
+        for (const word of words) {
+          expect(count(peer, word), `before end: ${word}`).toBe(1);
+        }
+      }
+      // No Enter or composition character is needed to duplicate the tail.
+      endComposition(t.a);
+      await t.sync();
+      const fresh = await freshReader(t.a);
+      for (const peer of [...t.peers, fresh]) {
+        for (const word of words) {
+          expect(count(peer, word), `after end: ${word}`).toBe(1);
+        }
+      }
+      expect(t.a.describe()).toBe(fresh.describe());
+      await expectConverged(t.peers);
+    });
+  }
+});
+
+describe('L1C-4: a held bold opener survives same-update composition end and Enter', () => {
+  for (const ids of [
+    [1, 2, 3],
+    [3, 2, 1],
+  ]) {
+    test(`L1C-4: the formerly plain prefix becomes bold and stays converged (ids ${ids})`, async () => {
+      const t = await setup(() => $getRoot().append($p('[s1] [s2] [s3] ')), {
+        ids,
+      });
+      const endAndEnter = (peer: Peer) =>
+        peer.update(() => {
+          $setCompositionKey(null);
+          const selection = $getSelection();
+          if (!$isRangeSelection(selection)) {
+            throw new Error('expected a composition selection');
+          }
+          selection.insertParagraph();
+        });
+      // This history matters: a plain prefix inserted before an existing
+      // bold run makes the next remote format add only a bold opener.
+      t.a.update(() => $selectIn([0], 0, 7).formatText('bold'));
+      await t.sync();
+      const first = compose(t.b, keyOf(t.b, [0]), 0);
+      step(t.b, first, 0, '', 'ㅎ');
+      await t.sync();
+      endAndEnter(t.b);
+      await t.sync();
+      t.b.update(() => $selectIn([1], 0).insertText('[kb96] '));
+      await t.sync();
+      const prefixBold = (peer: Peer, path: number[]) =>
+        peer.read(() => $first(path).hasFormat('bold'));
+      expect(prefixBold(t.a, [1])).toBe(false);
+      const key = compose(t.a, keyOf(t.a, [1]), 0);
+      t.c.update(() => $selectIn([1], 0, 7).formatText('bold'));
+      await t.sync();
+      expect(prefixBold(t.a, [1])).toBe(false);
+      expect(prefixBold(await freshReader(t.a), [1])).toBe(true);
+      step(t.a, key, 0, '', 'ㄓ');
+      await t.sync();
+      endAndEnter(t.a);
+      await t.sync();
+      const fresh = await freshReader(t.a);
+      for (const peer of [...t.peers, fresh]) {
+        expect(peer.read(() => $first([2]).getTextContent())).toContain(
+          '[kb96] ',
+        );
+        expect(prefixBold(peer, [2]), 'released prefix must be bold').toBe(
+          true,
+        );
+        expect(peer.warnings.filter(w => w.includes('self-check'))).toEqual([]);
+      }
+      expect(t.a.describe()).toBe(fresh.describe());
+      await expectConverged(t.peers);
+      // $selectIn creates a plain selection: the new text may be plain,
+      // but editing before the released prefix must not undo its bold.
+      t.a.update(() => $selectIn([2], 0).insertText('[next] '));
+      await t.sync();
+      expect(
+        t.a.read(() =>
+          $block([2])
+            .getAllTextNodes()
+            .find(node => node.getTextContent().includes('[kb96]'))
+            ?.hasFormat('bold'),
+        ),
+      ).toBe(true);
+      expect(count(t.a, '[kb96]')).toBe(1);
+      expect(count(t.a, '[next]')).toBe(1);
+      expect(t.a.describe()).toBe((await freshReader(t.a)).describe());
+      await expectConverged(t.peers);
+    });
+  }
+});
+
+describe('L1C-4: re-splitting a held-derived successor preserves its inherited bold', () => {
+  for (const ids of [
+    [1, 2, 3],
+    [3, 2, 1],
+  ]) {
+    for (const clearBeforeSplit of [false, true]) {
+      test(`L1C-4: the second successor becomes bold on release (clear before split ${clearBeforeSplit}, ids ${ids})`, async () => {
+        const t = await setup(
+          () => $getRoot().append($p('[s1] [s2] [s3] '), $p('UNTouched')),
+          {ids},
+        );
+        const untouched = keyOf(t.a, [1]);
+        t.a.update(() => $selectIn([0], 0, 7).formatText('bold'));
+        await t.sync();
+        const first = compose(t.b, keyOf(t.b, [0]), 0);
+        step(t.b, first, 0, '', 'ㅎ');
+        await t.sync();
+        t.b.update(() => {
+          $setCompositionKey(null);
+          $selectIn([0], 1).insertParagraph();
+        });
+        await t.sync();
+        t.b.update(() => $selectIn([1], 0).insertText('[kb96] '));
+        await t.sync();
+        const key = compose(t.a, keyOf(t.a, [1]), 0);
+        t.c.update(() => $selectIn([1], 0, 7).formatText('bold'));
+        await t.sync();
+        expect(t.a.read(() => $first([1]).hasFormat('bold'))).toBe(false);
+        step(t.a, key, 0, '', 'ㄓ');
+        await t.sync();
+        // Keep composition in the original owner while its first successor
+        // inherits the withheld opener; then split that successor separately.
+        t.a.update(() => {
+          $selectIn([1], 1).insertParagraph();
+          const owner = $first([1]);
+          owner.selectEnd();
+          $setCompositionKey(owner.getKey());
+        });
+        await t.sync();
+        const hidden = (
+          t.a.binding as unknown as {
+            state: {hidden: unknown | null};
+          }
+        ).state.hidden;
+        expect(hidden).not.toBeNull();
+        t.a.update(() => {
+          if (clearBeforeSplit) {
+            $setCompositionKey(null);
+          }
+          $selectIn([2], 3).insertParagraph();
+        });
+        await t.sync();
+        if (!clearBeforeSplit) {
+          endComposition(t.a);
+          await t.sync();
+        }
+        const fresh = await freshReader(t.a);
+        for (const peer of [...t.peers, fresh]) {
+          expect(peer.read(() => $first([3]).getTextContent())).toContain(
+            '96] ',
+          );
+          expect(
+            peer.read(() => $first([3]).hasFormat('bold')),
+            'second successor must render the inherited bold on release',
+          ).toBe(true);
+          expect(peer.warnings.filter(w => w.includes('self-check'))).toEqual(
+            [],
+          );
+        }
+        expect(t.a.describe()).toBe(fresh.describe());
+        expect(keyOf(t.a, [4])).toBe(untouched);
+        await expectConverged(t.peers);
+      });
+    }
+  }
+});
+
+describe('S8-4: composition steps after a held prefix and remote paste', () => {
+  test('S8-4: the throwing composition step and following step both survive in the own document', async () => {
+    const t = await setup(
+      () =>
+        $getRoot().append(
+          $p('[s1] [s2] [s3] '),
+          $p('[s4] 👷‍♀️🚧 [s5] '),
+          $createListNode('bullet').append(
+            $createListItemNode().append($createTextNode('[s6] [s7] ')),
+            $createListItemNode().append($createTextNode('[s8] ')),
+          ),
+          $p('[s9] [s10] '),
+        ),
+      {ids: [1, 2, 3, 4]},
+    );
+    const d = t.peers[3];
+    const $paths = () => {
+      const paths: number[][] = [];
+      $getRoot()
+        .getChildren()
+        .forEach((node, i) => {
+          if ($isListNode(node)) {
+            node.getChildren().forEach((_, j) => paths.push([i, j]));
+          } else {
+            paths.push([i]);
+          }
+        });
+      return paths;
+    };
+    const $line = (li: number) => $block($paths()[li]);
+    const $selectLine = (li: number, at: number, end = at) => {
+      if ($line(li).getAllTextNodes().length === 0) {
+        return $line(li).select(0, 0);
+      }
+      const text = $line(li).getTextContent();
+      const clamp = (offset: number) => {
+        let value = Math.min(offset, text.length);
+        const code = text.charCodeAt(value);
+        if (code >= 0xdc00 && code <= 0xdfff) value--;
+        return value;
+      };
+      return $selectIn($paths()[li], clamp(at), clamp(end));
+    };
+    const $paste = (li: number, at: number, texts: string[], list = false) => {
+      const nodes: ElementNode[] = (list ? texts.slice(0, -1) : texts).map($p);
+      if (list)
+        nodes.push(
+          $createListNode('bullet').append(
+            $createListItemNode().append(
+              $createTextNode(texts[texts.length - 1]),
+            ),
+          ),
+        );
+      $selectLine(li, at).insertNodes(nodes);
+    };
+    const $remove = (li: number) => {
+      const line = $line(li);
+      const parent = line.getParent();
+      $setSelection(null);
+      line.remove();
+      if ($isListNode(parent) && parent.getChildrenSize() === 0)
+        parent.remove();
+    };
+    const $cross = (li: number, at: number, li2: number, end: number) => {
+      const selection = $selectLine(li, at);
+      const [node, offset] = $locateIn(
+        $line(li2),
+        Math.min(end, $line(li2).getTextContentSize()),
+      );
+      selection.focus.set(node.getKey(), offset, 'text');
+      selection.removeText();
+    };
+    // The reduced report's structural history is necessary: a plain initial
+    // line catches duplication, but not the cursor failure of the next step.
+    const history: [Peer, () => void][] = [
+      [
+        t.c,
+        () => $paste(0, 11, ['[kc4] [kc5] ', '[kc6] [kc7] ', '[kc8] [kc9] ']),
+      ],
+      [t.c, () => $selectLine(0, 0).insertParagraph()],
+      [d, () => $selectLine(3, 23).insertParagraph()],
+      [
+        t.c,
+        () =>
+          $paste(
+            8,
+            10,
+            [
+              '[kc106] [kc107] ',
+              '[kc108] [kc109] ',
+              '[kc110] [kc111] ',
+              '[kc112] [kc113] ',
+              '[kc114] ',
+            ],
+            true,
+          ),
+      ],
+      [t.a, () => $cross(1, 0, 2, 0)],
+      [t.b, () => $selectLine(10, 16).insertText('[kb131] ')],
+      [t.a, () => $cross(4, 0, 5, 8)],
+      [d, () => $selectLine(9, 8).insertText('[kd134]🏳️‍🌈 ')],
+      [t.b, () => $remove(3)],
+      [t.b, () => $cross(5, 40, 6, 0)],
+      [d, () => $remove(6)],
+      [d, () => $selectLine(6, 30, 38).formatText('bold')],
+      [t.c, () => $remove(3)],
+      [t.c, () => $remove(3)],
+      [d, () => $cross(2, 0, 3, 10)],
+      [t.a, () => $selectLine(3, 38).insertText('[ka140] ')],
+      [t.b, () => $selectLine(3, 62).insertText('[kb143]🚧 ')],
+      [d, () => $selectLine(3, 46).insertText('[kd145] ')],
+      [d, () => $paste(0, 0, ['[kd146] [kd147] ', '[kd148] [kd149] '])],
+      [t.b, () => $cross(1, 16, 2, 22)],
+    ];
+    for (const [peer, action] of history) {
+      peer.update(action);
+      await t.sync();
+    }
+    const [key, at] = t.b.read(() => {
+      const [node, offset] = $locateIn(
+        $line(3),
+        Math.min(80, $line(3).getTextContentSize()),
+      );
+      return [node.getKey(), offset] as const;
+    });
+    compose(t.b, key, at);
+    t.a.update(() => $selectLine(3, 0).insertText('[ka156]😀 '));
+    await t.sync();
+    expect(count(t.b, '[ka156]')).toBe(0);
+    t.c.update(() =>
+      $paste(3, 18, [
+        '[kc157] [kc158] ',
+        '[kc159] [kc160] ',
+        '[kc161] [kc162] ',
+      ]),
+    );
+    await t.sync();
+    step(t.b, key, at, '', 'ㄓ');
+    await t.sync();
+    expect(t.b.errors).toEqual([]);
+    expect(count(t.b, 'ㄓ')).toBe(1);
+    expect(count(await freshReader(t.b), 'ㄓ')).toBe(1);
+    step(t.b, key, at, 'ㄓ', '中');
+    await t.sync();
+    expect(count(t.b, '中')).toBe(1);
+    expect(count(await freshReader(t.b), '中')).toBe(1);
+    endComposition(t.b);
+    await t.sync();
+    for (const peer of [...t.peers, await freshReader(t.b)]) {
+      expect(peer.errors).toEqual([]);
+      expect(count(peer, 'ㄓ')).toBe(0);
+      for (const token of [
+        '中',
+        '[ka156]',
+        '[kc157]',
+        '[kc158]',
+        '[kc159]',
+        '[kc160]',
+        '[kc161]',
+        '[kc162]',
+      ]) {
+        expect(count(peer, token), token).toBe(1);
+      }
+    }
+    expect(t.b.describe()).toBe((await freshReader(t.b)).describe());
+    await expectConverged(t.peers);
+  });
+});
+
+describe('S8-6: BlockIdExtension preserves pasted block NodeState across composition release', () => {
+  test('S8-6: pasted block ids agree with own-document readers and peers through following edits', async () => {
+    const t = await setup(
+      () =>
+        $getRoot().append(
+          $p('[s1] [s2] [s3] '),
+          $p('[s4] 👷‍♀️🚧 [s5] '),
+          $createListNode('bullet').append(
+            $createListItemNode().append($createTextNode('[s6] [s7] ')),
+            $createListItemNode().append($createTextNode('[s8] ')),
+          ),
+          $p('[s9] [s10] '),
+        ),
+      {ids: [1, 2, 3, 4, 5], withBlockIds: true},
+    );
+    const e = t.peers[4];
+    // Address the same leaf-line indices as the eight-action report, without
+    // importing its untracked simulator or changing global environment flags.
+    const $paths = () => {
+      const paths: number[][] = [];
+      $getRoot()
+        .getChildren()
+        .forEach((node, i) => {
+          if ($isListNode(node)) {
+            node.getChildren().forEach((_, j) => paths.push([i, j]));
+          } else {
+            paths.push([i]);
+          }
+        });
+      return paths;
+    };
+    const $line = (li: number) => $block($paths()[li]);
+    const $selectLine = (li: number, at: number) =>
+      $selectIn($paths()[li], Math.min(at, $line(li).getTextContentSize()));
+    const paste = (
+      peer: Peer,
+      li: number,
+      at: number,
+      texts: string[],
+      list = false,
+    ) =>
+      peer.update(() => {
+        const nodes: ElementNode[] = (list ? texts.slice(0, -1) : texts).map(
+          $p,
+        );
+        if (list) {
+          nodes.push(
+            $createListNode('bullet').append(
+              $createListItemNode().append(
+                $createTextNode(texts[texts.length - 1]),
+              ),
+            ),
+          );
+        }
+        $selectLine(li, at).insertNodes(nodes);
+      });
+    for (const peer of t.peers) {
+      expect(
+        getExtensionDependencyFromEditor(peer.editor, BlockIdExtension).output
+          .disabled.value,
+      ).toBe(false);
+    }
+    t.c.update(() => $line(0).remove());
+    await t.sync();
+    paste(t.c, 0, 30, [
+      '[kc7] [kc8] ',
+      '[kc9] [kc10] ',
+      '[kc11] [kc12] ',
+      '[kc13] [kc14] ',
+    ]);
+    await t.sync();
+    paste(e, 4, 10, ['[ke20] [ke21] ', '[ke22] [ke23] ', '[ke24] [ke25] ']);
+    await t.sync();
+    const key = t.c.read(() => $line(5).getFirstChildOrThrow().getKey());
+    compose(t.c, key, 0);
+    t.b.update(() => $line(2).remove());
+    await t.sync();
+    e.update(() => {
+      const selection = $selectLine(3, 0);
+      selection.focus.set($line(4).getFirstChildOrThrow().getKey(), 0, 'text');
+      selection.removeText();
+    });
+    await t.sync();
+    e.update(() => $selectLine(3, 7).insertText('[ke33] '));
+    await t.sync();
+    paste(
+      t.a,
+      3,
+      14,
+      ['[ka34] [ka35] ', '[ka36] [ka37] ', '[ka38] [ka39] ', '[ka40] '],
+      true,
+    );
+    await t.sync();
+    endComposition(t.c);
+    await t.sync();
+    const rows = (peer: Peer) =>
+      peer.read(() => {
+        const result: {type: string; text: string; id: string | null}[] = [];
+        const visit = (block: ElementNode) => {
+          result.push({
+            id: $getBlockId(block),
+            text: block.getTextContent(),
+            type: block.getType(),
+          });
+          for (const child of block.getChildren()) {
+            if ($isElementNode(child)) visit(child);
+          }
+        };
+        for (const child of $getRoot().getChildren()) {
+          if ($isElementNode(child)) visit(child);
+        }
+        return result;
+      });
+    const check = async () => {
+      const fresh = await freshReader(t.c);
+      expect(
+        getExtensionDependencyFromEditor(fresh.editor, BlockIdExtension).output
+          .disabled.value,
+      ).toBe(false);
+      const stored = rows(fresh);
+      expect(stored.every(row => row.id !== null)).toBe(true);
+      expect(stored.some(row => row.text.includes('[ka40]'))).toBe(true);
+      for (const peer of t.peers) {
+        expect(rows(peer), 'stored blockId NodeState must match').toEqual(
+          stored,
+        );
+      }
+      await expectConverged(t.peers);
+    };
+    await check();
+    t.c.update(() => $selectLine(3, 0).insertText('[next-c] '));
+    await t.sync();
+    await check();
+    t.b.update(() => $selectLine(4, 0).insertText('[next-b] '));
+    await t.sync();
+    await check();
+  });
+});
 
 describe('S7-28: a peer pastes paragraphs into the composed line, then types in them', () => {
   for (const ids of IDS) {

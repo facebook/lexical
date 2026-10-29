@@ -6,6 +6,8 @@
  *
  */
 
+import type {Formats} from './Cursor';
+import type {Unit} from './State';
 import type {NodeKey} from 'lexical';
 
 import {type Item} from '@y/y';
@@ -38,6 +40,15 @@ import {isGone} from './Unread';
 export class Hidden {
   /** Sorted, merged [start, end) clock ranges per client. */
   private readonly ranges = new Map<number, [number, number][]>();
+  /**
+   * Local split units whose shown start excludes a held format inherited
+   * across the split. Their stored starts remain known separately, and
+   * release reads these units even if the stored-format cache is unchanged.
+   */
+  readonly starts = new Map<
+    Unit,
+    {shown: Formats | null; stored: Formats | null}
+  >();
   /**
    * The attributes of the line being composed that held changes set (only
    * those this client owns, see ownsMarkerAttr and Reader#$ownedChanges):

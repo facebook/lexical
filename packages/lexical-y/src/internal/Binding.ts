@@ -243,6 +243,15 @@ const PENDING_ORDER: readonly PendingWork[] = [
 const MAX_REREADS = 3;
 
 /**
+ * The commits of local updates a read makes before it runs (see
+ * commitPending). Invariant: a read never runs with local updates still
+ * pending, which it would commit unwritten under its own tags; where
+ * listeners keep making them past this many commits, the read does not run
+ * and is recovered from instead (see guardedRead).
+ */
+const MAX_PENDING_COMMITS = 16;
+
+/**
  * How many updates for registered transforms the binding runs before the
  * event loop turns (see YBinding#runRegistrationPasses), as Lexical caps
  * the updates its listeners queue in a row. Transforms registered in a row
@@ -2064,7 +2073,9 @@ export class YBinding {
    *   runs, not only where it is admitted.
    * - The local updates still pending commit first, on their own (see
    *   commitPending), where the read is not nested in an update and does
-   *   not replace them (`read.replacesPending`).
+   *   not replace them (`read.replacesPending`). Where listeners keep making
+   *   them past MAX_PENDING_COMMITS, the read does not run: that goes to
+   *   `read.recover` too.
    * - A throw, of the read or of committing it, never reaches Yjs, a
    *   provider or `initialize()`: it goes to `read.recover`, with what the
    *   editor showed before the read. A throw committing the pending
@@ -2084,14 +2095,20 @@ export class YBinding {
     }
     const editor = this._editor;
     const nested = editor._updating;
-    if (read.replacesPending !== true) {
-      this.commitPending();
+    let failure = null as Failure;
+    if (read.replacesPending !== true && !this.commitPending()) {
+      // The app's listeners keep making local updates: the read, which would
+      // commit them unwritten under its tags, does not run.
+      failure = {
+        error: new Error(
+          `local updates were still pending after ${MAX_PENDING_COMMITS} commits`,
+        ),
+      };
     }
     if (read.before !== undefined) {
       read.before();
     }
     const shown = editor.getEditorState();
-    let failure = null as Failure;
     const settle = () => {
       if (this.unreadable) {
         return;
@@ -2102,6 +2119,11 @@ export class YBinding {
         read.after();
       }
     };
+    if (failure !== null) {
+      // Not nested (in an update, commitPending leaves the updates to it).
+      settle();
+      return;
+    }
     try {
       editor.update(
         () => {
@@ -3527,26 +3549,28 @@ export class YBinding {
 
   /**
    * Commit the local updates still pending (an editor.update() made in the
-   * same task, or one a listener of the last commit queued). Invariant: the
-   * update the binding makes next (a read) commits alone. Why: an update
-   * still pending would be committed with it, and take its tags. Committing
-   * one can leave another pending (its listeners queue one): up to 16 are
-   * committed. A pending state that holds nothing to commit is committed as
-   * it is: an update reuses such a state without committing it, so a read
-   * that changes nothing would leave its tags on it, and the next update
-   * that changes something would commit with them and not be written.
+   * same task, or one a listener of the last commit queued, also where that
+   * listener threw before Lexical ran it). Invariant: the update the binding
+   * makes next (a read) commits alone. Why: an update still pending would be
+   * committed with it, and take its tags. Committing one can leave another
+   * pending (its listeners queue one): up to MAX_PENDING_COMMITS are
+   * committed. Returns whether none is left (where the editor is not in an
+   * update; in one, the updates are its own). A pending state that holds
+   * nothing to commit is committed as it is: an update reuses such a state
+   * without committing it, so a read that changes nothing would leave its
+   * tags on it, and the next update that changes something would commit
+   * with them and not be written.
    */
-  private commitPending(): void {
+  private commitPending(): boolean {
     const editor = this._editor;
-    for (
-      let i = 0;
-      i < 16 && editor._pendingEditorState !== null && !editor._updating;
-      i++
-    ) {
+    const left = () =>
+      !editor._updating &&
+      (editor._pendingEditorState !== null || editor._updates.length > 0);
+    for (let i = 0; i < MAX_PENDING_COMMITS && left(); i++) {
       const pending = editor._pendingEditorState;
       try {
         editor.update(() => {}, {discrete: true});
-        if (editor._pendingEditorState === pending) {
+        if (pending !== null && editor._pendingEditorState === pending) {
           editor.read(() => {});
         }
       } catch (error) {
@@ -3558,6 +3582,7 @@ export class YBinding {
         });
       }
     }
+    return !left();
   }
 
   /**

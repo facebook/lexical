@@ -4195,17 +4195,16 @@ describe('link import', () => {
     ['[x](</a\\\u2028b> "t")', '/a\\\u2028b', 't'],
   ];
 
+  // Typing reads a link through `LINK.regExp`, which has to agree with the
+  // `importRegExp` used here.
+  function shortcutGroups(md: string) {
+    return LINK.regExp.exec(md)?.slice(1);
+  }
+
   for (const [md, url, title] of CASES) {
     it(`reads ${JSON.stringify(md)}`, () => {
-      const editor = createTestEditor({nodes: [LinkNode]});
-      editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
-        discrete: true,
-      });
-      editor.read('latest', () => {
-        const link = $getRoot().getAllTextNodes()[0].getParent();
-        assert($isLinkNode(link), 'Expected a link');
-        expect([link.getURL(), link.getTitle()]).toEqual([url, title]);
-      });
+      expect(importLinks(md)).toEqual([{title, url}]);
+      expect(shortcutGroups(md)).toEqual(LINK.importRegExp?.exec(md)?.slice(1));
     });
   }
 
@@ -4213,17 +4212,8 @@ describe('link import', () => {
   // destination cannot hold one.
   for (const md of ['[x](</a\rb>)', '[x](</a\\\rb>)']) {
     it(`reads no link from ${JSON.stringify(md)}`, () => {
-      const editor = createTestEditor({nodes: [LinkNode]});
-      editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
-        discrete: true,
-      });
-      expect(
-        editor.read('latest', () =>
-          $getRoot()
-            .getAllTextNodes()
-            .some(node => $isLinkNode(node.getParent())),
-        ),
-      ).toBe(false);
+      expect(importLinks(md)).toEqual([]);
+      expect(shortcutGroups(md)).toBeUndefined();
     });
   }
 });

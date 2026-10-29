@@ -412,6 +412,12 @@ export async function setup(
     }
     await flush();
     for (let round = 0; round < 3; round++) {
+      // flush has drained the binding's queued microtasks. Only sender-order
+      // delivery can still have follow-up updates waiting for the network;
+      // an idle round would just wait for another timer without doing work.
+      if (peers.every(peer => peer.pending.size === 0)) {
+        break;
+      }
       deliverMerged();
       await flush();
     }
@@ -466,6 +472,7 @@ export async function expectConverged(peers: Peer[], expected?: string) {
   if (expected !== undefined) {
     expect(first.describe()).toBe(expected);
   }
+  return fresh;
 }
 
 export function $block(path: number[]): ElementNode {

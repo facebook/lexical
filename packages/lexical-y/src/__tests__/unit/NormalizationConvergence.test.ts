@@ -81,8 +81,7 @@ function count(text: string, tok: string): number {
  * change.
  */
 async function expectClean(t: Setup, tokens: string[]) {
-  await expectConverged(t.peers);
-  const fresh = await freshReader(t.a);
+  const fresh = await expectConverged(t.peers);
   const text = t.a.read(() => $getRoot().getTextContent());
   for (const tok of tokens) {
     expect([tok, count(text, tok)]).toEqual([tok, 1]);
@@ -581,8 +580,6 @@ describe('unnormalized content converges with no duplicate and no loss (3 peers)
           await t.sync();
           if (c.concurrentNormalization && s.delivery === 'sender') {
             await expectConverged(t.peers);
-            const fresh = await freshReader(t.a);
-            expect(fresh.describe()).toBe(t.a.describe());
             const text = t.a.read(() => $getRoot().getTextContent());
             // The list that moves shows once per peer, the other once.
             const [first, ...rest] = c.tokens.map(tok => count(text, tok));

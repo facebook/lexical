@@ -118,8 +118,13 @@ export function createSelectionMarkdownExport(
     // Every node asks whether it is selected, which reads the selection's
     // nodes. A read-only selection doesn't cache them, so this works on a
     // copy that does, instead of recomputing them for every node.
+    // Its direction is cached too, since slicing a node asks for it.
+    const nodes = exportedSelection.getNodes();
     const selection = exportedSelection.clone();
-    selection.setCachedNodes(exportedSelection.getNodes());
+    selection.setCachedNodes(nodes);
+    if ($isRangeSelection(selection)) {
+      selection._cachedIsBackward = exportedSelection.isBackward();
+    }
     boundaryTextKeys.set(selection, $getBoundaryTextKeys(selection));
     const output = [];
     // The separator depends on the previously *emitted* block, not on the
@@ -614,9 +619,15 @@ function $exportTextFormat(
   // Flanking Compliance: CommonMark flanking rules require formatting tags to be
   // adjacent to non-whitespace characters, so openingTags and closingTagsAfter
   // are placed INSIDE the whitespace boundaries!
-  const [, leadingSpace, trimmedOutput, trailingSpace] = output.match(
-    /^(\s*)(.*?)(\s*)$/s,
-  ) || ['', '', output, ''];
+  // (Trimming rather than a regex keeps this linear in long whitespace runs.)
+  const trimmedOutput = output.trim();
+  const leadingSpace = output.slice(
+    0,
+    output.length - output.trimStart().length,
+  );
+  const trailingSpace = output.slice(
+    leadingSpace.length + trimmedOutput.length,
+  );
   return (
     closingTagsBefore +
     leadingSpace +

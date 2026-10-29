@@ -1316,7 +1316,7 @@ export class LexicalNode {
 
     const isSelected = $isKeyInSelectionNodes(targetSelection, this.__key);
 
-    if ($isTextNode(this)) {
+    if (!isSelected || $isTextNode(this)) {
       return isSelected;
     }
     // For inline images inside of element nodes.

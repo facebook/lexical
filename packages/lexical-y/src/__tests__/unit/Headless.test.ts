@@ -273,7 +273,7 @@ describe('@lexical/y/headless', () => {
     const state = seedYState(config, $build);
     expect(readYState(state, config, $describe)).toBe(normalized);
     // A client seeding the same content in a new document.
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     const editor = buildEditorFromExtensions(
       defineExtension({
         $initialEditorState: null,
@@ -506,7 +506,7 @@ describe('@lexical/y/headless', () => {
       defineExtension({
         dependencies: [
           AppNodes,
-          configExtension(YCollabExtension, {doc: new Y.Doc()}),
+          configExtension(YCollabExtension, {doc: createYDoc()}),
           BlockIdExtension,
         ],
         name: 'test-client',
@@ -1241,7 +1241,7 @@ describe('@lexical/y/headless', () => {
     legacy.get('root-v2').insert(0, [new Y.Node('paragraph')]);
     const stored = Y.encodeStateAsUpdate(legacy);
     // A client does not initialize it (it would hide the old content).
-    const blocked = new Y.Doc();
+    const blocked = createYDoc();
     Y.applyUpdate(blocked, stored);
     const codes: string[] = [];
     const editor = buildEditorFromExtensions(

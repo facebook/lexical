@@ -48,6 +48,7 @@ import {
   type YWarningCode,
   type YWarningData,
 } from './internal/Warnings';
+import {createYDoc, type YDoc, type YDocOptions} from './internal/YDoc';
 import {type YCollabConfig, YCollabExtension} from './internal/YExtension';
 
 export type {
@@ -57,6 +58,8 @@ export type {
   YBindingStatus,
   YCollabConfig,
   YCursor,
+  YDoc,
+  YDocOptions,
   YNestedFallbackData,
   YNestedFallbackReason,
   YRecoveredReadData,
@@ -75,6 +78,7 @@ export type {
   YWarningData,
 };
 export {
+  createYDoc,
   DEFAULT_ROOT_NAME,
   describeStorage,
   isYWarning,

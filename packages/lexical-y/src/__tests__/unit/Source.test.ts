@@ -43,10 +43,11 @@ test('shipped source reads no process.env but NODE_ENV', () => {
 
 // Old clients (@lexical/yjs) write other roots, so servers need no API of
 // their own: the package has no server entry, and the two constants a
-// server may want come from the main entry. `@lexical/y/headless` is plain
-// functions (`createYWriter` makes the writer `editYState` requires;
-// `createYDoc` the document a relay loads a state into), plus its warning
-// codes.
+// server may want come from the main entry, with `createYDoc`, the document
+// every client binds and a relay loads a state into (also exported by
+// `@lexical/y/headless`, for servers that import only that entry).
+// `@lexical/y/headless` is plain functions (`createYWriter` makes the writer
+// `editYState` requires), plus its warning codes.
 test('public entries', () => {
   const pkg = JSON.parse(
     fs.readFileSync(path.resolve(__dirname, '../../../package.json'), 'utf8'),
@@ -73,6 +74,7 @@ test('public entries', () => {
     'UNSYNCED_VALUE_WARNING',
     'YBinding',
     'YCollabExtension',
+    'createYDoc',
     'describeStorage',
     'isYWarning',
   ]);

@@ -32,7 +32,7 @@ import {
 } from 'lexical';
 import {describe, expect, test, vi} from 'vitest';
 
-import {YCollabExtension} from '../../..';
+import {createYDoc, YCollabExtension, type YDoc} from '../../..';
 import {
   $block,
   $createEquation,
@@ -43,7 +43,7 @@ import {
 
 const flush = () => new Promise(resolve => setTimeout(resolve, 0));
 
-function client(doc: Y.Doc, attached: boolean) {
+function client(doc: YDoc, attached: boolean) {
   const warnings: string[] = [];
   const editor = buildEditorFromExtensions(
     defineExtension({
@@ -85,7 +85,7 @@ describe('R16A-2: a naming follow-up on a paragraph whose derived textFormat dif
   test.fails(
     'R16A-2 a DOM-attached reader renames the paragraph: the follow-up is neither refused nor read again',
     async () => {
-      const docA = new Y.Doc();
+      const docA = createYDoc();
       const writer = client(docA, false);
       writer.editor.update(
         () => {
@@ -103,7 +103,7 @@ describe('R16A-2: a naming follow-up on a paragraph whose derived textFormat dif
       );
       writer.binding.initialize();
       await flush();
-      const docB = new Y.Doc();
+      const docB = createYDoc();
       Y.applyUpdate(docB, Y.encodeStateAsUpdate(docA));
       const reader = client(docB, true);
       reader.binding.initialize();

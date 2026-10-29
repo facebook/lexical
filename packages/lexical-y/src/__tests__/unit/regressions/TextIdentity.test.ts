@@ -40,7 +40,7 @@ import {
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {YCollabExtension} from '../../..';
+import {createYDoc, YCollabExtension} from '../../..';
 import {
   expectConverged,
   flush,
@@ -859,7 +859,7 @@ describe('R21A-2: a text set, edited and set again in one update', () => {
 // delete in it came back.
 describe('S6-5: Enter inside a code token the highlighter makes again', () => {
   function codePeer(id: number) {
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     doc.clientID = id;
     const editor = buildEditorFromExtensions(
       defineExtension({

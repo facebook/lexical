@@ -50,7 +50,7 @@ import {
 } from 'lexical';
 import {expect} from 'vitest';
 
-import {YBinding, YCollabExtension} from '../..';
+import {createYDoc, YBinding, YCollabExtension, type YDoc} from '../..';
 
 // An undeclared block container with a schema field ('node').
 const boxSchema = nodeSchema<BoxNode>()({
@@ -214,7 +214,7 @@ function pump(net: Network) {
 }
 
 export class Peer {
-  readonly doc: Y.Doc;
+  readonly doc: YDoc;
   readonly editor: LexicalEditor;
   readonly binding: YBinding;
   online = true;
@@ -230,7 +230,7 @@ export class Peer {
     /** Runs on the editor before the binding starts. */
     readonly prepare?: (editor: LexicalEditor) => void,
   ) {
-    this.doc = new Y.Doc({gc: false});
+    this.doc = createYDoc(null, {gc: false});
     this.doc.clientID = clientID;
     const bound = createBoundEditor(this.doc, {
       namespace: 'test',
@@ -547,7 +547,7 @@ export const WITH_BLOCK_IDS = process.env.LEXICAL_Y_BLOCK_ID === '1';
  * its disposal).
  */
 export function createBoundEditor(
-  doc: Y.Doc,
+  doc: YDoc,
   config: {
     namespace: string;
     nodes: readonly Klass<LexicalNode>[];

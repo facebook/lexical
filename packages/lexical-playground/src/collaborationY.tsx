@@ -36,17 +36,19 @@ import {ReactExtension} from '@lexical/react/ReactExtension';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
 import {useSignalValue} from '@lexical/react/useExtensionSignalValue';
 import {
+  createYDoc,
   isYWarning,
   STORAGE_MISMATCH_WARNING,
   UNKNOWN_NODE_TYPES_WARNING,
+  UNSUPPORTED_CONFIG_WARNING,
   UNSUPPORTED_LAYOUT_WARNING,
   UNSUPPORTED_SLOTS_WARNING,
   YCollabExtension,
+  type YDoc,
   type YWarning,
 } from '@lexical/y';
 import {CONNECTED_COMMAND, TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
 import {WebsocketProvider} from '@y/websocket';
-import {Doc} from '@y/y';
 import {
   type AnyLexicalExtensionArgument,
   COMMAND_PRIORITY_LOW,
@@ -64,12 +66,13 @@ const WEBSOCKET_SLUG = 'playground-y';
 const WEBSOCKET_ID = params.get('collabId') || '0';
 
 export interface CollabYSession {
-  doc: Doc;
+  doc: YDoc;
   editor: LexicalEditorWithDispose;
   provider: WebsocketProvider;
   /**
    * The binding's last warning that can make it read only (a layout, a node
-   * type or a slot it cannot store), for the read-only notice's text.
+   * type or a slot it cannot store, a configuration it cannot write with),
+   * for the read-only notice's text.
    */
   readOnlyWarning: Signal<YWarning | null>;
 }
@@ -80,6 +83,7 @@ const READ_ONLY_WARNING_CODES: ReadonlySet<string> = new Set([
   UNKNOWN_NODE_TYPES_WARNING,
   STORAGE_MISMATCH_WARNING,
   UNSUPPORTED_SLOTS_WARNING,
+  UNSUPPORTED_CONFIG_WARNING,
 ]);
 
 let session: CollabYSession | null = null;
@@ -98,7 +102,7 @@ export function getCollabYSession(
   buildApp: () => AnyLexicalExtensionArgument,
 ): CollabYSession {
   if (session === null) {
-    const doc = new Doc();
+    const doc = createYDoc();
     const readOnlyWarning = signal<YWarning | null>(null);
     const provider = new WebsocketProvider(
       WEBSOCKET_ENDPOINT,

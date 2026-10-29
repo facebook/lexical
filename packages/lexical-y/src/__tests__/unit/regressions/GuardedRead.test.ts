@@ -15,7 +15,7 @@
 // the binding failed closed. Each case is named after its finding.
 
 import * as Y from '@y/y';
-import {$createTextNode, $getRoot} from 'lexical';
+import {$createTextNode, $getRoot, type LexicalEditor} from 'lexical';
 import {afterEach, describe, expect, test, vi} from 'vitest';
 
 import {Reader} from '../../../internal/Read';
@@ -401,19 +401,32 @@ describe('R3-1: local updates a recovery commits are written on the document the
 });
 
 describe('R-1: an update listener of the app that throws on the commit of a read leaves the read standing', () => {
-  test.each([[1], [2], [3], [Infinity]])(
-    "R-1: it throws on %d commits while B reads A's insert",
-    async throws => {
-      const t = await setup(() =>
-        $getRoot().append($p('t1z t2z t3z'), $p('tail')),
+  test.each(
+    [1, 2, 3, Infinity].flatMap(n => [
+      [n, 'after'],
+      [n, 'before'],
+    ]),
+  )(
+    "R-1: it throws on %d commits while B reads A's insert (registered %s the binding's)",
+    async (throws, order) => {
+      let left = 0;
+      let armed: LexicalEditor | null = null;
+      const listener = (editor: LexicalEditor) =>
+        editor.registerUpdateListener(() => {
+          if (editor === armed && left > 0) {
+            left--;
+            throw new Error('app failure');
+          }
+        });
+      const t = await setup(
+        () => $getRoot().append($p('t1z t2z t3z'), $p('tail')),
+        order === 'before' ? {prepare: listener} : {},
       );
-      let left = throws;
-      t.b.editor.registerUpdateListener(() => {
-        if (left > 0) {
-          left--;
-          throw new Error('app failure');
-        }
-      });
+      if (order === 'after') {
+        listener(t.b.editor);
+      }
+      armed = t.b.editor;
+      left = throws as number;
       const caught = catchMicrotasks();
       t.a.update(() => void $selectIn([0], 3).insertText(' one'));
       await t.sync();

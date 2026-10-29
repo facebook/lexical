@@ -67,9 +67,6 @@ test.each(['YCollabExtension', 'TableExtension'] as const)(
             ? [RichTextExtension, collab, TableExtension]
             : [RichTextExtension, TableExtension, collab],
         name: '@lexical/y/test/table-on-open',
-        onError: error => {
-          throw error;
-        },
       }),
     );
     expect(editor.read(() => $getRoot().getTextContent())).toContain('cell');

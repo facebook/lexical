@@ -1908,6 +1908,14 @@ export class YBinding {
     deep = false,
     activate = false,
   ): void {
+    // Whether activation is still owed (see activateAfterRead).
+    let toActivate = activate;
+    const activateOnce = () => {
+      if (toActivate) {
+        toActivate = false;
+        this.activateAfterRead();
+      }
+    };
     this.guardedRead({
       $read: () => {
         this.$readAllInner(cursor, kept, deep);
@@ -1917,14 +1925,14 @@ export class YBinding {
           // (an editable listener's update or command), and an update made
           // in reply to the read (an update listener's), which Lexical runs
           // after this, is written.
-          $onUpdate(() =>
-            this.guard(() =>
-              withPins(this._pins, () => this.activateAfterRead()),
-            ),
-          );
+          $onUpdate(() => this.guard(() => withPins(this._pins, activateOnce)));
         }
       },
       after: () => {
+        // Where an app listener threw on the read's commit, Lexical skipped
+        // its $onUpdate callbacks, and the read stands (see guardedRead):
+        // the binding becomes active here, after the commit all the same.
+        activateOnce();
         this.checkUnknownTypes();
         this.flushRefresh(true);
       },

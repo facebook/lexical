@@ -1155,19 +1155,6 @@ export const ITALIC_UNDERSCORE: TextFormatTransformer = {
   type: 'text-format',
 };
 
-// `unescapeText` decodes a numeric character reference and a CommonMark reader
-// decodes the named ones too, so an `&` that begins one cannot be written raw
-// in a link destination or the URL comes back as the character it names. It
-// goes out as `&#38;` instead, which both of them read back as a single `&`.
-// An `&` that begins nothing is an ordinary character and stays as it is, so a
-// query string keeps the separators it was written with.
-function escapeCharacterReferences(value: string): string {
-  return value.replace(
-    /&(?=#\d+;|#[Xx][\dA-Fa-f]+;|[A-Za-z][\dA-Za-z]*;)/g,
-    '&#38;',
-  );
-}
-
 // A raw link destination cannot hold an ASCII control character or a space in
 // CommonMark, nor any Unicode whitespace in the raw branch of `LINK`'s import
 // patterns, so export writes a URL with any of them in the pointy form. Import
@@ -1177,20 +1164,28 @@ function escapeCharacterReferences(value: string): string {
 // eslint-disable-next-line no-control-regex
 const NOT_RAW_DESTINATION = /[\s\0-\x1f\x7f]/;
 
-// A link destination or title is read back through `unescapeText`, so after
-// `escapeCharacterReferences` every match of `syntax`, a global regular
-// expression for the characters its shape treats as syntax, gets a backslash.
-// So does a backtick: this package's importer reads code spans before links,
-// so one anywhere in the link could pair with one in the text after it and
-// swallow the link, although a CommonMark reader would not let it.
-// Neither may hold a line ending either. CommonMark allows none in a
+// A link destination or title is read back through `unescapeText`, which
+// decodes a numeric character reference, and a CommonMark reader decodes the
+// named ones too. So an `&` that begins one goes out as `&#38;`, or the part
+// would come back as the character the reference names. An `&` that begins
+// nothing is an ordinary character and stays as it is, so a query string keeps
+// the separators it was written with.
+//
+// Then every match of `syntax`, a global regular expression for the characters
+// the part's shape treats as syntax, gets a backslash. So does a backtick: this
+// package's importer reads code spans before links, so one anywhere in the
+// link could pair with one in the text after it and swallow the link, although
+// a CommonMark reader would not let it.
+//
+// Neither part may hold a line ending either. CommonMark allows none in a
 // destination and no blank line in a title, where two CRs make one as surely
 // as two LFs, and the importer reads one LF-separated line at a time, so even
 // a single LF would split the link. Each goes out as the character reference
 // that `unescapeText` and a CommonMark reader both turn back into the line
 // ending, written after the `&` escape so that one leaves it alone.
 function escapeLinkPart(value: string, syntax: RegExp): string {
-  return escapeCharacterReferences(value)
+  return value
+    .replace(/&(?=#\d+;|#[Xx][\dA-Fa-f]+;|[A-Za-z][\dA-Za-z]*;)/g, '&#38;')
     .replace(syntax, '\\$&')
     .replace(/`/g, '\\`')
     .replace(/[\r\n]/g, lineEnding => `&#${lineEnding.charCodeAt(0)};`);

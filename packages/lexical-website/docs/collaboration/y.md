@@ -879,9 +879,13 @@ not merge as a user might expect:
   [Changing your own node types](#changing-the-layout-and-migrating)), and
   in a block it moves, which is written anew (see Moves): the new copy takes
   what the block stored, and an item that joins another group takes that
-  group's fields. The text of a moved block is written anew from what the
-  client shows, so it loses the text formats it does not know, and the
-  fields of a text class or a link that the client's classes do not declare.
+  group's fields. A line it splits keeps a field it does not know on both
+  lines (the empty line Enter makes at the end of a line excepted): it
+  cannot tell whether the newer class copies the field to the new line, and
+  keeping it on both loses nothing. The text of a moved block is written
+  anew from what the client shows, so it loses the text formats it does not
+  know, and the fields of a text class or a link that the client's classes
+  do not declare.
   A nested list whose item it moves into another list does not take the
   fields of that list it does not know, so where that item becomes the
   list's first, every client reads the list without them.

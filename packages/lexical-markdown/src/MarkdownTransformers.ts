@@ -1179,6 +1179,12 @@ function escapeCharacterReferences(value: string): string {
 // a single LF would split the link. Each goes out as the character reference
 // that `unescapeText` and a CommonMark reader both turn back into the line
 // ending, written after the `&` escape so that one leaves it alone.
+// Whitespace and the ASCII control characters, which a raw link destination
+// cannot hold. A NUL still reads back as U+FFFD in a CommonMark reader, which
+// no spelling of it avoids.
+// eslint-disable-next-line no-control-regex
+const NOT_RAW_DESTINATION = /[\s\0-\x1f\x7f]/;
+
 function escapeLinkPart(value: string, syntax: RegExp): string {
   return escapeCharacterReferences(value)
     .replace(syntax, '\\$&')
@@ -1253,8 +1259,7 @@ export const LINK: TextMatchTransformer = {
     // it is.
     const rawUrl = node.getURL();
     const url =
-      // eslint-disable-next-line no-control-regex
-      rawUrl === '' || /[\s\0-\x1f\x7f]/.test(rawUrl)
+      rawUrl === '' || NOT_RAW_DESTINATION.test(rawUrl)
         ? `<${escapeLinkPart(rawUrl, /[\\<>]/g)}>`
         : escapeLinkPart(rawUrl, /[\\()]|^</g);
 

@@ -177,6 +177,29 @@ describe.each(ON_ERROR)('an update that throws, onError %s', onError => {
   });
 });
 
+/**
+ * An edit at `word` in the first paragraph, discrete or batched (committed in
+ * a microtask, as browsers commit); none where `word` is gone by then.
+ */
+function edit(
+  peer: Peer,
+  batched: boolean,
+  word: string,
+  $edit: (at: number) => void,
+) {
+  const $run = () => {
+    const at = $block([0]).getTextContent().indexOf(word);
+    if (at >= 0) {
+      $edit(at);
+    }
+  };
+  if (batched) {
+    peer.editor.update($run);
+  } else {
+    peer.update($run);
+  }
+}
+
 /** A seeded random number generator (mulberry32). */
 function random(seed: number): (n: number) => number {
   let s = seed >>> 0;
@@ -188,7 +211,7 @@ function random(seed: number): (n: number) => number {
   };
 }
 
-describe('the invariant, over random edits with updates that throw', () => {
+describe('the invariant, over random edits, batched or not, with updates that throw', () => {
   test('editors show the document and every later edit is written', async () => {
     for (let seed = 1; seed <= SEEDS; seed++) {
       const rnd = random(seed * 7919);
@@ -214,12 +237,15 @@ describe('the invariant, over random edits with updates that throw', () => {
             rnd(2) === 0,
           );
         } else if (kind === 2 && word !== null) {
-          peer.update(() => void $selectWords(word).removeText());
+          edit(peer, rnd(2) === 0, word, at => {
+            $selectIn([0], at, at + word.length).removeText();
+          });
         } else if (kind === 3 && word !== null) {
-          peer.update(() => void $selectWords(word).formatText('bold'));
+          edit(peer, rnd(2) === 0, word, at => {
+            $selectIn([0], at, at + word.length).formatText('bold');
+          });
         } else if (kind === 4 && word !== null) {
-          peer.update(() => {
-            const at = $block([0]).getTextContent().indexOf(word);
+          edit(peer, rnd(2) === 0, word, at => {
             $selectIn([0], at + word.length).insertText(` t${10 + step}z`);
           });
         } else if (kind === 5) {
@@ -244,10 +270,14 @@ describe('the invariant, over random edits with updates that throw', () => {
         }
         await t.sync();
         await expectConverged(t.peers);
+        // Each peer's, once.
         const fresh = await freshReader(t.a);
-        expect(fresh.describe()).toMatch(
-          /paragraph\("[123]>[123]>[123]>tail line"\)$/,
-        );
+        const tail = fresh.describe().match(/paragraph\("(.*)tail line"\)$/);
+        expect(tail && tail[1].match(/\d>/g)?.sort()).toEqual([
+          '1>',
+          '2>',
+          '3>',
+        ]);
       } catch (error) {
         throw new Error(
           `seed ${seed}: ${log.join(' ')}\n${error}\n` +

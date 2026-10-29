@@ -232,6 +232,7 @@ const PlaygroundRichTextExtension = defineExtension({
     TabFocusExtension,
     CollapsibleExtension,
     CodeHighlightExtension,
+    configExtension(CodeLineNumbersExtension, {onlyWordWrapped: true}),
     configExtension(ListExtension, {
       shouldPreserveNumbering: false,
     }),
@@ -290,7 +291,6 @@ const AppExtension = defineExtension({
     configExtension(VisibleNonPrintingExtension, {
       disabled: true,
     }),
-    configExtension(CodeLineNumbersExtension, {onlyWordWrapped: true}),
     // DOMImportExtension pipeline — `PlaygroundImportExtension` bundles
     // the shared `CoreImportExtension` baseline, the playground-specific
     // inline-style overlay and the `ClipboardDOMImportExtension` paste

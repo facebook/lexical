@@ -86,12 +86,12 @@ function lineNumberOverrides(mode: 'all' | 'wordWrapped') {
         $createDOM: (node, $next) => {
           const dom = $next();
           if (
+            !$hasLineNumbers(node.getParent(), mode) ||
             // The default exportDOM builds its element with $createDOM, so
             // HTML export and the clipboard come through here too. They get
             // the plain <br>, and overrides composed after this one change
             // that <br> rather than the wrapper.
-            $getRenderContextValue(RenderContextExport) ||
-            !$hasLineNumbers(node.getParent(), mode)
+            $getRenderContextValue(RenderContextExport)
           ) {
             return dom;
           }

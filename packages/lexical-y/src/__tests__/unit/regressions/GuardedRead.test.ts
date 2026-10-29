@@ -297,3 +297,67 @@ describe('N6: a read admitted before the binding failed closed reads nothing aft
     expect(shown).not.toContain('remote');
   });
 });
+
+describe('R2-1: a read runs only once no local update is pending or queued', () => {
+  /**
+   * A deletes the first character while B, offline, has a bold edit
+   * pending; `arm` makes B's listeners queue local updates on that commit.
+   */
+  async function run(arm: (b: Peer) => void) {
+    const t = await setup(() =>
+      $getRoot().append($p('alpha beta gamma'), $p('tail')),
+    );
+    t.offline();
+    t.a.update(() => void $selectIn([0], 0, 1).removeText());
+    t.b.editor.update(() => void $selectWord('beta').formatText('bold'));
+    arm(t.b);
+    const caught = catchMicrotasks();
+    await expect(t.sync()).resolves.toBeUndefined();
+    await t.sync();
+    const fresh = await freshReader(t.a);
+    expect(t.b.binding.status).toBe('active');
+    expect(t.a.describe()).toBe(fresh.describe());
+    expect(t.b.describe()).toBe(fresh.describe());
+    return {b: t.b, caught, fresh};
+  }
+
+  test('R2-1: an update listener queues a local update, then throws', async () => {
+    const error = new Error('app failure');
+    const {caught, fresh} = await run(b => {
+      let armed = true;
+      b.editor.registerUpdateListener(() => {
+        if (armed) {
+          armed = false;
+          b.editor.update(() => void $getRoot().append($p('queued edit')));
+          throw error;
+        }
+      });
+    });
+    expect(caught).toEqual([error]);
+    expect(fresh.describe()).toContain('lpha');
+    expect(fresh.describe()).not.toContain('alpha');
+    expect(fresh.describe()).toContain('paragraph("queued edit")');
+  });
+
+  test('R2-1: listeners that queue local updates past the commits a read makes first: recovered, every update written', async () => {
+    const {b, caught, fresh} = await run(peer => {
+      // Each commit's listener queues the next update and throws, so that
+      // each update waits for a commit of its own.
+      let left = 20;
+      peer.editor.registerUpdateListener(({tags}) => {
+        if (left > 0 && !tags.has('collaboration')) {
+          const n = left--;
+          peer.editor.update(() => void $getRoot().append($p(`queued ${n}`)));
+          throw new Error(`app failure ${n}`);
+        }
+      });
+    });
+    expect(caught).toHaveLength(20);
+    for (let n = 1; n <= 20; n++) {
+      expect(fresh.describe()).toContain(`paragraph("queued ${n}")`);
+    }
+    expect(b.warnings).toEqual([
+      'a remote change could not be read: local updates were still pending after 16 commits',
+    ]);
+  });
+});

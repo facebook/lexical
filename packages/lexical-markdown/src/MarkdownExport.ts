@@ -8,16 +8,19 @@
 
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
+  $caretRangeFromSelection,
   $getRoot,
   $getState,
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
+  $isRangeSelection,
   $isTextNode,
   type BaseSelection,
   type ElementNode,
   type LexicalNode,
   type LineBreakNode,
+  type NodeKey,
   type TextFormatType,
   type TextNode,
 } from 'lexical';
@@ -117,6 +120,7 @@ export function createSelectionMarkdownExport(
     // copy that does, instead of recomputing them for every node.
     const selection = exportedSelection.clone();
     selection.setCachedNodes(exportedSelection.getNodes());
+    boundaryTextKeys.set(selection, $getBoundaryTextKeys(selection));
     const output = [];
     // The separator depends on the previously *emitted* block, not on the
     // previous root child: unselected children produce no output, so keying
@@ -675,11 +679,40 @@ function $continuesTag(
   return false;
 }
 
-/** The text of `node` that the export emits: its selected slice, if any. */
+/**
+ * The text nodes at the ends of each exported selection, the only ones whose
+ * selected slice can differ from their whole text.
+ */
+const boundaryTextKeys = new WeakMap<BaseSelection, Set<NodeKey>>();
+
+function $getBoundaryTextKeys(selection: BaseSelection): Set<NodeKey> {
+  const keys = new Set<NodeKey>();
+  for (const point of selection.getStartEndPoints() || []) {
+    keys.add(point.key);
+  }
+  if ($isRangeSelection(selection)) {
+    for (const slice of $caretRangeFromSelection(selection).getTextSlices()) {
+      if (slice) {
+        keys.add(slice.caret.origin.getKey());
+      }
+    }
+  }
+  return keys;
+}
+
+/**
+ * The text of `node` that the export emits: its selected slice, if any.
+ * Slicing works out the selection's range, so it is only done for the nodes
+ * at its ends, which keeps a selection export linear.
+ */
 function $exportedText(node: TextNode, selection: BaseSelection | null) {
-  return selection
-    ? $sliceSelectedTextNodeContent(selection, node, 'clone').getTextContent()
-    : node.getTextContent();
+  if (selection === null) {
+    return node.getTextContent();
+  }
+  const boundary = boundaryTextKeys.get(selection);
+  return boundary && !boundary.has(node.getKey())
+    ? node.getTextContent()
+    : $sliceSelectedTextNodeContent(selection, node, 'clone').getTextContent();
 }
 
 function hasFormat(

@@ -63,6 +63,7 @@ import {
   $setState,
   COMPOSITION_END_TAG,
   type CreateEditorArgs,
+  type ElementNode,
   KEY_ENTER_COMMAND,
   type LexicalEditor,
   type LexicalNode,
@@ -4047,18 +4048,52 @@ describe('$generateNodesFromMarkdownString', () => {
 describe('Markdown export of long runs of formatted spaces', () => {
   // Each space differs in format from its neighbours, so none of them merge.
   // Visiting each sibling a bounded number of times keeps export linear; a
-  // look-ahead from every space to the end of the run is quadratic.
-  const SPACES = 500;
+  // look-ahead from every space to the end of the run, or working out the
+  // selection's range again for every node, is quadratic.
+  const SPACES = 200;
+  const HALF = SPACES / 2;
+  const $convertSelection = () =>
+    $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection());
 
-  it.each<[name: string, $export: () => string]>([
-    ['the document', () => $convertToMarkdownString(TRANSFORMERS)],
+  it.each<
     [
-      'a selection',
-      () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+      name: string,
+      $select: (paragraph: ElementNode) => void,
+      $export: () => string,
+      expected: string,
+    ]
+  >([
+    [
+      'the document',
+      () => {},
+      () => $convertToMarkdownString(TRANSFORMERS),
+      `**a${' '.repeat(SPACES)}c**`,
+    ],
+    [
+      'a selection between text points',
+      paragraph => {
+        const first = paragraph.getFirstChild();
+        const middle = paragraph.getChildAtIndex(HALF);
+        assert($isTextNode(first) && $isTextNode(middle));
+        $setSelectionFromCaretRange(
+          $getCaretRange(
+            $getTextPointCaret(first, 'next', 0),
+            $getTextPointCaret(middle, 'next', 1),
+          ),
+        );
+      },
+      $convertSelection,
+      `**a**${' '.repeat(HALF)}`,
+    ],
+    [
+      'a selection between element points',
+      paragraph => paragraph.select(HALF + 1, paragraph.getChildrenSize()),
+      $convertSelection,
+      `${' '.repeat(SPACES - HALF)}**c**`,
     ],
   ])(
     'visits each sibling a bounded number of times exporting %s',
-    (_name, $export) => {
+    (_name, $select, $export, expected) => {
       const editor = createTestEditor();
       editor.update(
         () => {
@@ -4075,15 +4110,21 @@ describe('Markdown export of long runs of formatted spaces', () => {
           }
           paragraph.append($createTextNode('c').setFormat(bold));
           $getRoot().append(paragraph);
-          paragraph.select(0, paragraph.getChildrenSize());
+          $select(paragraph);
         },
         {discrete: true},
       );
-      const getNextSibling = vi.spyOn(TextNode.prototype, 'getNextSibling');
-      onTestFinished(() => getNextSibling.mockRestore());
-      const markdown = editor.read($export);
-      expect(markdown).toBe(`**a${' '.repeat(SPACES)}c**`);
-      expect(getNextSibling.mock.calls.length).toBeLessThan(10 * SPACES);
+      const siblingReads = [
+        vi.spyOn(TextNode.prototype, 'getNextSibling'),
+        vi.spyOn(TextNode.prototype, 'getPreviousSibling'),
+      ];
+      onTestFinished(() => siblingReads.forEach(spy => spy.mockRestore()));
+      expect(editor.read($export)).toBe(expected);
+      const visits = siblingReads.reduce(
+        (sum, spy) => sum + spy.mock.calls.length,
+        0,
+      );
+      expect(visits).toBeLessThan(10 * SPACES);
     },
   );
 });

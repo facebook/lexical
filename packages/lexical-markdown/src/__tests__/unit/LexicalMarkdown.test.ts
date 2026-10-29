@@ -1749,6 +1749,7 @@ describe('Markdown', () => {
     const BOLD = TEXT_TYPE_TO_FORMAT.bold;
     const ITALIC = TEXT_TYPE_TO_FORMAT.italic;
     const STRIKE = TEXT_TYPE_TO_FORMAT.strikethrough;
+    const INLINE_CODE = TEXT_TYPE_TO_FORMAT.code;
     const $formatted = (text: string, format: number) =>
       $createTextNode(text).setFormat(format);
 
@@ -1826,6 +1827,29 @@ describe('Markdown', () => {
       expect(importMarkdown(exported).read($chars)).toEqual(
         editor.read($chars),
       );
+    });
+
+    it('keeps a tag on inline code that holds only a space', () => {
+      const editor = createTestEditor();
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $formatted('a', BOLD),
+                $formatted(' ', BOLD | INLINE_CODE),
+              ),
+            );
+        },
+        {discrete: true},
+      );
+      const formats = importMarkdown(editor.read($exportMarkdown)).read(() =>
+        $getRoot()
+          .getAllTextNodes()
+          .map(node => node.getFormat()),
+      );
+      expect(formats).toEqual([BOLD, BOLD | INLINE_CODE]);
     });
   });
 
@@ -4046,6 +4070,66 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
       $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
     );
     expect(result).toBe('***a*** ');
+  });
+
+  it.each<
+    [
+      name: string,
+      formats: [text: string, format: number][],
+      end: number,
+      expected: string,
+    ]
+  >([
+    [
+      'closes before a slice cut down to a formatted space',
+      [
+        ['a ', TEXT_TYPE_TO_FORMAT.bold],
+        [' b', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.italic],
+      ],
+      1,
+      '**a**  ',
+    ],
+    [
+      'closes when the format continues only after the selection',
+      [
+        ['a', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.italic],
+        [' x', TEXT_TYPE_TO_FORMAT.bold],
+        ['c', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.italic],
+      ],
+      1,
+      '***a*** ',
+    ],
+    [
+      'closes every tag at the end of a sliced node',
+      [
+        ['a', TEXT_TYPE_TO_FORMAT.bold],
+        ['bc', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.italic],
+        ['d', TEXT_TYPE_TO_FORMAT.bold],
+      ],
+      1,
+      '**a*b***',
+    ],
+  ])('%s', (_name, formats, end, expected) => {
+    const editor = createTestEditor({nodes: [LinkNode]});
+    editor.update(
+      () => {
+        const nodes = formats.map(([text, format]) =>
+          $createTextNode(text).setFormat(format),
+        );
+        $getRoot().append($createParagraphNode().append(...nodes));
+        $setSelectionFromCaretRange(
+          $getCaretRange(
+            $getTextPointCaret(nodes[0], 'next', 0),
+            $getTextPointCaret(nodes[1], 'next', end),
+          ),
+        );
+      },
+      {discrete: true},
+    );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
+    expect(result).toBe(expected);
   });
 });
 

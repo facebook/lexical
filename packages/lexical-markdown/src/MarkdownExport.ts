@@ -266,6 +266,7 @@ function $exportChildrenForSelection(
             unclosedTags,
             unclosableTags,
             shouldPreserveNewLines,
+            selection,
           );
         },
       );
@@ -304,6 +305,7 @@ function $exportChildrenForSelection(
             unclosedTags,
             unclosableTags,
             shouldPreserveNewLines,
+            selection,
           ),
         );
         anyChildIncluded = true;
@@ -488,6 +490,8 @@ function $exportTextFormat(
   unclosedTags: {format: TextFormatType; tag: string}[],
   unclosableTags?: {format: TextFormatType; tag: string}[],
   shouldPreserveNewLines: boolean = false,
+  // the selection being exported, which ends the text a tag can extend over
+  selection: BaseSelection | null = null,
 ): string {
   // This function handles the case of a string looking like this: "   foo   "
   // Where it would be invalid markdown to generate: "**   foo   **"
@@ -585,7 +589,9 @@ function $exportTextFormat(
   // close any tags in the same order they were applied, if necessary
   for (let i = 0; i < unclosedTags.length; i++) {
     const nodeHasFormat = hasFormat(node, unclosedTags[i].format);
-    const nextNodeHasFormat = $continuesFormat(node, unclosedTags[i].format);
+    const nextNodeHasFormat =
+      nodeHasFormat &&
+      $continuesFormat(node, unclosedTags[i].format, selection);
 
     // prevent adding closing tag if next sibling will do it
     if (nodeHasFormat && nextNodeHasFormat) {
@@ -651,14 +657,25 @@ function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
 }
 
 /**
- * Whether `format` carries on past `node` to text that can hold its tag.
- * Whitespace-only siblings cannot (the tag must close before the space), so
- * they are looked past while they keep the format.
+ * Whether `format` carries on past `node` to exported text that can hold its
+ * tag. Whitespace-only siblings cannot (the tag must close before the space),
+ * so they are looked past while they keep the format. Text outside the
+ * exported selection does not count.
  */
-function $continuesFormat(node: TextNode, format: TextFormatType): boolean {
+function $continuesFormat(
+  node: TextNode,
+  format: TextFormatType,
+  selection: BaseSelection | null,
+): boolean {
   let next = getTextSibling(node, false);
   while (next && next.hasFormat(format)) {
-    if (checkHasFormat(next, format)) {
+    if (selection && !next.isSelected(selection)) {
+      return false;
+    }
+    const text = selection
+      ? $sliceSelectedTextNodeContent(selection, next, 'clone').getTextContent()
+      : next.getTextContent();
+    if (next.hasFormat('code') || /\S/.test(text)) {
       return true;
     }
     next = getTextSibling(next, false);
@@ -677,7 +694,8 @@ function checkHasFormat(n: TextNode | null, f: TextFormatType): boolean {
   if (!hasFormat(n, f)) {
     return false;
   }
-  if (f === 'code') {
+  // Inline code is a fenced span, which can hold a tag whatever its text.
+  if (n && n.hasFormat('code')) {
     return true;
   }
   if (n && /^\s*$/.test(n.getTextContent())) {

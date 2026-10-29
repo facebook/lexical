@@ -14,6 +14,7 @@ import {
   ContentString,
   ContentType,
   createID,
+  type Doc,
   getItemCleanStart,
   Item,
   type Node as YNode,
@@ -141,6 +142,103 @@ export const isFormatCloser = (item: Item): boolean => formatClosers.has(item);
 export const markFormatCloser = (item: Item): void => {
   formatClosers.add(item);
 };
+
+/**
+ * The item that ends the run `item`, a format item, opened in the write that
+ * made it: the first item of its key, with another value, that its client
+ * made after it (one write's items are one after the other in its client's
+ * clock order; looked for among the next 64). Null when none is found.
+ */
+export function changeEnd(doc: Doc, item: Item): Item | null {
+  const {key, value} = item.content as ContentFormat;
+  const {client} = item.id;
+  const end = doc.store.getClock(client);
+  let clock = item.id.clock + item.length;
+  for (let steps = 0; clock < end && steps < 64; steps++) {
+    const next = doc.store.getItem(createID(client, clock));
+    if (!(next instanceof Item)) {
+      return null;
+    }
+    if (
+      next.content instanceof ContentFormat &&
+      next.content.key === key &&
+      !equalFormatValue(next.content.value, value)
+    ) {
+      return next;
+    }
+    clock = next.id.clock + next.length;
+  }
+  return null;
+}
+
+/**
+ * The item its client made last before `item` (looked for among the 64
+ * structs before it, in clock order) of the key `key`, or null.
+ */
+function lastOwnItemBefore(doc: Doc, item: Item, key: string): Item | null {
+  const {client} = item.id;
+  let clock = item.id.clock - 1;
+  for (let steps = 0; clock >= 0 && steps < 64; steps++) {
+    const prev = doc.store.getItem(createID(client, clock));
+    if (!(prev instanceof Item)) {
+      return null;
+    }
+    if (prev.content instanceof ContentFormat && prev.content.key === key) {
+      return prev;
+    }
+    clock = prev.id.clock - 1;
+  }
+  return null;
+}
+
+/** The nearest live item of `key` before `item`, among the 4096 before it. */
+function liveItemBefore(item: Item, key: string): Item | null {
+  let steps = 0;
+  for (let it = item.left; it !== null && steps < 4096; it = it.left, steps++) {
+    if (!it.deleted && isFormat(it) && keyOf(it) === key) {
+      return it;
+    }
+  }
+  return null;
+}
+
+/**
+ * The item that opened the run live format item `item` gives its value in:
+ * `item` itself, or, where it is a restore (its client wrote it after text
+ * it inserted inside the run, with a null of the key before that text), the
+ * opener of the run that restore restates, and so on.
+ */
+export function runOpener(doc: Doc, item: Item): Item {
+  const {key, value} = item.content as ContentFormat;
+  let current = item;
+  for (let depth = 0; depth < 16; depth++) {
+    const negation = lastOwnItemBefore(doc, current, key);
+    if (negation === null || valueOf(negation) !== null) {
+      return current;
+    }
+    let found = false;
+    let steps = 0;
+    for (
+      let it = current.left;
+      it !== null && steps < 512;
+      it = it.left, steps++
+    ) {
+      if (it === negation) {
+        found = true;
+        break;
+      }
+      if (!it.deleted && isFormat(it) && keyOf(it) === key) {
+        break;
+      }
+    }
+    const source = found ? liveItemBefore(negation, key) : null;
+    if (source === null || !equalFormatValue(valueOf(source), value)) {
+      return current;
+    }
+    current = source;
+  }
+  return current;
+}
 
 /** A live countable item: text, a child node, an embed. */
 export const isLiveContent = (item: Item): boolean =>
@@ -409,7 +507,9 @@ export class Cursor {
    * formatFamily) is never written after the items of a unit of it there
    * (see unitFrom), where a concurrent format change of the content after
    * puts its own item: it is written before them (see
-   * minimizeFormatChanges).
+   * minimizeFormatChanges). A restore of a value whose run another client's
+   * change opened gets an end of this client's own after that change's end
+   * (see format, rule 5).
    */
   private insertNegatedFormats(negated: Formats, closers = false): void {
     while (this.right !== null) {
@@ -441,13 +541,92 @@ export class Cursor {
       }
       this.forward();
     }
+    const ends: Item[] = [];
     for (const [key, val] of negated) {
+      const end = val === null ? null : this.restatedEnd(key, val);
+      if (end !== null) {
+        ends.push(end);
+      }
       this.right = this.newItem(new ContentFormat(key, val as object));
       if (closers && val === null) {
         formatClosers.add(this.right);
       }
       this.forward();
     }
+    for (const end of ends) {
+      this.insertAfter(
+        end,
+        new ContentFormat(keyOf(end), null as unknown as object),
+      );
+    }
+  }
+
+  /**
+   * For a restore of `key` to `value` written at the cursor: where the run it
+   * restates was opened by another client's change (see runOpener; the item
+   * that gave the content the value before this write is the nearest item of
+   * the key before the cursor that this write did not make), and the next
+   * live item of the key after the cursor with another value is that change's
+   * own end of the run (see changeEnd), that end, after which the restore's
+   * run gets an end of this client's own (see format, rule 5). Null
+   * otherwise.
+   */
+  private restatedEnd(key: string, value: unknown): Item | null {
+    const doc = this.tr.doc;
+    let source: Item | null = null;
+    let steps = 0;
+    for (
+      let it = this.left;
+      it !== null && steps < 4096;
+      it = it.left, steps++
+    ) {
+      if (
+        isFormat(it) &&
+        keyOf(it) === key &&
+        !this.tr.insertSet.hasId(it.id) &&
+        (!it.deleted || this.tr.deleteSet.hasId(it.id))
+      ) {
+        source = it;
+        break;
+      }
+    }
+    if (source === null || !equalFormatValue(valueOf(source), value)) {
+      return null;
+    }
+    const opener = runOpener(doc, source);
+    if (opener.id.client === doc.clientID) {
+      return null;
+    }
+    for (let it = this.right; it !== null; it = it.right) {
+      if (
+        it.deleted ||
+        !isFormat(it) ||
+        keyOf(it) !== key ||
+        equalFormatValue(valueOf(it), value)
+      ) {
+        continue;
+      }
+      return valueOf(it) === null && changeEnd(doc, opener) === it ? it : null;
+    }
+    return null;
+  }
+
+  /** Write `content` right after `left`, away from the cursor. */
+  private insertAfter(left: Item, content: ContentFormat): Item {
+    const doc = this.tr.doc;
+    const right = left.right;
+    const item = new Item(
+      createID(doc.clientID, doc.store.getClock(doc.clientID)),
+      left,
+      left.lastId,
+      right,
+      right && right.id,
+      this.parent,
+      null,
+      content,
+    );
+    item.integrate(this.tr, 0);
+    return item;
   }
 
   /**
@@ -847,6 +1026,24 @@ export class Cursor {
    *    there (see minimizeFormatChanges), so a comment resolved over two
    *    characters while a peer typed plain text between them came back on the
    *    second. A key whose old value there is null is restored by no one.
+   * 5. Where it restores a value (at the end of the range, as after
+   *    inserted text, see insertNegatedFormats) whose run another client's
+   *    change opened (see runOpener), and the item that ends the restored run
+   *    is that change's own end of the run (see changeEnd), it writes a null
+   *    of its own right after that end. Why: that end can go while the
+   *    restore stays, as the undo of that change deletes it and a concurrent
+   *    delete may drop it (it keeps a bounded number of the items it leaves,
+   *    see collapseGap), and the restored value ran on to the end of the
+   *    document (a format undone while a collaborator typed plain text inside
+   *    it, pasted a list there or removed it from part of the range; a
+   *    comment undone while a collaborator typed right after it where another
+   *    comment ended; a comment whose end a long offline peer's delete
+   *    dropped while a collaborator pasted inside it). Right after the end,
+   *    not before it: text a collaborator types at the end of the run at the
+   *    same time lands before the end, inside the run, and keeps the run's
+   *    value. A null by which a change made text inside the run plain (typed
+   *    plain text, a removal) is no such end: the undo of that change brings
+   *    the value back after it.
    */
   format(n: number, formats: Record<string, unknown>): void {
     const passed = new Set<string>();

@@ -841,11 +841,15 @@ not merge as a user might expect:
   Undoing a format change does not undo a collaborator's later change of
   part of its range, nor the value that change restored after itself: color
   `abc`, let a collaborator recolor `b`, then undo the color, and `c` keeps
-  the old color. Where a collaborator overwrote a step of yours entirely,
-  the undo manager skips that step as changing nothing, and the same undo
-  also reverts your step before it. When you undo a format change while a
-  collaborator removes that format and undoes the removal, the text keeps
-  the format: the collaborator's undo brings it back.
+  the old color, up to the end of the range (the same holds for text a
+  collaborator types or pastes inside the range as you undo). Undoing a link
+  while a collaborator formats text inside it keeps the link on its text:
+  formatting text in a link also sets the link's text format, which writes
+  the link there again. Where a collaborator overwrote a step of yours
+  entirely, the undo manager skips that step as changing nothing, and the
+  same undo also reverts your step before it. When you undo a format change
+  while a collaborator removes that format and undoes the removal, the text
+  keeps the format: the collaborator's undo brings it back.
 - **Large lists.** A structural edit in a list costs time proportional to
   the list on every client.
 - **The caret when a collaborator rewrites its line.** A caret stays after

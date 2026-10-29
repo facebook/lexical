@@ -220,7 +220,7 @@
 /*
  * Per line numbers from CodeLineNumbersExtension. Line 1 is drawn by the code
  * element's :before and each following line by the :after of the span wrapped
- * around the <br> that starts it, so a number stays with its line when the
+ * around the <br> that ends the line before it, so a number stays with its line when the
  * line wraps and empty lines get one too. Each number advances the line by
  * zero (negative start margin), so it sits in the same 52px the float gutter
  * above takes up and the text doesn't move. The background draws the gutter

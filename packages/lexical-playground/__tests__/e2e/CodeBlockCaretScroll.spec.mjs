@@ -180,7 +180,8 @@ test.describe('Code block caret scrolling', () => {
       await initialize({isCollab, page, ...settings});
       await createCodeBlock(page, [LONG_LINE, INDENTED_LINE]);
       if (settings.isCodeLineNumbers) {
-        // Each line has its own number element.
+        // Line 1 is numbered by the code element, and line 2 by the
+        // wrapper of the line break before it.
         await expect(locate(page, CODE)).toHaveAttribute(
           'data-lexical-code-line-numbers',
           'true',

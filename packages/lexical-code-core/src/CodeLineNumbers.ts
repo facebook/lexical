@@ -164,9 +164,10 @@ function allLineNumberOverrides() {
 /**
  * @experimental
  *
- * Gives every logical line of a code block its own element for a line
- * number, so a theme can number the lines with a CSS counter instead of
- * the `data-gutter` attribute. The numbers stay in step with the lines when
+ * Marks where each logical line of a code block starts, so a theme can
+ * number the lines with a CSS counter instead of the `data-gutter`
+ * attribute: line 1 on the code element, and each later line on the
+ * wrapper of the line break before it. The numbers stay in step with the lines when
  * a line wraps, and no text is added to the DOM, so copy, find and IME are
  * unaffected.
  *

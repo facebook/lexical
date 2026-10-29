@@ -10,6 +10,8 @@ import type {NodeKey} from 'lexical';
 
 import {type Item} from '@y/y';
 
+import {isGone} from './Unread';
+
 /*
  * Remote content not yet shown in the editor.
  *
@@ -133,7 +135,7 @@ export class Hidden {
 
 /** The length of an item the editor shows (live content only). */
 export function shownLength(item: Item, hidden: Hidden | null): number {
-  if (item.deleted || !item.countable) {
+  if (isGone(item) || !item.countable) {
     return 0;
   }
   return hidden === null ? item.length : hidden.shownLength(item);

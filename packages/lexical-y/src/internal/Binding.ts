@@ -78,7 +78,12 @@ import {
   LEGACY_ROOTS,
   SET_MEMBERS_LAYOUT_VERSION,
 } from './constants';
-import {isFormatCloser, markFormatCloser} from './Cursor';
+import {
+  changeEnd,
+  equalFormatValue,
+  isFormatCloser,
+  markFormatCloser,
+} from './Cursor';
 import {$canonicalizeGroup, $switchesWrapper} from './Groups';
 import {Hidden, shownLength} from './Hidden';
 import {$applyStoredAttrs, Reader} from './Read';
@@ -113,6 +118,7 @@ import {
   typeOf,
   type Unit,
 } from './State';
+import {emptyView, isGone, seenBy, type Unread} from './Unread';
 import {
   NESTED_FALLBACK_WARNING,
   notesSince,
@@ -313,6 +319,24 @@ export interface YBindingOptions {
 export interface YCursor {
   anchor: unknown;
   focus: unknown;
+}
+
+/**
+ * Whether live format item `item` changes its key's value: the nearest live
+ * item of its key before it gives another value (none gives null).
+ */
+function opensRun(item: Item): boolean {
+  const {key, value} = item.content as ContentFormat;
+  for (let it = item.left; it !== null; it = it.left) {
+    if (
+      !it.deleted &&
+      it.content instanceof ContentFormat &&
+      it.content.key === key
+    ) {
+      return !equalFormatValue(it.content.value, value);
+    }
+  }
+  return value !== null;
 }
 
 /**
@@ -537,6 +561,12 @@ export class YBinding {
   private remoteSeq = 0;
   /** Origin of read-only scans (no changes). */
   private readonly scanOrigin = {binding: this, scan: true};
+  /**
+   * The origin of the nulls an undo or redo writes to end the runs it
+   * brings back (see closeRestoredRuns): read into the editor as a
+   * collaborator's change is, and not part of the undo stack.
+   */
+  private readonly runEndOrigin = {binding: this, runEnd: true};
   /** Stored nodes the running undo/redo restores (see isKeptByUndo). */
   private restoring: Set<string> | null = null;
   /** Stored nodes the running undo/redo deletes (it inserted them). */
@@ -570,6 +600,16 @@ export class YBinding {
   /** The local selection before the remote transaction being applied. */
   private pendingCursor: YCursor | null = null;
   /**
+   * While changes Yjs applies are not read yet: the document as it was
+   * before them, which the editor still shows, and which the binding writes
+   * on and takes selections on meanwhile (see Unread).
+   */
+  private unread: Unread | null = null;
+  /** While a change is read: the document as it is (see readChange). */
+  private reading = false;
+  /** This binding's view, for its work (see guard). */
+  private readonly seer = () => (this.reading ? null : this.unread);
+  /**
    * The selection before the local change being written (see onUpdate), for
    * the undo step it starts (see stack-item-added in startInner).
    */
@@ -591,6 +631,10 @@ export class YBinding {
   /** Depth of the binding's own work in progress (see guard). */
   private busy = 0;
   private flushingWarnings = false;
+  /** Whether start() has completed, and dispose() not run since. */
+  private started = false;
+  /** Whether initialize() was called before start(), which then runs it. */
+  private initializeOnStart = false;
   private readonly afterAllTransactions = (): void => this.flushWarnings();
 
   /** The bound editor. */
@@ -642,6 +686,7 @@ export class YBinding {
         tr.origin !== this.followUpOrigin
           ? this.getCursor()
           : null;
+      this.noteChange(tr);
     };
   }
 
@@ -764,6 +809,14 @@ export class YBinding {
     }
     this.noteTransforms();
     this.evaluate();
+    // Started once all of the above has run: an initialize() call made
+    // while it ran (from an editable or update listener) runs here, where
+    // the editor's pending updates can commit.
+    this.started = true;
+    if (this.initializeOnStart) {
+      this.initializeOnStart = false;
+      withPins(this._pins, () => this.initializeInner());
+    }
     return () => this.dispose();
   }
 
@@ -850,6 +903,8 @@ export class YBinding {
 
   /** Disconnect from the document and the editor (`start` returns this). */
   dispose(): void {
+    this.started = false;
+    this.initializeOnStart = false;
     for (const d of this.disposers.splice(0)) {
       d();
     }
@@ -887,8 +942,16 @@ export class YBinding {
    * the same document with the same content at once write the same items
    * (one copy), and one id never holds two payloads; anywhere else, with
    * this client's own id.
+   *
+   * Called before `start()` (from an extension's `register`, before
+   * YCollabExtension starts the binding), it runs when the binding starts,
+   * once the editor has its initial state.
    */
   initialize(): void {
+    if (!this.started) {
+      this.initializeOnStart = true;
+      return;
+    }
     this.guard(() => withPins(this._pins, () => this.initializeInner()));
   }
 
@@ -897,6 +960,19 @@ export class YBinding {
       return;
     }
     if (this._root.length === 0 && recordedLayout(this._root) === null) {
+      // An update still pending (`editor.update(seed)` right before this
+      // call) is part of the initial content: committed now, while the
+      // binding is pending and writes nothing, then written with it. A
+      // listener of that commit can apply a remote change (a provider's
+      // first sync), so the document is looked at after it.
+      this.commitPending();
+      if (this._status !== 'pending') {
+        return;
+      }
+      if (this._root.length > 0 || recordedLayout(this._root) !== null) {
+        this.evaluate();
+        return;
+      }
       const legacy = this.options.convert ? [] : this.legacyRootsWithContent();
       if (legacy.length > 0) {
         this.warn(
@@ -912,10 +988,6 @@ export class YBinding {
         this.setStatus('active');
         return;
       }
-      // An update still pending (`editor.update(seed)` right before this
-      // call) is part of the initial content: committed now, while the
-      // binding is pending and writes nothing, then written with it.
-      this.commitPending();
       const editorState = this._editor.getEditorState();
       if (this.refuseUnstorableSlots(editorState, null)) {
         return;
@@ -1491,7 +1563,9 @@ export class YBinding {
   private guard<T>(fn: () => T): T {
     this.busy++;
     try {
-      return fn();
+      // On the document as this binding's editor shows it (see unread),
+      // whatever another binding of the document shows.
+      return seenBy(this.seer, fn);
     } finally {
       this.busy--;
       this.flushWarnings();
@@ -1616,7 +1690,54 @@ export class YBinding {
   // -------------------------------------------------------------------------
   // Remote -> Lexical
 
+  /**
+   * A change Yjs starts applying, before it changes anything: until this
+   * binding reads it (see onAfterTransaction), its editor shows the document
+   * as it was before it, whatever another binding of the document does
+   * meanwhile (another binding's writes, in the observers of an earlier
+   * change, included). Its own writes are its editor's already.
+   */
+  private noteChange(tr: Transaction): void {
+    if (
+      this._status === 'pending' ||
+      tr.origin === this ||
+      tr.origin === this.initOrigin ||
+      tr.origin === this.followUpOrigin ||
+      tr.origin === this.scanOrigin
+    ) {
+      return;
+    }
+    if (this.unread === null) {
+      this.unread = emptyView(this._root);
+    }
+    this.unread.changes.push(tr);
+  }
+
+  /** The change `tr` is read, or has nothing to read (see noteChange). */
+  private dropChange(tr: Transaction): void {
+    const view = this.unread;
+    if (view === null) {
+      return;
+    }
+    const at = view.changes.indexOf(tr);
+    if (at >= 0) {
+      view.changes.splice(at, 1);
+    }
+    if (view.changes.length === 0) {
+      this.unread = null;
+    }
+  }
+
   private onAfterTransaction(tr: Transaction): void {
+    try {
+      this.readChange(tr);
+    } finally {
+      this.reading = false;
+      this.dropChange(tr);
+    }
+  }
+
+  private readChange(tr: Transaction): void {
     if (
       tr.origin === this ||
       tr.origin === this.initOrigin ||
@@ -1693,16 +1814,35 @@ export class YBinding {
     // Invariant: a local update still pending (an editor.update() made in
     // the same task) is committed, and written, before a remote read. Why:
     // committed with the read, it would carry the read's tags and never be
-    // written.
+    // written. It is written on the document as it was before this change,
+    // which it was made on (see Unread).
+    if (this.unread === null || !this.unread.changes.includes(tr)) {
+      this.noteChange(tr);
+    }
+    const committed = this._editor.getEditorState();
     this.commitPending();
+    // The selection the read keeps is the one those updates left, on the
+    // document they were made on.
+    if (this._editor.getEditorState() !== committed) {
+      this.pendingCursor = this.getCursor();
+    }
+    // The read sees the document as it is: this change, and those applied
+    // since, which are read after it (see Reader).
+    this.reading = true;
     let cursor = this.pendingCursor;
     this.pendingCursor = null;
     // An undo puts back the selection of its step (a range, after typing
-    // over one); any other read keeps the user's caret a caret.
+    // over one); any other read keeps the user's caret a caret. The nulls an
+    // undo writes after itself (see closeRestoredRuns) are read as part of
+    // it: their read puts back the same selection, which the editor may not
+    // have committed yet (an undo run inside an update).
     const undoing =
-      tr.origin === this._undoManager && this._undoManager !== null;
+      (tr.origin === this._undoManager && this._undoManager !== null) ||
+      tr.origin === this.runEndOrigin;
     if (undoing) {
-      this.undoneCursor = cursor;
+      if (tr.origin !== this.runEndOrigin) {
+        this.undoneCursor = cursor;
+      }
       cursor = this.stepCursor ?? cursor;
     }
     let rebuilt: ReadonlySet<CS> = new Set();
@@ -2215,6 +2355,8 @@ export class YBinding {
         markedLeaves,
       );
     const state = this.state;
+    // On the document as it was before a remote change not read yet, while
+    // there is one (see Unread and guard).
     editorState.read(() =>
       this.$writeCommit(
         state,
@@ -2464,7 +2606,7 @@ export class YBinding {
             prevEditorState,
           )
         : new Set<CS>();
-    if (commit.followUp && writer !== null) {
+    if (commit.followUp && writer !== null && this.unread === null) {
       this.$checkFollowUp(
         state,
         commit,
@@ -2869,12 +3011,14 @@ export class YBinding {
       this.untransformedText.size === 0 &&
       this.storedHoles.size === 0;
     // Skipped when a remote change was applied during the write (remoteSeq
-    // moved): the shared content is no longer what was written.
+    // moved), or before it and not read yet (see Unread): the shared content
+    // is not what was written.
     if (
       !(
         check &&
         writer !== null &&
         this.remoteSeq === seq &&
+        this.unread === null &&
         Math.random() < (this.options.selfCheckSample ?? 1)
       )
     ) {
@@ -2891,8 +3035,12 @@ export class YBinding {
         containers.add(cs);
       }
     }
+    // A container whose node this write gave new storage after writing it
+    // (a block moved after its content changed) is compared as stored now.
     for (const cs of writer.groupWrites) {
-      containers.add(cs);
+      if (state.csByKey.get(cs.key) === cs) {
+        containers.add(cs);
+      }
     }
     for (const cs of containers) {
       if (
@@ -3224,7 +3372,10 @@ export class YBinding {
    * update the binding makes next (a read) commits alone. Why: an update
    * still pending would be committed with it, and take its tags. Committing
    * one can leave another pending (its listeners queue one): up to 16 are
-   * committed.
+   * committed. A pending state that holds nothing to commit is committed as
+   * it is: an update reuses such a state without committing it, so a read
+   * that changes nothing would leave its tags on it, and the next update
+   * that changes something would commit with them and not be written.
    */
   private commitPending(): void {
     const editor = this._editor;
@@ -3233,7 +3384,11 @@ export class YBinding {
       i < 16 && editor._pendingEditorState !== null && !editor._updating;
       i++
     ) {
+      const pending = editor._pendingEditorState;
       editor.update(() => {}, {discrete: true});
+      if (editor._pendingEditorState === pending) {
+        editor.read(() => {});
+      }
     }
   }
 
@@ -3891,25 +4046,32 @@ export class YBinding {
 
   /**
    * End each run that a format item the undo or redo of `step` brought back
-   * opens, where a null of another client's ends it, with a null of this
-   * client's own right before that one. An undo brings back the items its
-   * change deleted, and the closer that ended such a run was not among
-   * them: a collaborator's concurrent undo of the change that wrote it
-   * removed it, and the value ran on to the end of the document (a comment
-   * added, undone while a collaborator resolved it and undid the resolve,
-   * put the comment on everything after it). Invariant: a run an undo or
-   * redo brings back ends where a closer ended it for this client, whatever
-   * another client removes at the same time. A run that another value ends
-   * is left as it is: where that value's change is undone, the run going on
-   * over its text is what it had before (a copy of that value kept it there
-   * after its own undo).
+   * opens with an item of this client's own, where the item that ended it is
+   * another client's: right before a live null of another client's that ends
+   * it, or right after the end the original's own change gave its run (see
+   * changeEnd), where that is gone and nothing ends the run before it. An
+   * undo brings back the items its change deleted, and the closer that ended
+   * such a run was not among them: a collaborator's concurrent undo of the
+   * change that wrote it removed it, and the value ran on to the end of the
+   * document (a comment added, undone while a collaborator resolved it and
+   * undid the resolve, put the comment on everything after it; bold removed
+   * from a collaborator's bold text while the collaborator undid it, and that
+   * removal undone, made everything after it bold). Invariant: a run an undo
+   * or redo brings back ends where a closer ended it for this client,
+   * whatever another client removes at the same time. A run that another
+   * value ends is left as it is: where that value's change is undone, the run
+   * going on over its text is what it had before (a copy of that value kept
+   * it there after its own undo). A copy inside a run of its own value (see
+   * opensRun) opens no run: the run it is in ends where it ends.
    */
   private closeRestoredRuns(step: UndoManager['undoStack'][number]): void {
     const doc = this._doc;
     const store = doc.store;
     const client = doc.clientID;
+    // Where to write each null: after `left`, before `right`.
+    const ends: [left: Item | null, right: Item | null, key: string][] = [];
     doc.transact(tr => {
-      const copies: Item[] = [];
+      const copies: [original: Item, copy: Item][] = [];
       iterateStructsByIdSet(tr, step.deletes, s => {
         if (
           s instanceof Item &&
@@ -3923,50 +4085,62 @@ export class YBinding {
             copy.content instanceof ContentFormat &&
             copy.content.value !== null
           ) {
-            copies.push(copy);
+            copies.push([s, copy]);
           }
         }
       });
-      for (const copy of copies) {
+      for (const [original, copy] of copies) {
         const {key} = copy.content as ContentFormat;
+        // The end of the run the original opened in its own write (see
+        // changeEnd): where that is gone (the undo of that write), the
+        // copy's run ends there.
+        const gone = opensRun(copy) ? changeEnd(doc, original) : null;
         let shown = false;
-        let end: Item | null = null;
         for (let it = copy.right; it !== null; it = it.right) {
+          if (it === gone && it.deleted) {
+            if (shown) {
+              ends.push([it, it.right, key]);
+            }
+            break;
+          }
           if (it.deleted) {
             continue;
           }
           if (it.content instanceof ContentFormat) {
             if (it.content.key === key) {
-              end = it;
+              if (
+                shown &&
+                it.id.client !== client &&
+                it.content.value === null
+              ) {
+                ends.push([it.left, it, key]);
+              }
               break;
             }
           } else if (it.countable) {
             shown = true;
           }
         }
-        if (
-          end === null ||
-          !shown ||
-          end.id.client === client ||
-          (end.content as ContentFormat).value !== null
-        ) {
-          continue;
-        }
-        const left = end.left;
-        const item = new Item(
-          createID(client, store.getClock(client)),
-          left,
-          left && left.lastId,
-          end,
-          end.id,
-          end.parent,
-          null,
-          new ContentFormat(key, null as unknown as object),
-        );
-        item.integrate(tr, 0);
-        markFormatCloser(item);
       }
     }, this.scanOrigin);
+    if (ends.length > 0) {
+      doc.transact(tr => {
+        for (const [left, right, key] of ends) {
+          const item = new Item(
+            createID(client, store.getClock(client)),
+            left,
+            left && left.lastId,
+            right,
+            right && right.id,
+            (left ?? right)!.parent,
+            null,
+            new ContentFormat(key, null as unknown as object),
+          );
+          item.integrate(tr, 0);
+          markFormatCloser(item);
+        }
+      }, this.runEndOrigin);
+    }
   }
 
   /**
@@ -4016,6 +4190,11 @@ export class YBinding {
 
   /** The local selection as relative positions (JSON), or null. */
   getCursor(): YCursor | null {
+    // On the document as this binding's editor shows it (see guard).
+    return seenBy(this.seer, () => this.readCursor());
+  }
+
+  private readCursor(): YCursor | null {
     return this._editor.getEditorState().read(() => {
       try {
         return this.$captureCursor();
@@ -4491,7 +4670,7 @@ export class YBinding {
     for (let it = start; it !== null; it = it.right) {
       const len = shownLength(it, hidden);
       if (len === 0) {
-        if (isEndItem(it) && !it.deleted) {
+        if (isEndItem(it) && !isGone(it)) {
           break;
         }
         continue;

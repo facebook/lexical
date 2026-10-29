@@ -516,6 +516,8 @@ export {
   $createTextNode,
   $isInlineFormattable,
   $isTextNode,
+  INTERNAL_$recordTextMove,
+  INTERNAL_$recordTextRetype,
   TextNode,
 } from './nodes/LexicalTextNode';
 

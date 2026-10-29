@@ -114,9 +114,19 @@ provider.once('sync', () => {
   a link the first of those inside it). It
   does nothing on a document that already has content, and it refuses a
   document whose `@lexical/yjs` roots hold content.
+- The binding starts once the editor has its initial state
+  (`$initialEditorState`, and what extensions write while they register),
+  so that state is only ever the content of an empty document. On a
+  document that has content (an editor built again on the same document, a
+  document loaded from a cache before the editor), the editor shows the
+  document and writes nothing. `binding.initialize()` called before the
+  binding starts (from an extension's `register`) runs when it starts. An
+  extension that depends on `YCollabExtension` and changes content in its
+  own `afterRegistration` makes an edit, as an update made after
+  `buildEditorFromExtensions` returns does.
 - Pass `synced: true` instead when the document is already loaded (a test,
   an editor bound to a stored state): the extension initializes as soon as
-  it registers.
+  the binding starts.
 - Several `editor.update()` calls made in one task are committed, written
   and sent together, as in any Lexical editor. Once the editor has
   committed in a task (an update an app's listener queues after a commit),
@@ -125,7 +135,9 @@ provider.once('sync', () => {
   local update waiting to be written; so does one made while the binding
   has updates of its own waiting. A remote change a provider applies
   synchronously in the same task as updates made before any commit is
-  integrated before them, and they are written after it (providers that
+  integrated before them, and they are written after it, on the document as
+  it was before that change, which they were made on: their edits land
+  where they were made, and the change is read after them (providers that
   apply changes from network or channel events never do this).
 - To seed or convert a document on a server, use `seedYState` (see
   [Server-side editing](./y-server.md)).
@@ -134,7 +146,7 @@ provider.once('sync', () => {
 | -- | -- | -- |
 | `doc` | (required) | The Yjs document. |
 | `root` | `doc.get('lexical-y')` | The shared root to bind. |
-| `synced` | `false` | Initialize as soon as the extension registers. |
+| `synced` | `false` | Initialize as soon as the binding starts. |
 | `captureTimeout` | `500` | Undo capture timeout in ms; `null` turns collaborative undo off. |
 | `clientIDRange` | `'uint53'` | `'uint32'` for servers on yrs before 0.28, see [Servers](#servers). |
 | `selfCheck` | `false` | Reads every local write (and every container a remote change rebuilt) back from Yjs and compares it with the editor; a mismatch is a `'@lexical/y/self-check'` [warning](#warnings). A debugging aid: turn it on in tests and development builds. |
@@ -213,10 +225,12 @@ it shows. Every client reads these the same
 way, and the next edit there stores them.
 
 Without the extension API, `new YBinding(editor, doc, options)` does the
-same: call `binding.start()` to connect it, `binding.initialize()` after the
-first sync, and `binding.undo()` / `binding.redo()` for undo. An undo puts
-back the selection from before the step it undoes (as `HistoryExtension`
-does), and a redo the one from when it was undone. Called while the editor
+same: call `binding.start()` to connect it once the editor has its initial
+state (an update made after it, on a document that has content, is an
+edit), `binding.initialize()` after the first sync, and `binding.undo()` /
+`binding.redo()` for undo. An undo puts back the selection from before the
+step it undoes (as `HistoryExtension` does), and a redo the one from when it
+was undone. Called while the editor
 is updating (from a command handler, an update or its `$onUpdate`), it runs
 right after that update commits, in an update of its own.
 `binding.getCursor()` and `binding.$resolveCursor()` convert the selection
@@ -699,8 +713,18 @@ not merge as a user might expect:
 
 - **Moves.** Moving a block is a delete and a re-insert, so text a
   collaborator types into the moved block at the same time is lost or lands
-  at its old position, and two collaborators moving the same block at once
-  can duplicate it. Lexical operations that move content (turning a
+  at its old position, a collaborator's caret in it stays at that position,
+  and two collaborators moving the same block at once can duplicate it.
+  Undoing the move restores the block as it was before the move: what
+  collaborators typed in it since is lost or, in a moved line, stays where
+  the moved copy was. The moved block is the node Lexical recorded as moved:
+  an existing node passed to `insertBefore`, `insertAfter`, `append` or
+  `splice` in the update (as a block drag does), even one put back where it
+  was. The blocks it passes that Lexical did not record keep what
+  collaborators type in them. Between recorded blocks, and in a reorder that
+  Lexical did not record (an editor state set whole), the binding rewrites
+  as few blocks as it can, the smaller ones on a tie.
+  Lexical operations that move content (turning a
   paragraph into a list inside a container, indenting list items that hold
   blocks) behave the same way, and so does the first edit that restructures
   a list stored in an older shape (a nested list kept as a node inside an
@@ -839,11 +863,15 @@ not merge as a user might expect:
   Undoing a format change does not undo a collaborator's later change of
   part of its range, nor the value that change restored after itself: color
   `abc`, let a collaborator recolor `b`, then undo the color, and `c` keeps
-  the old color. Where a collaborator overwrote a step of yours entirely,
-  the undo manager skips that step as changing nothing, and the same undo
-  also reverts your step before it. When you undo a format change while a
-  collaborator removes that format and undoes the removal, the text keeps
-  the format: the collaborator's undo brings it back.
+  the old color, up to the end of the range (the same holds for text a
+  collaborator types or pastes inside the range as you undo). Undoing a link
+  while a collaborator formats text inside it keeps the link on its text:
+  formatting text in a link also sets the link's text format, which writes
+  the link there again. Where a collaborator overwrote a step of yours
+  entirely, the undo manager skips that step as changing nothing, and the
+  same undo also reverts your step before it. When you undo a format change
+  while a collaborator removes that format and undoes the removal, the text
+  keeps the format: the collaborator's undo brings it back.
 - **Large lists.** A structural edit in a list costs time proportional to
   the list on every client.
 - **The caret when a collaborator rewrites its line.** A caret stays after
@@ -881,7 +909,10 @@ not merge as a user might expect:
   inside the earlier deleted text after that, where its format changed
   more than once along it, takes the format that text had at its start,
   and so does that text where an undo brings it back after another
-  collaborator's delete there.
+  collaborator's delete there. Two joins at once into the same line both
+  write its type, and Yjs keeps one of them by client id: a heading joined
+  across a quote to the paragraph after it, while a collaborator joins that
+  paragraph into the quote, can become a quote.
 
 ## Changing the layout and migrating
 

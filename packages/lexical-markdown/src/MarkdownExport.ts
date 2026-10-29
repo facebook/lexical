@@ -429,6 +429,7 @@ function $exportChildren(
             unclosedTags,
             unclosableTags,
             shouldPreserveNewLines,
+            null,
           ),
       );
 
@@ -449,6 +450,7 @@ function $exportChildren(
           unclosedTags,
           unclosableTags,
           shouldPreserveNewLines,
+          null,
         ),
       );
     } else if ($isElementNode(child)) {
@@ -481,10 +483,10 @@ function $exportTextFormat(
   textTransformers: TextFormatTransformer[],
   // unclosed tags include the markdown tags that haven't been closed yet, and their associated formats
   unclosedTags: {format: TextFormatType; tag: string}[],
-  unclosableTags?: {format: TextFormatType; tag: string}[],
-  shouldPreserveNewLines: boolean = false,
+  unclosableTags: {format: TextFormatType; tag: string}[],
+  shouldPreserveNewLines: boolean,
   // the selection being exported, which ends the text a tag can extend over
-  selection: BaseSelection | null = null,
+  selection: BaseSelection | null,
 ): string {
   // This function handles the case of a string looking like this: "   foo   "
   // Where it would be invalid markdown to generate: "**   foo   **"

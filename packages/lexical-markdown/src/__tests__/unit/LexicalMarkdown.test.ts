@@ -1837,7 +1837,8 @@ describe('Markdown', () => {
       );
     });
 
-    it.each<[name: string, $nodes: () => LexicalNode[]]>([
+    // The code span's padding is not what these test, so it is left open.
+    it.each<[name: string, $nodes: () => LexicalNode[], expected: RegExp]>([
       [
         'leaves the formats of inline code that holds only a space off',
         () => [
@@ -1845,6 +1846,7 @@ describe('Markdown', () => {
           $formatted(' ', BOLD | TEXT_TYPE_TO_FORMAT.code),
           $formatted('b', 0),
         ],
+        /^a` +`b$/,
       ],
       [
         'keeps a tag open across inline code that holds only a space',
@@ -1853,8 +1855,9 @@ describe('Markdown', () => {
           $formatted(' ', BOLD | TEXT_TYPE_TO_FORMAT.code),
           $formatted('b', BOLD),
         ],
+        /^\*\*a` +`b\*\*$/,
       ],
-    ])('%s', (_name, $nodes) => {
+    ])('%s', (_name, $nodes, expected) => {
       const editor = createTestEditor();
       editor.update(
         () => {
@@ -1864,7 +1867,9 @@ describe('Markdown', () => {
         },
         {discrete: true},
       );
-      expect(importMarkdown(editor.read($exportMarkdown)).read($chars)).toEqual(
+      const exported = editor.read($exportMarkdown);
+      expect(exported).toMatch(expected);
+      expect(importMarkdown(exported).read($chars)).toEqual(
         editor.read($chars),
       );
     });
@@ -4064,7 +4069,7 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
     expect(result).toBe('  **b**');
   });
 
-  it('closes a tag left open by the previous node when the slice is cut down to whitespace', () => {
+  it('closes the tags of the previous node before a slice cut down to whitespace', () => {
     const editor = createTestEditor({nodes: [LinkNode]});
     editor.update(
       () => {

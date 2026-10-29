@@ -2,6 +2,8 @@
 '@lexical/markdown': patch
 ---
 
-[fix] Markdown export no longer drops, repeats or misplaces a closing format marker such as `**`, `*` or `~~` around a space whose formats differ from the text beside it, such as a bold space after bold italic text and before a link (`**_a_ [b](u)**` used to export as `***a* [**b**](u)`), and `$convertSelectionToMarkdownString` closes every tag when the selection ends inside formatted text and leaves out inline code the selection only touches
+[fix] Markdown export keeps format markers balanced around a space whose formats differ from the text beside it
 
-Verify: Markdown export, including of selections, of text where a space carries different formatting than the words around it.
+Closing markers such as `**`, `*` or `~~` were dropped, repeated or placed after the space, so `**_a_ [b](u)**` exported as `***a* [**b**](u)`. `$convertSelectionToMarkdownString` also closes every marker when the selection ends inside formatted text. Inline code that holds only spaces now keeps the formats around it, and empty inline code, such as inline code a selection only touches, is left out.
+
+Verify: Markdown export, including of selections, of text where a space or inline code carries different formatting than the words around it.

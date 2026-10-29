@@ -551,7 +551,7 @@ function $exportTextFormat(
   // close any tags in the same order they were applied, if necessary
   for (let i = 0; i < unclosedTags.length; i++) {
     const nodeHasFormat = hasFormat(node, unclosedTags[i].format);
-    // prevent adding closing tag if next sibling will do it
+    // prevent adding closing tag if later text with the format will do it
     if (
       nodeHasFormat &&
       $continuesFormat(node, unclosedTags[i].format, selection)

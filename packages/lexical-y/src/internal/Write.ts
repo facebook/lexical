@@ -4218,17 +4218,18 @@ export class Writer {
 
   /**
    * The stored marker attributes of item `item` of a group of type `gtype`,
-   * or null where this write made its marker (or it has none).
+   * in the document the write sees (see Unread), or null where this write
+   * made its marker (or it has none).
    */
   private storedItemAttrs(item: LexicalNode, gtype: unknown): Attrs | null {
     const unit = this.state.unitByKey.get(item.getKey());
     const end = unit === undefined ? null : unit.end;
-    if (end === null || end.deleted || this.tr.insertSet.hasId(end.id)) {
+    if (end === null || isGone(end) || this.tr.insertSet.hasId(end.id)) {
       return null;
     }
     const marker = typeOf(end);
-    return marker.getAttr(GROUP_KEY) === gtype
-      ? (marker.getAttrs() as Attrs)
+    return attrOf(marker, GROUP_KEY) === gtype
+      ? (attrsOf(marker) as Attrs)
       : null;
   }
 
@@ -4243,7 +4244,7 @@ export class Writer {
     // the type stored and of the node's.
     const fields = ownedFields(
       this.state.editor,
-      storedTypeOf(y),
+      storedType(y),
       node.getType(),
       true,
     );

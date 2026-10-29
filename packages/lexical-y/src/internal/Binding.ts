@@ -200,6 +200,17 @@ type GuardedRead = {
   readonly tag?: string | string[];
 };
 
+/**
+ * Rethrow an app's error (an update or a listener of its own that threw on a
+ * commit the binding made) in a microtask: an uncaught error, never thrown
+ * into Yjs or a provider.
+ */
+function rethrowLater(error: unknown): void {
+  queueMicrotask(() => {
+    throw error;
+  });
+}
+
 /** `error`'s text for a warning; never throws, whatever value was thrown. */
 function errorText(error: unknown): string {
   try {
@@ -2098,7 +2109,9 @@ export class YBinding {
    *   provider or `initialize()`: it goes to `read.recover`, with what the
    *   editor showed before the read. A throw committing the pending
    *   updates is the app's (an update or a listener of its own): it is
-   *   rethrown in a microtask, and the read goes on.
+   *   rethrown in a microtask, and the read goes on. So is a throw once the
+   *   read committed (the editor shows what it read, and an update listener
+   *   of the app's threw): the read stands.
    * - `read.after` runs once the read has committed and nothing threw: after
    *   the update the read is part of, where it is nested in one (an undo the
    *   binding runs in an update of its own, see undo).
@@ -2142,6 +2155,8 @@ export class YBinding {
       settle();
       return;
     }
+    // The state the read makes, which its commit gives the editor.
+    let readState: EditorState | null = null;
     try {
       editor.update(
         () => {
@@ -2151,6 +2166,7 @@ export class YBinding {
           if (this.unreadable) {
             return;
           }
+          readState = editor._pendingEditorState;
           try {
             read.$read();
           } catch (error) {
@@ -2172,8 +2188,14 @@ export class YBinding {
         // The update the read is part of threw: not the read's to recover.
         throw error;
       }
-      // Thrown committing what was read.
-      failure = {error};
+      if (readState !== null && editor.getEditorState() === readState) {
+        // Thrown once the read had committed, by a listener of the app's:
+        // the read stands.
+        rethrowLater(error);
+      } else {
+        // Thrown committing what was read.
+        failure = {error};
+      }
     }
     if (!nested) {
       settle();
@@ -3593,11 +3615,8 @@ export class YBinding {
         }
       } catch (error) {
         // An update or a listener of the app's threw: its error is rethrown
-        // in a microtask (an uncaught error), never into Yjs or a provider,
-        // and the updates still pending commit.
-        queueMicrotask(() => {
-          throw error;
-        });
+        // in a microtask, and the updates still pending commit.
+        rethrowLater(error);
       }
     }
     return !left();

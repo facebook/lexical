@@ -399,3 +399,39 @@ describe('R3-1: local updates a recovery commits are written on the document the
     expect(t.b.binding.status).toBe('active');
   });
 });
+
+describe('R-1: an update listener of the app that throws on the commit of a read leaves the read standing', () => {
+  test.each([[1], [2], [3], [Infinity]])(
+    "R-1: it throws on %d commits while B reads A's insert",
+    async throws => {
+      const t = await setup(() =>
+        $getRoot().append($p('t1z t2z t3z'), $p('tail')),
+      );
+      let left = throws;
+      t.b.editor.registerUpdateListener(() => {
+        if (left > 0) {
+          left--;
+          throw new Error('app failure');
+        }
+      });
+      const caught = catchMicrotasks();
+      t.a.update(() => void $selectIn([0], 3).insertText(' one'));
+      await t.sync();
+      expect(t.b.warnings).toEqual([]);
+      expect(t.b.binding.status).toBe('active');
+      expect(t.b.describe()).toBe(
+        'paragraph("t1z one t2z t3z") / paragraph("tail")',
+      );
+      expect(caught.length).toBeGreaterThan(0);
+      left = 0;
+      t.a.update(() => void $selectIn([1], 4).insertText(' two'));
+      t.b.update(() => void $selectIn([0], 15).insertText(' three'));
+      await t.sync();
+      const expected =
+        'paragraph("t1z one t2z t3z three") / paragraph("tail two")';
+      expect(t.a.describe()).toBe(expected);
+      expect(t.b.describe()).toBe(expected);
+      expect((await freshReader(t.a)).describe()).toBe(expected);
+    },
+  );
+});

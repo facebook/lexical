@@ -112,7 +112,8 @@ export function formatFamily(key: string): string {
   return key;
 }
 
-const hasOwn = (obj: object, key: string) =>
+/** Whether `obj` has an own property `key`. */
+export const hasOwn = (obj: object, key: string): boolean =>
   Object.prototype.hasOwnProperty.call(obj, key);
 
 /** `T` without `K`, per member of a union. */

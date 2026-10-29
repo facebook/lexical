@@ -76,7 +76,11 @@ import {
   ownsMember,
   ownsNodeAttr,
 } from '../../../internal/Schema';
-import {UNKNOWN_NODE_TYPES_WARNING} from '../../../internal/Warnings';
+import {
+  UNKNOWN_NODE_TYPES_WARNING,
+  type YUnknownNodeTypesData,
+} from '../../../internal/Warnings';
+import {Writer} from '../../../internal/Write';
 import {
   $block,
   $createBoxNode,
@@ -867,6 +871,112 @@ describe('S7-3: an older client keeps the fields a newer class added', () => {
   );
 });
 
+describe('S7-3: an older client restructuring a nested group', () => {
+  const $tl = (tone: string, ...items: (string | ListNode)[]) => {
+    const list = $create(ListV2);
+    list.__listType = 'bullet';
+    list.__tag = 'ul';
+    list.__tone = tone;
+    for (const item of items) {
+      list.append(
+        $createListItemNode().append(
+          typeof item === 'string' ? $createTextNode(item) : item,
+        ),
+      );
+    }
+    return list;
+  };
+
+  test("an outer group removed: each level keeps its own group's fields", async () => {
+    // The line's marker stays; its outer levels shift by one.
+    const r = await expectSameAsV2(
+      () =>
+        $getRoot().append($tl('outer', $tl('middle', $tl('inner', 'leaf')))),
+      () => {
+        const outer = $block([0]);
+        const item = outer.getFirstChildOrThrow() as ElementNode;
+        const middle = item.getFirstChildOrThrow();
+        outer.insertBefore(middle);
+        outer.remove();
+      },
+    );
+    expect(docJSON(r.author)).not.toContain('"tone":"outer"');
+    expect(docJSON(r.author)).toContain('"tone":"middle"');
+    expect(docJSON(r.author)).toContain('"tone":"inner"');
+  });
+
+  test.each([
+    ['outdent', [0, 1, 0, 0], 0],
+    ['indent', [0, 2], 1],
+  ] as const)('%s, levels of distinct fields', async (_name, path, indent) => {
+    await expectSameAsV2(
+      () => $getRoot().append($tl('out', 'a', $tl('in', 'x', 'y'), 'b')),
+      () => {
+        let node: LexicalNode = $getRoot();
+        for (const i of path) {
+          node = (node as ElementNode).getChildAtIndex(i)!;
+        }
+        (node as ListItemNode).setIndent(indent);
+      },
+    );
+  });
+
+  test('a run of new items finds the item their group fields come from in linear time', async () => {
+    // Prepended: each finds the first stored item after the run.
+    const proto = Writer.prototype as unknown as {
+      storedItemAttrs: (...args: unknown[]) => unknown;
+    };
+    const {storedItemAttrs} = proto;
+    const calls: number[] = [];
+    try {
+      for (const size of [32, 256]) {
+        const r = await room(V1, () => $getRoot().append($list('existing')));
+        let n = 0;
+        proto.storedItemAttrs = function (this: unknown, ...args: unknown[]) {
+          n++;
+          return storedItemAttrs.apply(this, args);
+        };
+        r.editor.update(() =>
+          $block([0]).splice(
+            0,
+            0,
+            Array.from({length: size}, (_, i) =>
+              $createListItemNode().append($createTextNode('new' + i)),
+            ),
+          ),
+        );
+        await flush();
+        proto.storedItemAttrs = storedItemAttrs;
+        expect(r.editor.errors).toEqual([]);
+        expect(docJSON(r.author).match(/"tone":"warm"/g)).toHaveLength(1);
+        calls.push(n);
+      }
+    } finally {
+      proto.storedItemAttrs = storedItemAttrs;
+    }
+    expect(calls[1]).toBeLessThan(calls[0] * 8 * 2);
+  });
+
+  test.fails(
+    'limit: a link an older client replaces with another keeps the fields it does not know',
+    async () => {
+      // It cannot tell the new link from the old one edited, and keeps what
+      // it does not own (see "Older app versions" in y.md's limits).
+      await expectSameAsV2(
+        () => $getRoot().append($p('see ').append($link())),
+        () => {
+          const old = $block([0]).getChildAtIndex(1) as LinkNode;
+          // Of the client's own class for the type.
+          const next = $create(old.constructor as Klass<LinkNode>)
+            .setURL('https://b.dev')
+            .append(...old.getChildren());
+          old.replace(next);
+        },
+      );
+    },
+  );
+});
+
 describe('S7-3: which stored names a client owns', () => {
   test('a node or marker attribute', () => {
     const fields = new Set(['src']);
@@ -1324,6 +1434,181 @@ describe('S7-21: a read that throws on every attempt fails closed', () => {
   });
 });
 
+type SerializedRequired = SerializedElementNode & {mode: string};
+/**
+ * A class whose `mode` its JSON always holds (its importJSON requires it),
+ * and older versions of it that reject a value a newer one writes, each in
+ * its own way.
+ */
+class RequiredV2 extends ElementNode {
+  __mode = 'a';
+  static getType(): string {
+    return 'test_required';
+  }
+  static clone(node: RequiredV2): RequiredV2 {
+    const copy = new RequiredV2(node.__key);
+    copy.__mode = node.__mode;
+    return copy;
+  }
+  static importJSON(json: SerializedRequired): RequiredV2 {
+    return new RequiredV2().updateFromJSON(json);
+  }
+  updateFromJSON(json: LexicalUpdateJSON<SerializedRequired>): this {
+    const self = super.updateFromJSON(json);
+    self.__mode = json.mode;
+    return self;
+  }
+  exportJSON(): SerializedRequired {
+    return {...super.exportJSON(), mode: this.__mode, type: 'test_required'};
+  }
+  createDOM(): HTMLElement {
+    throw new Error('headless');
+  }
+  updateDOM(): boolean {
+    return false;
+  }
+}
+function requiredV1(
+  reject: (node: RequiredV2, json: SerializedRequired) => void,
+): typeof RequiredV2 {
+  return class RequiredV1 extends RequiredV2 {
+    static getType(): string {
+      return 'test_required';
+    }
+    static clone(node: RequiredV1): RequiredV1 {
+      const copy = new RequiredV1(node.__key);
+      copy.__mode = node.__mode;
+      return copy;
+    }
+    static importJSON(json: SerializedRequired): RequiredV1 {
+      return new RequiredV1().updateFromJSON(json);
+    }
+    updateFromJSON(json: LexicalUpdateJSON<SerializedRequired>): this {
+      if (json.mode === 'a' || json.mode === 'b') {
+        return super.updateFromJSON(json);
+      }
+      reject(this, json as SerializedRequired);
+      throw new Error('unknown mode ' + json.mode);
+    }
+  };
+}
+
+describe('S7-21: what an older class does before it throws', () => {
+  const $content = (mode: string) => () => {
+    const box = $create(RequiredV2).append($p('inside'));
+    box.__mode = mode;
+    $getRoot().clear().append($p('FIRST'), box, $p('LAST'));
+  };
+  const opened = async (v1: typeof RequiredV2, mode: string) => {
+    const a = new Peer(2, newNet() as never, [...NODES, RequiredV2]);
+    a.update($content(mode));
+    a.binding.initialize();
+    await flush();
+    const b = new Peer(1, newNet() as never, [...NODES, v1]);
+    expect(() => {
+      Y.applyUpdate(b.doc, Y.encodeStateAsUpdate(a.doc));
+      b.binding.initialize();
+    }).not.toThrow();
+    await flush();
+    return b;
+  };
+
+  test('a fallback node does not go through the importJSON that rejected it', async () => {
+    const b = await opened(
+      requiredV1(() => {}),
+      'c',
+    );
+    expectUnreadable(b, 'test_required', null);
+    expect(b.describe()).toContain('"FIRST"');
+    expect(b.describe()).toContain('"LAST"');
+  });
+
+  test('what it throws need not be printable', async () => {
+    const v1 = class extends requiredV1(() => {}) {
+      static getType(): string {
+        return 'test_required';
+      }
+      updateFromJSON(json: LexicalUpdateJSON<SerializedRequired>): this {
+        if (json.mode !== 'a' && json.mode !== 'b') {
+          throw Object.create(null);
+        }
+        return super.updateFromJSON(json);
+      }
+    };
+    const b = await opened(v1, 'c');
+    expect(b.errors).toEqual([]);
+    expect(b.binding.status).toBe('readonly');
+  });
+
+  test.each([
+    [
+      'what it changed is undone',
+      (node: RequiredV2) => {
+        node.setFormat('right');
+      },
+    ],
+    [
+      'a change it made that Lexical cannot commit is undone',
+      (node: RequiredV2) => {
+        node.getWritable().__mode = 'c';
+      },
+    ],
+  ])('a node it updates: %s', async (_name, reject) => {
+    const v1 = class extends requiredV1(reject) {
+      static getType(): string {
+        return 'test_required';
+      }
+      getTextContent(): string {
+        if (this.getLatest().__mode === 'c') {
+          throw new Error('cannot show mode c');
+        }
+        return super.getTextContent();
+      }
+    };
+    const net = newNet();
+    const a = new Peer(2, net as never, [...NODES, RequiredV2]);
+    const b = new Peer(1, net as never, [...NODES, v1]);
+    a.update($content('a'));
+    a.binding.initialize();
+    await flush();
+    const shown = b.describe();
+    a.update(() => {
+      ($block([1]) as RequiredV2).getWritable().__mode = 'c';
+    });
+    await flush();
+    expectUnreadable(b, 'test_required', shown);
+    expect(b.read(() => $block([1]).getFormatType())).toBe('');
+  });
+
+  test('a reader that throws null fails closed too', async () => {
+    const a = new Peer(2, newNet() as never);
+    a.update(() => $getRoot().clear().append($p('hello')));
+    a.binding.initialize();
+    await flush();
+    const b = new Peer(1, newNet() as never);
+    const proto = Reader.prototype as unknown as {
+      $readFull: (...args: unknown[]) => void;
+    };
+    const {$readFull} = proto;
+    proto.$readFull = () => {
+      // eslint-disable-next-line no-throw-literal
+      throw null;
+    };
+    try {
+      Y.applyUpdate(b.doc, Y.encodeStateAsUpdate(a.doc));
+      b.binding.initialize();
+    } finally {
+      proto.$readFull = $readFull;
+    }
+    await flush();
+    expect(b.binding.status).toBe('readonly');
+    const vector = Y.encodeStateVector(b.doc);
+    b.update(() => $getRoot().append($p('typed while read only')));
+    await flush();
+    expect(Y.encodeStateVector(b.doc)).toEqual(vector);
+  });
+});
+
 /**
  * `peer` opened the room read only for stored content of `type` its class
  * throws on, warned once, threw nothing, and shows `shown` (when given).
@@ -1447,3 +1732,8 @@ describe('S7-3, S7-11, S7-21: a server agent with older classes', () => {
     );
   });
 });
+
+// The data of the warning stays an interface an app can extend.
+export interface AppUnknownNodeTypesData extends YUnknownNodeTypesData {
+  readonly requestId: string;
+}

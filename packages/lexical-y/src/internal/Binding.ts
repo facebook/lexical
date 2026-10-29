@@ -121,7 +121,7 @@ import {
   typeOf,
   type Unit,
 } from './State';
-import {emptyView, seenBy, type Unread} from './Unread';
+import {attrsBefore, emptyView, isGone, seenBy, type Unread} from './Unread';
 import {
   NESTED_FALLBACK_WARNING,
   notesSince,
@@ -1991,7 +1991,10 @@ export class YBinding {
     }
     reader.composingKey = this.$composingOwner();
     reader.composedAt = this.$composedCharacter(cursor);
-    reader.attrsBefore = (y, keys) => attrsBefore(y, keys, tr);
+    reader.attrsBefore = (y, keys) => {
+      const before = attrsBefore(y, tr);
+      return new Map([...keys].map(key => [key, before[key]]));
+    };
     // A container that still shows a follow-up's change the binding did not
     // write is read in full first: the reader changes only what the
     // transaction touched, on an editor it takes to show the document.
@@ -2336,7 +2339,7 @@ export class YBinding {
     const inLine = new Set<Item>();
     for (const [parent, items] of this.hiddenItems(hidden)) {
       for (const it of items) {
-        if (it.deleted) {
+        if (isGone(it)) {
           continue;
         }
         if (parent !== y) {
@@ -2366,7 +2369,7 @@ export class YBinding {
     return (
       hidden.marker === null ||
       (unit !== undefined &&
-        [...hidden.marker.ends].every(end => end === unit.end || end.deleted))
+        [...hidden.marker.ends].every(end => end === unit.end || isGone(end)))
     );
   }
 
@@ -5913,32 +5916,6 @@ function $restoreSelectionState(
  * and the payload, so a binding disposed in the same task (a headless call)
  * would be kept, with its document, until the caller yields.
  */
-/**
- * The values attributes `keys` of `y` had before transaction `tr`
- * (undefined: not set). An attribute's earlier values are the items left of
- * its current one; those `tr` replaced keep their content until it ends.
- */
-function attrsBefore(
-  y: YNode,
-  keys: ReadonlySet<string>,
-  tr: Transaction,
-): Map<string, unknown> {
-  const out = new Map<string, unknown>();
-  for (const key of keys) {
-    let it: Item | null = y._map.get(key) || null;
-    while (it !== null && tr.insertSet.hasId(it.id)) {
-      it = it.left;
-    }
-    out.set(
-      key,
-      it === null || (it.deleted && !tr.deleteSet.hasId(it.id))
-        ? undefined
-        : it.content.getContent()[it.length - 1],
-    );
-  }
-  return out;
-}
-
 function endOfTask(task: {committed: boolean}): () => void {
   return () => {
     task.committed = false;

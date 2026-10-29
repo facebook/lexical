@@ -205,6 +205,13 @@ type GuardedRead = {
   readonly tag?: string | string[];
 };
 
+/** Rethrow an app's error in a microtask: an uncaught error, never into Yjs. */
+function rethrowLater(error: unknown): void {
+  queueMicrotask(() => {
+    throw error;
+  });
+}
+
 /** `error`'s text for a warning; never throws, whatever value was thrown. */
 function errorText(error: unknown): string {
   try {
@@ -231,6 +238,7 @@ const BLOCK_ID_REPAIR_TAG = 'block-id-repair';
  * runPending), in the order they run.
  */
 type PendingWork =
+  | 'replies'
   | 'restore'
   | 'hidden'
   | 'reread'
@@ -238,6 +246,7 @@ type PendingWork =
   | 'refresh'
   | 'register';
 const PENDING_ORDER: readonly PendingWork[] = [
+  'replies',
   'restore',
   'hidden',
   'reread',
@@ -593,6 +602,16 @@ export class YBinding {
    * failed closed: shown again (see onUpdate).
    */
   private restoreTo: EditorState | null = null;
+  /**
+   * Updates the app's listeners queued while notified of a status change,
+   * held until they commit on their own (see notifyApart).
+   */
+  private replies: LexicalEditor['_updates'] = [];
+  /**
+   * The updates that were queued already when `replies` were made: the
+   * replies go back after them (see handBackReplies).
+   */
+  private queuedBeforeReplies = new Set<LexicalEditor['_updates'][number]>();
   /** Re-reads in a row (see MAX_REREADS). */
   private rereads = 0;
   /**
@@ -1032,6 +1051,17 @@ export class YBinding {
     this.keepsUnstored = false;
     this.warnedEdit = false;
     this.restoreTo = null;
+    // The app's updates still held (see notifyApart) are the editor's, which
+    // outlives the binding: handed back, they commit as any update of an
+    // editor no binding listens to any more.
+    this.handBackReplies();
+    if (!this._editor._updating && this._editor._updates.length > 0) {
+      try {
+        this._editor.update(() => {}, {discrete: true});
+      } catch (error) {
+        rethrowLater(error);
+      }
+    }
     this.toSettle.clear();
     this.untransformed.clear();
     this.untransformedText.clear();
@@ -1699,12 +1729,74 @@ export class YBinding {
       this.pendingStatus = status;
     }
     this._status = status;
-    this._editor.setEditable(status === 'active' && this.wasEditable);
+    this.notifyApart(() =>
+      this._editor.setEditable(status === 'active' && this.wasEditable),
+    );
     // Nothing is written while read only, an undo or redo included: the
     // undo history goes, which a direct UndoManager call could still apply.
     if (status === 'readonly' && this._undoManager !== null) {
       this._undoManager.clear();
     }
+  }
+
+  /**
+   * Notify the app's listeners (`notify`, such as `editor.setEditable`)
+   * apart from the binding's own updates.
+   *
+   * - An update a listener makes in reply (Lexical queues it while it
+   *   notifies) is held (`replies`), never run inside an update of the
+   *   binding's, tagged as a remote change, where it would be neither
+   *   written nor refused (see onUpdate). It is handed back to the front of
+   *   Lexical's queue (see handBackReplies) right after the update that runs
+   *   now commits, ahead of any later update of the app's; where a listener
+   *   of that commit threw (Lexical then skips its callbacks), once the
+   *   editor is idle (see runPending) or before the binding's next update
+   *   (see commitPending).
+   * - What a listener throws is rethrown in a microtask (an uncaught error,
+   *   as for the app's updates, see commitPending): it never fails the
+   *   binding's work.
+   */
+  private notifyApart(notify: () => void): void {
+    const editor = this._editor;
+    const queued = editor._updates.length;
+    try {
+      notify();
+    } catch (error) {
+      rethrowLater(error);
+    }
+    const replies = editor._updates.splice(queued);
+    if (replies.length === 0) {
+      return;
+    }
+    this.replies.push(...replies);
+    for (const update of editor._updates.slice(0, queued)) {
+      this.queuedBeforeReplies.add(update);
+    }
+    if (editor._updating && editor._pendingEditorState === null) {
+      // In a commit's listeners or callbacks: Lexical runs its queue right
+      // after them.
+      this.handBackReplies();
+    } else if (editor._updating) {
+      // In an update: with its callbacks, once it committed.
+      editor._deferred.push(() => this.handBackReplies());
+    }
+    this.pending.add('replies');
+    this.schedulePending();
+  }
+
+  /**
+   * Put the held replies (see notifyApart) back in Lexical's queue, in their
+   * order and with their options: after the updates queued before them that
+   * are still queued, ahead of any queued after them.
+   */
+  private handBackReplies(): void {
+    const updates = this._editor._updates;
+    let at = updates.length;
+    while (at > 0 && !this.queuedBeforeReplies.has(updates[at - 1])) {
+      at--;
+    }
+    this.queuedBeforeReplies.clear();
+    updates.splice(at, 0, ...this.replies.splice(0));
   }
 
   /**
@@ -1816,10 +1908,16 @@ export class YBinding {
       $read: () => {
         this.$readAllInner(cursor, kept, deep);
         if (activate) {
-          // In the read's update: the editor is editable for its commit,
-          // which puts the selection the read restored on the DOM, and an
-          // update made in reply to it (from an update listener) is written.
-          this.activateAfterRead();
+          // Right after the read's commit, and only after one: nothing the
+          // app does when the editor becomes editable runs inside the read
+          // (an editable listener's update or command), and an update made
+          // in reply to the read (an update listener's), which Lexical runs
+          // after this, is written.
+          $onUpdate(() =>
+            this.guard(() =>
+              withPins(this._pins, () => this.activateAfterRead()),
+            ),
+          );
         }
       },
       after: () => {
@@ -1842,6 +1940,27 @@ export class YBinding {
   private activateAfterRead(): void {
     this.checkUnknownTypes(true);
     this.setStatus('active');
+    // The read committed while the editor was not editable, so Lexical left
+    // its selection off the DOM: an update sets it again, which puts it
+    // there (Lexical sets the DOM selection only of a focused editor). It
+    // runs ahead of the updates the app queued in reply to the read, whose
+    // selection then stands, and not where the app set an editor state of
+    // its own in reply (pending now).
+    const editor = this._editor;
+    const selection = editor.getEditorState()._selection;
+    if (
+      selection !== null &&
+      this._status === 'active' &&
+      editor.isEditable() &&
+      editor.getRootElement() !== null &&
+      editor._pendingEditorState === null &&
+      editor._updating
+    ) {
+      editor._updates.unshift([
+        () => $setSelection(selection.clone()),
+        {discrete: true},
+      ]);
+    }
   }
 
   private $readAllInner(
@@ -2314,8 +2433,10 @@ export class YBinding {
       `the document cannot be read: ${errorText(error)}`,
       {error, reason: 'unreadable', types: []},
     );
-    this.setStatus('readonly');
+    // Shown again first: an update an app makes when the editor stops being
+    // editable commits after it, and is refused (see setStatus).
     this.showAgain(shown);
+    this.setStatus('readonly');
   }
 
   /**
@@ -3888,6 +4009,10 @@ export class YBinding {
    */
   private commitPending(): boolean {
     const editor = this._editor;
+    if (!editor._updating) {
+      // Held app updates (see notifyApart) commit like the others.
+      this.handBackReplies();
+    }
     const left = () =>
       !editor._updating &&
       (editor._pendingEditorState !== null || editor._updates.length > 0);
@@ -3902,9 +4027,7 @@ export class YBinding {
         // An update or a listener of the app's threw: its error is rethrown
         // in a microtask (an uncaught error), never into Yjs or a provider,
         // and the updates still pending commit.
-        queueMicrotask(() => {
-          throw error;
-        });
+        rethrowLater(error);
       }
     }
     return !left();
@@ -3988,11 +4111,13 @@ export class YBinding {
   }
 
   /**
-   * Run the binding's own updates, in PENDING_ORDER: showing what was held
-   * back during a composition, reading containers again after a follow-up's
-   * change was not written, the author's normalization of an update that ran
-   * no transforms, the refresh after a local change, and Lexical's update for
-   * a registered transform (see noteRegistrations).
+   * Run the binding's own updates, in PENDING_ORDER: committing the updates
+   * the app's listeners made when notified of a status change (see
+   * notifyApart), showing what was held back during a composition, reading
+   * containers again after a follow-up's change was not written, the
+   * author's normalization of an update that ran no transforms, the refresh
+   * after a local change, and Lexical's update for a registered transform
+   * (see noteRegistrations).
    *
    * Invariant: each commits alone, once the editor is idle, and never before
    * the editor shows the latest remote change. Why: Lexical runs the updates
@@ -4012,6 +4137,7 @@ export class YBinding {
       this.refused.clear();
       this.refusedComposing.clear();
       this.restoreTo = null;
+      this.replies.length = 0;
       this.toSettle.clear();
       this.untransformed.clear();
       this.untransformedText.clear();
@@ -4033,7 +4159,9 @@ export class YBinding {
       }
       this.pending.delete(work);
       withPins(this._pins, () => {
-        if (work === 'restore') {
+        if (work === 'replies') {
+          this.commitPending();
+        } else if (work === 'restore') {
           this.restoreShown();
         } else if (work === 'hidden') {
           this.flushHidden();

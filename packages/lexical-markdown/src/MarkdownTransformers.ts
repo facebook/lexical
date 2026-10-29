@@ -1097,11 +1097,11 @@ export function getCodeSpanDelimiter(content: string): {
     : 0;
   const fence = '`'.repeat(longestRun + 1);
   // A reader strips one space from each end only when the content is not all
-  // spaces, so content made only of spaces goes out as it is.
+  // spaces (line endings count as spaces), so such content goes out as it is.
   const needsPadding =
     content.length === 0 ||
     content.includes('`') ||
-    (/^\s/.test(content) && /\s$/.test(content) && /[^ ]/.test(content));
+    (/^\s/.test(content) && /\s$/.test(content) && /[^ \r\n]/.test(content));
   const padded = needsPadding ? ` ${content} ` : content;
   return {fence, padded};
 }

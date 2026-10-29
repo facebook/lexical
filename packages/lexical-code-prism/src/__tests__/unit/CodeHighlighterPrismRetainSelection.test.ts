@@ -10,6 +10,7 @@ import {$createCodeNode} from '@lexical/code';
 import {registerCodeHighlighting} from '@lexical/code-prism';
 import {
   $createLineBreakNode,
+  $createParagraphNode,
   $createTextNode,
   $getRoot,
   $getSelection,
@@ -77,6 +78,7 @@ describe('CodeHighlighterPrism $updateAndRetainSelection', () => {
       [['const a = 1', '\n', 'b'], 2, 'const a = 1\nXb'],
       [['const a = 1', '\n'], 2, 'const a = 1\nX'],
       [['const a = 1', '\n', '\n', 'b'], 3, 'const a = 1\n\nXb'],
+      [['\n', 'const a = 1'], 0, 'X\nconst a = 1'],
     ])(
       'keeps an element caret on its line when an earlier line is split: %j at %i',
       async (parts, offset, expectedText) => {
@@ -85,7 +87,13 @@ describe('CodeHighlighterPrism $updateAndRetainSelection', () => {
 
         await editor.update(() => {
           const code = $createCodeNode('javascript');
-          $getRoot().clear().append(code);
+          // Text before the code block must not count toward the caret.
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append($createTextNode('x'.repeat(50))),
+              code,
+            );
           code.append(
             ...parts.map(part =>
               part === '\n' ? $createLineBreakNode() : $createTextNode(part),
@@ -95,7 +103,7 @@ describe('CodeHighlighterPrism $updateAndRetainSelection', () => {
         });
         expect(
           editor.read(() => {
-            const code = $getRoot().getFirstChild();
+            const code = $getRoot().getLastChild();
             return $isElementNode(code) ? code.getChildrenSize() : 0;
           }),
         ).toBeGreaterThan(parts.length);
@@ -109,7 +117,7 @@ describe('CodeHighlighterPrism $updateAndRetainSelection', () => {
         });
 
         expect(
-          editor.read(() => $getRoot().getFirstChild()!.getTextContent()),
+          editor.read(() => $getRoot().getLastChild()!.getTextContent()),
         ).toBe(expectedText);
       },
     );

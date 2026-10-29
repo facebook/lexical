@@ -500,9 +500,16 @@ function exportTextFormat(
   let output = textContent;
   if (!isCode) {
     // Preserve literal backslashes when preserving source newlines.
+    // Default mode guards numeric references; named references keep legacy output.
+    // Numeric escapes avoid changing emphasis flanking beside formatting.
+    // Guard ambiguous '<' and '&' at node ends for constructs split across nodes.
     output = shouldPreserveNewLines
       ? output.replace(/([*_`~])/g, '\\$1')
-      : output.replace(/([*_`~\\])/g, '\\$1');
+      : output.replace(/([[\]*_`~\\]|<(?=\S|$)|&(?=#|$))/g, character =>
+          /[*_`~\\]/.test(character)
+            ? `\\${character}`
+            : `&#${character.charCodeAt(0)};`,
+        );
   }
 
   let leadingSpace: string;

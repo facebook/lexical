@@ -1,5 +1,4 @@
 ---
-'lexical': patch
 '@lexical/code-core': patch
 '@lexical/code': patch
 ---
@@ -9,5 +8,3 @@
 A code block with word wrap on writes `"wordWrap": true` to its JSON and `data-lexical-code-word-wrap="true"` to its DOM and exported HTML, and HTML import reads the attribute back; the key and the attribute are left out while it is off. The package adds no CSS: the theme wraps the lines under the attribute.
 
 `CodeLineNumbersExtension` sets `data-lexical-code-line-numbers` on each code block and wraps the `<br>` of each of its line breaks in a `<span data-lexical-code-line-break>`, so a theme can draw the numbers with a CSS counter. Exported and copied HTML is unchanged. Set `onlyWordWrapped` to number only blocks with word wrap on. The package README has the CSS recipe.
-
-In `lexical`, a DOM caret inside the wrapper of a leaf node whose `$getDOMSlot` exposes an inner element (such as that `<span>`) now marks the selection dirty, so the caret is written back outside the wrapper and text the browser inserts itself, as during composition, no longer lands inside it.

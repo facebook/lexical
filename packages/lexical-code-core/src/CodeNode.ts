@@ -483,9 +483,9 @@ export class CodeNode extends ElementNode {
   setWordWrap(valueOrUpdater: ValueOrUpdater<boolean>): this {
     const prevWordWrap = this.getWordWrap();
     const wordWrap =
-      typeof valueOrUpdater === 'function'
+      (typeof valueOrUpdater === 'function'
         ? valueOrUpdater(prevWordWrap)
-        : valueOrUpdater;
+        : valueOrUpdater) === true;
     if (wordWrap === prevWordWrap) {
       return this;
     }

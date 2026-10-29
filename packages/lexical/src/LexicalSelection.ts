@@ -3187,11 +3187,6 @@ export function $internalResolveSelectionPoint(
           const slot = $getDOMSlot(resolvedElement, elementDOM, editor);
           if (slot.element !== elementDOM) {
             position = slot.resolveLeafPosition(elementDOM, dom, offset);
-            // The caret is inside the leaf's wrapper, which is not a caret
-            // position the reconciler writes. Write the resolved one back,
-            // so text the browser inserts (e.g. during composition) lands
-            // outside the wrapper.
-            dirty = true;
           } else if (offset === 0 && $isDecoratorNode(resolvedElement)) {
             position = 'before';
           }

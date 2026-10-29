@@ -859,22 +859,20 @@ describe('CodeLineNumbersExtension', () => {
       using _editor = editor;
       const emptyLine = {key: codeKey, offset: 2, type: 'element'};
       const codeElement = getCodeElement(editor);
-      // Between the wrappers is a caret position the reconciler writes, so
-      // it isn't dirty.
+      // After the first wrapper, between the wrappers, before the second
+      // <br>. These carets are on keyed DOM, so they aren't dirty and the
+      // DOM caret stays where the browser put it.
+      expect(resolveDOMCaret(editor, first, 1)).toEqual({
+        ...emptyLine,
+        dirty: false,
+      });
       expect(resolveDOMCaret(editor, codeElement, 2)).toEqual({
         ...emptyLine,
         dirty: false,
       });
-      // After the first <br> or before the second, inside a wrapper. Text
-      // the browser inserts there would land in the wrapper, so these are
-      // dirty and get written back between the wrappers.
-      expect(resolveDOMCaret(editor, first, 1)).toEqual({
-        ...emptyLine,
-        dirty: true,
-      });
       expect(resolveDOMCaret(editor, second, 0)).toEqual({
         ...emptyLine,
-        dirty: true,
+        dirty: false,
       });
       // A caret reported on the <br> itself counts as before the break. The
       // <br> has no key, so it's dirty and gets written back onto the code

@@ -560,7 +560,7 @@ describe('Markdown', () => {
     {
       // Code spans bind tighter than text-match transformers, so the $...$
       // (HIGHLIGHT_TEXT_MATCH_IMPORT) must not consume across the code spans.
-      // https://github.com/facebook/lexical/issues/8687
+      // https://github.com/meta/lexical/issues/8687
       html: '<p><code spellcheck="false" style="white-space: pre-wrap;"><span>$a</span></code><span style="white-space: pre-wrap;"> </span><code spellcheck="false" style="white-space: pre-wrap;"><span>$b</span></code></p>',
       md: '`$a` `$b`',
     },
@@ -829,6 +829,7 @@ describe('Markdown', () => {
     {
       html: '<p><span style="white-space: pre-wrap;">[foo </span><a href="/uri"><span style="white-space: pre-wrap;">bar</span></a><span style="white-space: pre-wrap;">](/uri)</span></p>',
       md: '[foo [bar](/uri)](/uri)',
+      mdAfterExport: '&#91;foo [bar](/uri)&#93;(/uri)',
     },
     {
       // https://spec.commonmark.org/0.31.2/#link-destination allows a balanced
@@ -886,6 +887,24 @@ describe('Markdown', () => {
       md: 'This is a backslash: \\\\',
     },
     {
+      // Backslash escapes don't apply inside a code span, even at the start of a node (#9395)
+      html: '<p><code spellcheck="false" style="white-space: pre-wrap;"><span>C:\\$MFT</span></code></p>',
+      md: '`C:\\$MFT`',
+    },
+    {
+      html: '<p><code spellcheck="false" style="white-space: pre-wrap;"><span>C:\\$MFT</span></code><span style="white-space: pre-wrap;"> and more</span></p>',
+      md: '`C:\\$MFT` and more',
+    },
+    {
+      // Escapes at the start of a node are only unescaped once (#9395)
+      html: '<p><b><strong style="white-space: pre-wrap;">a\\*b</strong></b></p>',
+      md: '**a\\\\\\*b**',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">a\\* </span><b><strong style="white-space: pre-wrap;">b</strong></b></p>',
+      md: 'a\\\\\\* **b**',
+    },
+    {
       html: '<p><span style="white-space: pre-wrap;">This is an asterisk: *</span></p>',
       md: 'This is an asterisk: \\*',
     },
@@ -931,27 +950,36 @@ describe('Markdown', () => {
     {
       html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">[h]ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">h[e]llo</span></a></p>',
       md: '[[h]ello](https://lexical.dev)[h[e]llo](https://lexical.dev)',
+      mdAfterExport:
+        '[&#91;h&#93;ello](https://lexical.dev)[h&#91;e&#93;llo](https://lexical.dev)',
     },
     {
       html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">h[e[ll]]o</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
       md: '[h[e[ll]]o](https://lexical.dev)[world](https://lexical.dev)',
+      mdAfterExport:
+        '[h&#91;e&#91;ll&#93;&#93;o](https://lexical.dev)[world](https://lexical.dev)',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">[hello]](https://lexical.dev)</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
       md: '[hello]](https://lexical.dev)[world](https://lexical.dev)',
+      mdAfterExport:
+        '&#91;hello&#93;&#93;(https://lexical.dev)[world](https://lexical.dev)',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">[h</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
       md: '[h[ello](https://lexical.dev)[world](https://lexical.dev)',
+      mdAfterExport:
+        '&#91;h[ello](https://lexical.dev)[world](https://lexical.dev)',
     },
     {
       html: '<p><i><em style="white-space: pre-wrap;">[h</em></i><a href="https://lexical.dev"><i><em style="white-space: pre-wrap;">ello</em></i></a></p>',
       md: '*[h[ello](https://lexical.dev)*',
-      mdAfterExport: '*[h*[*ello*](https://lexical.dev)',
+      mdAfterExport: '*&#91;h*[*ello*](https://lexical.dev)',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">[](https://lexical.dev)</span></p>',
       md: '[](https://lexical.dev)',
+      mdAfterExport: '&#91;&#93;(https://lexical.dev)',
     },
     {
       html: '<p><a href="https://lexical.dev"><b><strong style="white-space: pre-wrap;">link</strong></b></a><b><strong style="white-space: pre-wrap;">text</strong></b></p>',
@@ -1012,7 +1040,7 @@ describe('Markdown', () => {
     {
       html: '<p><span style="white-space: pre-wrap;">!"#$%&amp;\'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~</span></p>',
       md: '\\!\\"\\#\\$\\%\\&\\\'\\(\\)\\*\\+\\,\\-\\.\\/\\:\\;\\<\\=\\>\\?\\@\\[\\\\\\]\\^\\_\\`\\{\\|\\}\\~',
-      mdAfterExport: '!"#$%&\'()\\*+,-./:;<=>?@[\\\\]^\\_\\`{|}\\~',
+      mdAfterExport: '!"#$%&\'()\\*+,-./:;&#60;=>?@&#91;\\\\&#93;^\\_\\`{|}\\~',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">\\→\\A\\a\\ \\3\\φ\\«</span></p>',
@@ -4129,4 +4157,39 @@ describe('link title round trip', () => {
       ).toEqual([title]);
     });
   }
+});
+
+describe('decimal character references that name no character', () => {
+  // `String.fromCodePoint` throws on a number past U+10FFFF, so one of these
+  // in the text or a link used to abort the whole import. CommonMark reads at
+  // most seven digits, and replaces U+0000 and an invalid code point with
+  // U+FFFD.
+  // https://spec.commonmark.org/0.31.2/#decimal-numeric-character
+  const TEXT_CASES: [md: string, text: string][] = [
+    ['a&#1114112;b', 'a\uFFFDb'],
+    ['a&#9999999;b', 'a\uFFFDb'],
+    ['a&#0;b', 'a\uFFFDb'],
+    ['a&#55296;b', 'a\uFFFDb'],
+    ['a&#12345678;b', 'a&#12345678;b'],
+    ['a&#1114111;b', 'a\u{10FFFF}b'],
+    ['a&#35;b', 'a#b'],
+  ];
+
+  for (const [md, text] of TEXT_CASES) {
+    it(`reads ${JSON.stringify(md)}`, () => {
+      const editor = createTestEditor();
+      editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+        discrete: true,
+      });
+      expect(editor.read('latest', () => $getRoot().getTextContent())).toBe(
+        text,
+      );
+    });
+  }
+
+  it('reads one in a link destination and title', () => {
+    expect(
+      importLinks('[x](https://example.com/&#9999999; "t&#1114112;")'),
+    ).toEqual([{title: 't\uFFFD', url: 'https://example.com/\uFFFD'}]);
+  });
 });

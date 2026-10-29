@@ -33,7 +33,11 @@ export const IS_COLLAB_V1 =
   process.env.E2E_EDITOR_MODE === 'rich-text-with-collab';
 export const IS_COLLAB_V2 =
   process.env.E2E_EDITOR_MODE === 'rich-text-with-collab-v2';
-export const IS_COLLAB = IS_COLLAB_V1 || IS_COLLAB_V2;
+// Collab Y: `@lexical/y` (Yjs 14). Runs the specs listed in
+// playwright.config.mjs, against `pnpm run collab:y`.
+export const IS_COLLAB_Y =
+  process.env.E2E_EDITOR_MODE === 'rich-text-with-collab-y';
+export const IS_COLLAB = IS_COLLAB_V1 || IS_COLLAB_V2 || IS_COLLAB_Y;
 const IS_RICH_TEXT = process.env.E2E_EDITOR_MODE !== 'plain-text';
 const IS_PLAIN_TEXT = process.env.E2E_EDITOR_MODE === 'plain-text';
 export const IS_TABLE_HORIZONTAL_SCROLL =
@@ -117,6 +121,7 @@ async function initializePlayground({
   if (isCollab) {
     appSettings.isCollab = !!isCollab;
     appSettings.useCollabV2 = isCollab === 2;
+    appSettings.useCollabY = isCollab === 'y';
     appSettings.collabId = randomUUID();
   }
   if (showNestedEditorTreeView === undefined) {
@@ -360,7 +365,10 @@ export const test = base.extend({
   // Editor mode is fixed by the worker's environment. Worker-scoped fixtures
   // let skip callbacks run before any parent beforeEach hook creates a page
   // or initializes the playground, including skips in nested describe blocks.
-  isCollab: [IS_COLLAB_V1 ? 1 : IS_COLLAB_V2 ? 2 : false, {scope: 'worker'}],
+  isCollab: [
+    IS_COLLAB_V1 ? 1 : IS_COLLAB_V2 ? 2 : IS_COLLAB_Y ? 'y' : false,
+    {scope: 'worker'},
+  ],
   isMaxLength: false,
   isPlainText: [IS_PLAIN_TEXT, {scope: 'worker'}],
   isRichText: [IS_RICH_TEXT, {scope: 'worker'}],
@@ -614,7 +622,9 @@ async function assertSelectionOnPageOrFrame(page, expected) {
 
       // The zero-size anchors the reconciler parks outside a leading / trailing
       // block decorator (#8922) occupy a DOM child slot but no lexical one, so
-      // discount them from both paths and offsets.
+      // discount them from both paths and offsets. Keep these helpers in step
+      // with the playground's TestRecorderPlugin, which records the paths and
+      // offsets that this asserts.
       const boundaryAnchorsBefore = (parent, index) => {
         const children = parent.childNodes;
         let count = 0;
@@ -648,24 +658,24 @@ async function assertSelectionOnPageOrFrame(page, expected) {
       };
 
       const fixOffset = (node, offset) => {
-        if (node && node.nodeType === Node.ELEMENT_NODE) {
-          offset -= boundaryAnchorsBefore(node, offset);
+        if (!node || node.nodeType !== Node.ELEMENT_NODE) {
+          return offset;
         }
         // If the selection offset is at the br of a webkit img+br linebreak
         // then move the offset to the img so the tests are consistent across
-        // browsers
-        if (node && node.nodeType === Node.ELEMENT_NODE && offset > 0) {
-          const child = node.children[offset - 1];
-          if (
-            child &&
-            child.nodeType === Node.ELEMENT_NODE &&
-            child.nodeName === 'IMG' &&
-            child.getAttribute('data-lexical-managed-linebreak') === 'true'
-          ) {
-            return offset - 1;
-          }
+        // browsers. Look the child up by the DOM offset: a leading anchor can
+        // precede it in the same element.
+        const child = offset > 0 ? node.childNodes[offset - 1] : null;
+        const lexicalOffset = offset - boundaryAnchorsBefore(node, offset);
+        if (
+          child &&
+          child.nodeType === Node.ELEMENT_NODE &&
+          child.nodeName === 'IMG' &&
+          child.getAttribute('data-lexical-managed-linebreak') === 'true'
+        ) {
+          return lexicalOffset - 1;
         }
-        return offset;
+        return lexicalOffset;
       };
 
       const {anchorNode, anchorOffset, focusNode, focusOffset} =
@@ -1014,14 +1024,18 @@ export async function advanceHistoryClock(page, overheadMs = 50) {
       const editor = document.querySelector(
         '[data-lexical-editor="true"]',
       ).__lexicalEditor;
-      // Collab: reset the Yjs UndoManager's capture window.
-      const undoManager = editor[Symbol.for('@lexical/yjs/UndoManager')];
+      const builder = editor[Symbol.for('@lexical/extension/LexicalBuilder')];
+      // Collab: reset the Yjs UndoManager's capture window (collab v1/v2
+      // publish it on the editor; collab Y keeps it on its binding).
+      const undoManager =
+        editor[Symbol.for('@lexical/yjs/UndoManager')] ||
+        builder?.extensionNameMap.get('@lexical/y/Collab')?.state?.output
+          ?.binding.undoManager;
       if (undoManager) {
         undoManager.stopCapturing();
         return;
       }
       // Local history: freeze `now` past the merge delay.
-      const builder = editor[Symbol.for('@lexical/extension/LexicalBuilder')];
       const output = builder?.extensionNameMap.get('@lexical/history/History')
         ?.state?.output;
       if (output && !output.disabled.value) {
@@ -1079,7 +1093,12 @@ export async function freezeCollabUndoGrouping(page) {
     const editor = document.querySelector(
       '[data-lexical-editor="true"]',
     )?.__lexicalEditor;
-    const undoManager = editor?.[Symbol.for('@lexical/yjs/UndoManager')];
+    const undoManager =
+      editor?.[Symbol.for('@lexical/yjs/UndoManager')] ||
+      editor?.[
+        Symbol.for('@lexical/extension/LexicalBuilder')
+      ]?.extensionNameMap.get('@lexical/y/Collab')?.state?.output?.binding
+        .undoManager;
     if (!undoManager) {
       return false;
     }
@@ -1312,7 +1331,6 @@ export async function dragMouse(
     offsetEnd = {x: 0, y: 0},
     mouseDown = true,
     mouseUp = true,
-    slow = false,
   } = opts;
   let fromX = fromBoundingBox.x;
   let fromY = fromBoundingBox.y;
@@ -1337,7 +1355,7 @@ export async function dragMouse(
   if (mouseDown) {
     await page.mouse.down();
   }
-  await page.mouse.move(toX, toY, slow ? 10 : 1);
+  await page.mouse.move(toX, toY);
   if (mouseUp) {
     await page.mouse.up();
   }
@@ -1526,7 +1544,7 @@ export async function selectCellsFromTableCords(
 
   // const firstBox = await firstRowFirstColumnCell.boundingBox();
   // const secondBox = await secondRowSecondCell.boundingBox();
-  // await dragMouse(page, firstBox, secondBox, {slow: true});
+  // await dragMouse(page, firstBox, secondBox);
 }
 
 export async function clickTableCellActiveButton(page) {

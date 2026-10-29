@@ -23,7 +23,7 @@ import {
   $isTextNode,
   $normalizeCaret,
   $setPointFromCaret,
-  type ElementNode,
+  ElementNode,
   type LexicalNode,
   type NodeKey,
   type ParagraphNode,
@@ -252,22 +252,15 @@ function $createListOrMerge(node: ElementNode, listType: ListType): ListNode {
  * @param list2 - The second list to be merged.
  */
 export function mergeLists(list1: ListNode, list2: ListNode): void {
-  const listItem1 = list1.getLastChild();
-  const listItem2 = list2.getFirstChild();
+  joinLists(list1, list2, false);
+}
 
-  if (
-    listItem1 &&
-    listItem2 &&
-    $isNestedListNode(listItem1) &&
-    $isNestedListNode(listItem2) &&
-    // A nested <ul> must not swallow a nested <ol>, same rule as
-    // mergeNextSiblingListIfSameType applies at the top level.
-    listItem1.getFirstChild().getListType() ===
-      listItem2.getFirstChild().getListType()
-  ) {
-    mergeLists(listItem1.getFirstChild(), listItem2.getFirstChild());
-    listItem2.remove();
-  }
+function joinLists(list1: ListNode, list2: ListNode, onlyChild: boolean): void {
+  mergeNestedListsAtSeam(
+    list1.getLastChild(),
+    list2.getFirstChild(),
+    onlyChild,
+  );
 
   const toMerge = list2.getChildren();
   if (toMerge.length > 0) {
@@ -275,6 +268,51 @@ export function mergeLists(list1: ListNode, list2: ListNode): void {
   }
 
   list2.remove();
+}
+
+/**
+ * Where two lists meet (`listItem1` the last item of the first, `listItem2`
+ * the first item of the second), join two items that only wrap nested lists
+ * of the same type into one.
+ *
+ * With `onlyChild` (the node structure normalization, `NodeStructureExtension`),
+ * an item counts as one that only wraps a nested list when that list is its
+ * only child. Without it, as `mergeLists` has always done, an item whose first
+ * child is a list counts too: what follows that list in the second item is
+ * then removed with it, and the second list's items go before what follows it
+ * in the first.
+ *
+ * @internal
+ */
+export function mergeNestedListsAtSeam(
+  listItem1: LexicalNode | null,
+  listItem2: LexicalNode | null,
+  onlyChild = false,
+): void {
+  if (
+    listItem1 &&
+    listItem2 &&
+    $isNestedListNode(listItem1) &&
+    $isNestedListNode(listItem2) &&
+    (!onlyChild ||
+      (listItem1.getChildrenSize() === 1 &&
+        listItem2.getChildrenSize() === 1)) &&
+    // A nested <ul> must not swallow a nested <ol>, same rule as
+    // mergeNextSiblingListIfSameType applies at the top level.
+    listItem1.getFirstChild().getListType() ===
+      listItem2.getFirstChild().getListType()
+  ) {
+    joinLists(listItem1.getFirstChild(), listItem2.getFirstChild(), onlyChild);
+    if (!onlyChild) {
+      listItem2.remove();
+      return;
+    }
+    // ElementNode's own remove. The normalization calls this once the second
+    // list's items are already in the first, so ListItemNode.remove would
+    // also join the item after this one, which mergeLists (joining at the
+    // seam before it moves them) never does.
+    ElementNode.prototype.remove.call(listItem2);
+  }
 }
 
 /**
@@ -507,6 +545,23 @@ export function $handleOutdent(listItemNode: ListItemNode): void {
     $isListItemNode(grandparentListItem) &&
     $isListNode(parentList)
   ) {
+    // The general outdent below assumes the wrapper item holds only the
+    // nested list: it removes or replaces the wrapper when the item is the
+    // list's only item or a middle one, which would delete what else the
+    // wrapper holds. Only those cases take the outdent that keeps it.
+    if (
+      grandparentListItem.getChildrenSize() > 1 &&
+      (parentList.getChildrenSize() === 1 ||
+        (!listItemNode.is(parentList.getFirstChild()) &&
+          !listItemNode.is(parentList.getLastChild())))
+    ) {
+      $outdentFromItemWithContent(
+        listItemNode,
+        parentList,
+        grandparentListItem,
+      );
+      return;
+    }
     // if it's the first child in it's parent list, insert it into the
     // great grandparent list before the grandparent
     const firstChild = parentList ? parentList.getFirstChild() : undefined;
@@ -544,6 +599,46 @@ export function $handleOutdent(listItemNode: ListItemNode): void {
       // replace the grandparent list item (now between the siblings) with the outdented list item.
       grandparentListItem.replace(listItemNode);
     }
+  }
+}
+
+/**
+ * Outdents `listItemNode` out of `parentList` when the item that wraps that
+ * list (`wrapper`) also holds other content (text beside the nested list, as a
+ * paste into a nested list item can leave, or another nested list). The
+ * general outdent assumes the wrapper holds only the nested list and
+ * replaces or removes it, which would delete that content; here the wrapper
+ * keeps what comes before the item, and the rest follows it in reading
+ * order: the item, then its next siblings in a new nested list, then the
+ * wrapper's content after `parentList` in a new item.
+ */
+function $outdentFromItemWithContent(
+  listItemNode: ListItemNode,
+  parentList: ListNode,
+  wrapper: ListItemNode,
+): void {
+  const nextSiblings = listItemNode.getNextSiblings();
+  const after = parentList.getNextSiblings();
+  wrapper.insertAfter(listItemNode);
+  let last: ListItemNode = listItemNode;
+  if (nextSiblings.length > 0) {
+    const nextSiblingsListItem = $copyNode(listItemNode);
+    const nextSiblingsList = $copyNode(parentList);
+    nextSiblingsListItem.append(nextSiblingsList);
+    append(nextSiblingsList, nextSiblings);
+    last.insertAfter(nextSiblingsListItem);
+    last = nextSiblingsListItem;
+  }
+  if (after.length > 0) {
+    const afterListItem = $copyNode(wrapper);
+    last.insertAfter(afterListItem);
+    append(afterListItem, after);
+  }
+  if (parentList.isEmpty()) {
+    parentList.remove();
+  }
+  if (wrapper.isEmpty()) {
+    wrapper.remove();
   }
 }
 

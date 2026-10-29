@@ -254,6 +254,22 @@ export function $isSelectionCapturedInDecoratorInput(
         getEditorPropertyFromDOMNode(activeElement) == null))
   );
 }
+/**
+ * Returns true if an event comes from an input embedded in a node's DOM, read
+ * from its composed target: an `<input>`, a `<textarea>` or a foreign
+ * contentEditable (see {@link $isSelectionCapturedInDecoratorInput}). That is
+ * a decorator's own input, or one in unmanaged DOM that any node renders
+ * beside its children or text, through `createDOM`, a DOM slot or a render
+ * override. The editor's selection is then still the one it had before the
+ * input took the focus, so a copy, cut or paste there belongs to the input: a
+ * `COPY_COMMAND`, `CUT_COMMAND` or `PASTE_COMMAND` handler that acts on the
+ * editor's selection should return false for it.
+ */
+export function $isEventFromEmbeddedInput(event: Event | null): boolean {
+  const target = event === null ? null : getComposedEventTarget(event);
+  return isDOMNode(target) && $isSelectionCapturedInDecoratorInput(target);
+}
+
 /** @deprecated renamed to {@link $isSelectionCapturedInDecoratorInput} by @lexical/eslint-plugin rules-of-lexical */
 export const isSelectionCapturedInDecoratorInput =
   $isSelectionCapturedInDecoratorInput;
@@ -606,6 +622,7 @@ export function $setCompositionKey(compositionKey: null | NodeKey): void {
   const previousCompositionKey = editor._compositionKey;
   if (compositionKey !== previousCompositionKey) {
     editor._compositionKey = compositionKey;
+    editor._compositionMergeHeld = null;
     if (previousCompositionKey !== null) {
       const node = $getNodeByKey(previousCompositionKey);
       if (node !== null) {
@@ -629,24 +646,21 @@ export function $getCompositionKey(): null | NodeKey {
   return editor._compositionKey;
 }
 
+/** Desktop WebKit renders a suffix so an empty composing node can host the IME. */
+export function $isEmptyCompositionTarget(node: TextNode): boolean {
+  return (
+    !IS_IOS &&
+    (IS_SAFARI || IS_APPLE_WEBKIT) &&
+    node.__text === '' &&
+    // DOM selection reconciliation runs after the state becomes read-only.
+    node.__key === getActiveEditor()._compositionKey
+  );
+}
+
 /**
  * Returns the node with the given key from the active EditorState
  * (or the given EditorState), or null if it does not exist.
  */
-export function $getNodeByKey(
-  key: NodeKey,
-  _editorState?: EditorState,
-): LexicalNode | null;
-/**
- * @deprecated The type parameter is an unchecked and unsafe cast,
- * equivalent to `$getNodeByKey(key) as T | null`, and will be removed
- * in a future release. Call this function without a type argument and
- * narrow the result with a type guard instead.
- */
-export function $getNodeByKey<T extends LexicalNode>(
-  key: NodeKey,
-  _editorState?: EditorState,
-): T | null;
 export function $getNodeByKey(
   key: NodeKey,
   _editorState?: EditorState,
@@ -843,10 +857,14 @@ export function $setSelection(selection: null | BaseSelection): void {
   editorState._selection = selection;
 }
 
-export function $flushMutations(): void {
+/**
+ * @param rerenderText Render the text that the browser changed from the
+ * editor state, as the editor applied the input that changed it itself.
+ */
+export function $flushMutations(rerenderText?: boolean): void {
   errorOnReadOnly();
   const editor = getActiveEditor();
-  flushRootMutations(editor);
+  flushRootMutations(editor, rerenderText);
 }
 
 export function $getNodeFromDOM(dom: Node): null | LexicalNode {
@@ -976,6 +994,7 @@ export function $updateTextNodeFromDOMContent(
 
   if (node.isAttached() && (compositionEnd || !node.isDirty())) {
     const isComposing = node.isComposing();
+    const isSafariComposition = !IS_IOS && (IS_SAFARI || IS_APPLE_WEBKIT);
 
     if (node.isToken() && isComposing) {
       return;
@@ -984,13 +1003,16 @@ export function $updateTextNodeFromDOMContent(
     let normalizedTextContent = textContent;
 
     if (isComposing || compositionEnd) {
-      if (textContent.endsWith(COMPOSITION_SUFFIX)) {
+      if (
+        textContent.endsWith(COMPOSITION_SUFFIX) &&
+        (!isSafariComposition || textContent !== node.getTextContent())
+      ) {
         normalizedTextContent = textContent.slice(
           0,
           -COMPOSITION_SUFFIX.length,
         );
       }
-      if (compositionEnd) {
+      if (compositionEnd && !isSafariComposition) {
         const char = COMPOSITION_START_CHAR;
         let index;
         while ((index = normalizedTextContent.indexOf(char)) !== -1) {
@@ -1013,6 +1035,11 @@ export function $updateTextNodeFromDOMContent(
       const selection = $getSelection();
 
       if (normalizedTextContent === '') {
+        if (isComposing && !compositionEnd && isSafariComposition) {
+          // The composition key owns this target until composition ends.
+          $setTextContentWithSelection(node, '', selection);
+          return;
+        }
         $setCompositionKey(null);
         if (!IS_SAFARI && !IS_IOS && !IS_APPLE_WEBKIT) {
           // For composition (mainly Android), we have to remove the node on a later update
@@ -2133,14 +2160,6 @@ export function errorOnInsertTextNodeOnRoot(
  * Returns the node with the given key from the active EditorState,
  * or throws if it does not exist.
  */
-export function $getNodeByKeyOrThrow(key: NodeKey): LexicalNode;
-/**
- * @deprecated The type parameter is an unchecked and unsafe cast,
- * equivalent to `$getNodeByKeyOrThrow(key) as N`, and will be removed
- * in a future release. Call this function without a type argument and
- * narrow the result with a type guard instead.
- */
-export function $getNodeByKeyOrThrow<N extends LexicalNode>(key: NodeKey): N;
 export function $getNodeByKeyOrThrow(key: NodeKey): LexicalNode {
   const node = $getNodeByKey(key);
   if (node === null) {
@@ -5065,11 +5084,61 @@ function buildNodeClassRecord(klass: Klass<LexicalNode>): NodeClassRecord {
     // stores them on every subclass instance, so its clone has to carry them
     // too.
     injectSynthesizedAfterCloneFrom(klass);
+    injectDeclaredIsInline(klass, ownNodeConfig);
   } catch (error) {
     NODE_CLASS_CACHE.delete(klass);
     throw error;
   }
   return record;
+}
+
+function synthesizedIsInlineTrue(): boolean {
+  return true;
+}
+function synthesizedIsInlineFalse(): boolean {
+  return false;
+}
+
+/**
+ * Whether `isInline` (an `isInline` method found on a prototype) was
+ * synthesized from a `$config({inline})` declaration.
+ *
+ * @internal
+ */
+export function isSynthesizedIsInline(isInline: unknown): boolean {
+  return (
+    isInline === synthesizedIsInlineTrue ||
+    isInline === synthesizedIsInlineFalse
+  );
+}
+
+/**
+ * A class that declares `$config({inline})` and does not write its own
+ * `isInline()` gets one returning the declaration, so classes that declare
+ * nothing run exactly the code they ran before (ElementNode.isInline is
+ * unchanged).
+ */
+function injectDeclaredIsInline(
+  klass: Klass<LexicalNode>,
+  ownNodeConfig:
+    | undefined
+    | StaticNodeConfigValue<LexicalNode, string | symbol>,
+): void {
+  if (
+    !ownNodeConfig ||
+    ownNodeConfig.inline === undefined ||
+    !hasOwnKey(klass.prototype as unknown as object, PROTOTYPE_CONFIG_METHOD) ||
+    Object.prototype.hasOwnProperty.call(klass.prototype, 'isInline')
+  ) {
+    return;
+  }
+  Object.defineProperty(klass.prototype, 'isInline', {
+    configurable: true,
+    value: ownNodeConfig.inline
+      ? synthesizedIsInlineTrue
+      : synthesizedIsInlineFalse,
+    writable: true,
+  });
 }
 
 /**

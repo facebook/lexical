@@ -6,6 +6,7 @@
  *
  */
 
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {
   $convertFromMarkdownString,
@@ -13,8 +14,14 @@ import {
   registerMarkdownShortcuts,
 } from '@lexical/markdown';
 import {MarkdownTestExtension} from '@lexical/markdown/src/__tests__/utils';
-import {defineExtension} from 'lexical';
-import {expect, test} from 'vitest';
+import {
+  $createParagraphNode,
+  $getRoot,
+  configExtension,
+  defineExtension,
+} from 'lexical';
+import {assert, expect, onTestFinished, test} from 'vitest';
+import {page, userEvent} from 'vitest/browser';
 
 import {
   assertHTML,
@@ -28,7 +35,14 @@ import {
 } from './utils';
 
 const extension = defineExtension({
-  dependencies: [MarkdownTestExtension, HistoryExtension],
+  dependencies: [
+    MarkdownTestExtension,
+    // Keys typed in a row make one undo step only while each comes within the
+    // history delay (300 ms) of the one before, which a busy runner can miss.
+    // Merge them however slowly they come, so each undo takes the step the
+    // undo/redo test expects.
+    configExtension(HistoryExtension, {delay: Infinity}),
+  ],
   name: '[markdown-inline-test]',
   register: editor => registerMarkdownShortcuts(editor),
 });
@@ -170,6 +184,56 @@ test.each(cases)(
       });
       await assertHTML(root, expected);
     }
+  },
+);
+// An iframe has its own performance.timeOrigin, and a capture-phase input
+// listener above the root (React adds one to a portal's container) lets the
+// mutation observer run before Lexical handles the native insertion.
+test.each([
+  {keys: '*hi*', selector: 'em', text: 'hi'},
+  {keys: '**hi**', selector: 'strong', text: 'hi'},
+  {keys: '`hi`', selector: 'code', text: 'hi'},
+  {keys: '# hi', selector: 'h1', text: 'hi'},
+  // userEvent.keyboard reads a single [ as the start of a key name
+  {keys: '[[hi](https://lexical.dev)', selector: 'a', text: 'hi'},
+])(
+  'transforms $keys when the editor root is in an iframe',
+  async ({keys, selector, text}) => {
+    const iframe = document.createElement('iframe');
+    document.body.append(iframe);
+    const iframeDocument = iframe.contentDocument;
+    assert(
+      iframeDocument !== null,
+      'Expected the test iframe to have a document',
+    );
+    iframeDocument.body.addEventListener('input', () => {}, true);
+    const root = iframeDocument.createElement('div');
+    root.contentEditable = 'true';
+    root.style.whiteSpace = 'pre-wrap';
+    root.dataset.testid = 'editor';
+    iframeDocument.body.append(root);
+    const editor = buildEditorFromExtensions([extension]);
+    editor.setRootElement(root);
+    editor.update(
+      () => {
+        $getRoot().clear().append($createParagraphNode());
+        $getRoot().selectEnd();
+      },
+      {discrete: true},
+    );
+    onTestFinished(() => {
+      editor.dispose();
+      iframe.remove();
+    });
+    // Firefox keeps keyboard focus in the parent frame after a programmatic
+    // focus() inside the iframe, so click into the editor instead
+    await page
+      .frameLocator(page.elementLocator(iframe))
+      .getByTestId('editor')
+      .click();
+    await userEvent.keyboard(keys);
+    await expect.poll(() => root.textContent).toBe(text);
+    expect(root.querySelector(selector)?.textContent).toBe(text);
   },
 );
 test('can undo/redo nested transformations', async () => {

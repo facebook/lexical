@@ -44,6 +44,7 @@ import {
   type SlotChildNode,
   type SlotHostNode,
 } from '../LexicalNode';
+import {$reconcileDecoratorBoundaryAnchors} from '../LexicalReconciler';
 import {
   enumValue,
   nodeSchema,
@@ -68,11 +69,14 @@ import {
   $getSlotsTextContent,
   $getSlotsTextContentSize,
 } from '../LexicalSlot';
+import {INTERNAL_isNodeStructureEnforced} from '../LexicalStructure';
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
   $getDOMSlot,
   $getNodeByKey,
   $isRootOrShadowRoot,
+  getNodeKeyFromDOMNode,
+  isDOMUnmanaged,
   isHTMLElement,
   toggleTextFormatType,
 } from '../LexicalUtils';
@@ -221,7 +225,14 @@ export type ElementFormatType =
  * @internal
  */
 function $normalizeShadowRootChildren(node: ElementNode): void {
-  if ($isRootOrShadowRoot(node)) {
+  // Where NodeStructureExtension enforces declared structure, it wraps these
+  // children itself (a root or shadow root holds blocks), after their own
+  // repairs: an empty inline element it removes is then never wrapped, which
+  // it would be here if this transform ran first.
+  if (
+    $isRootOrShadowRoot(node) &&
+    !INTERNAL_isNodeStructureEnforced(getActiveEditor())
+  ) {
     let block: ElementNode | null = null;
     for (const child of node.getChildren()) {
       block = child.isInline()
@@ -376,14 +387,6 @@ export class ElementNode
   /**
    * Returns the children of this node, in document order.
    */
-  getChildren(): LexicalNode[];
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast,
-   * equivalent to `element.getChildren() as T[]`, and will be
-   * removed in a future release. Call this method without a type argument
-   * and narrow the results with a type guard instead.
-   */
-  getChildren<T extends LexicalNode>(): T[];
   getChildren(): LexicalNode[] {
     return $collectSiblingNodes(this.getFirstChild(), 'next');
   }
@@ -455,14 +458,6 @@ export class ElementNode
    * Descendant navigation is children-only by design: it feeds selectStart /
    * selectEnd and selection, which must not see slots (slots are isolated).
    */
-  getFirstDescendant(): null | LexicalNode;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast,
-   * equivalent to `element.getFirstDescendant() as T | null`, and will be
-   * removed in a future release. Call this method without a type argument
-   * and narrow the result with a type guard instead.
-   */
-  getFirstDescendant<T extends LexicalNode>(): null | T;
   getFirstDescendant(): null | LexicalNode {
     let node = this.getFirstChild();
     while ($isElementNode(node)) {
@@ -478,14 +473,6 @@ export class ElementNode
    * Returns the deepest last descendant of this node,
    * or null if it has no children.
    */
-  getLastDescendant(): null | LexicalNode;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast,
-   * equivalent to `element.getLastDescendant() as T | null`, and will be
-   * removed in a future release. Call this method without a type argument
-   * and narrow the result with a type guard instead.
-   */
-  getLastDescendant<T extends LexicalNode>(): null | T;
   getLastDescendant(): null | LexicalNode {
     let node = this.getLastChild();
     while ($isElementNode(node)) {
@@ -501,14 +488,6 @@ export class ElementNode
    * Returns the deepest descendant corresponding to the child at the given
    * index, or null if this node has no children.
    */
-  getDescendantByIndex(index: number): null | LexicalNode;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast,
-   * equivalent to `element.getDescendantByIndex(index) as T | null`, and
-   * will be removed in a future release. Call this method without a type
-   * argument and narrow the result with a type guard instead.
-   */
-  getDescendantByIndex<T extends LexicalNode>(index: number): null | T;
   getDescendantByIndex(index: number): null | LexicalNode {
     const atEnd = index >= this.getChildrenSize();
     const child = atEnd ? this.getLastChild() : this.getChildAtIndex(index);
@@ -521,14 +500,6 @@ export class ElementNode
   /**
    * Returns the first child of this node, or null if it has no children.
    */
-  getFirstChild(): null | LexicalNode;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast,
-   * equivalent to `element.getFirstChild() as T | null`, and will be
-   * removed in a future release. Call this method without a type argument
-   * and narrow the result with a type guard instead.
-   */
-  getFirstChild<T extends LexicalNode>(): null | T;
   getFirstChild(): null | LexicalNode {
     const self = this.getLatest();
     const firstKey = self.__first;
@@ -537,14 +508,6 @@ export class ElementNode
   /**
    * Returns the first child of this node, or throws if it has no children.
    */
-  getFirstChildOrThrow(): LexicalNode;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast,
-   * equivalent to `element.getFirstChildOrThrow() as T`, and will be
-   * removed in a future release. Call this method without a type argument
-   * and narrow the result with a type guard instead.
-   */
-  getFirstChildOrThrow<T extends LexicalNode>(): T;
   getFirstChildOrThrow(): LexicalNode {
     const firstChild = this.getFirstChild();
     if (firstChild === null) {
@@ -555,14 +518,6 @@ export class ElementNode
   /**
    * Returns the last child of this node, or null if it has no children.
    */
-  getLastChild(): null | LexicalNode;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast,
-   * equivalent to `element.getLastChild() as T | null`, and will be
-   * removed in a future release. Call this method without a type argument
-   * and narrow the result with a type guard instead.
-   */
-  getLastChild<T extends LexicalNode>(): null | T;
   getLastChild(): null | LexicalNode {
     const self = this.getLatest();
     const lastKey = self.__last;
@@ -571,14 +526,6 @@ export class ElementNode
   /**
    * Returns the last child of this node, or throws if it has no children.
    */
-  getLastChildOrThrow(): LexicalNode;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast,
-   * equivalent to `element.getLastChildOrThrow() as T`, and will be
-   * removed in a future release. Call this method without a type argument
-   * and narrow the result with a type guard instead.
-   */
-  getLastChildOrThrow<T extends LexicalNode>(): T;
   getLastChildOrThrow(): LexicalNode {
     const lastChild = this.getLastChild();
     if (lastChild === null) {
@@ -590,14 +537,6 @@ export class ElementNode
    * Returns the child of this node at the given index, or null if
    * the index is out of range.
    */
-  getChildAtIndex(index: number): null | LexicalNode;
-  /**
-   * @deprecated The type parameter is an unchecked and unsafe cast,
-   * equivalent to `element.getChildAtIndex(index) as T | null`, and will
-   * be removed in a future release. Call this method without a type
-   * argument and narrow the result with a type guard instead.
-   */
-  getChildAtIndex<T extends LexicalNode>(index: number): null | T;
   getChildAtIndex(index: number): null | LexicalNode {
     const size = this.getChildrenSize();
     let node: null | LexicalNode;
@@ -939,7 +878,7 @@ export class ElementNode
         // to use `padding-right` in RTL languages, `padding-left` in `LTR` languages, or
         // `text-indent` if you are ok with first-line indents.
         // We recommend keeping multiples of 40px to maintain consistency with list-items
-        // (see https://github.com/facebook/lexical/pull/4025)
+        // (see https://github.com/meta/lexical/pull/4025)
         element.style.paddingInlineStart = `${indent * 40}px`;
         // Authoritative round-trip signal. padding-inline-start can be a
         // non-40px multiple (custom `--lexical-indent-base-value`) or a
@@ -1088,28 +1027,57 @@ export class ElementNode
 
   /** @internal */
   reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void {
-    const slot = $getDOMSlot(this, dom, editor);
-    let currentDOM = slot.getFirstChild();
-    for (
-      let currentNode = this.getFirstChild();
-      currentNode;
-      currentNode = currentNode.getNextSibling()
-    ) {
-      const correctDOM = editor.getElementByKey(currentNode.getKey());
-
-      if (correctDOM === null) {
-        continue;
+    // Put back the children of the committed state: they are what is on
+    // screen, and what the reconciler diffs the DOM against when this runs
+    // inside an update (onInput) that has already changed them.
+    editor.read('latest', () => {
+      let slot = $getDOMSlot(this, dom, editor);
+      const element = slot.element;
+      // The edit may have removed a boundary that the slot still names.
+      if (slot.after && slot.after.parentNode !== element) {
+        slot = slot.withAfter(null);
       }
-
-      if (currentDOM == null) {
-        slot.insertChild(correctDOM);
-        currentDOM = correctDOM;
-      } else if (currentDOM !== correctDOM) {
-        slot.replaceChild(correctDOM, currentDOM);
+      if (slot.before && slot.before.parentNode !== element) {
+        slot = slot.withBefore(null);
       }
+      // Put the managed line break back where the reconciler would if the
+      // edit removed or moved a node of it.
+      const lineBreak = slot.getManagedLineBreak();
+      if (lineBreak) {
+        slot.insertManagedLineBreak(lineBreak.nodeName === 'IMG');
+      }
+      let currentDOM = slot.getFirstChild();
+      for (const key of this.getChildrenKeys()) {
+        const correctDOM = editor.getElementByKey(key);
 
-      currentDOM = currentDOM.nextSibling;
-    }
+        if (!correctDOM) {
+          continue;
+        }
+
+        // Only move children into place, never replace a node. DOM an
+        // extension keeps among the children (keyless, marked with
+        // setDOMUnmanaged) stays ahead of the child that follows it; a
+        // child with no such follower goes before that DOM, so DOM at the
+        // end stays at the end.
+        let nextDOM = currentDOM;
+        let nextKey: NodeKey | undefined;
+        while (
+          nextDOM &&
+          !(nextKey = getNodeKeyFromDOMNode(nextDOM, editor)) &&
+          isDOMUnmanaged(nextDOM)
+        ) {
+          nextDOM = nextDOM.nextSibling;
+        }
+        if (nextDOM !== correctDOM) {
+          element.insertBefore(
+            correctDOM,
+            nextKey ? nextDOM : currentDOM || slot.getInsertionAnchor(),
+          );
+        }
+        currentDOM = correctDOM.nextSibling;
+      }
+      $reconcileDecoratorBoundaryAnchors(this, dom, slot);
+    });
   }
 }
 

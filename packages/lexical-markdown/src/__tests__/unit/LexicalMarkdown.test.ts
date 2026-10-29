@@ -4167,44 +4167,80 @@ describe('link title round trip', () => {
       ).toEqual([title]);
     });
   }
+});
 
-  it('keeps a title that ends in a backslash closed', () => {
-    // The `"` written after the escaped backslash closes the title, so a `")`
-    // in the text after the link must stay out of it.
-    const editor = createTestEditor({nodes: [LinkNode]});
-    editor.update(
-      () => {
-        $getRoot()
-          .clear()
-          .append(
-            $createParagraphNode().append(
-              $createLinkNode('/uri', {title: 'a\\'}).append(
-                $createTextNode('x'),
+describe('text after a link', () => {
+  // Nothing in the link markup may open a construct that the text after it
+  // closes: a backslash before the title's closing quote must not escape it,
+  // and a backtick must not open a code span, which is read before links are.
+  const AFTER = ' ") `b';
+  const CASES: [url: string, title: string | null, md: string][] = [
+    ['/uri', 'a\\', '[x](/uri "a\\\\") ") \\`b'],
+    ['/uri', 'a`', '[x](/uri "a\\`") ") \\`b'],
+    ['/a`b', null, '[x](/a\\`b) ") \\`b'],
+    ['/a `b', null, '[x](</a \\`b>) ") \\`b'],
+  ];
+
+  for (const [url, title, md] of CASES) {
+    it(`keeps ${JSON.stringify([url, title])} apart from it`, () => {
+      const editor = createTestEditor({nodes: [LinkNode]});
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $createLinkNode(url, {title}).append($createTextNode('x')),
+                $createTextNode(AFTER),
               ),
-              $createTextNode(' ")'),
-            ),
-          );
-      },
-      {discrete: true},
-    );
+            );
+        },
+        {discrete: true},
+      );
 
-    const exported = editor.read('latest', () =>
-      $convertToMarkdownString(TRANSFORMERS),
-    );
-    expect(exported).toBe('[x](/uri "a\\\\") ")');
+      const exported = editor.read('latest', () =>
+        $convertToMarkdownString(TRANSFORMERS),
+      );
+      expect(exported).toBe(md);
 
-    const reimported = createTestEditor({nodes: [LinkNode]});
-    reimported.update(
-      () => $convertFromMarkdownString(exported, TRANSFORMERS),
-      {discrete: true},
-    );
-    reimported.read('latest', () => {
-      const link = $getRoot().getAllTextNodes()[0].getParent();
-      assert($isLinkNode(link), 'Expected a link');
-      expect(link.getTitle()).toBe('a\\');
-      expect($getRoot().getTextContent()).toBe('x ")');
+      const reimported = createTestEditor({nodes: [LinkNode]});
+      reimported.update(
+        () => $convertFromMarkdownString(exported, TRANSFORMERS),
+        {discrete: true},
+      );
+      reimported.read('latest', () => {
+        const link = $getRoot().getAllTextNodes()[0].getParent();
+        assert($isLinkNode(link), 'Expected a link');
+        expect([link.getURL(), link.getTitle()]).toEqual([url, title]);
+        expect($getRoot().getTextContent()).toBe(`x${AFTER}`);
+      });
     });
-  });
+  }
+});
+
+describe('link title import', () => {
+  // Export only writes double-quoted titles, so the other spellings are read
+  // here. A backslash escapes the character after it, itself included.
+  const CASES: [md: string, title: string][] = [
+    ["[x](/uri 'a\\\\')", 'a\\'],
+    ["[x](/uri 'it\\'s')", "it's"],
+    ['[x](/uri (a\\)))', 'a)'],
+    ['[x](/uri "a\\\u2028b")', 'a\\\u2028b'],
+  ];
+
+  for (const [md, title] of CASES) {
+    it(`reads ${JSON.stringify(md)}`, () => {
+      const editor = createTestEditor({nodes: [LinkNode]});
+      editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+        discrete: true,
+      });
+      editor.read('latest', () => {
+        const link = $getRoot().getAllTextNodes()[0].getParent();
+        assert($isLinkNode(link), 'Expected a link');
+        expect(link.getTitle()).toBe(title);
+      });
+    });
+  }
 });
 
 describe('decimal character references that name no character', () => {

@@ -8,7 +8,6 @@
 
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
-  $caretRangeFromSelection,
   $getRoot,
   $getState,
   $isDecoratorNode,
@@ -229,8 +228,11 @@ function $processNodeForSelection(
 type OpenTag = {
   format: TextFormatType;
   tag: string;
-  /** See `$continuesTag`: the last node it kept this tag open past, and the later text that holds the tag. */
-  continues?: {from: TextNode; to: TextNode};
+  /**
+   * See `$continuesTag`: the last node it answered for, its answer, and the
+   * sibling its walk stopped at, which every node in between shares.
+   */
+  continues?: {from: TextNode; result: boolean; until: TextNode | null};
 };
 
 function $exportChildrenForSelection(
@@ -620,14 +622,10 @@ function $exportTextFormat(
   // adjacent to non-whitespace characters, so openingTags and closingTagsAfter
   // are placed INSIDE the whitespace boundaries!
   // (Trimming rather than a regex keeps this linear in long whitespace runs.)
-  const trimmedOutput = output.trim();
-  const leadingSpace = output.slice(
-    0,
-    output.length - output.trimStart().length,
-  );
-  const trailingSpace = output.slice(
-    leadingSpace.length + trimmedOutput.length,
-  );
+  const trimmedStart = output.trimStart();
+  const trimmedOutput = trimmedStart.trimEnd();
+  const leadingSpace = output.slice(0, output.length - trimmedStart.length);
+  const trailingSpace = trimmedStart.slice(trimmedOutput.length);
   return (
     closingTagsBefore +
     leadingSpace +
@@ -652,9 +650,9 @@ function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
  * Whether `tag` carries on past `node`, which has its format, to exported
  * text that can hold it. Whitespace-only siblings cannot (the tag must close
  * before the space), so they are looked past while they keep the format.
- * Text outside the exported selection does not count. The text found is
- * remembered on the tag, so the nodes of a whitespace run before it reuse the
- * answer instead of walking the rest of the run again.
+ * Text outside the exported selection does not count. The answer and where
+ * the walk stopped are remembered on the tag, so the rest of a whitespace run
+ * reuses it instead of walking the run again.
  */
 function $continuesTag(
   node: TextNode,
@@ -664,30 +662,32 @@ function $continuesTag(
   const {continues} = tag;
   if (
     continues &&
-    !node.is(continues.to) &&
-    continues.from.is(node.getPreviousSibling())
+    continues.from.is(node.getPreviousSibling()) &&
+    !node.is(continues.until)
   ) {
     continues.from = node;
-    return true;
+    return continues.result;
   }
-  tag.continues = undefined;
   let next = getTextSibling(node, false);
-  while (next && next.hasFormat(tag.format)) {
-    if (selection && !next.isSelected(selection)) {
-      return false;
-    }
+  let result = false;
+  while (
+    next &&
+    next.hasFormat(tag.format) &&
+    (!selection || next.isSelected(selection))
+  ) {
     const text = $exportedText(next, selection);
     if (canHoldTag(text)) {
-      tag.continues = {from: node, to: next};
-      return true;
+      result = true;
+      break;
     }
     // Markdown import matches a tag within one line.
     if (text.includes('\n')) {
-      return false;
+      break;
     }
     next = getTextSibling(next, false);
   }
-  return false;
+  tag.continues = {from: node, result, until: next};
+  return result;
 }
 
 /**
@@ -700,13 +700,6 @@ function $getBoundaryTextKeys(selection: BaseSelection): Set<NodeKey> {
   const keys = new Set<NodeKey>();
   for (const point of selection.getStartEndPoints() || []) {
     keys.add(point.key);
-  }
-  if ($isRangeSelection(selection)) {
-    for (const slice of $caretRangeFromSelection(selection).getTextSlices()) {
-      if (slice) {
-        keys.add(slice.caret.origin.getKey());
-      }
-    }
   }
   return keys;
 }

@@ -3099,6 +3099,29 @@ export function $getDOMTextNode(
   return getDOMTextNode(slot.element);
 }
 
+const cachedSelectedKeys = new WeakMap<LexicalNode[], Set<NodeKey>>();
+/**
+ * @internal
+ * Whether the node with `key` is among the nodes of `selection`. When the
+ * selection caches its nodes, a Set of their keys is cached with them, so
+ * asking this for every node of a large selection stays linear.
+ */
+export function $isKeyInSelectionNodes(
+  selection: BaseSelection,
+  key: NodeKey,
+): boolean {
+  const nodes = selection.getNodes();
+  if (nodes !== selection.getCachedNodes()) {
+    return nodes.some(node => node.__key === key);
+  }
+  let keys = cachedSelectedKeys.get(nodes);
+  if (keys === undefined) {
+    keys = new Set(nodes.map(node => node.__key));
+    cachedSelectedKeys.set(nodes, keys);
+  }
+  return keys.has(key);
+}
+
 /** @internal */
 export type TypeToNodeMap = Map<string, NodeMap>;
 /**

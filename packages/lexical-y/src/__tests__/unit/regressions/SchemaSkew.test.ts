@@ -1892,6 +1892,115 @@ describe('S7-3, S7-11, S7-21: a server agent with older classes', () => {
   });
 });
 
+// N2: a local update made before a remote change the binding has not read
+// yet is written on the document its editor shows (see Unread). The group
+// fields a client does not own, which a new item takes from the item next to
+// it, are read in that document too, so the run where the update waits for
+// the change ends as the run where it is written before the change arrives.
+describe('N2: a write before an unread remote change reads the document its editor shows', () => {
+  // The editor's update `$local`, made while the remote change waits to be
+  // read (`waiting`), or written before it arrives.
+  const edit = (r: Room, waiting: boolean, $local: () => void) => {
+    if (waiting) {
+      // Not committed yet when the remote change arrives in this task: it is
+      // committed and written first, and the change is read after it.
+      r.editor.editor.update($local);
+    } else {
+      r.editor.update($local);
+    }
+  };
+  // Delivers what the two clients sent while offline, until they converge.
+  const deliver = async (r: Room) => {
+    r.author.online = true;
+    r.editor.online = true;
+    for (let i = 0; i < 3; i++) {
+      for (const [to, from] of [
+        [r.editor, r.author],
+        [r.author, r.editor],
+      ] as const) {
+        const list = to.pending.get(from) || [];
+        to.pending.delete(from);
+        if (list.length > 0) {
+          Y.applyUpdate(
+            to.doc,
+            Y.mergeUpdates(list as Uint8Array<ArrayBuffer>[]),
+            to.net,
+          );
+        }
+      }
+      await flush();
+    }
+    expect([...r.editor.errors, ...r.author.errors]).toEqual([]);
+  };
+  const run = async (
+    nodes: Klass<LexicalNode>[],
+    waiting: boolean,
+    $init: () => void,
+    $remote: () => void,
+    $local: () => void,
+  ): Promise<string> => {
+    const r = await room(nodes, $init);
+    r.author.online = false;
+    r.editor.online = false;
+    r.author.update($remote);
+    edit(r, waiting, $local);
+    await deliver(r);
+    return docJSON(await freshReader(r.author));
+  };
+  const $retoneList = () => {
+    ($getRoot().getFirstChildOrThrow() as ListV2).getWritable().__tone = 'cool';
+  };
+  const $item = () => $createListItemNode().append($createTextNode('z'));
+  // The stored type is read there too: where a remote change retypes a node,
+  // this client owns the fields of the type its editor shows (see
+  // ownedFields), so its write deletes no field it does not own.
+  test('a card a remote change retypes, centered meanwhile', async () => {
+    const stored: Record<string, unknown>[] = [];
+    for (const waiting of [false, true]) {
+      const r = await room(V1, () => $getRoot().append($card(), $p('para')));
+      let card: Y.Node | null = null;
+      for (let it = r.author.doc.get('lexical-y')._start; it; it = it.right) {
+        const content = it.content;
+        if (
+          content instanceof Y.ContentType &&
+          String((content.type as Y.Node).name).slice(2) === 'test_skew_card'
+        ) {
+          card = content.type as Y.Node;
+        }
+      }
+      r.author.online = false;
+      r.editor.online = false;
+      // To a type both clients register, whose class declares the tone.
+      r.author.doc.transact(() => card!.setAttr('t', 'test_box'));
+      edit(r, waiting, () => $block([0]).setFormat('center'));
+      await deliver(r);
+      stored.push(card!.getAttrs());
+    }
+    expect(stored[0]).toMatchObject({'p:tone': 'warm', t: 'test_box'});
+    expect(stored[1]).toEqual(stored[0]);
+  });
+  test.each([
+    [
+      'appended to it',
+      () => ($getRoot().getFirstChildOrThrow() as ListNode).append($item()),
+    ],
+    [
+      'added before its first item',
+      () =>
+        ($getRoot().getFirstChildOrThrow() as ListNode)
+          .getFirstChildOrThrow()
+          .insertBefore($item()),
+    ],
+  ])('an item %s, in a list a remote change retones', async (_what, $local) => {
+    const $init = () => $getRoot().append($list('x', 'y'), $p('para'));
+    for (const nodes of [V1, V2]) {
+      const concurrent = await run(nodes, false, $init, $retoneList, $local);
+      const waiting = await run(nodes, true, $init, $retoneList, $local);
+      expect(waiting).toBe(concurrent);
+    }
+  });
+});
+
 // The data of the warning stays an interface an app can extend.
 export interface AppUnknownNodeTypesData extends YUnknownNodeTypesData {
   readonly requestId: string;

@@ -67,6 +67,7 @@ import {
   type LexicalEditor,
   type LexicalNode,
   TEXT_TYPE_TO_FORMAT,
+  type TextFormatType,
   type TextNode,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
@@ -4016,15 +4017,15 @@ describe('link destination whitespace does not backtrack', () => {
   }
 });
 
-// Exports a paragraph holding a link labelled `x` and then `after`, in inline
-// code when `afterIsCode` is set, expects `md`, and expects reading that back
-// to give the same link and text.
+// Exports a paragraph holding a link labelled `x` and then `after`, with
+// `afterFormat` when given, expects `md`, and expects reading that back to give
+// the same link and text.
 function expectLinkRoundTrip(
   url: string,
   title: string | null,
   md: string,
   after = '',
-  afterIsCode = false,
+  afterFormat?: TextFormatType,
 ): void {
   const editor = createTestEditor({nodes: [LinkNode]});
   editor.update(
@@ -4035,7 +4036,7 @@ function expectLinkRoundTrip(
       if (after) {
         const afterNode = $createTextNode(after);
         paragraph.append(
-          afterIsCode ? afterNode.toggleFormat('code') : afterNode,
+          afterFormat ? afterNode.toggleFormat(afterFormat) : afterNode,
         );
       }
       $getRoot().clear().append(paragraph);
@@ -4177,14 +4178,14 @@ describe('text after a link', () => {
   it('keeps a backtick in the link apart from inline code after it', () => {
     // The code span's own backticks cannot be escaped, so only the escape in
     // the link keeps the two apart.
-    expectLinkRoundTrip('/a`b', null, '[x](/a\\`b)`c`', 'c', true);
+    expectLinkRoundTrip('/a`b', null, '[x](/a\\`b)`c`', 'c', 'code');
   });
 });
 
 describe('link import', () => {
-  // Export only writes double-quoted titles, so the other spellings are read
-  // here, along with a pointy destination holding an escaped U+2028. A
-  // backslash escapes the character after it, itself included.
+  // Hand-written spellings export never produces: single-quoted and
+  // parenthesized titles, and an escaped U+2028 in a title or a pointy
+  // destination. A backslash escapes the character after it, itself included.
   const CASES: [md: string, url: string, title: string][] = [
     ["[x](/uri 'a\\\\')", '/uri', 'a\\'],
     ["[x](/uri 'it\\'s')", '/uri', "it's"],
@@ -4207,9 +4208,11 @@ describe('link import', () => {
       });
     });
   }
-  it('reads no link when a pointy destination holds a carriage return', () => {
-    // A CR is a line ending in CommonMark, escaped or not.
-    for (const md of ['[x](</a\rb>)', '[x](</a\\\rb>)']) {
+
+  // A CR is a line ending in CommonMark, escaped or not, and a pointy
+  // destination cannot hold one.
+  for (const md of ['[x](</a\rb>)', '[x](</a\\\rb>)']) {
+    it(`reads no link from ${JSON.stringify(md)}`, () => {
       const editor = createTestEditor({nodes: [LinkNode]});
       editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
         discrete: true,
@@ -4221,8 +4224,8 @@ describe('link import', () => {
             .some(node => $isLinkNode(node.getParent())),
         ),
       ).toBe(false);
-    }
-  });
+    });
+  }
 });
 
 describe('decimal character references that name no character', () => {

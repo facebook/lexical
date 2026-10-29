@@ -1836,6 +1836,38 @@ describe('Markdown', () => {
         editor.read($chars),
       );
     });
+
+    it.each<[name: string, $nodes: () => LexicalNode[]]>([
+      [
+        'leaves the formats of inline code that holds only a space off',
+        () => [
+          $formatted('a', 0),
+          $formatted(' ', BOLD | TEXT_TYPE_TO_FORMAT.code),
+          $formatted('b', 0),
+        ],
+      ],
+      [
+        'keeps a tag open across inline code that holds only a space',
+        () => [
+          $formatted('a', BOLD),
+          $formatted(' ', BOLD | TEXT_TYPE_TO_FORMAT.code),
+          $formatted('b', BOLD),
+        ],
+      ],
+    ])('%s', (_name, $nodes) => {
+      const editor = createTestEditor();
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append(...$nodes()));
+        },
+        {discrete: true},
+      );
+      expect(importMarkdown(editor.read($exportMarkdown)).read($chars)).toEqual(
+        editor.read($chars),
+      );
+    });
   });
 
   describe('list marker', () => {

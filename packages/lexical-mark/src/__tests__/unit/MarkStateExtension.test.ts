@@ -2595,6 +2595,64 @@ describe('MarkStateExtension', () => {
       expect(updates).toBe(3);
     });
 
+    test("assigning a new filter changes no node, also where an element's stored text format is not its first text's", async () => {
+      const editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            RichTextExtension,
+            configExtension(HistoryExtension, {delay: 0}),
+            MarkStateExtension,
+          ],
+          name: '[root]',
+        }),
+      );
+      // The first paragraph's textFormat (0) is not its bold text's format,
+      // as a client that never rendered it (headless, an agent) writes it
+      editor.update(
+        () => {
+          const bold = $createTextNode('bold');
+          bold.toggleFormat('bold');
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(bold),
+              $createParagraphNode().append($createTextNode('t4z t5z')),
+            );
+        },
+        {discrete: true},
+      );
+      const root = document.createElement('div');
+      root.contentEditable = 'true';
+      document.body.appendChild(root);
+      editor.setRootElement(root);
+      onTestFinished(() => {
+        editor.setRootElement(null);
+        root.remove();
+      });
+      const $textFormat = () => {
+        const paragraph = $getRoot().getFirstChild();
+        return $isElementNode(paragraph) ? paragraph.getTextFormat() : -1;
+      };
+      expect(editor.read($textFormat)).toBe(0);
+      // A comment in the other paragraph, so that a filter re-renders
+      update(editor, () => {
+        $addMarkID('c1', $select(0, 3, $paragraph(1)));
+      });
+      // The last edit, which an undo takes back
+      update(editor, () => {
+        $paragraph(1).selectEnd().insertText(' t6z');
+      });
+      const editorState = editor.getEditorState();
+      isMarkIDShownSignal(editor).value = id => id !== 'c1';
+      await Promise.resolve();
+      expect(editor.read($textFormat)).toBe(0);
+      expect(editor.getEditorState().toJSON()).toEqual(editorState.toJSON());
+      editor.dispatchCommand(UNDO_COMMAND, undefined);
+      expect(editor.read(() => $getRoot().getTextContent())).toBe(
+        'bold\n\nt4z t5z',
+      );
+    });
+
     test('a new filter re-renders nothing in a document without marks', () => {
       const editor = createTestEditor({withRoot: true});
       update(editor, () => $init());

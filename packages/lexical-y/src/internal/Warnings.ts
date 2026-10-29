@@ -66,9 +66,10 @@ export const UNSUPPORTED_SLOTS_WARNING = '@lexical/y/unsupported-slots';
 export const UNSUPPORTED_CONFIG_WARNING = '@lexical/y/unsupported-config';
 /**
  * @experimental A local update changed the editor while the binding is read
- * only: nothing is written, and what it changed is read again, so the editor
- * keeps showing the document. Reported once each time the binding goes read
- * only. `data`: YUnsupportedEditData.
+ * only: nothing is written, and what it changed is read again (once the
+ * document cannot be read, the editor shows what it showed before the update
+ * again), so the editor keeps showing the document. Reported once each time
+ * the binding goes read only. `data`: YUnsupportedEditData.
  */
 export const UNSUPPORTED_EDIT_WARNING = '@lexical/y/unsupported-edit';
 

@@ -9,8 +9,9 @@
 // @vitest-environment node
 
 // Regression cases for IME composition findings (#9492, the soak7 findings
-// S7-8, S7-9, S7-12, S7-15, S7-28 and S7-37, and findings R-1 to R-4 of the
-// review of the hold-back): what a collaborator changes in the
+// S7-8, S7-9, S7-12, S7-15, S7-28 and S7-37, findings R-1 to R-4 of the
+// review of the hold-back, and B-2 and MF-1 of a review of it with other
+// changes): what a collaborator changes in the
 // line being composed is held back until the composition ends, the line
 // keeps its nodes meanwhile, and nothing held is lost when the hold ends.
 // Each case is named after its finding; the general promise is checked over
@@ -22,6 +23,7 @@ import {$createListItemNode, $createListNode} from '@lexical/list';
 import {$addMarkID} from '@lexical/mark';
 import {$createHeadingNode} from '@lexical/rich-text';
 import {$setBlocksType} from '@lexical/selection';
+import * as Y from '@y/y';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -603,6 +605,130 @@ describe('R-4: A joins the line it composes in into the line before, which a pee
         await t.sync();
         await expectConverged(t.peers, 'paragraph("precomposed")');
         expect(t.a.read(() => $block([0]).getFormatType())).toBe('');
+      });
+    }
+  }
+});
+
+/** The markers of `peer`'s document, in order. */
+const markersOf = (peer: Peer) =>
+  peer.binding.root.toArray().filter(c => c instanceof Y.Node) as Y.Node[];
+
+describe('B-2: a peer realigns or retypes the line A composes in, then A presses Enter mid-line while composing', () => {
+  for (const ids of IDS) {
+    for (const change of [
+      'center',
+      'heading',
+      'center, then A aligns it left',
+    ] as const) {
+      test(`both halves keep it, the other lines do not get it (${change}, ids ${ids})`, async () => {
+        const t = await setup(
+          () =>
+            $getRoot().append($p('pre'), $p('alpha beta gamma'), $p('omega')),
+          {ids},
+        );
+        const key = compose(t.a, keyOf(t.a, [1]), 6);
+        step(t.a, key, 6, '', 'に');
+        await t.sync();
+        t.b.update(() => {
+          if (change === 'heading') {
+            $setBlocksType($selectIn([1], 0), () => $createHeadingNode('h2'));
+          } else {
+            $block([1]).setFormat('center');
+          }
+        });
+        await t.sync();
+        if (change === 'center, then A aligns it left') {
+          // An explicit local change of the held attribute wins.
+          t.a.update(() => $block([1]).setFormat('left'));
+          await t.sync();
+        }
+        // Enter after the composed text.
+        t.a.update(() => {
+          ($getNodeByKey(key) as TextNode).select(7, 7).insertParagraph();
+        });
+        await t.sync();
+        endComposition(t.a);
+        await t.sync();
+        await expectConverged(t.peers);
+        const lines = t.b.read(() =>
+          $getRoot()
+            .getChildren()
+            .map(n =>
+              [
+                n.getType(),
+                (n as ElementNode).getFormatType(),
+                n.getTextContent(),
+              ].join(':'),
+            ),
+        );
+        const [type, format] =
+          change === 'heading'
+            ? ['heading', '']
+            : change === 'center'
+              ? ['paragraph', 'center']
+              : ['paragraph', 'left'];
+        expect(lines).toEqual([
+          'paragraph::pre',
+          `${type}:${format}:alpha に`,
+          `${type}:${format}:beta gamma`,
+          'paragraph::omega',
+        ]);
+      });
+    }
+  }
+});
+
+describe('MF-1: a newer client sets a field A does not know on the line A composes in', () => {
+  for (const ids of IDS) {
+    for (const withOwned of [false, true]) {
+      test(`A holds nothing of it and stores it once after Enter (${withOwned ? 'with an alignment' : 'alone'}, ids ${ids})`, async () => {
+        const t = await setup(
+          () =>
+            $getRoot().append($p('pre'), $p('alpha beta gamma'), $p('omega')),
+          {ids},
+        );
+        const key = compose(t.a, keyOf(t.a, [1]), 6);
+        step(t.a, key, 6, '', 'に');
+        await t.sync();
+        // B writes the field to the line's marker (as a client whose class
+        // declares it), and an alignment A knows.
+        const marker = markersOf(t.b)[1];
+        t.b.doc.transact(() => {
+          marker.setAttr('p:future', 'x');
+          if (withOwned) {
+            marker.setAttr('p:format', 'center');
+          }
+        });
+        await t.sync();
+        const hidden = (
+          t.a.binding as unknown as {
+            state: {
+              hidden: {marker: {was: Map<string, unknown>} | null} | null;
+            };
+          }
+        ).state.hidden;
+        expect(
+          hidden === null || hidden.marker === null
+            ? []
+            : [...hidden.marker.was.keys()],
+        ).toEqual(withOwned ? ['p:format'] : []);
+        t.a.update(() => {
+          ($getNodeByKey(key) as TextNode).select(7, 7).insertParagraph();
+        });
+        await t.sync();
+        endComposition(t.a);
+        await t.sync();
+        await expectConverged(t.peers);
+        // The field stays on one line, as it does without a composition.
+        expect(
+          markersOf(t.a).filter(m => m.getAttr('p:future') === 'x'),
+        ).toHaveLength(1);
+        if (withOwned) {
+          expect(
+            markersOf(t.a).filter(m => m.getAttr('p:format') === 'center'),
+          ).toHaveLength(2);
+        }
       });
     }
   }

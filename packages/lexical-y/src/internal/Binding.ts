@@ -2395,7 +2395,8 @@ export class YBinding {
     }
     return (
       hidden.marker === null ||
-      (unit !== undefined && hidden.marker.end === unit.end)
+      (unit !== undefined &&
+        [...hidden.marker.ends].every(end => end === unit.end || end.deleted))
     );
   }
 
@@ -2412,8 +2413,12 @@ export class YBinding {
     }
     state.hidden = null;
     const markers = new Map<YNode, Set<string>>();
-    if (hidden.marker !== null && !hidden.marker.end.deleted) {
-      markers.set(typeOf(hidden.marker.end), new Set(hidden.marker.was.keys()));
+    if (hidden.marker !== null) {
+      for (const end of hidden.marker.ends) {
+        if (!end.deleted) {
+          markers.set(typeOf(end), new Set(hidden.marker.was.keys()));
+        }
+      }
     }
     const composing = reader.composingKey;
     reader.composingKey = null;

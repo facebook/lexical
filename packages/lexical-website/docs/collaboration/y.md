@@ -272,7 +272,7 @@ a short note for developers: render your own text from `code` and `data`.
 | `STORAGE_MISMATCH_WARNING` | A node type is stored in a way its class cannot be (one warning per type). Read only. | `'declaration-changed'`: `type`, `stored`, `declared`; `'malformed'`: `type`, `key`, `found` |
 | `UNSUPPORTED_SLOTS_WARNING` | Named slots where the document cannot store them. Not written; read only. | `'stored-host'`, `'root'`: `types` |
 | `UNSUPPORTED_CONFIG_WARNING` | `BlockIdExtension` with `repairTransforms: true`, or a document with Yjs's format cleanup on (not from `createYDoc`), see [Set up an editor](#set-up-an-editor). Nothing is written; read only. | `'repair-transforms'`: `options`; `'cleanup-formatting'` |
-| `NESTED_FALLBACK_WARNING` | A class that declares a line, format or group is stored as a node of its own (see [How content is stored](#how-content-is-stored)). Once per binding, class and reason. | `type`, and `method` (`'merge-override'`) or `properties` (`'undeclared-properties'`) |
+| `NESTED_FALLBACK_WARNING` | A class that declares a line, format or group is stored as a node of its own (see [How content is stored](#how-content-is-stored)). Once per binding, class and reason. | `'merge-override'`: `type`, `method`; `'undeclared-properties'`: `type`, `properties`; `'inline-slots'`, `'inline-incomplete-schema'`, `'type-name'`, `'merge-incomplete-schema'`, `'merge-slots'`, `'group-children'`, `'group-state-merge'`, `'group-incomplete-schema'`: `type` |
 | `UNSYNCED_VALUE_WARNING` | A property or NodeState value is not plain JSON, so it is not synchronized. Once per binding and property. | `'not-json'`: `property` |
 | `UNSUPPORTED_EDIT_WARNING` | A local update changed the editor while the binding is read only (reported once each time it goes read only). Not written; what it changed is read again, or, once the document cannot be read, the editor shows again the last state it showed before the update. | `'read-only'` |
 | `SELF_CHECK_WARNING` | The self-check (`selfCheck`) found the editor and the document disagree. | `'local'`, `'remote'`: `problems` |
@@ -288,6 +288,7 @@ import {
   UNSUPPORTED_SCHEMA_WARNING,
   type YWarning,
 } from '@lexical/y';
+import {defineExtension} from 'lexical';
 
 function banner(warning: YWarning): string | null {
   switch (warning.code) {
@@ -307,6 +308,7 @@ function banner(warning: YWarning): string | null {
 
 defineExtension({
   // ...
+  name: 'my-app/editor',
   onWarn(error) {
     if (isYWarning(error)) {
       showBanner(banner(error));
@@ -1026,6 +1028,50 @@ not merge as a user might expect:
   write its type, and Yjs keeps one of them by client id: a heading joined
   across a quote to the paragraph after it, while a collaborator joins that
   paragraph into the quote, can become a quote.
+
+### Open issues
+
+These are bugs, not intended behavior; each issue has a test that
+reproduces it:
+
+- Two joins at once into a code block or heading can change its block type
+  (see Other races above):
+  [#9511](https://github.com/meta/lexical/issues/9511).
+- Two versions of an app that store a node type differently, and insert
+  its first node at the same time, turn one of the two nodes into a
+  paragraph and leave the room read only:
+  [#9512](https://github.com/meta/lexical/issues/9512).
+- After an update tagged `SKIP_COLLAB_TAG` nests a container in another, a
+  collaborator's insert right after it leaves the editor showing what the
+  document does not hold:
+  [#9513](https://github.com/meta/lexical/issues/9513).
+- An update listener that throws stops the listeners registered after it,
+  so when it was registered before the binding, that commit is never
+  written: [#9514](https://github.com/meta/lexical/issues/9514).
+- Two clients that initialize a root inside another shared type, or a root
+  that held content, write the initial content twice (see "Initial content
+  with random values" above):
+  [#9515](https://github.com/meta/lexical/issues/9515).
+- A collaborator's delete before a range selection, or a format, comment or
+  link at its start, or Enter at its end, collapses the selection to a
+  caret: [#9516](https://github.com/meta/lexical/issues/9516),
+  [#9526](https://github.com/meta/lexical/issues/9526).
+- A caret in an empty line ends up inside the word a collaborator types
+  there: [#9517](https://github.com/meta/lexical/issues/9517).
+- Pasting over a selection across table cells that hold lists drops cells,
+  only in a bound editor:
+  [#9520](https://github.com/meta/lexical/issues/9520).
+- Undoing a link while a collaborator formats text over the link's start
+  keeps the link on its own text (see Undo above):
+  [#9521](https://github.com/meta/lexical/issues/9521).
+- A line without a marker joins the start of a paragraph a collaborator
+  appends at the same time, and a collaborator's Enter elsewhere moves a
+  caret off such a line:
+  [#9524](https://github.com/meta/lexical/issues/9524),
+  [#9525](https://github.com/meta/lexical/issues/9525).
+
+For `MarkStateExtension` comments, see the
+[comments limitations](./comments.md#limitations).
 
 ## Changing the layout and migrating
 

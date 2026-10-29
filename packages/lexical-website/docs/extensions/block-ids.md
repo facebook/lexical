@@ -320,6 +320,10 @@ export off in editors whose HTML must be byte-for-byte deterministic
   transforms, so it changes nothing else: for code that applies such updates
   and repairs what they bring in an update of its own. The ids are the same
   either way for blocks the transforms would not change.
+  [`YCollabExtension`](/docs/collaboration/y) sets it to `false`, and the
+  `@lexical/y` binding goes read only with `true` (an
+  `UNSUPPORTED_CONFIG_WARNING`), because transforms run on what a remote
+  change brought can derive different content on each client.
 - **Valid ids.** An id is 1 to 64 characters of the base64url alphabet
   (`A`–`Z`, `a`–`z`, `0`–`9`, `-`, `_`), so it is safe in URLs, HTML
   attributes and JSON without escaping. Any such value under `$.blockId` is

@@ -307,6 +307,32 @@ const unregister = registerMarkIDsListener(
 );
 ```
 
+With [`@lexical/y`](./y.md) the document is a Yjs 14 (`@y/y`) document,
+which has no `Y.Map`: a shared type's attributes play its part. The same
+listener, with each thread a `Y.Node` stored under its id:
+
+```ts
+import * as Y from '@y/y';
+
+const threads = ydoc.get('threads');
+
+// In the listener, instead of the transaction above:
+ydoc.transact(() => {
+  for (const id of removed) {
+    const thread = threads.getAttr(id);
+    if (thread instanceof Y.Node) {
+      thread.setAttr('orphaned', true);
+    }
+  }
+  for (const id of added) {
+    const thread = threads.getAttr(id);
+    if (thread instanceof Y.Node) {
+      thread.deleteAttr('orphaned');
+    }
+  }
+});
+```
+
 Nothing is reported while a flavor is `disabled` (its ids stay in the
 document); when it is enabled again, the listener gets the net change. An
 id pasted from another document is reported as added like any other: the
@@ -404,6 +430,13 @@ TextNode it lands in has.
 - If a collaborator edits the paragraph while an input method composition
   is in progress there, the composed text keeps the ids of the TextNode it
   was composed in, so it can join a mark at its edge.
+- Open issues: an input method composition that replaces the commented end
+  of a mark (`cd` of a commented `abcd`, composed as `cde`) leaves the new
+  letters without the comment
+  ([#9519](https://github.com/meta/lexical/issues/9519)), and
+  `$addMarkID` over part of a code highlighting token marks nothing, or
+  only part of the range
+  ([#9491](https://github.com/meta/lexical/issues/9491)).
 
 ## Collaboration
 

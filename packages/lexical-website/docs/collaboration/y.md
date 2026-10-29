@@ -102,8 +102,8 @@ provider.once('sync', () => {
   and that write reaches every client. So `doc` takes no other document,
   and the binding is read only on one that has the cleanup on (see
   [Warnings](#warnings)).
-- The editor stays **read only** until the document's layout record has
-  been read. `status` is a signal: `'pending'`, then `'active'`, or
+- The editor stays **read only** until the document has been read and
+  found writable. `status` is a signal: `'pending'`, then `'active'`, or
   `'readonly'` when the binding cannot write the document safely (a newer
   layout, a node type this editor does not register, stored content its
   classes throw on; a [warning](#warnings) says why).
@@ -270,7 +270,7 @@ a short note for developers: render your own text from `code` and `data`.
 | `UNSUPPORTED_CONFIG_WARNING` | `BlockIdExtension` with `repairTransforms: true`, or a document with Yjs's format cleanup on (not from `createYDoc`), see [Set up an editor](#set-up-an-editor). Nothing is written; read only. | `'repair-transforms'`: `options`; `'cleanup-formatting'` |
 | `NESTED_FALLBACK_WARNING` | A class that declares a line, format or group is stored as a node of its own (see [How content is stored](#how-content-is-stored)). Once per binding, class and reason. | `type`, and `method` (`'merge-override'`) or `properties` (`'undeclared-properties'`) |
 | `UNSYNCED_VALUE_WARNING` | A property or NodeState value is not plain JSON, so it is not synchronized. Once per binding and property. | `'not-json'`: `property` |
-| `UNSUPPORTED_EDIT_WARNING` | A local update changed the editor while the binding is read only (reported once each time it goes read only). Not written; what it changed is read again. | `'read-only'` |
+| `UNSUPPORTED_EDIT_WARNING` | A local update changed the editor while the binding is read only (reported once each time it goes read only). Not written; what it changed is read again, or, once the document cannot be read, the editor shows again the last state it showed before the update. | `'read-only'` |
 | `SELF_CHECK_WARNING` | The self-check (`selfCheck`) found the editor and the document disagree. | `'local'`, `'remote'`: `problems` |
 | `RECOVERED_READ_WARNING` | A change could not be read; the editor was rebuilt from the document. | `'remote-change'`, `'reread'`: `error` |
 | `RECOVERED_WRITE_WARNING` | A local change could not be written; the document was rewritten. | `'local-change'`: `error` |

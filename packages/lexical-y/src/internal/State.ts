@@ -39,6 +39,7 @@ import {
   MARKER,
   RUN_END,
 } from './Schema';
+import {isGone} from './Unread';
 
 // The state the reader and the writer share for one binding (State): the
 // containers (the root, and every node stored as its own Y.Node) and their
@@ -120,7 +121,7 @@ export function isEndItem(it: Item): boolean {
 /** The previous live end item before `it` in its container, or null. */
 export function prevLiveEnd(it: Item | null): Item | null {
   for (let p = it === null ? null : it.left; p !== null; p = p.left) {
-    if (!p.deleted && isEndItem(p)) {
+    if (!isGone(p) && isEndItem(p)) {
       return p;
     }
   }

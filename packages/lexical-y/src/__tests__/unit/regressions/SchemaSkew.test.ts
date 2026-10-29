@@ -39,11 +39,13 @@ import {
   $create,
   $createParagraphNode,
   $createTextNode,
+  $getNodeByKey,
   $getRoot,
   $getSlot,
   $getState,
   $isElementNode,
   $isTextNode,
+  $setCompositionKey,
   $setSlot,
   $setState,
   arraySetValue,
@@ -84,12 +86,14 @@ import {Writer} from '../../../internal/Write';
 import {
   $block,
   $createBoxNode,
+  $locateIn,
   $p,
   $selectIn,
   flush,
   freshReader,
   NODES,
   Peer,
+  setup,
   shape,
 } from '../../utils/harness';
 
@@ -1606,6 +1610,161 @@ describe('S7-21: what an older class does before it throws', () => {
     b.update(() => $getRoot().append($p('typed while read only')));
     await flush();
     expect(Y.encodeStateVector(b.doc)).toEqual(vector);
+  });
+});
+
+describe('S7-21 (MF-2): every read goes through the one fail-closed path', () => {
+  /** Make `method` of the reader throw `error` once. */
+  const throwOnce = (method: string, error: unknown) => {
+    const proto = Reader.prototype as unknown as Record<
+      string,
+      (...args: unknown[]) => unknown
+    >;
+    const original = proto[method];
+    proto[method] = function (this: unknown, ...args: unknown[]) {
+      proto[method] = original;
+      throw error;
+    };
+    return () => {
+      proto[method] = original;
+    };
+  };
+
+  test('releasing what a composition held back', async () => {
+    const t = await setup(() => $getRoot().append($p('alpha beta gamma')));
+    let key = '';
+    t.a.update(() => {
+      const [node, offset] = $locateIn($block([0]), 16);
+      node.select(offset, offset);
+      $setCompositionKey(node.getKey());
+      key = node.getKey();
+    });
+    t.a.update(() => {
+      const node = $getNodeByKey(key) as TextNode;
+      node.setTextContent('alpha beta gammaか');
+      node.select(17, 17);
+    });
+    await t.sync();
+    // Typed into the composed line: held back on the composing client.
+    t.b.update(() => {
+      const [node] = $locateIn($block([0]), 0);
+      (node as TextNode).spliceText(0, 0, 'XY');
+    });
+    await t.sync();
+    const restore = throwOnce(
+      '$refreshComposed',
+      new Error('simulated reader failure'),
+    );
+    try {
+      expect(() =>
+        t.a.update(() => {
+          const node = $getNodeByKey(key) as TextNode;
+          node.setTextContent('alpha beta gamma漢');
+          node.select(17, 17);
+          $setCompositionKey(null);
+        }),
+      ).not.toThrow();
+      await flush();
+      await t.sync();
+    } finally {
+      restore();
+    }
+    expect(t.a.errors).toEqual([]);
+    expect(t.a.warnings).toEqual([
+      'a remote change could not be read: simulated reader failure',
+    ]);
+    expect(t.a.binding.status).toBe('active');
+    expect(t.a.describe()).toBe(t.b.describe());
+    expect(t.a.describe()).toContain('XY');
+  });
+
+  test.each([
+    ['once: read again', 1],
+    ['on every read: kept as shown, read only', Infinity],
+  ])(
+    'a re-read of what a follow-up changed that throws %s',
+    async (_name, times) => {
+      const net = newNet();
+      const a = new Peer(2, net as never);
+      const b = new Peer(1, net as never);
+      a.update(() => $getRoot().clear().append($p('hello')));
+      a.binding.initialize();
+      await flush();
+      const shown = b.describe();
+      // As a follow-up the binding does not write leaves it (see
+      // rereadRefused): the root's container is read again, as the
+      // binding's own work.
+      const binding = b.binding as unknown as {
+        _root: unknown;
+        guard: (fn: () => void) => void;
+        refused: Set<unknown>;
+        rereadRefused: () => void;
+        state: {containers: Map<unknown, unknown>};
+      };
+      binding.refused.add(binding.state.containers.get(binding._root));
+      const proto = Reader.prototype as unknown as {
+        $readFull: (...args: unknown[]) => void;
+      };
+      const {$readFull} = proto;
+      let left = times;
+      proto.$readFull = function (this: unknown, ...args: unknown[]) {
+        if (left-- > 0) {
+          throw new Error('simulated reader failure');
+        }
+        return $readFull.apply(this, args);
+      };
+      try {
+        expect(() =>
+          binding.guard(() => binding.rereadRefused()),
+        ).not.toThrow();
+        await flush();
+      } finally {
+        proto.$readFull = $readFull;
+      }
+      expect(b.errors).toEqual([]);
+      expect(b.describe()).toBe(shown);
+      if (times === 1) {
+        expect(b.warnings).toEqual([
+          'a change could not be read again: simulated reader failure',
+        ]);
+        expect(b.binding.status).toBe('active');
+      } else {
+        expect(b.warnings).toEqual([
+          'the document cannot be read: simulated reader failure',
+        ]);
+        expect(b.binding.status).toBe('readonly');
+      }
+    },
+  );
+
+  test('a thrown value whose text cannot be read', async () => {
+    // Neither String() nor Object.prototype.toString can read it.
+    const unprintable = Object.create(null, {
+      [Symbol.toStringTag]: {
+        get() {
+          throw new Error('no tag');
+        },
+      },
+    });
+    const a = new Peer(2, newNet() as never);
+    a.update(() => $getRoot().clear().append($p('hello')));
+    a.binding.initialize();
+    await flush();
+    const b = new Peer(1, newNet() as never);
+    const restore = throwOnce('$readFull', unprintable);
+    try {
+      expect(() => {
+        Y.applyUpdate(b.doc, Y.encodeStateAsUpdate(a.doc));
+        b.binding.initialize();
+      }).not.toThrow();
+    } finally {
+      restore();
+    }
+    await flush();
+    expect(b.binding.status).toBe('readonly');
+    expect(b.warnings).toEqual([
+      'the document cannot be read: a value that cannot be shown as text',
+    ]);
   });
 });
 

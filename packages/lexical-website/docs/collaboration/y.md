@@ -713,8 +713,18 @@ not merge as a user might expect:
 
 - **Moves.** Moving a block is a delete and a re-insert, so text a
   collaborator types into the moved block at the same time is lost or lands
-  at its old position, and two collaborators moving the same block at once
-  can duplicate it. Lexical operations that move content (turning a
+  at its old position, a collaborator's caret in it stays at that position,
+  and two collaborators moving the same block at once can duplicate it.
+  Undoing the move restores the block as it was before the move: what
+  collaborators typed in it since is lost or, in a moved line, stays where
+  the moved copy was. The moved block is the node Lexical recorded as moved:
+  an existing node passed to `insertBefore`, `insertAfter`, `append` or
+  `splice` in the update (as a block drag does), even one put back where it
+  was. The blocks it passes that Lexical did not record keep what
+  collaborators type in them. Between recorded blocks, and in a reorder that
+  Lexical did not record (an editor state set whole), the binding rewrites
+  as few blocks as it can, the smaller ones on a tie.
+  Lexical operations that move content (turning a
   paragraph into a list inside a container, indenting list items that hold
   blocks) behave the same way, and so does the first edit that restructures
   a list stored in an older shape (a nested list kept as a node inside an
@@ -899,7 +909,10 @@ not merge as a user might expect:
   inside the earlier deleted text after that, where its format changed
   more than once along it, takes the format that text had at its start,
   and so does that text where an undo brings it back after another
-  collaborator's delete there.
+  collaborator's delete there. Two joins at once into the same line both
+  write its type, and Yjs keeps one of them by client id: a heading joined
+  across a quote to the paragraph after it, while a collaborator joins that
+  paragraph into the quote, can become a quote.
 
 ## Changing the layout and migrating
 

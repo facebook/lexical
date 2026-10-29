@@ -1957,11 +1957,17 @@ export class Writer {
         matches.push([di, oi]);
       }
     });
-    // Keep as many blocks in place as possible (a moved unit is deleted and
-    // written again, with any concurrent edit inside it). A list counts as
-    // one block, however many lines it has. Between equal counts, keep what
-    // costs most to rewrite: a block node (its whole subtree is copied, and
-    // what peers write inside it meanwhile dropped) outweighs lines.
+    // Anchors keep their items; every other unit is deleted and written
+    // again, and what peers write in it meanwhile is lost (in a block node)
+    // or stays at its old place. So what this update moved (Lexical's record
+    // of explicit moves, see $movedUnit) is rewritten, not the units it
+    // passed: those keep their order (only a move changes it), so all of them
+    // can stay in place. A moved unit stays too where it is still in order
+    // between them (put back where it was, indented). With no record (an
+    // editor state set whole), and among moved units, the cheaper rewrite
+    // wins: as many blocks as possible stay in place (a list counts as one
+    // block, however many lines it has), then what costs most to rewrite (a
+    // block node, whose whole subtree is copied, outweighs lines).
     const groupSize = new Map<NodeKey, number>();
     for (const d of desired) {
       groupSize.set(d.first, (groupSize.get(d.first) ?? 0) + 1);
@@ -1980,23 +1986,26 @@ export class Writer {
     matches.forEach(([di], k) =>
       weightOf.set(di, big / groupSize.get(desired[di].first)! + costs[k]),
     );
-    // Between choices that keep as many blocks and as much content in place
-    // (an exact tie), what the user moved (Lexical's record of explicit
-    // moves) is the one rewritten, not the block it passed. Otherwise the
-    // cheaper rewrite wins: a long move rewrites the moved block rather than
-    // every block it passed, and in an adjacent swap the smaller block is
-    // re-created (a container being dragged keeps a peer's typing inside
-    // it).
-    const moved = this.plan.moved;
-    if (moved !== null && moved !== undefined && moved.size > 0) {
-      matches.forEach(([di]) => {
-        const d = desired[di];
-        if ((d.key !== null && moved.has(d.key)) || moved.has(d.first)) {
-          weightOf.set(di, weightOf.get(di)! - 0.5);
-        }
-      });
+    const weight = ([di]: [number, number]) => weightOf.get(di)!;
+    const moved = this.plan.moved ?? null;
+    const unmoved: [number, number][] = [];
+    const movedMatches: [number, number][] = [];
+    for (const m of matches) {
+      if (
+        moved !== null &&
+        moved.size > 0 &&
+        $movedUnit(desired[m[0]], container, moved)
+      ) {
+        movedMatches.push(m);
+      } else {
+        unmoved.push(m);
+      }
     }
-    const anchors = longestIncreasing(matches, ([di]) => weightOf.get(di)!);
+    const anchors = addInOrder(
+      longestIncreasing(unmoved, weight),
+      movedMatches,
+      weight,
+    );
     const n = anchors.length;
     // Changed line anchors join a neighbouring gap (the following one first)
     // so that a split or join diffs their characters with it.
@@ -4218,6 +4227,73 @@ function unitCost(d: Desired): number {
     }
   }
   return n;
+}
+
+/**
+ * Whether this update moved desired unit `d` of `container`: Lexical
+ * recorded its node, or an element between it and the container (the list
+ * of a list item, the item holding a nested list), as detached and inserted
+ * again (EditorState#_movedNodes).
+ */
+function $movedUnit(
+  d: Desired,
+  container: ElementNode,
+  moved: ReadonlySet<NodeKey>,
+): boolean {
+  for (
+    let node: LexicalNode | null = d.node;
+    node !== null && !node.is(container);
+    node = node.getParent()
+  ) {
+    if (moved.has(node.getKey())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * `anchors` (pairs whose both indices increase) and the heaviest
+ * subsequence of `pairs` (in order of their first index) that fits in order
+ * between them: each pair added lies, by both indices, in one gap between
+ * two consecutive anchors.
+ */
+function addInOrder(
+  anchors: [number, number][],
+  pairs: [number, number][],
+  weight: (pair: [number, number]) => number,
+): [number, number][] {
+  if (pairs.length === 0) {
+    return anchors;
+  }
+  const fits: [number, number][] = [];
+  let next = 0;
+  for (const pair of pairs) {
+    while (next < anchors.length && anchors[next][0] < pair[0]) {
+      next++;
+    }
+    if (
+      (next === 0 || anchors[next - 1][1] < pair[1]) &&
+      (next === anchors.length || pair[1] < anchors[next][1])
+    ) {
+      fits.push(pair);
+    }
+  }
+  const kept = longestIncreasing(fits, weight);
+  const out: [number, number][] = [];
+  let a = 0;
+  let k = 0;
+  while (a < anchors.length || k < kept.length) {
+    if (
+      k === kept.length ||
+      (a < anchors.length && anchors[a][0] < kept[k][0])
+    ) {
+      out.push(anchors[a++]);
+    } else {
+      out.push(kept[k++]);
+    }
+  }
+  return out;
 }
 
 /**

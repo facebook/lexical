@@ -7,7 +7,12 @@
  */
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
-import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  RootNode,
+} from 'lexical';
 import {describe, expect, test, vi} from 'vitest';
 
 describe('LexicalEditor listeners', () => {
@@ -199,6 +204,32 @@ describe('LexicalEditor listeners', () => {
       unregister();
 
       expect(seen).toEqual(['a', 'b']);
+    });
+
+    test('does not compute document text when no text content listener is registered', () => {
+      using editor = buildRichTextEditor();
+      const spy = vi.spyOn(RootNode.prototype, 'getTextContent');
+
+      editor.update(() => $appendParagraph('a'), {discrete: true});
+      editor.update(() => $appendParagraph('b'), {discrete: true});
+
+      expect(spy).toHaveBeenCalledTimes(0);
+      spy.mockRestore();
+    });
+
+    test('computes document text when a text content listener is registered', () => {
+      using editor = buildRichTextEditor();
+      const spy = vi.spyOn(RootNode.prototype, 'getTextContent');
+      const seen: string[] = [];
+      const unregister = editor.registerTextContentListener(text =>
+        seen.push(text),
+      );
+
+      editor.update(() => $appendParagraph('a'), {discrete: true});
+      expect(seen).toEqual(['a']);
+      expect(spy).toHaveBeenCalled();
+      unregister();
+      spy.mockRestore();
     });
 
     test('an update listener returning a function gets it called as cleanup', () => {

@@ -36,10 +36,10 @@ import {
   createState,
   defineExtension,
   type ElementNode,
-  type TextNode,
+  TextNode,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
-import {expect, test} from 'vitest';
+import {expect, onTestFinished, test, vi} from 'vitest';
 
 import {YBinding, YCollabExtension} from '../..';
 import {$p, expectConverged, flush, freshReader, setup} from '../utils/harness';
@@ -214,11 +214,21 @@ for (const how of [
   }
 }
 
-// splitText takes its offsets as arguments, which are bounded in number: a
-// text node with very many line feeds is split in pieces (R10-B C1: one
-// call with 600,000 offsets threw a RangeError, and the edit was lost).
-test('a text node holding 300,000 line feeds', async () => {
-  const count = 300000;
+// Exercise several batches and enforce a portable argument limit, without
+// constructing 600,000 nodes just to hit V8's native argument limit. The
+// original stress case can still run with TEXT_NEWLINES_COUNT=300000.
+test('splits a text node with more offsets than one call can take', async () => {
+  const count = Number(process.env.TEXT_NEWLINES_COUNT ?? 8193);
+  const splitText = TextNode.prototype.splitText;
+  const split = vi
+    .spyOn(TextNode.prototype, 'splitText')
+    .mockImplementation(function (this: TextNode, ...offsets: number[]) {
+      if (offsets.length > 8192) {
+        throw new RangeError('too many splitText arguments');
+      }
+      return splitText.apply(this, offsets);
+    });
+  onTestFinished(() => split.mockRestore());
   const make = (id: number) => {
     const errors: unknown[] = [];
     const editor = createEditor({
@@ -275,6 +285,7 @@ test('a text node holding 300,000 line feeds', async () => {
   for (const client of [author, peer, fresh]) {
     client.binding.dispose();
   }
+  expect(split.mock.calls.length).toBeGreaterThan(1);
 }, 180000);
 
 // The pieces of a split make the same parts as one split: the first is a

@@ -48,7 +48,7 @@ export function setupEditor(dependencies: AnyLexicalExtensionArgument[]) {
   return {editor, root};
 }
 
-export async function typeText(text: string) {
+export async function typeText(text: string, options?: {delay?: number}) {
   const target = document.activeElement;
   if (!(target instanceof HTMLElement) || !target.isContentEditable) {
     throw new Error('typeText requires a focused editor');
@@ -59,7 +59,11 @@ export async function typeText(text: string) {
   const inputId = Math.random().toString(36).slice(2);
   target.setAttribute('data-lexical-test-input', inputId);
   try {
-    await commands.typeText(text, `[data-lexical-test-input="${inputId}"]`);
+    await commands.typeText(
+      text,
+      `[data-lexical-test-input="${inputId}"]`,
+      options,
+    );
   } finally {
     target.removeAttribute('data-lexical-test-input');
   }

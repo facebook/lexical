@@ -1440,31 +1440,45 @@ function normJson(p: FPeer): string {
 }
 
 function checkPeers(world: World, phase: string) {
-  const [a] = world.peers;
-  const raw = a.json();
-  for (const p of world.peers.slice(1)) {
-    if (p.json() !== raw && normJson(p) === normJson(a)) {
+  // Take one snapshot per peer at this checkpoint. Most checkpoints already
+  // match byte for byte, so only normalize field order and documented limits
+  // when the raw snapshots differ.
+  const snapshots = world.peers.map(peer => ({peer, raw: peer.json()}));
+  const [{peer: a, raw}] = snapshots;
+  if (snapshots.every(snapshot => snapshot.raw === raw)) {
+    return true;
+  }
+  const normalized = snapshots.map(snapshot =>
+    JSON.stringify(stripLimits(JSON.parse(snapshot.raw))),
+  );
+  const [ja] = normalized;
+  for (let i = 1; i < snapshots.length; i++) {
+    const {raw: other} = snapshots[i];
+    const jp = normalized[i];
+    if (other !== raw && jp === ja) {
       const sorted = (x: string) =>
         JSON.stringify(stripLimits(JSON.parse(x), false));
-      if (sorted(raw) === sorted(p.json())) {
+      if (sorted(raw) === sorted(other)) {
         world.fail('nit:json-key-order', `${a.describe()}`);
       } else {
         world.fail(
           'limit:group-textFormat/textStyle',
-          String(jsonDiff(JSON.parse(raw), JSON.parse(p.json()))),
+          String(jsonDiff(JSON.parse(raw), JSON.parse(other))),
         );
       }
     }
   }
-  const ja = normJson(a);
-  for (const p of world.peers.slice(1)) {
-    if (normJson(p) !== ja) {
+  for (let i = 1; i < snapshots.length; i++) {
+    const {peer: p} = snapshots[i];
+    const jp = normalized[i];
+    if (jp !== ja) {
       const sva = a.Y.encodeStateVector(a.doc as never).toString();
       const svp = p.Y.encodeStateVector(p.doc as never).toString();
-      const dk = diffKey(jsonDiff(JSON.parse(ja), JSON.parse(normJson(p))));
+      const difference = jsonDiff(JSON.parse(ja), JSON.parse(jp));
+      const dk = diffKey(difference);
       world.fail(
         `diverge${phase === 'final' ? '' : '-mid'}${sva === svp ? '' : '(yjs-sv-differs)'}:${dk}`,
-        `${jsonDiff(JSON.parse(ja), JSON.parse(normJson(p)))}\n${a.name}: ${a.describe()}\n${p.name}: ${p.describe()}`,
+        `${difference}\n${a.name}: ${a.describe()}\n${p.name}: ${p.describe()}`,
       );
       return false;
     }

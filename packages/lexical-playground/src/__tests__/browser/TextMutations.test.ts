@@ -6,33 +6,36 @@
  *
  */
 
-import {expect} from '@playwright/test';
+import {PlainTextExtension} from '@lexical/plain-text';
+import {RichTextExtension} from '@lexical/rich-text';
+import {describe, expect, onTestFinished, test} from 'vitest';
 
 import {
   assertHTML,
   assertSelection,
-  evaluate,
-  focusEditor,
   html,
-  initialize,
-  sleep,
-  test,
-} from '../utils/index.mjs';
+  setupEditor,
+  typeText,
+} from './utils';
 
-test.describe('Mutations', () => {
-  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  test(`Text mutation observers also manage the selection`, async ({page}) => {
-    await focusEditor(page);
-    await page.keyboard.type('Hello world.');
+describe.each([true, false])('text mutations (rich text: %s)', isRichText => {
+  test(`Text mutation observers also manage the selection`, async () => {
+    const {editor, root} = setupEditor([
+      isRichText ? RichTextExtension : PlainTextExtension,
+    ]);
+    const outside = document.createElement('button');
+    document.body.append(outside);
+    onTestFinished(() => outside.remove());
+    await typeText('Hello world.');
     await assertHTML(
-      page,
+      root,
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello world.</span>
         </p>
       `,
     );
-    await assertSelection(page, {
+    await assertSelection(root, {
       anchorOffset: 12,
       anchorPath: [0, 0, 0],
       focusOffset: 12,
@@ -42,82 +45,78 @@ test.describe('Mutations', () => {
     // otherwise the mutation will be applied to the DOM but not synchronized
     // with the lexical state (see shouldFlushTextMutations in flushMutations).
     // TODO: It might be worth tracking ignored mutations with a timeout to reconcile this edge case
-    await sleep(100);
-    await evaluate(page, () => {
-      const rootElement = document.querySelector('div[contenteditable="true"]');
-      const textNode = rootElement.querySelector('span').firstChild;
+    await new Promise(resolve => setTimeout(resolve, 100));
+    {
+      const rootElement = root;
+      const textNode = rootElement.querySelector('span')!.firstChild as Text;
       textNode.nodeValue = 'Hello.';
-      const domSelection = window.getSelection();
+      const domSelection = window.getSelection()!;
       const range = document.createRange();
       range.setStart(textNode, textNode.nodeValue.length);
       range.setEnd(textNode, textNode.nodeValue.length);
       domSelection.removeAllRanges();
       domSelection.addRange(range);
-    });
+    }
     await assertHTML(
-      page,
+      root,
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello.</span>
         </p>
       `,
     );
-    let editorStateJSON = await evaluate(page, () => {
-      const rootElement = document.querySelector('div[contenteditable="true"]');
-      return rootElement.__lexicalEditor.getEditorState().toJSON();
-    });
-    expect(editorStateJSON).toMatchObject({
-      root: {
-        children: [
-          {children: [{text: 'Hello.', type: 'text'}], type: 'paragraph'},
-        ],
-        type: 'root',
-      },
-    });
-    await assertSelection(page, {
+    await expect
+      .poll(() => editor.getEditorState().toJSON())
+      .toMatchObject({
+        root: {
+          children: [
+            {children: [{text: 'Hello.', type: 'text'}], type: 'paragraph'},
+          ],
+          type: 'root',
+        },
+      });
+    await assertSelection(root, {
       anchorOffset: 6,
       anchorPath: [0, 0, 0],
       focusOffset: 6,
       focusPath: [0, 0, 0],
     });
 
-    await evaluate(page, () => {
-      const rootElement = document.querySelector('div[contenteditable="true"]');
-      const textNode = rootElement.querySelector('span').firstChild;
+    {
+      const rootElement = root;
+      const textNode = rootElement.querySelector('span')!.firstChild as Text;
       textNode.nodeValue = 'Hi!';
-      const domSelection = window.getSelection();
+      const domSelection = window.getSelection()!;
       const range = document.createRange();
-      const uiElement = document.querySelector('i.lock');
+      const uiElement = outside;
       range.setStart(uiElement, 0);
       range.setEnd(uiElement, 0);
       domSelection.removeAllRanges();
       domSelection.addRange(range);
-    });
+    }
 
     await assertHTML(
-      page,
+      root,
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hi!</span>
         </p>
       `,
     );
-    editorStateJSON = await evaluate(page, () => {
-      const rootElement = document.querySelector('div[contenteditable="true"]');
-      return rootElement.__lexicalEditor.getEditorState().toJSON();
-    });
-    expect(editorStateJSON).toMatchObject({
-      root: {
-        children: [
-          {children: [{text: 'Hi!', type: 'text'}], type: 'paragraph'},
-        ],
-        type: 'root',
-      },
-    });
+    await expect
+      .poll(() => editor.getEditorState().toJSON())
+      .toMatchObject({
+        root: {
+          children: [
+            {children: [{text: 'Hi!', type: 'text'}], type: 'paragraph'},
+          ],
+          type: 'root',
+        },
+      });
     // This does "steal" the focus which might be unexpected? The key here
     // is that the lexical selection is modified accordingly (offset clamp)
     // even though the DOM selection was elsewhere at the time of mutation
-    await assertSelection(page, {
+    await assertSelection(root, {
       anchorOffset: 3,
       anchorPath: [0, 0, 0],
       focusOffset: 3,

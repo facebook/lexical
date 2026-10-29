@@ -6,27 +6,21 @@
  *
  */
 
-import {
-  assertHTML,
-  assertSelection,
-  evaluate,
-  focusEditor,
-  html,
-  initialize,
-  test,
-} from '../utils/index.mjs';
+import {PlainTextExtension} from '@lexical/plain-text';
+import {RichTextExtension} from '@lexical/rich-text';
+import {describe, test} from 'vitest';
+import {server} from 'vitest/browser';
 
-test.describe('Extensions', () => {
-  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
+import {assertHTML, assertSelection, html, setupEditor} from './utils';
 
-  test(`ClipboardEvent("paste") + document.execCommand("insertText")`, async ({
-    page,
-    browserName,
-  }) => {
-    await focusEditor(page);
+describe.each([true, false])('extension input (rich text: %s)', isRichText => {
+  test(`ClipboardEvent("paste") + document.execCommand("insertText")`, async () => {
+    const {root} = setupEditor([
+      isRichText ? RichTextExtension : PlainTextExtension,
+    ]);
 
-    await evaluate(page, () => {
-      const editor = document.querySelector('div[contenteditable="true"]');
+    {
+      const editor = root;
       const dataTransfer = new DataTransfer();
       dataTransfer.setData('text/plain', 'foo');
       editor.dispatchEvent(
@@ -37,20 +31,20 @@ test.describe('Extensions', () => {
         }),
       );
       document.execCommand('InsertText', false, 'bar');
-    });
+    }
 
     // Pasting this way doesn't work in FF due to content
     // privacy reasons. So we only look for the execCommand output.
-    if (browserName === 'firefox') {
+    if (server.browser === 'firefox') {
       await assertHTML(
-        page,
+        root,
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">bar</span>
           </p>
         `,
       );
-      await assertSelection(page, {
+      await assertSelection(root, {
         anchorOffset: 3,
         anchorPath: [0, 0, 0],
         focusOffset: 3,
@@ -58,14 +52,14 @@ test.describe('Extensions', () => {
       });
     } else {
       await assertHTML(
-        page,
+        root,
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">foobar</span>
           </p>
         `,
       );
-      await assertSelection(page, {
+      await assertSelection(root, {
         anchorOffset: 6,
         anchorPath: [0, 0, 0],
         focusOffset: 6,

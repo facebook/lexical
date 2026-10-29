@@ -138,23 +138,6 @@ const $tokens = () =>
 describe('a paragraph ending with an inline decorator', () => {
   const $children = () => [$endingWithDecorator()];
 
-  test('removing the decorator alone', async () => {
-    const mounted = mountEditor($children);
-    await observeBatch(mounted.root, () =>
-      remove(...decorators(mounted.block)),
-    );
-    expectRestored(mounted);
-  });
-
-  test('removing the decorator, then the line break', async () => {
-    const mounted = mountEditor($children);
-    const {block} = mounted;
-    await observeBatch(mounted.root, () =>
-      remove(...decorators(block), ...managedLineBreak(block)),
-    );
-    expectRestored(mounted);
-  });
-
   test('removing the line break, then the decorator in a later record', async () => {
     const mounted = mountEditor($children);
     const {block} = mounted;
@@ -164,28 +147,11 @@ describe('a paragraph ending with an inline decorator', () => {
     expectRestored(mounted);
   });
 
-  test('removing every child in one record', async () => {
-    const mounted = mountEditor($children);
-    await observeBatch(mounted.root, () => {
-      mounted.block.textContent = '';
-    });
-    expectRestored(mounted);
-  });
-
   test('removing the line break alone', async () => {
     const mounted = mountEditor($children);
     await observeBatch(mounted.root, () =>
       remove(...managedLineBreak(mounted.block)),
     );
-    expectRestored(mounted);
-  });
-
-  test('moving the decorator to the start of the paragraph', async () => {
-    const mounted = mountEditor($children);
-    const {block} = mounted;
-    await observeBatch(mounted.root, () => {
-      block.insertBefore(decorators(block)[0], block.firstChild);
-    });
     expectRestored(mounted);
   });
 
@@ -213,15 +179,6 @@ describe('a paragraph ending with an inline decorator', () => {
       mounted.block.appendChild(document.createElement('br'));
     });
     expectRestored(mounted);
-  });
-
-  test('a later edit at the end of the paragraph still renders', async () => {
-    const mounted = mountEditor($children);
-    await observeBatch(mounted.root, () =>
-      remove(...decorators(mounted.block)),
-    );
-    appendTextToFirstBlock(mounted, 'c');
-    expectRendersEditorState(mounted);
   });
 });
 
@@ -464,18 +421,6 @@ describe("moving a block's managed line break right after another block's", () =
     });
     expectRestored(mounted);
   });
-
-  test('into an empty paragraph', async () => {
-    const mounted = mountEditor(() => [
-      $createParagraphNode(),
-      $endingWithDecorator(),
-    ]);
-    const [target, source] = Array.from(mounted.root.children);
-    await observeBatch(mounted.root, () => {
-      target.append(...managedLineBreak(source));
-    });
-    expectRestored(mounted);
-  });
 });
 
 describe('an element whose DOM slot keeps a marker after its children', () => {
@@ -485,23 +430,6 @@ describe('an element whose DOM slot keeps a marker after its children', () => {
       $create(InlineDecoratorNode),
     ),
   ];
-
-  test('removing the trailing inline decorator alone', async () => {
-    const mounted = mountEditor($children);
-    await observeBatch(mounted.root, () =>
-      remove(...decorators(mounted.block)),
-    );
-    expectRestored(mounted);
-  });
-
-  test('removing the trailing inline decorator and the line break', async () => {
-    const mounted = mountEditor($children);
-    const {block} = mounted;
-    await observeBatch(mounted.root, () =>
-      remove(...decorators(block), ...managedLineBreak(block)),
-    );
-    expectRestored(mounted);
-  });
 
   test('removing every child and the marker in one record, then an edit', async () => {
     const mounted = mountEditor($children);

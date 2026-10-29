@@ -3224,7 +3224,10 @@ export class YBinding {
    * update the binding makes next (a read) commits alone. Why: an update
    * still pending would be committed with it, and take its tags. Committing
    * one can leave another pending (its listeners queue one): up to 16 are
-   * committed.
+   * committed. A pending state that holds nothing to commit is committed as
+   * it is: an update reuses such a state without committing it, so a read
+   * that changes nothing would leave its tags on it, and the next update
+   * that changes something would commit with them and not be written.
    */
   private commitPending(): void {
     const editor = this._editor;
@@ -3233,7 +3236,11 @@ export class YBinding {
       i < 16 && editor._pendingEditorState !== null && !editor._updating;
       i++
     ) {
+      const pending = editor._pendingEditorState;
       editor.update(() => {}, {discrete: true});
+      if (editor._pendingEditorState === pending) {
+        editor.read(() => {});
+      }
     }
   }
 

@@ -10,13 +10,13 @@ This is on top of the Yjs bindings provided by `@lexical/yjs`.
 
 :::tip
 
-Clone [Lexical GitHub repo](https://github.com/facebook/lexical), run `pnpm i && pnpm run start` and open [`http://localhost:3000/split/?isCollab=true`](http://localhost:3000/split/?isCollab=true) to launch playground in collaborative mode.
+Clone [Lexical GitHub repo](https://github.com/meta/lexical), run `pnpm i && pnpm run start` and open [`http://localhost:3000/split/?isCollab=true`](http://localhost:3000/split/?isCollab=true) to launch playground in collaborative mode.
 
 :::
 
 ## Getting started
 
-This guide is based on [examples/react-rich](https://github.com/facebook/lexical/tree/main/examples/react-rich) example.
+This guide is based on [examples/react-rich](https://github.com/meta/lexical/tree/main/examples/react-rich) example.
 
 **Install minimal set of the required dependencies:**
 ```bash
@@ -144,9 +144,9 @@ shouldBootstrap={true}
 
 ## See it in action
 
-Source code: [examples/react-rich-collab](https://github.com/facebook/lexical/tree/main/examples/react-rich-collab)
+Source code: [examples/react-rich-collab](https://github.com/meta/lexical/tree/main/examples/react-rich-collab)
 
-<iframe width="100%" height="600" src="https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-rich-collab?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"></iframe>
+<iframe width="100%" height="600" src="https://stackblitz.com/github/meta/lexical/tree/main/examples/react-rich-collab?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1&showSidebar=0&devtoolsheight=0&view=preview" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"></iframe>
 
 ## Sharing one Yjs document between editors
 
@@ -225,10 +225,10 @@ recognized.
 
 [Lexical Playground](https://playground.lexical.dev/) features set of the collaboration enabled plugins that integrate with primary document via `useCollaborationContext()` hook. Notable mentions:
 
-- [`CommentPlugin`](https://github.com/facebook/lexical/tree/main/packages/lexical-playground/src/plugins/CommentPlugin) - features use of the separate provider and Yjs room to sync comments.
-- [`ImageComponent`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/nodes/ImageComponent.tsx) - features use of the `LexicalExtensionEditorComposer` for its nested caption editor.
-- [`PollOptionComponent`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/nodes/PollComponent.tsx) - showcases poll implementation using `name` from the collaboration context.
-- [`StickyComponent`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/nodes/StickyComponent.tsx) - features use of the `LexicalExtensionEditorComposer` for its nested editor as well as sticky note position real-time sync.
+- [`CommentPlugin`](https://github.com/meta/lexical/tree/main/packages/lexical-playground/src/plugins/CommentPlugin) - features use of the separate provider and Yjs room to sync comments.
+- [`ImageComponent`](https://github.com/meta/lexical/blob/main/packages/lexical-playground/src/nodes/ImageComponent.tsx) - features use of the `LexicalExtensionEditorComposer` for its nested caption editor.
+- [`PollOptionComponent`](https://github.com/meta/lexical/blob/main/packages/lexical-playground/src/nodes/PollComponent.tsx) - showcases poll implementation using `name` from the collaboration context.
+- [`StickyComponent`](https://github.com/meta/lexical/blob/main/packages/lexical-playground/src/nodes/StickyComponent.tsx) - features use of the `LexicalExtensionEditorComposer` for its nested editor as well as sticky note position real-time sync.
 
 :::note
 

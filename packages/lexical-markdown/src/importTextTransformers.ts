@@ -59,7 +59,7 @@ export function importTextTransformers(
       // or links). A code span must never be partially consumed by a text
       // match, so prefer the code format unless the text match fully wraps it
       // (in which case the code span is part of the match's raw content).
-      // https://github.com/facebook/lexical/issues/8687
+      // https://github.com/meta/lexical/issues/8687
       if (
         foundTextMatch.startIndex <= foundTextFormat.startIndex &&
         foundTextMatch.endIndex >= foundTextFormat.endIndex

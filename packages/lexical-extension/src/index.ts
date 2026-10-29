@@ -8,6 +8,17 @@
 
 export {type AutoFocusConfig, AutoFocusExtension} from './AutoFocusExtension';
 export {
+  $defaultIsIdentifiedBlock,
+  $getBlockById,
+  $getBlockId,
+  $isRootChildBlock,
+  type BlockIdConfig,
+  BlockIdExtension,
+  type BlockIdOutput,
+  blockIdState,
+  generateBlockId,
+} from './BlockIdExtension';
+export {
   type ClearEditorConfig,
   ClearEditorExtension,
   registerClearEditor,
@@ -77,6 +88,11 @@ export {
   NodeSelectionDataSelectedExtension,
 } from './NodeSelectionDataSelectedExtension';
 export {NodeSelectionExtension} from './NodeSelectionExtension';
+export {
+  type NodeStructureConfig,
+  NodeStructureExtension,
+  registerNodeStructure,
+} from './NodeStructureExtension';
 export {
   type NormalizeInlineElementsConfig,
   NormalizeInlineElementsExtension,

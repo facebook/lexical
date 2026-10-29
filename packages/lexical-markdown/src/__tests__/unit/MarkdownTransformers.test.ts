@@ -92,7 +92,7 @@ describe('LINK', () => {
   });
 
   test('LINK is not too greedy if there is a preceding match that was not processed', () => {
-    // https://github.com/facebook/lexical/issues/8129
+    // https://github.com/meta/lexical/issues/8129
     using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
     // Set up initial condition, since we are not typing a character at a time
     // it's not handled by markdown shortcuts in this update
@@ -264,7 +264,7 @@ describe('CODE_SPAN_PRECEDENCE', () => {
 
 describe('WRAPPING_PRESERVES_FORMAT', () => {
   test('**...** around already-bold text preserves bold', () => {
-    // https://github.com/facebook/lexical/issues/8727
+    // https://github.com/meta/lexical/issues/8727
     using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
     editor.update(
       () => {
@@ -290,7 +290,7 @@ describe('WRAPPING_PRESERVES_FORMAT', () => {
   });
 
   test('**...** around mixed-format text formats every wrapped node bold', () => {
-    // https://github.com/facebook/lexical/issues/8727
+    // https://github.com/meta/lexical/issues/8727
     using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
     editor.update(
       () => {

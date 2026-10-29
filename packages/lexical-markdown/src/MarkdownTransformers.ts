@@ -1171,12 +1171,12 @@ function escapeCharacterReferences(value: string): string {
 // A link destination or title is read back through `unescapeText`, so after
 // `escapeCharacterReferences` every match of `syntax`, a global regular
 // expression for the characters its shape treats as syntax, gets a backslash.
-// Neither may hold a line ending either. A destination cannot hold one at all,
-// and a title cannot hold a blank line, but even a single one would split the
-// link across the lines the importer reads one at a time. It goes out as the
-// character reference that `unescapeText` and a CommonMark reader both turn
-// back into the line ending, written after the `&` escape so that one leaves
-// it alone.
+// Neither may hold a line ending either. CommonMark allows none in a
+// destination and no blank line in a title, where two CRs make one as surely
+// as two LFs, and the importer reads one LF-separated line at a time, so even
+// a single LF would split the link. Each goes out as the character reference
+// that `unescapeText` and a CommonMark reader both turn back into the line
+// ending, written after the `&` escape so that one leaves it alone.
 function escapeLinkPart(value: string, syntax: RegExp): string {
   return escapeCharacterReferences(value)
     .replace(syntax, '\\$&')

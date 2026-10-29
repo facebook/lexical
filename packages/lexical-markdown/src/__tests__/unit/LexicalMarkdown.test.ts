@@ -4170,9 +4170,9 @@ describe('link title round trip', () => {
 });
 
 describe('text after a link', () => {
-  // Nothing in the link markup may open a construct that the text after it
-  // closes: a backslash before the title's closing quote must not escape it,
-  // and a backtick must not open a code span, which is read before links are.
+  // The link markup must not open a construct that the text after it closes:
+  // a backslash before the title's closing quote must not escape it, and a
+  // backtick must not open a code span, which is read before links are.
   const AFTER = ' ") `b';
   const CASES: [url: string, title: string | null, md: string][] = [
     ['/uri', 'a\\', '[x](/uri "a\\\\") ") \\`b'],

@@ -1748,6 +1748,7 @@ describe('Markdown', () => {
     // stay separate, which markdown import alone cannot produce.
     const BOLD = TEXT_TYPE_TO_FORMAT.bold;
     const ITALIC = TEXT_TYPE_TO_FORMAT.italic;
+    const STRIKE = TEXT_TYPE_TO_FORMAT.strikethrough;
     const $formatted = (text: string, format: number) =>
       $createTextNode(text).setFormat(format);
 
@@ -1773,6 +1774,25 @@ describe('Markdown', () => {
         '[***a*** ](u)c',
       ],
       [
+        'closes before consecutive formatted spaces',
+        () => [
+          $formatted('a', BOLD),
+          $formatted(' ', BOLD | ITALIC),
+          $formatted(' ', BOLD | STRIKE),
+          $formatted('c', 0),
+        ],
+        '**a**  c',
+      ],
+      [
+        'closes before the trailing space of the text it formats',
+        () => [
+          $formatted('a ', BOLD),
+          $formatted(' ', BOLD | ITALIC),
+          $formatted('c', 0),
+        ],
+        '**a**  c',
+      ],
+      [
         'does not reopen a tag it kept open',
         () => [
           $formatted('a', BOLD),
@@ -1780,6 +1800,16 @@ describe('Markdown', () => {
           $formatted('c', BOLD),
         ],
         '**a c**',
+      ],
+      [
+        'keeps a tag open across consecutive formatted spaces',
+        () => [
+          $formatted('a', BOLD),
+          $formatted(' ', BOLD | ITALIC),
+          $formatted(' ', BOLD | STRIKE),
+          $formatted('c', BOLD),
+        ],
+        '**a  c**',
       ],
     ])('%s', (_name, $nodes, expected) => {
       const editor = createTestEditor();
@@ -3991,6 +4021,31 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
       $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
     );
     expect(result).toBe('  **b**');
+  });
+
+  it('closes a tag left open by the previous node when the slice is cut down to whitespace', () => {
+    const editor = createTestEditor({nodes: [LinkNode]});
+    editor.update(
+      () => {
+        const first = $createTextNode('a');
+        first.toggleFormat('bold');
+        first.toggleFormat('italic');
+        const second = $createTextNode(' b');
+        second.toggleFormat('bold');
+        $getRoot().append($createParagraphNode().append(first, second));
+        $setSelectionFromCaretRange(
+          $getCaretRange(
+            $getTextPointCaret(first, 'next', 0),
+            $getTextPointCaret(second, 'next', 1),
+          ),
+        );
+      },
+      {discrete: true},
+    );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
+    expect(result).toBe('***a*** ');
   });
 });
 

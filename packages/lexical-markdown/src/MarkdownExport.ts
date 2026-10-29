@@ -259,7 +259,7 @@ function $exportChildrenForSelection(
             textNode,
             'clone',
           );
-          return exportTextFormat(
+          return $exportTextFormat(
             textNode,
             slicedNode.getTextContent(),
             textFormatTransformers,
@@ -297,7 +297,7 @@ function $exportChildrenForSelection(
       if (childIncluded) {
         const target = $sliceSelectedTextNodeContent(selection, child, 'clone');
         output.push(
-          exportTextFormat(
+          $exportTextFormat(
             child,
             target.getTextContent(),
             textFormatTransformers,
@@ -427,7 +427,7 @@ function $exportChildren(
             shouldPreserveNewLines,
           ),
         (textNode, textContent) =>
-          exportTextFormat(
+          $exportTextFormat(
             textNode,
             textContent,
             textTransformersIndex,
@@ -447,7 +447,7 @@ function $exportChildren(
       output.push($exportLineBreak(child));
     } else if ($isTextNode(child)) {
       output.push(
-        exportTextFormat(
+        $exportTextFormat(
           child,
           child.getTextContent(),
           textTransformersIndex,
@@ -480,7 +480,7 @@ function $exportLineBreak(node: LineBreakNode): string {
   return $getState(node, hardLineBreakState) + '\n';
 }
 
-function exportTextFormat(
+function $exportTextFormat(
   node: TextNode,
   textContent: string,
   textTransformers: TextFormatTransformer[],
@@ -542,7 +542,6 @@ function exportTextFormat(
   let closingTagsAfter = '';
 
   const prevNode = getTextSibling(node, true);
-  const nextNode = getTextSibling(node, false);
 
   const applied = new Set();
 
@@ -586,7 +585,7 @@ function exportTextFormat(
   // close any tags in the same order they were applied, if necessary
   for (let i = 0; i < unclosedTags.length; i++) {
     const nodeHasFormat = hasFormat(node, unclosedTags[i].format);
-    const nextNodeHasFormat = hasFormat(nextNode, unclosedTags[i].format);
+    const nextNodeHasFormat = $continuesFormat(node, unclosedTags[i].format);
 
     // prevent adding closing tag if next sibling will do it
     if (nodeHasFormat && nextNodeHasFormat) {
@@ -626,7 +625,7 @@ function exportTextFormat(
   // However, it must still output the closing tags: those left open by
   // previous nodes, and those that close here because the next sibling is not
   // formatted (e.g. a link), which would otherwise be dropped from the output.
-  if (isWhitespaceOnly && !node.hasFormat('code')) {
+  if (isWhitespaceOnly) {
     return closingTagsBefore + closingTagsAfter + output;
   }
 
@@ -649,6 +648,22 @@ function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
   }
 
   return null;
+}
+
+/**
+ * Whether `format` carries on past `node` to text that can hold its tag.
+ * Whitespace-only siblings cannot (the tag must close before the space), so
+ * they are looked past while they keep the format.
+ */
+function $continuesFormat(node: TextNode, format: TextFormatType): boolean {
+  let next = getTextSibling(node, false);
+  while (next && next.hasFormat(format)) {
+    if (checkHasFormat(next, format)) {
+      return true;
+    }
+    next = getTextSibling(next, false);
+  }
+  return false;
 }
 
 function hasFormat(

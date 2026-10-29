@@ -1096,10 +1096,12 @@ export function getCodeSpanDelimiter(content: string): {
     ? Math.max(...backtickRuns.map(run => run.length))
     : 0;
   const fence = '`'.repeat(longestRun + 1);
+  // A reader strips one space from each end only when the content is not all
+  // spaces, so content made only of spaces goes out as it is.
   const needsPadding =
     content.length === 0 ||
     content.includes('`') ||
-    (/^\s/.test(content) && /\s$/.test(content));
+    (/^\s/.test(content) && /\s$/.test(content) && /[^ ]/.test(content));
   const padded = needsPadding ? ` ${content} ` : content;
   return {fence, padded};
 }

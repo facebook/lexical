@@ -14,13 +14,16 @@
 // runs after the update the read is nested in, and a read that runs after
 // the binding failed closed. Each case is named after its finding.
 
-import {$getRoot} from 'lexical';
+import * as Y from '@y/y';
+import {$createTextNode, $getRoot} from 'lexical';
 import {afterEach, describe, expect, test, vi} from 'vitest';
 
+import {Reader} from '../../../internal/Read';
 import {
   $block,
   $p,
   $selectIn,
+  flush,
   freshReader,
   type Peer,
   setup,
@@ -121,5 +124,93 @@ describe('N4: a throw committing the updates pending before a read reaches no pr
         }
       });
     }, 'rethrows');
+  });
+});
+
+describe('N5: a recovery nested in an update settles on the rebuild it runs', () => {
+  /** Make every read of the reader throw, until restored. */
+  function failEveryRead(): () => void {
+    const proto = Reader.prototype;
+    const {$apply, $readFull} = proto;
+    proto.$apply = () => {
+      throw new Error('reader failure');
+    };
+    proto.$readFull = () => {
+      throw new Error('reader failure');
+    };
+    return () => {
+      proto.$apply = $apply;
+      proto.$readFull = $readFull;
+    };
+  }
+
+  test.each(['a remote change', 'an undo'] as const)(
+    'N5: %s read inside an app update, whose recovery fails too, fails closed',
+    async entry => {
+      const t = await setup(() => $getRoot().append($p('hello')));
+      let update = new Uint8Array();
+      if (entry === 'a remote change') {
+        t.offline();
+        t.b.update(() => void $block([0]).append($createTextNode(' remote')));
+        update = Y.encodeStateAsUpdate(t.b.doc, Y.encodeStateVector(t.a.doc));
+      } else {
+        t.a.update(() => void $block([0]).append($createTextNode(' local')));
+        expect(t.a.binding.undoManager!.canUndo()).toBe(true);
+      }
+      const shown = t.a.describe();
+      const restore = failEveryRead();
+      try {
+        expect(() =>
+          t.a.editor.update(
+            () => {
+              if (entry === 'a remote change') {
+                Y.applyUpdate(t.a.doc, update);
+              } else {
+                t.a.binding.undo();
+              }
+            },
+            {discrete: true},
+          ),
+        ).not.toThrow();
+        await flush();
+      } finally {
+        restore();
+      }
+      expect(t.a.binding.status).toBe('readonly');
+      expect(t.a.describe()).toBe(shown);
+      expect(t.a.errors).toEqual([]);
+      expect(t.a.warnings).toEqual([
+        'the document cannot be read: reader failure',
+      ]);
+    },
+  );
+
+  test('N5: a remote change read inside an app update, recovered: warned once the rebuild committed', async () => {
+    const t = await setup(() => $getRoot().append($p('hello')));
+    t.offline();
+    t.b.update(() => void $block([0]).append($createTextNode(' remote')));
+    const update = Y.encodeStateAsUpdate(t.b.doc, Y.encodeStateVector(t.a.doc));
+    const proto = Reader.prototype;
+    const {$apply} = proto;
+    proto.$apply = () => {
+      throw new Error('reader failure');
+    };
+    const shownAtWarning: string[] = [];
+    t.a.editor._onWarn = w => {
+      shownAtWarning.push(`${(w as Error).message}: ${t.a.describe()}`);
+    };
+    try {
+      t.a.editor.update(() => Y.applyUpdate(t.a.doc, update), {
+        discrete: true,
+      });
+      await flush();
+    } finally {
+      proto.$apply = $apply;
+    }
+    expect(t.a.binding.status).toBe('active');
+    expect(t.a.describe()).toBe('paragraph("hello remote")');
+    expect(shownAtWarning).toEqual([
+      'a remote change could not be read: reader failure: paragraph("hello remote")',
+    ]);
   });
 });

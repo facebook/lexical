@@ -2025,27 +2025,33 @@ export class YBinding {
    * client converges on) in a fresh update, and the failure is reported.
    * Where the rebuild throws too, the editor's classes cannot read the
    * document: the binding fails closed, back to `shown` (see failClosed).
+   * Either settles once the rebuild has run, which is after the update the
+   * failed read is part of where it is nested in one (see guardedRead): the
+   * warning follows a rebuild that committed, never one only queued.
    */
   private recoverRead(
     error: unknown,
     shown: EditorState,
     reason: YRecoveredReadData['reason'] = 'remote-change',
   ): void {
-    try {
-      this.rebuildFromDocument();
-    } catch (e) {
-      this.failClosed(e, shown);
-      return;
-    }
-    this.warn(
-      RECOVERED_READ_WARNING,
-      `${
-        reason === 'reread'
-          ? 'a change could not be read again'
-          : 'a remote change could not be read'
-      }: ${errorText(error)}`,
-      {error, reason},
-    );
+    this.guardedRead({
+      $read: () => this.$rebuild(),
+      after: () => {
+        this.checkUnknownTypes();
+        this.flushRefresh(true);
+        this.warn(
+          RECOVERED_READ_WARNING,
+          `${
+            reason === 'reread'
+              ? 'a change could not be read again'
+              : 'a remote change could not be read'
+          }: ${errorText(error)}`,
+          {error, reason},
+        );
+      },
+      recover: rebuildError => this.failClosed(rebuildError, shown),
+      tag: REMOTE_TAGS,
+    });
   }
 
   /**
@@ -2156,6 +2162,12 @@ export class YBinding {
       });
     } else {
       editor.setEditorState(shown, {tag: COLLABORATION_TAG});
+      if (editor._updating) {
+        // Set from a commit's $onUpdate callbacks (the recovery of a read
+        // nested in an update, see guardedRead), where nothing commits it:
+        // the update queued here, which runs right after them, does.
+        editor.update(() => {}, {discrete: true});
+      }
     }
   }
 
@@ -2173,24 +2185,6 @@ export class YBinding {
     reader.$readFull(cs, root);
     $setSelection(null);
     this.$quietSelection();
-  }
-
-  /**
-   * Replace the editor's content with a fresh read of the shared root; what
-   * it throws is passed on (see recoverRead).
-   */
-  private rebuildFromDocument(): void {
-    this.guardedRead({
-      $read: () => this.$rebuild(),
-      after: () => {
-        this.checkUnknownTypes();
-        this.flushRefresh(true);
-      },
-      recover: error => {
-        throw error;
-      },
-      tag: REMOTE_TAGS,
-    });
   }
 
   /**

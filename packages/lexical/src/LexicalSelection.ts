@@ -131,6 +131,8 @@ import {
 import {$createTabNode} from './nodes/LexicalTabNode';
 import {
   $isInlineFormattable,
+  $recordDeleted,
+  $recordTextInserted,
   type TextFormatType,
 } from './nodes/LexicalTextNode';
 
@@ -502,6 +504,8 @@ function $insertText(
     const newNode = $createTextNode(text);
     newNode.setFormat(format);
     newNode.setStyle(style);
+    $recordDeleted(anchorNode);
+    $recordTextInserted(newNode);
     anchorNode.replace(newNode);
     newNode.select();
     return;
@@ -552,6 +556,7 @@ function $insertTextAtPoint(
   invariant($isTextNode(anchorNode), 'insertText: anchor is not a text node');
   const offset = selection.anchor.offset;
   const textNode = $createTextNode(text).setFormat(format).setStyle(style);
+  $recordTextInserted(textNode);
   const parent = anchorNode.getParentOrThrow();
   const before = offset === 0;
   const atBoundary = before || offset === anchorNode.getTextContentSize();
@@ -1960,7 +1965,7 @@ export class RangeSelection implements BaseSelection {
       const focus = this.focus;
       // Extend the selection in the model rather than with the native
       // modify('extend'), which would clobber the X11 PRIMARY selection.
-      // See https://github.com/facebook/lexical/issues/8766
+      // See https://github.com/meta/lexical/issues/8766
       $extendSelectionForDeletion(this, isBackward, 'character');
 
       if (!this.isCollapsed()) {
@@ -2489,7 +2494,7 @@ function $shrinkSelectionToRoot(
  * during a user gesture to the PRIMARY selection (the middle-click paste
  * buffer), so a deletion must never pass through a transient non-collapsed
  * DOM selection or every Backspace/Delete overwrites the user's paste
- * buffer (https://github.com/facebook/lexical/issues/8766). A collapsed
+ * buffer (https://github.com/meta/lexical/issues/8766). A collapsed
  * caret never takes PRIMARY ownership, so the DOM caret is moved with the
  * native `modify('move')` to measure where the engine places the unit
  * boundary, and the `[original .. landed]` range is constructed in the

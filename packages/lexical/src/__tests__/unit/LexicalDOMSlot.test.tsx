@@ -843,7 +843,7 @@ describe('ElementDOMSlot integration: a removed trailing decoration', () => {
   );
 });
 
-// Regression coverage for facebook/lexical#8561. A node whose `getDOMSlot`
+// Regression coverage for meta/lexical#8561. A node whose `getDOMSlot`
 // wraps its content (keyed DOM !== slot.element) crashed when the selection
 // layer parked the block cursor: the cursor was inserted into the keyed
 // wrapper, but the reference child it must sit before lives in `slot.element`,

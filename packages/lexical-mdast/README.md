@@ -261,7 +261,7 @@ export const MdastCollapsibleExtension = defineExtension({
 });
 ```
 
-The [mdast-editor dev example](https://github.com/facebook/lexical/tree/main/dev-examples/mdast-editor)
+The [mdast-editor dev example](https://github.com/meta/lexical/tree/main/dev-examples/mdast-editor)
 demonstrates the block path (a `<details><summary>` collapsible with a
 named summary slot), the inline path (`<kbd>` keys), and inline HTML text
 formats (`<u>`, `<mark>`, `<sub>`/`<sup>`, `style="color: …"` spans).

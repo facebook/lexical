@@ -2600,6 +2600,48 @@ describe('N2: a write before an unread remote change reads the document its edit
   });
 });
 
+// N1: a client that splits a line whose marker stores a field no class of
+// it declares cannot tell whether the newer class copies that field to the
+// new line, so the field stays on both lines: one keeps the old marker, and
+// the marker the write makes for the other takes what the old one stored
+// (see $markerBefore). The empty line Enter makes at the end of a line has
+// what the editor shows. A client that composes as it splits stores the
+// same (see the composition regression tests).
+describe('N1: a split by a client that does not own a field of the line', () => {
+  const markers = (p: Peer): Y.Node[] => {
+    const out: Y.Node[] = [];
+    const root = p.doc.get('lexical-y');
+    for (let it = root._start; it !== null; it = it.right) {
+      if (!it.deleted && it.content instanceof Y.ContentType) {
+        out.push(it.content.type as Y.Node);
+      }
+    }
+    return out;
+  };
+  test.each([
+    ['at its start', 0, 2],
+    ['inside it', 3, 2],
+    ['at its end', 6, 1],
+  ])('Enter %s stores the field on %i line(s)', async (_where, at, copies) => {
+    for (const nodes of [V1, V2]) {
+      const r = await room(nodes, () =>
+        $getRoot().append($p('pre'), $p('a line'), $p('post')),
+      );
+      r.author.doc.transact(() => {
+        markers(r.author)[1].setAttr('p:future', 'x');
+      });
+      await flush();
+      r.editor.update(() => $selectIn([1], at).insertParagraph());
+      await flush();
+      expect(r.editor.errors).toEqual([]);
+      expect(
+        markers(r.author).filter(m => m.getAttr('p:future') === 'x'),
+      ).toHaveLength(copies);
+      expect(shape(await freshReader(r.author))).toEqual(shape(r.author));
+    }
+  });
+});
+
 // The data of the warning stays an interface an app can extend.
 export interface AppUnknownNodeTypesData extends YUnknownNodeTypesData {
   readonly requestId: string;

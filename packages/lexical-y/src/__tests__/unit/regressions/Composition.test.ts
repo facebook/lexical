@@ -44,6 +44,7 @@ import {
   $p,
   $selectIn,
   expectConverged,
+  flush,
   type Peer,
   setup,
 } from '../../utils/harness';
@@ -731,5 +732,72 @@ describe('MF-1: a newer client sets a field A does not know on the line A compos
         }
       });
     }
+  }
+});
+
+// N2: a composition step committed and written before a remote change the
+// binding has not read yet (see Unread) is written on the document its
+// editor shows: the alignment a collaborator's change set, which the
+// composition holds back, is not written again as A's own, so the room ends
+// as it does without the step.
+describe('N2: a composition step written before an unread change of the held alignment', () => {
+  const run = async (ids: number[], stepInWindow: boolean) => {
+    const t = await setup(
+      () => $getRoot().append($p('pre'), $p('alpha beta gamma'), $p('omega')),
+      {ids},
+    );
+    const key = compose(t.a, keyOf(t.a, [1]), 6);
+    step(t.a, key, 6, '', 'に');
+    await t.sync();
+    t.b.update(() => $block([1]).setFormat('center'));
+    await t.sync();
+    // B and C align the line at the same time, offline.
+    t.offline();
+    const before = Y.encodeStateVector(t.b.doc);
+    t.b.update(() => $block([1]).setFormat('right'));
+    t.c.update(() => $block([1]).setFormat('justify'));
+    await flush();
+    const change = Y.encodeStateAsUpdate(t.b.doc, before);
+    if (stepInWindow) {
+      // Not committed yet when B's change arrives in this task: it is
+      // committed and written first, and the change is read after it.
+      t.a.editor.update(() => {
+        const node = $getNodeByKey(key) as TextNode;
+        const text = node.getTextContent();
+        node.setTextContent(text.slice(0, 7) + 'ほ' + text.slice(7));
+        node.select(8, 8);
+      });
+    }
+    Y.applyUpdate(t.a.doc, change);
+    await flush();
+    let own = 0;
+    const items = markersOf(t.a)[1]._map;
+    for (let it = items.get('p:format') ?? null; it !== null; it = it.left) {
+      if (it.id.client === t.a.doc.clientID) {
+        own++;
+      }
+    }
+    await t.sync();
+    endComposition(t.a);
+    await t.sync();
+    await expectConverged(t.peers);
+    const formats = t.b.read(() =>
+      $getRoot()
+        .getChildren()
+        .map(n => (n as ElementNode).getFormatType()),
+    );
+    return {formats, own};
+  };
+  for (const ids of [
+    [3, 1, 2],
+    [2, 1, 3],
+    [1, 2, 3],
+  ]) {
+    test(`writes no alignment of its own and ends as without the step (ids ${ids})`, async () => {
+      const withStep = await run(ids, true);
+      const without = await run(ids, false);
+      expect(withStep.own).toBe(0);
+      expect(withStep.formats).toEqual(without.formats);
+    });
   }
 });

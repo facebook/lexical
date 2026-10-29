@@ -458,18 +458,6 @@ export class Writer {
   ) {
     const editor = state.editor;
     this.wrapperFields = type => wrapperFieldsOf(editor, type);
-    // The values a held change set (see Hidden#marker), as stored now: a
-    // remote change applied while this local update waited to be written
-    // is not read yet.
-    const held = state.hidden === null ? null : state.hidden.marker;
-    const end =
-      held === null ? undefined : [...held.ends].find(e => !e.deleted);
-    if (end !== undefined) {
-      const attrs = typeOf(end).getAttrs() as Attrs;
-      for (const k of held!.was.keys()) {
-        held!.now.set(k, attrs[k]);
-      }
-    }
   }
 
   // -------------------------------------------------------------------------

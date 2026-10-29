@@ -59,6 +59,7 @@ import {
   createYDoc,
   isYWarning,
   RECOVERED_READ_WARNING,
+  UNKNOWN_NODE_TYPES_WARNING,
   UNSUPPORTED_EDIT_WARNING,
   UNSUPPORTED_SLOTS_WARNING,
   type YBinding,
@@ -483,7 +484,32 @@ describe.each([false, true])('blockIds %s', blockIds => {
         seen.push(values());
       }
       expect(seen).toEqual(Array.from({length: 6}, () => [1, 2]));
-      expect(edits(a.warnings)).toHaveLength(6);
+      // Warned once while read only.
+      expect(edits(a.warnings)).toEqual([{reason: 'read-only'}]);
+      a.editor.dispose();
+      b.editor.dispose();
+    });
+
+    test('a change to the layout record leaves the client read only, never editable', async () => {
+      const {a, b} = await readOnly();
+      const editable: boolean[] = [];
+      const stop = a.editor.registerEditableListener(value => {
+        editable.push(value);
+      });
+      const unknown = () =>
+        a.warnings
+          .filter(isYWarning)
+          .filter(warning => warning.code === UNKNOWN_NODE_TYPES_WARNING)
+          .length;
+      const warned = unknown();
+      // A peer records a layout version this binding reads: the document
+      // is read again.
+      b.doc.transact(() => b.binding.root.setAttr('lexical-y:1', true));
+      await flush();
+      expect(a.binding.status).toBe('readonly');
+      expect(editable).toEqual([]);
+      expect(unknown()).toBe(warned);
+      stop();
       a.editor.dispose();
       b.editor.dispose();
     });

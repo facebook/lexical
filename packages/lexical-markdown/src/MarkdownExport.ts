@@ -693,15 +693,9 @@ function $continuesTag(
   return result;
 }
 
-/**
- * The text of `node` that the export emits: its selected slice, if any.
- * Only the node of a text point can be cut short, and slicing works out the
- * selection's range, so only those nodes are sliced, keeping export linear.
- */
+/** The text of `node` that the export emits: its selected slice, if any. */
 function $exportedText(node: TextNode, selection: BaseSelection | null) {
-  const key = node.getKey();
-  return selection &&
-    (selection.getStartEndPoints() || []).some(point => point.key === key)
+  return selection
     ? $sliceSelectedTextNodeContent(selection, node, 'clone').getTextContent()
     : node.getTextContent();
 }

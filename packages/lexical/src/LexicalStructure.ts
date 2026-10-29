@@ -519,6 +519,12 @@ class Normalization {
   /** Whether every descendant is visited, not only those in `path`. */
   full = false;
   /**
+   * Whether this is `INTERNAL_$normalizeNodeStructure`'s normalization of
+   * what code changed without transforms, rather than the transform's of an
+   * update (see liftsFromStructure).
+   */
+  explicit = false;
+  /**
    * The roots and shadow roots whose inline children are all wrapped, as
    * core's own shadow root transform wraps them every time it runs (on the
    * root in every update, on a shadow root when it is written).
@@ -941,20 +947,47 @@ function $rebuild(
 }
 
 /**
+ * The holder's hook for a child its declared `children` allow that must
+ * still be lifted out, given what else the holder holds: a list item lifts a
+ * nested list that is not all it holds (see `ListItemNode`). Since the answer
+ * depends on the siblings and not on the child alone, a holder that has the
+ * hook checks all its children whenever it is visited.
+ */
+function liftsFromStructure(
+  holder: ElementNode,
+):
+  | null
+  | ((this: ElementNode, child: LexicalNode, explicit: boolean) => boolean) {
+  const hook = (
+    holder as unknown as {
+      INTERNAL_$liftsFromStructure?: (
+        child: LexicalNode,
+        explicit: boolean,
+      ) => boolean;
+    }
+  ).INTERNAL_$liftsFromStructure;
+  return typeof hook === 'function' ? hook : null;
+}
+
+/**
  * What a holder of inline content does with each child: keeps it, joins it
  * (a plain paragraph, not in an inline element), or lifts it out (any other
- * block). Disallowed inline content with nowhere to go (a misdeclared class)
- * is kept, never dropped.
+ * block, or an allowed child the holder's hook lifts). Disallowed inline
+ * content with nowhere to go (a misdeclared class) is kept, never dropped.
  */
 function inlineRuleKinds(
   holder: ElementNode,
   rule: NodeChildrenConfig,
   children: readonly LexicalNode[],
+  explicit: boolean,
 ): ('keep' | 'join' | 'lift')[] {
   const inlineHolder = holder.isInline();
+  const lifts = liftsFromStructure(holder);
   return children.map(c =>
     allows(rule, c)
-      ? 'keep'
+      ? lifts !== null && lifts.call(holder, c, explicit)
+        ? 'lift'
+        : 'keep'
       : !inlineHolder && isJoinableParagraph(rule, c)
         ? 'join'
         : isInlineChild(c)
@@ -1054,7 +1087,7 @@ function $applyInlineRule(
 ): ElementNode[] {
   const inlineHolder = holder.isInline();
   const children = holder.getChildren();
-  const kinds = inlineRuleKinds(holder, rule, children);
+  const kinds = inlineRuleKinds(holder, rule, children, ctx.explicit);
   if (kinds.every(k => k === 'keep')) {
     return [holder];
   }
@@ -1242,12 +1275,17 @@ const instanceRuleInputsCache = /* @__PURE__ */ new WeakMap<
  * Whether the children of `holder` must all be checked against its rule:
  * the normalization is `full`, or the holder was never visited in its current
  * or committed version, or what its rule depends on (whether it is a root or
- * shadow root, whether it is inline) changed since. Otherwise only the
- * children to visit can break the rule: every other child was allowed by the
- * same rule after the previous pass, and whether a child is allowed depends
- * on the child alone, which writes it when it changes.
+ * shadow root, whether it is inline) changed since, or the holder has a hook
+ * that lifts allowed children (see {@link liftsFromStructure}). Otherwise only
+ * the children to visit can break the rule: every other child was allowed by
+ * the same rule after the previous pass, and whether a child is allowed
+ * depends on the child alone, which writes it when it changes.
  */
 function $checksAllChildren(holder: ElementNode, ctx: Normalization): boolean {
+  if (liftsFromStructure(holder) !== null) {
+    // Whether a child is allowed depends on its siblings too.
+    return true;
+  }
   if (
     $isRootNode(holder) ||
     !hasInstanceRuleInputs(holder.constructor as Klass<LexicalNode>)
@@ -1296,7 +1334,9 @@ function $applyRules(
     return null;
   }
   if (rule === 'inline' || rule.includes('inline')) {
-    return inlineRuleKinds(holder, rule, children).every(k => k === 'keep')
+    return inlineRuleKinds(holder, rule, children, ctx.explicit).every(
+      k => k === 'keep',
+    )
       ? null
       : $applyInlineRule(holder, rule, ctx);
   }
@@ -1607,6 +1647,7 @@ export function INTERNAL_$normalizeNodeStructure(node: LexicalNode): void {
   }
   const ctx = new Normalization();
   ctx.full = true;
+  ctx.explicit = true;
   const parent = node.getParent();
   $normalize(ctx, () => {
     if (parent === null || $isRootOrShadowRoot(node)) {

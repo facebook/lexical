@@ -37,8 +37,10 @@ The numbers are generated content, so they never end up in the editor's text, th
 the wrappers: the default `exportDOM` of a `LineBreakNode` goes through the same `$createDOM` overrides, so the
 extension leaves the `<br>` unwrapped while `RenderContextExport` is set. Exported and copied HTML is the same as without
 the extension, including what other `$createDOM` overrides do to the `<br>`. The highlighters keep writing `data-gutter`
-while the extension is enabled, so hide an existing `attr(data-gutter)` gutter under `[data-lexical-code-line-numbers]`.
-The playground theme (`PlaygroundEditorTheme.css`) has a complete example.
+while the extension is enabled. If a theme draws an `attr(data-gutter)` gutter with the code element's `::before`, which
+now draws line 1's number, override that gutter's `content` and placement (such as a float or full height) under
+`[data-lexical-code-line-numbers]` rather than hiding the pseudo element. The playground theme
+(`PlaygroundEditorTheme.css`) has a complete example.
 
 WebKit does not draw line 1's number, the code element's `::before`, while a right to left block is scrolled sideways.
 The numbers drawn by the wrappers stay. The playground theme has this limitation too.

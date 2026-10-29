@@ -98,8 +98,8 @@ provider.once('sync', () => {
 - The editor stays **read only** until the document's layout record has
   been read. `status` is a signal: `'pending'`, then `'active'`, or
   `'readonly'` when the binding cannot write the document safely (a newer
-  layout, a node type this editor does not register; a
-  [warning](#warnings) says why).
+  layout, a node type this editor does not register, stored content its
+  classes throw on; a [warning](#warnings) says why).
   Register the same node classes on every client.
 - `binding.initialize()`, called after the provider's first sync, writes the
   editor's content into an empty document (an `editor.update()` still
@@ -235,7 +235,7 @@ a short note for developers: render your own text from `code` and `data`.
 | Constant | Reported when | `data` (`reason`: other fields) |
 | -- | -- | -- |
 | `UNSUPPORTED_LAYOUT_WARNING` | The layout is one this version cannot read. Read only. | `'newer'`: `found`; `'malformed'`: `key`, `found`; `'missing'`, `'removed'`; `'legacy-roots'`: `roots`. All: `supported` |
-| `UNKNOWN_NODE_TYPES_WARNING` | The document has node types the editor cannot build. Read only. | `'unregistered'`, `'malformed-slot'`: `types` |
+| `UNKNOWN_NODE_TYPES_WARNING` | The document has node types the editor cannot build: types it does not register, however they are stored (a link class it lacks too), or content its classes throw on. Read only. | `'unregistered'`, `'malformed-slot'`: `types`; `'unreadable'`: `types`, `error` |
 | `STORAGE_MISMATCH_WARNING` | A node type is stored in a way its class cannot be (one warning per type). Read only. | `'declaration-changed'`: `type`, `stored`, `declared`; `'malformed'`: `type`, `key`, `found` |
 | `UNSUPPORTED_SLOTS_WARNING` | Named slots where the document cannot store them. Not written; read only. | `'stored-host'`, `'root'`: `types` |
 | `UNSUPPORTED_CONFIG_WARNING` | `BlockIdExtension` with `repairTransforms: true` (see [Set up an editor](#set-up-an-editor)). Nothing is written; read only. | `'repair-transforms'`: `options` |
@@ -856,6 +856,16 @@ not merge as a user might expect:
   the format: the collaborator's undo brings it back.
 - **Large lists.** A structural edit in a list costs time proportional to
   the list on every client.
+- **Older app versions.** A client keeps the fields, text formats and
+  NodeState it does not know when it edits a node (see
+  [Changing your own node types](#changing-the-layout-and-migrating)), but a
+  block it moves is written anew from what it shows, so the moved block loses
+  them (see Moves). A link it replaces with another link of the same type over
+  the same text keeps the ones of the link it replaced: it cannot tell the
+  new link from the old one edited. A class that writes its own `exportJSON`
+  owns every field of its type, since which ones it writes cannot be known:
+  an older version of it deletes the fields a newer one added. Declare fields
+  in `$config` to keep them.
 - **The caret when a collaborator rewrites its line.** A caret stays after
   the text it was after. When a collaborator replaces the line holding it,
   deleting all the line showed and putting new content at its place in one
@@ -918,9 +928,16 @@ hold one stay readable and editable by layout 1 clients.
   field with a default, or dropping one, works as in
   [Lexical JSON](/docs/serialization/#versioning--breaking-changes): a field
   a room does not have reads as its default, and one your class no longer has
-  is ignored. A change to a class's declared node structure does not apply to
-  rooms that already hold that type (they keep the recorded kind); reseed
-  them to adopt it.
+  is ignored. Clients of both versions can edit a room at once (during a
+  rollout): a client writes only the fields its classes declare in
+  `$config`, so an older client's edit of a node keeps the fields a newer
+  version added, and a field a client knows and clears is deleted (see
+  "Older app versions" in the limits). A value an older class throws on (an
+  `updateFromJSON` that rejects a value the newer version writes) opens the
+  room read only for that client, as a type it does not register does. A
+  change to a class's declared node structure does not apply to rooms that
+  already hold that type (they keep the recorded kind); reseed them to adopt
+  it.
 
 ### Reseeding a room
 

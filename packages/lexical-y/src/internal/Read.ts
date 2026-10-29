@@ -15,8 +15,10 @@ import {
   type Node as YNode,
 } from '@y/y';
 import {
+  $create,
   $createLineBreakNode,
   $createParagraphNode,
+  $createTextNode,
   $getEditor,
   $getNodeByKey,
   $getSelection,
@@ -56,6 +58,7 @@ import {
   type Attrs,
   BLOCK_PREFIX,
   decodeFormatValue,
+  eachOuterLevel,
   FIELD_PREFIX,
   getContainerGroupSpec,
   getGroupSpec,
@@ -63,7 +66,9 @@ import {
   getWrapperSpec,
   GROUP_FIELD_PREFIX,
   GROUP_KEY,
+  groupItemFields,
   type GroupSpec,
+  hasOwn,
   INLINE_PREFIX,
   isUnsafeKey,
   joinSetMembers,
@@ -76,14 +81,21 @@ import {
   MARKER,
   nodeJSONFromAttrs,
   OUTER_KEY,
+  type OwnedFields,
+  ownedFields,
+  ownedFieldsOf,
+  ownsMarkerAttr,
+  ownsNodeAttr,
   SEGMENT_KEY,
   stableStringify,
   STATE_PREFIX,
   storedTypeOf,
   textJSONFromAttrs,
   TYPE_KEY,
+  withoutUnownedMembers,
   WRAPPER_FIELDS_KEY,
   WRAPPER_PREFIX,
+  wrapperFieldsOf,
   wrappersFromAttrs,
   type WrapperValue,
 } from './Schema';
@@ -244,7 +256,12 @@ function parseRange(
 }
 
 export class Reader {
-  private readonly isKnownWrapper: (type: string) => boolean;
+  /**
+   * The fields this editor owns in the value of a format wrapper (see
+   * wrapperFieldsOf), or null where it does not store the type as one. A
+   * type it does not register is an unknown type (see State#unknownTypes).
+   */
+  private readonly wrapperFields: (type: string) => OwnedFields | null;
   /** Item -> unit cache for one read. */
   private located = new Map<Item, Unit | null>();
   /** Formats in effect after the content last read by $pieces. */
@@ -274,11 +291,52 @@ export class Reader {
   readonly settler: BlockIdSettler;
   constructor(readonly state: State) {
     this.settler = new BlockIdSettler(state);
-    const nodes = state.editor._nodes;
-    this.isKnownWrapper = type => {
-      const info = nodes.get(type);
-      return info !== undefined && getWrapperSpec(info.klass) !== null;
+    const editor = state.editor;
+    this.wrapperFields = type => {
+      if (!editor._nodes.has(type)) {
+        state.unknownTypes.add(type);
+      }
+      return wrapperFieldsOf(editor, type);
     };
+  }
+
+  /**
+   * Run `read`, code of the class of stored content of `type` that builds a
+   * node from the stored values (its importJSON). Where it throws, this
+   * editor cannot read that content, as with content of a type it does not
+   * register: the type is noted (see State#unreadable), the binding opens
+   * read only after the read, and `fallback` stands in, so that what is
+   * shown keeps the rest of the document.
+   */
+  private $readStored<T>(type: string, read: () => T, fallback: () => T): T {
+    try {
+      return read();
+    } catch (error) {
+      this.noteUnreadable(type, error);
+      return fallback();
+    }
+  }
+
+  /**
+   * Run `update`, code of `node`'s class that gives it stored values (its
+   * updateFromJSON, a NodeState parse). Where it throws, as in $readStored,
+   * and `node` keeps what it held before: what the class changed before it
+   * threw is undone.
+   */
+  private $updateStored(node: LexicalNode, update: () => void): void {
+    const was = {...node.getLatest()} as Record<string, unknown>;
+    try {
+      update();
+    } catch (error) {
+      this.noteUnreadable(node.getType(), error);
+      $restoreNode(node, was);
+    }
+  }
+
+  private noteUnreadable(type: string, error: unknown): void {
+    if (!this.state.unreadable.has(type)) {
+      this.state.unreadable.set(type, error);
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -1080,9 +1138,16 @@ export class Reader {
     }
     const spec = ginfo === undefined ? null : getGroupSpec(ginfo.klass);
     if (spec !== null && spec.items.includes(info.klass)) {
+      // What this editor's classes read: the group fields it owns (see
+      // ownsMarkerAttr), as its writes give them.
+      const lineFields = ownedFieldsOf(info.klass, false);
+      const groupFields = ownedFieldsOf(spec.klass, false);
       const gkey: Attrs = {};
       for (const k in attrs) {
-        if (k.startsWith(GROUP_FIELD_PREFIX)) {
+        if (
+          k.startsWith(GROUP_FIELD_PREFIX) &&
+          ownsMarkerAttr(k, lineFields, groupFields)
+        ) {
           gkey[k] = attrs[k];
         }
       }
@@ -1104,7 +1169,13 @@ export class Reader {
         Array.isArray(o) &&
         o.length === level &&
         o.every(v => v !== null && typeof v === 'object' && !Array.isArray(v))
-          ? (o as Attrs[])
+          ? eachOuterLevel(
+              o as Attrs[],
+              null,
+              groupFields,
+              groupItemFields(spec),
+              (value, _stored, owns) => withoutUnownedMembers(value, owns),
+            )
           : null;
       return {gkey, gtype: g as string, level, outer, spec};
     }
@@ -1602,12 +1673,18 @@ export class Reader {
           level,
         );
         if (wrapper === undefined) {
-          wrapper = $parseSerializedNode({
-            ...clean,
-            children: [],
-            type: spec.items[0].getType(),
-            version: 1,
-          } as unknown as SerializedLexicalNode) as ElementNode;
+          const type = spec.items[0].getType();
+          wrapper = this.$readStored(
+            type,
+            () =>
+              $parseSerializedNode({
+                ...clean,
+                children: [],
+                type,
+                version: 1,
+              } as unknown as SerializedLexicalNode) as ElementNode,
+            () => $storedDefault(type) as ElementNode,
+          );
           $setTextFields(wrapper, clean);
         } else if (
           stableStringify($levelItemFields(wrapper, spec)) !==
@@ -1620,9 +1697,13 @@ export class Reader {
           Object.assign(json, clean);
           json.$ = clean.$ || {};
           json.type = wrapper.getType();
-          wrapper = wrapper.updateFromJSON(
-            json as Parameters<ElementNode['updateFromJSON']>[0],
-          );
+          const node = wrapper;
+          this.$updateStored(node, () => {
+            node.updateFromJSON(
+              json as Parameters<ElementNode['updateFromJSON']>[0],
+            );
+          });
+          wrapper = node.getLatest();
         }
         $setTextFields(wrapper, clean);
         $detachFromKids(wrapper, [g]);
@@ -1682,20 +1763,28 @@ export class Reader {
         Object.assign(json, fields);
         json.$ = fields.$ || {};
         json.type = reused.getType();
-        reused.updateFromJSON(
-          json as Parameters<ElementNode['updateFromJSON']>[0],
-        );
+        const group = reused;
+        this.$updateStored(group, () => {
+          group.updateFromJSON(
+            json as Parameters<ElementNode['updateFromJSON']>[0],
+          );
+        });
         $setTextFields(reused, fields);
       }
       this.state.ids.noteStoredId(reused.getKey(), storedId);
       return reused.getLatest();
     }
-    const created = $parseSerializedNode({
-      children: [],
-      type: item.gtype,
-      version: 1,
-      ...fields,
-    } as unknown as SerializedLexicalNode) as ElementNode;
+    const created = this.$readStored(
+      item.gtype,
+      () =>
+        $parseSerializedNode({
+          children: [],
+          type: item.gtype,
+          version: 1,
+          ...fields,
+        } as unknown as SerializedLexicalNode) as ElementNode,
+      () => $storedDefault(item.gtype) as ElementNode,
+    );
     $setTextFields(created, fields);
     this.state.ids.noteStoredId(created.getKey(), storedId);
     return created;
@@ -1719,9 +1808,22 @@ export class Reader {
       return existing.getLatest();
     }
     const json = lineJSON(attrs, derived, type as string);
-    return $parseSerializedNode(
-      json as unknown as SerializedLexicalNode,
-    ) as ElementNode;
+    return this.$readStored(
+      type as string,
+      () =>
+        $parseSerializedNode(
+          json as unknown as SerializedLexicalNode,
+        ) as ElementNode,
+      // As a line of a type it does not register.
+      () =>
+        $parseSerializedNode(
+          lineJSON(
+            {[TYPE_KEY]: 'paragraph'},
+            derived,
+            'paragraph',
+          ) as unknown as SerializedLexicalNode,
+        ) as ElementNode,
+    );
   }
 
   /**
@@ -1784,10 +1886,14 @@ export class Reader {
       json.textStyle = '';
     }
     json.type = node.getType();
-    const writable = node.updateFromJSON(
-      json as Parameters<ElementNode['updateFromJSON']>[0],
+    this.$updateStored(node, () =>
+      $setStateInOrder(
+        node.updateFromJSON(
+          json as Parameters<ElementNode['updateFromJSON']>[0],
+        ),
+        state,
+      ),
     );
-    $setStateInOrder(writable, state);
   }
 
   private $applyNodeAttrs(node: LexicalNode, y: YNode, placed = true): void {
@@ -1809,14 +1915,20 @@ export class Reader {
       y.getAttrs() as Attrs,
       placed,
     );
-    // Compare in the stored encoding (compact, textFormat always kept). A
-    // value holding an array hole is stored as null, which the class parses
-    // its own way (colWidths: 0): applied, so the node shows what every
-    // reader shows.
+    // Compare in the stored encoding (compact, textFormat always kept), what
+    // this editor owns of it (see ownsNodeAttr). A value holding an array
+    // hole is stored as null, which the class parses its own way (colWidths:
+    // 0): applied, so the node shows what every reader shows.
+    const fields = ownedFields(
+      this.state.editor,
+      node.getType(),
+      node.getType(),
+      true,
+    );
     const owned = (x: Attrs) => {
       const out: Attrs = {};
       for (const k of Object.keys(x).sort()) {
-        if (k.startsWith(FIELD_PREFIX) || k.startsWith(STATE_PREFIX)) {
+        if (ownsNodeAttr(k, fields)) {
           out[k] = x[k];
         }
       }
@@ -1827,7 +1939,7 @@ export class Reader {
       owned($nodeAttrs(node, holes, false)) !== owned(attrs) ||
       holes.length > 0;
     if (differs) {
-      $applyStoredAttrs(node, attrs);
+      this.$updateStored(node, () => $applyStoredAttrs(node, attrs));
       if (
         $isElementNode(node) &&
         getGroupSpec(klassOf(node.getLatest())) !== null
@@ -1855,7 +1967,14 @@ export class Reader {
     if ($isElementNode(node)) {
       json.children = [];
     }
-    const next = $parseSerializedNode(json as unknown as SerializedLexicalNode);
+    const next = this.$readStored(
+      type,
+      () => $parseSerializedNode(json as unknown as SerializedLexicalNode),
+      () => null,
+    );
+    if (next === null) {
+      return;
+    }
     if ($isElementNode(node) && $isElementNode(next)) {
       $appendAll(next, node.getChildren());
     }
@@ -1913,7 +2032,11 @@ export class Reader {
     if (isElement) {
       json.children = [];
     }
-    const node = $parseSerializedNode(json as unknown as SerializedLexicalNode);
+    const node = this.$readStored(
+      type,
+      () => $parseSerializedNode(json as unknown as SerializedLexicalNode),
+      () => $storedDefault(type),
+    );
     this.state.mapNode(node.getKey(), y);
     // It shows the id it stores: in the index of who stores what.
     this.state.ids.noteStoredId(
@@ -1953,7 +2076,7 @@ export class Reader {
           }
         });
         tsig = stableStringify(tattrs);
-        wrappers = wrappersFromAttrs(all, this.isKnownWrapper);
+        wrappers = wrappersFromAttrs(all, this.wrapperFields);
       }
     };
     for (let it = start; it !== null && it !== stop; it = it.right) {
@@ -2239,16 +2362,26 @@ export class Reader {
             node.getWritable().__state = undefined;
           }
           if (foreign || currentSig !== piece.tsig) {
-            node = $applyJSON(node, json);
+            const text = node;
+            this.$updateStored(text, () => {
+              $applyJSON(text, json);
+            });
+            node = text.getLatest();
           }
           if (node.getTextContent() !== piece.text) {
             node = node.setTextContent(piece.text);
           }
           $clampPointsIn(node);
         } else {
-          node = $parseSerializedNode(
-            json as unknown as SerializedLexicalNode,
-          ) as TextNode;
+          node = this.$readStored(
+            json.type as string,
+            () =>
+              $parseSerializedNode(
+                json as unknown as SerializedLexicalNode,
+              ) as TextNode,
+            // As text of a type it does not register.
+            () => $createTextNode(piece.text),
+          );
           if (segment !== null) {
             state.setSegment(node.getKey(), segment);
           }
@@ -2264,11 +2397,14 @@ export class Reader {
         ) {
           br = br.getWritable();
           const info = state.editor._nodes.get(br.getType());
-          $getWritableNodeState(br).updateFromJSON(
-            joinSetMembers(
-              brState,
-              info && info.sharedNodeState.sharedConfigMap,
-              info && learnedSetKeys(info.sharedNodeState),
+          const writable = br;
+          this.$updateStored(writable, () =>
+            $getWritableNodeState(writable).updateFromJSON(
+              joinSetMembers(
+                brState,
+                info && info.sharedNodeState.sharedConfigMap,
+                info && learnedSetKeys(info.sharedNodeState),
+              ),
             ),
           );
         }
@@ -2341,7 +2477,7 @@ export class Reader {
     if (reused !== undefined) {
       const own: Attrs = {};
       $wrapperAttrs(reused, own);
-      const current = wrappersFromAttrs(own, () => true)[0];
+      const current = wrappersFromAttrs(own, this.wrapperFields)[0];
       if (
         current === undefined ||
         stableStringify(current.json) !== stableStringify(w.json)
@@ -2354,19 +2490,26 @@ export class Reader {
         delete json.textFormat;
         delete json.textStyle;
         Object.assign(json, w.json);
-        const writable = reused.updateFromJSON(
-          json as Parameters<ElementNode['updateFromJSON']>[0],
-        );
-        $setTextFields(writable, w.json);
-        $setStateInOrder(writable, (w.json.$ as Attrs) || {});
-        return writable;
+        this.$updateStored(reused, () => {
+          const writable = reused.updateFromJSON(
+            json as Parameters<ElementNode['updateFromJSON']>[0],
+          );
+          $setTextFields(writable, w.json);
+          $setStateInOrder(writable, (w.json.$ as Attrs) || {});
+        });
+        return reused.getLatest();
       }
       return reused;
     }
-    return $parseSerializedNode({
-      ...w.json,
-      children: [],
-    } as unknown as SerializedLexicalNode) as ElementNode;
+    return this.$readStored(
+      w.type,
+      () =>
+        $parseSerializedNode({
+          ...w.json,
+          children: [],
+        } as unknown as SerializedLexicalNode) as ElementNode,
+      () => $storedDefault(w.type) as ElementNode,
+    );
   }
 
   /** Make `el`'s children exactly `children`, keeping unchanged ends. */
@@ -2450,6 +2593,43 @@ type GroupItemInfo = {
   outer: Attrs[] | null;
   spec: GroupSpec;
 };
+
+/**
+ * A new node of `type`'s class, as its constructor makes it: what a read
+ * shows for stored content of `type` that its class throws on (see
+ * Reader#$readStored). Not through the class's importJSON, which may reject
+ * the values a node it exports always has.
+ */
+function $storedDefault(type: string): LexicalNode {
+  const info = $getEditor()._nodes.get(type);
+  if (info === undefined) {
+    throw new Error(`@lexical/y: no node class of type ${type}`);
+  }
+  return $create(info.klass);
+}
+
+/**
+ * Give `node` back the own properties `was` held (see Reader#$updateStored):
+ * what its class changed before it threw is undone. Nothing is written where
+ * it changed nothing.
+ */
+function $restoreNode(node: LexicalNode, was: Record<string, unknown>): void {
+  const latest = node.getLatest() as unknown as Record<string, unknown>;
+  const keys = Object.keys(latest);
+  if (
+    keys.length === Object.keys(was).length &&
+    keys.every(k => hasOwn(was, k) && latest[k] === was[k])
+  ) {
+    return;
+  }
+  const writable = node.getWritable() as unknown as Record<string, unknown>;
+  for (const k of Object.keys(writable)) {
+    if (!hasOwn(was, k)) {
+      delete writable[k];
+    }
+  }
+  Object.assign(writable, was);
+}
 
 /**
  * Give a stored node the attributes `attrs` (see nodeJSONFromAttrs), as a

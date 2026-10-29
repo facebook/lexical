@@ -124,6 +124,7 @@ import {
   UNSUPPORTED_CONFIG_WARNING,
   UNSUPPORTED_LAYOUT_WARNING,
   UNSUPPORTED_SLOTS_WARNING,
+  type YRecoveredReadData,
   type YStorageMismatchData,
   type YWarningCode,
   type YWarningData,
@@ -161,6 +162,34 @@ const REMOTE_TAGS = [
   HISTORY_MERGE_TAG,
   DEFER_COMPOSITION_MERGE_TAG,
 ];
+/** A failure caught where any value may be thrown, `null` and `undefined` too. */
+type Failure = {readonly error: unknown} | null;
+
+/** A read of the shared document into the editor (see YBinding#guardedRead). */
+type GuardedRead = {
+  /** The read, inside the update. */
+  readonly $read: () => void;
+  /**
+   * Where a throw goes, of the read or of committing it, with what the
+   * editor showed before the read: recoverRead, which reads the whole
+   * document again, or failClosed for a read of the whole document.
+   */
+  readonly recover: (error: unknown, shown: EditorState) => void;
+  /** Runs once the read has committed and nothing threw. */
+  readonly after?: () => void;
+  /** The update's tags. */
+  readonly tag?: string | string[];
+};
+
+/** `error`'s text for a warning; never throws, whatever value was thrown. */
+function errorText(error: unknown): string {
+  try {
+    return String(error instanceof Error ? error.message : error);
+  } catch {
+    return 'a value that cannot be shown as text';
+  }
+}
+
 /** The binding's refresh of derived group fields (see flushRefresh). */
 const REFRESH_TAG = 'lexical-y-refresh';
 /** The author's normalization of its own update (see normalizeUntransformed). */
@@ -590,6 +619,11 @@ export class YBinding {
   private readonly pendingWarnings: LexicalWarning[] = [];
   /** Depth of the binding's own work in progress (see guard). */
   private busy = 0;
+  /**
+   * Whether the editor's classes cannot read the document (see failClosed):
+   * the binding is read only, and reads nothing more.
+   */
+  private unreadable = false;
   private flushingWarnings = false;
   private readonly afterAllTransactions = (): void => this.flushWarnings();
 
@@ -1360,33 +1394,22 @@ export class YBinding {
 
   private rereadContainers(list: CS[], extraTags: string[] = []): void {
     this.commitPending();
-    let error: unknown = null;
-    this._editor.update(
-      () => {
-        try {
-          const cursor = this.$cursorBeforeRead();
-          const reader = new Reader(this.state);
-          for (const cs of list) {
-            const el = cs.y === this._root ? $getRoot() : $getNodeByKey(cs.key);
-            if ($isElementNode(el) && el.isAttached()) {
-              reader.$readFull(cs, el);
-            }
+    this.guardedRead({
+      $read: () => {
+        const cursor = this.$cursorBeforeRead();
+        const reader = new Reader(this.state);
+        for (const cs of list) {
+          const el = cs.y === this._root ? $getRoot() : $getNodeByKey(cs.key);
+          if ($isElementNode(el) && el.isAttached()) {
+            reader.$readFull(cs, el);
           }
-          this.$selectionAfterRead(cursor);
-          this.$quietSelection();
-        } catch (e) {
-          error = e;
         }
+        this.$selectionAfterRead(cursor);
+        this.$quietSelection();
       },
-      {
-        discrete: true,
-        skipTransforms: true,
-        tag: [...REMOTE_TAGS, ...extraTags],
-      },
-    );
-    if (error !== null) {
-      this.recoverRead(error);
-    }
+      recover: (error, shown) => this.recoverRead(error, shown),
+      tag: [...REMOTE_TAGS, ...extraTags],
+    });
   }
 
   /**
@@ -1423,8 +1446,25 @@ export class YBinding {
     return true;
   }
 
-  /** Fail closed when a read found node types this editor lacks. */
+  /**
+   * Fail closed when a read found node types this editor lacks, or stored
+   * content its classes throw on (see Reader#$readStored).
+   */
   private checkUnknownTypes(): void {
+    const unreadable = this.state.unreadable;
+    if (unreadable.size > 0 && this._status === 'active') {
+      const types = [...unreadable.keys()].sort();
+      this.warn(
+        UNKNOWN_NODE_TYPES_WARNING,
+        `stored content the editor's classes cannot read: ${types.join(', ')}`,
+        {
+          error: unreadable.get(types[0]),
+          reason: 'unreadable',
+          types,
+        },
+      );
+      this.setStatus('readonly');
+    }
     const unknown = this.state.unknownTypes;
     if (unknown.size > 0 && this._status === 'active') {
       const slots = this.state.malformedSlots;
@@ -1569,48 +1609,54 @@ export class YBinding {
     kept: SelectionState | null = null,
     deep = false,
   ): void {
-    this._editor.update(
-      () => {
-        const reader = new Reader(this.state);
-        let cs = this.state.containers.get(this._root);
-        if (cs === undefined) {
-          cs = this.state.newCS(this._root, 'root', 'b');
-        }
-        reader.$readFull(cs, $getRoot());
-        if (deep) {
-          // The containers of the stored nodes the read kept (see
-          // initializeInner).
-          for (const inner of [...this.state.csByKey.values()]) {
-            const el = $getNodeByKey(inner.key);
-            if (
-              inner !== cs &&
-              this.state.csByKey.get(inner.key) === inner &&
-              $isElementNode(el) &&
-              el.isAttached()
-            ) {
-              reader.$readFull(inner, el);
-            }
-          }
-        }
-        $setSelection(null);
-        if (cursor !== null) {
-          this.$restoreSelection(cursor);
-        }
-        if (kept !== null) {
-          $restoreSelectionState(this.state, kept, json =>
-            this.$resolvePosition(json),
-          );
-        }
-        this.$quietSelection();
+    this.guardedRead({
+      $read: () => this.$readAllInner(cursor, kept, deep),
+      after: () => {
+        this.checkUnknownTypes();
+        this.flushRefresh(true);
       },
-      {
-        discrete: true,
-        skipTransforms: true,
-        tag: REMOTE_TAGS,
-      },
-    );
-    this.checkUnknownTypes();
-    this.flushRefresh(true);
+      // The whole document: read again, it would throw again.
+      recover: (error, shown) => this.failClosed(error, shown),
+      tag: REMOTE_TAGS,
+    });
+  }
+
+  private $readAllInner(
+    cursor: YCursor | null,
+    kept: SelectionState | null,
+    deep: boolean,
+  ): void {
+    const reader = new Reader(this.state);
+    let cs = this.state.containers.get(this._root);
+    if (cs === undefined) {
+      cs = this.state.newCS(this._root, 'root', 'b');
+    }
+    reader.$readFull(cs, $getRoot());
+    if (deep) {
+      // The containers of the stored nodes the read kept (see
+      // initializeInner).
+      for (const inner of [...this.state.csByKey.values()]) {
+        const el = $getNodeByKey(inner.key);
+        if (
+          inner !== cs &&
+          this.state.csByKey.get(inner.key) === inner &&
+          $isElementNode(el) &&
+          el.isAttached()
+        ) {
+          reader.$readFull(inner, el);
+        }
+      }
+    }
+    $setSelection(null);
+    if (cursor !== null) {
+      this.$restoreSelection(cursor);
+    }
+    if (kept !== null) {
+      $restoreSelectionState(this.state, kept, json =>
+        this.$resolvePosition(json),
+      );
+    }
+    this.$quietSelection();
   }
 
   // -------------------------------------------------------------------------
@@ -1626,6 +1672,9 @@ export class YBinding {
       return;
     }
     this.remoteSeq++;
+    if (this.unreadable) {
+      return;
+    }
     if (this._status === 'pending') {
       if (recordedLayout(this._root) !== null) {
         this.evaluate();
@@ -1706,62 +1755,34 @@ export class YBinding {
       cursor = this.stepCursor ?? cursor;
     }
     let rebuilt: ReadonlySet<CS> = new Set();
-    let readError: unknown = null;
     // A re-read of a naming update's change is tagged as that update (see
     // rereadRefused).
     const naming = this.refused.size > 0 && this.refusedNaming;
-    const after = () => {
-      if (readError !== null) {
-        this.recoverRead(readError);
-        return;
-      }
-      this.checkUnknownTypes();
-      this.checkRead(rebuilt);
-      this.flushRefresh(true);
-      // Invariant: the binding's own pending updates run once the editor
-      // shows the remote change, never before. Why: a write before that would
-      // take what the editor does not show yet for deleted.
-      this.runPending();
-    };
-    // Applied while the editor is updating (an undo the binding runs in an
-    // update of its own, see undo): the read is part of that update, and
-    // what follows it waits for its commit.
-    const nested = this._editor._updating;
-    this._editor.update(
-      () => {
-        try {
-          this.$readRemote(
-            state,
-            childItems,
-            attrKeys,
-            cursor,
-            !undoing,
-            r => {
-              rebuilt = r;
-            },
-            tr,
-          );
-        } catch (e) {
-          readError = e;
-          // The editor is rebuilt from the document right after (see
-          // recoverRead): a selection the failed read left on a removed
-          // node must not fail this update's commit too, which would drop
-          // an undo or redo the read was part of.
-          $setSelection(null);
-        }
-        if (nested) {
-          $onUpdate(() => this.guard(() => withPins(this._pins, after)));
-        }
+    this.guardedRead({
+      $read: () =>
+        this.$readRemote(
+          state,
+          childItems,
+          attrKeys,
+          cursor,
+          !undoing,
+          r => {
+            rebuilt = r;
+          },
+          tr,
+        ),
+      after: () => {
+        this.checkUnknownTypes();
+        this.checkRead(rebuilt);
+        this.flushRefresh(true);
+        // Invariant: the binding's own pending updates run once the editor
+        // shows the remote change, never before. Why: a write before that
+        // would take what the editor does not show yet for deleted.
+        this.runPending();
       },
-      {
-        discrete: true,
-        skipTransforms: true,
-        tag: naming ? [...REMOTE_TAGS, BLOCK_ID_REPAIR_TAG] : REMOTE_TAGS,
-      },
-    );
-    if (!nested) {
-      after();
-    }
+      recover: (error, shown) => this.recoverRead(error, shown),
+      tag: naming ? [...REMOTE_TAGS, BLOCK_ID_REPAIR_TAG] : REMOTE_TAGS,
+    });
   }
 
   private $readRemote(
@@ -1842,19 +1863,128 @@ export class YBinding {
    * showing something else than the document for good: the editor is
    * rebuilt from the shared content (a fresh reader's result, which every
    * client converges on) in a fresh update, and the failure is reported.
+   * Where the rebuild throws too, the editor's classes cannot read the
+   * document: the binding fails closed, back to `shown` (see failClosed).
    */
-  private recoverRead(error: unknown): void {
-    this.warn(
-      RECOVERED_READ_WARNING,
-      `a remote change could not be read: ${String(
-        error instanceof Error ? error.message : error,
-      )}`,
-      {error, reason: 'remote-change'},
-    );
+  private recoverRead(
+    error: unknown,
+    shown: EditorState,
+    reason: YRecoveredReadData['reason'] = 'remote-change',
+  ): void {
     try {
       this.rebuildFromDocument();
     } catch (e) {
-      this._editor._onError(e instanceof Error ? e : new Error(String(e)));
+      this.failClosed(e, shown);
+      return;
+    }
+    this.warn(
+      RECOVERED_READ_WARNING,
+      `${
+        reason === 'reread'
+          ? 'a change could not be read again'
+          : 'a remote change could not be read'
+      }: ${errorText(error)}`,
+      {error, reason},
+    );
+  }
+
+  /**
+   * Read the shared document into the editor: `read.$read`, in an update.
+   * The one entry point for every read of the binding: a read that does not
+   * go through it can neither recover nor fail closed.
+   *
+   * - Nothing is read once the binding failed closed (see failClosed).
+   * - A throw, of the read or of committing it, never reaches Yjs, a
+   *   provider or `initialize()`: it goes to `read.recover`, with what the
+   *   editor showed before the read.
+   * - `read.after` runs once the read has committed and nothing threw: after
+   *   the update the read is part of, where it is nested in one (an undo the
+   *   binding runs in an update of its own, see undo).
+   *
+   * What the read shows is its caller's to set up: a release of a hold
+   * clears the hold first (see flushHidden), so that the read shows what it
+   * held, and a recovery reads the whole document again.
+   */
+  private guardedRead(read: GuardedRead): void {
+    if (this.unreadable) {
+      return;
+    }
+    const editor = this._editor;
+    const nested = editor._updating;
+    const shown = editor.getEditorState();
+    let failure = null as Failure;
+    const settle = () => {
+      if (failure !== null) {
+        read.recover(failure.error, shown);
+      } else if (read.after !== undefined) {
+        read.after();
+      }
+    };
+    try {
+      editor.update(
+        () => {
+          try {
+            read.$read();
+          } catch (error) {
+            failure = {error};
+            // It is recovered from right after (see read.recover): a
+            // selection the failed read left on a removed node must not fail
+            // this update's commit too, which would drop an undo or redo the
+            // read is part of.
+            $setSelection(null);
+          }
+          if (nested) {
+            $onUpdate(() => this.guard(() => withPins(this._pins, settle)));
+          }
+        },
+        {discrete: true, skipTransforms: true, tag: read.tag},
+      );
+    } catch (error) {
+      if (nested) {
+        // The update the read is part of threw: not the read's to recover.
+        throw error;
+      }
+      // Thrown committing what was read.
+      failure = {error};
+    }
+    if (!nested) {
+      settle();
+    }
+  }
+
+  /**
+   * Fail closed where the document cannot be read (a read threw and so did
+   * a fresh read of the document after it, or a read of the whole document
+   * did; a class that throws on stored content does not, see
+   * Reader#$readStored): warn (UNKNOWN_NODE_TYPES_WARNING, reason
+   * `'unreadable'`), open read only, and show `shown` again, what the editor
+   * showed before. The binding reads nothing more from then on, so the
+   * editor keeps showing it, and no error reaches Yjs or a provider.
+   */
+  private failClosed(error: unknown, shown: EditorState): void {
+    if (this.unreadable) {
+      return;
+    }
+    this.unreadable = true;
+    this.warn(
+      UNKNOWN_NODE_TYPES_WARNING,
+      `the document cannot be read: ${errorText(error)}`,
+      {error, reason: 'unreadable', types: []},
+    );
+    this.setStatus('readonly');
+    const editor = this._editor;
+    if (editor.getEditorState() === shown) {
+      return;
+    }
+    if (shown.isEmpty()) {
+      // Before the first read: an editor that showed nothing yet.
+      editor.update(() => $getRoot().clear(), {
+        discrete: true,
+        skipTransforms: true,
+        tag: REMOTE_TAGS,
+      });
+    } else {
+      editor.setEditorState(shown, {tag: COLLABORATION_TAG});
     }
   }
 
@@ -1874,29 +2004,23 @@ export class YBinding {
     this.$quietSelection();
   }
 
-  /** Replace the editor's content with a fresh read of the shared root. */
+  /**
+   * Replace the editor's content with a fresh read of the shared root; what
+   * it throws is passed on (see recoverRead).
+   */
   private rebuildFromDocument(): void {
     this.commitPending();
-    let error: unknown = null;
-    this._editor.update(
-      () => {
-        try {
-          this.$rebuild();
-        } catch (e) {
-          error = e;
-        }
+    this.guardedRead({
+      $read: () => this.$rebuild(),
+      after: () => {
+        this.checkUnknownTypes();
+        this.flushRefresh(true);
       },
-      {
-        discrete: true,
-        skipTransforms: true,
-        tag: REMOTE_TAGS,
+      recover: error => {
+        throw error;
       },
-    );
-    if (error !== null) {
-      throw error;
-    }
-    this.checkUnknownTypes();
-    this.flushRefresh(true);
+      tag: REMOTE_TAGS,
+    });
   }
 
   /**
@@ -1929,9 +2053,11 @@ export class YBinding {
       return;
     }
     const cursor = this.getCursor();
+    // Cleared before the read, which shows what it held; a read that throws
+    // reads the whole document again (see recoverRead).
     this.state.hidden = null;
-    this._editor.update(
-      () => {
+    this.guardedRead({
+      $read: () => {
         const reader = new Reader(this.state);
         if (!reader.$refreshComposed(hidden.ownerKey)) {
           // A local edit removed the composed line: what was hidden in it is
@@ -1944,12 +2070,9 @@ export class YBinding {
         this.$caretOnText();
         this.$quietSelection();
       },
-      {
-        discrete: true,
-        skipTransforms: true,
-        tag: REMOTE_TAGS,
-      },
-    );
+      recover: (error, shown) => this.recoverRead(error, shown),
+      tag: REMOTE_TAGS,
+    });
   }
 
   /** The items of the binding's containers that `hidden` holds. */
@@ -2519,6 +2642,7 @@ export class YBinding {
       this._status !== 'active' ||
       state.hidden !== null ||
       state.unknownTypes.size > 0 ||
+      state.unreadable.size > 0 ||
       this.untransformed.size > 0 ||
       this.untransformedText.size > 0 ||
       this.storedHoles.size > 0
@@ -3387,15 +3511,17 @@ export class YBinding {
    */
   private rereadRefused(): void {
     let after: (() => void) | null = null;
-    this._editor.update(
-      () => {
+    this.guardedRead({
+      $read: () => {
         after = this.$rereadRefused();
       },
-      {discrete: true, skipTransforms: true},
-    );
-    if (after !== null) {
-      (after as () => void)();
-    }
+      after: () => {
+        if (after !== null) {
+          (after as () => void)();
+        }
+      },
+      recover: (error, shown) => this.recoverRead(error, shown, 'reread'),
+    });
   }
 
   /**
@@ -3431,17 +3557,16 @@ export class YBinding {
     try {
       this.guard(() =>
         withPins(this._pins, () => {
-          const after = this.$rereadRefused();
-          if (after !== null || later.length > 0) {
+          if (later.length > 0) {
             $onUpdate(() => {
               for (const [fn, options] of later) {
                 editor.update(fn, options);
               }
-              if (after !== null) {
-                this.guard(() => withPins(this._pins, after));
-              }
             });
           }
+          // Nested in this update (see guardedRead): what follows the read
+          // runs after its commit, after the updates queued behind it.
+          this.rereadRefused();
         }),
       );
       done = true;
@@ -3455,8 +3580,8 @@ export class YBinding {
   };
 
   /**
-   * The re-read itself (see rereadRefused), inside an update; returns what
-   * runs once it has committed, if anything.
+   * The re-read itself (see rereadRefused), inside an update (see
+   * guardedRead); returns what runs once it has committed, if anything.
    */
   private $rereadRefused(): (() => void) | null {
     const list = [...this.refused].filter(
@@ -3482,26 +3607,15 @@ export class YBinding {
       $addUpdateTag(BLOCK_ID_REPAIR_TAG);
     }
     const cursor = this.$cursorBeforeRead();
-    try {
-      const reader = new Reader(this.state);
-      for (const cs of list) {
-        const el = cs.y === this._root ? $getRoot() : $getNodeByKey(cs.key);
-        if ($isElementNode(el) && el.isAttached()) {
-          reader.$readFull(cs, el);
-        }
+    const reader = new Reader(this.state);
+    for (const cs of list) {
+      const el = cs.y === this._root ? $getRoot() : $getNodeByKey(cs.key);
+      if ($isElementNode(el) && el.isAttached()) {
+        reader.$readFull(cs, el);
       }
-      reader.$settle(settle);
-      this.$selectionAfterRead(cursor);
-    } catch (e) {
-      this.warn(
-        RECOVERED_READ_WARNING,
-        `a change could not be read again: ${String(
-          e instanceof Error ? e.message : e,
-        )}`,
-        {error: e, reason: 'reread'},
-      );
-      this.$rebuild();
     }
+    reader.$settle(settle);
+    this.$selectionAfterRead(cursor);
     this.$quietSelection();
     if (last) {
       // A transform that changes the same content each time it runs (a

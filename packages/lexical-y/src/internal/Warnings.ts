@@ -17,8 +17,9 @@ import {LexicalWarning} from 'lexical';
  */
 export const UNSUPPORTED_LAYOUT_WARNING = '@lexical/y/unsupported-layout';
 /**
- * @experimental The document has node types the editor cannot build: read
- * only. `data`: YUnknownNodeTypesData.
+ * @experimental The document has node types the editor cannot build, or
+ * stored content its classes throw on: read only. `data`:
+ * YUnknownNodeTypesData, or YUnreadableContentData.
  */
 export const UNKNOWN_NODE_TYPES_WARNING = '@lexical/y/unknown-node-types';
 /**
@@ -150,6 +151,21 @@ export interface YUnknownNodeTypesData {
 }
 
 /**
+ * @experimental `data` of an `UNKNOWN_NODE_TYPES_WARNING` whose `reason` is
+ * `'unreadable'` (the binding is read only): stored content the editor's
+ * classes throw on when they read it (its importJSON or updateFromJSON, a
+ * NodeState parse), of `types`, with the first `error` thrown. The editor
+ * shows the rest of the document. `types` is empty, and the editor keeps
+ * what it showed before and reads nothing more, where a read failed without
+ * a class to name (it threw again on a fresh read of the document).
+ */
+export interface YUnreadableContentData {
+  readonly reason: 'unreadable';
+  readonly types: readonly string[];
+  readonly error: unknown;
+}
+
+/**
  * @experimental `data` of an `UNSUPPORTED_SLOTS_WARNING` (the change is not
  * written and the binding is read only): `types` hold named slots on a node
  * stored as a line, a format or a group (`'stored-host'`), or on the root
@@ -258,7 +274,7 @@ export interface YUnsyncedValueData {
 /** The `data` of each code. */
 interface YWarningDataByCode {
   [UNSUPPORTED_LAYOUT_WARNING]: YUnsupportedLayoutData;
-  [UNKNOWN_NODE_TYPES_WARNING]: YUnknownNodeTypesData;
+  [UNKNOWN_NODE_TYPES_WARNING]: YUnknownNodeTypesData | YUnreadableContentData;
   [STORAGE_MISMATCH_WARNING]: YStorageMismatchData;
   [SELF_CHECK_WARNING]: YSelfCheckData;
   [RECOVERED_READ_WARNING]: YRecoveredReadData;

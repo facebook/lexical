@@ -1247,15 +1247,17 @@ export const LINK: TextMatchTransformer = {
     // parenthesis would close it early, a backslash would start an escape, and
     // only a `<` in first place turns it into the pointy form. An angle
     // bracket anywhere else is an ordinary character and goes out as it is.
+    //
+    // Code spans are read before links, so a backtick anywhere in the link
+    // could pair with one in the text after it and swallow the link. Every
+    // part escapes a backtick on top of its own syntax.
     const rawUrl = node.getURL();
     const url =
       rawUrl === '' || /\s/.test(rawUrl)
         ? `<${escapeLinkPart(rawUrl, /[\\<>`]/g)}>`
         : escapeLinkPart(rawUrl, /[\\()`]|^</g);
 
-    // In the double-quoted title only `"` and a backslash need an escape.
-    // A backtick needs one in every part, since code spans are read before
-    // links and one could pair with a backtick in the text after the link.
+    // In the double-quoted title only `"` and a backslash are syntax.
     const linkContent = title
       ? `[${textContent}](${url} "${escapeLinkPart(title, /[\\"`]/g)}")`
       : `[${textContent}](${url})`;
@@ -1290,9 +1292,9 @@ export const LINK: TextMatchTransformer = {
   // are characters, which costs a quadratic walk of every run that never
   // reaches the closing parenthesis.
   importRegExp:
-    /(?:\[(.+?)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:\\[\s\S]|[^"\\])*)"|'((?:\\[\s\S]|[^'\\])*)'|\(((?:\\[\s\S]|[^()\\])*)\)))?\s*)?\))/,
+    /(?:\[(.+?)\])(?:\(\s*(?:(?:<((?:\\[^\n]|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:\\[\s\S]|[^"\\])*)"|'((?:\\[\s\S]|[^'\\])*)'|\(((?:\\[\s\S]|[^()\\])*)\)))?\s*)?\))/,
   regExp:
-    /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\(\s*(?:(?:<((?:\\.|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:\\[\s\S]|[^"\\])*)"|'((?:\\[\s\S]|[^'\\])*)'|\(((?:\\[\s\S]|[^()\\])*)\)))?\s*)?\))$/,
+    /(?:\[([^[\]]*(?:\[[^[\]]*\][^[\]]*)*)\])(?:\(\s*(?:(?:<((?:\\[^\n]|[^<>\n\\])*)>|((?!<)(?:\\[^\s]|\\(?=\s)|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\]|\((?:\\[^\s]|[^\s()\\])*\))*\))*\)|[^\s()\\])+))(?:\s+(?:"((?:\\[\s\S]|[^"\\])*)"|'((?:\\[\s\S]|[^'\\])*)'|\(((?:\\[\s\S]|[^()\\])*)\)))?\s*)?\))$/,
   replace: (textNode, match) => {
     // https://spec.commonmark.org/0.31.2/#inline-link
     const source = match.input || '';

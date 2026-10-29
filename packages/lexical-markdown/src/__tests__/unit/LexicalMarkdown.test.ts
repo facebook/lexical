@@ -4225,7 +4225,9 @@ describe('link title import', () => {
     ["[x](/uri 'a\\\\')", 'a\\'],
     ["[x](/uri 'it\\'s')", "it's"],
     ['[x](/uri (a\\)))', 'a)'],
+    ['[x](/uri (a\\\u2028b))', 'a\\\u2028b'],
     ['[x](/uri "a\\\u2028b")', 'a\\\u2028b'],
+    ['[x](</a\\\u2028b> "t")', 't'],
   ];
 
   for (const [md, title] of CASES) {

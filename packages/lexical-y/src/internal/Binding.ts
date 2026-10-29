@@ -631,6 +631,10 @@ export class YBinding {
   /** Depth of the binding's own work in progress (see guard). */
   private busy = 0;
   private flushingWarnings = false;
+  /** Whether start() has completed, and dispose() not run since. */
+  private started = false;
+  /** Whether initialize() was called before start(), which then runs it. */
+  private initializeOnStart = false;
   private readonly afterAllTransactions = (): void => this.flushWarnings();
 
   /** The bound editor. */
@@ -805,6 +809,14 @@ export class YBinding {
     }
     this.noteTransforms();
     this.evaluate();
+    // Started once all of the above has run: an initialize() call made
+    // while it ran (from an editable or update listener) runs here, where
+    // the editor's pending updates can commit.
+    this.started = true;
+    if (this.initializeOnStart) {
+      this.initializeOnStart = false;
+      withPins(this._pins, () => this.initializeInner());
+    }
     return () => this.dispose();
   }
 
@@ -891,6 +903,8 @@ export class YBinding {
 
   /** Disconnect from the document and the editor (`start` returns this). */
   dispose(): void {
+    this.started = false;
+    this.initializeOnStart = false;
     for (const d of this.disposers.splice(0)) {
       d();
     }
@@ -928,8 +942,16 @@ export class YBinding {
    * the same document with the same content at once write the same items
    * (one copy), and one id never holds two payloads; anywhere else, with
    * this client's own id.
+   *
+   * Called before `start()` (from an extension's `register`, before
+   * YCollabExtension starts the binding), it runs when the binding starts,
+   * once the editor has its initial state.
    */
   initialize(): void {
+    if (!this.started) {
+      this.initializeOnStart = true;
+      return;
+    }
     this.guard(() => withPins(this._pins, () => this.initializeInner()));
   }
 
@@ -938,6 +960,19 @@ export class YBinding {
       return;
     }
     if (this._root.length === 0 && recordedLayout(this._root) === null) {
+      // An update still pending (`editor.update(seed)` right before this
+      // call) is part of the initial content: committed now, while the
+      // binding is pending and writes nothing, then written with it. A
+      // listener of that commit can apply a remote change (a provider's
+      // first sync), so the document is looked at after it.
+      this.commitPending();
+      if (this._status !== 'pending') {
+        return;
+      }
+      if (this._root.length > 0 || recordedLayout(this._root) !== null) {
+        this.evaluate();
+        return;
+      }
       const legacy = this.options.convert ? [] : this.legacyRootsWithContent();
       if (legacy.length > 0) {
         this.warn(
@@ -953,10 +988,6 @@ export class YBinding {
         this.setStatus('active');
         return;
       }
-      // An update still pending (`editor.update(seed)` right before this
-      // call) is part of the initial content: committed now, while the
-      // binding is pending and writes nothing, then written with it.
-      this.commitPending();
       const editorState = this._editor.getEditorState();
       if (this.refuseUnstorableSlots(editorState, null)) {
         return;

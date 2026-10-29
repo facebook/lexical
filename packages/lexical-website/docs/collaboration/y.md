@@ -850,10 +850,12 @@ not merge as a user might expect:
   NodeState it does not know when it edits a node (see
   [Changing your own node types](#changing-the-layout-and-migrating)), but a
   block it moves is written anew from what it shows, so the moved block loses
-  them (see Moves). A class that writes its own `exportJSON` owns every
-  field of its type, since which ones it writes cannot be known: an older
-  version of it deletes the fields a newer one added. Declare fields in
-  `$config` to keep them.
+  them (see Moves). A link it replaces with another link of the same type over
+  the same text keeps the ones of the link it replaced: it cannot tell the
+  new link from the old one edited. A class that writes its own `exportJSON`
+  owns every field of its type, since which ones it writes cannot be known:
+  an older version of it deletes the fields a newer one added. Declare fields
+  in `$config` to keep them.
 - **The caret when a collaborator rewrites its line.** A caret stays after
   the text it was after. When a collaborator replaces the line holding it,
   deleting all the line showed and putting new content at its place in one

@@ -161,6 +161,18 @@ const REMOTE_TAGS = [
   HISTORY_MERGE_TAG,
   DEFER_COMPOSITION_MERGE_TAG,
 ];
+/** A failure caught where any value may be thrown, `null` and `undefined` too. */
+type Failure = {readonly error: unknown} | null;
+
+/** `error`'s text for a warning; never throws, whatever value was thrown. */
+function errorText(error: unknown): string {
+  try {
+    return String(error instanceof Error ? error.message : error);
+  } catch {
+    return Object.prototype.toString.call(error);
+  }
+}
+
 /** The binding's refresh of derived group fields (see flushRefresh). */
 const REFRESH_TAG = 'lexical-y-refresh';
 /** The author's normalization of its own update (see normalizeUntransformed). */
@@ -1369,32 +1381,38 @@ export class YBinding {
     }
     this.commitPending();
     const shown = this._editor.getEditorState();
-    let error: unknown = null;
-    this._editor.update(
-      () => {
-        try {
-          const cursor = this.$cursorBeforeRead();
-          const reader = new Reader(this.state);
-          for (const cs of list) {
-            const el = cs.y === this._root ? $getRoot() : $getNodeByKey(cs.key);
-            if ($isElementNode(el) && el.isAttached()) {
-              reader.$readFull(cs, el);
+    let failure = null as Failure;
+    try {
+      this._editor.update(
+        () => {
+          try {
+            const cursor = this.$cursorBeforeRead();
+            const reader = new Reader(this.state);
+            for (const cs of list) {
+              const el =
+                cs.y === this._root ? $getRoot() : $getNodeByKey(cs.key);
+              if ($isElementNode(el) && el.isAttached()) {
+                reader.$readFull(cs, el);
+              }
             }
+            this.$selectionAfterRead(cursor);
+            this.$quietSelection();
+          } catch (error) {
+            failure = {error};
           }
-          this.$selectionAfterRead(cursor);
-          this.$quietSelection();
-        } catch (e) {
-          error = e;
-        }
-      },
-      {
-        discrete: true,
-        skipTransforms: true,
-        tag: [...REMOTE_TAGS, ...extraTags],
-      },
-    );
-    if (error !== null) {
-      this.recoverRead(error, shown);
+        },
+        {
+          discrete: true,
+          skipTransforms: true,
+          tag: [...REMOTE_TAGS, ...extraTags],
+        },
+      );
+    } catch (error) {
+      // Thrown committing what was read.
+      failure = {error};
+    }
+    if (failure !== null) {
+      this.recoverRead(failure.error, shown);
     }
   }
 
@@ -1599,23 +1617,28 @@ export class YBinding {
       return;
     }
     const shown = this._editor.getEditorState();
-    let error: unknown = null;
-    this._editor.update(
-      () => {
-        try {
-          this.$readAllInner(cursor, kept, deep);
-        } catch (e) {
-          error = e;
-        }
-      },
-      {
-        discrete: true,
-        skipTransforms: true,
-        tag: REMOTE_TAGS,
-      },
-    );
-    if (error !== null) {
-      this.failClosed(error, shown);
+    let failure = null as Failure;
+    try {
+      this._editor.update(
+        () => {
+          try {
+            this.$readAllInner(cursor, kept, deep);
+          } catch (error) {
+            failure = {error};
+          }
+        },
+        {
+          discrete: true,
+          skipTransforms: true,
+          tag: REMOTE_TAGS,
+        },
+      );
+    } catch (error) {
+      // Thrown committing what was read.
+      failure = {error};
+    }
+    if (failure !== null) {
+      this.failClosed(failure.error, shown);
       return;
     }
     this.checkUnknownTypes();
@@ -1756,7 +1779,7 @@ export class YBinding {
       cursor = this.stepCursor ?? cursor;
     }
     let rebuilt: ReadonlySet<CS> = new Set();
-    let readError: unknown = null;
+    let readError = null as Failure;
     // What the editor shows before the read (see failClosed).
     const shown = this._editor.getEditorState();
     // A re-read of a naming update's change is tagged as that update (see
@@ -1764,7 +1787,7 @@ export class YBinding {
     const naming = this.refused.size > 0 && this.refusedNaming;
     const after = () => {
       if (readError !== null) {
-        this.recoverRead(readError, shown);
+        this.recoverRead(readError.error, shown);
         return;
       }
       this.checkUnknownTypes();
@@ -1779,38 +1802,46 @@ export class YBinding {
     // update of its own, see undo): the read is part of that update, and
     // what follows it waits for its commit.
     const nested = this._editor._updating;
-    this._editor.update(
-      () => {
-        try {
-          this.$readRemote(
-            state,
-            childItems,
-            attrKeys,
-            cursor,
-            !undoing,
-            r => {
-              rebuilt = r;
-            },
-            tr,
-          );
-        } catch (e) {
-          readError = e;
-          // The editor is rebuilt from the document right after (see
-          // recoverRead): a selection the failed read left on a removed
-          // node must not fail this update's commit too, which would drop
-          // an undo or redo the read was part of.
-          $setSelection(null);
-        }
-        if (nested) {
-          $onUpdate(() => this.guard(() => withPins(this._pins, after)));
-        }
-      },
-      {
-        discrete: true,
-        skipTransforms: true,
-        tag: naming ? [...REMOTE_TAGS, BLOCK_ID_REPAIR_TAG] : REMOTE_TAGS,
-      },
-    );
+    try {
+      this._editor.update(
+        () => {
+          try {
+            this.$readRemote(
+              state,
+              childItems,
+              attrKeys,
+              cursor,
+              !undoing,
+              r => {
+                rebuilt = r;
+              },
+              tr,
+            );
+          } catch (error) {
+            readError = {error};
+            // The editor is rebuilt from the document right after (see
+            // recoverRead): a selection the failed read left on a removed
+            // node must not fail this update's commit too, which would drop
+            // an undo or redo the read was part of.
+            $setSelection(null);
+          }
+          if (nested) {
+            $onUpdate(() => this.guard(() => withPins(this._pins, after)));
+          }
+        },
+        {
+          discrete: true,
+          skipTransforms: true,
+          tag: naming ? [...REMOTE_TAGS, BLOCK_ID_REPAIR_TAG] : REMOTE_TAGS,
+        },
+      );
+    } catch (error) {
+      if (nested) {
+        throw error;
+      }
+      // Thrown committing what was read.
+      readError = {error};
+    }
     if (!nested) {
       after();
     }
@@ -1906,9 +1937,7 @@ export class YBinding {
     }
     this.warn(
       RECOVERED_READ_WARNING,
-      `a remote change could not be read: ${String(
-        error instanceof Error ? error.message : error,
-      )}`,
+      `a remote change could not be read: ${errorText(error)}`,
       {error, reason: 'remote-change'},
     );
   }
@@ -1929,9 +1958,7 @@ export class YBinding {
     this.unreadable = true;
     this.warn(
       UNKNOWN_NODE_TYPES_WARNING,
-      `the document cannot be read: ${String(
-        error instanceof Error ? error.message : error,
-      )}`,
+      `the document cannot be read: ${errorText(error)}`,
       {error, reason: 'unreadable', types: []},
     );
     this.setStatus('readonly');
@@ -1970,13 +1997,13 @@ export class YBinding {
   /** Replace the editor's content with a fresh read of the shared root. */
   private rebuildFromDocument(): void {
     this.commitPending();
-    let error: unknown = null;
+    let failure = null as Failure;
     this._editor.update(
       () => {
         try {
           this.$rebuild();
-        } catch (e) {
-          error = e;
+        } catch (error) {
+          failure = {error};
         }
       },
       {
@@ -1985,8 +2012,8 @@ export class YBinding {
         tag: REMOTE_TAGS,
       },
     );
-    if (error !== null) {
-      throw error;
+    if (failure !== null) {
+      throw failure.error;
     }
     this.checkUnknownTypes();
     this.flushRefresh(true);
@@ -3574,7 +3601,7 @@ export class YBinding {
     const cursor = this.$cursorBeforeRead();
     // What the editor shows before the read (see failClosed).
     const shown = this._editor.getEditorState();
-    let unreadable: unknown = null;
+    let unreadable = null as Failure;
     try {
       const reader = new Reader(this.state);
       for (const cs of list) {
@@ -3590,17 +3617,15 @@ export class YBinding {
         this.$rebuild();
         this.warn(
           RECOVERED_READ_WARNING,
-          `a change could not be read again: ${String(
-            e instanceof Error ? e.message : e,
-          )}`,
+          `a change could not be read again: ${errorText(e)}`,
           {error: e, reason: 'reread'},
         );
-      } catch (rebuildError) {
-        unreadable = rebuildError;
+      } catch (error) {
+        unreadable = {error};
       }
     }
     if (unreadable !== null) {
-      const error = unreadable;
+      const {error} = unreadable;
       return () => this.failClosed(error, shown);
     }
     this.$quietSelection();

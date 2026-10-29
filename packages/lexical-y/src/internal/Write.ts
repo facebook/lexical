@@ -405,8 +405,9 @@ export class Writer {
    * where it does not store the type as one (see wrapperFieldsOf).
    */
   readonly wrapperFields: (type: string) => OwnedFields | null;
-  /** Per item, see $storedItemAtOrBefore. */
-  private readonly groupReferences = new Map<NodeKey, Attrs | null>();
+  /** Per item, the stored item found from it (see $storedItemFrom). */
+  private readonly storedBefore = new Map<NodeKey, LexicalNode | null>();
+  private readonly storedAfter = new Map<NodeKey, LexicalNode | null>();
   constructor(
     readonly state: State,
     readonly roles: Roles,
@@ -4012,14 +4013,21 @@ export class Writer {
         }
       }
     };
-    keepOuter(current[OUTER_KEY], owners);
+    keepOuter(
+      line === null
+        ? current[OUTER_KEY]
+        : this.$alignedOuter(line, line, current[OUTER_KEY]),
+      owners,
+    );
     if (
       line !== null &&
       GROUP_KEY in desired &&
       current[GROUP_KEY] === undefined
     ) {
-      const ref = this.$groupReference(line, desired[GROUP_KEY]);
-      if (ref !== null) {
+      const item = this.$groupReference(line, desired[GROUP_KEY]);
+      const ref =
+        item === null ? null : this.storedItemAttrs(item, desired[GROUP_KEY]);
+      if (item !== null && ref !== null) {
         // Owned as at the other item, whose group has the item's type.
         const of = this.markerOwners(desired, ref);
         for (const k in ref) {
@@ -4031,61 +4039,159 @@ export class Writer {
             want = {...want, [k]: ref[k]};
           }
         }
-        keepOuter(ref[OUTER_KEY], of);
+        keepOuter(this.$alignedOuter(line, item, ref[OUTER_KEY]), of);
       }
     }
     return want;
   }
 
   /**
-   * The stored marker attributes of the item of `line`'s group (of type
-   * `gtype`) nearest before it, else after it, that this write did not
-   * make, or null. Its neighbor, not any item: a client that does not own a
-   * group field shows one group where another client shows two that differ
-   * in it, and the item goes into the one it is next to.
+   * `stored`, the outer levels (OUTER_KEY) the marker of `item` stores,
+   * aligned with the outer levels `line` is written with: at each, the
+   * level stored for the same group (see $outerGroupKeys), or none. Matched
+   * by group, not by depth: an edit that removes or adds an outer group
+   * shifts the depths, and a level keeps the members of its own group only.
+   * Undefined where the stored levels cannot be matched to groups.
    */
-  private $groupReference(line: LexicalNode, gtype: unknown): Attrs | null {
-    const before = line.getPreviousSibling();
-    const ref =
-      before === null ? null : this.$storedItemAtOrBefore(before, gtype);
-    if (ref !== null) {
-      return ref;
+  private $alignedOuter(
+    line: LexicalNode,
+    item: LexicalNode,
+    stored: unknown,
+  ): Attrs[] | undefined {
+    if (!Array.isArray(stored)) {
+      return undefined;
     }
-    for (let c = line.getNextSibling(); c !== null; c = c.getNextSibling()) {
-      const attrs = this.storedItemAttrs(c, gtype);
-      if (attrs !== null) {
-        return attrs;
-      }
+    // The groups `item`'s marker was written for: those before this update,
+    // unless this write already wrote its outer levels.
+    const unit = this.state.unitByKey.get(item.getKey());
+    const attr =
+      unit === undefined || unit.end === null
+        ? undefined
+        : typeOf(unit.end)._map.get(OUTER_KEY);
+    const was =
+      attr !== undefined && this.tr.insertSet.hasId(attr.id)
+        ? this.$outerGroupKeys(item)
+        : this.outerGroupKeysBefore(item.getKey());
+    if (was === null || was.length !== stored.length) {
+      return undefined;
     }
-    return null;
+    return this.$outerGroupKeys(line).map(key => {
+      const at = was.indexOf(key);
+      return at === -1 ? undefined : stored[at];
+    });
   }
 
   /**
-   * The stored marker attributes of `item` or of the nearest item before it
-   * that this write did not make (see $groupReference), or null. Noted for
-   * each item walked: new items written in order find theirs at once.
+   * The keys of the groups whose levels the marker of `line` stores as its
+   * outer levels (OUTER_KEY), outermost first: the groups that hold its
+   * group through level items, as $lineDesired finds them.
    */
-  private $storedItemAtOrBefore(
+  private $outerGroupKeys(line: LexicalNode): NodeKey[] {
+    const keys: NodeKey[] = [];
+    for (let g = line.getParent(); g !== null; ) {
+      const levelItem = g.getParent();
+      if (levelItem === null || this.roles.$role(levelItem) !== 'level') {
+        break;
+      }
+      g = levelItem.getParent();
+      if (g !== null) {
+        keys.push(g.getKey());
+      }
+    }
+    return keys.reverse();
+  }
+
+  /**
+   * $outerGroupKeys for the node of `key` in the editor state before this
+   * update (a level item there holds only the nested group, see
+   * $nestedGroupOf), or null where it had no such node.
+   */
+  private outerGroupKeysBefore(key: NodeKey): NodeKey[] | null {
+    const map = this.prevState._nodeMap;
+    const node = map.get(key);
+    if (node === undefined) {
+      return null;
+    }
+    const parentOf = (n: LexicalNode) =>
+      n.__parent === null ? undefined : map.get(n.__parent);
+    const keys: NodeKey[] = [];
+    for (let g = parentOf(node); g !== undefined; ) {
+      const levelItem = parentOf(g) as ElementNode | undefined;
+      const outer = levelItem === undefined ? undefined : parentOf(levelItem);
+      const spec = outer === undefined ? null : getGroupSpec(klassOf(outer));
+      if (
+        outer === undefined ||
+        levelItem === undefined ||
+        spec === null ||
+        !spec.nested ||
+        klassOf(g) !== spec.klass ||
+        levelItem.__first !== g.__key ||
+        levelItem.__last !== g.__key
+      ) {
+        break;
+      }
+      keys.push(outer.__key);
+      g = outer;
+    }
+    return keys.reverse();
+  }
+
+  /**
+   * The item of `line`'s group (of type `gtype`) nearest before it, else
+   * after it, whose stored marker this write did not make (see
+   * storedItemAttrs), or null. Its neighbor, not any item: a client that
+   * does not own a group field shows one group where another client shows
+   * two that differ in it, and the item goes into the one it is next to.
+   */
+  private $groupReference(
+    line: LexicalNode,
+    gtype: unknown,
+  ): LexicalNode | null {
+    const before = line.getPreviousSibling();
+    const ref =
+      before === null
+        ? null
+        : this.$storedItemFrom(before, gtype, this.storedBefore, n =>
+            n.getPreviousSibling(),
+          );
+    if (ref !== null) {
+      return ref;
+    }
+    const after = line.getNextSibling();
+    return after === null
+      ? null
+      : this.$storedItemFrom(after, gtype, this.storedAfter, n =>
+          n.getNextSibling(),
+        );
+  }
+
+  /**
+   * `item`, or the nearest item from it on (`step`), whose stored marker
+   * this write did not make, or null. Noted (`noted`) for each item walked:
+   * a run of new items finds it at once.
+   */
+  private $storedItemFrom(
     item: LexicalNode,
     gtype: unknown,
-  ): Attrs | null {
+    noted: Map<NodeKey, LexicalNode | null>,
+    step: (node: LexicalNode) => LexicalNode | null,
+  ): LexicalNode | null {
     const walked: NodeKey[] = [];
-    let ref: Attrs | null = null;
-    for (let c: LexicalNode | null = item; c !== null; ) {
-      const noted = this.groupReferences.get(c.getKey());
-      if (noted !== undefined) {
-        ref = noted;
+    let ref: LexicalNode | null = null;
+    for (let c: LexicalNode | null = item; c !== null; c = step(c)) {
+      const known = noted.get(c.getKey());
+      if (known !== undefined) {
+        ref = known;
         break;
       }
       walked.push(c.getKey());
-      ref = this.storedItemAttrs(c, gtype);
-      if (ref !== null) {
+      if (this.storedItemAttrs(c, gtype) !== null) {
+        ref = c;
         break;
       }
-      c = c.getPreviousSibling();
     }
     for (const key of walked) {
-      this.groupReferences.set(key, ref);
+      noted.set(key, ref);
     }
     return ref;
   }

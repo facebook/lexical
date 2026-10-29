@@ -114,9 +114,19 @@ provider.once('sync', () => {
   a link the first of those inside it). It
   does nothing on a document that already has content, and it refuses a
   document whose `@lexical/yjs` roots hold content.
+- The binding starts once the editor has its initial state
+  (`$initialEditorState`, and what extensions write while they register),
+  so that state is only ever the content of an empty document. On a
+  document that has content (an editor built again on the same document, a
+  document loaded from a cache before the editor), the editor shows the
+  document and writes nothing. `binding.initialize()` called before the
+  binding starts (from an extension's `register`) runs when it starts. An
+  extension that depends on `YCollabExtension` and changes content in its
+  own `afterRegistration` makes an edit, as an update made after
+  `buildEditorFromExtensions` returns does.
 - Pass `synced: true` instead when the document is already loaded (a test,
   an editor bound to a stored state): the extension initializes as soon as
-  it registers.
+  the binding starts.
 - Several `editor.update()` calls made in one task are committed, written
   and sent together, as in any Lexical editor. Once the editor has
   committed in a task (an update an app's listener queues after a commit),
@@ -134,7 +144,7 @@ provider.once('sync', () => {
 | -- | -- | -- |
 | `doc` | (required) | The Yjs document. |
 | `root` | `doc.get('lexical-y')` | The shared root to bind. |
-| `synced` | `false` | Initialize as soon as the extension registers. |
+| `synced` | `false` | Initialize as soon as the binding starts. |
 | `captureTimeout` | `500` | Undo capture timeout in ms; `null` turns collaborative undo off. |
 | `clientIDRange` | `'uint53'` | `'uint32'` for servers on yrs before 0.28, see [Servers](#servers). |
 | `selfCheck` | `false` | Reads every local write (and every container a remote change rebuilt) back from Yjs and compares it with the editor; a mismatch is a `'@lexical/y/self-check'` [warning](#warnings). A debugging aid: turn it on in tests and development builds. |
@@ -213,10 +223,12 @@ it shows. Every client reads these the same
 way, and the next edit there stores them.
 
 Without the extension API, `new YBinding(editor, doc, options)` does the
-same: call `binding.start()` to connect it, `binding.initialize()` after the
-first sync, and `binding.undo()` / `binding.redo()` for undo. An undo puts
-back the selection from before the step it undoes (as `HistoryExtension`
-does), and a redo the one from when it was undone. Called while the editor
+same: call `binding.start()` to connect it once the editor has its initial
+state (an update made after it, on a document that has content, is an
+edit), `binding.initialize()` after the first sync, and `binding.undo()` /
+`binding.redo()` for undo. An undo puts back the selection from before the
+step it undoes (as `HistoryExtension` does), and a redo the one from when it
+was undone. Called while the editor
 is updating (from a command handler, an update or its `$onUpdate`), it runs
 right after that update commits, in an update of its own.
 `binding.getCursor()` and `binding.$resolveCursor()` convert the selection

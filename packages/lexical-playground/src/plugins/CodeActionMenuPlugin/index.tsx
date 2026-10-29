@@ -142,6 +142,10 @@ function CodeActionMenuContainer({
 
               case 'destroyed':
                 codeSetRef.current.delete(key);
+                if (key === codeKeyRef.current) {
+                  codeKeyRef.current = null;
+                  setShown(false);
+                }
                 break;
 
               case 'updated':

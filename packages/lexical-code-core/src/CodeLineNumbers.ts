@@ -6,7 +6,7 @@
  *
  */
 
-import {effect, namedSignals} from '@lexical/extension';
+import {effect, namedSignals, untracked} from '@lexical/extension';
 import {
   $getRenderContextValue,
   $setRenderContextValue,
@@ -217,10 +217,15 @@ export const CodeLineNumbersExtension = defineExtension({
   register: (editor, _config, state) => {
     const {disabled, onlyWordWrapped} = state.getOutput();
     return effect(() => {
-      $setRenderContextValue(
-        CodeLineNumbersModeState,
-        disabled.value ? 'off' : onlyWordWrapped.value ? 'wordWrapped' : 'all',
-        editor,
+      const mode = disabled.value
+        ? 'off'
+        : onlyWordWrapped.value
+          ? 'wordWrapped'
+          : 'all';
+      // A mode change re-renders the editor synchronously. Don't let the
+      // signals that render reads become dependencies of this effect.
+      untracked(() =>
+        $setRenderContextValue(CodeLineNumbersModeState, mode, editor),
       );
     });
   },

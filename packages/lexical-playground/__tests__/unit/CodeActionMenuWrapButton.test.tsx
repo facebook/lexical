@@ -177,4 +177,18 @@ describe('CodeActionMenuPlugin wrap button', () => {
     expect(getWrapButton().getAttribute('aria-pressed')).toBe('false');
     expect(getCodeElements()[1]).toBe(second);
   });
+
+  it('hides the menu when the hovered code block is removed', async () => {
+    const [first] = getCodeElements();
+    await hover(first);
+    getWrapButton();
+
+    await act(async () => {
+      editor.update(() => $getRoot().getFirstChildOrThrow().remove(), {
+        discrete: true,
+      });
+    });
+    expect(anchorElem.querySelector('button[aria-label="wrap"]')).toBeNull();
+    expect(getWordWraps()).toEqual([true]);
+  });
 });

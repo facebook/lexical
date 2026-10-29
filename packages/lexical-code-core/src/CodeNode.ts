@@ -301,7 +301,9 @@ export class CodeNode extends ElementNode {
     }
 
     // Only the attribute changes. Keep the <code> element, with its scroll
-    // position and line break wrappers, instead of recreating it.
+    // position, instead of recreating it. (CodeLineNumbersExtension with
+    // onlyWordWrapped does recreate it, because its line break wrappers
+    // follow the flag.)
     if (this.__wordWrap !== prevNode.__wordWrap) {
       if (this.__wordWrap) {
         dom.setAttribute(WORD_WRAP_DATA_ATTRIBUTE, 'true');

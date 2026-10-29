@@ -17,8 +17,9 @@ import {LexicalWarning} from 'lexical';
  */
 export const UNSUPPORTED_LAYOUT_WARNING = '@lexical/y/unsupported-layout';
 /**
- * @experimental The document has node types the editor cannot build: read
- * only. `data`: YUnknownNodeTypesData.
+ * @experimental The document has node types the editor cannot build, or
+ * stored content its classes throw on: read only. `data`:
+ * YUnknownNodeTypesData, or YUnreadableContentData.
  */
 export const UNKNOWN_NODE_TYPES_WARNING = '@lexical/y/unknown-node-types';
 /**
@@ -140,29 +141,29 @@ export type YStorageMismatchData =
 
 /**
  * @experimental `data` of an `UNKNOWN_NODE_TYPES_WARNING` (the binding is read
- * only).
+ * only): types the editor does not register (`'unregistered'`), or slots the
+ * document holds that are not a block node (`'malformed-slot'`: the slot's
+ * key, or the type of the inline node in it).
  */
-export type YUnknownNodeTypesData =
-  /**
-   * Types the editor does not register (`'unregistered'`), or slots the
-   * document holds that are not a block node (`'malformed-slot'`: the slot's
-   * key, or the type of the inline node in it).
-   */
-  | {
-      readonly reason: 'unregistered' | 'malformed-slot';
-      readonly types: readonly string[];
-    }
-  /**
-   * The editor's classes throw `error` on stored content (of `types`, where
-   * the error came from a class reading content of a type), on a read and on
-   * a fresh read of the document after it. The editor keeps what it showed
-   * before, and reads nothing more.
-   */
-  | {
-      readonly reason: 'unreadable';
-      readonly types: readonly string[];
-      readonly error: unknown;
-    };
+export interface YUnknownNodeTypesData {
+  readonly reason: 'unregistered' | 'malformed-slot';
+  readonly types: readonly string[];
+}
+
+/**
+ * @experimental `data` of an `UNKNOWN_NODE_TYPES_WARNING` whose `reason` is
+ * `'unreadable'` (the binding is read only): stored content the editor's
+ * classes throw on when they read it (its importJSON or updateFromJSON, a
+ * NodeState parse), of `types`, with the first `error` thrown. The editor
+ * shows the rest of the document. `types` is empty, and the editor keeps
+ * what it showed before and reads nothing more, where a read failed without
+ * a class to name (it threw again on a fresh read of the document).
+ */
+export interface YUnreadableContentData {
+  readonly reason: 'unreadable';
+  readonly types: readonly string[];
+  readonly error: unknown;
+}
 
 /**
  * @experimental `data` of an `UNSUPPORTED_SLOTS_WARNING` (the change is not
@@ -273,7 +274,7 @@ export interface YUnsyncedValueData {
 /** The `data` of each code. */
 interface YWarningDataByCode {
   [UNSUPPORTED_LAYOUT_WARNING]: YUnsupportedLayoutData;
-  [UNKNOWN_NODE_TYPES_WARNING]: YUnknownNodeTypesData;
+  [UNKNOWN_NODE_TYPES_WARNING]: YUnknownNodeTypesData | YUnreadableContentData;
   [STORAGE_MISMATCH_WARNING]: YStorageMismatchData;
   [SELF_CHECK_WARNING]: YSelfCheckData;
   [RECOVERED_READ_WARNING]: YRecoveredReadData;

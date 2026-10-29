@@ -20,7 +20,9 @@ import {
   ContentType,
   createID,
   createRelativePositionFromJSON,
+  type Doc,
   encodeStateAsUpdate,
+  encodeStateVector,
   findIndexSS,
   Item,
   iterateStructsByIdSet,
@@ -1233,13 +1235,13 @@ export class YBinding {
    *
    * The initial content (including an update still pending, such as
    * `editor.update(seed)` right before this call) is not part of the undo
-   * history. Into a pristine top-level root (one that has never held an
-   * item or an attribute), it is written once, under a client id derived
-   * from those exact bytes (see seedUpdate), applied to the document as they
-   * are and read back like any document, so that two clients initializing
-   * the same document with the same content at once write the same items
-   * (one copy), and one id never holds two payloads; anywhere else, with
-   * this client's own id.
+   * history. It is written once, under a client id derived from those exact
+   * bytes (see seedUpdate), applied to the document as they are and read
+   * back like any document, so that two clients initializing the same
+   * document with the same content at once write the same items (one copy),
+   * and one id never holds two payloads. That holds for a root inside
+   * another shared type and for a root that held content, deleted since,
+   * as for a new document.
    *
    * Called before `start()` (from an extension's `register`, before
    * YCollabExtension starts the binding), it runs when the binding starts,
@@ -1290,19 +1292,12 @@ export class YBinding {
       if (this.refuseUnstorableSlots(editorState, null)) {
         return;
       }
-      // Not pristine (it held an item or an attribute, deleted since): under
-      // a derived id, two clients' copies could differ in what they write
-      // around those, so it is written under this client's own id; so is a
-      // root inside another shared type (see seedUpdate).
       // What the cursor leaves out of the selection (a range's typing format
       // and style, a node selection), kept too: a node selection by the
       // items written for its nodes (see $restoreSelectionState).
       const kept = editorState.read($selectionState);
       const selected = kept !== null && kept.kind === 'node' ? kept.keys : [];
-      const seed =
-        this._root._start !== null || this._root._map.size > 0
-          ? null
-          : this.seedUpdate(editorState, selected);
+      const seed = this.seedUpdate(editorState, selected);
       if (seed !== null) {
         // The seed's exact bytes, under the id derived from them, the
         // binding's only items under another client id than the document's;
@@ -1379,17 +1374,33 @@ export class YBinding {
   }
 
   /**
-   * The initial content of a pristine top-level root as a Yjs update,
-   * written once: into a scratch document under a fixed client id, with this
-   * binding's configuration (with or without block ids, and which blocks are
-   * identified, change the items), hashed with the layout version and the
-   * root's name into a client id, and written again under that id the same
-   * way (the writer gives the same items for the same input). So two clients
-   * share an id only when they write the same bytes into the same root. It
-   * is the scratch state's first write, so its segment keys are that id and
-   * a counter from 0 on every client. Null for a root inside another shared
-   * type: its update would name that type's item, which a scratch document
-   * does not hold.
+   * The initial content of the root as a Yjs update, written once: into a
+   * scratch document under a fixed client id, with this binding's
+   * configuration (with or without block ids, and which blocks are
+   * identified, change the items), hashed into a client id, and written
+   * again under that id the same way (the writer gives the same items for
+   * the same input). It is the scratch state's first write, so its segment
+   * keys are that id and a counter from the id's clock on every client.
+   *
+   * - A pristine top-level root (one that has never held an item or an
+   *   attribute) is written into an empty scratch document; the hash covers
+   *   the layout version, the root's name and the bytes. So two clients
+   *   share an id only when they write the same bytes into the same root.
+   * - Any other root (inside another shared type, or one that held content,
+   *   deleted since) is written into a copy of the document, and the update
+   *   is what that write added. Its items name what they were written next
+   *   to (the deleted items, the parent type's item), which a copy holds and
+   *   an empty document does not. The hash covers the copy's state vector
+   *   too: two clients share an id only when they wrote the same bytes on
+   *   the same document, where the second write under that id gives the
+   *   same items as well. A client that has seen other changes gets another
+   *   id, and the content shows twice, as before.
+   *
+   * That copy costs the whole document (other editors' roots included),
+   * encoded once and read twice, at the initialization of such a root.
+   *
+   * Null where a top-level root is not found among the document's shared
+   * types, or a nested root was deleted.
    */
   private seedUpdate(
     editorState: EditorState,
@@ -1399,23 +1410,41 @@ export class YBinding {
     cursor: YCursor | null;
     items: SelectedAnchor[];
   } | null {
-    if (this._root._item !== null) {
-      return null;
+    const rootItem = this._root._item;
+    for (let t: YNode | null = this._root; t !== null; t = t.parent) {
+      if (t._item !== null && t._item.deleted) {
+        // A root inside a shared type entry deleted since (the app holds
+        // the Y.Node still): nothing written there is stored, as before.
+        return null;
+      }
     }
     let name: string | null = null;
-    this._doc.share.forEach((type, key) => {
-      if (type === this._root) {
-        name = key;
+    if (rootItem === null) {
+      this._doc.share.forEach((type, key) => {
+        if (type === this._root) {
+          name = key;
+        }
+      });
+      if (name === null) {
+        return null;
       }
-    });
-    if (name === null) {
-      return null;
     }
-    const rootName: string = name;
+    const rootName: string | null = name;
+    const pristine =
+      rootItem === null &&
+      this._root._start === null &&
+      this._root._map.size === 0;
+    // The document as it is, which the write of any other root goes on.
+    const base = pristine ? null : encodeStateAsUpdate(this._doc);
+    const baseVector = pristine ? null : encodeStateVector(this._doc);
     const write = (clientID: number) => {
-      const scratch = createYDoc(null, {gc: false});
+      const scratch = createYDoc(base, {gc: false});
+      const before = base === null ? null : encodeStateVector(scratch);
       scratch.clientID = clientID;
-      const sroot = scratch.get(rootName);
+      const sroot =
+        rootItem === null
+          ? scratch.get(rootName!)
+          : storedTypeOf(scratch, rootItem.id.client, rootItem.id.clock);
       const sstate = this.state.configuredLike(scratch, sroot);
       scratch.transact(tr =>
         this.$writeInitial(sstate, sroot, tr, editorState),
@@ -1427,21 +1456,30 @@ export class YBinding {
       const items = editorState.read(() =>
         this.$selectedAnchors(sstate, selected),
       );
-      const bytes = encodeStateAsUpdate(scratch);
+      const bytes =
+        before === null
+          ? encodeStateAsUpdate(scratch)
+          : encodeStateAsUpdate(scratch, before);
       scratch.destroy();
       return {bytes, cursor, items};
     };
     const {bytes} = write(1);
-    let content = '';
-    for (let i = 0; i < bytes.length; i += 4096) {
-      content += String.fromCharCode.apply(
-        null,
-        Array.from(bytes.subarray(i, i + 4096)),
-      );
-    }
+    const content = byteString(bytes);
     return write(
       initClientID(
-        BASE_LAYOUT_VERSION + '\u0000' + 'r:' + rootName + '\u0000' + content,
+        baseVector === null
+          ? BASE_LAYOUT_VERSION +
+              '\u0000' +
+              'r:' +
+              rootName +
+              '\u0000' +
+              content
+          : BASE_LAYOUT_VERSION +
+              '\u0000' +
+              'd:' +
+              byteString(baseVector) +
+              '\u0000' +
+              content,
         this.clientIDRange(),
       ),
     );
@@ -6321,6 +6359,33 @@ function changedKeys(
  * as two random client ids; so every client of a document must use the same
  * range.
  */
+/** `bytes` as a string of one char per byte (see initClientID). */
+function byteString(bytes: Uint8Array): string {
+  let out = '';
+  for (let i = 0; i < bytes.length; i += 4096) {
+    out += String.fromCharCode.apply(
+      null,
+      Array.from(bytes.subarray(i, i + 4096)),
+    );
+  }
+  return out;
+}
+
+/**
+ * The shared type item `client`:`clock` of `doc` holds (the copy of a root
+ * inside another shared type, see YBinding#seedUpdate).
+ */
+function storedTypeOf(doc: Doc, client: number, clock: number): YNode {
+  const structs = doc.store.clients.get(client);
+  const item =
+    structs === undefined ? undefined : structs[findIndexSS(structs, clock)];
+  invariant(
+    item instanceof Item && item.content instanceof ContentType,
+    '@lexical/y: the copy of the document does not hold the root',
+  );
+  return item.content.type as YNode;
+}
+
 function initClientID(seed: string, range: ClientIDRange = 'uint53'): number {
   // cyrb53 (public domain).
   let h1 = 0xdeadbeef;

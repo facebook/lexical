@@ -1725,6 +1725,27 @@ export function ownedFieldsOf(
   return json && writesOwnJSON(klass) ? EVERY_FIELD : schemaFieldsOf(klass);
 }
 
+/**
+ * The fields a client owns where the type is one of `types` (an absent one
+ * is a paragraph's): those its classes of them declare in their `$config`
+ * schema (see ownedFieldsOf), none of a type it does not register.
+ */
+export function fieldsOfTypes(
+  editor: LexicalEditor,
+  types: readonly unknown[],
+): OwnedFields {
+  const sets: OwnedFields[] = [];
+  for (const type of types) {
+    const info = editor._nodes.get(
+      typeof type === 'string' ? type : 'paragraph',
+    );
+    if (info !== undefined) {
+      sets.push(ownedFieldsOf(info.klass, false));
+    }
+  }
+  return {has: field => sets.some(set => set.has(field))};
+}
+
 const itemFieldSets = new WeakMap<GroupSpec, OwnedFields>();
 
 /**

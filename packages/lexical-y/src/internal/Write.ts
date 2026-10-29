@@ -421,10 +421,12 @@ export class Writer {
     // remote change applied while this local update waited to be written
     // is not read yet.
     const held = state.hidden === null ? null : state.hidden.marker;
-    if (held !== null && !held.end.deleted) {
-      const attrs = typeOf(held.end).getAttrs() as Attrs;
-      for (const k of held.was.keys()) {
-        held.now.set(k, attrs[k]);
+    const end =
+      held === null ? undefined : [...held.ends].find(e => !e.deleted);
+    if (end !== undefined) {
+      const attrs = typeOf(end).getAttrs() as Attrs;
+      for (const k of held!.was.keys()) {
+        held!.now.set(k, attrs[k]);
       }
     }
   }
@@ -3899,13 +3901,21 @@ export class Writer {
   ): void {
     const hidden = this.state.hidden;
     const held = hidden === null ? null : hidden.marker;
-    if (held !== null && line !== null && this.$isComposedLine(line)) {
-      // A collaborator's change of the composed line's attributes is held
-      // back (see Hidden#marker): an attribute this edit left as the editor
-      // shows it keeps the collaborator's value, written to the marker that
-      // ends the line now; one it changed takes its value, and is no longer
-      // held. (A held marker that now ends another line, as one the line
-      // was joined into, is written as that line's.)
+    if (
+      held !== null &&
+      line !== null &&
+      ((held.ends.has(item) && !this.prevState._nodeMap.has(line.getKey())) ||
+        this.$isComposedLine(line))
+    ) {
+      // Attributes of the composed line a collaborator changed are held
+      // back (see Hidden#marker): one this edit left as the editor shows it
+      // keeps the collaborator's value; one it changed takes its value, and
+      // is no longer held. So does the line a split of it makes while
+      // composing (the composed line ends at a new marker, the new line
+      // holding the rest of it at the old one). A line it was joined into
+      // keeps its own, though it ends at the old marker; an empty line
+      // Enter makes at its end has the attributes the editor shows.
+      const composed = this.$isComposedLine(line);
       desired = {...desired};
       for (const [k, was] of [...held.was]) {
         if (equalValue(desired[k], was)) {
@@ -3915,13 +3925,15 @@ export class Writer {
           } else {
             desired[k] = now;
           }
-        } else {
+        } else if (composed) {
           held.was.delete(k);
           held.now.delete(k);
         }
       }
-      held.end = item;
-      hidden!.ownerKey = line.getKey();
+      held.ends.add(item);
+      if (composed) {
+        hidden!.ownerKey = line.getKey();
+      }
       if (held.was.size === 0) {
         hidden!.marker = null;
       }

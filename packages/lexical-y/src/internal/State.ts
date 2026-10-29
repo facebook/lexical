@@ -133,7 +133,7 @@ export function isShownEnd(it: Item, hidden: Hidden | null): boolean {
 export function shownAttrs(end: Item, hidden: Hidden | null): Attrs {
   const attrs = typeOf(end).getAttrs() as Attrs;
   const held = hidden === null ? null : hidden.marker;
-  if (held !== null && held.end === end) {
+  if (held !== null && held.ends.has(end)) {
     for (const [k, v] of held.was) {
       if (v === undefined) {
         delete attrs[k];

@@ -177,14 +177,21 @@ of set-valued NodeState; layout 3 (planned, #9449) adds move records.
 - **Names a client does not own:** a writer changes the value a name gives
   content only for the names it owns, the binding's own and the fields its
   classes declare for the content's type (all of them where the write
-  changes that type), its text formats and NodeState, and keeps every other
+  changes that type; on a node stored as its own Y.Node and on text, its
+  flat NodeState too), its text formats and NodeState, and keeps every other
   name's value as stored: a field a newer version of a class added, a text
   format a newer Lexical added, a key of a later layout. Format items that
   only keep every name's value where it is (around inserted content, at the
   end of a run) carry any name. Inserted text takes the names it does not
-  own from the text it continues (a field only from text of its own type),
-  and a new group item the group fields of the item next to it. A reader
-  reads only the names it owns.
+  own from the text it continues (a field only from text of its own type).
+  A marker or shared node written anew for a node stored before (a block
+  moved, a line split) takes the fields the old one stored that the writer
+  does not own. A group item new to its group, or written anew, takes the
+  group fields of the item next to it that kept its marker and was in the
+  group before; where none did, those the group stored before the write (on
+  the item's old marker, another item's, or that of an item the group had
+  then). An outer level takes the fields of its item (`@`) from where that
+  item's were stored. A reader reads only the names it owns.
 - **Defaults are left out:** a field or NodeState value equal to the one a
   new instance of the class has (its `$config` default) is not stored, so a
   reader takes it from its own class (an `h1` heading's marker is

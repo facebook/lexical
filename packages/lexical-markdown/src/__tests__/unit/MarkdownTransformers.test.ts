@@ -21,7 +21,6 @@ import {
   $isRangeSelection,
   $isTextNode,
   defineExtension,
-  type ElementNode,
   type LexicalEditor,
   UNDO_COMMAND,
 } from 'lexical';
@@ -137,7 +136,7 @@ describe('LINK', () => {
       expect(children).toHaveLength(1);
 
       const linkNode = children[0];
-      assert($isLinkNode(linkNode), 'First child must be a LinkNode');
+      assert($isLinkNode(linkNode), 'Expected a link');
       expect(linkNode.getTextContent()).toBe('test');
       expect(linkNode.getURL()).toBe('https://example.com/a b');
     });
@@ -148,10 +147,8 @@ describe('LINK', () => {
     typeMarkdown(editor, '[test](url "a\\\\")');
 
     editor.read(() => {
-      const linkNode = $getRoot()
-        .getFirstChildOrThrow<ElementNode>()
-        .getFirstChild();
-      assert($isLinkNode(linkNode), 'First child must be a LinkNode');
+      const linkNode = $getRoot().getAllTextNodes()[0].getParent();
+      assert($isLinkNode(linkNode), 'Expected a link');
       expect([linkNode.getURL(), linkNode.getTitle()]).toEqual(['url', 'a\\']);
     });
   });
@@ -200,7 +197,7 @@ describe('LINK', () => {
       expect(children.length).toBe(1);
 
       const linkNode = children[0];
-      assert($isLinkNode(linkNode), 'First child must be a LinkNode');
+      assert($isLinkNode(linkNode), 'Expected a link');
       expect(linkNode.getTextContent()).toBe('hell[world](www)o');
       expect(linkNode.getURL()).toBe('link');
     });

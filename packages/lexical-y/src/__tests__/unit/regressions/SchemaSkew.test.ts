@@ -47,6 +47,9 @@ import {
   $setSlot,
   $setState,
   arraySetValue,
+  COLLABORATION_TAG,
+  COMMAND_PRIORITY_EDITOR,
+  createCommand,
   createState,
   DecoratorNode,
   ElementNode,
@@ -2314,6 +2317,435 @@ describe('N7: a room the binding cannot write is never editable', () => {
     expectUnreadable(b, 'test_required', shown);
     expect(written()).toBe(before);
   });
+});
+
+describe('R2-2: an edit an editable listener makes when the room opens is written', () => {
+  test('R2-2: an edit made when the editor becomes editable is stored, and the editor shows the document', async () => {
+    const a = new Peer(2, newNet() as never);
+    a.update(() => $getRoot().clear().append($p('hello')));
+    a.binding.initialize();
+    await flush();
+    const editable: boolean[] = [];
+    const b = new Peer(1, newNet() as never, NODES, editor =>
+      editor.registerEditableListener(value => {
+        editable.push(value);
+        if (value && editable.filter(Boolean).length === 1) {
+          editor.update(() => $getRoot().append($p('app edit')), {
+            discrete: true,
+          });
+        }
+      }),
+    );
+    editable.length = 0;
+    Y.applyUpdate(b.doc, Y.encodeStateAsUpdate(a.doc));
+    b.binding.initialize();
+    await flush();
+    expect(b.errors).toEqual([]);
+    expect(b.warnings).toEqual([]);
+    expect(b.binding.status).toBe('active');
+    expect(editable).toEqual([true]);
+    expect(b.describe()).toBe('paragraph("hello") / paragraph("app edit")');
+    const fresh = new Peer(3, newNet() as never);
+    Y.applyUpdate(fresh.doc, Y.encodeStateAsUpdate(b.doc));
+    fresh.binding.initialize();
+    await flush();
+    expect(fresh.describe()).toBe(b.describe());
+  });
+});
+
+describe('R3-3: an editable listener that queues an edit and throws', () => {
+  test('R3-3: opening a room, the edit is written and the error is rethrown apart', async () => {
+    const a = new Peer(2, newNet() as never);
+    a.update(() => $getRoot().clear().append($p('hello')));
+    a.binding.initialize();
+    await flush();
+    let armed = false;
+    const b = new Peer(1, newNet() as never, NODES, editor =>
+      editor.registerEditableListener(value => {
+        if (value && armed) {
+          armed = false;
+          editor.update(() => $getRoot().append($p('true reply')), {
+            discrete: true,
+          });
+          throw new Error('editable listener error');
+        }
+      }),
+    );
+    armed = true;
+    const uncaught: unknown[] = [];
+    const onUncaught = (error: unknown) => uncaught.push(error);
+    process.on('uncaughtException', onUncaught);
+    try {
+      Y.applyUpdate(b.doc, Y.encodeStateAsUpdate(a.doc));
+      b.binding.initialize();
+      await flush();
+    } finally {
+      process.off('uncaughtException', onUncaught);
+    }
+    expect(armed).toBe(false);
+    const fresh = new Peer(3, newNet() as never);
+    Y.applyUpdate(fresh.doc, Y.encodeStateAsUpdate(b.doc));
+    fresh.binding.initialize();
+    await flush();
+    expect({shown: b.describe(), status: b.binding.status}).toEqual({
+      shown: 'paragraph("hello") / paragraph("true reply")',
+      status: 'active',
+    });
+    expect(fresh.describe()).toBe(b.describe());
+    expect(b.errors).toEqual([]);
+    expect(uncaught.map(String)).toEqual(['Error: editable listener error']);
+  });
+});
+
+describe('R4-2: an update listener that throws on the commit after an editable listener queued an edit', () => {
+  test('R4-2: opening a room: the edit runs once, and nothing escapes', async () => {
+    const a = new Peer(2, newNet() as never);
+    a.update(() => $getRoot().clear().append($p('hello')));
+    a.binding.initialize();
+    await flush();
+    let runs = 0;
+    let armed = false;
+    const b = new Peer(1, newNet() as never, NODES, editor => {
+      editor.registerEditableListener(value => {
+        if (value && !armed && runs === 0) {
+          armed = true;
+          editor.update(
+            () => {
+              runs++;
+              $getRoot().append($p('reply'));
+            },
+            {discrete: true},
+          );
+        }
+      });
+      editor.registerUpdateListener(() => {
+        if (armed) {
+          armed = false;
+          throw new Error('update listener error');
+        }
+      });
+    });
+    const uncaught: unknown[] = [];
+    const onUncaught = (error: unknown) => uncaught.push(error);
+    process.on('uncaughtException', onUncaught);
+    try {
+      expect(() => {
+        Y.applyUpdate(b.doc, Y.encodeStateAsUpdate(a.doc));
+        b.binding.initialize();
+      }).not.toThrow();
+      await flush();
+    } finally {
+      process.off('uncaughtException', onUncaught);
+    }
+    expect(runs).toBe(1);
+    expect(b.errors).toEqual([]);
+    // The listener's error fails the read's commit (the binding fails
+    // closed and warns with it) or is rethrown as an uncaught error.
+    expect(
+      uncaught.length +
+        b.warnings.filter(w => w.includes('update listener error')).length,
+    ).toBe(1);
+    const fresh = new Peer(3, newNet() as never);
+    Y.applyUpdate(fresh.doc, Y.encodeStateAsUpdate(b.doc));
+    fresh.binding.initialize();
+    await flush();
+    if (b.binding.status === 'active') {
+      expect(b.describe()).toBe(fresh.describe());
+    } else {
+      expect(b.describe()).not.toContain('reply');
+    }
+  });
+
+  test.each([
+    ['a remote change applied on its own', false],
+    ['a remote change applied inside an editor update', true],
+  ])(
+    'R4-2: failing closed, %s: the edit runs once and is refused, and nothing escapes',
+    async (_name, nested) => {
+      const a = new Peer(2, newNet() as never);
+      const b = new Peer(1, newNet() as never);
+      const sync = () =>
+        Y.applyUpdate(
+          b.doc,
+          Y.encodeStateAsUpdate(a.doc, Y.encodeStateVector(b.doc)),
+        );
+      a.update(() => $getRoot().clear().append($p('hello')));
+      a.binding.initialize();
+      await flush();
+      sync();
+      b.binding.initialize();
+      await flush();
+      let runs = 0;
+      let armed = false;
+      const stopEditable = b.editor.registerEditableListener(value => {
+        if (!value && runs === 0) {
+          armed = true;
+          b.editor.update(
+            () => {
+              runs++;
+              $getRoot().append($p('freeze reply'));
+            },
+            {discrete: true},
+          );
+        }
+      });
+      // Throws on the first commit with no tags after the editor stopped
+      // being editable.
+      const stopUpdate = b.editor.registerUpdateListener(({tags}) => {
+        if (armed && tags.size === 0) {
+          armed = false;
+          throw new Error('update listener error');
+        }
+      });
+      const proto = Reader.prototype as unknown as {
+        $apply: (...args: unknown[]) => void;
+        $readFull: (...args: unknown[]) => void;
+      };
+      const {$apply, $readFull} = proto;
+      proto.$apply = proto.$readFull = () => {
+        throw new Error('simulated reader failure');
+      };
+      const uncaught: unknown[] = [];
+      const onUncaught = (error: unknown) => uncaught.push(error);
+      process.on('uncaughtException', onUncaught);
+      const escaped: unknown[] = [];
+      try {
+        a.update(() => $block([0]).append($createTextNode(' there')));
+        await flush();
+        try {
+          if (nested) {
+            b.editor.update(sync, {discrete: true});
+          } else {
+            sync();
+          }
+        } catch (error) {
+          escaped.push(error);
+        }
+        await flush();
+      } finally {
+        process.off('uncaughtException', onUncaught);
+        proto.$apply = $apply;
+        proto.$readFull = $readFull;
+        stopEditable();
+        stopUpdate();
+      }
+      // Never out of Y.applyUpdate. Applied inside the app's update, the
+      // edit commits with it, and the error of the app's listener on that
+      // commit is the app's update's.
+      expect(nested ? [] : escaped).toEqual([]);
+      expect([...escaped, ...uncaught].map(String)).toEqual([
+        'Error: update listener error',
+      ]);
+      expect(runs).toBe(1);
+      expect(b.binding.status).toBe('readonly');
+      expect(b.describe()).toBe('paragraph("hello")');
+      expect(b.warnings).toEqual([
+        'the document cannot be read: simulated reader failure',
+        'a local change is not written while read only',
+      ]);
+    },
+  );
+});
+
+describe('R5: the order and the fate of an edit an editable listener makes when the room opens', () => {
+  const opened = async (
+    reply: () => void,
+  ): Promise<{b: Peer; open: () => void; runs: () => number}> => {
+    const a = new Peer(2, newNet() as never);
+    a.update(() => $getRoot().clear().append($p('hello')));
+    a.binding.initialize();
+    await flush();
+    let runs = 0;
+    const b = new Peer(1, newNet() as never, NODES, editor =>
+      editor.registerEditableListener(value => {
+        if (value && runs === 0) {
+          editor.update(
+            () => {
+              runs++;
+              reply();
+            },
+            {discrete: true},
+          );
+        }
+      }),
+    );
+    // Opened by the provider's sync: the binding reads the document it
+    // brings.
+    const open = () => Y.applyUpdate(b.doc, Y.encodeStateAsUpdate(a.doc));
+    return {b, open, runs: () => runs};
+  };
+
+  test('R6-1: an update queued in reply to the read before the editor became editable commits before the edit', async () => {
+    const a = new Peer(2, newNet() as never);
+    a.update(() => $getRoot().clear().append($p('hello')));
+    a.binding.initialize();
+    await flush();
+    let older = false;
+    let newer = false;
+    const b = new Peer(1, newNet() as never, NODES, editor => {
+      editor.registerUpdateListener(({tags}) => {
+        if (!older && tags.has(COLLABORATION_TAG)) {
+          older = true;
+          editor.update(() => $getRoot().append($p('older')), {
+            discrete: true,
+          });
+        }
+      });
+      editor.registerEditableListener(value => {
+        if (value && !newer) {
+          newer = true;
+          editor.update(() => $getRoot().append($p('newer')), {
+            discrete: true,
+          });
+        }
+      });
+    });
+    Y.applyUpdate(b.doc, Y.encodeStateAsUpdate(a.doc));
+    await flush();
+    expect(b.errors).toEqual([]);
+    expect(b.binding.status).toBe('active');
+    expect(b.describe()).toBe(
+      'paragraph("hello") / paragraph("older") / paragraph("newer")',
+    );
+    const fresh = new Peer(3, newNet() as never);
+    Y.applyUpdate(fresh.doc, Y.encodeStateAsUpdate(b.doc));
+    fresh.binding.initialize();
+    await flush();
+    expect(fresh.describe()).toBe(b.describe());
+  });
+
+  test('R5-1: a command an editable listener dispatches is written', async () => {
+    const a = new Peer(2, newNet() as never);
+    a.update(() => $getRoot().clear().append($p('hello')));
+    a.binding.initialize();
+    await flush();
+    const APPEND = createCommand<string>('test_append');
+    let runs = 0;
+    const b = new Peer(1, newNet() as never, NODES, editor => {
+      editor.registerCommand(
+        APPEND,
+        text => {
+          runs++;
+          $getRoot().append($p(text));
+          return true;
+        },
+        COMMAND_PRIORITY_EDITOR,
+      );
+      editor.registerEditableListener(value => {
+        if (value && runs === 0) {
+          editor.dispatchCommand(APPEND, 'reply');
+        }
+      });
+    });
+    Y.applyUpdate(b.doc, Y.encodeStateAsUpdate(a.doc));
+    await flush();
+    expect(runs).toBe(1);
+    expect(b.errors).toEqual([]);
+    expect(b.binding.status).toBe('active');
+    expect(b.describe()).toBe('paragraph("hello") / paragraph("reply")');
+    const fresh = new Peer(3, newNet() as never);
+    Y.applyUpdate(fresh.doc, Y.encodeStateAsUpdate(b.doc));
+    fresh.binding.initialize();
+    await flush();
+    expect(fresh.describe()).toBe(b.describe());
+  });
+
+  test('R5-2: an update the app makes right after opening commits after the edit', async () => {
+    const {b, open} = await opened(() => {
+      $getRoot().clear().append($p('first'));
+    });
+    open();
+    b.editor.update(() => $getRoot().append($p('second')), {discrete: true});
+    await flush();
+    expect(b.binding.status).toBe('active');
+    expect(b.describe()).toBe('paragraph("first") / paragraph("second")');
+    const fresh = new Peer(3, newNet() as never);
+    Y.applyUpdate(fresh.doc, Y.encodeStateAsUpdate(b.doc));
+    fresh.binding.initialize();
+    await flush();
+    expect(fresh.describe()).toBe(b.describe());
+  });
+
+  test('R5-3: the binding disposed right after opening: the edit still runs on the editor, and the document has nothing of it', async () => {
+    const {b, open, runs} = await opened(() => {
+      $getRoot().append($p('reply'));
+    });
+    open();
+    const stored = JSON.stringify(b.doc.get('lexical-y').toJSON());
+    b.binding.dispose();
+    await flush();
+    expect(runs()).toBe(1);
+    expect(b.describe()).toBe('paragraph("hello") / paragraph("reply")');
+    expect(JSON.stringify(b.doc.get('lexical-y').toJSON())).toBe(stored);
+  });
+});
+
+describe('R2-3: an edit an editable listener makes when the binding fails closed', () => {
+  test.each([
+    ['a remote change applied on its own', false],
+    ['a remote change applied inside an editor update', true],
+  ])(
+    'R2-3: %s: the editor goes back to what it showed, and the edit is refused',
+    async (_name, nested) => {
+      const a = new Peer(2, newNet() as never);
+      const b = new Peer(1, newNet() as never);
+      const sync = () =>
+        Y.applyUpdate(
+          b.doc,
+          Y.encodeStateAsUpdate(a.doc, Y.encodeStateVector(b.doc)),
+        );
+      a.update(() => $getRoot().clear().append($p('hello')));
+      a.binding.initialize();
+      await flush();
+      sync();
+      b.binding.initialize();
+      await flush();
+      const shown = b.describe();
+      expect(shown).toBe('paragraph("hello")');
+      const stop = b.editor.registerEditableListener(value => {
+        if (!value) {
+          b.editor.update(() => $getRoot().append($p('freeze callback edit')), {
+            discrete: true,
+          });
+        }
+      });
+      const written = () =>
+        Y.decodeStateVector(Y.encodeStateVector(b.doc)).get(b.doc.clientID);
+      const before = written();
+      // Every read throws, and so does the fresh read after it: b fails
+      // closed.
+      const proto = Reader.prototype as unknown as {
+        $apply: (...args: unknown[]) => void;
+        $readFull: (...args: unknown[]) => void;
+      };
+      const {$apply, $readFull} = proto;
+      proto.$apply = proto.$readFull = () => {
+        throw new Error('simulated reader failure');
+      };
+      try {
+        a.update(() => $block([0]).append($createTextNode(' there')));
+        await flush();
+        if (nested) {
+          b.editor.update(sync, {discrete: true});
+        } else {
+          sync();
+        }
+        await flush();
+      } finally {
+        proto.$apply = $apply;
+        proto.$readFull = $readFull;
+        stop();
+      }
+      expect(b.errors).toEqual([]);
+      expect(b.binding.status).toBe('readonly');
+      expect(b.describe()).toBe(shown);
+      expect(written()).toBe(before);
+      expect(b.warnings).toEqual([
+        'the document cannot be read: simulated reader failure',
+        'a local change is not written while read only',
+      ]);
+    },
+  );
 });
 
 describe('S7-21 (MF-2): every read goes through the one fail-closed path', () => {

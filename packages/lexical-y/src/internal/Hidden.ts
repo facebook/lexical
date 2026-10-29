@@ -40,11 +40,12 @@ export class Hidden {
   private readonly ranges = new Map<number, [number, number][]>();
   /**
    * The attributes of the line being composed that held changes set (only
-   * those this client owns, see ownsMarkerKey): `was` holds the values they
-   * had before (undefined: not set), which the editor goes on showing, and
-   * `now` the values the changes set. `ends` are the markers that store
-   * them: the line's, and those of the lines a local split of it made
-   * while composing, which keep them too (see Writer#$writeMarker).
+   * those this client owns, see ownsMarkerAttr and Reader#$ownedChanges):
+   * `was` holds the values they had before (undefined: not set), which the
+   * editor goes on showing, and `now` the values the changes set. `ends` are
+   * the markers that store them: the line's, and those of the lines a local
+   * split of it made while composing, which keep them too (see
+   * Writer#$writeMarker).
    */
   marker: {
     ends: Set<Item>;
@@ -188,7 +189,7 @@ export function shownLength(item: Item, hidden: Hidden | null): number {
 
 /** Whether the editor shows `item`: live, and not held back. */
 export function isShown(item: Item, hidden: Hidden | null): boolean {
-  return !item.deleted && (hidden === null || !hidden.hides(item));
+  return !isGone(item) && (hidden === null || !hidden.hides(item));
 }
 
 /** The part of string item `item`'s text `str` the editor shows. */

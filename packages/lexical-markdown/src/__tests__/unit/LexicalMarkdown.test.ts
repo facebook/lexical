@@ -67,6 +67,7 @@ import {
   type LexicalEditor,
   type LexicalNode,
   TEXT_TYPE_TO_FORMAT,
+  type TextFormatType,
   type TextNode,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
@@ -3049,6 +3050,18 @@ describe('inline code with backticks (CommonMark code spans)', () => {
     expect(exportCodeSpan('`x')).toBe('`` `x ``');
   });
 
+  it('does not pad a code span made only of spaces', () => {
+    // CommonMark strips one space from each end only when the content is not
+    // all spaces, so padding such a span would add two spaces on import.
+    expect(exportCodeSpan(' ')).toBe('` `');
+    expect(exportCodeSpan('   ')).toBe('`   `');
+    expect(roundtrip('a ` ` b')).toBe('a ` ` b');
+    expect(roundtrip('a `   ` b')).toBe('a `   ` b');
+    expect(exportCodeSpan(' x ')).toBe('`  x  `');
+    expect(exportCodeSpan('\tx\t')).toBe('` \tx\t `');
+    expect(exportCodeSpan(' \t ')).toBe('`  \t  `');
+  });
+
   it('normalizes a redundant inline fence to the minimal valid fence', () => {
     // Both a single- and triple-backtick inline fence with backtick-free
     // content normalize to a single backtick on export.
@@ -4318,6 +4331,54 @@ describe('link destination whitespace does not backtrack', () => {
   }
 });
 
+// Exports a paragraph holding a link labelled `x` and then `after`, with
+// `afterFormat` when given, expects `md`, and expects reading that back to give
+// the same link and text.
+function expectLinkRoundTrip(
+  url: string,
+  title: string | null,
+  md: string,
+  after = '',
+  afterFormat?: TextFormatType,
+): void {
+  const editor = createTestEditor({nodes: [LinkNode]});
+  editor.update(
+    () => {
+      const paragraph = $createParagraphNode().append(
+        $createLinkNode(url, {title}).append($createTextNode('x')),
+      );
+      if (after) {
+        const afterNode = $createTextNode(after);
+        paragraph.append(
+          afterFormat ? afterNode.toggleFormat(afterFormat) : afterNode,
+        );
+      }
+      $getRoot().clear().append(paragraph);
+    },
+    {discrete: true},
+  );
+
+  const exported = editor.read('latest', () =>
+    $convertToMarkdownString(TRANSFORMERS),
+  );
+  expect(exported).toBe(md);
+
+  const reimported = createTestEditor({nodes: [LinkNode]});
+  reimported.update(() => $convertFromMarkdownString(exported, TRANSFORMERS), {
+    discrete: true,
+  });
+  reimported.read('latest', () => {
+    expect(
+      $getRoot()
+        .getAllTextNodes()
+        .map(node => node.getParent())
+        .filter($isLinkNode)
+        .map(node => [node.getURL(), node.getTitle()]),
+    ).toEqual([[url, title]]);
+    expect($getRoot().getTextContent()).toBe(`x${after}`);
+  });
+}
+
 describe('link destination round trip', () => {
   // Export has to write a destination that import can read back: escapes in
   // the raw form, and the pointy form for a URL the raw form cannot hold.
@@ -4342,10 +4403,15 @@ describe('link destination round trip', () => {
     ['https://example.com/a b<c', '[x](<https://example.com/a b\\<c>)'],
     ['https://example.com/a b\\', '[x](<https://example.com/a b\\\\>)'],
     ['https://example.com/a\tb', '[x](<https://example.com/a\tb>)'],
+    // Nor a control character, which the pointy form can hold.
+    ['/a\u0001b', '[x](</a\u0001b>)'],
+    ['/a\u007fb', '[x](</a\u007fb>)'],
+    ['/a\u0000b', '[x](</a\u0000b>)'],
     // No destination may hold a line ending, and writing one raw would end the
     // paragraph in the middle of the link.
     ['https://example.com/a\nb', '[x](<https://example.com/a&#10;b>)'],
     ['https://example.com/a\r\nb', '[x](<https://example.com/a&#13;&#10;b>)'],
+    ['https://example.com/a\rb', '[x](<https://example.com/a&#13;b>)'],
     ['https://example.com/a b\nc', '[x](<https://example.com/a b&#10;c>)'],
     // Only a `<` in first place would turn the raw form into the pointy one,
     // so an angle bracket anywhere else goes out unescaped.
@@ -4370,93 +4436,98 @@ describe('link destination round trip', () => {
   ];
 
   for (const [url, md] of CASES) {
-    it(`preserves "${url}"`, () => {
-      const editor = createTestEditor({nodes: [LinkNode]});
-      editor.update(
-        () => {
-          $getRoot()
-            .clear()
-            .append(
-              $createParagraphNode().append(
-                $createLinkNode(url).append($createTextNode('x')),
-              ),
-            );
-        },
-        {discrete: true},
-      );
-
-      const exported = editor.read('latest', () =>
-        $convertToMarkdownString(TRANSFORMERS),
-      );
-      expect(exported).toBe(md);
-
-      const reimported = createTestEditor({nodes: [LinkNode]});
-      reimported.update(
-        () => $convertFromMarkdownString(exported, TRANSFORMERS),
-        {discrete: true},
-      );
-
-      expect(
-        reimported.read('latest', () =>
-          $getRoot()
-            .getAllTextNodes()
-            .map(node => node.getParent())
-            .filter($isLinkNode)
-            .map(node => node.getURL()),
-        ),
-      ).toEqual([url]);
+    it(`preserves ${JSON.stringify(url)}`, () => {
+      expectLinkRoundTrip(url, null, md);
     });
   }
 });
 
 describe('link title round trip', () => {
   // A title is read back through `unescapeText` too, so a character reference
-  // in one survives only if it goes out as a reference of its own.
+  // in one survives only if it goes out as a reference of its own, and a `"`
+  // or backslash only with a backslash in front. A line ending cannot be
+  // written raw, since it would split the paragraph and lose the link, so it
+  // goes out as a character reference.
   // https://spec.commonmark.org/0.31.2/#link-title
   const CASES: [title: string, md: string][] = [
+    ['a\nb', '[x](/uri "a&#10;b")'],
+    ['a\rb', '[x](/uri "a&#13;b")'],
+    ['a\r\nb', '[x](/uri "a&#13;&#10;b")'],
+    ['a\n\nb', '[x](/uri "a&#10;&#10;b")'],
+    ['a&#10;\nb', '[x](/uri "a&#38;#10;&#10;b")'],
     ['a&#10;b', '[x](/uri "a&#38;#10;b")'],
     ['a&amp;b', '[x](/uri "a&#38;amp;b")'],
     ['a&b', '[x](/uri "a&b")'],
     ['a"b', '[x](/uri "a\\"b")'],
+    ['a\\b', '[x](/uri "a\\\\b")'],
+    ['a\\"b', '[x](/uri "a\\\\\\"b")'],
     ['plain', '[x](/uri "plain")'],
   ];
 
   for (const [title, md] of CASES) {
-    it(`preserves "${title}"`, () => {
-      const editor = createTestEditor({nodes: [LinkNode]});
-      editor.update(
-        () => {
-          $getRoot()
-            .clear()
-            .append(
-              $createParagraphNode().append(
-                $createLinkNode('/uri', {title}).append($createTextNode('x')),
-              ),
-            );
-        },
-        {discrete: true},
-      );
+    it(`preserves ${JSON.stringify(title)}`, () => {
+      expectLinkRoundTrip('/uri', title, md);
+    });
+  }
+});
 
-      const exported = editor.read('latest', () =>
-        $convertToMarkdownString(TRANSFORMERS),
-      );
-      expect(exported).toBe(md);
+describe('text after a link', () => {
+  // The link markup must not open a construct that the text after it closes:
+  // a backslash before the title's closing quote must not escape it, and a
+  // backtick must not open a code span, which is read before links are.
+  const AFTER = ' ") `b';
+  const CASES: [url: string, title: string | null, md: string][] = [
+    ['/uri', 'a\\', '[x](/uri "a\\\\") ") \\`b'],
+    ['/uri', 'a`', '[x](/uri "a\\`") ") \\`b'],
+    ['/a`b', null, '[x](/a\\`b) ") \\`b'],
+    ['/a `b', null, '[x](</a \\`b>) ") \\`b'],
+  ];
 
-      const reimported = createTestEditor({nodes: [LinkNode]});
-      reimported.update(
-        () => $convertFromMarkdownString(exported, TRANSFORMERS),
-        {discrete: true},
-      );
+  for (const [url, title, md] of CASES) {
+    it(`keeps ${JSON.stringify([url, title])} apart from it`, () => {
+      expectLinkRoundTrip(url, title, md, AFTER);
+    });
+  }
 
-      expect(
-        reimported.read('latest', () =>
-          $getRoot()
-            .getAllTextNodes()
-            .map(node => node.getParent())
-            .filter($isLinkNode)
-            .map(node => node.getTitle()),
-        ),
-      ).toEqual([title]);
+  it('keeps a backtick in the link apart from inline code after it', () => {
+    // The code span's own backticks cannot be escaped, so only the escape in
+    // the link keeps the two apart.
+    expectLinkRoundTrip('/a`b', null, '[x](/a\\`b)`c`', 'c', 'code');
+  });
+});
+
+describe('link import', () => {
+  // Hand-written spellings export never produces: single-quoted and
+  // parenthesized titles, and an escaped U+2028 in a title or a pointy
+  // destination. A backslash escapes the character after it, itself included.
+  const CASES: [md: string, url: string, title: string][] = [
+    ["[x](/uri 'a\\\\')", '/uri', 'a\\'],
+    ["[x](/uri 'it\\'s')", '/uri', "it's"],
+    ['[x](/uri (a\\)))', '/uri', 'a)'],
+    ['[x](/uri (a\\\u2028b))', '/uri', 'a\\\u2028b'],
+    ['[x](/uri "a\\\u2028b")', '/uri', 'a\\\u2028b'],
+    ['[x](</a\\\u2028b> "t")', '/a\\\u2028b', 't'],
+  ];
+
+  // Typing reads a link through `LINK.regExp`, which has to agree with the
+  // `importRegExp` used here.
+  function shortcutGroups(md: string) {
+    return LINK.regExp.exec(md)?.slice(1);
+  }
+
+  for (const [md, url, title] of CASES) {
+    it(`reads ${JSON.stringify(md)}`, () => {
+      expect(importLinks(md)).toEqual([{title, url}]);
+      expect(shortcutGroups(md)).toEqual(LINK.importRegExp?.exec(md)?.slice(1));
+    });
+  }
+
+  // A CR is a line ending in CommonMark, escaped or not, and a pointy
+  // destination cannot hold one.
+  for (const md of ['[x](</a\rb>)', '[x](</a\\\rb>)']) {
+    it(`reads no link from ${JSON.stringify(md)}`, () => {
+      expect(importLinks(md)).toEqual([]);
+      expect(shortcutGroups(md)).toBeUndefined();
     });
   }
 });

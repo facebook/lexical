@@ -361,3 +361,41 @@ describe('R2-1: a read runs only once no local update is pending or queued', () 
     ]);
   });
 });
+
+describe('R3-1: local updates a recovery commits are written on the document the editor shows', () => {
+  test('R3-1: listeners that queue local deletions past the commits a read makes first, while a remote insert waits', async () => {
+    const ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
+    const t = await setup(() => $getRoot().append($p(ALPHABET)));
+    t.offline();
+    t.a.update(() => void $selectIn([0], 0).insertText('!'));
+    // B deletes its first character 20 times: once pending when A's insert
+    // arrives, then from a listener of each commit that queues the next
+    // deletion and throws, so that each waits for a commit of its own (past
+    // the 16 a read commits first).
+    let left = 19;
+    t.b.editor.registerUpdateListener(({tags}) => {
+      if (left > 0 && !tags.has('collaboration')) {
+        left--;
+        t.b.editor.update(() => void $selectIn([0], 0, 1).removeText());
+        throw new Error('app failure');
+      }
+    });
+    t.b.editor.update(() => void $selectIn([0], 0, 1).removeText());
+    const caught = catchMicrotasks();
+    await expect(t.sync()).resolves.toBeUndefined();
+    await t.sync();
+    expect(caught).toHaveLength(19);
+    expect(left).toBe(0);
+    expect(t.b.warnings).toEqual([
+      'a remote change could not be read: local updates were still pending after 16 commits',
+    ]);
+    const fresh = await freshReader(t.a);
+    // As if the two edits had met concurrently: A's insert kept, B's 20
+    // deletions applied to B's own text.
+    const expected = `paragraph("!${ALPHABET.slice(20)}")`;
+    expect(fresh.describe()).toBe(expected);
+    expect(t.a.describe()).toBe(expected);
+    expect(t.b.describe()).toBe(expected);
+    expect(t.b.binding.status).toBe('active');
+  });
+});

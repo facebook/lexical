@@ -176,7 +176,7 @@ type GuardedRead = {
   /**
    * Runs right before the read's update, once the local updates still
    * pending have committed (see commitPending): what the read takes from
-   * the editor as those updates left it.
+   * the editor as those updates left it. Not where the read does not run.
    */
   readonly before?: () => void;
   /** The read, inside the update. */
@@ -1805,6 +1805,21 @@ export class YBinding {
     }
   }
 
+  /**
+   * An import starts (see guardedRead, once the local updates pending before
+   * it were committed): the binding sees the document as it is, the changes
+   * Yjs applied and it has not read included, until the transaction being
+   * read ends (see onAfterTransaction). Invariant: never before those
+   * updates are written. Why: they were made on the document the editor
+   * shows, without those changes (see Unread). Outside a transaction being
+   * read, nothing is unread and nothing changes.
+   */
+  private startReading(): void {
+    if (this.unread !== null) {
+      this.reading = true;
+    }
+  }
+
   private readChange(tr: Transaction): void {
     if (
       tr.origin === this ||
@@ -1936,7 +1951,7 @@ export class YBinding {
         }
         // The read sees the document as it is: this change, and those
         // applied since, which are read after it (see Reader).
-        this.reading = true;
+        this.startReading();
         cursor = this.pendingCursor;
         this.pendingCursor = null;
         if (undoing) {
@@ -2058,6 +2073,9 @@ export class YBinding {
           {error, reason},
         );
       },
+      // The rebuild reads the document as it is, once the local updates still
+      // pending were written on it as the editor showed it.
+      before: () => this.startReading(),
       recover: rebuildError => this.failClosed(rebuildError, shown),
       tag: REMOTE_TAGS,
     });
@@ -2105,7 +2123,7 @@ export class YBinding {
         ),
       };
     }
-    if (read.before !== undefined) {
+    if (failure === null && read.before !== undefined) {
       read.before();
     }
     const shown = editor.getEditorState();

@@ -26,6 +26,7 @@ import {
   $createTableRowNode,
 } from '@lexical/table';
 import {
+  $createTextNode,
   $getNodeByKey,
   $getRoot,
   $getSelection,
@@ -75,6 +76,19 @@ export const SHAPES: Record<string, Shape> = {
       $getRoot().append(
         $p('pre'),
         $createCodeNode('javascript').append($text('alpha beta gamma')),
+        $p('omega'),
+      ),
+    path: [1],
+  },
+  // A line whose text is three nodes: the composition is in the last one.
+  'formatted run': {
+    init: () =>
+      $getRoot().append(
+        $p('pre'),
+        $p('alpha ').append(
+          $createTextNode('beta').toggleFormat('italic'),
+          $createTextNode(' gamma'),
+        ),
         $p('omega'),
       ),
     path: [1],
@@ -156,8 +170,12 @@ export const REMOTE: Record<
     promise: (shape: Shape) => Expected;
     /** The change, made by B in one update. */
     $edit?: (path: number[]) => void;
-    /** The change, made by B in several updates (each synced). */
+    /** The change, made by B (and C) in several updates (each synced). */
     run?: (t: Setup, path: number[]) => Promise<void>;
+    /** Whether the change needs a third peer, C. */
+    third?: boolean;
+    /** The cases a known limit skips (see where it is set). */
+    limit?: (shape: Shape, end: string) => boolean;
   }
 > = {
   // B centers the line: its marker's attributes are held back.
@@ -230,6 +248,26 @@ export const REMOTE: Record<
   insert: {
     $edit: path => $selectIn(path, 6).insertText('XY '),
     promise: () => 'held',
+  },
+  // B types a word in the line and deletes text before it (read at once,
+  // the word held), then C types inside B's word (S7-37).
+  'insert, a delete, an insert in it': {
+    // A known limit (as S7-8): in a highlighted code line, A highlights its
+    // view of the text, without B's word, in other tokens than the stored
+    // ones. When A joins the line into the paragraph before while composing,
+    // the self-check notes a code highlight type the write left, until the
+    // hold ends and A reads it: then every client shows the same.
+    limit: (shape, end) =>
+      shape.highlight === true && end === 'Backspace across lines',
+    promise: () => 'read',
+    run: async (t, path) => {
+      t.b.update(() => $selectIn(path, 6).insertText('XY '));
+      t.b.update(() => $selectIn(path, 0, 2).removeText());
+      await t.sync();
+      t.c.update(() => $selectIn(path, 5).insertText('kc1z '));
+      await t.sync();
+    },
+    third: true,
   },
   join: {
     // Delete at the end of the line: the next line joins it.
@@ -334,7 +372,7 @@ export async function runCase(
   ids: number[],
 ) {
   const t = await setup(shape.init, {
-    ids,
+    ids: remote.third === true ? [...ids, 3] : ids,
     prepare: editor => {
       prepareMarkState(editor);
       if (shape.highlight) {
@@ -503,8 +541,8 @@ export async function runCase(
   if (made.text.includes('XY')) {
     expect(has('XY')).toBe(true);
   }
-  // Each word B pasted or typed shows once.
-  for (const word of ['pa1z', 'pb2z', 'kb9z', 'XY', '日本']) {
+  // Each word B or C pasted or typed shows once.
+  for (const word of ['pa1z', 'pb2z', 'kb9z', 'kc1z', 'XY', '日本']) {
     const count = (text: string) => text.split(word).length - 1;
     expect(count(final)).toBe(count(made.text));
   }

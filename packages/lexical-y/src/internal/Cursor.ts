@@ -27,6 +27,7 @@ import {
   SEGMENT_KEY,
   TYPE_KEY,
 } from './Schema';
+import {deleteItem, isGone} from './Unread';
 
 /*
  * Anchored editing of a Y.Node's children.
@@ -114,7 +115,7 @@ function unitFrom(item: Item): Item[] {
   const unit = [item];
   for (
     let prev = item, it = item.right;
-    it !== null && !it.deleted && isFormat(it) && continuesUnit(unit, prev, it);
+    it !== null && !isGone(it) && isFormat(it) && continuesUnit(unit, prev, it);
     prev = it, it = it.right
   ) {
     unit.push(it);
@@ -143,7 +144,7 @@ export const markFormatCloser = (item: Item): void => {
 
 /** A live countable item: text, a child node, an embed. */
 export const isLiveContent = (item: Item): boolean =>
-  !item.deleted && item.countable;
+  !isGone(item) && item.countable;
 
 /** An opener of a node type key (`t`) or segment key (`k`). */
 function isNodeTypeOpener(content: ContentFormat): boolean {
@@ -212,12 +213,12 @@ export class Cursor {
     ) {
       const of = `${keyOf(item)}\u0000${item.id.client}`;
       this.passed.add(
-        !item.deleted || this.tr.deleteSet.hasId(item.id)
+        !isGone(item) || this.tr.deleteSet.hasId(item.id)
           ? of
           : `${of}\u0000${JSON.stringify(valueOf(item))}`,
       );
     }
-    if (!item.deleted && isFormat(item)) {
+    if (!isGone(item) && isFormat(item)) {
       const {key, value} = item.content as ContentFormat;
       if (!this.gapFormats.has(key)) {
         this.gapFormats.set(key, this.formats.get(key) ?? null);
@@ -332,7 +333,7 @@ export class Cursor {
   private minimizeFormatChanges(formats: Record<string, unknown>): void {
     while (this.right !== null) {
       const r = this.right;
-      if (r.deleted) {
+      if (isGone(r)) {
         // a deleted item has no length: step over it
       } else if (
         isFormat(r) &&
@@ -413,7 +414,7 @@ export class Cursor {
   private insertNegatedFormats(negated: Formats, closers = false): void {
     while (this.right !== null) {
       const r = this.right;
-      if (!r.deleted) {
+      if (!isGone(r)) {
         if (
           !isFormat(r) ||
           !equalFormatValue(negated.get(keyOf(r)), valueOf(r))
@@ -517,7 +518,7 @@ export class Cursor {
           this.split(item, n);
         }
         n -= item.length;
-        item.delete(this.tr);
+        deleteItem(item, this.tr);
         first = first ?? item;
         last = item;
       }
@@ -609,7 +610,7 @@ export class Cursor {
         }
       }
       let unit: Item[] | null = null;
-      if (it.deleted || !isFormat(it)) {
+      if (isGone(it) || !isFormat(it)) {
         place++;
       } else {
         const family = formatFamily(keyOf(it));
@@ -738,7 +739,7 @@ export class Cursor {
       for (const unit of units) {
         for (const it of unit) {
           if (!keep.has(it)) {
-            it.delete(this.tr);
+            deleteItem(it, this.tr);
             if (passed.has(it)) {
               changed.add(keyOf(it));
             }
@@ -888,10 +889,10 @@ export class Cursor {
     loop: while (
       this.right !== null &&
       (n > 0 ||
-        (negated.size > 0 && (this.right.deleted || isFormat(this.right))))
+        (negated.size > 0 && (isGone(this.right) || isFormat(this.right))))
     ) {
       const r = this.right;
-      if (!r.deleted) {
+      if (!isGone(r)) {
         if (isFormat(r)) {
           const {key, value} = r.content as ContentFormat;
           const attr = formats[key];
@@ -908,7 +909,7 @@ export class Cursor {
               // and the range's value opened after it, before that content.
               const earlier = atStart.get(key);
               if (earlier !== undefined) {
-                earlier.delete(this.tr);
+                deleteItem(earlier, this.tr);
               }
               atStart.set(key, r);
               if (equalFormatValue(attr, value)) {
@@ -952,7 +953,7 @@ export class Cursor {
               }
               negated.set(key, value);
             }
-            r.delete(this.tr);
+            deleteItem(r, this.tr);
           } else {
             if (inRange && n > 0) {
               // Rule 4. A boundary of another key of a family this write
@@ -1022,7 +1023,7 @@ export class Cursor {
       it !== null && !isLiveContent(it);
       it = it.right
     ) {
-      if (!it.deleted && isFormat(it) && !ahead.has(keyOf(it))) {
+      if (!isGone(it) && isFormat(it) && !ahead.has(keyOf(it))) {
         ahead.set(keyOf(it), it);
       }
     }

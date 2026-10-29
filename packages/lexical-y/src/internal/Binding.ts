@@ -113,6 +113,7 @@ import {
   typeOf,
   type Unit,
 } from './State';
+import {emptyView, isGone, seenBy, type Unread} from './Unread';
 import {
   NESTED_FALLBACK_WARNING,
   notesSince,
@@ -570,6 +571,16 @@ export class YBinding {
   /** The local selection before the remote transaction being applied. */
   private pendingCursor: YCursor | null = null;
   /**
+   * While changes Yjs applies are not read yet: the document as it was
+   * before them, which the editor still shows, and which the binding writes
+   * on and takes selections on meanwhile (see Unread).
+   */
+  private unread: Unread | null = null;
+  /** While a change is read: the document as it is (see readChange). */
+  private reading = false;
+  /** This binding's view, for its work (see guard). */
+  private readonly seer = () => (this.reading ? null : this.unread);
+  /**
    * The selection before the local change being written (see onUpdate), for
    * the undo step it starts (see stack-item-added in startInner).
    */
@@ -642,6 +653,7 @@ export class YBinding {
         tr.origin !== this.followUpOrigin
           ? this.getCursor()
           : null;
+      this.noteChange(tr);
     };
   }
 
@@ -1491,7 +1503,9 @@ export class YBinding {
   private guard<T>(fn: () => T): T {
     this.busy++;
     try {
-      return fn();
+      // On the document as this binding's editor shows it (see unread),
+      // whatever another binding of the document shows.
+      return seenBy(this.seer, fn);
     } finally {
       this.busy--;
       this.flushWarnings();
@@ -1616,7 +1630,54 @@ export class YBinding {
   // -------------------------------------------------------------------------
   // Remote -> Lexical
 
+  /**
+   * A change Yjs starts applying, before it changes anything: until this
+   * binding reads it (see onAfterTransaction), its editor shows the document
+   * as it was before it, whatever another binding of the document does
+   * meanwhile (another binding's writes, in the observers of an earlier
+   * change, included). Its own writes are its editor's already.
+   */
+  private noteChange(tr: Transaction): void {
+    if (
+      this._status === 'pending' ||
+      tr.origin === this ||
+      tr.origin === this.initOrigin ||
+      tr.origin === this.followUpOrigin ||
+      tr.origin === this.scanOrigin
+    ) {
+      return;
+    }
+    if (this.unread === null) {
+      this.unread = emptyView(this._root);
+    }
+    this.unread.changes.push(tr);
+  }
+
+  /** The change `tr` is read, or has nothing to read (see noteChange). */
+  private dropChange(tr: Transaction): void {
+    const view = this.unread;
+    if (view === null) {
+      return;
+    }
+    const at = view.changes.indexOf(tr);
+    if (at >= 0) {
+      view.changes.splice(at, 1);
+    }
+    if (view.changes.length === 0) {
+      this.unread = null;
+    }
+  }
+
   private onAfterTransaction(tr: Transaction): void {
+    try {
+      this.readChange(tr);
+    } finally {
+      this.reading = false;
+      this.dropChange(tr);
+    }
+  }
+
+  private readChange(tr: Transaction): void {
     if (
       tr.origin === this ||
       tr.origin === this.initOrigin ||
@@ -1693,8 +1754,21 @@ export class YBinding {
     // Invariant: a local update still pending (an editor.update() made in
     // the same task) is committed, and written, before a remote read. Why:
     // committed with the read, it would carry the read's tags and never be
-    // written.
+    // written. It is written on the document as it was before this change,
+    // which it was made on (see Unread).
+    if (this.unread === null || !this.unread.changes.includes(tr)) {
+      this.noteChange(tr);
+    }
+    const committed = this._editor.getEditorState();
     this.commitPending();
+    // The selection the read keeps is the one those updates left, on the
+    // document they were made on.
+    if (this._editor.getEditorState() !== committed) {
+      this.pendingCursor = this.getCursor();
+    }
+    // The read sees the document as it is: this change, and those applied
+    // since, which are read after it (see Reader).
+    this.reading = true;
     let cursor = this.pendingCursor;
     this.pendingCursor = null;
     // An undo puts back the selection of its step (a range, after typing
@@ -2215,6 +2289,8 @@ export class YBinding {
         markedLeaves,
       );
     const state = this.state;
+    // On the document as it was before a remote change not read yet, while
+    // there is one (see Unread and guard).
     editorState.read(() =>
       this.$writeCommit(
         state,
@@ -2464,7 +2540,7 @@ export class YBinding {
             prevEditorState,
           )
         : new Set<CS>();
-    if (commit.followUp && writer !== null) {
+    if (commit.followUp && writer !== null && this.unread === null) {
       this.$checkFollowUp(
         state,
         commit,
@@ -2869,12 +2945,14 @@ export class YBinding {
       this.untransformedText.size === 0 &&
       this.storedHoles.size === 0;
     // Skipped when a remote change was applied during the write (remoteSeq
-    // moved): the shared content is no longer what was written.
+    // moved), or before it and not read yet (see Unread): the shared content
+    // is not what was written.
     if (
       !(
         check &&
         writer !== null &&
         this.remoteSeq === seq &&
+        this.unread === null &&
         Math.random() < (this.options.selfCheckSample ?? 1)
       )
     ) {
@@ -3224,7 +3302,10 @@ export class YBinding {
    * update the binding makes next (a read) commits alone. Why: an update
    * still pending would be committed with it, and take its tags. Committing
    * one can leave another pending (its listeners queue one): up to 16 are
-   * committed.
+   * committed. A pending state that holds nothing to commit is committed as
+   * it is: an update reuses such a state without committing it, so a read
+   * that changes nothing would leave its tags on it, and the next update
+   * that changes something would commit with them and not be written.
    */
   private commitPending(): void {
     const editor = this._editor;
@@ -3233,7 +3314,11 @@ export class YBinding {
       i < 16 && editor._pendingEditorState !== null && !editor._updating;
       i++
     ) {
+      const pending = editor._pendingEditorState;
       editor.update(() => {}, {discrete: true});
+      if (editor._pendingEditorState === pending) {
+        editor.read(() => {});
+      }
     }
   }
 
@@ -4016,6 +4101,11 @@ export class YBinding {
 
   /** The local selection as relative positions (JSON), or null. */
   getCursor(): YCursor | null {
+    // On the document as this binding's editor shows it (see guard).
+    return seenBy(this.seer, () => this.readCursor());
+  }
+
+  private readCursor(): YCursor | null {
     return this._editor.getEditorState().read(() => {
       try {
         return this.$captureCursor();
@@ -4491,7 +4581,7 @@ export class YBinding {
     for (let it = start; it !== null; it = it.right) {
       const len = shownLength(it, hidden);
       if (len === 0) {
-        if (isEndItem(it) && !it.deleted) {
+        if (isEndItem(it) && !isGone(it)) {
           break;
         }
         continue;

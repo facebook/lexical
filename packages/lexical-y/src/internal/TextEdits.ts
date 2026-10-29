@@ -1464,7 +1464,7 @@ export class TextReplay {
           ),
           cursor,
           undefined,
-          true,
+          {at, text: d},
         );
         const kept: Block[] = [];
         let r = 0;
@@ -1526,7 +1526,18 @@ export class TextReplay {
    * (items of what arrived, `s`, in order) that lies between two of them (or
    * one and an end of the stretch) aligned with the text that left between
    * them (of `d`), as one text, by the diff (see stretch): anchored at the
-   * caret (`cursor`, in `s`) where it is in that text.
+   * caret (`cursor`, in `s`) where it is in that text. With `sure`, only what
+   * the diff that takes the common end first keeps too: where the text could
+   * be either of two equal runs, neither. That diff reads `d`, and also the
+   * text that left as it was (`sure.text`, of which `d` holds the runs
+   * `sure.at` says, see stretch), with the text deleted whole still in
+   * place; what either reading keeps as the diff does is kept. Why: read
+   * without that text, the characters on its two sides are next to each
+   * other, which makes the diff's alignment one of two where the line had
+   * one (a line made again as one node with one word changed, where that
+   * word was a node of its own, wrote the end of the word before it again,
+   * and a peer's concurrent edit of the changed word landed inside that
+   * word).
    */
   private align(
     spans: readonly Span[],
@@ -1535,8 +1546,31 @@ export class TextReplay {
     blocks: readonly Block[],
     cursor: number,
     keeps: (x: Span) => boolean = () => true,
-    sure = false,
+    sure: {
+      readonly at: readonly (readonly [number, number, number])[];
+      readonly text: string;
+    } | null = null,
   ): Block[] {
+    // The run of `d` (see `sure`) that character `at` of it is in.
+    const runOf = (at: number): readonly [number, number, number] => {
+      const runs = sure!.at;
+      let lo = 0;
+      let hi = runs.length - 1;
+      while (lo < hi) {
+        const mid = (lo + hi + 1) >> 1;
+        if (runs[mid][0] <= at) {
+          lo = mid;
+        } else {
+          hi = mid - 1;
+        }
+      }
+      return runs[lo];
+    };
+    // Where character `at` of `d` was in the text that left.
+    const old = (at: number): number => {
+      const run = runOf(at);
+      return run[1] + at - run[0];
+    };
     const out: Block[] = [];
     let k = 0;
     for (let i = 0; i <= blocks.length; i++) {
@@ -1586,31 +1620,64 @@ export class TextReplay {
         [0, prefix, 0],
         [tl - suffix, tl, shift],
       ];
-      if (sure) {
-        // Only what the diff that takes the common end first keeps too:
-        // where the text could be either of two equal runs, neither.
-        const max = Math.min(w.length, tl);
-        let q = 0;
-        while (
-          q < max &&
-          w.charCodeAt(w.length - 1 - q) === text.charCodeAt(tl - 1 - q)
-        ) {
-          q++;
-        }
-        let p = 0;
-        while (p < max - q && w.charCodeAt(p) === text.charCodeAt(p)) {
-          p++;
-        }
-        ({prefix: p, suffix: q} = snapToWords(w, text, p, q, this.composing));
+      if (sure !== null) {
+        // Only what the diff that takes the common end first keeps too (see
+        // `sure`): in `w`, and where text that left was deleted whole in
+        // this part, also in the text that left as it was, from right after
+        // the character before it to the character after it; what either
+        // reading keeps as the diff does is kept.
+        const endFirst = (was: string): [number, number] => {
+          const max = Math.min(was.length, tl);
+          let q = 0;
+          while (
+            q < max &&
+            was.charCodeAt(was.length - 1 - q) === text.charCodeAt(tl - 1 - q)
+          ) {
+            q++;
+          }
+          let p = 0;
+          while (p < max - q && was.charCodeAt(p) === text.charCodeAt(p)) {
+            p++;
+          }
+          const snapped = snapToWords(was, text, p, q, this.composing);
+          return [snapped.prefix, snapped.suffix];
+        };
+        const both: [number, number, number][] = [];
+        // Character `i` of `text` is character `i + dy` of `w`.
+        const [p, q] = endFirst(w);
         const other: [number, number, number][] = [
           [0, p, 0],
           [tl - q, tl, shift],
         ];
-        const both: [number, number, number][] = [];
         for (const [x0, x1, dx] of keep) {
           for (const [y0, y1, dy] of other) {
             if (dx === dy && Math.min(x1, y1) > Math.max(x0, y0)) {
               both.push([Math.max(x0, y0), Math.min(x1, y1), dx]);
+            }
+          }
+        }
+        const from = o0 === 0 ? 0 : old(o0 - 1) + 1;
+        const to = o1 === d.length ? sure.text.length : old(o1);
+        const was = sure.text.slice(from, to);
+        if (was !== w) {
+          // Character `i` of `text` is character `i + c` of the text that
+          // left; in the diff's reading, the run of `w` it is in says.
+          const [op, oq] = endFirst(was);
+          const olds: [number, number, number][] = [
+            [0, op, from],
+            [tl - oq, tl, from + was.length - tl],
+          ];
+          for (const [x0, x1, dx] of keep) {
+            for (let x = x0; x < x1; ) {
+              const run = runOf(o0 + x + dx);
+              const end = Math.min(x1, run[0] + run[2] - o0 - dx);
+              const c = o0 + dx + run[1] - run[0];
+              for (const [y0, y1, cy] of olds) {
+                if (c === cy && Math.min(end, y1) > Math.max(x, y0)) {
+                  both.push([Math.max(x, y0), Math.min(end, y1), dx]);
+                }
+              }
+              x = end;
             }
           }
         }

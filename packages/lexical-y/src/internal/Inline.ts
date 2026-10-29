@@ -36,6 +36,7 @@ import {
   TYPE_KEY,
   WRAPPER_PREFIX,
 } from './Schema';
+import {isGone} from './Unread';
 
 // Inline content as atoms, the form both the editor's side ($pushInline)
 // and the shared side (readAtoms) are compared in: one atom per content unit
@@ -267,7 +268,7 @@ export function readAtoms(
   const current = new Map(formats);
   let attrs: Attrs | null = null;
   for (let it = start; it !== null && it !== stop; it = it.right) {
-    if (it.deleted) {
+    if (isGone(it)) {
       continue;
     }
     if (hidden !== null && it.countable) {

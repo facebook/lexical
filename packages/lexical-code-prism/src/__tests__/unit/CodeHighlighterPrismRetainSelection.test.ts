@@ -13,8 +13,8 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
-  type ElementNode,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
@@ -94,9 +94,10 @@ describe('CodeHighlighterPrism $updateAndRetainSelection', () => {
           code.select(offset, offset);
         });
         expect(
-          editor.read(() =>
-            $getRoot().getFirstChildOrThrow<ElementNode>().getChildrenSize(),
-          ),
+          editor.read(() => {
+            const code = $getRoot().getFirstChild();
+            return $isElementNode(code) ? code.getChildrenSize() : 0;
+          }),
         ).toBeGreaterThan(parts.length);
 
         await editor.update(() => {

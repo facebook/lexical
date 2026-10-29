@@ -24,9 +24,9 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   defineExtension,
-  type ElementNode,
 } from 'lexical';
 import {beforeAll, describe, expect, test} from 'vitest';
 
@@ -127,9 +127,10 @@ describe('CodeHighlighterShiki $updateAndRetainSelection', () => {
         {discrete: true},
       );
       expect(
-        editor.read(() =>
-          $getRoot().getFirstChildOrThrow<ElementNode>().getChildrenSize(),
-        ),
+        editor.read(() => {
+          const code = $getRoot().getFirstChild();
+          return $isElementNode(code) ? code.getChildrenSize() : 0;
+        }),
       ).toBeGreaterThan(parts.length);
 
       editor.update(

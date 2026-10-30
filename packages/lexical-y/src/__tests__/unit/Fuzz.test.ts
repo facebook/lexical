@@ -55,9 +55,10 @@ const CHUNK = 25;
 const KNOWN_OPEN = new Map<number, string>([
   // Documented limits, shared with the Yjs 13 layouts or where they diverge
   // (seen in runs of 2,000 seeds; triaged on the minimized scripts):
-  // a list type change of an item that holds a paragraph shows it twice
-  // (restructure written as a move; #9386 and v2 duplicate it too).
-  [347, 'restructure of a list item holding blocks (dup)'],
+  // two peers turn the same paragraph into a number list and a bullet list
+  // in the same round: both lists keep it, so its text shows twice
+  // (#9386 and v2 duplicate it too).
+  [347, 'one paragraph made a list by two peers at once (dup)'],
   // A table inserted into a box while a peer makes the box's paragraph a
   // list, which replaces the box: the table goes with the box (delete wins;
   // #9386 and v2 lose the same tokens).
@@ -103,7 +104,11 @@ function chunks(start: number, count: number): [number, number][] {
 
 // Seeds where @lexical/y does worse than v2 in a documented limit, skipped
 // by the relative check (the absolute check still runs on them).
-const KNOWN_WORSE_THAN_V2 = new Map<number, string>([]);
+const KNOWN_WORSE_THAN_V2 = new Map<number, string>([
+  // Every token @lexical/y loses was typed into a table a peer removed
+  // (delete wins); v2 keeps some of them and duplicates another.
+  [5789, 'loss: delete wins in a removed container'],
+]);
 
 if (process.env.FUZZ_DIFF === '1') {
   test('differential', () => {

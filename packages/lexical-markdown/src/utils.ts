@@ -66,18 +66,6 @@ export function transformersByType(transformers: Transformer[]): Readonly<{
 const PUNCTUATION = /[\p{P}\p{S}]/u;
 const WHITESPACE = /[\p{Zs}\t\n\f\r]/u;
 
-// CJK characters for the CJK-friendly amendment to emphasis flanking:
-// East Asian Width W, F or H and not emoji, or Hangul (generated ranges), plus
-// the ideographic variation selectors, which flank as a CJK character does.
-// https://github.com/tats-u/markdown-cjk-friendly/blob/main/specification.md
-const CJK =
-  // Some ranges start or end at a combining mark, which is not misleading.
-  // eslint-disable-next-line no-misleading-character-class
-  /[\u1100-\u11ff\u20a9\u2329-\u232a\u2630-\u2637\u268a-\u268f\u2e80-\u2e99\u2e9b-\u2ef3\u2f00-\u2fd5\u2ff0-\u303e\u3041-\u3096\u3099-\u30ff\u3105-\u312f\u3131-\u318e\u3190-\u31e5\u31ef-\u321e\u3220-\u3247\u3250-\ua48c\ua490-\ua4c6\ua960-\ua97c\uac00-\ud7a3\ud7b0-\ud7c6\ud7cb-\ud7fb\uf900-\ufaff\ufe10-\ufe19\ufe30-\ufe52\ufe54-\ufe66\ufe68-\ufe6b\uff01-\uffbe\uffc2-\uffc7\uffca-\uffcf\uffd2-\uffd7\uffda-\uffdc\uffe0-\uffe6\uffe8-\uffee\u{16fe0}-\u{16fe4}\u{16ff0}-\u{16ff6}\u{17000}-\u{18cda}\u{18cff}-\u{18d20}\u{18d80}-\u{18df2}\u{18e00}-\u{19191}\u{191a0}-\u{191d2}\u{1aff0}-\u{1aff3}\u{1aff5}-\u{1affb}\u{1affd}-\u{1affe}\u{1b000}-\u{1b128}\u{1b132}\u{1b150}-\u{1b152}\u{1b155}\u{1b164}-\u{1b168}\u{1b170}-\u{1b2fb}\u{1d300}-\u{1d356}\u{1d360}-\u{1d376}\u{1f1ae}\u{1f200}\u{1f202}\u{1f210}-\u{1f219}\u{1f21b}-\u{1f22e}\u{1f230}-\u{1f231}\u{1f237}\u{1f23b}\u{1f240}-\u{1f248}\u{1f260}-\u{1f265}\u{1f7da}\u{20000}-\u{3fffd}\u{e0100}-\u{e01ef}]/u;
-// Variation selectors other than the emoji one, which join the character
-// before them.
-const TEXT_VARIATION_SELECTOR = /[\ufe00-\ufe0e]/;
-
 const WHITESPACE_CLASS = 0;
 const PUNCTUATION_CLASS = 1;
 const OTHER_CLASS = 2;
@@ -132,77 +120,27 @@ function isFlankedByClass(primary: number, secondary: number): boolean {
   );
 }
 
-function isCJK(character: string | undefined): boolean {
-  return (
-    character !== undefined &&
-    character.charCodeAt(0) >= 0x1100 &&
-    CJK.test(character)
-  );
-}
-
-// Under the CJK-friendly amendment, CJK punctuation on the side a run faces
-// flanks as a letter does, and a CJK character on its other side lets it
-// flank as punctuation there does.
-function facingClass(character: string | undefined, isCJKFriendly: boolean) {
-  const characterClass = classify(character);
-  return isCJKFriendly &&
-    characterClass === PUNCTUATION_CLASS &&
-    isCJK(character)
-    ? OTHER_CLASS
-    : characterClass;
-}
-
-function awayClass(character: string | undefined, isCJKFriendly: boolean) {
-  const characterClass = classify(character);
-  return isCJKFriendly && characterClass === OTHER_CLASS && isCJK(character)
-    ? PUNCTUATION_CLASS
-    : characterClass;
-}
-
 /**
  * Whether a delimiter run of `marker` between `before` and `after` can open
  * and close emphasis; `_` opens or closes inside a word only beside
- * punctuation. With `isCJKFriendly`, it follows the CJK-friendly amendment,
- * so that `**你好。**世界` is strong as it is in CJK-friendly readers.
+ * punctuation.
  * https://spec.commonmark.org/0.31.2/#can-open-emphasis
  */
 export function getEmphasisSides(
   marker: string,
   before: string | undefined,
   after: string | undefined,
-  isCJKFriendly = false,
 ): {canOpen: boolean; canClose: boolean} {
-  const isLeft = isFlankedByClass(
-    facingClass(after, isCJKFriendly),
-    awayClass(before, isCJKFriendly),
-  );
-  const isRight = isFlankedByClass(
-    facingClass(before, isCJKFriendly),
-    awayClass(after, isCJKFriendly),
-  );
+  const beforeClass = classify(before);
+  const afterClass = classify(after);
+  const isLeft = isFlankedByClass(afterClass, beforeClass);
+  const isRight = isFlankedByClass(beforeClass, afterClass);
   return marker === '_'
     ? {
-        canClose: isRight && (!isLeft || classify(after) === PUNCTUATION_CLASS),
-        canOpen: isLeft && (!isRight || classify(before) === PUNCTUATION_CLASS),
+        canClose: isRight && (!isLeft || afterClass === PUNCTUATION_CLASS),
+        canOpen: isLeft && (!isRight || beforeClass === PUNCTUATION_CLASS),
       }
     : {canClose: isRight, canOpen: isLeft};
-}
-
-/**
- * The character before `index`, read with a variation selector other than
- * the emoji one as the character it follows, as the CJK-friendly amendment
- * does.
- */
-export function characterBeforeRun(
-  text: string,
-  index: number,
-): string | undefined {
-  const character = characterBefore(text, index);
-  return character !== undefined &&
-    index > 1 &&
-    TEXT_VARIATION_SELECTOR.test(character)
-    ? characterBefore(text, index - 1)
-    : character;
 }
 
 export function isPunctuationOrSpace(character: string): boolean {

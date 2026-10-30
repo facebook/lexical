@@ -387,7 +387,7 @@ for developers (what happened and what to do): render your own text from
 | `STORAGE_MISMATCH_WARNING` | A node type is stored in a way its class cannot be (one warning per type). Read only. | `'declaration-changed'`: `type`, `stored`, `declared`; `'malformed'`: `type`, `key`, `found` |
 | `UNSUPPORTED_SLOTS_WARNING` | Named slots where the document cannot store them. Not written; read only. | `'stored-host'`, `'root'`: `types` |
 | `UNSUPPORTED_CONFIG_WARNING` | `BlockIdExtension` with `repairTransforms: true`, or a document with Yjs's format cleanup on (not from `createYDoc`), see [Set up an editor](#set-up-an-editor). Nothing is written; read only. | `'repair-transforms'`: `options`; `'cleanup-formatting'` |
-| `NESTED_FALLBACK_WARNING` | A class that declares a line, format or group is stored as a node of its own (see [How content is stored](#how-content-is-stored)). Once per binding, class and reason. | `type`, and `method` (`'merge-override'`) or `properties` (`'undeclared-properties'`) |
+| `NESTED_FALLBACK_WARNING` | A class that declares a line, format or group is stored as a node of its own (see [How content is stored](#how-content-is-stored)). Once per binding, class and reason. | `'merge-override'`: `type`, `method`; `'undeclared-properties'`: `type`, `properties`; `'inline-slots'`, `'inline-incomplete-schema'`, `'type-name'`, `'merge-incomplete-schema'`, `'merge-slots'`, `'group-children'`, `'group-state-merge'`, `'group-incomplete-schema'`: `type` |
 | `UNSYNCED_VALUE_WARNING` | A property or NodeState value is not plain JSON, so it is not synchronized. Once per binding and property. | `'not-json'`: `property` |
 | `UNSUPPORTED_EDIT_WARNING` | A local update changed the editor while the binding is read only (reported once each time it goes read only). Not written; what it changed is read again, or, once the document cannot be read, the editor shows again the last state it showed before the update. | `'read-only'` |
 | `SELF_CHECK_WARNING` | The self-check (`selfCheck`) found the editor and the document disagree. | `'local'`, `'remote'`: `problems` |
@@ -403,6 +403,7 @@ import {
   UNSUPPORTED_SCHEMA_WARNING,
   type YWarning,
 } from '@lexical/y';
+import {defineExtension} from 'lexical';
 
 function banner(warning: YWarning): string | null {
   switch (warning.code) {
@@ -422,6 +423,7 @@ function banner(warning: YWarning): string | null {
 
 defineExtension({
   // ...
+  name: 'my-app/editor',
   onWarn(error) {
     if (isYWarning(error)) {
       showBanner(banner(error));
@@ -1068,6 +1070,14 @@ not merge as a user might expect:
     nothing and recomputes no column widths: the update in which Lexical
     runs a newly registered transform over the document writes nothing, and
     the editor reads what it changed again.
+  - Code stored without highlighting (written by a headless seed or
+    `editYState` whose extensions lack `CodePrismExtension` or
+    `CodeShikiExtension`) shows unhighlighted on every client until a local
+    edit in that code block, which highlights the whole block and writes it.
+    The highlighter's pass over the document when it registers writes
+    nothing, like the table plugin's above, and the binding reads content
+    without running transforms: a transform never rewrites what a client
+    read. Seed and edit documents with the same extensions as the clients.
   - A list item that holds its nested list next to other content (text, a
     second list) stays so until a local edit changes that item (its
     children, or the item itself; typing in its text does not). Lexical's
@@ -1261,6 +1271,42 @@ not merge as a user might expect:
   write its type, and Yjs keeps one of them by client id: a heading joined
   across a quote to the paragraph after it, while a collaborator joins that
   paragraph into the quote, can become a quote.
+
+### Open issues
+
+These are bugs, not intended behavior; each issue has a test that
+reproduces it:
+
+- Two joins at once into a code block or heading can change its block type
+  (see Other races above):
+  [#9511](https://github.com/meta/lexical/issues/9511).
+- Two versions of an app that store a node type differently, and insert
+  its first node at the same time, turn one of the two nodes into a
+  paragraph and leave the room read only:
+  [#9512](https://github.com/meta/lexical/issues/9512).
+- An update listener that throws stops the listeners registered after it,
+  so when it was registered before the binding, that commit is never
+  written: [#9514](https://github.com/meta/lexical/issues/9514).
+- Undoing a link while a collaborator formats text over the link's start
+  keeps the link on its own text (see Undo above):
+  [#9521](https://github.com/meta/lexical/issues/9521).
+- A line without a marker joins the start of a paragraph a collaborator
+  appends at the same time:
+  [#9524](https://github.com/meta/lexical/issues/9524).
+- Undoing a format while a collaborator moves a word into its range can
+  leave the format on text typed next to the range (see Undo above):
+  [#9560](https://github.com/meta/lexical/issues/9560).
+- A comment can spread onto later words when a client types uncommented
+  text inside it offline while a collaborator's deletes there drop the item
+  that ended it: [#9564](https://github.com/meta/lexical/issues/9564).
+- Turning a paragraph inside a container that is itself inside a
+  container (both not shadow roots) into a list removes the outer
+  container and makes no list, in every `@lexical/y` editor (it runs
+  `NodeStructureExtension`):
+  [#9570](https://github.com/meta/lexical/issues/9570).
+
+For `MarkStateExtension` comments, see the
+[comments limitations](./comments.md#limitations).
 
 ## Changing the layout and migrating
 

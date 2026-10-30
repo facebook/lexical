@@ -5198,6 +5198,25 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     },
   );
 
+  it('writes no backslash reference inside a URL', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createTextNode('see http://x.com/a\\'),
+            $createTextNode('b').toggleFormat('bold'),
+          ),
+        ),
+      {discrete: true},
+    );
+    expect(
+      editor.read('latest', () =>
+        $convertToMarkdownString(TRANSFORMERS, undefined, true),
+      ),
+    ).toBe('see http://x.com/a\\**b**');
+  });
+
   it('writes no reference for a tag character inside a URL', () => {
     const editor = createTestEditor();
     editor.update(

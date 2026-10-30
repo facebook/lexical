@@ -773,7 +773,7 @@ function joinPieces({kinds, values}: MarkdownPieces): string {
   if (!kinds.some(isMarker)) {
     return values.join('');
   }
-  const {encodeStart, encodeEnd} = decideReferences(kinds, values);
+  const {encodeStart, encodeEnd, isLinkish} = decideReferences(kinds, values);
   let markdown = '';
   for (let index = 0; index < kinds.length; index++) {
     let value = values[index];
@@ -790,11 +790,13 @@ function joinPieces({kinds, values}: MarkdownPieces): string {
       value = value.slice(0, -last.length);
     }
     // A backslash left unescaped (when preserving newlines, or in decorator
-    // text) would escape the reference or marker written after it.
+    // text) would escape the reference or marker written after it, though
+    // not inside a bare URL, where no reference is written.
     if (
       kinds[index] === TEXT &&
       isMarker(kinds[index + 1]) &&
-      isEscaped(value, value.length)
+      isEscaped(value, value.length) &&
+      !isLinkish(index, true)
     ) {
       value = value.slice(0, -1) + toCharacterReference('\\');
     }
@@ -901,7 +903,11 @@ function scanDelimiterRun(
 function decideReferences(
   kinds: PieceKind[],
   values: string[],
-): {encodeStart: Uint8Array; encodeEnd: Uint8Array} {
+): {
+  encodeStart: Uint8Array;
+  encodeEnd: Uint8Array;
+  isLinkish: (index: number, atEnd: boolean) => boolean;
+} {
   const count = kinds.length;
   const encodeStart = new Uint8Array(count);
   const encodeEnd = new Uint8Array(count);
@@ -1116,7 +1122,7 @@ function decideReferences(
       }
     }
   }
-  return {encodeEnd, encodeStart};
+  return {encodeEnd, encodeStart, isLinkish};
 }
 
 function getTextSibling(node: TextNode, backward: boolean): TextNode | null {

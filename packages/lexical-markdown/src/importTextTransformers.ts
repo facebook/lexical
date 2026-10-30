@@ -129,6 +129,34 @@ export function importTextTransformers(
     }
   }
 
+  // Imports the text left on either side of a match from `startIndex` to
+  // `endIndex`, each with what lies beyond the run cut at its edge.
+  const importAround = (
+    nodeBefore: LexicalNode | undefined,
+    nodeAfter: LexicalNode | undefined,
+    startIndex: number,
+    endIndex: number,
+  ) => {
+    if (canContainTransformableMarkdown(nodeAfter)) {
+      importTextTransformers(
+        nodeAfter,
+        textFormatTransformersIndex,
+        textMatchTransformers,
+        characterBeyondRun(text, endIndex, -1, before),
+        after,
+      );
+    }
+    if (canContainTransformableMarkdown(nodeBefore)) {
+      importTextTransformers(
+        nodeBefore,
+        textFormatTransformersIndex,
+        textMatchTransformers,
+        before,
+        characterBeyondRun(text, startIndex, 1, after),
+      );
+    }
+  };
+
   if (foundTextFormat) {
     const result = importTextFormatTransformer(
       textNode,
@@ -139,25 +167,7 @@ export function importTextTransformers(
     );
     const {startIndex, endIndex} = foundTextFormat;
     const tagLength = foundTextFormat.match[1].length;
-
-    if (canContainTransformableMarkdown(result.nodeAfter)) {
-      importTextTransformers(
-        result.nodeAfter,
-        textFormatTransformersIndex,
-        textMatchTransformers,
-        characterBeyondRun(text, endIndex, -1, before),
-        after,
-      );
-    }
-    if (canContainTransformableMarkdown(result.nodeBefore)) {
-      importTextTransformers(
-        result.nodeBefore,
-        textFormatTransformersIndex,
-        textMatchTransformers,
-        before,
-        characterBeyondRun(text, startIndex, 1, after),
-      );
-    }
+    importAround(result.nodeBefore, result.nodeAfter, startIndex, endIndex);
     if (canContainTransformableMarkdown(result.transformedNode)) {
       importTextTransformers(
         result.transformedNode,
@@ -178,25 +188,12 @@ export function importTextTransformers(
     if (!result) {
       return;
     }
-
-    if (canContainTransformableMarkdown(result.nodeAfter)) {
-      importTextTransformers(
-        result.nodeAfter,
-        textFormatTransformersIndex,
-        textMatchTransformers,
-        characterBeyondRun(text, foundTextMatch.endIndex, -1, before),
-        after,
-      );
-    }
-    if (canContainTransformableMarkdown(result.nodeBefore)) {
-      importTextTransformers(
-        result.nodeBefore,
-        textFormatTransformersIndex,
-        textMatchTransformers,
-        before,
-        characterBeyondRun(text, foundTextMatch.startIndex, 1, after),
-      );
-    }
+    importAround(
+      result.nodeBefore,
+      result.nodeAfter,
+      foundTextMatch.startIndex,
+      foundTextMatch.endIndex,
+    );
     if (canContainTransformableMarkdown(result.transformedNode)) {
       importTextTransformers(
         result.transformedNode,

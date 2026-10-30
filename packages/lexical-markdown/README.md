@@ -102,7 +102,7 @@ whether `*`, `_`, `~~` and `==` open or close formatting. When formatted text st
 or ends with punctuation right beside a letter, export writes that letter as a
 numeric reference (`fo&#111;**“bar”**`) so that the markers still open and
 close, also with `shouldPreserveNewLines`, where a raw backslash right before
-such a marker or reference goes out as `&#92;`. No reference is written inside
+such a marker or reference goes out as `&#92;` outside a bare URL. No reference is written inside
 a bare URL, `www.` host, email or mention.
 
 There're three types of transformers:

@@ -472,7 +472,12 @@ describe('schema version gate: timing', () => {
     await Promise.resolve();
     expect(caught.length).toBeGreaterThan(0);
     expect(older.binding.status).toBe('readonly');
-    expect(codes(older)).toContain(UNSUPPORTED_SCHEMA_WARNING);
+    // The recovery read gated, not a fail-closed path (which warns about
+    // what it cannot read instead of a recovered read).
+    expect(codes(older)).toEqual([
+      RECOVERED_READ_WARNING,
+      UNSUPPORTED_SCHEMA_WARNING,
+    ]);
     const before = Y.encodeStateVector(older.doc);
     older.editor.update(() => void $getRoot().append($p('late')), {
       discrete: true,

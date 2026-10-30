@@ -88,7 +88,6 @@ import {
   markFormatCloser,
 } from './Cursor';
 import {$canonicalizeGroup, $switchesWrapper} from './Groups';
-import {shownLength} from './Hidden';
 import {$applyStoredAttrs, Reader} from './Read';
 import {
   $isGroupNode,
@@ -109,20 +108,25 @@ import {
   storageKindOf,
   withPins,
 } from './Schema';
+import {
+  attrsBefore,
+  isGone,
+  isShownEnd,
+  prevLiveEnd,
+  shownLength,
+} from './Seen';
 import {$checkWrite, $followUpDifference, checkContainer} from './SelfCheck';
 import {$unstorableSlotHosts, $wrapSlotShadowRootInline} from './Slots';
 import {
   type CS,
   isEndItem,
-  isShownEnd,
   nameOf,
-  prevLiveEnd,
   Roles,
   State,
   typeOf,
   type Unit,
 } from './State';
-import {attrsBefore, emptyView, isGone, seenBy, type Unread} from './Unread';
+import {emptyView, seenBy, type Unread} from './Unread';
 import {
   NESTED_FALLBACK_WARNING,
   notesSince,

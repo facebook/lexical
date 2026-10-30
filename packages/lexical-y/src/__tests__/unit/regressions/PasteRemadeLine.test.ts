@@ -306,10 +306,10 @@ describe('a paste over part of a line its transform makes again', () => {
     expect(stored).toContain('// t54z t55z t83zt84z');
   });
 
-  // Open: the mirror case. Where the pasted text starts like the word right
-  // after the range (`t84z` before `t80z`), that word's first character is
-  // written again, and what a collaborator types right after it lands before
-  // the whole paste instead.
+  // Open (#9587): the mirror case. Where the pasted text starts like the word
+  // right after the range (`t84z` before `t80z`), that word's first character
+  // is written again, and what a collaborator types right after it lands
+  // before the whole paste instead.
   test.fails(
     'code, typing inside the word after the range, when the paste starts like it (open)',
     async () => {

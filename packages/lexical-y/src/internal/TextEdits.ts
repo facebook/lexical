@@ -146,9 +146,15 @@ type Item = {
 
 /**
  * Text that left a stretch: at old position `at` (see resolve), `from` the
- * place of the removed node that held it (null: a text set replaced it).
+ * place of the removed node that held it (null: a text set replaced it);
+ * `ord`, where it was in the line's items.
  */
-type Left = {readonly run: Run; readonly from: Entry | null; at: number};
+type Left = {
+  readonly run: Run;
+  readonly from: Entry | null;
+  at: number;
+  readonly ord: number;
+};
 
 /**
  * A stretch of a line between two pins (see resolve): its runs in the new
@@ -160,7 +166,7 @@ type Left = {readonly run: Run; readonly from: Entry | null; at: number};
 type Stretch = {
   live: Item[];
   left: Left[];
-  passed: {readonly text: string; readonly at: number}[];
+  passed: {readonly text: string; readonly at: number; readonly ord: number}[];
   unknown?: true;
 };
 
@@ -1224,7 +1230,11 @@ export class TextReplay {
       } else if (x.node !== null || x.run.dead === true) {
         stretches[s].live.push(x);
       } else if (x.run.gone === true && x.run.kind === LOOSE) {
-        stretches[s].passed.push({at: lastOld + 0.5, text: textOf(x.run)});
+        stretches[s].passed.push({
+          at: lastOld + 0.5,
+          ord: k,
+          text: textOf(x.run),
+        });
       } else if (x.run.gone === true && x.run.kind !== LOOSE) {
         // (Text that arrived and left again in this commit is neither
         // state's: what it stood for left too.)
@@ -1237,6 +1247,7 @@ export class TextReplay {
           stretches[t].left.push({
             at: at < 0 ? lastOld : at,
             from: x.from ?? null,
+            ord: k,
             run,
           });
         }
@@ -1462,7 +1473,13 @@ export class TextReplay {
         for (let k = 0, g = 0; k <= left.length; k++) {
           while (
             g < passed.length &&
-            (k === left.length || passed[g].at < left[k].at)
+            (k === left.length ||
+              passed[g].at < left[k].at ||
+              // (Text with no old position, typed in this commit, is at the
+              // old position before it: the line's order says which came
+              // first.)
+              (passed[g].at - 0.5 === left[k].at &&
+                passed[g].ord < left[k].ord))
           ) {
             was += passed[g++].text;
           }

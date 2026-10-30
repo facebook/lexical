@@ -34,6 +34,8 @@ import {
   $createTextNode,
   $getEditor,
   $getRoot,
+  $getSelection,
+  $isRangeSelection,
   $setSelection,
   configExtension,
   defineExtension,
@@ -304,6 +306,80 @@ describe('a paste over part of a line its transform makes again', () => {
       't54z t55z',
     );
     expect(stored).toContain('// t54z t55z t83zt84z');
+  });
+
+  test('code, a paste and typing after it in one update, while a collaborator deletes the character before the range', async () => {
+    const line = 'const x = 1; // t55 zzz t 5tz5';
+    const seed = seedYState(config('code'), () => {
+      $getRoot().append(
+        $createParagraphNode().append($createTextNode('t1z')),
+        $createCodeNode('javascript').append($createTextNode(line)),
+      );
+    });
+    const a = peer('code', seed, 101);
+    const b = peer('code', seed, 202);
+    onTestFinished(() => {
+      a.editor.dispose();
+      b.editor.dispose();
+    });
+    await idle();
+    a.out.length = 0;
+    b.out.length = 0;
+    // A deletes the last "z" of "zzz", right before the range.
+    a.editor.update(
+      () => {
+        const [t, i] = $find('zzz');
+        const s = $createRangeSelection();
+        s.anchor.set(t.getKey(), i + 2, 'text');
+        s.focus.set(t.getKey(), i + 3, 'text');
+        $setSelection(s);
+        s.removeText();
+      },
+      {discrete: true},
+    );
+    // In one update, B pastes over " t 5tz5" and types "x" after the paste.
+    b.editor.update(
+      () => {
+        const [t, i] = $find('zzz');
+        const s = $createRangeSelection();
+        s.anchor.set(t.getKey(), i + 3, 'text');
+        const [end, j] = $find('5tz5');
+        s.focus.set(end.getKey(), j + 4, 'text');
+        $setSelection(s);
+        const dom = new DOMParser().parseFromString(
+          '<p><b>z55z</b></p><ul><li>ttz</li></ul>',
+          'text/html',
+        );
+        $insertGeneratedNodes(
+          $getEditor(),
+          $generateNodesFromDOM($getEditor(), dom),
+          s,
+        );
+        const after = $getSelection();
+        if ($isRangeSelection(after)) {
+          after.insertText('x');
+        }
+      },
+      {discrete: true},
+    );
+    await idle();
+    for (const u of a.out.splice(0)) {
+      Y.applyUpdate(b.doc, u, 'remote');
+    }
+    for (const u of b.out.splice(0)) {
+      Y.applyUpdate(a.doc, u, 'remote');
+    }
+    await idle();
+    const text = (p: Peer) => p.editor.read(() => $getRoot().getTextContent());
+    const stored = readYState(
+      Y.encodeStateAsUpdate(a.doc),
+      config('code'),
+      () => $getRoot().getTextContent(),
+    );
+    expect(text(a)).toBe(stored);
+    expect(text(b)).toBe(stored);
+    // A's delete stays: two of the three "z" are left before the paste.
+    expect(stored).toContain('// t55 zzz55z');
   });
 
   // Open (#9587): the mirror case. Where the pasted text starts like the word

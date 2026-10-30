@@ -93,13 +93,13 @@ function $ids(): {all: string[]; exportable: string[]} {
   return {all, exportable};
 }
 
-/** The type of the block that carries each id. */
-function $blockTypes(): Map<string, string> {
-  const out = new Map<string, string>();
+/** Each block that carries an id, as [id, type], holders of one id apart. */
+function $blockTypes(): [string, string][] {
+  const out: [string, string][] = [];
   const walk = (node: LexicalNode) => {
     const id = $getBlockId(node);
     if (id !== null) {
-      out.set(id, node.getType());
+      out.push([id, node.getType()]);
     }
     for (const name of $getSlotNames(node)) {
       const slot = $getSlot(node, name);
@@ -192,19 +192,18 @@ describe('C1/C2: HTML export and import with block ids, every shape', () => {
                 // exactly one imported block, where import makes a block of
                 // that type (it makes none for nodes without an importer,
                 // such as the playground's containers and decorators).
-                const typeOf = editor.read($blockTypes);
-                const importedTypes = reader.read($blockTypes);
-                const madeTypes = new Set(importedTypes.values());
+                const typeOf = new Map(editor.read($blockTypes));
+                const imported = reader.read($blockTypes);
+                const madeTypes = new Set(imported.map(([, type]) => type));
                 for (const id of written) {
-                  if (!madeTypes.has(typeOf.get(id) ?? '')) {
+                  const type = typeOf.get(id) ?? '';
+                  if (!madeTypes.has(type)) {
                     continue;
                   }
-                  const n = [...importedTypes.keys()].filter(
-                    x => x === id,
-                  ).length;
-                  if (n !== 1 || importedTypes.get(id) !== typeOf.get(id)) {
+                  const holders = imported.filter(([x]) => x === id);
+                  if (holders.length !== 1 || holders[0][1] !== type) {
                     problems.push(
-                      `imported ${typeOf.get(id)} id ${id} on ${n} blocks (${importedTypes.get(id) ?? 'none'})`,
+                      `imported ${type} id ${id} on ${holders.length} blocks (${holders.map(([, held]) => held).join(',') || 'none'})`,
                     );
                   }
                 }

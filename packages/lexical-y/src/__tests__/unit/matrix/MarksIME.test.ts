@@ -183,112 +183,99 @@ describe('marks under an input method: composed text gets the ids all of the rep
   for (const flavor of ['mark-state', 'mark-flavor'] as Flavor[]) {
     for (const [container, $wrap] of Object.entries(CONTAINERS)) {
       for (const [label, text, [ms, me], [rs, re], composed] of CASES) {
-        // Letters composed past the end of a marked run lose its ids
-        // (#9519); fixed by #9540. Inside a link the run ends with the
-        // link's text, and the longer text keeps the ids already.
-        const failsUntilFixed =
-          label.startsWith('the end of a run') &&
-          !(
-            container === 'link' && label === 'the end of a run, by longer text'
-          );
-        (failsUntilFixed ? test.fails : test)(
-          `${flavor}, ${container}: ${label}`,
-          () => {
-            const editor = build(flavor);
-            const u = (fn: () => void) => editor.update(fn, {discrete: true});
-            u(() => {
-              $getRoot()
-                .clear()
-                .append($wrap($createTextNode(text)));
-            });
-            u(() => {
-              $select(ms, me);
-              const s = $getSelection()!;
-              if (flavor === 'mark-flavor') {
-                $addMarkID(CatalogCommentMarks, 'c1', s);
-              } else {
-                $addMarkID('c1', s);
-              }
-            });
-            const before = editor.read(() => $charIds(flavor));
-            u(() => $select(rs, re));
-            // The composition starts in its own update, as a browser fires it.
-            u(() => {
-              editor.dispatchCommand(COMPOSITION_START_COMMAND, {
-                data: '',
-                timeStamp: Number.MAX_SAFE_INTEGER,
-              } as CompositionEvent);
-            });
-            // The input method writes at the caret, over the placeholder.
-            u(() => {
-              const selection = $getSelection();
-              if (!$isRangeSelection(selection)) {
-                throw new Error('no selection');
-              }
-              const target = selection.anchor.getNode() as TextNode;
-              const content = target.getTextContent();
-              let at = selection.anchor.offset;
-              if (content[at] !== '\u200b' && content[at - 1] === '\u200b') {
-                at--;
-              }
-              target.spliceText(
-                at,
-                content[at] === '\u200b' ? 1 : 0,
-                composed,
-                true,
-              );
-            });
-            u(() => $setCompositionKey(null));
-            const after = editor.read(() => $charIds(flavor));
-            const afterText = editor.read(() =>
-              $targetTexts()
-                .map(t => t.getTextContent())
-                .join(''),
-            );
-            const expectedText = text.slice(0, rs) + composed + text.slice(re);
-            const problems: string[] = [];
-            if (afterText !== expectedText) {
-              problems.push(
-                `text ${JSON.stringify(afterText)} != ${JSON.stringify(expectedText)}`,
-              );
+        test(`${flavor}, ${container}: ${label}`, () => {
+          const editor = build(flavor);
+          const u = (fn: () => void) => editor.update(fn, {discrete: true});
+          u(() => {
+            $getRoot()
+              .clear()
+              .append($wrap($createTextNode(text)));
+          });
+          u(() => {
+            $select(ms, me);
+            const s = $getSelection()!;
+            if (flavor === 'mark-flavor') {
+              $addMarkID(CatalogCommentMarks, 'c1', s);
             } else {
-              // Untouched text keeps its ids; composed text gets the ids every
-              // replaced character had.
-              const replaced = before.slice(rs, re);
-              const common =
-                replaced.length === 0
-                  ? []
-                  : replaced[0].filter(id =>
-                      replaced.every(r => r.includes(id)),
-                    );
-              for (let i = 0; i < rs; i++) {
-                if (JSON.stringify(after[i]) !== JSON.stringify(before[i])) {
-                  problems.push(
-                    `char ${i} ids ${JSON.stringify(after[i])} != ${JSON.stringify(before[i])}`,
-                  );
-                }
-              }
-              for (let i = 0; i < composed.length; i++) {
-                const got = after[rs + i];
-                if (!common.every(id => got.includes(id))) {
-                  problems.push(
-                    `composed char ${i} ${JSON.stringify(composed[i])} ids ${JSON.stringify(got)}, expected ${JSON.stringify(common)}`,
-                  );
-                }
-              }
-              for (let j = 1; j <= text.length - re; j++) {
-                const a = before[text.length - j];
-                const b = after[afterText.length - j];
-                if (JSON.stringify(a) !== JSON.stringify(b)) {
-                  problems.push(
-                    `trailing char ids ${JSON.stringify(b)} != ${JSON.stringify(a)}`,
-                  );
-                }
+              $addMarkID('c1', s);
+            }
+          });
+          const before = editor.read(() => $charIds(flavor));
+          u(() => $select(rs, re));
+          // The composition starts in its own update, as a browser fires it.
+          u(() => {
+            editor.dispatchCommand(COMPOSITION_START_COMMAND, {
+              data: '',
+              timeStamp: Number.MAX_SAFE_INTEGER,
+            } as CompositionEvent);
+          });
+          // The input method writes at the caret, over the placeholder.
+          u(() => {
+            const selection = $getSelection();
+            if (!$isRangeSelection(selection)) {
+              throw new Error('no selection');
+            }
+            const target = selection.anchor.getNode() as TextNode;
+            const content = target.getTextContent();
+            let at = selection.anchor.offset;
+            if (content[at] !== '\u200b' && content[at - 1] === '\u200b') {
+              at--;
+            }
+            target.spliceText(
+              at,
+              content[at] === '\u200b' ? 1 : 0,
+              composed,
+              true,
+            );
+          });
+          u(() => $setCompositionKey(null));
+          const after = editor.read(() => $charIds(flavor));
+          const afterText = editor.read(() =>
+            $targetTexts()
+              .map(t => t.getTextContent())
+              .join(''),
+          );
+          const expectedText = text.slice(0, rs) + composed + text.slice(re);
+          const problems: string[] = [];
+          if (afterText !== expectedText) {
+            problems.push(
+              `text ${JSON.stringify(afterText)} != ${JSON.stringify(expectedText)}`,
+            );
+          } else {
+            // Untouched text keeps its ids; composed text gets the ids every
+            // replaced character had.
+            const replaced = before.slice(rs, re);
+            const common =
+              replaced.length === 0
+                ? []
+                : replaced[0].filter(id => replaced.every(r => r.includes(id)));
+            for (let i = 0; i < rs; i++) {
+              if (JSON.stringify(after[i]) !== JSON.stringify(before[i])) {
+                problems.push(
+                  `char ${i} ids ${JSON.stringify(after[i])} != ${JSON.stringify(before[i])}`,
+                );
               }
             }
-            expect(problems).toEqual([]);
-          },
-        );
+            for (let i = 0; i < composed.length; i++) {
+              const got = after[rs + i];
+              if (!common.every(id => got.includes(id))) {
+                problems.push(
+                  `composed char ${i} ${JSON.stringify(composed[i])} ids ${JSON.stringify(got)}, expected ${JSON.stringify(common)}`,
+                );
+              }
+            }
+            for (let j = 1; j <= text.length - re; j++) {
+              const a = before[text.length - j];
+              const b = after[afterText.length - j];
+              if (JSON.stringify(a) !== JSON.stringify(b)) {
+                problems.push(
+                  `trailing char ids ${JSON.stringify(b)} != ${JSON.stringify(a)}`,
+                );
+              }
+            }
+          }
+          expect(problems).toEqual([]);
+        });
       }
     }
   }

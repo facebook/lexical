@@ -163,20 +163,9 @@ describe('C6: concurrent core edits settle and converge, every binding', () => {
   for (const kind of BINDING_KINDS) {
     for (const variant of VARIANTS) {
       for (let seed = 1; seed <= SEEDS; seed++) {
-        // After concurrent table row and column inserts, one @lexical/yjs v2
-        // editor shows a row without cells that its own document has (#9581).
-        const failsUntilFixed =
-          kind === 'yjs-v2' &&
-          variant.tables &&
-          variant.repair === 'none' &&
-          variant.followUp === 'none' &&
-          seed === 11;
-        (failsUntilFixed ? test.fails : test)(
-          `${kind}, ${label(variant)}, seed ${seed}`,
-          () => {
-            expect(run(kind, seed, variant)).toEqual([]);
-          },
-        );
+        test(`${kind}, ${label(variant)}, seed ${seed}`, () => {
+          expect(run(kind, seed, variant)).toEqual([]);
+        });
       }
     }
   }

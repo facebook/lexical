@@ -656,8 +656,11 @@ person's:
 
 - **Edit text in place** (insert and delete characters in a text node)
   rather than replacing blocks or whole documents. A replaced block is a
-  delete and an insert, so what collaborators type into it at the same time
-  is lost (see [Limits](#limits)). Lexical records the text edits of an
+  delete and an insert. In a line such as a paragraph, what a collaborator
+  types at the same time survives but lands before the new text, with its
+  own formatting; formatting of the replaced characters does not carry
+  over. Replacing a block stored as a node of its own, such as a table,
+  deletes what was typed in it (see [Limits](#limits)). Lexical records the text edits of an
   update while the binding is attached: `TextNode#spliceText`, the
   selection's `insertText` and `removeText` (and the commands built on
   them), splits and merges of text nodes, text typed into a node Lexical
@@ -1041,34 +1044,15 @@ reproduces it:
   its first node at the same time, turn one of the two nodes into a
   paragraph and leave the room read only:
   [#9512](https://github.com/meta/lexical/issues/9512).
-- After an update tagged `SKIP_COLLAB_TAG` nests a container in another, a
-  collaborator's insert right after it leaves the editor showing what the
-  document does not hold:
-  [#9513](https://github.com/meta/lexical/issues/9513).
 - An update listener that throws stops the listeners registered after it,
   so when it was registered before the binding, that commit is never
   written: [#9514](https://github.com/meta/lexical/issues/9514).
-- Two clients that initialize a root inside another shared type, or a root
-  that held content, write the initial content twice (see "Initial content
-  with random values" above):
-  [#9515](https://github.com/meta/lexical/issues/9515).
-- A collaborator's delete before a range selection, or a format, comment or
-  link at its start, or Enter at its end, collapses the selection to a
-  caret: [#9516](https://github.com/meta/lexical/issues/9516),
-  [#9526](https://github.com/meta/lexical/issues/9526).
-- A caret in an empty line ends up inside the word a collaborator types
-  there: [#9517](https://github.com/meta/lexical/issues/9517).
-- Pasting over a selection across table cells that hold lists drops cells,
-  only in a bound editor:
-  [#9520](https://github.com/meta/lexical/issues/9520).
 - Undoing a link while a collaborator formats text over the link's start
   keeps the link on its own text (see Undo above):
   [#9521](https://github.com/meta/lexical/issues/9521).
 - A line without a marker joins the start of a paragraph a collaborator
-  appends at the same time, and a collaborator's Enter elsewhere moves a
-  caret off such a line:
-  [#9524](https://github.com/meta/lexical/issues/9524),
-  [#9525](https://github.com/meta/lexical/issues/9525).
+  appends at the same time:
+  [#9524](https://github.com/meta/lexical/issues/9524).
 
 For `MarkStateExtension` comments, see the
 [comments limitations](./comments.md#limitations).

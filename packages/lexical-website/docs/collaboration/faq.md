@@ -30,10 +30,7 @@ _* Based on the advice of the Yjs author - [Kevin Jahns](https://github.com/yjs/
 
 ## Initializing `EditorState` from Yjs Document
 
-With [`@lexical/y`](./y.md) (Yjs 14), use `readYState` from
-`@lexical/y/headless`, which binds a headless editor to a stored state (see
-[Server-side editing](./y-server.md)). For `@lexical/yjs`, it's achievable
-by leveraging headless Lexical and no-op provider for Yjs:
+It's achievable by leveraging headless Lexical and no-op provider for Yjs:
 
 <details>
   <summary>createHeadlessCollaborativeEditor.ts</summary>

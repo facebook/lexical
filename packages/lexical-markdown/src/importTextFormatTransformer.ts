@@ -62,9 +62,15 @@ export function findOutermostTextFormatTransformer(
 
   if (codeMatch && emphasisMatch) {
     // Delimiters inside the code span were excluded, so an emphasis match
-    // that starts first either holds the whole span or ends before it, and
-    // either way it is applied first.
-    if (emphasisMatch.startIndex <= codeMatch.startIndex) {
+    // that starts first either holds the whole span or ends before it. One
+    // that holds it is applied first, and so is one that ends before it,
+    // unless that would split a delimiter run: the part left in the text
+    // after the split would read as being at the edge of a line.
+    if (
+      emphasisMatch.startIndex <= codeMatch.startIndex &&
+      (emphasisMatch.endIndex >= codeMatch.endIndex ||
+        !splitsRun(textContent, emphasisMatch))
+    ) {
       resultMatch = emphasisMatch;
       resultTransformer =
         textFormatTransformersIndex.transformersByTag[emphasisMatch.tag];
@@ -103,6 +109,35 @@ export function findOutermostTextFormatTransformer(
     startIndex: resultMatch.startIndex,
     transformer: resultTransformer,
   };
+}
+
+// Whether applying `match` on its own splits a delimiter run in a way that
+// changes how its other part reads: a part left before the match always
+// does, and a part left after it does when the whole run could not open.
+function splitsRun(
+  text: string,
+  match: {startIndex: number; endIndex: number; tag: string},
+): boolean {
+  const marker = match.tag[0];
+  if (text[match.startIndex - 1] === marker) {
+    return true;
+  }
+  if (text[match.endIndex] !== marker) {
+    return false;
+  }
+  let start = match.endIndex;
+  while (start > 0 && text[start - 1] === marker) {
+    start--;
+  }
+  let end = match.endIndex;
+  while (end < text.length && text[end] === marker) {
+    end++;
+  }
+  return !getEmphasisSides(
+    marker,
+    characterBefore(text, start),
+    characterAt(text, end),
+  ).canOpen;
 }
 
 // Finds all inline code spans, left to right and non-overlapping, per CommonMark

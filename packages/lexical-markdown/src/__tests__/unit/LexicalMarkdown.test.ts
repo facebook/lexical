@@ -579,6 +579,13 @@ describe('Markdown', () => {
       skipExport: true,
     },
     {
+      // A delimiter left over beside emphasis that ends before a code span
+      // stays literal.
+      html: '<p><i><em style="white-space: pre-wrap;">a</em></i><span style="white-space: pre-wrap;">*</span><code spellcheck="false" style="white-space: pre-wrap;"><span>x</span></code><span style="white-space: pre-wrap;">*</span></p>',
+      md: '*a**`x`*',
+      skipExport: true,
+    },
+    {
       // Inline code containing a backtick must use a longer fence (CommonMark
       // code spans) and pad with spaces so it round-trips losslessly.
       html: '<p><span style="white-space: pre-wrap;">Here: </span><code spellcheck="false" style="white-space: pre-wrap;"><span>a`b</span></code></p>',

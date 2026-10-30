@@ -815,10 +815,14 @@ function joinPieces({kinds, values}: MarkdownPieces): string {
  * would change what an autolinking reader links to, so the format is lost
  * there instead, as before. The pieces are read as one text, since a URL can
  * run on through markers and other formats, and each character is looked at
- * a bounded number of times.
+ * a bounded number of times. Raw output, such as an inline link's destination,
+ * is not bare text, so it ends a run.
  */
-function findLinkEdges(values: string[]): Uint8Array {
-  const text = values.join('');
+function findLinkEdges(kinds: PieceKind[], values: string[]): Uint8Array {
+  let text = '';
+  for (let i = 0; i < values.length; i++) {
+    text += kinds[i] === RAW ? ' '.repeat(values[i].length) : values[i];
+  }
   const inLink = new Uint8Array(text.length);
   const runEnd = (
     start: number,
@@ -980,7 +984,7 @@ function decideReferences(
   let linkEdges: Uint8Array | undefined;
   const isLinkish = (index: number, atEnd: boolean): boolean => {
     if (linkEdges === undefined) {
-      linkEdges = findLinkEdges(values);
+      linkEdges = findLinkEdges(kinds, values);
     }
     return (linkEdges[index] & (atEnd ? 2 : 1)) !== 0;
   };

@@ -5175,6 +5175,49 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     },
   );
 
+  it("guards a letter right after an inline link's destination", () => {
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createLinkNode('https://e.com').append($createTextNode('API')),
+            $createTextNode('s'),
+            $createTextNode('(beta)').toggleFormat('bold'),
+            $createTextNode(' end'),
+          ),
+        ),
+      {discrete: true},
+    );
+    expect(
+      editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
+    ).toBe('[API](https://e.com)&#115;**(beta)** end');
+  });
+
+  it('keeps a link from taking part of a later code span', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => $convertFromMarkdownString('**`a` [b** `c](d)`', TRANSFORMERS),
+      {discrete: true},
+    );
+    expect(
+      editor.read('latest', () =>
+        $getRoot()
+          .getAllTextNodes()
+          .map(node => [
+            node.getTextContent(),
+            node.hasFormat('bold'),
+            node.hasFormat('code'),
+          ]),
+      ),
+    ).toEqual([
+      ['a', true, true],
+      [' [b', true, false],
+      [' ', false, false],
+      ['c](d)', false, true],
+    ]);
+  });
+
   it('writes no reference inside a URL that runs on through formats', () => {
     const editor = createTestEditor();
     editor.update(

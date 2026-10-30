@@ -59,17 +59,17 @@ export function importTextTransformers(
     // match, so the match goes only when it fully wraps the span (in which
     // case the span is part of the match's raw content).
     // https://github.com/meta/lexical/issues/8687
-    const {codeSpan} = foundTextFormat;
-    const wrapsCodeSpan =
-      codeSpan !== null &&
-      foundTextMatch.startIndex <= codeSpan.startIndex &&
-      foundTextMatch.endIndex >= codeSpan.endIndex;
+    const {startIndex, endIndex} = foundTextMatch;
+    const wraps = (span: {startIndex: number; endIndex: number}) =>
+      startIndex <= span.startIndex && endIndex >= span.endIndex;
     if (
-      codeSpan !== null &&
-      !wrapsCodeSpan &&
-      (foundTextFormat.isCodeSpan ||
-        (foundTextMatch.startIndex < codeSpan.endIndex &&
-          foundTextMatch.endIndex > codeSpan.startIndex))
+      (foundTextFormat.isCodeSpan && !wraps(foundTextFormat)) ||
+      foundTextFormat.codeSpans.some(
+        span =>
+          startIndex < span.endIndex &&
+          endIndex > span.startIndex &&
+          !wraps(span),
+      )
     ) {
       // Apply the code span, or the emphasis before it, and not the text
       // match, which would take part of the span.

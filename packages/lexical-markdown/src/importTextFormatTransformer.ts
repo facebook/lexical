@@ -38,9 +38,9 @@ export function findOutermostTextFormatTransformer(
   // content is never reprocessed and they bind tighter than text-match
   // transformers, so this is tagged here rather than re-derived by callers.
   isCodeSpan: boolean;
-  // The first code span, which a text-match transformer must not take part
-  // of even when an emphasis match before it is applied first.
-  codeSpan: {startIndex: number; endIndex: number} | null;
+  // The code spans, which a text-match transformer must not take part of
+  // even when an emphasis match around or before them is applied first.
+  codeSpans: {startIndex: number; endIndex: number}[];
 } | null {
   const textContent = textNode.getTextContent();
 
@@ -123,7 +123,10 @@ export function findOutermostTextFormatTransformer(
   regexMatch.input = textContent;
 
   return {
-    codeSpan: codeMatch,
+    codeSpans: excludeRanges.map(({start, end}) => ({
+      endIndex: end,
+      startIndex: start,
+    })),
     endIndex: resultMatch.endIndex,
     // resultTransformer is the registered code transformer (by identity)
     // exactly when the chosen match is the code span.

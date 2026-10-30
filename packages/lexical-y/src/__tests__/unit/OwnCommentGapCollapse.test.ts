@@ -88,7 +88,11 @@ describe('@lexical/y undo of one write inside a comment its author opened ‖ a 
         }
         await t.sync();
         await expectConverged(t.peers);
-        expect(line(t.a, 0)).not.toMatch(/(bb|cc|dd)\[c1/);
+        expect(line(t.a, 0)).toBe(
+          variant === 'o then space'
+            ? 'aa Kil[c1] bb[c2] cc dd'
+            : 'aa Kil[c1] cc dd',
+        );
         expect(line(t.a, 1)).toBe('tail line');
       });
     }

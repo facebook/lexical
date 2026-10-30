@@ -33,36 +33,29 @@ export function canContainTransformableMarkdown(
 }
 
 /**
- * What a delimiter run that starts at `index` of `text` sees before it, once
- * the text before `index` is split off: the character before the whole run,
- * or `outside` when the run reaches the start of the text.
+ * What a delimiter run cut at `index` of `text` sees beyond its far end once
+ * the text is split there: before the run that starts at `index` when `step`
+ * is -1, after the run that ends there when it is 1. `outside` is what lies
+ * beyond the text.
  */
-function characterBeforeRun(
+function characterBeyondRun(
   text: string,
   index: number,
+  step: 1 | -1,
   outside: string | undefined,
 ): string | undefined {
-  let start = index;
-  while (start > 0 && text[start - 1] === text[index]) {
-    start--;
+  const isInside = (edge: number) =>
+    step === 1 ? edge < text.length : edge > 0;
+  const delimiter = text[step === 1 ? index - 1 : index];
+  let edge = index;
+  while (isInside(edge) && text[step === 1 ? edge : edge - 1] === delimiter) {
+    edge += step;
   }
-  return start > 0 ? characterBefore(text, start) : outside;
-}
-
-/**
- * What a delimiter run that ends at `index` of `text` sees after it, once the
- * text from `index` is split off.
- */
-function characterAfterRun(
-  text: string,
-  index: number,
-  outside: string | undefined,
-): string | undefined {
-  let end = index;
-  while (end < text.length && text[end] === text[index - 1]) {
-    end++;
-  }
-  return end < text.length ? characterAt(text, end) : outside;
+  return !isInside(edge)
+    ? outside
+    : step === 1
+      ? characterAt(text, edge)
+      : characterBefore(text, edge);
 }
 
 /**
@@ -103,7 +96,6 @@ export function importTextTransformers(
     const wraps = (span: {startIndex: number; endIndex: number}) =>
       startIndex <= span.startIndex && endIndex >= span.endIndex;
     if (
-      (foundTextFormat.isCodeSpan && !wraps(foundTextFormat)) ||
       foundTextFormat.codeSpans.some(
         span =>
           startIndex < span.endIndex &&
@@ -148,7 +140,7 @@ export function importTextTransformers(
         result.nodeAfter,
         textFormatTransformersIndex,
         textMatchTransformers,
-        characterBeforeRun(text, endIndex, before),
+        characterBeyondRun(text, endIndex, -1, before),
         after,
       );
     }
@@ -158,7 +150,7 @@ export function importTextTransformers(
         textFormatTransformersIndex,
         textMatchTransformers,
         before,
-        characterAfterRun(text, startIndex, after),
+        characterBeyondRun(text, startIndex, 1, after),
       );
     }
     if (canContainTransformableMarkdown(result.transformedNode)) {
@@ -166,8 +158,8 @@ export function importTextTransformers(
         result.transformedNode,
         textFormatTransformersIndex,
         textMatchTransformers,
-        characterBeforeRun(text, startIndex + tagLength, before),
-        characterAfterRun(text, endIndex - tagLength, after),
+        characterBeyondRun(text, startIndex + tagLength, -1, before),
+        characterBeyondRun(text, endIndex - tagLength, 1, after),
       );
     }
   } else if (foundTextMatch) {
@@ -187,7 +179,7 @@ export function importTextTransformers(
         result.nodeAfter,
         textFormatTransformersIndex,
         textMatchTransformers,
-        characterBeforeRun(text, foundTextMatch.endIndex, before),
+        characterBeyondRun(text, foundTextMatch.endIndex, -1, before),
         after,
       );
     }
@@ -197,7 +189,7 @@ export function importTextTransformers(
         textFormatTransformersIndex,
         textMatchTransformers,
         before,
-        characterAfterRun(text, foundTextMatch.startIndex, after),
+        characterBeyondRun(text, foundTextMatch.startIndex, 1, after),
       );
     }
     if (canContainTransformableMarkdown(result.transformedNode)) {

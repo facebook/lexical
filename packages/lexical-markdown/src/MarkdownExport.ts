@@ -728,17 +728,9 @@ const LINK_URL =
   /:\/\/|(?:^|[^a-z\d.-])www\.|(?:^|[^a-z\d.+-])(?:mailto|xmpp):/i;
 // Characters an email or mention can hold (word characters, `.+@-`, and the
 // backslash that escapes one), and what makes one.
+const ADDRESS_CHARACTER = /[\w.+@\\-]/;
 function isAddressCharacter(code: number): boolean {
-  return (
-    (code >= 0x30 && code <= 0x39) ||
-    (code >= 0x40 && code <= 0x5a) ||
-    (code >= 0x61 && code <= 0x7a) ||
-    code === 0x5f ||
-    code === 0x2e ||
-    code === 0x2b ||
-    code === 0x2d ||
-    code === 0x5c
-  );
+  return ADDRESS_CHARACTER.test(String.fromCharCode(code));
 }
 const ADDRESS = /@\w/;
 

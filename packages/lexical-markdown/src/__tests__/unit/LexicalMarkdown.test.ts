@@ -5275,6 +5275,33 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     },
   );
 
+  it('applies a link before a later link that holds a code span', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $convertFromMarkdownString(
+          '[a](https://u) and [`b`](https://v)',
+          TRANSFORMERS,
+        ),
+      {discrete: true},
+    );
+    expect(
+      editor.read('latest', () =>
+        $getRoot()
+          .getAllTextNodes()
+          .map(node => [
+            node.getTextContent(),
+            node.hasFormat('code'),
+            $isLinkNode(node.getParent()),
+          ]),
+      ),
+    ).toEqual([
+      ['a', false, true],
+      [' and ', false, false],
+      ['b', true, true],
+    ]);
+  });
+
   it('keeps a link from taking part of a later code span', () => {
     const editor = createTestEditor();
     editor.update(

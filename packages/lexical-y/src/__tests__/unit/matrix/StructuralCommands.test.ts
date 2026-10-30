@@ -91,6 +91,7 @@ import {
   catalogAppExtension,
   catalogHeadlessConfig,
   DEFAULT_CONFIG,
+  NODE_SHAPES,
 } from '../../catalog';
 import {$createDownstreamComponent} from '../../catalog/downstream';
 
@@ -686,6 +687,253 @@ describe('structural commands in block containers, where structure is enforced',
             opened.dispose();
           }
         });
+      }
+    }
+  }
+});
+
+// The same commands where they turn the selected paragraph into another
+// block (a list item, a heading, a quote), with the paragraph's inline
+// content varied over the catalog's inline shapes: text in its modes, tabs,
+// line breaks, hashtags and other text subclasses, links, marks, overflow,
+// and inline decorators. Whatever the container, the block the command
+// makes holds all of the paragraph's inline content, in order: its text,
+// and the same inline nodes, with nothing split out into another block
+// (where a command does not act, the paragraph keeps it).
+// (Code highlight nodes live only in code blocks, so they are not here.)
+const INLINE_SHAPES = NODE_SHAPES.filter(s => s.$inline !== undefined);
+const INLINE_CTXS = CTXS.filter(
+  c => !c.nested && ['root', 'plain', 'declared', 'shadow'].includes(c.kind),
+);
+const INLINE_MODES: Mode[] = ['unbound, NodeStructureExtension', 'extension'];
+
+/**
+ * Where the selection is when the command runs: a caret in the text before
+ * the inline content, a caret inside the inline content's own text (for
+ * shapes that have a text node of their own), or the whole paragraph.
+ */
+type Where = 'caret before it' | 'caret inside it' | 'the whole paragraph';
+const WHERE: Where[] = [
+  'caret before it',
+  'caret inside it',
+  'the whole paragraph',
+];
+
+/**
+ * Puts the caret one character into the inline content: at offset 5 of the
+ * paragraph's text, "abc " being 4 characters. Located by offset in the
+ * leaves as they are after normalization, since the shape's text can merge
+ * with the text around it. False where that character is not in a text
+ * node (an inline decorator's text).
+ */
+function $caretInside(): boolean {
+  let offset = 'abc '.length + 1;
+  const walk = (n: LexicalNode): boolean => {
+    if ($isElementNode(n)) {
+      return n.getChildren().some(walk);
+    }
+    const size = n.getTextContentSize();
+    if (offset < size || (offset === size && $isTextNode(n))) {
+      if (!$isTextNode(n)) {
+        return false;
+      }
+      n.select(offset, offset);
+      offset = -1;
+      return true;
+    }
+    offset -= size;
+    return false;
+  };
+  return walk($blockOfAbc()!) && offset === -1;
+}
+
+/** Selects as `where` says; false where the shape has no such place. */
+function $select(where: Where): boolean {
+  if (where === 'caret before it') {
+    $caret('abc', 1);
+    return true;
+  }
+  if (where === 'caret inside it') {
+    return $caretInside();
+  }
+  const block = $blockOfAbc()!;
+  const texts = block.getAllTextNodes();
+  const first = texts[0];
+  const last = texts[texts.length - 1];
+  const selection = first.select(0, 0);
+  selection.focus.set(last.getKey(), last.getTextContentSize(), 'text');
+  return true;
+}
+
+type BlockCmd = {
+  name: string;
+  /** Whether `node` is the block the command makes. */
+  made: (node: LexicalNode) => boolean;
+  run: () => void;
+  /** The shortcuts are typed at the paragraph's start; they take no range. */
+  type?: string;
+};
+
+const BLOCK_CMDS: BlockCmd[] = [
+  ...(['bullet', 'number', 'check'] as const).map(
+    (type): BlockCmd => ({
+      made: n =>
+        $isListItemNode(n) &&
+        $isListNode(n.getParent()) &&
+        (
+          n.getParent() as ElementNode & {getListType(): string}
+        ).getListType() === type,
+      name: `$insertList('${type}')`,
+      run: () => $insertList(type),
+    }),
+  ),
+  {
+    made: n => $isQuoteNode(n),
+    name: '$wrapNodes in a quote',
+    run: () => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        $wrapNodes(selection, () => $createQuoteNode());
+      }
+    },
+  },
+  ...(
+    [
+      ['# ', (n: LexicalNode) => $isHeadingNode(n)],
+      ['- ', (n: LexicalNode) => $isListItemNode(n)],
+      ['> ', (n: LexicalNode) => $isQuoteNode(n)],
+    ] as const
+  ).map(
+    ([typed, made]): BlockCmd => ({
+      made,
+      name: `markdown "${typed}"`,
+      run: () => $caret('abc', 0),
+      type: typed,
+    }),
+  ),
+];
+
+/** The inline content of a block: its text and its inline node types. */
+function $inlineContent(block: ElementNode, typed = ''): string {
+  const types: string[] = [];
+  const walk = (n: LexicalNode) => {
+    if (n !== block && n.getType() !== 'text') {
+      types.push(n.getType());
+    }
+    if ($isElementNode(n)) {
+      n.getChildren().forEach(walk);
+    }
+  };
+  walk(block);
+  const text = block.getTextContent();
+  return JSON.stringify({
+    text:
+      typed !== '' && text.startsWith(typed) ? text.slice(typed.length) : text,
+    types,
+  });
+}
+
+/** The block element holding the text "abc". */
+function $blockOfAbc(): ElementNode | null {
+  let node: LexicalNode | null = $text('abc') ?? null;
+  while (node !== null && !($isElementNode(node) && !node.isInline())) {
+    node = node.getParent();
+  }
+  return node;
+}
+
+describe("structural commands keep the selected paragraph's inline content together", () => {
+  for (const shape of INLINE_SHAPES) {
+    for (const cmd of BLOCK_CMDS) {
+      for (const where of cmd.type === undefined ? WHERE : WHERE.slice(0, 1)) {
+        for (const ctx of INLINE_CTXS) {
+          for (const mode of INLINE_MODES) {
+            // The deprecated $wrapNodes takes an OverflowNode (not inline by
+            // isInline(), though it is) and a link inside a mark for blocks of
+            // their own: it splits the paragraph and drops the overflow or
+            // the mark (#9612).
+            const failsUntilFixed =
+              cmd.name === '$wrapNodes in a quote' &&
+              ((shape.name === 'overflow/text' &&
+                where === 'caret inside it') ||
+                (shape.name === 'link/in-mark' && where !== 'caret before it'));
+            // An inline decorator has no text node to put the caret in.
+            const skip =
+              where === 'caret inside it' && shape.kind === 'inline-decorator';
+            (skip ? test.skip : failsUntilFixed ? test.fails : test)(
+              `${cmd.name}, ${where}, on a paragraph with ${shape.name} in ${ctxName(ctx)} [${mode}]${skip ? ' (skipped: no text node inside the decorator)' : ''}`,
+              async () => {
+                const $inner = () => [
+                  $createParagraphNode().append(
+                    $createTextNode('abc '),
+                    ...shape.$inline!(),
+                    $createTextNode(' end'),
+                  ),
+                ];
+                const opened = open(mode, ctx, $inner);
+                const {editor} = opened;
+                try {
+                  await Promise.resolve();
+                  const before = editor.read(() =>
+                    $inlineContent($blockOfAbc()!),
+                  );
+                  let placed = true;
+                  editor.update(
+                    () => {
+                      placed = cmd.type !== undefined || $select(where);
+                      if (placed) {
+                        cmd.run();
+                      }
+                    },
+                    {discrete: true},
+                  );
+                  expect(placed).toBe(true);
+                  for (const ch of cmd.type ?? '') {
+                    editor.update(
+                      () => {
+                        const selection = $getSelection();
+                        if ($isRangeSelection(selection)) {
+                          selection.insertText(ch);
+                        }
+                      },
+                      {discrete: true},
+                    );
+                  }
+                  await Promise.resolve();
+                  expect(opened.errors).toEqual([]);
+                  const result = editor.read(() => {
+                    const block = $blockOfAbc();
+                    if (block === null) {
+                      return 'no block holds "abc"';
+                    }
+                    // Where a shortcut does not act (in a container that declares
+                    // nothing, and in a declared one without the rule), the
+                    // paragraph stays as it was.
+                    // A command given a selection always makes its block.
+                    const made =
+                      cmd.made(block) ||
+                      cmd.made(block.getParent() as LexicalNode) ||
+                      (cmd.type !== undefined && $isParagraphNode(block))
+                        ? block
+                        : null;
+                    if (made === null) {
+                      return `"abc" is in a ${block.getType()}, not the made block`;
+                    }
+                    // A shortcut that did not act leaves its typed text.
+                    return cmd.type !== undefined &&
+                      !cmd.made(made) &&
+                      !cmd.made(made.getParent() as LexicalNode)
+                      ? $inlineContent(made, cmd.type)
+                      : $inlineContent(made);
+                  });
+                  expect(result).toBe(before);
+                } finally {
+                  opened.dispose();
+                }
+              },
+            );
+          }
+        }
       }
     }
   }

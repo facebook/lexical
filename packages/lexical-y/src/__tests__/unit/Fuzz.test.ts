@@ -58,9 +58,10 @@ const KNOWN_OPEN = new Map<number, string>([
   // a list type change of an item that holds a paragraph shows it twice
   // (restructure written as a move; #9386 and v2 duplicate it too).
   [347, 'restructure of a list item holding blocks (dup)'],
-  // Text typed into a table a peer removes (delete wins; #9386 and v2 lose
-  // the same tokens).
-  [1045, 'typing into a container a peer removes'],
+  // A table inserted into a box while a peer makes the box's paragraph a
+  // list, which replaces the box: the table goes with the box (delete wins;
+  // #9386 and v2 lose the same tokens).
+  [1045, 'a block inserted into a container a peer removes'],
 ]);
 
 function allowed(sig: string): boolean {

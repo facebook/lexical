@@ -152,6 +152,13 @@ describe('#9577: composing in a code token split by NodeState', () => {
         Y.applyUpdate(doc, b64(u), 'remote');
         await idle();
         expect(codeLine(editor)).toBe(expected);
+        // The composition stays in its node (in a browser, the DOM text node
+        // the IME composes in).
+        expect(
+          editor
+            .getEditorState()
+            .read(() => $getNodeByKey(key)?.isAttached() ?? false),
+        ).toBe(composing);
       }
       if (composing) {
         // compositionend

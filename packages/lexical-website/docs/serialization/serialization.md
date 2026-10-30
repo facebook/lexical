@@ -665,16 +665,18 @@ its `isInline()` is false. Each editor enforces its own registration: a
 nested editor (an image caption) needs the extension too. For an editor
 built without extensions, `registerNodeStructure(editor)` does the same.
 
-With the extension, a class that declares `children: 'block'` (a callout, a
-box) is also a block container for the structural commands, as the root
-and shadow roots are: turning one of its paragraphs into a list
-(`$insertList`, or a markdown shortcut), wrapping it (`$wrapNodes`), pasting
-several blocks into it (`insertNodes`), inserting a block such as a table or
-a horizontal rule (`$insertNodeToNearestRoot`), or pressing Enter in an
-empty list item acts on the blocks inside it and keeps the container, where
-otherwise the container itself would be replaced, split or left. Converting
-a block's type (`$setBlocksType`) and indenting already act on the block in
-place in any container. Unlike a shadow root (`isShadowRoot()`), a declared
+Where the declarations are enforced (the extension, `registerNodeStructure`,
+or a `@lexical/y` binding, which always enforces them), a class that
+declares `children: 'block'` (a callout, a box) is also a block container
+for the structural commands, as the root and shadow roots are: turning one
+of its paragraphs into a list (`$insertList`, or a markdown shortcut),
+wrapping it (`$wrapNodes`), pasting several blocks into it (`insertNodes`),
+inserting a block such as a table or a horizontal rule
+(`$insertNodeToNearestRoot`), or pressing Enter in an empty list item acts
+on the blocks inside it and keeps the container, where otherwise the
+container itself would be replaced, split or left. Converting a block's type
+(`$setBlocksType`) and indenting already act on the block in place in any
+container, and leave an empty container in place. Unlike a shadow root (`isShadowRoot()`), a declared
 container is not a selection boundary: select-all, the arrow keys, and
 Backspace or Delete at its edges treat it like any other element, so
 Backspace at the start of its first paragraph still joins that paragraph to

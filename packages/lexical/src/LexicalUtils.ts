@@ -117,6 +117,7 @@ import {
   $isSlotChild,
   $isSlotHost,
 } from './LexicalSlot';
+import {$isBlockContainer} from './LexicalStructure';
 import {
   errorOnInfiniteTransforms,
   errorOnReadOnly,
@@ -2903,7 +2904,8 @@ const BlockNodeBrand: unique symbol = Symbol.for('@lexical/BlockNodeBrand');
  *
  * This function returns true for a DecoratorNode that is not inline OR
  * an ElementNode that is:
- * - not a root or shadow root
+ * - not a block container (a root, a shadow root or a declared container,
+ *   see {@link $isBlockContainer})
  * - not inline
  * - can't be empty
  * - has no children or an inline first child
@@ -2914,7 +2916,7 @@ export function INTERNAL_$isBlock(
   if ($isDecoratorNode(node) && !node.isInline()) {
     return true;
   }
-  if (!$isElementNode(node) || $isRootOrShadowRoot(node)) {
+  if (!$isElementNode(node) || $isBlockContainer(node)) {
     return false;
   }
 

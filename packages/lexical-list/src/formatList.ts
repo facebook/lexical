@@ -19,8 +19,10 @@ import {
   $getSelection,
   $getSlotHost,
   $isBlockContainer,
+  $isDecoratorNode,
   $isElementNode,
   $isLeafNode,
+  $isLineBreakNode,
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
@@ -135,6 +137,7 @@ export function $insertList(listType: ListType): void {
     }
 
     const handled = new Set();
+    const kept = new Map<NodeKey, boolean>();
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
 
@@ -142,6 +145,8 @@ export function $insertList(listType: ListType): void {
         $isElementNode(node) &&
         node.isEmpty() &&
         !$isListItemNode(node) &&
+        // An empty container the selection passes over stays a container.
+        !$isBlockContainer(node) &&
         // A named-slot value's slot assignment is managed by the node or
         // extension that owns the slot, so it is not eligible for list
         // conversion (see $setBlocksType).
@@ -159,6 +164,11 @@ export function $insertList(listType: ListType): void {
           : null;
 
       while (parent != null) {
+        if ($isBlockContainer(parent)) {
+          // A block in a container (a decorator selected in a callout) is
+          // not converted, and neither is its container.
+          break;
+        }
         const parentKey = parent.getKey();
 
         if ($isListNode(parent)) {
@@ -177,8 +187,8 @@ export function $insertList(listType: ListType): void {
           const nextParent = parent.getParent();
 
           if ($isBlockContainer(nextParent)) {
-            const target = $listTarget(parent, node);
-            if (!handled.has(target.getKey())) {
+            const target = $listTarget(parent, node, kept);
+            if (target !== null && !handled.has(target.getKey())) {
               handled.add(target.getKey());
               $createListOrMerge(target, listType);
             }
@@ -193,30 +203,49 @@ export function $insertList(listType: ListType): void {
 }
 
 /**
- * The node `$insertList` turns into a list item for the selected `leaf`,
- * where `top` is its ancestor in the nearest block container: `top`, unless
- * NodeStructureExtension enforces declared structure and the block that holds
- * `leaf` is neither `top` nor a plain paragraph directly in it. A list item
- * holds inline content and lists (a plain paragraph becomes a line of it), so
- * the normalization would lift such a block, and the selected text with it,
- * out of the new list item and remove the list as empty: that block is
- * converted instead, in place.
+ * Whether a list item can hold `node` where NodeStructureExtension enforces
+ * declared structure: inline content, a list, or a plain paragraph (which
+ * becomes a line of the item). Anything else is lifted out of the item.
  */
-function $listTarget(top: ElementNode, leaf: LexicalNode): ElementNode {
+function $isListItemContent(node: LexicalNode): boolean {
+  return (
+    $isTextNode(node) ||
+    $isLineBreakNode(node) ||
+    $isListNode(node) ||
+    ($isParagraphNode(node) && !node.isShadowRoot()) ||
+    (($isElementNode(node) || $isDecoratorNode(node)) && node.isInline())
+  );
+}
+
+/**
+ * The node `$insertList` turns into a list item for the selected `leaf`,
+ * where `top` is its ancestor in the nearest block container, or null for
+ * none. It is `top` unless NodeStructureExtension enforces declared
+ * structure and `top` holds a block a list item cannot hold (a quote, a
+ * box), as decided in `kept`: the normalization would lift that block, and the selected text with
+ * it, out of the new list item and remove the list as empty, so `top` stays
+ * and the block that holds `leaf` is converted instead, in place.
+ */
+function $listTarget(
+  top: ElementNode,
+  leaf: LexicalNode,
+  kept: Map<NodeKey, boolean>,
+): ElementNode | null {
   if (!INTERNAL_isNodeStructureEnforced($getEditor())) {
     return top;
   }
-  const block = $findMatchingParent(leaf, INTERNAL_$isBlock);
-  if (
-    !$isElementNode(block) ||
-    block.is(top) ||
-    ($isParagraphNode(block) &&
-      !block.isShadowRoot() &&
-      top.is(block.getParent()))
-  ) {
+  // Decided once per command, before converting a block in it changes what
+  // `top` holds, so that every selected block of `top` is treated alike.
+  let keep = kept.get(top.getKey());
+  if (keep === undefined) {
+    keep = !top.getChildren().every($isListItemContent);
+    kept.set(top.getKey(), keep);
+  }
+  if (!keep) {
     return top;
   }
-  return block;
+  const block = $findMatchingParent(leaf, INTERNAL_$isBlock);
+  return $isElementNode(block) ? block : null;
 }
 
 function append(node: ElementNode, nodesToAppend: LexicalNode[]) {

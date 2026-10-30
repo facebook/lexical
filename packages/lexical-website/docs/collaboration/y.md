@@ -802,19 +802,19 @@ not merge as a user might expect:
   collaborators type in them. Between recorded blocks, and in a reorder that
   Lexical did not record (an editor state set whole), the binding rewrites
   as few blocks as it can, the smaller ones on a tie.
-  Lexical operations that move content (turning a
+  Lexical operations that move content behave the same way: turning a
   paragraph into a list inside a container that is neither a shadow root
-  nor declared `children: 'block'`, which Lexical replaces with the list;
-  indenting list items that hold blocks) behave the same way. In a shadow
-  root or a container declared `children: 'block'`, the paragraph becomes
-  a list item in place and keeps what collaborators type in it (see
-  [block containers](../serialization/serialization.md#node-structure)).
-  So does the first edit that restructures
-  a list stored in an older shape (a nested list kept as a node inside an
-  item's line): its items move into the list's own sequence. A Backspace
-  that outdents an item of such a list is a delete in the nested list's
-  container and an insert in the list's: text a collaborator types in those
-  items at the same time is lost (only lists stored in that older shape).
+  nor declared `children: 'block'` (Lexical replaces the container with the
+  list, unless the container holds a block a list item cannot hold, such as
+  a quote), indenting list items that hold blocks, and the first edit that
+  restructures a list stored in an older shape (a nested list kept as a
+  node inside an item's line): its items move into the list's own sequence.
+  In a shadow root or a container declared `children: 'block'`, the
+  paragraph becomes a list item in place and keeps what collaborators type
+  in it (see [block containers](../serialization/serialization.md#node-structure)).
+  A Backspace that outdents an item of a list stored in that older shape is
+  a delete in the nested list's container and an insert in the list's: text
+  a collaborator types in those items at the same time is lost.
 - **Delete wins.** Text typed into a container that a collaborator deletes at
   the same time is deleted with it, and so is a block moved into it.
 - **Last writer wins** for the fields of one link (URL and target change

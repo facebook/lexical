@@ -42,6 +42,7 @@ import {
 import {$insertSibling} from './caret/LexicalCaretTree';
 import {$removeNode} from './LexicalNode';
 import {StateConfig} from './LexicalNodeState';
+import {internalGetActiveEditor} from './LexicalUpdates';
 import {
   $copyNode,
   isSynthesizedIsInline,
@@ -1815,6 +1816,12 @@ export function INTERNAL_isNodeStructureEnforced(
   );
 }
 
+/** Whether there is an active editor and it enforces declared structure. */
+function $isStructureEnforcedOnActiveEditor(): boolean {
+  const editor = internalGetActiveEditor();
+  return editor !== null && INTERNAL_isNodeStructureEnforced(editor);
+}
+
 /**
  * Lets `$isBlockContainer` narrow without excluding: an element that is not a
  * block container is still an element.
@@ -1825,17 +1832,20 @@ declare const BlockContainerBrand: unique symbol;
  * @experimental node-structure
  *
  * Whether structural commands treat `node` as a container of blocks: the
- * root, a shadow root, or, in an editor where `NodeStructureExtension`
- * enforces declared structure, an element whose class declares
- * `children: 'block'` (a callout, a box).
+ * root, a shadow root, or, in an editor that enforces declared node
+ * structure (`NodeStructureExtension` enabled, `registerNodeStructure`, or a
+ * `@lexical/y` binding, which always enforces it), a block element whose
+ * class declares `children: 'block'` (a callout, a box).
  *
  * The commands that convert, wrap, split or insert blocks (`$insertList`,
  * Enter in an empty list item, `$wrapNodes`, `insertNodes`,
- * `$insertNodeToNearestRoot`, the markdown shortcuts) stop at a container:
- * they act on the blocks inside it and never replace or split the container
- * itself. Unlike a shadow root, a declared container is not a selection
+ * `$insertNodeToNearestRoot` unless given `rootMode: 'root'`, the markdown
+ * shortcuts) stop at a container: they act on the blocks inside it and do
+ * not replace or split the container itself, and `$setBlocksType` leaves an
+ * empty one in place. Unlike a shadow root, a declared container is not a selection
  * boundary: select-all, the arrow keys, and Backspace or Delete at its edges
- * treat it like any other element.
+ * treat it like any other element. With no active editor (a bare
+ * `editorState.read()`), only the root and shadow roots are containers.
  */
 export function $isBlockContainer(
   node: LexicalNode | null | undefined,
@@ -1847,7 +1857,8 @@ export function $isBlockContainer(
     $isRootOrShadowRoot(node) ||
     (cachedNodeStructure(node.constructor as Klass<LexicalNode>).children ===
       'block' &&
-      INTERNAL_isNodeStructureEnforced($getEditor()))
+      !node.isInline() &&
+      $isStructureEnforcedOnActiveEditor())
   );
 }
 

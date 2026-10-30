@@ -39,6 +39,7 @@ import {$setBlocksType, $wrapNodes} from '@lexical/selection';
 import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
   $create,
+  $createNodeSelection,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
@@ -62,6 +63,7 @@ import {
   type LexicalEditor,
   type LexicalNode,
   OUTDENT_CONTENT_COMMAND,
+  type RangeSelection,
   type TextNode,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
@@ -819,7 +821,7 @@ describe('structural commands in block containers', () => {
     },
   );
 
-  test('every command has a case in every context', () => {
+  test('every command has a row of cases', () => {
     expect(Object.keys(EXPECTED).sort()).toEqual(Object.keys(CMDS).sort());
   });
 
@@ -852,6 +854,16 @@ describe('$isBlockContainer', () => {
       });
     }
   }
+  class InlineDeclaredBoxNode extends DeclaredBoxNode {
+    $config() {
+      return this.config('test_inline_declared_box', {
+        extends: DeclaredBoxNode,
+      });
+    }
+    isInline(): boolean {
+      return true;
+    }
+  }
   test.each([
     ['absent', false],
     ['disabled', false],
@@ -877,6 +889,7 @@ describe('$isBlockContainer', () => {
             PlainBoxNode,
             DeclaredBoxNode,
             DeclaredBoxSubclassNode,
+            InlineDeclaredBoxNode,
             ShadowBoxNode,
           ],
         }),
@@ -889,6 +902,7 @@ describe('$isBlockContainer', () => {
           const nodes = {
             declared: $create(DeclaredBoxNode),
             inherited: $create(DeclaredBoxSubclassNode),
+            inline: $create(InlineDeclaredBoxNode),
             list,
             listItem: list.getFirstChildOrThrow(),
             paragraph: $createParagraphNode(),
@@ -905,6 +919,7 @@ describe('$isBlockContainer', () => {
           expect(result).toEqual({
             declared: structure,
             inherited: structure,
+            inline: false,
             list: false,
             listItem: false,
             paragraph: false,
@@ -921,6 +936,254 @@ describe('$isBlockContainer', () => {
       );
     },
   );
+});
+
+describe('selections that pass over or sit on a container', () => {
+  const $range = (empty: () => ElementNode) => {
+    const a = $createTextNode('before');
+    const b = $createTextNode('after');
+    $getRoot()
+      .clear()
+      .append(
+        $createParagraphNode().append(a),
+        empty(),
+        $createParagraphNode().append(b),
+      );
+    $selectRange(a, 1, b, 1);
+  };
+  const $inBox = (offset: number) => {
+    const box = $create(DeclaredBoxNode).append($p('abc'));
+    $getRoot().clear().append(box);
+    box.select(offset, offset);
+  };
+  test.each([
+    [
+      'an empty declared box in a range: $insertList',
+      () => {
+        $range(() => $create(DeclaredBoxNode));
+        $insertList('bullet');
+      },
+      'list[bullet](li("before")) / dbox() / list[bullet](li("after"))',
+    ],
+    [
+      'an empty shadow root in a range: $insertList',
+      () => {
+        $range(() => $create(ShadowBoxNode));
+        $insertList('bullet');
+      },
+      'list[bullet](li("before")) / sbox() / list[bullet](li("after"))',
+    ],
+    [
+      'an empty declared box in a range: $setBlocksType',
+      () => {
+        $range(() => $create(DeclaredBoxNode));
+        $setBlocksType($getSelection(), () => $createHeadingNode('h1'));
+      },
+      'h("before") / dbox() / h("after")',
+    ],
+    [
+      'an element point on a declared box: insertParagraph',
+      () => {
+        $inBox(1);
+        ($getSelection() as RangeSelection).insertParagraph();
+      },
+      'dbox(p("abc") p())',
+    ],
+    [
+      'an element point on a declared box: insertNodes',
+      () => {
+        $inBox(1);
+        ($getSelection() as RangeSelection).insertNodes([$p('X')]);
+      },
+      'dbox(p("abc") p("X"))',
+    ],
+    [
+      'an element point on a declared box: $insertList',
+      () => {
+        $inBox(0);
+        $insertList('bullet');
+      },
+      'dbox(list[bullet](li("abc")))',
+    ],
+    [
+      'a range from before a declared box into it: $insertList',
+      () => {
+        const a = $createTextNode('before');
+        const b = $createTextNode('in');
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(a),
+            $create(DeclaredBoxNode).append($createParagraphNode().append(b)),
+          );
+        $selectRange(a, 1, b, 1);
+        $insertList('bullet');
+      },
+      'list[bullet](li("before")) / dbox(list[bullet](li("in")))',
+    ],
+    [
+      'a horizontal rule selected in a declared box: $insertList',
+      () => {
+        const hr = $createHorizontalRuleNode();
+        $getRoot()
+          .clear()
+          .append($create(DeclaredBoxNode).append($p('abc'), hr));
+        const selection = $createNodeSelection();
+        selection.add(hr.getKey());
+        $setSelection(selection);
+        $insertList('bullet');
+      },
+      'dbox(p("abc") horizontalrule())',
+    ],
+    [
+      'a horizontal rule selected in a shadow root: $insertList',
+      () => {
+        const hr = $createHorizontalRuleNode();
+        $getRoot()
+          .clear()
+          .append($create(ShadowBoxNode).append($p('abc'), hr));
+        const selection = $createNodeSelection();
+        selection.add(hr.getKey());
+        $setSelection(selection);
+        $insertList('bullet');
+      },
+      'sbox(p("abc") horizontalrule())',
+    ],
+    [
+      'a range over a horizontal rule in a declared box: $insertList',
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $create(DeclaredBoxNode).append(
+              $p('abc'),
+              $createHorizontalRuleNode(),
+              $p('def'),
+            ),
+          );
+        $selectRange($findText('abc'), 1, $findText('def'), 1);
+        $insertList('bullet');
+      },
+      'dbox(list[bullet](li("abc")) horizontalrule() list[bullet](li("def")))',
+    ],
+    [
+      'a range over a horizontal rule in a declared box: $wrapNodes',
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $create(DeclaredBoxNode).append(
+              $p('abc'),
+              $createHorizontalRuleNode(),
+              $p('def'),
+            ),
+          );
+        $selectRange($findText('abc'), 1, $findText('def'), 1);
+        $wrapNodes($getSelection()!, () => $createQuoteNode());
+      },
+      'dbox(quote("abc") horizontalrule() quote("def"))',
+    ],
+    [
+      'a range over a horizontal rule at the root: $wrapNodes',
+      () => {
+        $getRoot()
+          .clear()
+          .append($p('abc'), $createHorizontalRuleNode(), $p('def'));
+        $selectRange($findText('abc'), 1, $findText('def'), 1);
+        $wrapNodes($getSelection()!, () => $createQuoteNode());
+      },
+      'quote("abc") / horizontalrule() / quote("def")',
+    ],
+    [
+      'a range over a quote and a paragraph in a box that declares nothing: $insertList',
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $create(PlainBoxNode).append(
+              $createQuoteNode().append($createTextNode('y')),
+              $p('x'),
+            ),
+          );
+        $selectRange($findText('y'), 0, $findText('x'), 1);
+        $insertList('bullet');
+      },
+      'box(list[bullet](li("y") li("x")))',
+    ],
+    [
+      'an empty declared box with a slot, element point: $wrapNodes',
+      () => {
+        const box = $create(DeclaredBoxNode);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        $setSlot(box as any, 'aside', $p('slot'));
+        $getRoot().clear().append($p('before'), box, $p('after'));
+        box.select(0, 0);
+        $wrapNodes($getSelection()!, () => $createQuoteNode());
+      },
+      'p("before") / dbox{aside:p("slot")}(quote()) / p("after")',
+    ],
+    [
+      'an empty declared box with a slot, node selected: $insertList',
+      () => {
+        const box = $create(DeclaredBoxNode);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        $setSlot(box as any, 'aside', $p('slot'));
+        $getRoot().clear().append($p('before'), box, $p('after'));
+        const selection = $createNodeSelection();
+        selection.add(box.getKey());
+        $setSelection(selection);
+        $insertList('bullet');
+      },
+      'p("before") / dbox{aside:p("slot")}() / p("after")',
+    ],
+    [
+      'a declared box holding only a block decorator, element point: $insertList',
+      () => {
+        const box = $create(DeclaredBoxNode).append($create(ComponentNode));
+        $getRoot().clear().append($p('before'), box, $p('after'));
+        box.select(0, 0);
+        $insertList('bullet');
+      },
+      'p("before") / dbox(component()) / p("after")',
+    ],
+    [
+      'a declared box as a named-slot value: $wrapNodes',
+      () => {
+        const host = $create(ComponentNode);
+        const body = $create(DeclaredBoxNode).append($p('abc'));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        $setSlot(host as any, 'body', body);
+        $getRoot().clear().append(host);
+        $findText('abc').select(1, 1);
+        $wrapNodes($getSelection()!, () => $createQuoteNode());
+      },
+      'component{body:dbox(quote("abc"))}()',
+    ],
+  ] as const)('%s (NodeStructureExtension)', (_name, $act, expected) => {
+    using editor = buildEditor(true);
+    editor.update($act, {discrete: true});
+    expect(editor.read(() => $shape())).toBe(expected);
+  });
+
+  test('with no active editor, a declared box is not a container', () => {
+    using editor = buildEditor(true);
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append($create(DeclaredBoxNode).append($p('x')));
+      },
+      {discrete: true},
+    );
+    expect(
+      editor
+        .getEditorState()
+        .read(() => $isBlockContainer($getRoot().getFirstChild())),
+    ).toBe(false);
+    expect(
+      editor.read(() => $isBlockContainer($getRoot().getFirstChild())),
+    ).toBe(true);
+  });
 });
 
 // https://github.com/meta/lexical/issues/9570

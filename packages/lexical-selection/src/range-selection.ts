@@ -22,7 +22,6 @@ import {
   $isExtendableTextPointCaret,
   $isLeafNode,
   $isRangeSelection,
-  $isRootOrShadowRoot,
   $isTabNode,
   $isTextNode,
   $isTextPointCaret,
@@ -239,12 +238,12 @@ export function $wrapNodes(
   // wrap: the slot value is the only block in its virtual scope and its slot
   // assignment is managed by the node or extension that owns the slot, so
   // this is a no-op (same rule as $setBlocksType). A shadow-root slot value
-  // is root-like and wraps its own subtree below, as usual. (A selection
-  // never crosses a slot boundary, so checking the anchor covers the whole
-  // selection.)
+  // or block container value is root-like and wraps its own subtree below,
+  // as usual. (A selection never crosses a slot boundary, so checking the
+  // anchor covers the whole selection.)
   if (anchor !== null) {
     const slotFrame = $getSlotFrame(anchor.getNode());
-    if (slotFrame !== null && !$isRootOrShadowRoot(slotFrame)) {
+    if (slotFrame !== null && !$isBlockContainer(slotFrame)) {
       return;
     }
   }
@@ -270,7 +269,13 @@ export function $wrapNodes(
       element = wrappingElement.append(element);
     }
 
-    target.replace(element);
+    if ($isBlockContainer(target)) {
+      // An empty container stays: the new block goes in it.
+      target.append(element);
+      element.selectStart();
+    } else {
+      target.replace(element);
+    }
 
     return;
   }

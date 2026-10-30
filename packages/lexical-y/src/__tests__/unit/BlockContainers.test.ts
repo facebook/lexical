@@ -9,8 +9,11 @@
 // @vitest-environment node
 
 import {$insertList} from '@lexical/list';
+import {$createQuoteNode} from '@lexical/rich-text';
 import {
   $create,
+  $createParagraphNode,
+  $createTextNode,
   $getRoot,
   ElementNode,
   INTERNAL_isNodeStructureEnforced,
@@ -30,7 +33,8 @@ import {
 // node structure enforced, as in every @lexical/y editor, turning one of its
 // paragraphs into a list converts that paragraph in place, so what a
 // collaborator types in it at the same time is kept. A container that
-// declares nothing is replaced by the list (y.md, Limits: Moves).
+// declares nothing is replaced by the list (y.md, Limits: Moves), unless it
+// holds a block a list item cannot hold.
 class DeclaredBoxNode extends ElementNode {
   $config() {
     return this.config('test_declared_box', {
@@ -77,7 +81,63 @@ describe('@lexical/y list conversion in a block container', () => {
       );
     });
 
-    test(`paragraph -> list in a container that declares nothing ‖ type in it (${ids})`, async () => {
+    test(`formatted paragraph -> list in a declared container ‖ type in it keeps the text (${ids})`, async () => {
+      const t = await setup(
+        () =>
+          $getRoot().append(
+            $create(DeclaredBoxNode).append(
+              $createParagraphNode().append(
+                $createTextNode('Al'),
+                $createTextNode('pha').toggleFormat('bold'),
+              ),
+              $p('Gamma'),
+            ),
+          ),
+        {ids, nodes},
+      );
+      t.offline();
+      t.a.update(() => {
+        $block([0, 0]).selectStart();
+        $insertList('bullet');
+      });
+      t.b.update(() => {
+        $block([0, 0]).selectEnd().insertText('X');
+      });
+      await t.sync();
+      await expectConverged(t.peers);
+      expect(t.a.describe()).toContain('X');
+      expect(t.a.describe()).toMatch(/^test_declared_box\(list\[bullet\]/);
+    });
+
+    test(`quote -> list in a container that declares nothing ‖ type in it keeps the text (${ids})`, async () => {
+      const t = await setup(
+        () =>
+          $getRoot().append(
+            $createBoxNode('o').append(
+              $createQuoteNode().append($createTextNode('Alpha')),
+              $p('Gamma'),
+            ),
+          ),
+        {ids, nodes},
+      );
+      t.offline();
+      t.a.update(() => {
+        $block([0, 0]).selectStart();
+        $insertList('bullet');
+      });
+      t.b.update(() => {
+        $block([0, 0]).selectEnd().insertText('X');
+      });
+      await t.sync();
+      // The box holds a block a list item cannot hold (the quote): the quote
+      // is converted in place, so the typing is kept.
+      await expectConverged(
+        t.peers,
+        'test_box[o](list[bullet](listitem("AlphaX")) paragraph("Gamma"))',
+      );
+    });
+
+    test(`paragraph -> list in a container that declares nothing ‖ type in it loses the typing, a documented limit (${ids})`, async () => {
       const t = await setup(
         () => $getRoot().append($createBoxNode('o').append($p('Alpha'))),
         {ids, nodes},

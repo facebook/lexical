@@ -15,19 +15,29 @@
 
 import type * as Y from '@y/y';
 
+import {$createCodeHighlightNode, $createCodeNode} from '@lexical/code';
+import {$createHashtagNode, HashtagNode} from '@lexical/hashtag';
 import {
   $createParagraphNode,
   $createTabNode,
   $createTextNode,
+  $getNodeByKey,
   $getRoot,
   $getSelection,
   $isRangeSelection,
   type ElementNode,
+  type LexicalNode,
   type TextNode,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {$block, $selectIn, expectConverged, setup} from '../utils/harness';
+import {
+  $block,
+  $selectIn,
+  expectConverged,
+  NODES,
+  setup,
+} from '../utils/harness';
 
 const $t = (s: string) => $createTextNode(s);
 
@@ -323,4 +333,196 @@ describe('shown text next to held-back text under an open tab opener', () => {
     );
     expect(shown.runs[0].attrs).toEqual({});
   });
+});
+
+// Nodes Lexical keeps apart from an equal neighbour (a tab, token and
+// segmented text) are stored as runs with a segment key. A node written
+// right next to another client's node of the same kind, inside that node's
+// run, must state its own type and formats: the other client's undo deletes
+// the run's opener and closers, and a node that relied on them was read as
+// another node (a tab as a "\t" in the text before it, a token as plain
+// text).
+describe("a node kept apart written next to another client's", () => {
+  // Every kind of text node stored with a segment key: a tab, text in
+  // token and segmented mode (with and without a format), and TextNode
+  // subclasses (a hashtag; a code highlight token in a code block).
+  const KINDS = [
+    'tab',
+    'token',
+    'segmented',
+    'bold token',
+    'hashtag',
+    'code-highlight',
+  ] as const;
+  type Kind = (typeof KINDS)[number];
+  const $make = (kind: Kind, text: string): LexicalNode => {
+    switch (kind) {
+      case 'tab':
+        return $createTabNode();
+      case 'hashtag':
+        return $createHashtagNode(`#${text}`);
+      case 'code-highlight':
+        return $createCodeHighlightNode(text, 'keyword');
+      default: {
+        const node = $createTextNode(text).setMode(
+          kind === 'segmented' ? 'segmented' : 'token',
+        );
+        return kind === 'bold token' ? node.setFormat('bold') : node;
+      }
+    }
+  };
+  const isKind = (kind: Kind, n: LexicalNode): boolean =>
+    kind === 'tab' || kind === 'hashtag' || kind === 'code-highlight'
+      ? n.getType() === kind
+      : n.getType() === 'text' && (n as TextNode).getMode() !== 'normal';
+  const $kindNodes = (kind: Kind): LexicalNode[] =>
+    $block([0])
+      .getChildren()
+      .filter(n => isKind(kind, n));
+  const describeKind = (n: LexicalNode) => JSON.stringify(n.exportJSON());
+  for (const container of ['paragraph', 'code'] as const) {
+    for (const kind of KINDS) {
+      // Code highlight tokens live in code blocks; a code block holds
+      // tabs and code highlight tokens only.
+      const inCode = kind === 'tab' || kind === 'code-highlight';
+      const inParagraph = kind !== 'code-highlight';
+      if (container === 'code' ? !inCode : !inParagraph) {
+        continue;
+      }
+      for (const side of ['after', 'before'] as const) {
+        for (const op of ['undo', 'remove'] as const) {
+          for (const ids of [
+            [1, 2],
+            [2, 1],
+          ]) {
+            test(`${container}: B adds a ${kind}, A adds one ${side} it, B ${op}s (ids ${ids})`, async () => {
+              const t = await setup(
+                () =>
+                  $getRoot().append(
+                    (container === 'code'
+                      ? $createCodeNode()
+                      : $createParagraphNode()
+                    ).append($t('ab'), $make(kind, 'PP'), $t('cd')),
+                    $createParagraphNode().append($t('next line')),
+                  ),
+                {ids, nodes: [...NODES, HashtagNode]},
+              );
+              // B adds its node right before the first one.
+              let bKey = '';
+              t.b.update(() => {
+                const bs = $make(kind, 'BB');
+                $kindNodes(kind)[0].insertBefore(bs);
+                bKey = bs.getKey();
+              });
+              await t.sync();
+              // A adds its node right after (or before) B's.
+              t.a.update(() => {
+                const bs = $kindNodes(kind)[0];
+                const mine = $make(kind, 'AA');
+                if (side === 'after') {
+                  bs.insertAfter(mine);
+                } else {
+                  bs.insertBefore(mine);
+                }
+              });
+              const want = t.a.read(() =>
+                $kindNodes(kind)
+                  .filter((_n, i) => i !== (side === 'after' ? 0 : 1))
+                  .map(describeKind),
+              );
+              if (op === 'undo') {
+                t.b.undo();
+              } else {
+                t.b.update(() => {
+                  $getNodeByKey(bKey)?.remove();
+                });
+              }
+              await t.sync();
+              for (const peer of t.peers) {
+                expect(
+                  peer.read(() => $kindNodes(kind).map(describeKind)),
+                ).toEqual(want);
+                // No tab character outside a tab node.
+                expect(
+                  peer.read(() =>
+                    $block([0])
+                      .getChildren()
+                      .filter(
+                        n =>
+                          n.getType() !== 'tab' &&
+                          n.getTextContent().includes('\t'),
+                      )
+                      .map(n => n.getTextContent()),
+                  ),
+                ).toEqual([]);
+              }
+              await expectConverged(t.peers);
+            });
+          }
+        }
+      }
+    }
+  }
+});
+
+// A tab's run holds one "\t" when one writer wrote it, but concurrent writes
+// can leave two clients' "\t" under one tab opener (a tab restored by an undo
+// next to another client's tab in the same run). Each "\t" is a tab: read
+// as one tab node, one character was not shown and the self-check reported
+// the line.
+describe('tab characters under one tab opener', () => {
+  for (const container of ['paragraph', 'code'] as const) {
+    test(`${container}: two "\\t" in one run read as two tabs`, async () => {
+      const t = await setup(() =>
+        $getRoot().append(
+          (container === 'code'
+            ? $createCodeNode()
+            : $createParagraphNode()
+          ).append($t('ab'), $createTabNode(), $t('cd')),
+          $createParagraphNode().append($t('next line')),
+        ),
+      );
+      // Another client writes a "\t" right after the tab's "\t", inside its
+      // run: Yjs gives it the run's type and segment key.
+      const root = t.b.doc.get('lexical-y');
+      let segment: unknown = null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (let it: any = root._start; it !== null; it = it.right) {
+        if (!it.deleted && it.content.key === 'k' && it.content.value) {
+          segment = it.content.value;
+          break;
+        }
+      }
+      expect(segment).not.toBe(null);
+      t.b.doc.transact(() => {
+        root.insert(3, '\t', {k: segment, t: 'tab'});
+      });
+      expect(raw(t.b.doc)).toContain('\t\t');
+      await t.sync();
+      for (const peer of t.peers) {
+        expect(
+          peer.read(() =>
+            $block([0])
+              .getChildren()
+              .map(n => n.getType()),
+          ),
+        ).toEqual(['text', 'tab', 'tab', 'text']);
+      }
+      // Both still edit the line.
+      t.a.update(() => {
+        $selectIn([0], 0, 0);
+        const s = $getSelection();
+        if ($isRangeSelection(s)) s.insertText('X');
+      });
+      t.b.update(() => {
+        const last = $block([0]).getLastChild() as TextNode;
+        last.select(last.getTextContentSize(), last.getTextContentSize());
+        const s = $getSelection();
+        if ($isRangeSelection(s)) s.insertText('Y');
+      });
+      await t.sync();
+      expect(t.a.read(() => $block([0]).getTextContent())).toBe('Xab\t\tcdY');
+      await expectConverged(t.peers);
+    });
+  }
 });

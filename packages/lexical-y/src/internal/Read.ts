@@ -2245,6 +2245,7 @@ export class Reader {
               last !== undefined &&
               last.kind === 'text' &&
               last.tsig === run.tsig &&
+              !isTabText(run.tattrs) &&
               sameWrappers(last.wrappers, wrappers)
             ) {
               last.text += run.text;
@@ -3026,7 +3027,10 @@ function $applyJSON<T extends LexicalNode>(node: T, json: Attrs): T {
  * (`t: 'tab'`) and segment key apply to its `\t` only: other text inside
  * a tab's format range (left open there when the client that wrote the tab
  * removed it, while another client's content written inside it stays) is
- * read as plain text, never as tabs.
+ * read as plain text, never as tabs. Each `\t` is a run of its own (a tab
+ * node holds one): two clients' `\t` can share one tab's range (one
+ * written inside the other's run), and read as one tab node, one of them
+ * was not shown.
  */
 function tabRuns(
   text: string,
@@ -3036,19 +3040,23 @@ function tabRuns(
   if (text.length === 0) {
     return [];
   }
-  if (decodeFormatValue(tattrs[TYPE_KEY]) !== 'tab' || /^\t+$/.test(text)) {
+  if (decodeFormatValue(tattrs[TYPE_KEY]) !== 'tab') {
     return [{tattrs, text, tsig}];
   }
   const plain: Attrs = {...tattrs};
   delete plain[TYPE_KEY];
   delete plain[SEGMENT_KEY];
   const plainSig = stableStringify(plain);
-  return (text.match(/\t+|[^\t]+/g) || []).map(run =>
-    run[0] === '\t'
+  return (text.match(/\t|[^\t]+/g) || []).map(run =>
+    run === '\t'
       ? {tattrs, text: run, tsig}
       : {tattrs: plain, text: run, tsig: plainSig},
   );
 }
+
+/** Whether text read with `tattrs` is a tab's (one node per `\t`). */
+const isTabText = (tattrs: Attrs): boolean =>
+  decodeFormatValue(tattrs[TYPE_KEY]) === 'tab';
 
 function lineGroupSig(attrs: Attrs, group: GroupItemInfo | null): string {
   if (group === null) {

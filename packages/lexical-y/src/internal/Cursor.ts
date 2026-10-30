@@ -517,12 +517,44 @@ export class Cursor {
     return true;
   }
 
-  private insertFormats(formats: Record<string, unknown>): Formats {
+  /**
+   * The keys content with `formats` writes items of its own for even where
+   * the cursor already has their values: every key it gives a value, when
+   * it starts a segment (a node Lexical keeps apart from an equal neighbour,
+   * see SEGMENT_KEY) other than the one in effect at the cursor. Why: a
+   * segment's run is its author's, opened and closed by items its author
+   * wrote; content inside it that only changes the segment key reads its
+   * type and formats from that author's opener, and the author's undo
+   * deletes the opener and its closers (a tab written right after another
+   * client's tab, which that client undid, read as a "\t" in the text
+   * before it). Null when there are none.
+   */
+  private ownSegmentKeys(formats: Record<string, unknown>): Set<string> | null {
+    const segment = formats[SEGMENT_KEY] ?? null;
+    if (
+      segment === null ||
+      equalFormatValue(this.formats.get(SEGMENT_KEY) ?? null, segment)
+    ) {
+      return null;
+    }
+    const own = new Set<string>();
+    for (const key in formats) {
+      if (formats[key] !== null) {
+        own.add(key);
+      }
+    }
+    return own;
+  }
+
+  private insertFormats(
+    formats: Record<string, unknown>,
+    own: Set<string> | null = null,
+  ): Formats {
     const negated: Formats = new Map();
     for (const key in formats) {
       const val = formats[key];
       const current = this.formats.get(key) ?? null;
-      if (!equalFormatValue(current, val)) {
+      if (!equalFormatValue(current, val) || (own !== null && own.has(key))) {
         negated.set(key, current);
         this.right = this.newItem(new ContentFormat(key, val as object));
         this.forward();
@@ -710,7 +742,7 @@ export class Cursor {
       }
     });
     this.minimizeFormatChanges(f);
-    const negated = this.insertFormats(f);
+    const negated = this.insertFormats(f, this.ownSegmentKeys(f));
     const item = this.newItem(content);
     this.right = item;
     this.forward();

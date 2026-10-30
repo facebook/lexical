@@ -5735,9 +5735,22 @@ export class YBinding {
     owner = parent;
     offset += $atomsBefore(parent, target);
     const unit = state.unitByKey.get(owner.getKey());
+    // A line without a marker (see Unit) ends where its container does, or
+    // at the block node after it.
+    const implicit = unit !== undefined && unit.kind === 'implicit';
     let start: Item | null;
     if (unit !== undefined && unit.end !== null) {
       const left = prevLiveEnd(unit.end, state.hidden);
+      start = left === null ? unit.cs.y._start : left.right;
+    } else if (unit !== undefined && implicit) {
+      // Its content starts right after the unit before it, the end of the
+      // nearest line before it that is still shown.
+      const units = unit.cs.units;
+      const idx = units.indexOf(unit);
+      let left = idx > 0 ? units[idx - 1].end : null;
+      while (left !== null && !isShownEnd(left, state.hidden)) {
+        left = prevLiveEnd(left, state.hidden);
+      }
       start = left === null ? unit.cs.y._start : left.right;
     } else {
       const cs = state.csByKey.get(owner.getKey());
@@ -5782,10 +5795,14 @@ export class YBinding {
       lastLive = it;
       lastLen = len;
       if (isShownEnd(it, hidden)) {
-        break;
+        return null;
       }
     }
-    return null;
+    // At the end of a line without a marker that ends its container: after
+    // its last character.
+    return implicit && offset === 0 && lastLive !== null
+      ? at(lastLive, unitAt(lastLive, lastLen - 1), -1)
+      : null;
   }
 
   /**

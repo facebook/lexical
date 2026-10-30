@@ -5294,6 +5294,31 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     },
   );
 
+  it.each(['**b.***.**', '**b_***.**'])(
+    'measures the whole run cut by an earlier match for the rule of 3 in %j',
+    markdown => {
+      const editor = createTestEditor();
+      editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
+        discrete: true,
+      });
+      expect(
+        editor.read('latest', () =>
+          $getRoot()
+            .getAllTextNodes()
+            .map(node => [
+              node.getTextContent(),
+              node.hasFormat('bold'),
+              node.hasFormat('italic'),
+            ]),
+        ),
+      ).toEqual([
+        [markdown.slice(2, 4), true, false],
+        ['.', false, true],
+        ['*', false, false],
+      ]);
+    },
+  );
+
   it('applies a link before a later link that holds a code span', () => {
     const editor = createTestEditor();
     editor.update(

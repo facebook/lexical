@@ -12,10 +12,19 @@ import type {TextNode} from 'lexical';
 
 import {characterAt, characterBefore, getEmphasisSides} from './utils';
 
+/**
+ * What a delimiter run at the edge of a text sees beyond the text it was split
+ * from: the next character (undefined at the edge of the line) and how many
+ * delimiters of the run itself were cut off there.
+ */
+export type RunEdge = {character: string | undefined; length: number};
+
 interface Delimiter {
   index: number;
   char: string;
   length: number;
+  // The length of the whole run in the line, for the rule of 3.
+  origLength: number;
   canOpen: boolean;
   canClose: boolean;
   active: boolean;
@@ -24,8 +33,8 @@ interface Delimiter {
 export function findOutermostTextFormatTransformer(
   textNode: TextNode,
   textFormatTransformersIndex: TextFormatTransformersIndex,
-  before?: string,
-  after?: string,
+  before?: RunEdge,
+  after?: RunEdge,
 ): {
   startIndex: number;
   endIndex: number;
@@ -195,8 +204,8 @@ function scanDelimiters(
   codeSpans: {startIndex: number; endIndex: number}[],
   // What a run at the start (or end) of the text sees beyond it; the edge of
   // the line when undefined.
-  before: string | undefined,
-  after: string | undefined,
+  before: RunEdge | undefined,
+  after: RunEdge | undefined,
 ): Delimiter[] {
   const delimiters: Delimiter[] = [];
   const delimiterChars = new Set(
@@ -236,10 +245,12 @@ function scanDelimiters(
       len++;
     }
 
+    const atStart = i === 0 && before;
+    const atEnd = i + len === text.length && after;
     const {canOpen, canClose} = getEmphasisSides(
       char,
-      i === 0 ? before : characterBefore(text, i),
-      i + len === text.length ? after : characterAt(text, i + len),
+      atStart ? before.character : characterBefore(text, i),
+      atEnd ? after.character : characterAt(text, i + len),
     );
 
     if (canOpen || canClose) {
@@ -250,6 +261,8 @@ function scanDelimiters(
         char,
         index: i,
         length: len,
+        origLength:
+          len + (atStart ? before.length : 0) + (atEnd ? after.length : 0),
       });
     }
 
@@ -257,6 +270,10 @@ function scanDelimiters(
   }
 
   return delimiters;
+}
+
+function isRefusedByRuleOf3(opener: number, closer: number): boolean {
+  return (opener + closer) % 3 === 0 && opener % 3 !== 0 && closer % 3 !== 0;
 }
 
 function processEmphasis(
@@ -288,7 +305,10 @@ function processEmphasis(
     // openers_bottom is likewise per length-mod-3). The length key uses the
     // *current* length: a partially consumed closer switches class and must
     // rescan openers a shorter closer already gave up on (#4895).
-    const bottomKey = `${closer.char}${closer.canOpen}${closer.length % 3}`;
+    // The original length joins it, since the rule of 3 below also reads it.
+    const bottomKey = `${closer.char}${closer.canOpen}${closer.length % 3}${
+      closer.origLength % 3
+    }`;
     const bottom = openersBottom[bottomKey] ?? -1;
     let foundOpener = false;
 
@@ -304,21 +324,21 @@ function processEmphasis(
         continue;
       }
 
-      // Rule of 3, on the *remaining* lengths: a delimiter run partially
-      // consumed by an earlier pairing is re-measured, matching micromark
-      // (the CommonMark reference this models). Using the original lengths
-      // instead would refuse pairings like the `**` opener with the two
-      // markers left of a `****` run in `**llo*wor****`, so the exporter's
-      // own output for overlapping formats would not re-import (#4895).
-      if (opener.canClose || closer.canOpen) {
-        const sum = opener.length + closer.length;
-        if (
-          sum % 3 === 0 &&
-          opener.length % 3 !== 0 &&
-          closer.length % 3 !== 0
-        ) {
-          continue;
-        }
+      // Rule of 3. The spec measures the original runs, but a pairing is
+      // refused only when the *remaining* lengths refuse it too, matching
+      // micromark: a delimiter run partially consumed by an earlier pairing is
+      // re-measured. Refusing by the original lengths alone would refuse
+      // pairings like the `**` opener with the two markers left of a `****`
+      // run in `**llo*wor****`, so the exporter's own output for overlapping
+      // formats would not re-import (#4895). Refusing by the remaining
+      // lengths alone would refuse the `*` left of `***` with the `**` in
+      // `**b.***.**`, which the spec pairs.
+      if (
+        (opener.canClose || closer.canOpen) &&
+        isRefusedByRuleOf3(opener.length, closer.length) &&
+        isRefusedByRuleOf3(opener.origLength, closer.origLength)
+      ) {
+        continue;
       }
 
       const maxLen = Math.min(opener.length, closer.length);

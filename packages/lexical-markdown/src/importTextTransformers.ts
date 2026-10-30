@@ -13,6 +13,7 @@ import {$isTextNode, type LexicalNode, type TextNode} from 'lexical';
 import {
   findOutermostTextFormatTransformer,
   importTextFormatTransformer,
+  type RunEdge,
 } from './importTextFormatTransformer';
 import {
   findOutermostTextMatchTransformer,
@@ -34,16 +35,16 @@ export function canContainTransformableMarkdown(
 
 /**
  * What a delimiter run cut at `index` of `text` sees beyond its far end once
- * the text is split there: before the run that starts at `index` when `step`
- * is -1, after the run that ends there when it is 1. `outside` is what lies
- * beyond the text.
+ * the text is split there, and how many of its delimiters are cut off: before
+ * the run that starts at `index` when `step` is -1, after the run that ends
+ * there when it is 1. `outside` is what lies beyond the text.
  */
-function characterBeyondRun(
+function runEdge(
   text: string,
   index: number,
   step: 1 | -1,
-  outside: string | undefined,
-): string | undefined {
+  outside: RunEdge | undefined,
+): RunEdge {
   const isInside = (edge: number) =>
     step === 1 ? edge < text.length : edge > 0;
   const delimiter = text[step === 1 ? index - 1 : index];
@@ -51,11 +52,17 @@ function characterBeyondRun(
   while (isInside(edge) && text[step === 1 ? edge : edge - 1] === delimiter) {
     edge += step;
   }
+  const length = Math.abs(edge - index);
   return !isInside(edge)
-    ? outside
-    : step === 1
-      ? characterAt(text, edge)
-      : characterBefore(text, edge);
+    ? {
+        character: outside && outside.character,
+        length: length + (outside ? outside.length : 0),
+      }
+    : {
+        character:
+          step === 1 ? characterAt(text, edge) : characterBefore(text, edge),
+        length,
+      };
 }
 
 /**
@@ -68,10 +75,10 @@ export function importTextTransformers(
   textNode: TextNode,
   textFormatTransformersIndex: TextFormatTransformersIndex,
   textMatchTransformers: TextMatchTransformer[],
-  // The characters around this text in the text it was split from, so that
-  // a delimiter run at its edge reads as it did there.
-  before?: string,
-  after?: string,
+  // What lies around this text in the text it was split from, so that a
+  // delimiter run at its edge reads as it did there.
+  before?: RunEdge,
+  after?: RunEdge,
 ) {
   const text = textNode.getTextContent();
   let foundTextFormat = findOutermostTextFormatTransformer(
@@ -142,7 +149,7 @@ export function importTextTransformers(
         nodeAfter,
         textFormatTransformersIndex,
         textMatchTransformers,
-        characterBeyondRun(text, endIndex, -1, before),
+        runEdge(text, endIndex, -1, before),
         after,
       );
     }
@@ -152,7 +159,7 @@ export function importTextTransformers(
         textFormatTransformersIndex,
         textMatchTransformers,
         before,
-        characterBeyondRun(text, startIndex, 1, after),
+        runEdge(text, startIndex, 1, after),
       );
     }
   };
@@ -178,10 +185,8 @@ export function importTextTransformers(
         textMatchTransformers,
         isCodeSpan
           ? undefined
-          : characterBeyondRun(text, startIndex + tagLength, -1, before),
-        isCodeSpan
-          ? undefined
-          : characterBeyondRun(text, endIndex - tagLength, 1, after),
+          : runEdge(text, startIndex + tagLength, -1, before),
+        isCodeSpan ? undefined : runEdge(text, endIndex - tagLength, 1, after),
       );
     }
   } else if (foundTextMatch) {

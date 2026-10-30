@@ -42,7 +42,13 @@ import {
   type Transformer,
   TRANSFORMERS,
 } from './MarkdownTransformers';
-import {indexBy, PUNCTUATION_OR_SPACE, transformersByType} from './utils';
+import {
+  codePointAt,
+  codePointBefore,
+  indexBy,
+  PUNCTUATION_OR_SPACE,
+  transformersByType,
+} from './utils';
 
 function runElementTransformers(
   parentNode: ElementNode,
@@ -248,7 +254,7 @@ function $runTextFormatTransformers(
     }
 
     // Some tags can not be used within words, hence should have newline/space/punctuation after it
-    const afterCloseTagChar = textContent[closeTagEndIndex + 1];
+    const afterCloseTagChar = codePointAt(textContent, closeTagEndIndex + 1);
 
     if (
       matcher.intraword === false &&
@@ -313,7 +319,10 @@ function $runTextFormatTransformers(
     }
 
     // Some tags can not be used within words, hence should have newline/space/punctuation before it
-    const beforeOpenTagChar = prevOpenNodeText[openTagStartIndex - 1];
+    const beforeOpenTagChar = codePointBefore(
+      prevOpenNodeText,
+      openTagStartIndex,
+    );
 
     if (
       matcher.intraword === false &&

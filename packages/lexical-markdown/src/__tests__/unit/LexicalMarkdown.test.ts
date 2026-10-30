@@ -4800,6 +4800,108 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       ).toBe(exported);
     });
   }
+
+  // Characters outside the Basic Multilingual Plane are read whole: an emoji
+  // is a symbol (So), so it is punctuation too. markdown-it agrees; micromark
+  // reads UTF-16 code units here.
+  const GRINNING_FACE = '\u{1F600}';
+  it.each([
+    [`a**${GRINNING_FACE}**`, [[`a**${GRINNING_FACE}**`, 'plain']]],
+    [`**${GRINNING_FACE}**a`, [[`**${GRINNING_FACE}**a`, 'plain']]],
+    [
+      `a **${GRINNING_FACE}**`,
+      [
+        ['a ', 'plain'],
+        [GRINNING_FACE, 'bold'],
+      ],
+    ],
+  ] as [string, Run[]][])('imports %j', (md, runs) => {
+    expect(importRuns(md)).toEqual(runs);
+  });
+
+  // A tag between a word character and punctuation cannot open or close, so
+  // the word character goes out as a numeric reference, whose `&` or `;` is
+  // punctuation.
+  it.each([
+    [
+      [
+        ['foo', []],
+        [`${LEFT_DOUBLE_QUOTE}bar${RIGHT_DOUBLE_QUOTE}`, ['bold']],
+        ['baz', []],
+      ],
+      `fo&#111;**${LEFT_DOUBLE_QUOTE}bar${RIGHT_DOUBLE_QUOTE}**&#98;az`,
+    ],
+    [
+      [
+        ['a', []],
+        [GRINNING_FACE, ['italic']],
+        ['b', []],
+      ],
+      `&#97;*${GRINNING_FACE}*&#98;`,
+    ],
+    [
+      [
+        ['a', []],
+        ['x', ['bold', 'code']],
+        ['b', []],
+      ],
+      '&#97;**`x`**&#98;',
+    ],
+    [
+      [
+        ['x.', ['bold']],
+        ['b', []],
+        ['(y)', ['bold']],
+      ],
+      '**x.**&#98;**(y)**',
+    ],
+    // A word character beside a word character needs no reference.
+    [
+      [
+        ['a', []],
+        ['b', ['bold']],
+        ['c', []],
+      ],
+      'a**b**c',
+    ],
+  ] as [[string, TextFormatType[]][], string][])(
+    'exports and reimports %j as %j',
+    (runs, exported) => {
+      const editor = createTestEditor();
+      editor.update(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append(
+              ...runs.map(([text, formats]) => {
+                const node = $createTextNode(text);
+                formats.forEach(format => node.toggleFormat(format));
+                return node;
+              }),
+            ),
+          ),
+        {discrete: true},
+      );
+      const markdown = editor.read('latest', () =>
+        $convertToMarkdownString(TRANSFORMERS),
+      );
+      expect(markdown).toBe(exported);
+      editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
+        discrete: true,
+      });
+      expect(
+        editor.read('latest', () =>
+          $getRoot()
+            .getAllTextNodes()
+            .map(node => [
+              node.getTextContent(),
+              (['bold', 'italic', 'code'] as const).filter(format =>
+                node.hasFormat(format),
+              ),
+            ]),
+        ),
+      ).toEqual(runs);
+    },
+  );
 });
 
 describe('decimal character references that name no character', () => {

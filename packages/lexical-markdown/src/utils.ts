@@ -64,6 +64,24 @@ export const PUNCTUATION_OR_SPACE = /[\p{P}\p{S}\s]/u;
 export const WHITESPACE = /\s/;
 export const PUNCTUATION = /[\p{P}\p{S}]/u;
 
+/** The code point that starts at `index`, if any, whole when it is astral. */
+export function codePointAt(text: string, index: number): string | undefined {
+  const codePoint = text.codePointAt(index);
+  return codePoint === undefined ? undefined : String.fromCodePoint(codePoint);
+}
+
+/** The code point that ends just before `index`, if any. */
+export function codePointBefore(
+  text: string,
+  index: number,
+): string | undefined {
+  if (index < 1) {
+    return undefined;
+  }
+  const pair = index >= 2 ? text.slice(index - 2, index) : '';
+  return /^[\uD800-\uDBFF][\uDC00-\uDFFF]$/.test(pair) ? pair : text[index - 1];
+}
+
 const MARKDOWN_EMPTY_LINE_REG_EXP = /^\s{0,3}$/;
 
 export function isEmptyParagraph(node: LexicalNode): boolean {

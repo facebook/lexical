@@ -299,6 +299,8 @@ describe('UNDERSCORE_AFTER_UNICODE_PUNCTUATION', () => {
   test.each([
     [`See ${EN_DASH}_here_`, `See ${EN_DASH}`],
     [`See ${LEFT_DOUBLE_QUOTE}_here_`, `See ${LEFT_DOUBLE_QUOTE}`],
+    // An emoji (So) outside the Basic Multilingual Plane, read whole.
+    ['See \u{1F600}_here_', 'See \u{1F600}'],
   ])('typing %j formats the word between the underscores', (typed, before) => {
     using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
     typeMarkdown(editor, typed);

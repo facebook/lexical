@@ -33,7 +33,14 @@ import {
   type TextMatchTransformer,
   type Transformer,
 } from './MarkdownTransformers';
-import {isEmptyParagraph, transformersByType} from './utils';
+import {
+  codePointAt,
+  codePointBefore,
+  isEmptyParagraph,
+  PUNCTUATION,
+  transformersByType,
+  WHITESPACE,
+} from './utils';
 
 /**
  * Renders string from markdown. The selection is moved to the start after the operation.
@@ -626,10 +633,121 @@ function $exportTextFormat(
     closingTagsBefore +
     leadingSpace +
     openingTags +
-    trimmedOutput +
+    (isCode
+      ? trimmedOutput
+      : $guardWordEdges(
+          node,
+          trimmedOutput,
+          leadingSpace === '',
+          trailingSpace === '',
+          textTransformers,
+          selection,
+        )) +
     closingTagsAfter +
     trailingSpace
   );
+}
+
+/**
+ * A marker between a word character and punctuation can only open or close
+ * on the punctuation side (CommonMark flanking), so plain `a` before a bold
+ * `*` cannot go out as `a**\***`. A word character of `node`'s text that
+ * meets such a marker goes out as a numeric reference instead, whose `&` or
+ * `;` is punctuation: `&#97;**\***`.
+ */
+function $guardWordEdges(
+  node: TextNode,
+  output: string,
+  startsAtEdge: boolean,
+  endsAtEdge: boolean,
+  textTransformers: TextFormatTransformer[],
+  selection: BaseSelection | null,
+): string {
+  const prevNode = startsAtEdge
+    ? $exportedSibling(node, true, selection)
+    : null;
+  const nextNode = endsAtEdge ? $exportedSibling(node, false, selection) : null;
+  const first = codePointAt(output, 0);
+  const last = codePointBefore(output, output.length);
+  // A tag that `prevNode` has and `node` lacks closes between them.
+  const encodeFirst =
+    prevNode !== null &&
+    isWordChar(first) &&
+    hasTagMissingFrom(prevNode, node, textTransformers) &&
+    PUNCTUATION.test($edgeChar(prevNode, selection, true));
+  // A tag that `nextNode` has and `node` lacks opens between them.
+  const encodeLast =
+    nextNode !== null &&
+    isWordChar(last) &&
+    hasTagMissingFrom(nextNode, node, textTransformers) &&
+    PUNCTUATION.test($edgeChar(nextNode, selection, false));
+  let start = '';
+  let end = '';
+  let body = output;
+  if (encodeFirst) {
+    start = toCharacterReference(first!);
+    body = body.slice(first!.length);
+  }
+  if (encodeLast && body !== '') {
+    end = toCharacterReference(last!);
+    body = body.slice(0, -last!.length);
+  }
+  return start + body + end;
+}
+
+function $exportedSibling(
+  node: TextNode,
+  backward: boolean,
+  selection: BaseSelection | null,
+): TextNode | null {
+  const sibling = getTextSibling(node, backward);
+  return sibling && (!selection || sibling.isSelected(selection))
+    ? sibling
+    : null;
+}
+
+/**
+ * The exported character of `node` at its edge beside a tag, or `''` when
+ * `node` puts no tag there.
+ */
+function $edgeChar(
+  node: TextNode,
+  selection: BaseSelection | null,
+  atEnd: boolean,
+): string {
+  const text = $exportedText(node, selection);
+  // Text that cannot hold a tag has no tag at its edges.
+  if (!canHoldTag(text)) {
+    return '';
+  }
+  // Inline code goes out inside a backtick fence.
+  if (node.hasFormat('code')) {
+    return '`';
+  }
+  return (
+    (atEnd ? codePointBefore(text, text.length) : codePointAt(text, 0)) || ''
+  );
+}
+
+function hasTagMissingFrom(
+  node: TextNode,
+  other: TextNode,
+  textTransformers: TextFormatTransformer[],
+): boolean {
+  return textTransformers.some(
+    ({format: [format]}) =>
+      format !== 'code' && node.hasFormat(format) && !other.hasFormat(format),
+  );
+}
+
+function isWordChar(char: string | undefined): boolean {
+  return (
+    char !== undefined && !WHITESPACE.test(char) && !PUNCTUATION.test(char)
+  );
+}
+
+function toCharacterReference(char: string): string {
+  return `&#${char.codePointAt(0)};`;
 }
 
 function getTextSibling(node: TextNode, backward: boolean): TextNode | null {

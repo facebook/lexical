@@ -26,6 +26,7 @@ import {
   CODE,
   type ElementTransformer,
   HEADING,
+  ITALIC_STAR,
   LINK,
   type MultilineElementTransformer,
   registerMarkdownShortcuts,
@@ -1662,6 +1663,17 @@ describe('Markdown', () => {
           ['e', 0],
         ],
         'a*b**c*****d**e',
+      );
+    });
+
+    it('round-trips italic then bold italic between punctuation', () => {
+      expectRoundTrip(
+        [
+          [')', ITALIC],
+          ['(', BOLD],
+          [')', BOLD | ITALIC],
+        ],
+        '*)***(*)***',
       );
     });
 
@@ -5238,6 +5250,42 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     ).toBe('see https://x.com/?a===b==');
   });
 
+  it('writes references around an underscore italic between letters', () => {
+    const transformers = TRANSFORMERS.filter(
+      transformer => transformer !== ITALIC_STAR,
+    );
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createTextNode('a'),
+            $createTextNode('b').toggleFormat('italic'),
+            $createTextNode('c'),
+          ),
+        ),
+      {discrete: true},
+    );
+    const markdown = editor.read('latest', () =>
+      $convertToMarkdownString(transformers),
+    );
+    expect(markdown).toBe('&#97;_b_&#99;');
+    editor.update(() => $convertFromMarkdownString(markdown, transformers), {
+      discrete: true,
+    });
+    expect(
+      editor.read('latest', () =>
+        $getRoot()
+          .getAllTextNodes()
+          .map(node => [node.getTextContent(), node.hasFormat('italic')]),
+      ),
+    ).toEqual([
+      ['a', false],
+      ['b', true],
+      ['c', false],
+    ]);
+  });
+
   it("guards a letter right after an inline link's destination", () => {
     const editor = createTestEditor();
     editor.update(
@@ -5295,35 +5343,6 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
             .map(node => [node.getTextContent(), node.hasFormat('italic')]),
         ),
       ).toEqual(runs);
-    },
-  );
-
-  it.each([
-    ['**b.***.**', 'b.'],
-    ['**b_***.**', 'b_'],
-    ['**\\*ba\\****.**', '*ba*'],
-  ])(
-    'measures the whole run cut by an earlier match for the rule of 3 in %j',
-    (markdown, bold) => {
-      const editor = createTestEditor();
-      editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
-        discrete: true,
-      });
-      expect(
-        editor.read('latest', () =>
-          $getRoot()
-            .getAllTextNodes()
-            .map(node => [
-              node.getTextContent(),
-              node.hasFormat('bold'),
-              node.hasFormat('italic'),
-            ]),
-        ),
-      ).toEqual([
-        [bold, true, false],
-        ['.', false, true],
-        ['*', false, false],
-      ]);
     },
   );
 

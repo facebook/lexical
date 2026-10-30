@@ -36,6 +36,7 @@ import {
 import {
   characterAt,
   characterBefore,
+  getEmphasisSides,
   isEmptyParagraph,
   isEscaped,
   isFlankedBy,
@@ -1054,21 +1055,40 @@ function decideReferences(
   };
   const isFree = (index: number, leftward: boolean) =>
     !isOneCharacter(index) || canSpread(index, leftward);
-  // A reference helps only where the run would flank if the character
-  // beside it were punctuation.
-  const opensWithReference = ({opens, before, after, afterFirst}: MarkerRun) =>
-    opens &&
-    !isFlankedBy(afterFirst || startChar(after), endChar(before)) &&
-    isFlankedBy(afterFirst || startChar(after), ';');
+  // A reference helps only where the run could open (or close) if the
+  // character beside it were punctuation. `_` between two letters cannot.
+  const opensWithReference = ({
+    opens,
+    before,
+    after,
+    afterFirst,
+  }: MarkerRun) => {
+    if (!opens) {
+      return false;
+    }
+    const marker = values[before + 1][0];
+    const next = afterFirst || startChar(after);
+    return (
+      !getEmphasisSides(marker, endChar(before), next).canOpen &&
+      getEmphasisSides(marker, ';', next).canOpen
+    );
+  };
   const closesWithReference = ({
     closes,
     before,
     after,
     beforeLast,
-  }: MarkerRun) =>
-    closes &&
-    !isFlankedBy(beforeLast || endChar(before), startChar(after)) &&
-    isFlankedBy(beforeLast || endChar(before), '&');
+  }: MarkerRun) => {
+    if (!closes) {
+      return false;
+    }
+    const marker = values[after - 1][values[after - 1].length - 1];
+    const previous = beforeLast || endChar(before);
+    return (
+      !getEmphasisSides(marker, previous, startChar(after)).canClose &&
+      getEmphasisSides(marker, previous, '&').canClose
+    );
+  };
   // Text does not escape every tag character (the `=` of `==`, say), and one
   // right beside a marker of the same character would join its delimiter
   // run, so it goes out as a reference, except in a bare URL, as with any

@@ -66,6 +66,27 @@ export function transformersByType(transformers: Transformer[]): Readonly<{
 export const PUNCTUATION_OR_SPACE = /[\p{P}\p{S}\p{Zs}\t\n\f\r]/u;
 export const WHITESPACE = /[\p{Zs}\t\n\f\r]/u;
 export const NOT_WHITESPACE = /[^\p{Zs}\t\n\f\r]/u;
+
+/**
+ * Whether a delimiter run with `primary` on the side it faces (after it for
+ * left-flanking, before it for right-flanking) and `secondary` on the other
+ * side is flanking. `undefined` is the edge of the line.
+ * https://spec.commonmark.org/0.31.2/#left-flanking-delimiter-run
+ */
+export function isFlankedBy(
+  primary: string | undefined,
+  secondary: string | undefined,
+): boolean {
+  if (primary === undefined || WHITESPACE.test(primary)) {
+    return false;
+  }
+  return (
+    !PUNCTUATION.test(primary) ||
+    secondary === undefined ||
+    WHITESPACE.test(secondary) ||
+    PUNCTUATION.test(secondary)
+  );
+}
 export const PUNCTUATION = /[\p{P}\p{S}]/u;
 
 /** The character (code point) that starts at `index`, if any. */

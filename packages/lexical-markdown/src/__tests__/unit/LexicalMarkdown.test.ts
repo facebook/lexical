@@ -4989,6 +4989,38 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     ]);
   });
 
+  it('keeps a raw backslash from escaping a marker when preserving newlines', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createTextNode('a\\'),
+            $createTextNode('b').toggleFormat('bold'),
+          ),
+        ),
+      {discrete: true},
+    );
+    const markdown = editor.read('latest', () =>
+      $convertToMarkdownString(TRANSFORMERS, undefined, true),
+    );
+    expect(markdown).toBe('a&#92;**b**');
+    editor.update(
+      () => $convertFromMarkdownString(markdown, TRANSFORMERS, undefined, true),
+      {discrete: true},
+    );
+    expect(
+      editor.read('latest', () =>
+        $getRoot()
+          .getAllTextNodes()
+          .map(node => [node.getTextContent(), node.hasFormat('bold')]),
+      ),
+    ).toEqual([
+      ['a\\', false],
+      ['b', true],
+    ]);
+  });
+
   it('guards word characters in a selection export', () => {
     const editor = createTestEditor();
     editor.update(

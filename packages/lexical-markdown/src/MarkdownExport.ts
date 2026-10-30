@@ -38,8 +38,8 @@ import {
   characterBefore,
   isEmptyParagraph,
   isEscaped,
+  isFlankedBy,
   NOT_WHITESPACE,
-  PUNCTUATION,
   PUNCTUATION_OR_SPACE,
   toCharacterReference,
   transformersByType,
@@ -663,7 +663,7 @@ function $exportTextFormat(
   // whitespace runs.)
   const contentStart = output.search(NOT_WHITESPACE);
   let contentEnd = output.length;
-  while (WHITESPACE.test(output[contentEnd - 1])) {
+  while (contentEnd > contentStart && WHITESPACE.test(output[contentEnd - 1])) {
     contentEnd--;
   }
   const leadingSpace = output.slice(0, contentStart);
@@ -748,6 +748,9 @@ interface MarkerRun {
  * reference instead, whose `&` or `;` is punctuation: `&#97;**\***`.
  */
 function joinPieces(pieces: MarkdownPiece[]): string {
+  if (!pieces.some(isMarker)) {
+    return pieces.map(piece => piece.value).join('');
+  }
   // Drop empty pieces and merge adjacent text, so that each run of markers
   // sits between the pieces whose characters a reader sees beside it.
   const merged: MarkdownPiece[] = [];
@@ -837,11 +840,16 @@ function joinPieces(pieces: MarkdownPiece[]): string {
   while (pending.length > 0) {
     const {before, after, opens, closes, afterFirst, beforeLast} =
       runs[pending.pop()!];
+    // A reference helps only where the run would flank if the character
+    // beside it were punctuation.
+    const charBefore = endChar(before);
+    const charAfter = startChar(after);
     if (
       opens &&
       isText(before) &&
-      isWordCharacter(endChar(before)) &&
-      PUNCTUATION.test(afterFirst || startChar(after) || '')
+      isWordCharacter(charBefore) &&
+      !isFlankedBy(afterFirst || charAfter, charBefore) &&
+      isFlankedBy(afterFirst || charAfter, ';')
     ) {
       encodeEnd[before] = true;
       if (isEncoded(before) && runBefore[before] !== -1) {
@@ -851,8 +859,9 @@ function joinPieces(pieces: MarkdownPiece[]): string {
     if (
       closes &&
       isText(after) &&
-      isWordCharacter(startChar(after)) &&
-      PUNCTUATION.test(beforeLast || endChar(before) || '')
+      isWordCharacter(charAfter) &&
+      !isFlankedBy(beforeLast || charBefore, charAfter) &&
+      isFlankedBy(beforeLast || charBefore, '&')
     ) {
       encodeStart[after] = true;
       if (isEncoded(after) && runAfter[after] !== -1) {
@@ -867,6 +876,16 @@ function joinPieces(pieces: MarkdownPiece[]): string {
       const first = characterAt(value, 0)!;
       markdown += toCharacterReference(first);
       value = value.slice(first.length);
+    }
+    if (
+      merged[index].kind === 'text' &&
+      isMarker(merged[index + 1]) &&
+      !encodeEnd[index] &&
+      isEscaped(value, value.length)
+    ) {
+      // A backslash left unescaped (when preserving newlines) would escape
+      // the marker after it, so it goes out as a reference.
+      value = value.slice(0, -1) + toCharacterReference('\\');
     }
     if (encodeEnd[index] && value !== '') {
       const last = characterBefore(value, value.length)!;

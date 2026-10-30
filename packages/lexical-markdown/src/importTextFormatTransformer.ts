@@ -10,7 +10,7 @@ import type {TextFormatTransformersIndex} from './MarkdownImport';
 import type {TextFormatTransformer} from './MarkdownTransformers';
 import type {TextNode} from 'lexical';
 
-import {characterAt, characterBefore, PUNCTUATION, WHITESPACE} from './utils';
+import {characterAt, characterBefore, isFlankedBy, PUNCTUATION} from './utils';
 
 interface Delimiter {
   index: number;
@@ -412,22 +412,9 @@ function isFlanking(
 ): boolean {
   const charBefore = characterBefore(text, index);
   const charAfter = characterAt(text, index + length);
-
-  const [primary, secondary] = isLeft
-    ? [charAfter, charBefore]
-    : [charBefore, charAfter];
-
-  if (primary === undefined || WHITESPACE.test(primary)) {
-    return false;
-  }
-  if (!PUNCTUATION.test(primary)) {
-    return true;
-  }
-  return (
-    secondary === undefined ||
-    WHITESPACE.test(secondary) ||
-    PUNCTUATION.test(secondary)
-  );
+  return isLeft
+    ? isFlankedBy(charAfter, charBefore)
+    : isFlankedBy(charBefore, charAfter);
 }
 
 export function importTextFormatTransformer(

@@ -58,8 +58,7 @@ reads a stub instead, and every import fails with "Module '@lexical/y' has
 no exported member" rather than an error that names the setting.
 
 - **`@nightly` until a Lexical release includes `@lexical/y`.** Until then,
-  npm's `latest` for `@lexical/y` is a placeholder (`0.0.0-bootstrap.0`)
-  that does not work, so install every Lexical package of your app from the
+  `npm install @lexical/y` does not install a working copy, so install every Lexical package of your app from the
   same nightly, in one command so that they resolve to the same version.
   Each nightly `@lexical/y` depends on the `lexical` of its own nightly, so
   a `lexical` from another version puts

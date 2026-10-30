@@ -2,7 +2,7 @@
 '@lexical/markdown': patch
 ---
 
-[fix] Follow CommonMark's Unicode punctuation and whitespace when deciding whether `*`, `_` and `~~` markers open or close formatting
+[fix] Follow CommonMark's Unicode punctuation and whitespace when deciding whether `*`, `_`, `~~` and `==` markers open or close formatting
 
 Markdown import and the typing shortcuts now count every character in the Unicode punctuation (P) and symbol (S) categories as punctuation, so an en dash, a curly quote, a currency sign or a symbol such as ✓ or 😀 next to a marker no longer reads as a letter, and `See –**[here](https://example.com)**` imports as a bold link. On import, the backslash, which was missing from its ASCII list, counts too. Whitespace is the Zs category plus tab, line feed, form feed and carriage return, so U+000B, U+2028, U+2029 and U+FEFF no longer count as whitespace beside a marker, on import or for the typing shortcuts. Import also applies emphasis that closes before a later code span ahead of that span, as in `**a.**&#120;**`c`**`, so its markers no longer split apart and stay as literal text. A link or other text match no longer takes part of any code span in the text, not only the first.
 

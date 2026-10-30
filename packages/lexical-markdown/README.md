@@ -98,7 +98,7 @@ brackets and guarded `<`/`&` use numeric references so escaping does not change
 adjacent emphasis flanking.
 
 Import follows CommonMark's Unicode punctuation and whitespace when deciding
-whether `*`, `_` and `~~` open or close formatting. When formatted text starts
+whether `*`, `_`, `~~` and `==` open or close formatting. When formatted text starts
 or ends with punctuation right beside a letter, export writes that letter as a
 numeric reference (`fo&#111;**“bar”**`) so that the markers still open and
 close, also with `shouldPreserveNewLines`, where a raw backslash right before

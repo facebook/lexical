@@ -4940,6 +4940,15 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       ],
       'a**b**c',
     ],
+    // A tag character that text does not escape is kept out of the marker.
+    [
+      [
+        ['a=', []],
+        [`${LEFT_DOUBLE_QUOTE}b${RIGHT_DOUBLE_QUOTE}`, ['highlight']],
+        ['=c', []],
+      ],
+      'a&#61;==“b”==&#61;c',
+    ],
     // Emphasis that ends before a code span is read before the span.
     [
       [
@@ -4987,9 +4996,15 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
             .getAllTextNodes()
             .map(node => [
               node.getTextContent(),
-              (['bold', 'italic', 'strikethrough', 'code'] as const).filter(
-                format => node.hasFormat(format),
-              ),
+              (
+                [
+                  'bold',
+                  'italic',
+                  'strikethrough',
+                  'highlight',
+                  'code',
+                ] as const
+              ).filter(format => node.hasFormat(format)),
             ]),
         ),
       ).toEqual(runs);

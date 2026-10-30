@@ -911,6 +911,27 @@ function decideReferences(
   const count = kinds.length;
   const encodeStart = new Uint8Array(count);
   const encodeEnd = new Uint8Array(count);
+  // Text does not escape every tag character (the `=` of `==`, say), and one
+  // right beside a marker of the same character would join its delimiter
+  // run, so it goes out as a reference.
+  for (let i = 0; i < count; i++) {
+    const value = values[i];
+    if (kinds[i] === TEXT) {
+      if (
+        isMarker(kinds[i + 1]) &&
+        value[value.length - 1] === values[i + 1][0] &&
+        !isEscaped(value, value.length - 1)
+      ) {
+        encodeEnd[i] = 1;
+      }
+      if (
+        isMarker(kinds[i - 1]) &&
+        value[0] === values[i - 1][values[i - 1].length - 1]
+      ) {
+        encodeStart[i] = 1;
+      }
+    }
+  }
   const runs: MarkerRun[] = [];
   // The run that follows and the run that precedes each piece, or -1.
   const runAfter = new Int32Array(count).fill(-1);

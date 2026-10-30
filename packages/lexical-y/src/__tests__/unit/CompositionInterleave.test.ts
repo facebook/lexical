@@ -8,6 +8,7 @@
 
 // @vitest-environment node
 
+import {$createHashtagNode, HashtagNode} from '@lexical/hashtag';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -20,7 +21,7 @@ import {
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {$block, expectConverged, setup} from '../utils/harness';
+import {$block, expectConverged, NODES, setup} from '../utils/harness';
 
 // A client composes (IME) at the end of text it typed itself, while a
 // collaborator's text typed at the same place at the same time comes in,
@@ -81,6 +82,59 @@ describe('@lexical/y a composition at text a collaborator typed next to at the s
       const line = t.a.read(() => $block([0]).getTextContent());
       // Both words whole, in either order the room gave them
       expect(['t12dz t18ez t20ez t3', 't12dz t18ez t3 t20ez']).toContain(line);
+      await expectConverged(t.peers);
+    });
+  }
+});
+
+// The composed node is a text node kept apart from its neighbours (stored
+// with a segment key: a hashtag here), and a collaborator's change that
+// deletes some of its text adds a character before the composition's
+// character. The node then starts one character later in the run, and the
+// character before it is read as text of its own with the same segment: it
+// must get a node of its own, not the node being composed (which the
+// composed text then took back, so the character was not shown).
+describe('@lexical/y a composition in a node kept apart when text before the caret grows', () => {
+  for (const ids of [
+    [1, 2],
+    [2, 1],
+  ]) {
+    test(`the text before the composed node stays shown (ids ${ids})`, async () => {
+      const t = await setup(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append(
+              $createTextNode('x '),
+              $createHashtagNode('#ab'),
+            ),
+          ),
+        {ids, nodes: [...NODES, HashtagNode]},
+      );
+      // A composes at the end of the hashtag
+      let key: NodeKey = '';
+      t.a.update(() => {
+        const node = ($block([0]) as ElementNode).getLastChild();
+        if (!$isTextNode(node)) {
+          throw new Error('no text');
+        }
+        node.select(3, 3);
+        $setCompositionKey(node.getKey());
+        key = node.getKey();
+      });
+      // B replaces its "a" with "cd" (a change that deletes shown text,
+      // read at once while A composes)
+      t.b.update(() => {
+        const node = ($block([0]) as ElementNode).getLastChild();
+        if ($isTextNode(node)) {
+          node.spliceText(1, 1, 'cd', false);
+        }
+      });
+      await t.sync();
+      expect(t.a.read(() => $block([0]).getTextContent())).toBe('x #cdb');
+      expect(t.a.read(() => $getNodeByKey(key) !== null)).toBe(true);
+      t.a.update(() => $setCompositionKey(null));
+      await t.sync();
+      expect(t.a.read(() => $block([0]).getTextContent())).toBe('x #cdb');
       await expectConverged(t.peers);
     });
   }

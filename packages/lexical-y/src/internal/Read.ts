@@ -2474,6 +2474,15 @@ export class Reader {
           }
           end = at + ct.length;
         }
+        if (typeof piece.tattrs[SEGMENT_KEY] === 'string') {
+          // A node kept apart from its neighbours (its run has a segment
+          // key) is never split around the composition: its parts would be
+          // nodes of one segment that Lexical does not merge when the
+          // composition ends, and the editor would keep two nodes where the
+          // document holds one. The composed node is the whole run.
+          at = 0;
+          end = text.length;
+        }
         const parts: Piece[] = [];
         if (at > 0) {
           parts.push({...piece, text: text.slice(0, at)});

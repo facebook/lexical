@@ -566,6 +566,10 @@ const isWordChar = (s: string, i: number): boolean => {
   return !SPACE.test(c) && !UNSPACED.test(c);
 };
 
+/** Whether a word of `s` runs across position `i` (between `i - 1` and `i`). */
+export const cutsWord = (s: string, i: number): boolean =>
+  isWordChar(s, i - 1) && isWordChar(s, i);
+
 /**
  * Snap a replacement's common prefix and suffix back to word boundaries, so
  * that replaced words are replaced whole. Character-level diffs keep the
@@ -637,18 +641,24 @@ export function snapToWords(
 // More than spaces: a character that is not white space, or a line feed (a
 // line break is a node of its own, not a separator).
 const NOT_SPACE = /\S|\n/;
-const isSpaceAt = (s: string, i: number): boolean =>
-  i >= 0 && i < s.length && SPACE.test(s[i]);
 
 /**
  * The common start and end that text made in place of removed text (`b`,
  * see TextReplay#stretch) keeps of that text (`a`), as the characters they
- * were: the diff anchored at the caret (diffStrings). An insertion or a
- * deletion keeps every other character; where it could be at several
- * places (`t9z ` inserted in `t1z t2z`, at `t1z t|9z t2z` or at
- * `t1z |t9z t2z`) and the caret does not place it, it goes at the last of
- * them that is at a word boundary of `a`, so that no word of `a` is cut. A
- * replacement keeps whole words (snapToWords), and a kept start or end that
+ * were: the diff anchored at the caret (diffStrings).
+ *
+ * An insertion or a deletion keeps every other character where it changes
+ * no word of `a`: between two words, or a whole word with its separator
+ * (`t9z ` inserted in `t1z t2z`). Where it could be at several places
+ * (`t1z t|9z t2z` or `t1z |t9z t2z`), it goes at the caret's if that changes
+ * no word, else at the last that does not. Inside a word or glued onto one
+ * (`t9z` made again as `t90z`), it changed that word, which is then
+ * replaced whole, as by a replacement: a kept piece of the old word would be
+ * a piece of the new one, and an edit computed before this one that
+ * replaces the old word deletes exactly the old word's characters, so it
+ * took that piece out of the new word.
+ *
+ * A replacement keeps whole words (snapToWords). A kept start or end that
  * is only spaces is written with it: a separator alone carries no word, and
  * the old one is the one a concurrent rewrite of the words around it
  * deletes (a node `Note: ` replaced by `Tip: ` while a collaborator rewrites
@@ -663,18 +673,44 @@ export function keptEnds(
   const diff = diffStrings(a, b, cursor);
   const n = Math.min(a.length, b.length);
   if (diff.prefix + diff.suffix === n) {
-    // An insertion or a deletion: where the caret placed it, else at a word
-    // boundary between the furthest the common start and the common end
-    // reach (diffStrings takes the common start first: `diff.prefix`).
-    if (
-      diff.prefix < n &&
-      a.charCodeAt(diff.prefix) === b.charCodeAt(diff.prefix)
-    ) {
-      // The caret stopped the common start.
+    if (composing || a.length === b.length) {
       return diff;
     }
-    // The common end, from the end, a chunk at a time where equal.
+    // An insertion or a deletion of `m` characters at `k`: of `b` at
+    // `[k, k + m)` (an insertion) or of `a` (a deletion).
+    const m = Math.abs(b.length - a.length);
+    const longer = b.length > a.length ? b : a;
+    const splits = (s: string, i: number): boolean =>
+      i > 0 &&
+      i < s.length &&
+      isHighSurrogate(s.charCodeAt(i - 1)) &&
+      isLowSurrogate(s.charCodeAt(i));
+    const changesNoWord = (k: number): boolean => {
+      if (splits(a, k) || splits(longer, k) || splits(longer, k + m)) {
+        return false;
+      }
+      if (longer === b) {
+        return (
+          !(isWordChar(a, k - 1) && isWordChar(b, k)) &&
+          !(isWordChar(b, k + m - 1) && isWordChar(a, k))
+        );
+      }
+      return !cutsWord(a, k) && !cutsWord(a, k + m);
+    };
+    // The places it could be: from the furthest the common end reaches to
+    // the furthest the common start reaches (diffStrings takes the common
+    // start first unless the caret stops it, at `diff.prefix`).
     const CHUNK = 256;
+    let hi = diff.prefix;
+    while (
+      hi + CHUNK <= n &&
+      a.substring(hi, hi + CHUNK) === b.substring(hi, hi + CHUNK)
+    ) {
+      hi += CHUNK;
+    }
+    while (hi < n && a.charCodeAt(hi) === b.charCodeAt(hi)) {
+      hi++;
+    }
     let end = diff.suffix;
     while (
       end + CHUNK <= n &&
@@ -689,12 +725,48 @@ export function keptEnds(
     ) {
       end++;
     }
-    for (let k = diff.prefix; k >= n - end; k--) {
-      if (k === 0 || k === a.length || isSpaceAt(a, k - 1) || isSpaceAt(a, k)) {
+    if (changesNoWord(diff.prefix)) {
+      return diff;
+    }
+    for (let k = hi; k >= n - end; k--) {
+      if (changesNoWord(k)) {
         return {prefix: k, suffix: n - k};
       }
     }
-    return diff;
+    // It changed the word or words at its ends: those are replaced whole.
+    const k = diff.prefix;
+    if (longer.slice(k, k + m).includes('\ufffc')) {
+      return diff;
+    }
+    let prefix = k;
+    let suffix = n - k;
+    const glued =
+      longer === b
+        ? [
+            isWordChar(a, k - 1) && isWordChar(b, k),
+            isWordChar(b, k + m - 1) && isWordChar(a, k),
+          ]
+        : [cutsWord(a, k), cutsWord(a, k + m)];
+    if (glued[0]) {
+      while (isWordChar(a, prefix - 1)) {
+        prefix = charStart(a, prefix - 1);
+      }
+    }
+    if (glued[1]) {
+      while (suffix > 0 && isWordChar(a, a.length - suffix)) {
+        const at = a.length - suffix;
+        suffix -=
+          at + 1 < a.length &&
+          isHighSurrogate(a.charCodeAt(at)) &&
+          isLowSurrogate(a.charCodeAt(at + 1))
+            ? 2
+            : 1;
+      }
+    }
+    return {
+      prefix: NOT_SPACE.test(a.slice(0, prefix)) ? prefix : 0,
+      suffix: NOT_SPACE.test(a.slice(a.length - suffix)) ? suffix : 0,
+    };
   }
   const {prefix, suffix} = snapToWords(
     a,

@@ -214,18 +214,19 @@ function $tableTransform(node: TableNode) {
   // TODO: Future support of tbody/thead/tfoot/caption may change this
   $unwrapAndFilterDescendants(node, $isTableRowNode);
 
-  // A table whose rows the update changed (a row added, removed or moved)
-  // gets all its rows padded. One whose rows are the ones it had gets the
-  // rows that lost cells padded, and no other: the other short rows (a
-  // table ragged by collaborators' concurrent row and column inserts) are
-  // their authors' to pad, and a client padding them at the same time as
-  // their authors duplicates cells, which makes the other rows short in
-  // turn.
+  // A new table, or one whose rows the update changed (a row added,
+  // removed or moved), gets all its rows padded. One whose rows are the ones
+  // it had gets the rows that lost cells padded, and no other, also when
+  // the update changed only the table itself (its striping): the other
+  // short rows (a table ragged by collaborators' concurrent row and column
+  // inserts) are their authors' to pad, and a client padding them at the
+  // same time as their authors duplicates cells, which makes the other rows
+  // short in turn.
   const rows = $rowsLost(node);
-  if (rows !== undefined && $sameRows(node)) {
-    $padTableRows(node, row => rows.has(row.getKey()));
-  } else {
+  if (!$sameRows(node)) {
     $padTableRows(node);
+  } else if (rows !== undefined) {
+    $padTableRows(node, row => rows.has(row.getKey()));
   }
   const colWidths = node.getColWidths();
   const columnCount = node.getColumnCount();

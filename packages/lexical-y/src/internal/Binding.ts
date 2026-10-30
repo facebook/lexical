@@ -622,19 +622,6 @@ function recordSetMembersLayout(root: YNode, tr: Transaction): void {
 }
 
 /**
- * @experimental A Yjs 14 binding for one editor and one shared root.
- *
- * Every container (the root, and every node stored as its own Y.Node) holds
- * one sequence of text, child nodes and line markers; see the package README
- * for the layout.
- *
- * Warnings (read only states, recoveries, the opt-in self-check) go to the
- * editor's `onWarn`, typed by their code (see YWarning and isYWarning), once a
- * remote change has been applied in full: never from inside a Yjs observer
- * or transaction. A handler that throws does not affect syncing.
- */
-
-/**
  * What any reader of `type` can show: its live content in order, each with
  * the format values it has there, and its attributes, nested types
  * included. Two documents with the same digest read the same.
@@ -690,6 +677,18 @@ function contentDigest(c: Item['content']): string {
   }
 }
 
+/**
+ * @experimental A Yjs 14 binding for one editor and one shared root.
+ *
+ * Every container (the root, and every node stored as its own Y.Node) holds
+ * one sequence of text, child nodes and line markers; see the package README
+ * for the layout.
+ *
+ * Warnings (read only states, recoveries, the opt-in self-check) go to the
+ * editor's `onWarn`, typed by their code (see YWarning and isYWarning), once a
+ * remote change has been applied in full: never from inside a Yjs observer
+ * or transaction. A handler that throws does not affect syncing.
+ */
 export class YBinding {
   private readonly _editor: LexicalEditor;
   private readonly _doc: YDoc;
@@ -5225,12 +5224,14 @@ export class YBinding {
     }
     this.undoDepth++;
     try {
+      // What the document shows before the press: a step that changed
+      // nothing visible leaves it as it was.
+      const before = visibleDigest(this._root);
       let any = false;
       for (;;) {
         if ((undo ? um.undoStack : um.redoStack).length === 0) {
           return any;
         }
-        const before = visibleDigest(this._root);
         if (!this.applyUndoStep(um, undo)) {
           return any;
         }

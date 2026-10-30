@@ -326,6 +326,14 @@ the edit arrives. Follow
   `update` into the latest stored state (and send it to the clients). Yjs
   merges it with everything that changed since. Do not store the returned
   `state`: it lacks those changes.
+- **Resolve block handles against the stored state.** An agent that
+  addresses blocks by [handle](/docs/extensions/block-ids#showing-blocks-to-a-model)
+  resolves each one in a `readYState` of the latest stored state, with the
+  handles it was shown (`$resolveBlockHandle(handle, {read})`), so that a
+  block deleted since the read fails, then applies the edit to the read by
+  id (see
+  [Handles and collaboration](/docs/extensions/block-ids#handles-and-collaboration)).
+  Resolved inside the edit of the read, a handle always finds its block.
 - **Give the agent its writer.** The edit continues the agent's client id
   when the agent has not written the document since `seen` was read. When
   two runs of the agent overlap on one document, the later edit is written

@@ -63,7 +63,13 @@ test('internal writes of node attributes go through Seen', () => {
   const dir = path.resolve(__dirname, '../../internal');
   const found: string[] = [];
   for (const name of fs.readdirSync(dir).sort()) {
-    if (!name.endsWith('.ts') || name === 'Seen.ts') {
+    // YjsContract.ts probes @y/y on scratch documents of its own, never a
+    // document a binding reads, so its writes have no Seen record to keep.
+    if (
+      !name.endsWith('.ts') ||
+      name === 'Seen.ts' ||
+      name === 'YjsContract.ts'
+    ) {
       continue;
     }
     const file = ts.createSourceFile(

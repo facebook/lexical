@@ -19,6 +19,7 @@ import {
   decodeUpdate,
   Doc,
   encodeStateAsUpdate,
+  encodeStateVector,
   findIndexSS,
   findRootTypeKey,
   type GC,
@@ -47,8 +48,11 @@ import {SUPPORTED_YJS_VERSION} from './SupportedYjs';
  * public API (see Cursor). A package manager only warns about a peer
  * dependency it cannot satisfy (pnpm by default, npm with
  * --legacy-peer-deps), so an app can still run another @y/y. @y/y exposes no
- * version at run time (its `package.json` subpath is not something every
- * bundler or runtime can import), so the check probes the contract itself,
+ * version at run time: no export or constant, and its duplicate-import flag
+ * (`globalThis['__ $YJS14$ __']`) is only `true`; its `package.json`
+ * subpath needs a JSON import that not every bundler or runtime supports,
+ * and synchronously none. The exact version is enforced by the peer
+ * dependency; at run time the check probes the contract itself,
  * once per module, on a scratch document: every export below is a
  * function, every member below has the kind of value the binding expects on
  * an object of that kind, and every event below fires. Any difference
@@ -86,6 +90,7 @@ export const YJS_EXPORTS = [
   'createRelativePositionFromJSON',
   'decodeUpdate',
   'encodeStateAsUpdate',
+  'encodeStateVector',
   'findIndexSS',
   'findRootTypeKey',
   'getItemCleanStart',
@@ -371,6 +376,7 @@ function yjsExports() {
     createRelativePositionFromJSON,
     decodeUpdate,
     encodeStateAsUpdate,
+    encodeStateVector,
     findIndexSS,
     findRootTypeKey,
     getItemCleanStart,

@@ -14,10 +14,14 @@ npm i --save-exact @lexical/y@nightly @lexical/extension@nightly \
 ```
 
 `@y/y` is a peer dependency pinned to the one release candidate this package
-supports: install exactly that version, once. `createYDoc`, `YBinding` and
-the headless helpers throw a `YUnsupportedYjsError` (`data.supported` names
-the version) when the `@y/y` the app loaded lacks what the binding uses, or
-the document comes from a second copy. `@y/y`'s type declarations do not
+supports: install exactly that version, once. The peer dependency enforces
+the version (`@y/y` exposes none at run time); at run time `createYDoc`,
+`YBinding` and the headless helpers throw a `YUnsupportedYjsError`
+(`data.supported` names the version) when the `@y/y` the app loaded lacks
+what the binding uses, or the document comes from a second copy. A release
+candidate older than `14.0.0-rc.25` (npm's `latest` among them) fails
+earlier, at build or load, with a missing `Node` export. `@y/y`'s type
+declarations do not
 type-check on their own (an upstream issue): projects that run `tsc` need
 `skipLibCheck: true`.
 

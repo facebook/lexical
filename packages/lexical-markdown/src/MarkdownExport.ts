@@ -250,8 +250,8 @@ function $exportChildrenForSelection(
   shouldPreserveNewLines: boolean,
   unclosedTags?: OpenTag[],
   unclosableTags?: OpenTag[],
+  output: MarkdownPieces = createPieces(),
 ): {shouldInclude: boolean; pieces: MarkdownPieces} {
-  const output = createPieces();
   const children = node.getChildren();
   let anyChildIncluded = false;
 
@@ -337,6 +337,7 @@ function $exportChildrenForSelection(
         anyChildIncluded = true;
       }
     } else if ($isElementNode(child)) {
+      const childStart = output.kinds.length;
       const childResult = $exportChildrenForSelection(
         child,
         selection,
@@ -345,6 +346,7 @@ function $exportChildrenForSelection(
         shouldPreserveNewLines,
         unclosedTags,
         unclosableTags,
+        output,
       );
 
       // extractWithChild: if child has selected descendants, ask parent if it should be included
@@ -357,8 +359,10 @@ function $exportChildrenForSelection(
       }
 
       if (childIncluded || childResult.shouldInclude) {
-        appendPieces(output, childResult.pieces);
         anyChildIncluded = true;
+      } else {
+        output.kinds.length = childStart;
+        output.values.length = childStart;
       }
     } else if ($isDecoratorNode(child)) {
       if (childIncluded) {
@@ -441,8 +445,8 @@ function $exportChildPieces(
   unclosedTags?: OpenTag[],
   unclosableTags?: OpenTag[],
   shouldPreserveNewLines: boolean = false,
+  output: MarkdownPieces = createPieces(),
 ): MarkdownPieces {
-  const output = createPieces();
   const children = node.getChildren();
   // keep track of unclosed tags from the very beginning
   if (!unclosedTags) {
@@ -509,16 +513,14 @@ function $exportChildPieces(
       );
     } else if ($isElementNode(child)) {
       // empty paragraph returns ""
-      appendPieces(
+      $exportChildPieces(
+        child,
+        textTransformersIndex,
+        textMatchTransformers,
+        unclosedTags,
+        unclosableTags,
+        shouldPreserveNewLines,
         output,
-        $exportChildPieces(
-          child,
-          textTransformersIndex,
-          textMatchTransformers,
-          unclosedTags,
-          unclosableTags,
-          shouldPreserveNewLines,
-        ),
       );
     } else if ($isDecoratorNode(child)) {
       pushPiece(output, TEXT, child.getTextContent());
@@ -704,25 +706,19 @@ function pushPiece(pieces: MarkdownPieces, kind: number, value: string) {
   }
 }
 
-function appendPieces(output: MarkdownPieces, pieces: MarkdownPieces) {
-  for (let i = 0; i < pieces.kinds.length; i++) {
-    output.kinds.push(pieces.kinds[i]);
-    output.values.push(pieces.values[i]);
-  }
-}
-
 function isMarker(kind: number | undefined): boolean {
   return kind === OPENER || kind === CLOSER;
 }
 
-// Characters a URL, email or mention can hold.
-const LINK_CHARACTER = /[\w!#$%&'()*+,./:;=?@~-]/;
+// Characters a URL, email or mention can hold, and the backslash that
+// escapes one of them.
+const LINK_CHARACTER = /[\w!#$%&'()*+,./:;=?@~\\-]/;
 // How far the export looks for one, which keeps the look linear.
 const LINK_LOOKAHEAD = 2048;
 // A URL, `www.` host, email or mention at the end of the text before it, or
 // at the start of the text after it.
 const LINK_AT_END = /:\/\/|(?:^|[^\w.-])www\.|@[\w.-]*\w$/i;
-const LINK_AT_START = /^[(]*(?:[a-z][\w+.-]*:\/\/|www\.)|^[\w.+-]*@\w/i;
+const LINK_AT_START = /^(?:[a-z][\w+.-]*:\/\/|www\.)|^[\w.+-]*@\w/i;
 
 // Characters that a reference does not stand in for everywhere: CommonMark
 // readers and HTML decode references to control characters, unpaired
@@ -835,7 +831,7 @@ function decideReferences(
     const firstMarker = values[start][0];
     let opens = false;
     let afterFirst: string | undefined;
-    for (let i = start; i <= end && afterFirst === undefined; i++) {
+    findAfterFirst: for (let i = start; i <= end; i++) {
       const value = values[i];
       if (value[0] !== firstMarker) {
         afterFirst = value[0];
@@ -845,14 +841,14 @@ function decideReferences(
       for (let c = 1; c < value.length; c++) {
         if (value[c] !== firstMarker) {
           afterFirst = value[c];
-          break;
+          break findAfterFirst;
         }
       }
     }
     const lastMarker = values[end][values[end].length - 1];
     let closes = false;
     let beforeLast: string | undefined;
-    for (let i = end; i >= start && beforeLast === undefined; i--) {
+    findBeforeLast: for (let i = end; i >= start; i--) {
       const value = values[i];
       if (value[value.length - 1] !== lastMarker) {
         beforeLast = value[value.length - 1];
@@ -862,7 +858,7 @@ function decideReferences(
       for (let c = value.length - 2; c >= 0; c--) {
         if (value[c] !== lastMarker) {
           beforeLast = value[c];
-          break;
+          break findBeforeLast;
         }
       }
     }
@@ -922,7 +918,9 @@ function decideReferences(
         end++;
       }
     }
-    return (atEnd ? LINK_AT_END : LINK_AT_START).test(value.slice(start, end));
+    return (atEnd ? LINK_AT_END : LINK_AT_START).test(
+      value.slice(start, end).replace(/\\/g, ''),
+    );
   };
   // Whether the last (or first) character of the piece at `index` can go out
   // as a reference.

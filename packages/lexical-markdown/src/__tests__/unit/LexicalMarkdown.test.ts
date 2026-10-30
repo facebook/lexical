@@ -5086,9 +5086,15 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     ).toBe(true);
   });
 
-  it.each(['www.example.com', 'me@example.com', 'https://example.com/a'])(
+  it.each([
+    ['www.example.com', 'www.example.com'],
+    ['me@example.com', 'me@example.com'],
+    ['https://example.com/a', 'https://example.com/a'],
+    ['https://example.com/a_b', 'https://example.com/a\\_b'],
+    ['@john_doe', '@john\\_doe'],
+  ])(
     'writes no reference inside %j, which readers may autolink',
-    link => {
+    (link, markdown) => {
       const editor = createTestEditor();
       editor.update(
         () =>
@@ -5104,7 +5110,7 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       );
       expect(
         editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
-      ).toMatch(new RegExp(`^see ${link.replace(/\./g, '\\.')}\\*\\*`));
+      ).toMatch(new RegExp(`^see ${markdown.replace(/[.\\]/g, '\\$&')}\\*\\*`));
     },
   );
 

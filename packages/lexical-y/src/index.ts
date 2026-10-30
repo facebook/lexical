@@ -28,7 +28,9 @@ import {
   STORAGE_MISMATCH_WARNING,
   UNKNOWN_NODE_TYPES_WARNING,
   UNSUPPORTED_CONFIG_WARNING,
+  UNSUPPORTED_EDIT_WARNING,
   UNSUPPORTED_LAYOUT_WARNING,
+  UNSUPPORTED_SCHEMA_WARNING,
   UNSUPPORTED_SLOTS_WARNING,
   UNSYNCED_VALUE_WARNING,
   type YNestedFallbackData,
@@ -39,14 +41,18 @@ import {
   type YStorageMismatchData,
   type YStoredAs,
   type YUnknownNodeTypesData,
+  type YUnreadableContentData,
   type YUnsupportedConfigData,
+  type YUnsupportedEditData,
   type YUnsupportedLayoutData,
+  type YUnsupportedSchemaData,
   type YUnsupportedSlotsData,
   type YUnsyncedValueData,
   type YWarning,
   type YWarningCode,
   type YWarningData,
 } from './internal/Warnings';
+import {createYDoc, type YDoc, type YDocOptions} from './internal/YDoc';
 import {type YCollabConfig, YCollabExtension} from './internal/YExtension';
 
 export type {
@@ -56,6 +62,8 @@ export type {
   YBindingStatus,
   YCollabConfig,
   YCursor,
+  YDoc,
+  YDocOptions,
   YNestedFallbackData,
   YNestedFallbackReason,
   YRecoveredReadData,
@@ -64,8 +72,11 @@ export type {
   YStorageMismatchData,
   YStoredAs,
   YUnknownNodeTypesData,
+  YUnreadableContentData,
   YUnsupportedConfigData,
+  YUnsupportedEditData,
   YUnsupportedLayoutData,
+  YUnsupportedSchemaData,
   YUnsupportedSlotsData,
   YUnsyncedValueData,
   YWarning,
@@ -73,6 +84,7 @@ export type {
   YWarningData,
 };
 export {
+  createYDoc,
   DEFAULT_ROOT_NAME,
   describeStorage,
   isYWarning,
@@ -84,7 +96,9 @@ export {
   STORAGE_MISMATCH_WARNING,
   UNKNOWN_NODE_TYPES_WARNING,
   UNSUPPORTED_CONFIG_WARNING,
+  UNSUPPORTED_EDIT_WARNING,
   UNSUPPORTED_LAYOUT_WARNING,
+  UNSUPPORTED_SCHEMA_WARNING,
   UNSUPPORTED_SLOTS_WARNING,
   UNSYNCED_VALUE_WARNING,
   YBinding,

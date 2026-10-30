@@ -248,6 +248,7 @@ function createTestEditor(
   options: {
     disabled?: boolean;
     exportIDsToHTML?: boolean;
+    isMarkIDShown?: (id: string) => boolean;
     markableNodes?: readonly MarkableNodeMatch[];
     withRoot?: boolean;
   } = {},
@@ -262,6 +263,9 @@ function createTestEditor(
         configExtension(MarkStateExtension, {
           disabled: options.disabled ?? false,
           exportIDsToHTML: options.exportIDsToHTML ?? false,
+          ...(options.isMarkIDShown
+            ? {isMarkIDShown: options.isMarkIDShown}
+            : {}),
           markableNodes: options.markableNodes ?? DEFAULT_MARKABLE_NODES,
         }),
       ],
@@ -2459,6 +2463,311 @@ describe('MarkStateExtension', () => {
       expect(registryText(editor)).toEqual({c1: ['grew 4%']});
       editor.setRootElement(null);
       root.remove();
+    });
+  });
+
+  describe('isMarkIDShown', () => {
+    /** [text, ids attribute, class] of each span of the editor DOM */
+    function renderedSpans(editor: LexicalEditor) {
+      return Array.from(editor.getRootElement()!.querySelectorAll('span')).map(
+        el => [
+          el.textContent,
+          el.getAttribute(MARK_STATE_IDS_ATTRIBUTE),
+          el.className,
+        ],
+      );
+    }
+
+    function isMarkIDShownSignal(editor: LexicalEditor) {
+      return getExtensionDependencyFromEditor(editor, MarkStateExtension).output
+        .isMarkIDShown;
+    }
+
+    test('the default renders every id', () => {
+      const editor = createTestEditor({withRoot: true});
+      update(editor, () => $init());
+      mark(editor, 8, 15, 'c1');
+      mark(editor, 12, 19, 'c2');
+      expect(isMarkIDShownSignal(editor).value('anything')).toBe(true);
+      expect(renderedSpans(editor)).toEqual([
+        ['Revenue ', null, ''],
+        ['grew', 'c1', 'mark'],
+        [' 4%', 'c1 c2', 'mark mark-overlap'],
+        [' in ', 'c2', 'mark'],
+        ['Q3.', null, ''],
+      ]);
+    });
+
+    test('hidden ids are not rendered but stay in the document', () => {
+      const editor = createTestEditor({
+        exportIDsToHTML: true,
+        isMarkIDShown: id => id !== 'c2',
+        withRoot: true,
+      });
+      update(editor, () => $init());
+      mark(editor, 8, 15, 'c1');
+      mark(editor, 12, 19, 'c2');
+      expect(renderedSpans(editor)).toEqual([
+        ['Revenue ', null, ''],
+        ['grew', 'c1', 'mark'],
+        [' 4%', 'c1', 'mark'],
+        [' in ', null, ''],
+        ['Q3.', null, ''],
+      ]);
+      // Only rendering is filtered
+      expect(registryText(editor)).toEqual({
+        c1: [' 4%', 'grew'],
+        c2: [' 4%', ' in '],
+      });
+      let atSelection: string[] = [];
+      update(editor, () => {
+        atSelection = $getMarkIDsAtSelection($select(12, 19), 'any');
+      });
+      expect(atSelection).toEqual(['c1', 'c2']);
+      const html = editor.read(() => $generateHtmlFromNodes(editor));
+      expect(html).toContain(`${MARK_STATE_IDS_ATTRIBUTE}="c1 c2"`);
+      expect(html).toContain(`${MARK_STATE_IDS_ATTRIBUTE}="c2"`);
+    });
+
+    test('newly marked text follows the filter', () => {
+      const editor = createTestEditor({
+        isMarkIDShown: id => id !== 'c2',
+        withRoot: true,
+      });
+      update(editor, () => $init());
+      mark(editor, 8, 12, 'c2');
+      expect(renderedSpans(editor)).toEqual([
+        ['Revenue ', null, ''],
+        ['grew', null, ''],
+        [' 4% in Q3.', null, ''],
+      ]);
+      mark(editor, 8, 12, 'c1');
+      expect(renderedSpans(editor)).toEqual([
+        ['Revenue ', null, ''],
+        ['grew', 'c1', 'mark'],
+        [' 4% in Q3.', null, ''],
+      ]);
+    });
+
+    test('assigning a new filter at runtime re-renders the affected leaves', () => {
+      const editor = createTestEditor({withRoot: true});
+      update(editor, () => $init());
+      mark(editor, 8, 15, 'c1');
+      mark(editor, 12, 19, 'c2');
+      const isMarkIDShown = isMarkIDShownSignal(editor);
+      const resolved = new Set<string>();
+      let updates = 0;
+      onTestFinished(editor.registerUpdateListener(() => updates++));
+      const {decorated, editorState} = {
+        decorated: renderedSpans(editor),
+        editorState: editor.getEditorState(),
+      };
+
+      // Resolve c2
+      resolved.add('c2');
+      isMarkIDShown.value = id => !resolved.has(id);
+      expect(renderedSpans(editor)).toEqual([
+        ['Revenue ', null, ''],
+        ['grew', 'c1', 'mark'],
+        [' 4%', 'c1', 'mark'],
+        [' in ', null, ''],
+        ['Q3.', null, ''],
+      ]);
+      // A re-render only: the document and the output are unchanged
+      expect(editor.getEditorState().toJSON()).toEqual(editorState.toJSON());
+      expect(registryText(editor)).toEqual({
+        c1: [' 4%', 'grew'],
+        c2: [' 4%', ' in '],
+      });
+
+      // Resolve c1 too: nothing is decorated
+      resolved.add('c1');
+      isMarkIDShown.value = id => !resolved.has(id);
+      expect(
+        editor.getRootElement()!.querySelector(`[${MARK_STATE_IDS_ATTRIBUTE}]`),
+      ).toBe(null);
+      expect(editor.getRootElement()!.querySelector('.mark')).toBe(null);
+
+      // Reopen both
+      resolved.clear();
+      isMarkIDShown.value = id => !resolved.has(id);
+      expect(renderedSpans(editor)).toEqual(decorated);
+      expect(updates).toBe(3);
+    });
+
+    test('a new filter re-renders nothing in a document without marks', () => {
+      const editor = createTestEditor({withRoot: true});
+      update(editor, () => $init());
+      let updates = 0;
+      onTestFinished(editor.registerUpdateListener(() => updates++));
+      isMarkIDShownSignal(editor).value = () => false;
+      expect(updates).toBe(0);
+      mark(editor, 8, 15, 'c1');
+      expect(updates).toBe(1);
+      expect(renderedSpans(editor)).toEqual([
+        ['Revenue ', null, ''],
+        ['grew 4%', null, ''],
+        [' in Q3.', null, ''],
+      ]);
+    });
+
+    test('a filter assigned inside an edit re-renders after it, without changing it', async () => {
+      const editor = createTestEditor({withRoot: true});
+      update(editor, () => $init());
+      mark(editor, 8, 15, 'c1');
+      update(editor, () => $select(15));
+      update(editor, () => {
+        isMarkIDShownSignal(editor).value = () => false;
+        editor.dispatchCommand(CONTROLLED_TEXT_INSERTION_COMMAND, 'X');
+      });
+      // Text typed at the end of the run is still not marked
+      expect(tree(editor)).toBe(
+        'paragraph("Revenue " "grew 4%"[c1] "X in Q3.")',
+      );
+      await Promise.resolve();
+      expect(renderedSpans(editor)).toEqual([
+        ['Revenue ', null, ''],
+        ['grew 4%', null, ''],
+        ['X in Q3.', null, ''],
+      ]);
+    });
+
+    test('a filter assigned in an update listener with an edit re-renders after that edit, which keeps its caret update', async () => {
+      const editor = createTestEditor({withRoot: true});
+      update(editor, () => $init());
+      mark(editor, 8, 15, 'c1');
+      update(editor, () => $select(10));
+      let armed = true;
+      onTestFinished(
+        editor.registerUpdateListener(() => {
+          if (!armed) {
+            return;
+          }
+          armed = false;
+          // A listener (an app's thread store reacting to the document)
+          // resolves the thread and queues an edit of its own
+          isMarkIDShownSignal(editor).value = () => false;
+          editor.update(() => {
+            editor.dispatchCommand(CONTROLLED_TEXT_INSERTION_COMMAND, 'X');
+          });
+        }),
+      );
+      // Moving the caret commits an update that runs the listener
+      update(editor, () => $select(15));
+      await new Promise(resolve => setTimeout(resolve, 0));
+      // Text typed at the end of the run is still not marked
+      expect(tree(editor)).toBe(
+        'paragraph("Revenue " "grew 4%"[c1] "X in Q3.")',
+      );
+      expect(renderedSpans(editor)).toEqual([
+        ['Revenue ', null, ''],
+        ['grew 4%', null, ''],
+        ['X in Q3.', null, ''],
+      ]);
+      // The edit moved the DOM caret past the inserted text
+      const domSelection = window.getSelection()!;
+      expect(domSelection.anchorNode?.textContent).toBe('X in Q3.');
+      expect(domSelection.anchorOffset).toBe(1);
+    });
+
+    test('a filter assigned in an update listener after its edit re-renders after that edit, which keeps its caret update', async () => {
+      const editor = createTestEditor({withRoot: true});
+      update(editor, () => $init());
+      mark(editor, 8, 15, 'c1');
+      update(editor, () => $select(10));
+      let armed = true;
+      onTestFinished(
+        editor.registerUpdateListener(() => {
+          if (!armed) {
+            return;
+          }
+          armed = false;
+          // A listener (an app's thread store reacting to the document)
+          // queues an edit, then resolves the thread
+          editor.update(() => {
+            editor.dispatchCommand(CONTROLLED_TEXT_INSERTION_COMMAND, 'X');
+          });
+          isMarkIDShownSignal(editor).value = () => false;
+        }),
+      );
+      // Moving the caret commits an update that runs the listener
+      update(editor, () => $select(15));
+      await new Promise(resolve => setTimeout(resolve, 0));
+      // Text typed at the end of the run is still not marked
+      expect(tree(editor)).toBe(
+        'paragraph("Revenue " "grew 4%"[c1] "X in Q3.")',
+      );
+      expect(renderedSpans(editor)).toEqual([
+        ['Revenue ', null, ''],
+        ['grew 4%', null, ''],
+        ['X in Q3.', null, ''],
+      ]);
+      // The edit moved the DOM caret past the inserted text
+      const domSelection = window.getSelection()!;
+      expect(domSelection.anchorNode?.textContent).toBe('X in Q3.');
+      expect(domSelection.anchorOffset).toBe(1);
+    });
+
+    test('a new filter does not move the DOM selection out of another editable', () => {
+      const editor = createTestEditor({withRoot: true});
+      update(editor, () => $init());
+      mark(editor, 8, 15, 'c1');
+      update(editor, () => $select(10));
+      // A comment reply box next to the editor holds the caret
+      const replyBox = document.createElement('div');
+      replyBox.contentEditable = 'true';
+      replyBox.textContent = 'Done, resolving';
+      document.body.appendChild(replyBox);
+      onTestFinished(() => replyBox.remove());
+      const domSelection = window.getSelection()!;
+      domSelection.collapse(replyBox.firstChild, 4);
+      isMarkIDShownSignal(editor).value = () => false;
+      expect(editor.getRootElement()!.querySelector('.mark')).toBe(null);
+      expect(domSelection.anchorNode).toBe(replyBox.firstChild);
+      expect(domSelection.anchorOffset).toBe(4);
+    });
+
+    test('a filter changed while disabled applies when re-enabled', () => {
+      const editor = createTestEditor({withRoot: true});
+      update(editor, () => $init());
+      mark(editor, 8, 15, 'c1');
+      mark(editor, 12, 19, 'c2');
+      const {disabled, isMarkIDShown} = getExtensionDependencyFromEditor(
+        editor,
+        MarkStateExtension,
+      ).output;
+      disabled.value = true;
+      editor.update(() => {}, {discrete: true});
+      isMarkIDShown.value = id => id !== 'c1';
+      expect(
+        editor.getRootElement()!.querySelector(`[${MARK_STATE_IDS_ATTRIBUTE}]`),
+      ).toBe(null);
+      disabled.value = false;
+      editor.update(() => {}, {discrete: true});
+      expect(renderedSpans(editor)).toEqual([
+        ['Revenue ', null, ''],
+        ['grew', null, ''],
+        [' 4%', 'c2', 'mark'],
+        [' in ', 'c2', 'mark'],
+        ['Q3.', null, ''],
+      ]);
+    });
+
+    test('a filter set before the root element is attached applies on mount', () => {
+      const editor = createTestEditor();
+      update(editor, () => $init());
+      mark(editor, 8, 15, 'c1');
+      isMarkIDShownSignal(editor).value = () => false;
+      const root = document.createElement('div');
+      root.contentEditable = 'true';
+      document.body.appendChild(root);
+      editor.setRootElement(root);
+      onTestFinished(() => {
+        editor.setRootElement(null);
+        root.remove();
+      });
+      expect(root.querySelector(`[${MARK_STATE_IDS_ATTRIBUTE}]`)).toBe(null);
+      expect(root.querySelector('.mark')).toBe(null);
     });
   });
 

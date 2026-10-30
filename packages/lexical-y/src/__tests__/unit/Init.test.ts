@@ -49,7 +49,7 @@ import {
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
-import {YBinding, YCollabExtension} from '../..';
+import {createYDoc, YBinding, YCollabExtension, type YDoc} from '../..';
 import {
   $createEquation,
   $p,
@@ -63,7 +63,7 @@ import {
 import {writeEditorToYDoc} from '../utils/headless';
 import {$body, $component, SLOT_NODES} from '../utils/slots';
 
-function client(doc: Y.Doc, text: string | null, root?: Y.Node) {
+function client(doc: YDoc, text: string | null, root?: Y.Node) {
   const warnings: string[] = [];
   const codes: string[] = [];
   const editor = createEditor({
@@ -79,7 +79,11 @@ function client(doc: Y.Doc, text: string | null, root?: Y.Node) {
   if (text !== null) {
     editor.update(() => $getRoot().clear().append($p(text)), {discrete: true});
   }
-  const binding = new YBinding(editor, doc, {root, selfCheck: true});
+  const binding = new YBinding(editor, doc, {
+    root,
+    schemaVersion: 1,
+    selfCheck: true,
+  });
   binding.start();
   return {binding, codes, editor, warnings};
 }
@@ -103,8 +107,8 @@ describe('@lexical/y initialization', () => {
   });
 
   test('two clients initializing with the same content write one copy', () => {
-    const d1 = new Y.Doc();
-    const d2 = new Y.Doc();
+    const d1 = createYDoc();
+    const d2 = createYDoc();
     const a = client(d1, 'Same seed');
     const b = client(d2, 'Same seed');
     a.binding.initialize();
@@ -123,8 +127,8 @@ describe('@lexical/y initialization', () => {
 
   for (const content of [null, 'Same seed']) {
     test(`two clients initializing two different roots with equal content keep both (${content ?? 'empty'})`, () => {
-      const d1 = new Y.Doc({gc: false});
-      const d2 = new Y.Doc({gc: false});
+      const d1 = createYDoc(null, {gc: false});
+      const d2 = createYDoc(null, {gc: false});
       const a = client(d1, content, d1.get('a'));
       const b = client(d2, content, d2.get('b'));
       a.binding.initialize();
@@ -137,7 +141,7 @@ describe('@lexical/y initialization', () => {
         JSON.stringify({a: d.get('a').toJSON(), b: d.get('b').toJSON()});
       expect(roots(d1)).toBe(roots(d2));
       for (const name of ['a', 'b']) {
-        const d = new Y.Doc();
+        const d = createYDoc();
         Y.applyUpdate(d, Y.encodeStateAsUpdate(d1));
         const reader = client(d, null, d.get(name));
         reader.binding.initialize();
@@ -153,7 +157,7 @@ describe('@lexical/y initialization', () => {
   // blocks): two clients whose writes differ get different ids, whatever
   // the configuration, so one id never holds two payloads.
   type BlockIdConfig = 'none' | 'default' | 'nested lists';
-  function seeder(doc: Y.Doc, config: BlockIdConfig) {
+  function seeder(doc: YDoc, config: BlockIdConfig) {
     const editor = buildEditorFromExtensions(
       defineExtension({
         $initialEditorState: null,
@@ -169,7 +173,11 @@ describe('@lexical/y initialization', () => {
                           $defaultIsIdentifiedBlock(node) || $isListNode(node),
                 }),
               ]),
-          configExtension(YCollabExtension, {doc, selfCheck: false}),
+          configExtension(YCollabExtension, {
+            doc,
+            schemaVersion: 1,
+            selfCheck: false,
+          }),
         ],
         name: '@lexical/y/test/seeder',
         nodes: [ListNode, ListItemNode, HeadingNode],
@@ -237,8 +245,8 @@ describe('@lexical/y initialization', () => {
   ] as [BlockIdConfig, BlockIdConfig][]) {
     for (const gc of [false, true]) {
       test(`two clients initializing the same content with block ids ${first} / ${second} (gc ${gc}): one payload per id, both relay orders converge`, async () => {
-        const a = seeder(new Y.Doc({gc}), first);
-        const b = seeder(new Y.Doc({gc}), second);
+        const a = seeder(createYDoc(null, {gc}), first);
+        const b = seeder(createYDoc(null, {gc}), second);
         for (const c of [a, b]) {
           c.editor.update($seedLists, {discrete: true, skipTransforms: true});
         }
@@ -251,7 +259,7 @@ describe('@lexical/y initialization', () => {
         }
         const updates = [a, b].map(c => Y.encodeStateAsUpdate(c.doc));
         const relays = [updates, [...updates].reverse()].map(order => {
-          const d = new Y.Doc({gc});
+          const d = createYDoc(null, {gc});
           for (const u of order) {
             Y.applyUpdate(d, u);
           }
@@ -307,7 +315,7 @@ describe('@lexical/y initialization', () => {
     // Written without the normalization: a heading inside a list item's
     // line, which the document stores as the lines the normalization leaves.
     // The seed is read back like any document, so the editor shows that.
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     const a = seeder(doc, 'default');
     a.editor.update(
       () => {
@@ -324,7 +332,7 @@ describe('@lexical/y initialization', () => {
       {discrete: true, skipTransforms: true},
     );
     a.binding.initialize();
-    const fresh = seeder(new Y.Doc(), 'default');
+    const fresh = seeder(createYDoc(), 'default');
     Y.applyUpdate(fresh.doc, Y.encodeStateAsUpdate(doc));
     fresh.binding.initialize();
     expect(a.editor.getEditorState().toJSON()).toEqual(
@@ -346,7 +354,7 @@ describe('@lexical/y initialization', () => {
         // Before: off the pristine root, the content was written but not
         // read back, so a line break written inside a text node stayed one
         // text node on the author while readers showed a line break node.
-        const doc = new Y.Doc({gc});
+        const doc = createYDoc(null, {gc});
         const root =
           where === 'a root inside another shared type'
             ? new Y.Node('editor-root')
@@ -373,7 +381,7 @@ describe('@lexical/y initialization', () => {
         );
         author.binding.initialize();
         await flush();
-        const copy = new Y.Doc({gc});
+        const copy = createYDoc(null, {gc});
         Y.applyUpdate(copy, Y.encodeStateAsUpdate(doc));
         const fresh = client(
           copy,
@@ -403,7 +411,7 @@ describe('@lexical/y initialization', () => {
     test(`the initializing client keeps its selection (${pristine ? 'pristine root, the seed read back' : 'a root that held an attribute'})`, async () => {
       // Before: seeding a pristine root read the seed back and dropped the
       // selection.
-      const doc = new Y.Doc();
+      const doc = createYDoc();
       if (!pristine) {
         doc.get('lexical-y').setAttr('used', true);
         doc.get('lexical-y').deleteAttr('used');
@@ -445,7 +453,7 @@ describe('@lexical/y initialization', () => {
   for (const pristine of [true, false]) {
     for (const kind of ['caret format', 'node'] as const) {
       test(`the initializing client keeps its ${kind === 'node' ? 'node selection' : "caret's typing format and style"} (${pristine ? 'pristine root' : 'a root that held an attribute'})`, async () => {
-        const doc = new Y.Doc();
+        const doc = createYDoc();
         if (!pristine) {
           doc.get('lexical-y').setAttr('used', true);
           doc.get('lexical-y').deleteAttr('used');
@@ -511,7 +519,7 @@ describe('@lexical/y initialization', () => {
   for (const pristine of [true, false]) {
     for (const content of ['x\n', 'x\ny', 'xy']) {
       test(`a node selection after ${JSON.stringify(content)} keeps its decorator (${pristine ? 'pristine root' : 'a root that held an attribute'})`, async () => {
-        const doc = new Y.Doc();
+        const doc = createYDoc();
         if (!pristine) {
           doc.get('lexical-y').setAttr('used', true);
           doc.get('lexical-y').deleteAttr('used');
@@ -586,7 +594,7 @@ describe('@lexical/y initialization', () => {
 
   for (const pristine of [true, false]) {
     test(`a node selection in a named slot is kept (${pristine ? 'pristine root' : 'a root that held an attribute'})`, async () => {
-      const doc = new Y.Doc();
+      const doc = createYDoc();
       if (!pristine) {
         doc.get('lexical-y').setAttr('used', true);
         doc.get('lexical-y').deleteAttr('used');
@@ -616,7 +624,10 @@ describe('@lexical/y initialization', () => {
         },
         {discrete: true},
       );
-      const binding = new YBinding(editor, doc, {selfCheck: true});
+      const binding = new YBinding(editor, doc, {
+        schemaVersion: 1,
+        selfCheck: true,
+      });
       binding.start();
       binding.initialize();
       await flush();
@@ -635,8 +646,8 @@ describe('@lexical/y initialization', () => {
   }
 
   test('two clients initializing with different content converge', () => {
-    const d1 = new Y.Doc();
-    const d2 = new Y.Doc();
+    const d1 = createYDoc();
+    const d2 = createYDoc();
     const a = client(d1, 'First');
     const b = client(d2, 'Second');
     a.binding.initialize();
@@ -650,7 +661,7 @@ describe('@lexical/y initialization', () => {
   });
 
   test('update handlers never see the content-derived client id of the initial write', () => {
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     const real = doc.clientID;
     const seen: number[] = [];
     // A provider that relays from its update handler sees (and would write
@@ -665,13 +676,13 @@ describe('@lexical/y initialization', () => {
   });
 
   test('only older layout roots block initialization', () => {
-    const appDoc = new Y.Doc();
+    const appDoc = createYDoc();
     appDoc.get('comments').setAttr('c1', {text: 'hello'});
     const app = client(appDoc, 'x');
     app.binding.initialize();
     expect(app.binding.status).toBe('active');
 
-    const oldDoc = new Y.Doc();
+    const oldDoc = createYDoc();
     oldDoc.get('root-v2').insert(0, [new Y.Node('paragraph')]);
     const old = client(oldDoc, 'x');
     old.binding.initialize();
@@ -681,7 +692,7 @@ describe('@lexical/y initialization', () => {
   });
 
   test('YCollabExtension forwards convert, selfCheck and selfCheckSample', () => {
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     doc.get('root-v2').insert(0, [new Y.Node('paragraph')]);
     const editor = buildEditorFromExtensions(
       defineExtension({
@@ -689,6 +700,7 @@ describe('@lexical/y initialization', () => {
           configExtension(YCollabExtension, {
             convert: true,
             doc,
+            schemaVersion: 1,
             selfCheck: false,
             selfCheckSample: 0.25,
             synced: true,
@@ -712,7 +724,7 @@ describe('@lexical/y initialization', () => {
   });
 
   test('converting in place next to an older layout root', () => {
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     doc.get('root-v2').insert(0, [new Y.Node('paragraph')]);
     const source = createEditor({
       nodes: NODES,
@@ -729,11 +741,13 @@ describe('@lexical/y initialization', () => {
   });
 
   test('the extension: status signal, undo state, conflicts with history', () => {
-    const doc = new Y.Doc();
+    const doc = createYDoc();
     const canUndo: boolean[] = [];
     const editor = buildEditorFromExtensions(
       defineExtension({
-        dependencies: [configExtension(YCollabExtension, {doc})],
+        dependencies: [
+          configExtension(YCollabExtension, {doc, schemaVersion: 1}),
+        ],
         name: 'app',
         nodes: NODES,
         register: ed =>
@@ -763,7 +777,10 @@ describe('@lexical/y initialization', () => {
       buildEditorFromExtensions(
         defineExtension({
           dependencies: [
-            configExtension(YCollabExtension, {doc: new Y.Doc()}),
+            configExtension(YCollabExtension, {
+              doc: createYDoc(),
+              schemaVersion: 1,
+            }),
             HistoryExtension,
           ],
           name: 'conflict',

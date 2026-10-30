@@ -15,6 +15,7 @@ import {ContentFormat} from '@y/y';
 import {
   $createTextNode,
   $getRoot,
+  $isTextNode,
   $setSelection,
   type LexicalNode,
   type TextNode,
@@ -485,5 +486,115 @@ describe('@lexical/y a restore of a comment its own client opened', () => {
         expect(t.a.describe()).toContain('"o bb"{1}');
       },
     );
+    // The same tie when the author types plain text inside its own bold run
+    // while B bolds from inside that run past its end: A's own-run null after
+    // the run's end and B's opener there share their origins, so with A's id
+    // higher B's bold on " bb cc" is lost on every client (main keeps it; it
+    // comes back if A undoes its typing). Documented with #9589.
+    (ids[0] === 2 ? test.fails : test)(
+      `keeps a collaborator's bold that runs past the end of the author's bold while the author types inside it (ids ${ids})`,
+      async () => {
+        const $boldAll = (from: number, to: number) => () => {
+          for (const n of $selectIn([0], from, to).extract()) {
+            if ($isTextNode(n) && !n.hasFormat('bold')) {
+              n.toggleFormat('bold');
+            }
+          }
+          $setSelection(null);
+        };
+        const t = await setup(
+          () => $getRoot().append($p('aa Kilo bb cc dd'), $p('tail line')),
+          {ids, prepare},
+        );
+        t.a.update($boldAll(3, 7));
+        await t.sync();
+        t.offline();
+        t.a.update(() => $insertPlainAt(5, 'X'));
+        t.b.update($boldAll(5, 13));
+        await t.sync();
+        await expectConverged(t.peers);
+        const shownBold = t.a.read(() =>
+          ($block([0]).getAllTextNodes() as TextNode[])
+            .map(n =>
+              n.hasFormat('bold')
+                ? `[${n.getTextContent()}]`
+                : n.getTextContent(),
+            )
+            .join(''),
+        );
+        expect(shownBold).toBe('aa [Ki]X[lo bb cc] dd');
+      },
+    );
+  }
+});
+
+/** Deletes every format item of `peer`'s document whose key names one of `ids`. */
+function dropMarkItems(peer: Peer, ids: readonly string[]): void {
+  peer.doc.transact(tr => {
+    const walk = (type: {_start: Item | null}) => {
+      for (let it = type._start; it !== null; it = it.right) {
+        if (
+          !it.deleted &&
+          it.content instanceof ContentFormat &&
+          ids.some(id => (it.content as ContentFormat).key.endsWith(id))
+        ) {
+          it.delete(tr);
+        }
+        const content = it.content as {type?: {_start?: Item | null}};
+        if (content.type?._start !== undefined) {
+          walk(content.type as {_start: Item | null});
+        }
+      }
+    };
+    walk(peer.doc.get('lexical-y') as unknown as {_start: Item | null});
+  });
+}
+
+describe("@lexical/y a restore inside its own client's comment run, with many comment ids", () => {
+  for (const count of [1, 16, 64, 128]) {
+    for (const ids of [
+      [1, 2],
+      [2, 1],
+    ]) {
+      // Past 64 structs, rule 5 cannot find where the comment change ended
+      // (changeEnd's scan is capped), so the restore gets no end of its own
+      // and every comment spreads, as on main: tracked in #9603.
+      (count > 64 ? test.fails : test)(
+        `ends after the run when a collaborator deletes the word and its comment items (${count} ids, ids ${ids})`,
+        async () => {
+          const marks = Array.from(
+            {length: count},
+            (_, i) => `m${i.toString().padStart(3, '0')}`,
+          );
+          const t = await setup(
+            () => $getRoot().append($p('aa Kilometer bb cc'), $p('tail line')),
+            {ids, prepare},
+          );
+          t.a.update(() => {
+            const selection = $selectIn([0], 3, 12);
+            for (const id of marks) {
+              $addMarkID(id, selection);
+            }
+          });
+          await t.sync();
+          t.offline();
+          t.a.update(() => $insertPlainAt(6, 'X'));
+          t.b.update(() => void $selectIn([0], 3, 13).removeText());
+          dropMarkItems(t.b, marks);
+          await t.sync();
+          await expectConverged(t.peers);
+          expect(t.a.read(() => $getRoot().getTextContent())).toBe(
+            'aa Xbb cc\n\ntail line',
+          );
+          expect(
+            t.a.read(() =>
+              $getRoot()
+                .getAllTextNodes()
+                .flatMap(node => $getNodeMarkIDs(node)),
+            ),
+          ).toEqual([]);
+        },
+      );
+    }
   }
 });

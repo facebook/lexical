@@ -1030,9 +1030,11 @@ not merge as a user might expect:
   format they saw there, which the removal could not see. It stops at the
   end of the range. Text typed inside or at the edge of text a
   collaborator deletes at the same time keeps the formats it was typed
-  with; text typed at the start of a range a collaborator formats at the
-  same time can take that format, by the order Yjs gives the two inserts
-  (the same on Yjs 13), and keeps it when that range is then deleted. A
+  with. Text typed inside a range a collaborator formats at the same time
+  takes that format (also when the range comes from an older read, as an
+  agent's does), and text typed at the start or the end of the range can
+  take it, by the order Yjs gives the two inserts (at the start the same on
+  Yjs 13, and it keeps the format when that range is then deleted). A
   node whose `isInline()` changes is written again in its new form, so
   text typed inside it at the same time lands next to it, in an inline
   element of its old form. Where text was deleted, the format items it

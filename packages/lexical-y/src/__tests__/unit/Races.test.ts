@@ -275,6 +275,15 @@ const CASES: Case[] = [
     init: () => $getRoot().append($p('Revenue grew 4%'), $p(' in Q3.')),
   },
   {
+    a: () => $selectIn([0], 8, 15).formatText('bold'),
+    b: () => $selectIn([0], 10).insertText('X'),
+    // Documented (Other races): text typed inside a range formatted at the
+    // same time takes the format.
+    expected: 'paragraph("Revenue " "grXew 4%"{1} " in Q3.")',
+    id: 'format ‖ type inside its range',
+    init: $initPara,
+  },
+  {
     a: () => {
       const row = $block([0, 0]);
       $mergeCells([

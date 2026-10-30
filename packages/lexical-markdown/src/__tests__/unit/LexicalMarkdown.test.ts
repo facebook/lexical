@@ -6,6 +6,7 @@
  *
  */
 import {$createCodeNode, CodeNode} from '@lexical/code-core';
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import invariant from '@lexical/internal/invariant';
@@ -34,6 +35,10 @@ import {
   type Transformer,
   TRANSFORMERS,
 } from '@lexical/markdown';
+import {
+  $convertFromMarkdownString as $convertFromMdastMarkdownString,
+  MdastGfmExtension,
+} from '@lexical/mdast';
 import {
   $createHeadingNode,
   $createQuoteNode,
@@ -64,6 +69,7 @@ import {
   $setState,
   COMPOSITION_END_TAG,
   type CreateEditorArgs,
+  defineExtension,
   type ElementNode,
   KEY_ENTER_COMMAND,
   type LexicalEditor,
@@ -5279,6 +5285,61 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       ['\u4f60\u597d\u3002', true],
       ['\u4e16\u754c', false],
     ]);
+  });
+
+  // micromark, which @lexical/mdast imports with, reads a character outside
+  // the Basic Multilingual Plane as a letter, so export writes references
+  // that make the markers open and close for it too.
+  it.each<[runs: [string, number][], markdown: string]>([
+    [
+      [
+        ['\u{1f600}', 0],
+        ['\u201cb\u201d', TEXT_TYPE_TO_FORMAT.bold],
+      ],
+      '&#128512;**\u201cb\u201d**',
+    ],
+    [
+      [
+        ['a', TEXT_TYPE_TO_FORMAT.bold],
+        ['\u{1f600}', TEXT_TYPE_TO_FORMAT.italic],
+      ],
+      '**&#97;***&#128512;*',
+    ],
+  ])('exports %j so that both importers read it back', (runs, markdown) => {
+    const $runs = () =>
+      $getRoot()
+        .getAllTextNodes()
+        .map(node => [node.getTextContent(), node.getFormat()]);
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            ...runs.map(([text, format]) =>
+              $createTextNode(text).setFormat(format),
+            ),
+          ),
+        ),
+      {discrete: true},
+    );
+    expect(
+      editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
+    ).toBe(markdown);
+    editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
+      discrete: true,
+    });
+    expect(editor.read('latest', $runs)).toEqual(runs);
+    const mdastEditor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [MdastGfmExtension],
+        name: '[root]',
+      }),
+    );
+    onTestFinished(() => mdastEditor.dispose());
+    mdastEditor.update(() => $convertFromMdastMarkdownString(markdown), {
+      discrete: true,
+    });
+    expect(mdastEditor.read('latest', $runs)).toEqual(runs);
   });
 
   it('writes references around an underscore italic between letters', () => {

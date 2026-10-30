@@ -147,6 +147,58 @@ export function isPunctuationOrSpace(character: string): boolean {
   return classify(character) !== OTHER_CLASS;
 }
 
+// Readers built on micromark, such as `@lexical/mdast`, read a character
+// outside the Basic Multilingual Plane one UTF-16 unit at a time, so as a
+// letter, and count JavaScript's whitespace, U+FEFF among it, as whitespace.
+// Export has to open and close for those readers as well.
+const MICROMARK_ONLY_WHITESPACE = /[\v\u2028\u2029\ufeff]/;
+function asMicromarkReads(character: string | undefined): string | undefined {
+  return character === undefined
+    ? character
+    : character.length > 1
+      ? 'a'
+      : MICROMARK_ONLY_WHITESPACE.test(character)
+        ? ' '
+        : character;
+}
+
+/** {@link isFlankedBy}, both for CommonMark and for micromark. */
+export function isPortablyFlankedBy(
+  primary: string | undefined,
+  secondary: string | undefined,
+): boolean {
+  return (
+    isFlankedBy(primary, secondary) &&
+    isFlankedBy(asMicromarkReads(primary), asMicromarkReads(secondary))
+  );
+}
+
+/** {@link getEmphasisSides}, both for CommonMark and for micromark. */
+export function getPortableEmphasisSides(
+  marker: string,
+  before: string | undefined,
+  after: string | undefined,
+): {canOpen: boolean; canClose: boolean} {
+  const sides = getEmphasisSides(marker, before, after);
+  const micromark = getEmphasisSides(
+    marker,
+    asMicromarkReads(before),
+    asMicromarkReads(after),
+  );
+  return {
+    canClose: sides.canClose && micromark.canClose,
+    canOpen: sides.canOpen && micromark.canOpen,
+  };
+}
+
+/** Whether CommonMark or micromark reads `character` as a letter. */
+export function isLetterForSomeReader(character: string): boolean {
+  return (
+    !isPunctuationOrSpace(character) ||
+    !isPunctuationOrSpace(asMicromarkReads(character)!)
+  );
+}
+
 function isHighSurrogate(code: number): boolean {
   return code >= 0xd800 && code <= 0xdbff;
 }

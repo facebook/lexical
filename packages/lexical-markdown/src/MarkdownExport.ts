@@ -36,11 +36,11 @@ import {
 import {
   characterAt,
   characterBefore,
-  getEmphasisSides,
+  getPortableEmphasisSides,
   isEmptyParagraph,
   isEscaped,
-  isFlankedBy,
-  isPunctuationOrSpace,
+  isLetterForSomeReader,
+  isPortablyFlankedBy,
   toCharacterReference,
   transformersByType,
 } from './utils';
@@ -746,7 +746,7 @@ const UNREFERENCEABLE = /[\p{Cc}\p{Cs}\p{Noncharacter_Code_Point}]/u;
 function isReferenceable(character: string | undefined): boolean {
   return (
     character !== undefined &&
-    !isPunctuationOrSpace(character) &&
+    isLetterForSomeReader(character) &&
     !UNREFERENCEABLE.test(character)
   );
 }
@@ -1036,7 +1036,7 @@ function decideReferences(
         : run.closes && run.beforeLast === undefined;
       const next = leftward ? run.before : run.after;
       const char = leftward ? endChar(next) : startChar(next);
-      if (!isAffected || isFlankedBy(leftward ? '&' : ';', char)) {
+      if (!isAffected || isPortablyFlankedBy(leftward ? '&' : ';', char)) {
         break;
       }
       if (!canReference(next, leftward)) {
@@ -1069,8 +1069,8 @@ function decideReferences(
     const marker = values[before + 1][0];
     const next = afterFirst || startChar(after);
     return (
-      !getEmphasisSides(marker, endChar(before), next).canOpen &&
-      getEmphasisSides(marker, ';', next).canOpen
+      !getPortableEmphasisSides(marker, endChar(before), next).canOpen &&
+      getPortableEmphasisSides(marker, ';', next).canOpen
     );
   };
   const closesWithReference = ({
@@ -1085,8 +1085,8 @@ function decideReferences(
     const marker = values[after - 1][values[after - 1].length - 1];
     const previous = beforeLast || endChar(before);
     return (
-      !getEmphasisSides(marker, previous, startChar(after)).canClose &&
-      getEmphasisSides(marker, previous, '&').canClose
+      !getPortableEmphasisSides(marker, previous, startChar(after)).canClose &&
+      getPortableEmphasisSides(marker, previous, '&').canClose
     );
   };
   // Text does not escape every tag character (the `=` of `==`, say), and one
@@ -1118,7 +1118,8 @@ function decideReferences(
   // other side sees, so that run is decided again. Each piece changes at most
   // twice, so this stays linear.
   while (pending.length > 0) {
-    const run = runs[pending.pop()!];
+    const index = pending.pop()!;
+    const run = runs[index];
     const {before, after} = run;
     if (
       opensWithReference(run) &&
@@ -1136,6 +1137,11 @@ function decideReferences(
       isFree(after, false)
     ) {
       encodeStart[after] = 1;
+      // An opener that sees the same character, of a run that both closes
+      // and opens, may now need its own reference.
+      if (run.opens && run.afterFirst === undefined) {
+        pending.push(index);
+      }
       if (isEncoded(after) && runAfter[after] !== -1) {
         pending.push(runAfter[after]);
       }

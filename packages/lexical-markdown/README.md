@@ -101,7 +101,7 @@ Import follows CommonMark's Unicode punctuation and whitespace when deciding
 whether `*`, `_`, `~~` and `==` open or close formatting. When formatted text starts
 or ends with punctuation right beside a letter, export writes that letter as a
 numeric reference (`fo&#111;**“bar”**`) so that the markers still open and
-close, also with `shouldPreserveNewLines`, where a raw backslash right before
+close, for micromark-based readers such as `@lexical/mdast` too, also with `shouldPreserveNewLines`, where a raw backslash right before
 such a marker or reference goes out as `&#92;` outside a bare URL. No reference is written inside
 a bare URL, `www.` host, email or mention.
 

@@ -1302,7 +1302,7 @@ export function registerRichText(
           // node (its own click handler may select it, open an editor, …),
           // not a deselect gesture. Keep the selection when the click target
           // is inside the selected node's DOM; clicking anywhere else still
-          // deselects (facebook/lexical#8907).
+          // deselects (meta/lexical#8907).
           const eventTarget = event.target;
           if (isHTMLElement(eventTarget)) {
             for (const node of selection.getNodes()) {
@@ -1757,7 +1757,7 @@ export function registerRichText(
           // after Backspace. Returning false here skips event.preventDefault()
           // on keydown; the beforeinput deleteContentBackward handler still runs
           // and performs the deletion, so editing behavior is unchanged.
-          // See https://github.com/facebook/lexical/issues/5841
+          // See https://github.com/meta/lexical/issues/5841
           if (IS_IOS && CAN_USE_BEFORE_INPUT) {
             return false;
           }

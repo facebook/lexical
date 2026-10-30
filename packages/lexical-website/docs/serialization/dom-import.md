@@ -6,7 +6,7 @@
 `@experimental` and may change between any two Lexical releases —
 including breaking renames, signature changes, or behavior changes —
 until the API stabilizes. We track issues and proposals in the
-[GitHub repo](https://github.com/facebook/lexical); breaking changes
+[GitHub repo](https://github.com/meta/lexical); breaking changes
 will be called out in release notes. Apps that depend on this
 pipeline should pin their Lexical version and treat upgrades as
 intentional.
@@ -920,7 +920,7 @@ defineExtension({
 
 See `packages/lexical-list/src/__tests__/unit/ListImportExtension.test.ts`
 ("MS Word paste — preprocess-installed overlay") for a worked unit
-test, and [`dev-examples/dom-import`](https://github.com/facebook/lexical/tree/main/dev-examples/dom-import)
+test, and [`dev-examples/dom-import`](https://github.com/meta/lexical/tree/main/dev-examples/dom-import)
 for a running editor that exercises the same overlay end-to-end (a
 reduced rich-text editor with lists, tables, code blocks, markdown
 shortcuts, and an "Import HTML" dialog so you can paste raw HTML
@@ -1223,7 +1223,7 @@ attaches them via the normal `ElementNode.splice` primitive.
 ### Concrete example: playground
 
 The lexical-playground application was migrated in
-[#8590](https://github.com/facebook/lexical/pull/8590), which should
+[#8590](https://github.com/meta/lexical/pull/8590), which should
 be a good example of what it would take to move an entire application
 from `importDOM` to `DOMImportExtension` (while adding test coverage).
 

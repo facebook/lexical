@@ -972,18 +972,22 @@ not merge as a user might expect:
   Lexical did not record (an editor state set whole), the binding rewrites
   as few blocks as it can, the smaller ones on a tie.
   Lexical operations that move content behave the same way: turning a
-  paragraph that holds text into a list inside a container that is not a
-  shadow root (Lexical replaces the whole container with the list, so its
-  content moves into the list; in a table cell or another shadow root the
-  paragraph becomes a list item in place and keeps what collaborators type
-  in it),
-  indenting list items that hold blocks, merging table cells (the content
-  of the cells merged away moves into the first one), and the first edit that
-  restructures a list stored in an older shape (a nested list kept as a node
-  inside an item's line): its items move into the list's own sequence. A Backspace
-  that outdents an item of such a list is a delete in the nested list's
-  container and an insert in the list's: text a collaborator types in those
-  items at the same time is lost (only lists stored in that older shape).
+  paragraph that holds text into a list inside a container that is neither
+  a shadow root nor declared `children: 'block'` (Lexical replaces the
+  whole container with the list, so its content moves into the list; if the
+  container also holds a block a list item cannot hold, such as a quote,
+  the block holding the selected text becomes a list in place, inside the
+  container, instead), indenting list items that hold blocks, merging table
+  cells (the content of the cells merged away moves into the first one), and
+  the first edit that restructures a list stored in an older shape (a nested
+  list kept as a node inside an item's line): its items move into the list's
+  own sequence. In a table cell or another shadow root, or a container
+  declared `children: 'block'`, the paragraph becomes a list item in place
+  and keeps what collaborators type in it (see
+  [block containers](../serialization/serialization.md#node-structure)). A
+  Backspace that outdents an item of a list stored in that older shape is a
+  delete in the nested list's container and an insert in the list's: text a
+  collaborator types in those items at the same time is lost.
 - **Text nodes made again with other text.** Where an update replaces a
   line's text nodes with new ones and the line's text changed (an AI rewrite
   that makes a block's text nodes again with one word changed, or removes a

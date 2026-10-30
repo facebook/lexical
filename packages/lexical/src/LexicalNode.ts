@@ -272,7 +272,10 @@ export interface StaticNodeConfigValue<
    *   Out of an inline element (a link), the block's content is first wrapped
    *   in a copy of the element.
    * - `'block'`: blocks only, like a table cell. Each run of inline children
-   *   is wrapped in a paragraph.
+   *   is wrapped in a paragraph. With the extension, the node is also a block
+   *   container for structural commands (see `$isBlockContainer`): they
+   *   convert, wrap, split and insert blocks inside it and never replace or
+   *   split the node itself.
    * - a list of `'inline'` and classes: only those (a class allows its
    *   subclasses). When the list names no `'inline'` (a list holds list
    *   items), a child the first listed class can hold is wrapped in one (a

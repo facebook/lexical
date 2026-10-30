@@ -22,8 +22,7 @@
 // The expected outcome of each cell comes from a model of the rule (a
 // container acts as a root for these commands when it is a shadow root, or a
 // class declaring `children: 'block'`), checked with predicates on the
-// result, not from another tree's output. Cells where main does not follow
-// the rule yet are `test.fails` naming the pull request that adds it.
+// result, not from another tree's output.
 
 import {$isCodeNode, CodeExtension} from '@lexical/code-core';
 import {
@@ -336,8 +335,6 @@ type Outcome =
   | 'blocked at the edge'
   | 'joins across the edge';
 
-type Tree = 'rule' | 'main';
-
 type Cmd = {
   name: string;
   kind: 'structural' | 'list' | 'edge';
@@ -351,13 +348,12 @@ type Cmd = {
  * The rule (#9590): where structure is enforced, a shadow root or a class
  * declaring `children: 'block'` is a block container, so structural
  * commands act inside it; a container that declares nothing is one more
- * block. Main is the same without the declared container (it acts like one
- * that declares nothing), and loses the list in a box inside a box
- * (#9570), where the rule converts the paragraph in place. Only a shadow
- * root is an editing edge: Backspace and Delete cross the edges of every
- * other container, on main and with the rule.
+ * block, except that in a box inside a box (#9570) the paragraph holding
+ * the selected text becomes a list in place. Only a shadow root is an
+ * editing edge: Backspace and Delete cross the edges of every other
+ * container.
  */
-function model(cmd: Cmd, ctx: Ctx, tree: Tree): Outcome {
+function model(cmd: Cmd, ctx: Ctx): Outcome {
   if (cmd.kind === 'edge') {
     return SHADOW.includes(ctx.kind)
       ? 'blocked at the edge'
@@ -366,12 +362,12 @@ function model(cmd: Cmd, ctx: Ctx, tree: Tree): Outcome {
   if (
     ctx.kind === 'root' ||
     SHADOW.includes(ctx.kind) ||
-    (ctx.kind === 'declared' && tree === 'rule')
+    ctx.kind === 'declared'
   ) {
     return 'in place';
   }
   if (cmd.kind === 'list' && ctx.nested) {
-    return tree === 'rule' ? 'in place' : 'no list';
+    return 'in place';
   }
   return 'not in place';
 }
@@ -662,40 +658,35 @@ describe('structural commands in block containers, where structure is enforced',
   for (const cmd of CMDS) {
     for (const ctx of CTXS) {
       for (const mode of MODES) {
-        const want = model(cmd, ctx, 'rule');
-        // Main does not have the rule yet (#9590).
-        const failsUntilFixed = model(cmd, ctx, 'main') !== want;
-        (failsUntilFixed ? test.fails : test)(
-          `${cmd.name} in ${ctxName(ctx)} [${mode}]: ${want}`,
-          async () => {
-            const opened = open(mode, ctx, cmd.inner);
-            const {editor} = opened;
-            try {
-              await Promise.resolve();
-              const before = editor.read(() => $count(ctx));
-              editor.update(() => cmd.run(editor), {discrete: true});
-              for (const ch of cmd.type ?? '') {
-                editor.update(
-                  () => {
-                    const selection = $getSelection();
-                    if ($isRangeSelection(selection)) {
-                      selection.insertText(ch);
-                    }
-                  },
-                  {discrete: true},
-                );
-              }
-              if (mode === 'extension, then a full reconcile') {
-                editor.update(() => $fullReconcile(), {discrete: true});
-              }
-              await Promise.resolve();
-              expect(opened.errors).toEqual([]);
-              expect(editor.read(() => cmd.$check(ctx, before))).toBe(want);
-            } finally {
-              opened.dispose();
+        const want = model(cmd, ctx);
+        test(`${cmd.name} in ${ctxName(ctx)} [${mode}]: ${want}`, async () => {
+          const opened = open(mode, ctx, cmd.inner);
+          const {editor} = opened;
+          try {
+            await Promise.resolve();
+            const before = editor.read(() => $count(ctx));
+            editor.update(() => cmd.run(editor), {discrete: true});
+            for (const ch of cmd.type ?? '') {
+              editor.update(
+                () => {
+                  const selection = $getSelection();
+                  if ($isRangeSelection(selection)) {
+                    selection.insertText(ch);
+                  }
+                },
+                {discrete: true},
+              );
             }
-          },
-        );
+            if (mode === 'extension, then a full reconcile') {
+              editor.update(() => $fullReconcile(), {discrete: true});
+            }
+            await Promise.resolve();
+            expect(opened.errors).toEqual([]);
+            expect(editor.read(() => cmd.$check(ctx, before))).toBe(want);
+          } finally {
+            opened.dispose();
+          }
+        });
       }
     }
   }

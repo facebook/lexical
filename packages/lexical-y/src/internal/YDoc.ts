@@ -21,6 +21,8 @@
 
 import {applyUpdate, Doc} from '@y/y';
 
+import {assertSupportedYjs} from './YjsContract';
+
 /**
  * The key of {@link YDoc}'s phantom brand. Declared rather than defined: it
  * exists only in the type system, so nothing is emitted for it. Named so
@@ -53,11 +55,14 @@ export type YDocOptions = ConstructorParameters<typeof Doc>[0];
  * there. `state`, a stored state, is applied when given; `options` are those
  * of `new Y.Doc(options)` (the default document is garbage collected, as
  * clients store one). Merging updates with `mergeUpdates` needs no document.
+ * Throws a `YUnsupportedYjsError`, before the document is made, when the
+ * `@y/y` the app loaded is not the one `@lexical/y` supports.
  */
 export function createYDoc(
   state?: Uint8Array | null,
   options?: YDocOptions,
 ): YDoc {
+  assertSupportedYjs();
   const doc = new Doc(options);
   doc.cleanupFormatting = false;
   if (state != null) {

@@ -241,17 +241,38 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
  * nearest ancestor that is an element and not inline content, as the node
  * structure normalization counts it (so a link inside a mark, or the
  * character limit's OverflowNode, whose isInline() is false, stays in its
- * block).
+ * block). The walk never leaves the block container (root, shadow root,
+ * inline or not, or declared container) that holds `node`: it returns that
+ * container when it gets there.
  */
-function $wrappedBlock(node: LexicalNode): ElementNode | null {
+function $wrappedBlock(
+  node: LexicalNode,
+  cache: Map<NodeKey, ElementNode | null> = new Map(),
+): ElementNode | null {
+  // `cache` holds the block found for each node already walked through, so
+  // the nodes of one selection walk each ancestor once.
+  const walked: NodeKey[] = [];
   let block: LexicalNode | null = node;
-  while (
-    block !== null &&
-    (!$isElementNode(block) || INTERNAL_isInlineContent(block))
-  ) {
-    block = block.getParent();
+  let found: ElementNode | null | undefined;
+  while (found === undefined) {
+    if (block === null) {
+      found = null;
+    } else if (cache.has(block.getKey())) {
+      found = cache.get(block.getKey());
+    } else if (
+      $isBlockContainer(block) ||
+      ($isElementNode(block) && !INTERNAL_isInlineContent(block))
+    ) {
+      found = block;
+    } else {
+      walked.push(block.getKey());
+      block = block.getParent();
+    }
   }
-  return block;
+  for (const key of walked) {
+    cache.set(key, found);
+  }
+  return found;
 }
 
 /**
@@ -391,14 +412,16 @@ export function $wrapNodesImpl(
   // either insertAfter/insertBefore/append the corresponding
   // elements to. This is made more complicated due to nested
   // structures.
-  const firstNodeBlock = $wrappedBlock(firstNode);
+  const blockOf = new Map<NodeKey, ElementNode | null>();
+  const firstNodeBlock = $wrappedBlock(firstNode, blockOf);
   if (firstNodeBlock === null) {
     return;
   }
   let target: LexicalNode = firstNodeBlock;
 
   let targetIsPrevSibling = false;
-  while (target !== null) {
+  // Content directly in a block container goes in it, before its first child.
+  while (!$isBlockContainer(firstNodeBlock) && target !== null) {
     const prevSibling: LexicalNode | null = target.getPreviousSibling();
 
     if (prevSibling !== null) {
@@ -437,7 +460,9 @@ export function $wrapNodesImpl(
   const blocks: (ElementNode | null)[] = [];
   for (let i = 0; i < nodesLength; i++) {
     const nodeParent = nodes[i].getParent();
-    blocks.push(nodeParent === null ? null : $wrappedBlock(nodeParent));
+    blocks.push(
+      nodeParent === null ? null : $wrappedBlock(nodeParent, blockOf),
+    );
   }
 
   // Move out all leaf nodes into our elements array.

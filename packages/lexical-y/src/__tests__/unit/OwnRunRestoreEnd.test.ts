@@ -82,6 +82,25 @@ function dropCommentItems(peer: Peer, id: string) {
   });
 }
 
+/** Insert uncommented `text` in `peer`'s first line right after `prefix`. */
+function typeAfter(peer: Peer, prefix: string, text: string) {
+  peer.update(() => {
+    let acc = 0;
+    for (const node of $block([0]).getAllTextNodes() as TextNode[]) {
+      const s = node.getTextContent();
+      const at =
+        $block([0]).getTextContent().indexOf(prefix) + prefix.length - acc;
+      if (at > 0 && at < s.length) {
+        const [, tail] = node.splitText(at);
+        tail.insertBefore($createTextNode(text));
+        return;
+      }
+      acc += s.length;
+    }
+    throw new Error(`no "${prefix}" inside a text node`);
+  });
+}
+
 describe('@lexical/y a restore of a comment its own client opened', () => {
   for (const ids of [
     [1, 2],
@@ -154,6 +173,86 @@ describe('@lexical/y a restore of a comment its own client opened', () => {
       await t.sync();
       await expectConverged(t.peers);
       expect(words(t.a)).toBe('aa Ybb cc');
+    });
+    // S9-12: two writes of A each type uncommented text inside A's own
+    // comment, and each restore gets a null of A's own right after the
+    // comment's end (rule 5). B, which has not seen A undo both, deletes the
+    // rest of the comment and then the text after it: its collapse keeps the
+    // last two nulls and must also keep the comment's own end, which A's
+    // undo does not remove.
+    test(`S9-12: ends where the comment ended when its author undoes two writes inside it while a collaborator deletes past its end (ids ${ids})`, async () => {
+      const t = await setup(
+        () => $getRoot().append($p('aa Kilometer bb cc dd'), $p('tail line')),
+        {ids, prepare},
+      );
+      t.a.update(() => void $addMarkID('c1', $selectIn([0], 3, 12)));
+      await t.sync();
+      typeAfter(t.a, 'Kil', 'X');
+      typeAfter(t.a, 'KilXome', 'Y');
+      await t.sync();
+      expect(words(t.a)).toBe('aa Kil[c1] X ome[c1] Y ter[c1] bb cc dd');
+      t.offline();
+      t.a.undo();
+      t.a.undo();
+      expect(words(t.a)).toBe('aa Kilometer[c1] bb cc dd');
+      // B deletes "ter", then " bb"
+      t.b.update(() => void $selectIn([0], 11, 14).removeText());
+      t.b.update(() => void $selectIn([0], 11, 14).removeText());
+      expect(words(t.b)).toBe('aa Kil[c1] X ome[c1] Y cc dd');
+      await t.sync();
+      await expectConverged(t.peers);
+      expect(words(t.a)).toBe('aa Kilome[c1] cc dd');
+      expect(
+        t.a.read(() =>
+          ($block([1]).getAllTextNodes() as TextNode[]).some(
+            n => $getNodeMarkIDs(n).length > 0,
+          ),
+        ),
+      ).toBe(false);
+    });
+  }
+});
+
+describe('@lexical/y S9-12 with several authors', () => {
+  for (const ids of [
+    [1, 2, 3],
+    [3, 2, 1],
+    [2, 1, 3],
+    [1, 3, 2],
+  ]) {
+    // As above, and B also typed uncommented "Z" inside the comment, so its
+    // null sits after the comment's end too; C deletes, A and B undo.
+    test(`S9-12: ends where the comment ended when two authors undo their writes inside it while a third deletes past its end (ids ${ids})`, async () => {
+      const t = await setup(
+        () => $getRoot().append($p('aa Kilometer bb cc dd'), $p('tail line')),
+        {ids, prepare},
+      );
+      t.a.update(() => void $addMarkID('c1', $selectIn([0], 3, 12)));
+      await t.sync();
+      typeAfter(t.b, 'K', 'Z');
+      await t.sync();
+      typeAfter(t.a, 'KZil', 'X');
+      typeAfter(t.a, 'KZilXome', 'Y');
+      await t.sync();
+      expect(words(t.a)).toBe('aa K[c1] Z il[c1] X ome[c1] Y ter[c1] bb cc dd');
+      t.offline();
+      t.a.undo();
+      t.a.undo();
+      t.b.undo();
+      // C deletes "ter", then " bb"
+      t.c.update(() => void $selectIn([0], 12, 15).removeText());
+      t.c.update(() => void $selectIn([0], 12, 15).removeText());
+      expect(words(t.c)).toBe('aa K[c1] Z il[c1] X ome[c1] Y cc dd');
+      await t.sync();
+      await expectConverged(t.peers);
+      expect(words(t.a)).toBe('aa Kilome[c1] cc dd');
+      expect(
+        t.a.read(() =>
+          ($block([1]).getAllTextNodes() as TextNode[]).some(
+            n => $getNodeMarkIDs(n).length > 0,
+          ),
+        ),
+      ).toBe(false);
     });
   }
 });

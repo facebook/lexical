@@ -773,7 +773,8 @@ export class Cursor {
    * its value. Delete the items of the rest, except, of each key, the last item
    * where without it the key would have another value after the run, and,
    * where the key's last item is kept, the last item before it of that key with
-   * the same value (no other value between them) that another client wrote.
+   * the same value (no other value between them) that another client wrote,
+   * and of each of those two clients the first such item (lowest clock).
    * Invariant:
    * such a run holds, besides the units of the last delete in it, at most five
    * units per family, the items that give a family its value at the end of the
@@ -803,7 +804,13 @@ export class Cursor {
    * after it (see format, rule 5) each end the run where the other's writer
    * removes theirs (a paste over plain text typed after a word two comments
    * cover kept only the typist's null of one comment, and the typist's
-   * concurrent undo left that comment on to the end of the document). The
+   * concurrent undo left that comment on to the end of the document). For the
+   * same reason the first such item of each of those clients stays: a
+   * later write of that client can put a null of its own right after an end
+   * its earlier write made (see format, rule 5), and its undo removes the later
+   * null only (a link undone by its author after a collaborator deleted the
+   * text at its end kept only the later null, and the link ran on over the
+   * following lines). The
    * items a kept
    * unit's place holds for the other keys of its family give content restored
    * there, as an undo of its delete restores it, the value it had: a word two
@@ -956,10 +963,13 @@ export class Cursor {
       }
       // The value of each key after the run stays; where the key's last item
       // stays, so does the last item before it with the same value that
-      // another client wrote.
+      // another client wrote, and of each of those two clients the first item
+      // (by clock) with that value.
       const lastOf = new Map<string, Item>();
       const lastKept = new Map<string, Item>();
       const otherClient = new Map<string, Item>();
+      // Per key, the items since its value last changed.
+      const sameValue = new Map<string, Item[]>();
       for (const unit of units) {
         for (const it of unit) {
           const key = keyOf(it);
@@ -967,9 +977,16 @@ export class Cursor {
           if (before !== undefined) {
             if (!equalFormatValue(valueOf(before), valueOf(it))) {
               otherClient.delete(key);
+              sameValue.delete(key);
             } else if (before.id.client !== it.id.client) {
               otherClient.set(key, before);
             }
+          }
+          const run = sameValue.get(key);
+          if (run === undefined) {
+            sameValue.set(key, [it]);
+          } else {
+            run.push(it);
           }
           lastOf.set(key, it);
           if (keep.has(it)) {
@@ -990,6 +1007,29 @@ export class Cursor {
         const other = otherClient.get(key);
         if (keep.has(it) && other !== undefined) {
           keep.add(other);
+        }
+        if (keep.has(it)) {
+          // The first item with that value of each client kept here: a later
+          // write of that client can put a null of its own right after an end
+          // its earlier write made, and its undo removes the later one only.
+          const clients =
+            other === undefined
+              ? [it.id.client]
+              : [it.id.client, other.id.client];
+          for (const client of clients) {
+            let oldest: Item | null = null;
+            for (const x of sameValue.get(key) ?? []) {
+              if (
+                x.id.client === client &&
+                (oldest === null || x.id.clock < oldest.id.clock)
+              ) {
+                oldest = x;
+              }
+            }
+            if (oldest !== null) {
+              keep.add(oldest);
+            }
+          }
         }
       }
       const values = new Map<string, unknown>();

@@ -214,7 +214,9 @@ function isChangeEnd(doc: Doc, item: Item): boolean {
  * its run at another client's item). The scan covers that write's own
  * structs only, however many keys it wrote (a range with many comment ids
  * gets a null and a restore per id): format items, then the text, then
- * format items up to the key's; text after that is a later write's.
+ * format items up to the key's; text after that is a later write's, and so
+ * is an item of the key that does not sit right after that text (see
+ * followsText).
  */
 function opensHole(doc: Doc, item: Item, value: unknown): boolean {
   const key = keyOf(item);
@@ -223,6 +225,9 @@ function opensHole(doc: Doc, item: Item, value: unknown): boolean {
   let clock = item.id.clock + item.length;
   // 0: format items before the text; 1: the text; 2: format items after it.
   let phase = 0;
+  // The clocks of that text.
+  let textFrom = 0;
+  let textTo = -1;
   while (clock < end) {
     const next = doc.store.getItem(createID(client, clock));
     if (!(next instanceof Item)) {
@@ -230,7 +235,11 @@ function opensHole(doc: Doc, item: Item, value: unknown): boolean {
     }
     if (next.content instanceof ContentFormat) {
       if (next.content.key === key) {
-        return phase > 0 && equalFormatValue(next.content.value, value);
+        return (
+          phase > 0 &&
+          equalFormatValue(next.content.value, value) &&
+          followsText(next, client, textFrom, textTo)
+        );
       }
       if (phase === 1) {
         phase = 2;
@@ -239,11 +248,44 @@ function opensHole(doc: Doc, item: Item, value: unknown): boolean {
       if (phase === 2) {
         return false;
       }
+      if (phase === 0) {
+        textFrom = next.id.clock;
+      }
+      textTo = next.id.clock + next.length - 1;
       phase = 1;
     }
     clock = next.id.clock + next.length;
   }
   return false;
+}
+
+/**
+ * Whether `restore` sits right after text of `client` with clocks from
+ * `from` to `to` in the document: walking left from it over format items
+ * and deleted items reaches that text. A later write of the client that
+ * gives the value again elsewhere (it bolds another word after typing)
+ * writes the key's next item in clock order too, but not after that text.
+ */
+function followsText(
+  restore: Item,
+  client: number,
+  from: number,
+  to: number,
+): boolean {
+  let it = restore.left;
+  while (
+    it !== null &&
+    (it.deleted || it.content instanceof ContentFormat) &&
+    !(it.id.client === client && it.id.clock >= from && it.id.clock <= to)
+  ) {
+    it = it.left;
+  }
+  return (
+    it !== null &&
+    it.id.client === client &&
+    it.id.clock + it.length - 1 >= from &&
+    it.id.clock <= to
+  );
 }
 
 /** The nearest live item of `key` before `item`, among the 4096 before it. */

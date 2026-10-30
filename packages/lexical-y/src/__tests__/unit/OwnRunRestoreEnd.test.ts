@@ -83,6 +83,62 @@ function dropCommentItems(peer: Peer, id: string) {
   });
 }
 
+/**
+ * Delete `peer`'s first live bold opener of its first line and the next
+ * live bold item after it (that run's end) with raw Yjs deletes, as
+ * dropCommentItems does for a comment.
+ */
+function dropFirstBoldRun(peer: Peer) {
+  const doc = peer.doc;
+  doc.transact(tr => {
+    const root = doc.get('lexical-y') as unknown as {_start: Item | null};
+    let opener: Item | null = null;
+    for (let it = root._start; it !== null; it = it.right) {
+      if (
+        it.deleted ||
+        !(it.content instanceof ContentFormat) ||
+        it.content.key !== 'f:bold'
+      ) {
+        continue;
+      }
+      if (opener === null) {
+        if (it.content.value === true) {
+          opener = it;
+        }
+      } else {
+        opener.delete(tr);
+        it.delete(tr);
+        return;
+      }
+    }
+  });
+}
+
+/** Whether each text node of `peer` holding text after "lo" is bold. */
+function boldAfterLo(peer: Peer): string {
+  return peer.read(() => {
+    const out: string[] = [];
+    let seen = false;
+    for (const n of $getRoot().getAllTextNodes() as TextNode[]) {
+      if (seen) {
+        out.push(`${n.getTextContent()}${n.hasFormat('bold') ? '*' : ''}`);
+      }
+      if (n.getTextContent().endsWith('lo')) {
+        seen = true;
+      }
+    }
+    return out.join('|');
+  });
+}
+
+/** Bold the first line from `from` to `to`. */
+const $boldIn = (from: number, to: number) => () => {
+  const selection = $selectIn([0], from, to);
+  selection.format = (selection.anchor.getNode() as TextNode).getFormat();
+  selection.formatText('bold');
+  $setSelection(null);
+};
+
 /** In `peer`'s first line, insert uncommented `text` at offset `off`. */
 function $insertPlainAt(off: number, text: string) {
   for (const node of $block([0]).getAllTextNodes() as TextNode[]) {
@@ -240,6 +296,72 @@ describe('@lexical/y a restore of a comment its own client opened', () => {
         expect(words(t.a)).toBe('aa Kilome[c1] cc dd');
       },
     );
+    test(`a restore in another client's run keeps its end after that client wrote the value again (ids ${ids})`, async () => {
+      // B bolds "Kilo", types plain text, bolds "cc", then undoes all three,
+      // while A types plain "X" inside "Kilo": the scan from B's end of
+      // "Kilo" passes B's later text and finds B's later bold opener, which
+      // is not right after that text and opens no hole.
+      const t = await setup(
+        () => $getRoot().append($p('aa Kilo bb cc dd'), $p('tail line')),
+        {ids, prepare},
+      );
+      t.b.update($boldIn(3, 7));
+      await t.sync();
+      t.b.update(() => $insertPlainAt(10, ' zz'));
+      await t.sync();
+      t.b.update($boldIn(14, 16));
+      await t.sync();
+      t.offline();
+      t.b.undo();
+      t.b.undo();
+      t.b.undo();
+      t.a.update(() => $insertPlainAt(5, 'X'));
+      await t.sync();
+      await expectConverged(t.peers);
+      expect(t.a.describe()).toBe(
+        'paragraph("aa KiX" "lo"{1} " bb cc dd") / paragraph("tail line")',
+      );
+    });
+    test(`a restore in another client's run keeps its end when that run's items are dropped after its client wrote the value again (ids ${ids})`, async () => {
+      // As above without the undos: B's bold opener and end of "Kilo" are
+      // dropped while A types plain "X" inside it.
+      const t = await setup(
+        () => $getRoot().append($p('aa Kilo bb cc dd'), $p('tail line')),
+        {ids, prepare},
+      );
+      t.b.update($boldIn(3, 7));
+      await t.sync();
+      t.b.update(() => $insertPlainAt(10, ' zz'));
+      await t.sync();
+      t.b.update($boldIn(14, 16));
+      await t.sync();
+      t.offline();
+      t.a.update(() => $insertPlainAt(5, 'X'));
+      dropFirstBoldRun(t.b);
+      await t.sync();
+      await expectConverged(t.peers);
+      expect(boldAfterLo(t.a)).toBe(' bb zz |cc*| dd|tail line');
+    });
+    test(`a restore of a run its own client opened keeps its end after that client wrote the value again (ids ${ids})`, async () => {
+      // A bolds "Kilo", types plain text, bolds "cc", then types plain "X"
+      // inside "Kilo" while B drops the bold opener and end of "Kilo".
+      const t = await setup(
+        () => $getRoot().append($p('aa Kilo bb cc dd'), $p('tail line')),
+        {ids, prepare},
+      );
+      t.a.update($boldIn(3, 7));
+      await t.sync();
+      t.a.update(() => $insertPlainAt(10, ' zz'));
+      await t.sync();
+      t.a.update($boldIn(14, 16));
+      await t.sync();
+      t.offline();
+      t.a.update(() => $insertPlainAt(5, 'X'));
+      dropFirstBoldRun(t.b);
+      await t.sync();
+      await expectConverged(t.peers);
+      expect(boldAfterLo(t.a)).toBe(' bb zz |cc*| dd|tail line');
+    });
     test(`a later write's hole is not a run end with 64 comments on the run (ids ${ids})`, async () => {
       // Each write puts a null and a restore per comment id: the hole is
       // found however many keys its write has.

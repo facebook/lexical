@@ -142,6 +142,27 @@ class TitledParagraphNode extends ParagraphNode {
   }
 }
 
+/** An inline decorator without text (an inline image, say) */
+class EmptyInlineDecoratorNode extends DecoratorNode<null> {
+  $config() {
+    return this.config('test-empty-inline-decorator', {
+      extends: DecoratorNode,
+    });
+  }
+  isInline(): true {
+    return true;
+  }
+  createDOM(): HTMLElement {
+    return document.createElement('span');
+  }
+  updateDOM(): false {
+    return false;
+  }
+  decorate(): null {
+    return null;
+  }
+}
+
 /** An inline element that shows its text in brackets */
 class BracketedInlineNode extends ElementNode {
   $config() {
@@ -304,6 +325,7 @@ function createTestEditor(
         ChipNode,
         FigureNode,
         BracketedInlineNode,
+        EmptyInlineDecoratorNode,
         TestDecoratorTextNode,
         TitledParagraphNode,
       ],
@@ -2461,6 +2483,152 @@ describe('MarkStateExtension', () => {
           .join(''),
       );
       expect(marked).toBe('abcde');
+    });
+
+    /** Composes `composed` over the placeholder at the caret, if there is one. */
+    function composeOverPlaceholder(editor: LexicalEditor, composed: string) {
+      update(editor, () => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          throw new Error('no selection');
+        }
+        const target = selection.anchor.getNode() as TextNode;
+        const content = target.getTextContent();
+        const at = selection.anchor.offset;
+        if (content[at - 1] === '\u200b' || content[at - 1] === '\u00a0') {
+          target.spliceText(at - 1, 1, composed, true);
+        } else {
+          target.spliceText(
+            at,
+            content[at] === '\u200b' ? 1 : 0,
+            composed,
+            true,
+          );
+        }
+      });
+    }
+
+    test.each([
+      ['nothing (a start that removes the selection)', ''],
+      ['a zero-width space', '\u200b'],
+      ['a no-break space', '\u00a0'],
+    ])(
+      'a selection replaced by %s at the composition start gives the composed text the ids all of it had',
+      (_label, placeholder) => {
+        const editor = setupMarked('abcd', [[0, 4, 'c1']], [2, 4]);
+        editor.registerCommand(
+          CONTROLLED_TEXT_INSERTION_COMMAND,
+          payload => {
+            const selection = $getSelection();
+            if (
+              payload !== '\u200b' ||
+              placeholder === '\u200b' ||
+              !$isRangeSelection(selection)
+            ) {
+              return false;
+            }
+            if (placeholder === '') {
+              selection.removeText();
+            } else {
+              selection.insertText(placeholder);
+            }
+            return true;
+          },
+          COMMAND_PRIORITY_HIGH,
+        );
+        startComposition(editor);
+        composeOverPlaceholder(editor, 'cde');
+        update(editor, () => $setCompositionKey(null));
+        // A no-break space the composition kept is not the point here: the
+        // composed text and the text before it have the run's id
+        expect(tree(editor).replace(/\u00a0/g, '')).toBe(
+          'paragraph("abcde"[c1])',
+        );
+      },
+    );
+
+    /** Collapses the selection to its focus when a composition starts. */
+    function collapseOnCompositionStart(editor: LexicalEditor) {
+      editor.registerCommand(
+        COMPOSITION_START_COMMAND,
+        () => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            const {key, offset, type} = selection.focus;
+            selection.anchor.set(key, offset, type);
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_HIGH,
+      );
+    }
+
+    test('a selection of an inline decorator without text that a handler kept was not replaced', () => {
+      const editor = createTestEditor();
+      update(editor, () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $createTextNode('ab'),
+              $create(EmptyInlineDecoratorNode),
+              $createTextNode('cd'),
+            ),
+          );
+      });
+      const $selectDecorator = () => {
+        const key = $paragraph().getKey();
+        const selection = $createRangeSelection();
+        selection.anchor.set(key, 1, 'element');
+        selection.focus.set(key, 2, 'element');
+        $setSelection(selection);
+        return selection;
+      };
+      update(editor, () => {
+        $addMarkID('c1', $selectDecorator());
+      });
+      update(editor, () => {
+        $selectDecorator();
+      });
+      collapseOnCompositionStart(editor);
+      startComposition(editor);
+      compose(editor, 'X');
+      update(editor, () => $setCompositionKey(null));
+      const composedIds = editor.read(() => {
+        const node = $getRoot()
+          .getAllTextNodes()
+          .find(text => text.getTextContent().includes('X'));
+        return node ? $getNodeMarkIDs(node) : null;
+      });
+      expect(composedIds).toEqual([]);
+    });
+
+    test('a selection that is a no-break space, kept by a start that wrote nothing, was not replaced', () => {
+      const editor = setupMarked(
+        'a\u00a0b',
+        [
+          [0, 3, 'c1'],
+          [1, 2, 'c2'],
+        ],
+        [1, 2],
+      );
+      collapseOnCompositionStart(editor);
+      // The start writes nothing (as a browser that composes in place)
+      editor.registerCommand(
+        CONTROLLED_TEXT_INSERTION_COMMAND,
+        payload => payload === '\u200b',
+        COMMAND_PRIORITY_HIGH,
+      );
+      startComposition(editor);
+      compose(editor, 'X');
+      update(editor, () => $setCompositionKey(null));
+      const composedIds = editor.read(() => {
+        const node = $getRoot()
+          .getAllTextNodes()
+          .find(text => text.getTextContent().includes('X'));
+        return node ? $getNodeMarkIDs(node) : null;
+      });
+      expect(composedIds).toEqual(['c1']);
     });
 
     test('a selection that a handler collapsed before the composition started was not replaced', () => {

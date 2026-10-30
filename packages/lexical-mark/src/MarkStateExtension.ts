@@ -1503,22 +1503,33 @@ function $getReplacedRange(
  */
 const COMPOSITION_PLACEHOLDERS = ['', '\u200b', '\u00a0'];
 
+/** How {@link $childrenText} writes a child that is not text: one unit. */
+const NON_TEXT_UNIT = '\ufffc';
+
 /**
  * The text of `block`'s children as {@link $offsetInBlock} counts it: an
- * inline element's text is its children's. `getTextContent` would also put
- * the text of the block's named slots in front, and an inline element can add
- * text of its own to its `getTextContent`, neither of which a point in the
- * children counts.
+ * inline element's text is its children's, and a child that is not text (a
+ * decorator, a line break) is one unit, whatever its `getTextContent` (often
+ * empty for a decorator, which would let a selection of it span nothing).
+ * `getTextContent` would also put the text of the block's named slots in
+ * front, and an inline element can add text of its own to its
+ * `getTextContent`, neither of which a point in the children counts.
  */
 function $childrenText(block: ElementNode): string {
   let text = '';
   for (const child of block.getChildren()) {
-    text +=
-      $isElementNode(child) && child.isInline()
-        ? $childrenText(child)
-        : child.getTextContent();
+    if ($isElementNode(child)) {
+      text += child.isInline() ? $childrenText(child) : child.getTextContent();
+    } else {
+      text += $isTextNode(child) ? child.getTextContent() : NON_TEXT_UNIT;
+    }
   }
   return text;
+}
+
+/** The size of a leaf in {@link $childrenText}. */
+function $unitSize(node: LexicalNode): number {
+  return $isTextNode(node) ? node.getTextContentSize() : 1;
 }
 
 /**
@@ -1556,7 +1567,7 @@ function $offsetInBlock(block: ElementNode, point: PointLike): number {
           return true;
         }
       } else {
-        offset += child.getTextContentSize();
+        offset += $unitSize(child);
       }
     }
     return false;
@@ -1573,7 +1584,7 @@ function $offsetInBlock(block: ElementNode, point: PointLike): number {
       }
       return true;
     }
-    offset += node.getTextContentSize();
+    offset += $unitSize(node);
     return true;
   };
   return $walk(block) ? offset : -1;
@@ -1639,7 +1650,13 @@ function $getCompositionReplacedRange(
       const text = $childrenText(block);
       const head = before.text.slice(0, before.start);
       const tail = before.text.slice(before.end);
+      const selected = before.text.slice(before.start, before.end);
       for (const placeholder of COMPOSITION_PLACEHOLDERS) {
+        // A selection that is the placeholder itself, kept by a start that
+        // wrote nothing, would look replaced: leave it to the comparison
+        if (placeholder !== '' && placeholder === selected) {
+          continue;
+        }
         const end = before.start + placeholder.length;
         if (
           text === head + placeholder + tail &&

@@ -1201,7 +1201,7 @@ function escapeLinkPart(value: string, syntax: RegExp): string {
 // Mask escaped/code brackets without changing source offsets, then find an inner
 // opener after a literal prefix. Return -1 for balanced labels or null when
 // unmatched closers leave no recoverable opener.
-function getLinkLabelOpener(text: string): number | null {
+export function getLinkLabelOpener(text: string): number | null {
   const codeSpans = scanCodeSpans(text);
   let codeIndex = 0;
   const brackets = text.replace(/\\.|[[\]]/g, (part, index: number) => {

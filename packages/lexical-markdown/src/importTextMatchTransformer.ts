@@ -8,7 +8,7 @@
 import type {TextMatchTransformer} from './MarkdownTransformers';
 import type {TextNode} from 'lexical';
 
-import {LINK} from './MarkdownTransformers';
+import {getLinkLabelOpener, LINK} from './MarkdownTransformers';
 import {isEscaped} from './utils';
 
 function matchLink(text: string, regExp: RegExp): RegExpExecArray | null {
@@ -18,8 +18,17 @@ function matchLink(text: string, regExp: RegExp): RegExpExecArray | null {
   );
   let match;
   while ((match = search.exec(text)) !== null) {
-    if (!isEscaped(text, match.index)) return match;
-    search.lastIndex = match.index + 1;
+    // A `[` that the label holds outside a code span is the link's real
+    // opener, and what comes before it is ordinary text, so search again
+    // from there.
+    const opener = getLinkLabelOpener(match[1]);
+    if (opener !== null && opener >= 0) {
+      search.lastIndex = match.index + opener + 1;
+    } else if (!isEscaped(text, match.index)) {
+      return match;
+    } else {
+      search.lastIndex = match.index + 1;
+    }
   }
   return null;
 }

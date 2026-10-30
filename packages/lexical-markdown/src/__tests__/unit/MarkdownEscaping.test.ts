@@ -631,18 +631,20 @@ describe('literal Markdown text', () => {
     },
   );
 
-  it('preserves existing literal prefix text before an unbalanced link', () => {
+  it('reads the text before an unbalanced link as ordinary Markdown', () => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
-    const prefix = '[`\\`';
-    editor.update(() => $convertFromMarkdownString(prefix + '[x](u)'), {
+    // CommonMark reads `[` as literal text and `` `\` `` as a code span here.
+    editor.update(() => $convertFromMarkdownString('[`\\`[x](u)'), {
       discrete: true,
     });
     editor.read(() => {
       const paragraph = $getRoot().getFirstChildOrThrow();
       assert($isElementNode(paragraph));
-      const [text, link] = paragraph.getChildren();
+      const [text, code, link] = paragraph.getChildren();
       assert($isTextNode(text));
-      expect(text.getTextContent()).toBe(prefix);
+      expect(text.getTextContent()).toBe('[');
+      assert($isTextNode(code) && code.hasFormat('code'));
+      expect(code.getTextContent()).toBe('\\');
       assert($isLinkNode(link));
       expect(link.getURL()).toBe('u');
       expect(link.getTextContent()).toBe('x');

@@ -5438,6 +5438,48 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     },
   );
 
+  it.each<[string, [string, boolean, boolean][]]>([
+    [
+      'Use [this](u) or the [`--flag` from [docs](u)',
+      [
+        ['Use ', false, false],
+        ['this', false, true],
+        [' or the [', false, false],
+        ['--flag', true, false],
+        [' from ', false, false],
+        ['docs', false, true],
+      ],
+    ],
+    [
+      '[a](b) [`x`[c](d)',
+      [
+        ['a', false, true],
+        [' [', false, false],
+        ['x', true, false],
+        ['c', false, true],
+      ],
+    ],
+  ])(
+    'keeps a code span after a stray `[` before a link in %j',
+    (markdown, nodes) => {
+      const editor = createTestEditor();
+      editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
+        discrete: true,
+      });
+      expect(
+        editor.read('latest', () =>
+          $getRoot()
+            .getAllTextNodes()
+            .map(node => [
+              node.getTextContent(),
+              node.hasFormat('code'),
+              $isLinkNode(node.getParent()),
+            ]),
+        ),
+      ).toEqual(nodes);
+    },
+  );
+
   it('applies a link before a later link that holds a code span', () => {
     const editor = createTestEditor();
     editor.update(

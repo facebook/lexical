@@ -27,6 +27,7 @@ import {
   MARKER,
   SEGMENT_KEY,
   TYPE_KEY,
+  WRAPPER_PREFIX,
 } from './Schema';
 import {deleteItem, isGone} from './Unread';
 
@@ -492,13 +493,15 @@ export class Cursor {
       } else if (
         isFormat(r) &&
         this.unitGives(r, formats) &&
-        !opensNodeRun(r)
+        (keyOf(r).startsWith(WRAPPER_PREFIX) || !opensNodeRun(r))
       ) {
         // a format that already matches (never an item of another node's
         // opener, its type and segment keys and the formats its write
         // opened with them: content written past it would be inside that
         // node's run, between its opener and its content, and depend on
-        // items that node's author owns)
+        // items that node's author owns; its wrapper items, a link around
+        // the node, are stepped over as any other: the content shares the
+        // link and goes with it)
       } else {
         break;
       }
@@ -571,7 +574,9 @@ export class Cursor {
       return null;
     }
     const opener = this.valueSource(SEGMENT_KEY);
-    if (opener === null) {
+    // A run this client wrote needs none: its own undo removes its later
+    // write first.
+    if (opener === null || opener.id.client === this.tr.doc.clientID) {
       return null;
     }
     if (
@@ -621,15 +626,16 @@ export class Cursor {
     if (a.id.client !== b.id.client) {
       return false;
     }
+    // Every item between them is one of that client's format items: the
+    // walk stops at the first other item, so it costs at most the items
+    // of one write (a write may open many keys, a comment's ids each one).
     const [first, last] = a.id.clock < b.id.clock ? [a, b] : [b, a];
     const store = this.tr.doc.store;
-    let steps = 0;
     for (let clock = first.id.clock + first.length; clock < last.id.clock; ) {
       const struct = store.getItem(createID(first.id.client, clock));
       if (
         !(struct instanceof Item) ||
-        !(struct.content instanceof ContentFormat) ||
-        ++steps > 64
+        !(struct.content instanceof ContentFormat)
       ) {
         return false;
       }

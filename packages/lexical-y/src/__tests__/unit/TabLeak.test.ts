@@ -18,6 +18,7 @@ import type * as Y from '@y/y';
 import {$createCodeHighlightNode, $createCodeNode} from '@lexical/code';
 import {$createHashtagNode, HashtagNode} from '@lexical/hashtag';
 import {$createLinkNode, $isLinkNode} from '@lexical/link';
+import {$addMarkID} from '@lexical/mark';
 import {
   $createParagraphNode,
   $createTabNode,
@@ -37,8 +38,10 @@ import {
   $selectIn,
   expectConverged,
   NODES,
+  type Setup,
   setup,
 } from '../utils/harness';
+import {prepareMarkState} from '../utils/sizeOps';
 
 const $t = (s: string) => $createTextNode(s);
 
@@ -691,5 +694,144 @@ describe('a node kept apart written where a peer removes the link or format arou
       }
       await expectConverged(t.peers);
     });
+  }
+});
+
+// Content inserted inside a link right before a node that opened the link in
+// the same write shares the link: when the link's author undoes or a
+// collaborator removes the link, it goes from that content too.
+describe('content written inside a link right before a node that opened it', () => {
+  type Case = {
+    name: string;
+    $link: () => LexicalNode;
+    $insert: () => void;
+    then: 'undo' | 'unlink';
+  };
+  const $firstOf = (type: string) =>
+    $block([0])
+      .getAllTextNodes()
+      .find(n => n.getType() === type)!;
+  const CASES: Case[] = [
+    {
+      $insert: () => $firstOf('hashtag').insertBefore($t('XY')),
+      $link: () =>
+        $createLinkNode('https://example.com').append(
+          $createHashtagNode('#BB'),
+          $t(' more'),
+        ),
+      name: 'text before a hashtag, B undoes',
+      then: 'undo',
+    },
+    {
+      $insert: () => $firstOf('hashtag').insertBefore($t('XY')),
+      $link: () =>
+        $createLinkNode('https://example.com').append(
+          $createHashtagNode('#BB'),
+        ),
+      name: 'text before a hashtag, C unlinks',
+      then: 'unlink',
+    },
+    {
+      $insert: () => $firstOf('tab').insertBefore($createTabNode()),
+      $link: () =>
+        $createLinkNode('https://example.com').append(
+          $createTabNode(),
+          $t('zz'),
+        ),
+      name: 'a tab before a tab, C unlinks',
+      then: 'unlink',
+    },
+  ];
+  for (const c of CASES) {
+    for (const ids of [
+      [1, 2, 3],
+      [3, 2, 1],
+    ]) {
+      test(`${c.name} (ids ${ids})`, async () => {
+        const t = await setup(
+          () =>
+            $getRoot().append(
+              $createParagraphNode().append($t('ab cd')),
+              $createParagraphNode().append($t('next line')),
+            ),
+          {ids, nodes: [...NODES, HashtagNode]},
+        );
+        t.b.update(() => {
+          const [left] = ($block([0]).getFirstChild() as TextNode).splitText(2);
+          left.insertAfter(c.$link());
+        });
+        await t.sync();
+        t.offline();
+        t.a.update(c.$insert);
+        if (c.then === 'undo') {
+          t.b.undo();
+        } else {
+          t.c.update(() => {
+            const link = $block([0]).getChildren().find($isLinkNode)!;
+            for (const child of link.getChildren()) {
+              link.insertBefore(child);
+            }
+            link.remove();
+          });
+        }
+        await t.sync();
+        for (const peer of t.peers) {
+          expect(
+            peer.read(() => $block([0]).getChildren().some($isLinkNode)),
+          ).toBe(false);
+        }
+        await expectConverged(t.peers);
+      });
+    }
+  }
+});
+
+// The write that opens a tab can hold many items (each comment id on it is
+// one): a tab written right after it still recognizes that write and states
+// its own type, whatever the number of items.
+describe('a tab written after a tab whose opening write holds many items', () => {
+  for (const n of [1, 16, 64, 128]) {
+    for (const ids of [
+      [1, 2],
+      [2, 1],
+    ]) {
+      test(`${n} comment ids on B's tab (ids ${ids})`, async () => {
+        const $line = () => $getRoot().getFirstChildOrThrow() as ElementNode;
+        const tabs = (peer: Setup['a']) =>
+          peer.read(
+            () =>
+              $line()
+                .getAllTextNodes()
+                .filter(node => node.getType() === 'tab').length,
+          );
+        const t = await setup(
+          () => $getRoot().append($createParagraphNode().append($t('one two'))),
+          {ids, prepare: prepareMarkState},
+        );
+        t.b.update(() => {
+          const [one] = $line().getAllTextNodes()[0].splitText(3);
+          const tab = $createTabNode();
+          one.insertAfter(tab);
+          const selection = tab.select(0, 1);
+          for (let i = 0; i < n; i++) {
+            $addMarkID('m' + String(i).padStart(4, '0'), selection);
+          }
+        });
+        await t.sync();
+        t.a.update(() => {
+          const tab = $line()
+            .getAllTextNodes()
+            .find(node => node.getType() === 'tab')!;
+          tab.insertAfter($createTabNode());
+        });
+        await t.sync();
+        expect(tabs(t.a)).toBe(2);
+        t.b.undo();
+        await t.sync();
+        await expectConverged(t.peers);
+        expect(t.a.read(() => $line().getTextContent())).toBe('one\t two');
+        expect(tabs(t.a)).toBe(1);
+      });
+    }
   }
 });

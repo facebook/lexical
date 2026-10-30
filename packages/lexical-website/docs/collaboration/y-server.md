@@ -31,9 +31,11 @@ import {
   $getRoot,
 } from 'lexical';
 
-// The clients' extensions (or `nodes`): the server must register every node
-// type the clients use. `schemaVersion` is the version of the app's schema
-// this server's code has, as on the clients (required).
+// The clients' extensions: the server must register every node type the
+// clients use (through `extensions` or `nodes`) and the extensions that
+// change what is written, such as `BlockIdExtension`, so that it writes
+// what a client would. `schemaVersion` is the version of the app's
+// schema this server's code has, as on the clients (required).
 const config = {extensions: [AppNodesExtension], schemaVersion: 3};
 
 // Who the server's edits are by: one writer per agent or integration,
@@ -316,13 +318,25 @@ the edit arrives. Follow
 
 - **Edit text in place.** Change the characters of a text node
   (`spliceText`) rather than replacing its block: a replaced block is a
-  delete and an insert, and what a collaborator types into it meanwhile is
-  lost.
+  delete and an insert. In a line such as a paragraph, what a collaborator
+  types at the same time survives, with its own formatting, at the start of
+  the new text (typed at the end of the line, it can also stay at the end);
+  formatting of the replaced characters does not carry over. Replacing a
+  block stored as a node of its own, such as a table, deletes what was typed
+  in it.
 - **Edit the state the plan was computed from, then merge.** Keep the state
   the agent read, run `editYState` on that state, and merge the returned
   `update` into the latest stored state (and send it to the clients). Yjs
   merges it with everything that changed since. Do not store the returned
   `state`: it lacks those changes.
+- **Resolve block handles against the stored state.** An agent that
+  addresses blocks by [handle](/docs/extensions/block-ids#showing-blocks-to-a-model)
+  resolves each one in a `readYState` of the latest stored state, with the
+  handles it was shown (`$resolveBlockHandle(handle, {read})`), so that a
+  block deleted since the read fails, then applies the edit to the read by
+  id (see
+  [Handles and collaboration](/docs/extensions/block-ids#handles-and-collaboration)).
+  Resolved inside the edit of the read, a handle always finds its block.
 - **Give the agent its writer.** The edit continues the agent's client id
   when the agent has not written the document since `seen` was read. When
   two runs of the agent overlap on one document, the later edit is written
@@ -342,7 +356,9 @@ const {update} = editYState(
   config,
   () => {
     const text = $getRoot().getFirstDescendant();
-    if ($isTextNode(text)) {
+    // Plain text only: a tab does not take text, and a hashtag or a code
+    // token would keep its type around the new text.
+    if ($isTextNode(text) && text.isSimpleText()) {
       text.spliceText(0, 5, 'Hi');
     }
   },
@@ -353,10 +369,179 @@ if (update !== null) {
 }
 ```
 
+### Edits by block id
+
+With [`BlockIdExtension`](/docs/extensions/block-ids) in the config (as on
+the clients: a config without it writes new blocks without ids), an agent
+can read blocks with their ids and answer with edits addressed by id. Two
+things differ from a single editor:
+
+- **Check the targets on the latest state.** The edit runs on `seen`, the
+  state the agent read, where every block it read still exists, so
+  `$getBlockById` finds a block a collaborator has deleted since. It also
+  finds the original of a block a collaborator has moved or replaced since:
+  a move or a `replace` keeps the block's id (see
+  [How ids follow edits](/docs/extensions/block-ids#how-ids-follow-edits)),
+  but `@lexical/y` stores either one as a delete and an insert. The agent's
+  text then survives the merge without its block, as
+  [a line without a marker](./y.md#limits): a paragraph of its own, or text
+  glued to a neighboring line, depending on what is around it. Compare each
+  target on the latest state with what the agent read (where it is: the
+  path from the root to it, each node on it by its id or, without one, by
+  its type and place in its parent; and its text), and send the ones that
+  are gone or differ back to the agent, to plan again from the latest
+  state, instead of applying them. The check is conservative (a block a
+  collaborator typed in, or one after an inserted or deleted block in any
+  of its containers, goes back too) and best effort: a change that reaches
+  the stored state after the check (one already on its way, or made in
+  between) still lands this way, and so does a block replaced by one with
+  the same text.
+- **Edit the text in place.** Replacing the block (`block.replace(node)`, as
+  in the [single-editor example](/docs/extensions/block-ids#addressing-blocks))
+  writes it anew. In a line such as a paragraph, what a collaborator types
+  at the same time survives, with its own formatting, at the start of the
+  new text (typed at the end of the line, it can also stay at the end);
+  formatting of the replaced characters does not carry over. Replacing a
+  block stored as a node of its own, such as a table, deletes what was typed
+  in it. Splice only the characters that changed.
+
+```ts
+import {$getBlockById, $getBlockId} from '@lexical/extension';
+import {editYState, readYState} from '@lexical/y/headless';
+import {
+  $getRoot,
+  $getSlotHost,
+  $getSlotNames,
+  $getSlotNameWithinHost,
+  $isElementNode,
+  $isRootNode,
+  $isTextNode,
+  type LexicalNode,
+  type TextNode,
+} from 'lexical';
+
+// Changes a text node's text to `next` with one splice: the start and end
+// the two texts share stay (and what collaborators type in them), and
+// everything from the first difference to the last is replaced. For an
+// answer that changes several separate places, splice each change on its
+// own (from a diff of the two texts), so the text between them stays too.
+function $setTextInPlace(text: TextNode, next: string): void {
+  const prev = text.getTextContent();
+  let start = 0;
+  while (start < prev.length && prev[start] === next[start]) {
+    start++;
+  }
+  let end = 0;
+  while (
+    end < prev.length - start &&
+    end < next.length - start &&
+    prev[prev.length - 1 - end] === next[next.length - 1 - end]
+  ) {
+    end++;
+  }
+  text.spliceText(
+    start,
+    prev.length - start - end,
+    next.slice(start, next.length - end),
+  );
+}
+
+// The text node of a block that this sketch edits in place, or null: the
+// block's only child, plain text, and no named slots. A tab does not take
+// text, a hashtag or a code token would keep its type around the new text,
+// and the text of a named slot is part of the block's text but not of that
+// child.
+function $plainTextOf(block: LexicalNode | null): TextNode | null {
+  if (
+    !$isElementNode(block) ||
+    $getSlotNames(block).length > 0 ||
+    block.getChildrenSize() !== 1
+  ) {
+    return null;
+  }
+  const text = block.getFirstChild();
+  return $isTextNode(text) && text.isSimpleText() ? text : null;
+}
+
+// Where the block with this id is and what it holds, or null when no block
+// has the id: the path from it up to the root (through the hosts of named
+// slots), each node on it by its id or, for one without (a table cell, by
+// default), by its type, and each by its place: the slot it fills, or its
+// index in its parent; and its text. A collaborator's move of the block or
+// of a container it is in changes the path; a replace changes the text
+// (unless the new block has the same text).
+function $placeOf(id: string): string | null {
+  const block = $getBlockById(id);
+  if (block === null) {
+    return null;
+  }
+  const path: unknown[] = [];
+  for (
+    let node: LexicalNode | null = block;
+    node !== null && !$isRootNode(node);
+    node = node.getParent() ?? $getSlotHost(node)
+  ) {
+    path.push([
+      $getBlockId(node) ?? node.getType(),
+      $getSlotNameWithinHost(node) ?? node.getIndexWithinParent(),
+    ]);
+  }
+  return JSON.stringify([path, block.getTextContent()]);
+}
+
+// 1. What the agent reads, from `seen`.
+const blocks = readYState(seen, config, () =>
+  $getRoot()
+    .getChildren()
+    .map(node => ({id: $getBlockId(node), text: node.getTextContent()})),
+);
+
+// 2. What it answers, seconds later: [{id: 'b7', text: 'New text'}, ...].
+
+// 3. The targets that are still where and what the agent read, in the
+// latest stored state.
+const wasAt = readYState(seen, config, () => ops.map(op => $placeOf(op.id)));
+const isAt = readYState(latest, config, () => ops.map(op => $placeOf(op.id)));
+const live = new Set(
+  ops
+    .filter((op, i) => wasAt[i] !== null && wasAt[i] === isAt[i])
+    .map(op => op.id),
+);
+const gone = ops.filter(op => !live.has(op.id)); // Tell the agent.
+const unsupported: typeof ops = []; // Tell the agent too.
+
+// 4. The rest, applied to `seen` and merged into the latest state.
+const {update} = editYState(
+  seen,
+  config,
+  () => {
+    for (const op of ops) {
+      const block = live.has(op.id) ? $getBlockById(op.id) : null;
+      const text = $plainTextOf(block);
+      if (text !== null) {
+        $setTextInPlace(text, op.text);
+      } else if (block !== null) {
+        unsupported.push(op);
+      }
+    }
+  },
+  {writer: agent},
+);
+if (update !== null) {
+  // Merge `update` into the latest stored state and send it to the clients.
+}
+```
+
+A block with several text nodes (formats, links) needs the same idea across
+its nodes: splice where the text differs, and leave the nodes before and
+after the change alone.
+
 ### One edit at a time per document
 
 Run a document's server edits one after another, each on the latest stored
-state. Two edits run at once from the same state each return a state
+state (an agent's planned edit runs on the state it read instead, and its
+update is merged into the latest, see
+[Edits by agents and tools](#edits-by-agents-and-tools)). Two edits run at once from the same state each return a state
 without the other's update, and storing both loses one. If edits must run in
 parallel, merge each `update` into the latest stored state instead of
 storing the returned `state`. Clients' concurrent edits merge with the

@@ -36,7 +36,7 @@ import {
   TYPE_KEY,
   WRAPPER_PREFIX,
 } from './Schema';
-import {isGone} from './Unread';
+import {isGone, unheldLength} from './Seen';
 
 // Inline content as atoms, the form both the editor's side ($pushInline)
 // and the shared side (readAtoms) are compared in: one atom per content unit
@@ -372,7 +372,7 @@ export function countLive(
   let n = 0;
   for (let it = start; it !== null && it !== stop; it = it.right) {
     if (isLiveContent(it)) {
-      n += hidden === null ? it.length : hidden.shownLength(it);
+      n += unheldLength(it, hidden);
     }
   }
   return n;
@@ -566,6 +566,20 @@ const isWordChar = (s: string, i: number): boolean => {
   return !SPACE.test(c) && !UNSPACED.test(c);
 };
 
+const ALNUM = /[\p{L}\p{N}\p{M}]/u;
+
+/**
+ * Whether the character the code unit at `i` is part of is a letter, a digit
+ * or a combining mark, of a script written with spaces.
+ */
+const isAlnum = (s: string, i: number): boolean => {
+  if (i < 0 || i >= s.length) {
+    return false;
+  }
+  const c = String.fromCodePoint(s.codePointAt(charStart(s, i))!);
+  return ALNUM.test(c) && !UNSPACED.test(c);
+};
+
 /**
  * Snap a replacement's common prefix and suffix back to word boundaries, so
  * that replaced words are replaced whole. Character-level diffs keep the
@@ -632,6 +646,148 @@ export function snapToWords(
     }
   }
   return {prefix, suffix};
+}
+
+// More than spaces: a character that is not white space, or a line feed (a
+// line break is a node of its own, not a separator).
+const NOT_SPACE = /\S|\n/;
+
+/**
+ * The common start and end that text made in place of removed text (`b`,
+ * see TextReplay#stretch) keeps of that text (`a`), as the characters they
+ * were: the diff anchored at the caret (diffStrings).
+ *
+ * An insertion or a deletion keeps every other character, except inside a
+ * word: an insertion between two letters or digits of one (`t9z` made again
+ * as `t90z`), or a deletion with both ends inside words, changed those
+ * words, which are then replaced whole, as by a replacement: a kept piece of
+ * the old word would be a piece of the new one, and an edit computed before
+ * this one that replaces the old word deletes exactly the old word's
+ * characters, so it took that piece out of the new word. At a word's edge
+ * (`foo` made again as `food`, `fooX.bar`) every character is kept. Where it
+ * could be at several places (`t1z t|9z t2z` or `t1z |t9z t2z`), it goes
+ * where the caret placed it, else at the last place inside no word.
+ *
+ * A replacement keeps whole words (snapToWords). A kept start or end that
+ * is only spaces is written with it: a separator alone carries no word, and
+ * the old one is the one a concurrent rewrite of the words around it
+ * deletes (a node `Note: ` replaced by `Tip: ` while a collaborator rewrites
+ * the line kept `Tip:` and lost the space).
+ */
+export function keptEnds(
+  a: string,
+  b: string,
+  cursor: number,
+  composing: boolean,
+): {prefix: number; suffix: number} {
+  const diff = diffStrings(a, b, cursor);
+  const n = Math.min(a.length, b.length);
+  if (diff.prefix + diff.suffix === n) {
+    if (composing || a.length === b.length) {
+      return diff;
+    }
+    // An insertion or a deletion of `m` characters at `k`: of `b` at
+    // `[k, k + m)` (an insertion) or of `a` (a deletion).
+    const m = Math.abs(b.length - a.length);
+    const longer = b.length > a.length ? b : a;
+    const splits = (s: string, i: number): boolean =>
+      i > 0 &&
+      i < s.length &&
+      isHighSurrogate(s.charCodeAt(i - 1)) &&
+      isLowSurrogate(s.charCodeAt(i));
+    // Inside a word: between two letters or digits of one (`t9|z`), not
+    // next to punctuation, an emoji or white space, and not in a script
+    // written without spaces, where each character is a word.
+    const inside = (i: number): boolean => isAlnum(a, i - 1) && isAlnum(a, i);
+    const changesNoWord = (k: number): boolean => {
+      if (splits(a, k) || splits(longer, k) || splits(longer, k + m)) {
+        return false;
+      }
+      // An insertion inside a word, or a deletion with both ends inside
+      // words, changed those words; at a word's edge (`foo` made again as
+      // `food`, `fooX.bar`) it is a word's text typed or deleted there.
+      return longer === b ? !inside(k) : !(inside(k) && inside(k + m));
+    };
+    // The places it could be: from the furthest the common end reaches to
+    // the furthest the common start reaches (diffStrings takes the common
+    // start first unless the caret stops it, at `diff.prefix`).
+    const CHUNK = 256;
+    let hi = diff.prefix;
+    while (
+      hi + CHUNK <= n &&
+      a.substring(hi, hi + CHUNK) === b.substring(hi, hi + CHUNK)
+    ) {
+      hi += CHUNK;
+    }
+    while (hi < n && a.charCodeAt(hi) === b.charCodeAt(hi)) {
+      hi++;
+    }
+    let end = diff.suffix;
+    while (
+      end + CHUNK <= n &&
+      a.substring(a.length - end - CHUNK, a.length - end) ===
+        b.substring(b.length - end - CHUNK, b.length - end)
+    ) {
+      end += CHUNK;
+    }
+    while (
+      end < n &&
+      a.charCodeAt(a.length - 1 - end) === b.charCodeAt(b.length - 1 - end)
+    ) {
+      end++;
+    }
+    // Where the caret placed it (it stopped the common start), there.
+    const caretPlaced = diff.prefix < hi;
+    if (changesNoWord(diff.prefix)) {
+      return diff;
+    }
+    if (!caretPlaced) {
+      for (let k = hi; k >= n - end; k--) {
+        if (changesNoWord(k)) {
+          return {prefix: k, suffix: n - k};
+        }
+      }
+    }
+    // It changed the word or words it is inside of: those are replaced
+    // whole.
+    const k = diff.prefix;
+    if (longer.slice(k, k + m).includes('\ufffc')) {
+      return diff;
+    }
+    let prefix = k;
+    let suffix = n - k;
+    if (inside(k)) {
+      while (isAlnum(a, prefix - 1)) {
+        prefix = charStart(a, prefix - 1);
+      }
+    }
+    if (inside(a.length - suffix)) {
+      while (suffix > 0 && isAlnum(a, a.length - suffix)) {
+        const at = a.length - suffix;
+        suffix -=
+          at + 1 < a.length &&
+          isHighSurrogate(a.charCodeAt(at)) &&
+          isLowSurrogate(a.charCodeAt(at + 1))
+            ? 2
+            : 1;
+      }
+    }
+    return {
+      prefix: NOT_SPACE.test(a.slice(0, prefix)) ? prefix : 0,
+      suffix: NOT_SPACE.test(a.slice(a.length - suffix)) ? suffix : 0,
+    };
+  }
+  const {prefix, suffix} = snapToWords(
+    a,
+    b,
+    diff.prefix,
+    diff.suffix,
+    composing,
+  );
+  return {
+    prefix: NOT_SPACE.test(a.slice(0, prefix)) ? prefix : 0,
+    suffix: NOT_SPACE.test(a.slice(a.length - suffix)) ? suffix : 0,
+  };
 }
 
 const isHighSurrogate = (c: number): boolean => c >= 0xd800 && c <= 0xdbff;

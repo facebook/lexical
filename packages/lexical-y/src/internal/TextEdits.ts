@@ -19,7 +19,7 @@ import {
   type NodeMap,
 } from 'lexical';
 
-import {diffStrings, snapToWords} from './Inline';
+import {diffStrings, keptEnds, snapToWords} from './Inline';
 import {$isWrapper} from './Schema';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
@@ -106,6 +106,8 @@ type Run = {
    * of its node's, or joined it with another node's (see the move entry).
    */
   readonly moved?: number;
+  /** The one character of an inline node (not a line break). */
+  readonly atom?: true;
 };
 
 /**
@@ -146,16 +148,29 @@ type Item = {
 
 /**
  * Text that left a stretch: at old position `at` (see resolve), `from` the
- * place of the removed node that held it (null: a text set replaced it).
+ * place of the removed node that held it (null: a text set replaced it);
+ * `ord`, where it was in the line's items.
  */
-type Left = {readonly run: Run; readonly from: Entry | null; at: number};
+type Left = {
+  readonly run: Run;
+  readonly from: Entry | null;
+  at: number;
+  readonly ord: number;
+};
 
 /**
  * A stretch of a line between two pins (see resolve): its runs in the new
- * line (`live`, with text that arrived and was deleted), and the text that
- * left it, in order.
+ * line (`live`, with text that arrived and was deleted), the text that left
+ * it, in order, and the text that arrived there and left again in this
+ * commit (`passed`, after the old position `at`), which is neither state's
+ * but was there between the old characters around it (see align's `sure`).
  */
-type Stretch = {live: Item[]; left: Left[]; unknown?: true};
+type Stretch = {
+  live: Item[];
+  left: Left[];
+  passed: {readonly text: string; readonly at: number; readonly ord: number}[];
+  unknown?: true;
+};
 
 /**
  * Characters `a` to `a + n` of the text that arrived in a stretch (in line
@@ -265,6 +280,40 @@ function push(out: Segment[], s: Segment): void {
   out.push(s);
 }
 
+/**
+ * Blocks `keep` (in order, see Block), with the parts of blocks `more` (in
+ * order) that lie between two of them, or one and an end, in both texts.
+ */
+function within(keep: readonly Block[], more: readonly Block[]): Block[] {
+  const out: Block[] = [];
+  let m = 0;
+  for (let i = 0; i <= keep.length; i++) {
+    const prev = i > 0 ? keep[i - 1] : null;
+    const next = i < keep.length ? keep[i] : null;
+    if (prev !== null) {
+      out.push(prev);
+    }
+    const a0 = prev === null ? 0 : prev.a + prev.n;
+    const o0 = prev === null ? 0 : prev.o + prev.n;
+    const a1 = next === null ? Infinity : next.a;
+    const o1 = next === null ? Infinity : next.o;
+    while (m < more.length && more[m].a + more[m].n <= a0) {
+      m++;
+    }
+    for (let j = m; j < more.length && more[j].a < a1; j++) {
+      const b = more[j];
+      // Character `x` of what arrived is character `x + shift` of `d`.
+      const shift = b.o - b.a;
+      const lo = Math.max(b.a, a0, o0 - shift);
+      const hi = Math.min(b.a + b.n, a1, o1 - shift);
+      if (hi > lo) {
+        out.push({a: lo, n: hi - lo, o: lo + shift});
+      }
+    }
+  }
+  return out;
+}
+
 /** Unlink `e` from `list`. */
 function unlink(list: List, e: Entry): void {
   if (e.out === true) {
@@ -344,10 +393,10 @@ export class TextReplay {
   ) {
     if (log !== null) {
       // Where a text set reaches text whose history a move split or joined,
-      // or a removed node still holds such text at the end (its text is
-      // aligned whole or not at all, see stretch), the replay starts over
-      // with that move as the text sets it stands for (see the move entry):
-      // at most once per move.
+      // or a removed node still holds such text at the end (set text aligns
+      // with its text whole or not at all, see stretch), the replay starts
+      // over with that move as the text sets it stands for (see the move
+      // entry): at most once per move.
       for (;;) {
         for (let i = 0; i < log.length && this.restart === null; i++) {
           this.at = i;
@@ -517,8 +566,8 @@ export class TextReplay {
         // Text that left a node earlier in the commit, and what arrived in
         // its place (a set, typed text deleted again), are aligned with each
         // other when that node is set whole again (see compose and stretch),
-        // and a removed node's text is aligned whole or not at all (see
-        // stretch). Where the move splits such a history between the two
+        // and set text aligns with a removed node's text whole or not at all
+        // (see stretch). Where the move splits such a history between the two
         // nodes, or joins two, those runs are marked with it, wherever they
         // go; where a text set later in the commit reaches one, or a removed
         // node still holds one at the end, the replay starts over with the
@@ -971,19 +1020,15 @@ export class TextReplay {
   private atom(key: NodeKey, kind: Kind | null): Run {
     const old = kindOf(this.prevMap.get(key));
     if (old !== null && old === kind) {
-      return {
-        base: kind === 'break' ? '\n' : OBJ,
-        end: 1,
-        kind: OLD,
-        src: key,
-        start: 0,
-      };
+      return kind === 'break'
+        ? {base: '\n', end: 1, kind: OLD, src: key, start: 0}
+        : {atom: true, base: OBJ, end: 1, kind: OLD, src: key, start: 0};
     }
     // Made in this commit: a line break may be a line feed made again (see
     // stretch), any other node is new.
     return kind === 'break'
       ? this.inserted('\n', LOOSE)
-      : this.inserted(OBJ, NEW);
+      : {...this.inserted(OBJ, NEW), atom: true};
   }
 
   /**
@@ -1188,7 +1233,7 @@ export class TextReplay {
     });
     const stretches: Stretch[] = [];
     for (let s = 0; s <= anchors.length; s++) {
-      stretches.push({left: [], live: []});
+      stretches.push({left: [], live: [], passed: []});
     }
     // The stretch an old position is in.
     const byOld = (at: number): number => {
@@ -1216,6 +1261,12 @@ export class TextReplay {
         stretches[s].unknown = true;
       } else if (x.node !== null || x.run.dead === true) {
         stretches[s].live.push(x);
+      } else if (x.run.gone === true && x.run.kind === LOOSE) {
+        stretches[s].passed.push({
+          at: lastOld + 0.5,
+          ord: k,
+          text: textOf(x.run),
+        });
       } else if (x.run.gone === true && x.run.kind !== LOOSE) {
         // (Text that arrived and left again in this commit is neither
         // state's: what it stood for left too.)
@@ -1228,6 +1279,7 @@ export class TextReplay {
           stretches[t].left.push({
             at: at < 0 ? lastOld : at,
             from: x.from ?? null,
+            ord: k,
             run,
           });
         }
@@ -1280,13 +1332,24 @@ export class TextReplay {
    *    text it replaced left (it stays in the text that left, where it was,
    *    and is new: no old character is aligned with it), and nothing is
    *    pinned there any more.
-   * 4. A removed node's text is aligned whole or not at all.
+   * 4. Set text aligns with a removed node's text whole or not at all
+   *    (where a removed node in front of a node set whole shares nothing
+   *    with the new text, the set node's own text is still kept).
+   * 5. Text of nodes made aligns with the text that left as y-prosemirror
+   *    aligns a text run: as one text each, node boundaries and formats
+   *    left out, by their common start and end (see keptEnds), so that a
+   *    line made again from its JSON with one word changed writes that word
+   *    alone, whichever nodes held its text. An old character it keeps keeps
+   *    its Yjs item, which stays deleted where a peer deleted it (an item is
+   *    never put back, and the old text is the one the editor showed, see
+   *    Unread); only the changed words are written.
    * Priority: the diff runs over all that arrived, in line order, and text
    * that goes on a node's text (a set) keeps what it is aligned with; set
    * text still new is then aligned with what is left between what is kept,
-   * and the text of nodes made last, keeping only what the diff that takes
-   * the common end first keeps too (where it could be either of two equal
-   * runs, neither). False where a text in it is not known.
+   * and the text of nodes made last, between what is kept, with all of the
+   * text that left there, anchored at the caret wherever it is in it (a
+   * highlighter that makes a line's tokens again puts it back where the
+   * user typed). False where a text in it is not known.
    */
   private stretch(
     st: Stretch,
@@ -1307,6 +1370,8 @@ export class TextReplay {
       const made: Span[] = [];
       let s = '';
       let cursor = -1;
+      // Where the caret is in any of it (the text of nodes made, see below).
+      let caretAt = -1;
       for (const x of st.live) {
         if (arrived(x)) {
           const n = length(x.run);
@@ -1316,11 +1381,13 @@ export class TextReplay {
           if (
             caret !== null &&
             caret.key === x.node &&
-            this.prevMap.has(caret.key) &&
             caret.offset >= x.at &&
             caret.offset <= x.at + n
           ) {
-            cursor = s.length + caret.offset - x.at;
+            caretAt = s.length + caret.offset - x.at;
+            if (this.prevMap.has(caret.key)) {
+              cursor = caretAt;
+            }
           }
           if (n > 0) {
             const span = {a: s.length, n, x};
@@ -1331,13 +1398,14 @@ export class TextReplay {
         }
       }
       if (s !== '') {
-        // A removed node's text is aligned whole or not at all: where the
-        // common start of the two texts meets one it does not cover whole,
-        // the common start stops there; where the common end meets one it
-        // does not cover whole, that text is deleted and the common end goes
-        // on past it; and text the common start stopped at that the common
-        // end does not cover either is deleted. The text left is `w`; each
-        // of its runs starts at `at[k][0]` there and `at[k][1]` in `d`.
+        // For set text, a removed node's text is aligned whole or not at
+        // all: where the common start of the two texts meets one it does not
+        // cover whole, the common start stops there; where the common end
+        // meets one it does not cover whole, that text is deleted and the
+        // common end goes on past it; and text the common start stopped at
+        // that the common end does not cover either is deleted. The text
+        // left is `w`; each of its runs starts at `at[k][0]` there and
+        // `at[k][1]` in `d`.
         const left = st.left;
         const drop = new Uint8Array(left.length);
         const removed = left.some(x => x.from !== null);
@@ -1440,44 +1508,134 @@ export class TextReplay {
         if (blocked >= 0 && back >= blocked) {
           drop.fill(1, pk, blocked);
         }
+        // The text that left as it was, also with the text that arrived and
+        // left again in place (`passed`, see Stretch): read without it, the
+        // characters on its two sides are next to each other, and the diff
+        // that takes the common end first can align the end of the old text
+        // with an equal character at the end of what arrived (a paste over
+        // part of a highlighted line, whose nodes the highlighter made again
+        // with the pasted text: `t55z` before the paste, `t87z` at its end).
+        const passed = st.passed;
+        let was = '';
+        const wasAt: number[] = [];
+        for (let k = 0, g = 0; k <= left.length; k++) {
+          while (
+            g < passed.length &&
+            (k === left.length ||
+              passed[g].at < left[k].at ||
+              // (Text with no old position, typed in this commit, is at the
+              // old position before it: the line's order says which came
+              // first.)
+              (passed[g].at - 0.5 === left[k].at &&
+                passed[g].ord < left[k].ord))
+          ) {
+            was += passed[g++].text;
+          }
+          if (k < left.length) {
+            wasAt.push(was.length);
+            was += textOf(left[k].run);
+          }
+        }
         let w = '';
         const at: [number, number, number][] = [];
+        const sureAt: [number, number, number][] = [];
         for (let k = 0, pos = 0; k < left.length; k++) {
           const n = length(left[k].run);
           if (drop[k] === 0) {
             at.push([w.length, pos, n]);
+            sureAt.push([w.length, wasAt[k], n]);
             w += textOf(left[k].run);
           }
           pos += n;
         }
         // The priority (see above).
         const aligned = this.align(
-          made,
+          sets,
           w,
           s,
-          this.align(
-            sets,
-            w,
-            s,
-            this.align(all, w, s, [], cursor, x => x.x.run.set === true),
-            cursor,
-          ),
+          this.align(all, w, s, [], cursor, x => x.x.run.set === true),
           cursor,
-          undefined,
-          {at, text: d},
         );
-        const kept: Block[] = [];
-        let r = 0;
-        for (const b of aligned) {
-          while (r < at.length && at[r][0] + at[r][2] <= b.o) {
-            r++;
+        // Blocks over a text made of runs of `d` (`runs`: run `k` starts at
+        // `runs[k][0]` there and at `runs[k][1]` in `d`), over `d`.
+        const toLeft = (
+          blocks: readonly Block[],
+          runs: readonly [number, number, number][],
+        ): Block[] => {
+          const out: Block[] = [];
+          let r = 0;
+          for (const b of blocks) {
+            while (r < runs.length && runs[r][0] + runs[r][2] <= b.o) {
+              r++;
+            }
+            for (let k = r; k < runs.length && runs[k][0] < b.o + b.n; k++) {
+              const [o0, p0, n] = runs[k];
+              const lo = Math.max(b.o, o0);
+              const hi = Math.min(b.o + b.n, o0 + n);
+              out.push({a: b.a + lo - b.o, n: hi - lo, o: p0 + lo - o0});
+            }
           }
-          for (let k = r; k < at.length && at[k][0] < b.o + b.n; k++) {
-            const [o0, p0, n] = at[k];
-            const lo = Math.max(b.o, o0);
-            const hi = Math.min(b.o + b.n, o0 + n);
-            kept.push({a: b.a + lo - b.o, n: hi - lo, o: p0 + lo - o0});
+          return out;
+        };
+        let kept = toLeft(aligned, at);
+        if (made.length > 0) {
+          // The text of nodes made, between what set text keeps, with all
+          // of the text that left there, as one text each (see the priority
+          // above). A removed inline node (an object character) is left out
+          // of it: the one made in its place is new, so the text on its two
+          // sides is compared as if it were not there.
+          let t = '';
+          const runs: [number, number, number][] = [];
+          // Where each character of `d` is in `t`.
+          const inT = new Int32Array(d.length + 1);
+          for (let k = 0, pos = 0; k < left.length; k++) {
+            const text = textOf(left[k].run);
+            if (left[k].run.atom !== true) {
+              runs.push([t.length, pos, text.length]);
+              for (let i = 0; i < text.length; i++) {
+                inT[pos + i] = t.length + i;
+              }
+              t += text;
+            } else {
+              inT[pos] = t.length;
+            }
+            pos += text.length;
           }
+          inT[d.length] = t.length;
+          const before = kept.map(b => ({...b, o: inT[b.o]}));
+          const filled = this.align(
+            made,
+            t,
+            s,
+            before,
+            caretAt,
+            undefined,
+            [],
+            true,
+          );
+          const next: Block[] = [];
+          for (let i = 0, j = 0; i < filled.length; i++) {
+            if (j < before.length && filled[i] === before[j]) {
+              next.push(kept[j++]);
+            } else {
+              next.push(...toLeft([filled[i]], runs));
+            }
+          }
+          // Between what that keeps, what the made text's alignment of
+          // main keeps (each removed node's text whole or not at all,
+          // keeping only what the diff that takes the common end first
+          // keeps too), so that nothing main keeps is written again unless
+          // the text made keeps that old character's place for another one.
+          kept = within(
+            next,
+            toLeft(
+              this.align(made, w, s, aligned, cursor, undefined, [
+                {at, text: d},
+                {at: sureAt, text: was},
+              ]),
+              at,
+            ),
+          );
         }
         if (__DEV__) {
           let a = 0;
@@ -1528,16 +1686,19 @@ export class TextReplay {
    * them (of `d`), as one text, by the diff (see stretch): anchored at the
    * caret (`cursor`, in `s`) where it is in that text. With `sure`, only what
    * the diff that takes the common end first keeps too: where the text could
-   * be either of two equal runs, neither. That diff reads `d`, and also the
-   * text that left as it was (`sure.text`, of which `d` holds the runs
-   * `sure.at` says, see stretch), with the text deleted whole still in
-   * place; what either reading keeps as the diff does is kept. Why: read
+   * be either of two equal runs, neither. That diff reads `d`, and also each
+   * reading of the text that left as it was in `sure` (its `text`, of which
+   * `d` holds the runs its `at` says, see stretch): with the text deleted
+   * whole still in place, and with the text that arrived and left again in
+   * this commit in place too; what any reading keeps as the diff does is
+   * kept. Why: read
    * without that text, the characters on its two sides are next to each
    * other, which makes the diff's alignment one of two where the line had
    * one (a line made again as one node with one word changed, where that
    * word was a node of its own, wrote the end of the word before it again,
    * and a peer's concurrent edit of the changed word landed inside that
-   * word).
+   * word). With `made`, by the common start and end text made again keeps
+   * (see keptEnds), and without `sure`.
    */
   private align(
     spans: readonly Span[],
@@ -1546,14 +1707,19 @@ export class TextReplay {
     blocks: readonly Block[],
     cursor: number,
     keeps: (x: Span) => boolean = () => true,
-    sure: {
+    sure: readonly {
       readonly at: readonly (readonly [number, number, number])[];
       readonly text: string;
-    } | null = null,
+    }[] = [],
+    made = false,
   ): Block[] {
+    type Reading = (typeof sure)[number];
     // The run of `d` (see `sure`) that character `at` of it is in.
-    const runOf = (at: number): readonly [number, number, number] => {
-      const runs = sure!.at;
+    const runOf = (
+      r: Reading,
+      at: number,
+    ): readonly [number, number, number] => {
+      const runs = r.at;
       let lo = 0;
       let hi = runs.length - 1;
       while (lo < hi) {
@@ -1566,9 +1732,9 @@ export class TextReplay {
       }
       return runs[lo];
     };
-    // Where character `at` of `d` was in the text that left.
-    const old = (at: number): number => {
-      const run = runOf(at);
+    // Where character `at` of `d` was in the text that left, in reading `r`.
+    const old = (r: Reading, at: number): number => {
+      const run = runOf(r, at);
       return run[1] + at - run[0];
     };
     const out: Block[] = [];
@@ -1605,14 +1771,20 @@ export class TextReplay {
         continue;
       }
       const w = d.slice(o0, o1);
-      const diff = diffStrings(w, text, caret);
-      const {prefix, suffix} = snapToWords(
-        w,
-        text,
-        diff.prefix,
-        diff.suffix,
-        this.composing,
-      );
+      let prefix: number;
+      let suffix: number;
+      if (made) {
+        ({prefix, suffix} = keptEnds(w, text, caret, this.composing));
+      } else {
+        const diff = diffStrings(w, text, caret);
+        ({prefix, suffix} = snapToWords(
+          w,
+          text,
+          diff.prefix,
+          diff.suffix,
+          this.composing,
+        ));
+      }
       // What it keeps, as ranges of `text` and how far on in `w` each is.
       const tl = text.length;
       const shift = w.length - tl;
@@ -1620,7 +1792,7 @@ export class TextReplay {
         [0, prefix, 0],
         [tl - suffix, tl, shift],
       ];
-      if (sure !== null) {
+      if (sure.length > 0) {
         // Only what the diff that takes the common end first keeps too (see
         // `sure`): in `w`, and where text that left was deleted whole in
         // this part, also in the text that left as it was, from right after
@@ -1656,10 +1828,13 @@ export class TextReplay {
             }
           }
         }
-        const from = o0 === 0 ? 0 : old(o0 - 1) + 1;
-        const to = o1 === d.length ? sure.text.length : old(o1);
-        const was = sure.text.slice(from, to);
-        if (was !== w) {
+        for (const r of sure) {
+          const from = o0 === 0 ? 0 : old(r, o0 - 1) + 1;
+          const to = o1 === d.length ? r.text.length : old(r, o1);
+          const was = r.text.slice(from, to);
+          if (was === w) {
+            continue;
+          }
           // Character `i` of `text` is character `i + c` of the text that
           // left; in the diff's reading, the run of `w` it is in says.
           const [op, oq] = endFirst(was);
@@ -1669,7 +1844,7 @@ export class TextReplay {
           ];
           for (const [x0, x1, dx] of keep) {
             for (let x = x0; x < x1; ) {
-              const run = runOf(o0 + x + dx);
+              const run = runOf(r, o0 + x + dx);
               const end = Math.min(x1, run[0] + run[2] - o0 - dx);
               const c = o0 + dx + run[1] - run[0];
               for (const [y0, y1, cy] of olds) {

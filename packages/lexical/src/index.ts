@@ -374,6 +374,7 @@ export {
   $flushSyncAfterUpdate,
   $fullReconcile,
   $parseSerializedNode,
+  INTERNAL_getActiveEditorState,
   isCurrentlyReadOnlyMode,
 } from './LexicalUpdates';
 export {

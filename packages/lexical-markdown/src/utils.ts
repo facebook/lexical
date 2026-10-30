@@ -66,6 +66,36 @@ export function transformersByType(transformers: Transformer[]): Readonly<{
 export const PUNCTUATION = /[\p{P}\p{S}]/u;
 export const WHITESPACE = /[\p{Zs}\t\n\f\r]/u;
 
+const enum CharacterClass {
+  Whitespace,
+  Punctuation,
+  Other,
+}
+
+/** How flanking sees `character`; the edge of the line is whitespace. */
+function classify(character: string | undefined): CharacterClass {
+  if (character === undefined) {
+    return CharacterClass.Whitespace;
+  }
+  const code = character.charCodeAt(0);
+  // ASCII, without a regular expression
+  if (code < 0x80) {
+    return code === 0x20 || (code >= 0x09 && code <= 0x0d && code !== 0x0b)
+      ? CharacterClass.Whitespace
+      : (code >= 0x21 && code <= 0x2f) ||
+          (code >= 0x3a && code <= 0x40) ||
+          (code >= 0x5b && code <= 0x60) ||
+          (code >= 0x7b && code <= 0x7e)
+        ? CharacterClass.Punctuation
+        : CharacterClass.Other;
+  }
+  return WHITESPACE.test(character)
+    ? CharacterClass.Whitespace
+    : PUNCTUATION.test(character)
+      ? CharacterClass.Punctuation
+      : CharacterClass.Other;
+}
+
 /**
  * Whether a delimiter run with `primary` on the side it faces (after it for
  * left-flanking, before it for right-flanking) and `secondary` on the other
@@ -76,25 +106,32 @@ export function isFlankedBy(
   primary: string | undefined,
   secondary: string | undefined,
 ): boolean {
-  if (primary === undefined || WHITESPACE.test(primary)) {
-    return false;
-  }
+  const primaryClass = classify(primary);
   return (
-    !PUNCTUATION.test(primary) ||
-    secondary === undefined ||
-    WHITESPACE.test(secondary) ||
-    PUNCTUATION.test(secondary)
+    primaryClass === CharacterClass.Other ||
+    (primaryClass === CharacterClass.Punctuation &&
+      classify(secondary) !== CharacterClass.Other)
   );
 }
 
 export function isPunctuationOrSpace(character: string): boolean {
-  return PUNCTUATION.test(character) || WHITESPACE.test(character);
+  return classify(character) !== CharacterClass.Other;
+}
+
+function isHighSurrogate(code: number): boolean {
+  return code >= 0xd800 && code <= 0xdbff;
+}
+
+function isLowSurrogate(code: number): boolean {
+  return code >= 0xdc00 && code <= 0xdfff;
 }
 
 /** The character (code point) that starts at `index`, if any. */
 export function characterAt(text: string, index: number): string | undefined {
-  const codePoint = text.codePointAt(index);
-  return codePoint === undefined ? undefined : String.fromCodePoint(codePoint);
+  return isHighSurrogate(text.charCodeAt(index)) &&
+    isLowSurrogate(text.charCodeAt(index + 1))
+    ? text.slice(index, index + 2)
+    : text[index];
 }
 
 /** The character (code point) that ends just before `index`, if any. */
@@ -102,9 +139,9 @@ export function characterBefore(
   text: string,
   index: number,
 ): string | undefined {
-  const codePoint = index >= 2 ? text.codePointAt(index - 2) : undefined;
-  return codePoint !== undefined && codePoint > 0xffff
-    ? String.fromCodePoint(codePoint)
+  return isLowSurrogate(text.charCodeAt(index - 1)) &&
+    isHighSurrogate(text.charCodeAt(index - 2))
+    ? text.slice(index - 2, index)
     : text[index - 1];
 }
 

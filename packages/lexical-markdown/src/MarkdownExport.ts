@@ -250,8 +250,8 @@ function $exportChildrenForSelection(
   shouldPreserveNewLines: boolean,
   unclosedTags?: OpenTag[],
   unclosableTags?: OpenTag[],
-): {shouldInclude: boolean; pieces: MarkdownPiece[]} {
-  const output: MarkdownPiece[] = [];
+): {shouldInclude: boolean; pieces: MarkdownPieces} {
+  const output = createPieces();
   const children = node.getChildren();
   let anyChildIncluded = false;
 
@@ -310,7 +310,7 @@ function $exportChildrenForSelection(
           childIncluded = true;
         }
         if (childIncluded) {
-          output.push(rawPiece(result));
+          pushPiece(output, RAW, result);
           anyChildIncluded = true;
         }
         continue mainLoop;
@@ -319,22 +319,20 @@ function $exportChildrenForSelection(
 
     if ($isLineBreakNode(child)) {
       if (childIncluded) {
-        output.push(rawPiece($exportLineBreak(child)));
+        pushPiece(output, RAW, $exportLineBreak(child));
         anyChildIncluded = true;
       }
     } else if ($isTextNode(child)) {
       if (childIncluded) {
-        appendPieces(
+        $exportTextFormat(
+          child,
+          $exportedText(child, selection),
+          textFormatTransformers,
+          unclosedTags,
+          unclosableTags,
+          shouldPreserveNewLines,
+          selection,
           output,
-          $exportTextFormat(
-            child,
-            $exportedText(child, selection),
-            textFormatTransformers,
-            unclosedTags,
-            unclosableTags,
-            shouldPreserveNewLines,
-            selection,
-          ),
         );
         anyChildIncluded = true;
       }
@@ -364,7 +362,7 @@ function $exportChildrenForSelection(
       }
     } else if ($isDecoratorNode(child)) {
       if (childIncluded) {
-        output.push(textPiece(child.getTextContent()));
+        pushPiece(output, TEXT, child.getTextContent());
         anyChildIncluded = true;
       }
     }
@@ -443,8 +441,8 @@ function $exportChildPieces(
   unclosedTags?: OpenTag[],
   unclosableTags?: OpenTag[],
   shouldPreserveNewLines: boolean = false,
-): MarkdownPiece[] {
-  const output: MarkdownPiece[] = [];
+): MarkdownPieces {
+  const output = createPieces();
   const children = node.getChildren();
   // keep track of unclosed tags from the very beginning
   if (!unclosedTags) {
@@ -491,25 +489,23 @@ function $exportChildPieces(
       );
 
       if (result != null) {
-        output.push(rawPiece(result));
+        pushPiece(output, RAW, result);
         continue mainLoop;
       }
     }
 
     if ($isLineBreakNode(child)) {
-      output.push(rawPiece($exportLineBreak(child)));
+      pushPiece(output, RAW, $exportLineBreak(child));
     } else if ($isTextNode(child)) {
-      appendPieces(
+      $exportTextFormat(
+        child,
+        child.getTextContent(),
+        textTransformersIndex,
+        unclosedTags,
+        unclosableTags,
+        shouldPreserveNewLines,
+        null,
         output,
-        $exportTextFormat(
-          child,
-          child.getTextContent(),
-          textTransformersIndex,
-          unclosedTags,
-          unclosableTags,
-          shouldPreserveNewLines,
-          null,
-        ),
       );
     } else if ($isElementNode(child)) {
       // empty paragraph returns ""
@@ -525,7 +521,7 @@ function $exportChildPieces(
         ),
       );
     } else if ($isDecoratorNode(child)) {
-      output.push(textPiece(child.getTextContent()));
+      pushPiece(output, TEXT, child.getTextContent());
     }
   }
 
@@ -546,7 +542,9 @@ function $exportTextFormat(
   shouldPreserveNewLines: boolean,
   // the selection being exported, which ends the text a tag can extend over
   selection: BaseSelection | null,
-): MarkdownPiece[] {
+  // where the exported pieces go
+  pieces: MarkdownPieces = createPieces(),
+): MarkdownPieces {
   // This function handles the case of a string looking like this: "   foo   "
   // Where it would be invalid markdown to generate: "**   foo   **"
   // so the tags go inside the whitespace instead: "   **foo**   ".
@@ -571,10 +569,10 @@ function $exportTextFormat(
   const holdsTag = canHoldTag(textContent);
 
   // the opening tags to be added to the result
-  const openingTags: MarkdownPiece[] = [];
+  let openingTags = '';
   // the closing tags to be added to the result
-  const closingTagsBefore: MarkdownPiece[] = [];
-  const closingTagsAfter: MarkdownPiece[] = [];
+  let closingTagsBefore = '';
+  let closingTagsAfter = '';
 
   const prevNode = getTextSibling(node, true);
 
@@ -602,7 +600,7 @@ function $exportTextFormat(
         !unclosedTags.find(element => element.tag === tag)
       ) {
         unclosedTags.push({answers: new Map(), format, tag});
-        openingTags.push({kind: 'opener', value: tag});
+        openingTags += tag;
       }
     }
   }
@@ -633,9 +631,9 @@ function $exportTextFormat(
         if (!nodeHasFormat) {
           // Handles cases where the tag has not been closed before, e.g. if the previous node
           // was a text match transformer that did not account for closing tags of the next node (e.g. a link)
-          closingTagsBefore.push({kind: 'closer', value: unclosedTag.tag});
+          closingTagsBefore += unclosedTag.tag;
         } else {
-          closingTagsAfter.push({kind: 'closer', value: unclosedTag.tag});
+          closingTagsAfter += unclosedTag.tag;
         }
       }
       // Mutate the original array to remove the closed tag
@@ -651,7 +649,9 @@ function $exportTextFormat(
   } else if (!holdsTag) {
     // If the node is entirely whitespace, we don't apply opening/closing tags
     // around it, but it must still output any closing tags.
-    return [...closingTagsBefore, ...closingTagsAfter, textPiece(output)];
+    pushPiece(pieces, CLOSER, closingTagsBefore + closingTagsAfter);
+    pushPiece(pieces, TEXT, output);
+    return pieces;
   }
 
   // Flanking Compliance: CommonMark flanking rules require formatting tags to be
@@ -664,50 +664,60 @@ function $exportTextFormat(
   const trimmedOutput = trimmedStart.trimEnd();
   const leadingSpace = output.slice(0, output.length - trimmedStart.length);
   const trailingSpace = trimmedStart.slice(trimmedOutput.length);
-  return [
-    ...closingTagsBefore,
-    textPiece(leadingSpace),
-    ...openingTags,
-    // Inline code is a literal span: a character reference would show as is.
-    isCode ? rawPiece(trimmedOutput) : textPiece(trimmedOutput),
-    ...closingTagsAfter,
-    textPiece(trailingSpace),
-  ];
+  pushPiece(pieces, CLOSER, closingTagsBefore);
+  pushPiece(pieces, TEXT, leadingSpace);
+  pushPiece(pieces, OPENER, openingTags);
+  // Inline code is a literal span: a character reference would show as is.
+  pushPiece(pieces, isCode ? RAW : TEXT, trimmedOutput);
+  pushPiece(pieces, CLOSER, closingTagsAfter);
+  pushPiece(pieces, TEXT, trailingSpace);
+  return pieces;
 }
 
 /**
  * Exported inline Markdown, with the format markers kept apart from the text
  * until `joinPieces` can see the characters on both sides of each delimiter
- * run. A character reference can stand in for a character of `text`, which
- * is text and decorator content; `raw` is anything else, such as code spans,
- * line breaks and the output of transformers, whose syntax a reference could
- * break.
+ * run: `values[i]` is a piece of the output and `kinds[i]` what it is. A
+ * character reference can stand in for a character of `TEXT`, which is text
+ * and decorator content; `RAW` is anything else, such as code spans, line
+ * breaks and the output of transformers, whose syntax a reference could
+ * break. `OPENER` and `CLOSER` are format markers.
  */
-interface MarkdownPiece {
-  kind: 'text' | 'raw' | 'opener' | 'closer';
-  value: string;
+interface MarkdownPieces {
+  kinds: number[];
+  values: string[];
 }
 
-function textPiece(value: string): MarkdownPiece {
-  return {kind: 'text', value};
+const TEXT = 0;
+const RAW = 1;
+const OPENER = 2;
+const CLOSER = 3;
+
+function createPieces(): MarkdownPieces {
+  return {kinds: [], values: []};
 }
 
-function rawPiece(value: string): MarkdownPiece {
-  return {kind: 'raw', value};
-}
-
-// A loop rather than `push(...pieces)`, whose argument count is limited.
-function appendPieces(output: MarkdownPiece[], pieces: MarkdownPiece[]) {
-  for (const piece of pieces) {
-    output.push(piece);
+function pushPiece(pieces: MarkdownPieces, kind: number, value: string) {
+  if (value !== '') {
+    pieces.kinds.push(kind);
+    pieces.values.push(value);
   }
 }
 
-function isMarker(piece: MarkdownPiece | undefined): boolean {
-  return (
-    piece !== undefined && (piece.kind === 'opener' || piece.kind === 'closer')
-  );
+function appendPieces(output: MarkdownPieces, pieces: MarkdownPieces) {
+  for (let i = 0; i < pieces.kinds.length; i++) {
+    output.kinds.push(pieces.kinds[i]);
+    output.values.push(pieces.values[i]);
+  }
 }
+
+function isMarker(kind: number | undefined): boolean {
+  return kind === OPENER || kind === CLOSER;
+}
+
+const SPACE = /\s/;
+// A bare URL, `www.` host, email or mention, which a reader may autolink.
+const LINKISH = /:\/\/|www\.|@/i;
 
 // Characters that a reference does not stand in for everywhere: CommonMark
 // readers and HTML decode references to control characters, unpaired
@@ -744,32 +754,28 @@ interface MarkerRun {
  * `a**\***`. The word character beside such a run goes out as a numeric
  * reference instead, whose `&` or `;` is punctuation: `&#97;**\***`.
  */
-function joinPieces(pieces: MarkdownPiece[]): string {
-  // Drop empty pieces and merge adjacent text, so that each run of markers
-  // sits between the pieces whose characters a reader sees beside it.
-  const merged: MarkdownPiece[] = [];
-  for (const piece of pieces) {
-    const last = merged[merged.length - 1];
-    if (piece.value === '') {
-      continue;
-    } else if (last && !isMarker(piece) && last.kind === piece.kind) {
-      merged[merged.length - 1] = {
-        kind: last.kind,
-        value: last.value + piece.value,
-      };
+function joinPieces(pieces: MarkdownPieces): string {
+  if (!pieces.kinds.some(isMarker)) {
+    return pieces.values.join('');
+  }
+  // Merge adjacent text (and adjacent raw output), so that each run of
+  // markers sits between the pieces whose characters a reader sees beside it.
+  const kinds: number[] = [];
+  const values: string[] = [];
+  for (let i = 0; i < pieces.kinds.length; i++) {
+    const kind = pieces.kinds[i];
+    const last = kinds.length - 1;
+    if (last >= 0 && !isMarker(kind) && kinds[last] === kind) {
+      values[last] += pieces.values[i];
     } else {
-      merged.push(piece);
+      kinds.push(kind);
+      values.push(pieces.values[i]);
     }
   }
-  const encodeStart: boolean[] = [];
-  const encodeEnd: boolean[] = [];
-  if (merged.some(isMarker)) {
-    decideReferences(merged, encodeStart, encodeEnd);
-  }
+  const {encodeStart, encodeEnd} = decideReferences(kinds, values);
   let markdown = '';
-  for (let index = 0; index < merged.length; index++) {
-    const {kind} = merged[index];
-    let {value} = merged[index];
+  for (let index = 0; index < kinds.length; index++) {
+    let value = values[index];
     let start = '';
     let end = '';
     if (encodeStart[index]) {
@@ -782,11 +788,11 @@ function joinPieces(pieces: MarkdownPiece[]): string {
       end = toCharacterReference(last);
       value = value.slice(0, -last.length);
     }
-    // A backslash left unescaped (when preserving newlines) would escape the
-    // reference or marker written after it.
+    // A backslash left unescaped (when preserving newlines, or in decorator
+    // text) would escape the reference or marker written after it.
     if (
-      kind === 'text' &&
-      (end !== '' || isMarker(merged[index + 1])) &&
+      kinds[index] === TEXT &&
+      (end !== '' || isMarker(kinds[index + 1])) &&
       isEscaped(value, value.length)
     ) {
       value = value.slice(0, -1) + toCharacterReference('\\');
@@ -801,106 +807,127 @@ function joinPieces(pieces: MarkdownPiece[]): string {
  * reference for the marker run beside it to open or close.
  */
 function decideReferences(
-  merged: MarkdownPiece[],
-  encodeStart: boolean[],
-  encodeEnd: boolean[],
-) {
+  kinds: number[],
+  values: string[],
+): {encodeStart: Uint8Array; encodeEnd: Uint8Array} {
+  const count = kinds.length;
+  const encodeStart = new Uint8Array(count);
+  const encodeEnd = new Uint8Array(count);
   const runs: MarkerRun[] = [];
   // The run that follows and the run that precedes each piece, or -1.
-  const runAfter: number[] = new Array(merged.length).fill(-1);
-  const runBefore: number[] = new Array(merged.length).fill(-1);
-  for (let start = 0; start < merged.length; start++) {
-    if (!isMarker(merged[start])) {
+  const runAfter = new Int32Array(count).fill(-1);
+  const runBefore = new Int32Array(count).fill(-1);
+  for (let start = 0; start < count; start++) {
+    if (!isMarker(kinds[start])) {
       continue;
     }
     let end = start;
-    while (isMarker(merged[end + 1])) {
+    while (isMarker(kinds[end + 1])) {
       end++;
     }
     // Markers of one character form one delimiter run, and only the first
     // and the last delimiter run touch text.
-    const groups: {char: string; closes: boolean; opens: boolean}[] = [];
-    for (let i = start; i <= end; i++) {
-      const {kind, value} = merged[i];
-      let group = groups[groups.length - 1];
-      if (!group || group.char !== value[0]) {
-        group = {char: value[0], closes: false, opens: false};
-        groups.push(group);
+    const firstMarker = values[start][0];
+    let opens = false;
+    let afterFirst: string | undefined;
+    for (let i = start; i <= end && afterFirst === undefined; i++) {
+      const value = values[i];
+      if (value[0] !== firstMarker) {
+        afterFirst = value[0];
+        break;
       }
-      group.opens ||= kind === 'opener';
-      group.closes ||= kind === 'closer';
+      opens ||= kinds[i] === OPENER;
+      for (let c = 1; c < value.length; c++) {
+        if (value[c] !== firstMarker) {
+          afterFirst = value[c];
+          break;
+        }
+      }
     }
-    const last = groups.length - 1;
+    const lastMarker = values[end][values[end].length - 1];
+    let closes = false;
+    let beforeLast: string | undefined;
+    for (let i = end; i >= start && beforeLast === undefined; i--) {
+      const value = values[i];
+      if (value[value.length - 1] !== lastMarker) {
+        beforeLast = value[value.length - 1];
+        break;
+      }
+      closes ||= kinds[i] === CLOSER;
+      for (let c = value.length - 2; c >= 0; c--) {
+        if (value[c] !== lastMarker) {
+          beforeLast = value[c];
+          break;
+        }
+      }
+    }
     if (start > 0) {
       runAfter[start - 1] = runs.length;
     }
-    if (end + 1 < merged.length) {
+    if (end + 1 < count) {
       runBefore[end + 1] = runs.length;
     }
     runs.push({
       after: end + 1,
-      afterFirst: last > 0 ? groups[1].char : undefined,
+      afterFirst,
       before: start - 1,
-      beforeLast: last > 0 ? groups[last - 1].char : undefined,
-      closes: groups[last].closes,
-      opens: groups[0].opens,
+      beforeLast,
+      closes,
+      opens,
     });
     start = end;
   }
-  // Whether the word at the end (or start) of the piece at `index` is a bare
-  // URL, `www.` host, email or mention. A reference inside one would change
-  // what an autolinking reader links to, so the format is lost there instead,
-  // as before.
-  const linkish: boolean[][] = [[], []];
-  const isLinkish = (index: number, atEnd: boolean): boolean => {
-    const known = linkish[atEnd ? 1 : 0];
-    if (known[index] === undefined) {
-      const {value} = merged[index];
-      let start = atEnd ? value.length : 0;
-      let end = start;
-      if (atEnd) {
-        while (start > 0 && /\S/.test(value[start - 1])) {
-          start--;
-        }
-      } else {
-        while (end < value.length && /\S/.test(value[end])) {
-          end++;
-        }
-      }
-      known[index] = /:\/\/|www\.|@/i.test(value.slice(start, end));
-    }
-    return known[index];
-  };
-  // Whether the last (or first) character of the piece at `index` can go out
-  // as a reference.
-  const canReference = (index: number, atEnd: boolean): boolean =>
-    index >= 0 &&
-    index < merged.length &&
-    merged[index].kind === 'text' &&
-    isWordCharacter(atEnd ? endChar(index) : startChar(index)) &&
-    !isLinkish(index, atEnd);
+  const firstChar = (index: number) => characterAt(values[index], 0)!;
+  const lastChar = (index: number) =>
+    characterBefore(values[index], values[index].length)!;
   // A one-character piece written as a reference reads as punctuation at
   // both ends: `&#97;`.
-  const firstChars = merged.map(({value}) => characterAt(value, 0)!);
-  const lastChars = merged.map(
-    ({value}) => characterBefore(value, value.length)!,
-  );
   const isOneCharacter = (index: number) =>
-    firstChars[index].length === merged[index].value.length;
+    firstChar(index).length === values[index].length;
   const isEncoded = (index: number) =>
     (encodeStart[index] || encodeEnd[index]) && isOneCharacter(index);
   const startChar = (index: number) =>
-    index >= merged.length
+    index >= count
       ? undefined
       : encodeStart[index] || isEncoded(index)
         ? '&'
-        : firstChars[index];
+        : firstChar(index);
   const endChar = (index: number) =>
     index < 0
       ? undefined
       : encodeEnd[index] || isEncoded(index)
         ? ';'
-        : lastChars[index];
+        : lastChar(index);
+  // Whether the word at the end (or start) of the piece at `index` is a bare
+  // URL, `www.` host, email or mention. A reference inside one would change
+  // what an autolinking reader links to, so the format is lost there instead,
+  // as before.
+  const isLinkish = (index: number, atEnd: boolean): boolean => {
+    const value = values[index];
+    if (!LINKISH.test(value)) {
+      return false;
+    }
+    let start = atEnd ? value.length : 0;
+    let end = start;
+    if (atEnd) {
+      while (start > 0 && !SPACE.test(value[start - 1])) {
+        start--;
+      }
+    } else {
+      while (end < value.length && !SPACE.test(value[end])) {
+        end++;
+      }
+    }
+    return LINKISH.test(value.slice(start, end));
+  };
+  // Whether the last (or first) character of the piece at `index` can go out
+  // as a reference.
+  const canReference = (index: number, atEnd: boolean): boolean =>
+    index >= 0 &&
+    index < count &&
+    kinds[index] === TEXT &&
+    isWordCharacter(atEnd ? endChar(index) : startChar(index)) &&
+    !isLinkish(index, atEnd);
   // Writing a one-character piece as a reference makes its other edge
   // punctuation too. That can stop the delimiter run touching that edge from
   // flanking unless the piece past it is written as a reference as well, and
@@ -911,14 +938,15 @@ function decideReferences(
   // walked at most twice. Raw output and unreferenceable characters stay
   // what they are, and other references only make edges punctuation, so a
   // remembered answer can only go stale toward writing fewer references.
-  const spreads: (boolean | undefined)[][] = [[], []];
+  // 0 while unknown, then 1 when it spreads and 2 when it is blocked.
+  const spreads = [new Uint8Array(count), new Uint8Array(count)];
   const canSpread = (index: number, leftward: boolean): boolean => {
     const side = leftward ? 0 : 1;
     const visited: number[] = [];
     let result = true;
     for (let piece = index; ; ) {
-      if (spreads[side][piece] !== undefined) {
-        result = spreads[side][piece]!;
+      if (spreads[side][piece] !== 0) {
+        result = spreads[side][piece] === 1;
         break;
       }
       visited.push(piece);
@@ -946,7 +974,7 @@ function decideReferences(
       piece = next;
     }
     for (const piece of visited) {
-      spreads[side][piece] = result;
+      spreads[side][piece] = result ? 1 : 2;
     }
     return result;
   };
@@ -967,29 +995,30 @@ function decideReferences(
     const charAfter = startChar(after);
     if (
       opens &&
-      canReference(before, true) &&
       !isFlankedBy(afterFirst || charAfter, charBefore) &&
       isFlankedBy(afterFirst || charAfter, ';') &&
+      canReference(before, true) &&
       isFree(before, true)
     ) {
-      encodeEnd[before] = true;
+      encodeEnd[before] = 1;
       if (isEncoded(before) && runBefore[before] !== -1) {
         pending.push(runBefore[before]);
       }
     }
     if (
       closes &&
-      canReference(after, false) &&
       !isFlankedBy(beforeLast || charBefore, charAfter) &&
       isFlankedBy(beforeLast || charBefore, '&') &&
+      canReference(after, false) &&
       isFree(after, false)
     ) {
-      encodeStart[after] = true;
+      encodeStart[after] = 1;
       if (isEncoded(after) && runAfter[after] !== -1) {
         pending.push(runAfter[after]);
       }
     }
   }
+  return {encodeEnd, encodeStart};
 }
 
 function getTextSibling(node: TextNode, backward: boolean): TextNode | null {

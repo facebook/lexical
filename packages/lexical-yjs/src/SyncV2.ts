@@ -356,11 +356,21 @@ const $spliceChildren = (node: ElementNode, nextChildren: LexicalNode[]) => {
   if (appendNewChildren && !removeOldChildren) {
     node.append(...nextChildren.slice(nextIndex));
   } else if (removeOldChildren && !appendNewChildren) {
-    node.splice(
-      nextChildren.length,
-      node.getChildrenSize() - nextChildren.length,
-      [],
-    );
+    if (nextChildren.length === 0) {
+      // The Y element holds no children any more: keep the node, empty, as
+      // the document holds it. (With a range selection, splice would also
+      // remove an element that cannot be empty, such as a list, and the Y
+      // element would stay mapped to a removed node.)
+      for (const child of node.getChildren()) {
+        child.remove(true);
+      }
+    } else {
+      node.splice(
+        nextChildren.length,
+        node.getChildrenSize() - nextChildren.length,
+        [],
+      );
+    }
   }
 };
 

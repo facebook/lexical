@@ -230,8 +230,6 @@ export function importTextTransformers(
   // unescaped here: retained non-code results above have already had their
   // escapes read, and code spans must keep their backslashes.
   if (!foundTextFormat && !foundTextMatch) {
-    const textContent = textNode.getTextContent();
-    const unescapedText = unescapeText(textContent);
-    textNode.setTextContent(unescapedText);
+    textNode.setTextContent(unescapeText(text));
   }
 }

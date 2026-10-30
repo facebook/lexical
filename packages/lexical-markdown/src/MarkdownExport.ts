@@ -815,10 +815,14 @@ function joinPieces({kinds, values}: MarkdownPieces): string {
  * is not bare text, so it ends a run.
  */
 function findLinkEdges(kinds: PieceKind[], values: string[]): Uint8Array {
+  // Raw output ends a run, so it is joined as a single space.
   let text = '';
+  const starts = new Uint32Array(values.length + 1);
   for (let i = 0; i < values.length; i++) {
-    text += kinds[i] === RAW ? ' '.repeat(values[i].length) : values[i];
+    starts[i] = text.length;
+    text += kinds[i] === RAW ? ' ' : values[i];
   }
+  starts[values.length] = text.length;
   const inLink = new Uint8Array(text.length);
   const runEnd = (
     start: number,
@@ -855,10 +859,8 @@ function findLinkEdges(kinds: PieceKind[], values: string[]): Uint8Array {
     start = end;
   }
   const edges = new Uint8Array(values.length);
-  for (let i = 0, offset = 0; i < values.length; i++) {
-    const length = values[i].length;
-    edges[i] = inLink[offset] | (inLink[offset + length - 1] << 1);
-    offset += length;
+  for (let i = 0; i < values.length; i++) {
+    edges[i] = inLink[starts[i]] | (inLink[starts[i + 1] - 1] << 1);
   }
   return edges;
 }

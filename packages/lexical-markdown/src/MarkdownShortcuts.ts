@@ -46,7 +46,7 @@ import {
   characterAt,
   characterBefore,
   indexBy,
-  PUNCTUATION_OR_SPACE,
+  isPunctuationOrSpace,
   transformersByType,
 } from './utils';
 
@@ -259,7 +259,7 @@ function $runTextFormatTransformers(
     if (
       matcher.intraword === false &&
       afterCloseTagChar &&
-      !PUNCTUATION_OR_SPACE.test(afterCloseTagChar)
+      !isPunctuationOrSpace(afterCloseTagChar)
     ) {
       continue;
     }
@@ -327,7 +327,7 @@ function $runTextFormatTransformers(
     if (
       matcher.intraword === false &&
       beforeOpenTagChar &&
-      !PUNCTUATION_OR_SPACE.test(beforeOpenTagChar)
+      !isPunctuationOrSpace(beforeOpenTagChar)
     ) {
       continue;
     }

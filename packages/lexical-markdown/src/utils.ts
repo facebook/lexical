@@ -65,7 +65,6 @@ export function transformersByType(transformers: Transformer[]): Readonly<{
 // https://spec.commonmark.org/0.31.2/#unicode-whitespace-character
 export const PUNCTUATION = /[\p{P}\p{S}]/u;
 export const WHITESPACE = /[\p{Zs}\t\n\f\r]/u;
-export const PUNCTUATION_OR_SPACE = /[\p{P}\p{S}\p{Zs}\t\n\f\r]/u;
 
 /**
  * Whether a delimiter run with `primary` on the side it faces (after it for
@@ -86,6 +85,10 @@ export function isFlankedBy(
     WHITESPACE.test(secondary) ||
     PUNCTUATION.test(secondary)
   );
+}
+
+export function isPunctuationOrSpace(character: string): boolean {
+  return PUNCTUATION.test(character) || WHITESPACE.test(character);
 }
 
 /** The character (code point) that starts at `index`, if any. */

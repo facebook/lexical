@@ -240,8 +240,7 @@ function scanDelimiters(
       len++;
     }
 
-    const canOpen = canEmphasis(char, text, i, len, true);
-    const canClose = canEmphasis(char, text, i, len, false);
+    const {canOpen, canClose} = canEmphasis(char, text, i, len);
 
     if (canOpen || canClose) {
       delimiters.push({
@@ -384,37 +383,19 @@ function canEmphasis(
   text: string,
   index: number,
   length: number,
-  isOpen: boolean,
-): boolean {
-  if (!isFlanking(text, index, length, isOpen)) {
-    return false;
-  }
-  if (char === '*') {
-    return true;
-  }
-  if (char === '_') {
-    if (!isFlanking(text, index, length, !isOpen)) {
-      return true;
-    }
-    const adjacentChar = isOpen
-      ? characterBefore(text, index)
-      : characterAt(text, index + length);
-    return adjacentChar !== undefined && PUNCTUATION.test(adjacentChar);
-  }
-  return true;
-}
-
-function isFlanking(
-  text: string,
-  index: number,
-  length: number,
-  isLeft: boolean,
-): boolean {
+): {canOpen: boolean; canClose: boolean} {
   const charBefore = characterBefore(text, index);
   const charAfter = characterAt(text, index + length);
-  return isLeft
-    ? isFlankedBy(charAfter, charBefore)
-    : isFlankedBy(charBefore, charAfter);
+  const isLeft = isFlankedBy(charAfter, charBefore);
+  const isRight = isFlankedBy(charBefore, charAfter);
+  if (char !== '_') {
+    return {canClose: isRight, canOpen: isLeft};
+  }
+  // `_` opens or closes inside a word only beside punctuation.
+  return {
+    canClose: isRight && (!isLeft || PUNCTUATION.test(charAfter || '')),
+    canOpen: isLeft && (!isRight || PUNCTUATION.test(charBefore || '')),
+  };
 }
 
 export function importTextFormatTransformer(

@@ -39,7 +39,7 @@ import {
   isEmptyParagraph,
   isEscaped,
   isFlankedBy,
-  PUNCTUATION_OR_SPACE,
+  isPunctuationOrSpace,
   toCharacterReference,
   transformersByType,
 } from './utils';
@@ -709,14 +709,16 @@ function isMarker(piece: MarkdownPiece | undefined): boolean {
   );
 }
 
-// U+0000 and unpaired surrogates read back from a reference as U+FFFD.
-const UNREFERENCEABLE = /[\0\p{Cs}]/u;
+// Characters that a reference does not stand in for everywhere: CommonMark
+// readers and HTML decode references to control characters, unpaired
+// surrogates and noncharacters as U+FFFD (or remap them).
+const UNREFERENCEABLE = /[\p{Cc}\p{Cs}\p{Noncharacter_Code_Point}]/u;
 
 /** Whether a character reference can stand in for `character` beside a marker. */
 function isWordCharacter(character: string | undefined): boolean {
   return (
     character !== undefined &&
-    !PUNCTUATION_OR_SPACE.test(character) &&
+    !isPunctuationOrSpace(character) &&
     !UNREFERENCEABLE.test(character)
   );
 }

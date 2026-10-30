@@ -679,11 +679,15 @@ person's:
   keeps a text run's): a block's text nodes made again from its JSON with
   one word changed write that word alone, so a letter a collaborator types
   into another word of the line at the same time stays in that word, and a
-  character a collaborator deletes there stays deleted. Such a replacement
-  replaces whole words, as below, and a separator alone between them and
-  the kept text is written with them, unless it was a node of its own (a
-  tab, a line break, a node of spaces); text between two separate changes is
-  written again, and an inline node made there is new where it is put. Prefer
+  character a collaborator deletes there stays deleted. Such a change
+  replaces whole words, as below (also an insertion or deletion inside a
+  word, so that an edit computed before it that replaces the old word takes
+  nothing out of the new one), and a separator alone between them and the
+  kept text is written with them, unless it was a node of its own (a tab, a
+  line break, a node of spaces). A word joined to a changed word through an
+  inline node, with no space between, is written again with it; text
+  between two separate changes is written again, and an inline node made
+  there is new where it is put. Prefer
   these to `setTextContent`, which sets a node's text whole: such a change
   (and a change the browser makes to the DOM text, as an IME composition
   does) keeps the start and end its text shares with the node's old text,

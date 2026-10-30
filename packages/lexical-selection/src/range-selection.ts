@@ -12,6 +12,7 @@ import {
   $extendCaretToRange,
   $findMatchingParent,
   $getPreviousSelection,
+  $getSelection,
   $getSlotFrame,
   $getSlotHost,
   $hasAncestor,
@@ -148,10 +149,12 @@ export function $setBlocksType<T extends ElementNode>(
   let skipFocus = false;
   let focusBlock: ElementNode | DecoratorNode<unknown> | null = null;
   const blockMap = new Map<NodeKey, ElementNode>();
-  let anchorBlock: ElementNode | DecoratorNode<unknown> | null = null;
   if (anchorAndFocus) {
     const [anchor, focus] = anchorAndFocus;
-    anchorBlock = $findMatchingParent(anchor.getNode(), INTERNAL_$isBlock);
+    const anchorBlock = $findMatchingParent(
+      anchor.getNode(),
+      INTERNAL_$isBlock,
+    );
     focusBlock = $findMatchingParent(focus.getNode(), INTERNAL_$isBlock);
     // The focus is the moving edge of the selection, travelling in `direction`
     // (towards the end of the document for a forward selection). When a
@@ -192,20 +195,27 @@ export function $setBlocksType<T extends ElementNode>(
     }
     if ($isBlockContainer(prevNode)) {
       // An empty declared container (roots and shadow roots are never in
-      // the map) is not a block to convert: with the selection in it, the
-      // new block goes in it, as with $insertList and $wrapNodes. The
-      // container stays, so its indent and format are not copied, and the
-      // selection points in it move into the new block (a range keeps its
-      // other end).
-      if (prevNode.is(anchorBlock) && prevNode.isEmpty()) {
-        const element = $createElement();
-        prevNode.append(element);
-        if ($isRangeSelection(selection)) {
-          for (const point of [selection.anchor, selection.focus]) {
+      // the map) is not a block to convert: with a selection point in it
+      // (either end, in either direction), the new block goes in it, as
+      // with $insertList and $wrapNodes. The container stays, so its indent
+      // and format are not copied, and the points in it move into the new
+      // block (a range keeps its other end). A replacement above may have
+      // made a new active selection, so its points count too.
+      const points: Point[] = [];
+      for (const s of new Set([selection, $getSelection()])) {
+        if ($isRangeSelection(s)) {
+          for (const point of [s.anchor, s.focus]) {
             if (point.key === prevNode.getKey()) {
-              point.set(element.getKey(), 0, 'element');
+              points.push(point);
             }
           }
+        }
+      }
+      if (points.length > 0 && prevNode.isEmpty()) {
+        const element = $createElement();
+        prevNode.append(element);
+        for (const point of points) {
+          point.set(element.getKey(), 0, 'element');
         }
       }
       continue;

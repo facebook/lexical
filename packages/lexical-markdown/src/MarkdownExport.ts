@@ -37,10 +37,13 @@ import {
   characterAt,
   characterBefore,
   isEmptyParagraph,
+  isEscaped,
+  NOT_WHITESPACE,
   PUNCTUATION,
   PUNCTUATION_OR_SPACE,
   toCharacterReference,
   transformersByType,
+  WHITESPACE,
 } from './utils';
 
 /**
@@ -656,11 +659,16 @@ function $exportTextFormat(
   // Flanking Compliance: CommonMark flanking rules require formatting tags to be
   // adjacent to non-whitespace characters, so openingTags and closingTagsAfter
   // are placed INSIDE the whitespace boundaries!
-  // (Trimming rather than a regex keeps this linear in long whitespace runs.)
-  const trimmedStart = output.trimStart();
-  const trimmedOutput = trimmedStart.trimEnd();
-  const leadingSpace = output.slice(0, output.length - trimmedStart.length);
-  const trailingSpace = trimmedStart.slice(trimmedOutput.length);
+  // (Scanning rather than a trailing regex keeps this linear in long
+  // whitespace runs.)
+  const contentStart = output.search(NOT_WHITESPACE);
+  let contentEnd = output.length;
+  while (WHITESPACE.test(output[contentEnd - 1])) {
+    contentEnd--;
+  }
+  const leadingSpace = output.slice(0, contentStart);
+  const trimmedOutput = output.slice(contentStart, contentEnd);
+  const trailingSpace = output.slice(contentEnd);
   return [
     ...closingTagsBefore,
     textPiece(leadingSpace),
@@ -705,15 +713,16 @@ function isMarker(piece: MarkdownPiece | undefined): boolean {
   );
 }
 
-// U+0000 and unpaired surrogates read back from a reference as U+FFFD.
-const UNREFERENCEABLE = /[\0\p{Cs}]/u;
+// An unpaired surrogate reads back from a reference as U+FFFD. (U+0000 does
+// too, but CommonMark reads a raw one as U+FFFD as well.)
+const UNPAIRED_SURROGATE = /\p{Cs}/u;
 
 /** Whether a character reference can stand in for `character` beside a marker. */
 function isWordCharacter(character: string | undefined): boolean {
   return (
     character !== undefined &&
     !PUNCTUATION_OR_SPACE.test(character) &&
-    !UNREFERENCEABLE.test(character)
+    !UNPAIRED_SURROGATE.test(character)
   );
 }
 
@@ -756,9 +765,9 @@ function joinPieces(pieces: MarkdownPiece[]): string {
     }
   }
   const runs: MarkerRun[] = [];
-  // The run that follows and the run that precedes each piece.
-  const runAfter: number[] = [];
-  const runBefore: number[] = [];
+  // The run that follows and the run that precedes each piece, or -1.
+  const runAfter: number[] = new Array(merged.length).fill(-1);
+  const runBefore: number[] = new Array(merged.length).fill(-1);
   for (let start = 0; start < merged.length; start++) {
     if (!isMarker(merged[start])) {
       continue;
@@ -782,7 +791,12 @@ function joinPieces(pieces: MarkdownPiece[]): string {
       group.closes ||= kind === 'closer';
     }
     const last = groups.length - 1;
-    runAfter[start - 1] = runBefore[end + 1] = runs.length;
+    if (start > 0) {
+      runAfter[start - 1] = runs.length;
+    }
+    if (end + 1 < merged.length) {
+      runBefore[end + 1] = runs.length;
+    }
     runs.push({
       after: end + 1,
       afterFirst: last > 0 ? groups[1].value[0] : undefined,
@@ -793,15 +807,17 @@ function joinPieces(pieces: MarkdownPiece[]): string {
     });
     start = end;
   }
-  const encodeStart: boolean[] = [];
-  const encodeEnd: boolean[] = [];
+  const encodeStart: boolean[] = new Array(merged.length).fill(false);
+  const encodeEnd: boolean[] = new Array(merged.length).fill(false);
+  const isOneCharacter = merged.map(
+    ({value}) => characterAt(value, 0)!.length === value.length,
+  );
   const isText = (index: number) =>
     index >= 0 && index < merged.length && merged[index].kind === 'text';
   // A one-character piece written as a reference reads as punctuation at
   // both ends: `&#97;`.
   const isEncoded = (index: number) =>
-    (encodeStart[index] || encodeEnd[index]) &&
-    characterAt(merged[index].value, 0)!.length === merged[index].value.length;
+    (encodeStart[index] || encodeEnd[index]) && isOneCharacter[index];
   const startChar = (index: number) =>
     index >= merged.length
       ? undefined
@@ -828,7 +844,7 @@ function joinPieces(pieces: MarkdownPiece[]): string {
       PUNCTUATION.test(afterFirst || startChar(after) || '')
     ) {
       encodeEnd[before] = true;
-      if (isEncoded(before) && runBefore[before] !== undefined) {
+      if (isEncoded(before) && runBefore[before] !== -1) {
         pending.push(runBefore[before]);
       }
     }
@@ -839,7 +855,7 @@ function joinPieces(pieces: MarkdownPiece[]): string {
       PUNCTUATION.test(beforeLast || endChar(before) || '')
     ) {
       encodeStart[after] = true;
-      if (isEncoded(after) && runAfter[after] !== undefined) {
+      if (isEncoded(after) && runAfter[after] !== -1) {
         pending.push(runAfter[after]);
       }
     }
@@ -857,8 +873,7 @@ function joinPieces(pieces: MarkdownPiece[]): string {
       value = value.slice(0, -last.length);
       // A backslash left unescaped (when preserving newlines) would escape
       // the reference's `&`, so it goes out as a reference too.
-      const backslashes = value.length - value.replace(/\\+$/, '').length;
-      if (backslashes % 2 === 1) {
+      if (isEscaped(value, value.length)) {
         value = value.slice(0, -1) + toCharacterReference('\\');
       }
       value += toCharacterReference(last);
@@ -948,5 +963,5 @@ function hasFormat(
  * keep tags off whitespace.
  */
 function canHoldTag(text: string): boolean {
-  return /\S/.test(text);
+  return NOT_WHITESPACE.test(text);
 }

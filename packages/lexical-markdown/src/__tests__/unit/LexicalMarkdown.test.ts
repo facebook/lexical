@@ -4903,6 +4903,8 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       ],
       '&#120;**&#97;*“b”***',
     ],
+    // Tags go inside CommonMark whitespace only, so U+FEFF keeps its bold.
+    [[['\uFEFFx', ['bold']]], '**\uFEFFx**'],
     // A word character beside a word character needs no reference.
     [
       [

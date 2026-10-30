@@ -65,6 +65,7 @@ export function transformersByType(transformers: Transformer[]): Readonly<{
 // https://spec.commonmark.org/0.31.2/#unicode-whitespace-character
 export const PUNCTUATION_OR_SPACE = /[\p{P}\p{S}\p{Zs}\t\n\f\r]/u;
 export const WHITESPACE = /[\p{Zs}\t\n\f\r]/u;
+export const NOT_WHITESPACE = /[^\p{Zs}\t\n\f\r]/u;
 export const PUNCTUATION = /[\p{P}\p{S}]/u;
 
 /** The character (code point) that starts at `index`, if any. */

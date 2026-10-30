@@ -385,6 +385,26 @@ export class Reader {
   // -------------------------------------------------------------------------
   // Entry points
 
+  /**
+   * Run `read`, one logical read made of several entry points (the
+   * containers a re-read reads in full, one after the other): what each
+   * takes out is checked once, at the end (see $checkTakenOut), as a node
+   * one container sets aside can be placed again by the read of another.
+   */
+  $reading(read: () => void): void {
+    this.depth++;
+    try {
+      read();
+      if (this.depth === 1) {
+        this.$checkTakenOut();
+      }
+    } finally {
+      if (--this.depth === 0) {
+        this.settler.$settleIds();
+      }
+    }
+  }
+
   /** Read a whole container into its Lexical node. */
   $readFull(cs: CS, el: ElementNode): void {
     this.depth++;

@@ -1868,12 +1868,14 @@ export class YBinding {
       $read: () => {
         const cursor = this.$cursorBeforeRead();
         const reader = new Reader(this.state);
-        for (const cs of list) {
-          const el = cs.y === this._root ? $getRoot() : $getNodeByKey(cs.key);
-          if ($isElementNode(el) && el.isAttached()) {
-            reader.$readFull(cs, el);
+        reader.$reading(() => {
+          for (const cs of list) {
+            const el = cs.y === this._root ? $getRoot() : $getNodeByKey(cs.key);
+            if ($isElementNode(el) && el.isAttached()) {
+              reader.$readFull(cs, el);
+            }
           }
-        }
+        });
         this.$selectionAfterRead(cursor);
         this.$quietSelection();
       },
@@ -2264,22 +2266,25 @@ export class YBinding {
     if (cs === undefined) {
       cs = this.state.newCS(this._root, 'root', 'b');
     }
-    reader.$readFull(cs, $getRoot());
-    if (deep) {
-      // The containers of the stored nodes the read kept (see
-      // initializeInner).
-      for (const inner of [...this.state.csByKey.values()]) {
-        const el = $getNodeByKey(inner.key);
-        if (
-          inner !== cs &&
-          this.state.csByKey.get(inner.key) === inner &&
-          $isElementNode(el) &&
-          el.isAttached()
-        ) {
-          reader.$readFull(inner, el);
+    const rootCS = cs;
+    reader.$reading(() => {
+      reader.$readFull(rootCS, $getRoot());
+      if (deep) {
+        // The containers of the stored nodes the read kept (see
+        // initializeInner).
+        for (const inner of [...this.state.csByKey.values()]) {
+          const el = $getNodeByKey(inner.key);
+          if (
+            inner !== rootCS &&
+            this.state.csByKey.get(inner.key) === inner &&
+            $isElementNode(el) &&
+            el.isAttached()
+          ) {
+            reader.$readFull(inner, el);
+          }
         }
       }
-    }
+    });
     $setSelection(null);
     if (cursor !== null) {
       this.$restoreSelection(cursor);
@@ -2559,25 +2564,29 @@ export class YBinding {
     // A container that still shows a follow-up's change the binding did not
     // write is read in full first: the reader changes only what the
     // transaction touched, on an editor it takes to show the document.
-    for (const cs of this.refused) {
-      const el = cs.y === this._root ? $getRoot() : $getNodeByKey(cs.key);
-      if (
-        state.containers.get(cs.y) === cs &&
-        $isElementNode(el) &&
-        el.isAttached()
-      ) {
-        reader.$readFull(cs, el);
-      }
-    }
+    // One logical read with the change itself (see Reader#$reading).
+    const refused = [...this.refused];
     this.refused.clear();
     this.refusedNaming = false;
     for (const id of this.toSettle) {
       state.ids.touchedIds.add(id);
     }
     this.toSettle.clear();
-    // What this change does to the line being composed is held back where
-    // Yjs keeps it (see Hidden); it shows when the hold ends.
-    reader.$apply(childItems, attrKeys);
+    reader.$reading(() => {
+      for (const cs of refused) {
+        const el = cs.y === this._root ? $getRoot() : $getNodeByKey(cs.key);
+        if (
+          state.containers.get(cs.y) === cs &&
+          $isElementNode(el) &&
+          el.isAttached()
+        ) {
+          reader.$readFull(cs, el);
+        }
+      }
+      // What this change does to the line being composed is held back where
+      // Yjs keeps it (see Hidden); it shows when the hold ends.
+      reader.$apply(childItems, attrKeys);
+    });
     if (state.hidden !== null && !this.$holds(state.hidden)) {
       // This change ended the hold (it removed the line being composed).
       this.$release(state, reader);
@@ -4683,12 +4692,14 @@ export class YBinding {
     }
     const cursor = this.$cursorBeforeRead();
     const reader = new Reader(this.state);
-    for (const cs of list) {
-      const el = cs.y === this._root ? $getRoot() : $getNodeByKey(cs.key);
-      if ($isElementNode(el) && el.isAttached()) {
-        reader.$readFull(cs, el);
+    reader.$reading(() => {
+      for (const cs of list) {
+        const el = cs.y === this._root ? $getRoot() : $getNodeByKey(cs.key);
+        if ($isElementNode(el) && el.isAttached()) {
+          reader.$readFull(cs, el);
+        }
       }
-    }
+    });
     reader.$settle(settle);
     this.$selectionAfterRead(cursor);
     this.$quietSelection();

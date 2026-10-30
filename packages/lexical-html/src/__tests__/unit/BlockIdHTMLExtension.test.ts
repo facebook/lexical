@@ -22,6 +22,7 @@ import {
 import {
   $generateDOMFromNodes,
   $generateHtmlFromNodes,
+  $getSessionDOMRenderConfig,
   DOMImportExtension,
 } from '@lexical/html';
 import {
@@ -335,6 +336,33 @@ describe('BlockIdHTMLExtension', () => {
       editor.read(() => $getBlockId($getRoot().getFirstChildOrThrow())),
     );
     iframe.remove();
+  });
+
+  test('export: false leaves the export override out of every export session', () => {
+    using editor = build({html: {export: false}});
+    append(editor, parseFixture('<p>a</p>'));
+    const {export: exportSignal} = getExtensionDependencyFromEditor(
+      editor,
+      BlockIdHTMLExtension,
+    ).output;
+    // Whether an export session runs with the editor's own render config
+    // (every override, this extension's included) or one compiled without
+    // an override that its disabledForSession turned off.
+    const sessionHasAllOverrides = () =>
+      editor.read(
+        () => $getSessionDOMRenderConfig(editor) === editor._config.dom,
+      );
+    expect(sessionHasAllOverrides()).toBe(false);
+    expect(exportHTML(editor)).not.toContain('data-block');
+    exportSignal.value = 'handle';
+    expect(sessionHasAllOverrides()).toBe(true);
+    expect(exportHTML(editor)).toContain('data-block-handle');
+    exportSignal.value = true;
+    expect(sessionHasAllOverrides()).toBe(true);
+    expect(exportHTML(editor)).toContain('data-block-id');
+    exportSignal.value = false;
+    expect(sessionHasAllOverrides()).toBe(false);
+    expect(exportHTML(editor)).not.toContain('data-block');
   });
 
   test('import: false ignores the attribute; export: false omits it', () => {

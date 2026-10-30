@@ -172,31 +172,40 @@ export const BlockIdHTMLExtension = defineExtension({
     BlockIdExtension,
     configExtension(DOMRenderExtension, {
       overrides: [
-        domOverride('*', {
-          $exportDOM(node, $next) {
-            const output = $next();
-            const mode =
-              $getExtensionOutput(BlockIdHTMLExtension).export.peek();
-            if (
-              isHTMLElement(output.element) &&
-              mode &&
-              $getExtensionOutput(BlockIdExtension).$isIdentifiedBlock(node)
-            ) {
-              if (mode === 'handle') {
-                const handle = $getBlockHandle(node);
-                if (handle !== null) {
-                  output.element.setAttribute(BLOCK_HANDLE_ATTRIBUTE, handle);
-                }
-              } else {
-                const id = $getBlockId(node);
-                if (id !== null) {
-                  output.element.setAttribute(BLOCK_ID_ATTRIBUTE, id);
+        domOverride(
+          '*',
+          {
+            $exportDOM(node, $next) {
+              const output = $next();
+              const mode =
+                $getExtensionOutput(BlockIdHTMLExtension).export.peek();
+              if (
+                isHTMLElement(output.element) &&
+                mode &&
+                $getExtensionOutput(BlockIdExtension).$isIdentifiedBlock(node)
+              ) {
+                if (mode === 'handle') {
+                  const handle = $getBlockHandle(node);
+                  if (handle !== null) {
+                    output.element.setAttribute(BLOCK_HANDLE_ATTRIBUTE, handle);
+                  }
+                } else {
+                  const id = $getBlockId(node);
+                  if (id !== null) {
+                    output.element.setAttribute(BLOCK_ID_ATTRIBUTE, id);
+                  }
                 }
               }
-            }
-            return output;
+              return output;
+            },
           },
-        }),
+          {
+            // Left out of export sessions while `export` is off, so that
+            // nothing runs for each exported element.
+            disabledForSession: (): boolean =>
+              !$getExtensionOutput(BlockIdHTMLExtension).export.peek(),
+          },
+        ),
       ],
     }),
     configExtension(DOMImportExtension, {

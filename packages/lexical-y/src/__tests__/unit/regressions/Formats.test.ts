@@ -296,8 +296,8 @@ describe('U23A-2: two concurrent deletes next to a character nobody touched', ()
 // redundant, so the typist's restore of the format after its text had no
 // end and ran on over the rest of the line and, in the flat layout, over
 // the following lines. The remover now keeps the closer (see
-// Cursor#format): what follows the range keeps its formats. Still open (in
-// Known limits): the part of the range after the typist's text gets the
+// Cursor#format): what follows the range keeps its formats. Still open (y.md,
+// Limits, Other races): the part of the range after the typist's text gets the
 // format back, from that restore, which the remover's write never saw.
 describe('U23A-1: a format removed while a peer types inside it', () => {
   const cases = [

@@ -1497,7 +1497,10 @@ export class TextReplay {
           ),
           cursor,
           undefined,
-          {at: sureAt, text: was},
+          [
+            {at, text: d},
+            {at: sureAt, text: was},
+          ],
         );
         const kept: Block[] = [];
         let r = 0;
@@ -1561,11 +1564,12 @@ export class TextReplay {
    * them (of `d`), as one text, by the diff (see stretch): anchored at the
    * caret (`cursor`, in `s`) where it is in that text. With `sure`, only what
    * the diff that takes the common end first keeps too: where the text could
-   * be either of two equal runs, neither. That diff reads `d`, and also the
-   * text that left as it was (`sure.text`, of which `d` holds the runs
-   * `sure.at` says, see stretch), with the text deleted whole and the text
-   * that arrived and left again in this commit still in place; what either
-   * reading keeps as the diff does is kept. Why: read
+   * be either of two equal runs, neither. That diff reads `d`, and also each
+   * reading of the text that left as it was in `sure` (its `text`, of which
+   * `d` holds the runs its `at` says, see stretch): with the text deleted
+   * whole still in place, and with the text that arrived and left again in
+   * this commit in place too; what any reading keeps as the diff does is
+   * kept. Why: read
    * without that text, the characters on its two sides are next to each
    * other, which makes the diff's alignment one of two where the line had
    * one (a line made again as one node with one word changed, where that
@@ -1580,14 +1584,18 @@ export class TextReplay {
     blocks: readonly Block[],
     cursor: number,
     keeps: (x: Span) => boolean = () => true,
-    sure: {
+    sure: readonly {
       readonly at: readonly (readonly [number, number, number])[];
       readonly text: string;
-    } | null = null,
+    }[] = [],
   ): Block[] {
+    type Reading = (typeof sure)[number];
     // The run of `d` (see `sure`) that character `at` of it is in.
-    const runOf = (at: number): readonly [number, number, number] => {
-      const runs = sure!.at;
+    const runOf = (
+      r: Reading,
+      at: number,
+    ): readonly [number, number, number] => {
+      const runs = r.at;
       let lo = 0;
       let hi = runs.length - 1;
       while (lo < hi) {
@@ -1600,9 +1608,9 @@ export class TextReplay {
       }
       return runs[lo];
     };
-    // Where character `at` of `d` was in the text that left.
-    const old = (at: number): number => {
-      const run = runOf(at);
+    // Where character `at` of `d` was in the text that left, in reading `r`.
+    const old = (r: Reading, at: number): number => {
+      const run = runOf(r, at);
       return run[1] + at - run[0];
     };
     const out: Block[] = [];
@@ -1654,7 +1662,7 @@ export class TextReplay {
         [0, prefix, 0],
         [tl - suffix, tl, shift],
       ];
-      if (sure !== null) {
+      if (sure.length > 0) {
         // Only what the diff that takes the common end first keeps too (see
         // `sure`): in `w`, and where text that left was deleted whole in
         // this part, also in the text that left as it was, from right after
@@ -1690,10 +1698,13 @@ export class TextReplay {
             }
           }
         }
-        const from = o0 === 0 ? 0 : old(o0 - 1) + 1;
-        const to = o1 === d.length ? sure.text.length : old(o1);
-        const was = sure.text.slice(from, to);
-        if (was !== w) {
+        for (const r of sure) {
+          const from = o0 === 0 ? 0 : old(r, o0 - 1) + 1;
+          const to = o1 === d.length ? r.text.length : old(r, o1);
+          const was = r.text.slice(from, to);
+          if (was === w) {
+            continue;
+          }
           // Character `i` of `text` is character `i + c` of the text that
           // left; in the diff's reading, the run of `w` it is in says.
           const [op, oq] = endFirst(was);
@@ -1703,7 +1714,7 @@ export class TextReplay {
           ];
           for (const [x0, x1, dx] of keep) {
             for (let x = x0; x < x1; ) {
-              const run = runOf(o0 + x + dx);
+              const run = runOf(r, o0 + x + dx);
               const end = Math.min(x1, run[0] + run[2] - o0 - dx);
               const c = o0 + dx + run[1] - run[0];
               for (const [y0, y1, cy] of olds) {

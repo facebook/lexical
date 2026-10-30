@@ -169,12 +169,19 @@ export function importTextTransformers(
     const tagLength = foundTextFormat.match[1].length;
     importAround(result.nodeBefore, result.nodeAfter, startIndex, endIndex);
     if (canContainTransformableMarkdown(result.transformedNode)) {
+      // A code span's fence is not its tag's length, and its content is not
+      // read for emphasis against what lies outside it.
+      const {isCodeSpan} = foundTextFormat;
       importTextTransformers(
         result.transformedNode,
         textFormatTransformersIndex,
         textMatchTransformers,
-        characterBeyondRun(text, startIndex + tagLength, -1, before),
-        characterBeyondRun(text, endIndex - tagLength, 1, after),
+        isCodeSpan
+          ? undefined
+          : characterBeyondRun(text, startIndex + tagLength, -1, before),
+        isCodeSpan
+          ? undefined
+          : characterBeyondRun(text, endIndex - tagLength, 1, after),
       );
     }
   } else if (foundTextMatch) {

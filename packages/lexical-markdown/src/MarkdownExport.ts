@@ -1089,12 +1089,7 @@ function decideReferences(
       }
     }
   }
-  const pending: number[] = [];
-  runs.forEach((run, index) => {
-    if (opensWithReference(run) || closesWithReference(run)) {
-      pending.push(index);
-    }
-  });
+  const pending = runs.map((_run, index) => index);
   // Writing a one-character piece as a reference changes what the run on its
   // other side sees, so that run is decided again. Each piece changes at most
   // twice, so this stays linear.

@@ -673,8 +673,16 @@ person's:
   their characters (the hashtag plugin, a keyword highlighter or another
   transform making a part of a node again, an entity grown over the word
   after it, two entities made plain text at once), also when the update
-  then edits them; text made where the line's text changed (a node with
-  other text, a line break, an inline node) is new where it is put. Prefer
+  then edits them. Where the line's text changed, the text of nodes made in
+  place of removed ones keeps the start and end it shares with the line's
+  text as it was, by character, whatever nodes held it (as y-prosemirror
+  keeps a text run's): a block's text nodes made again from its JSON with
+  one word changed write that word alone, so a letter a collaborator types
+  into another word of the line at the same time stays in that word, and a
+  character a collaborator deletes there stays deleted. Such a replacement
+  replaces whole words, as below, and a separator alone between them and
+  the kept text is written with them; text between two separate changes is
+  written again, and an inline node made there is new where it is put. Prefer
   these to `setTextContent`, which sets a node's text whole: such a change
   (and a change the browser makes to the DOM text, as an IME composition
   does) keeps the start and end its text shares with the node's old text,

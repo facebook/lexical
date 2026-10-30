@@ -634,5 +634,69 @@ export function snapToWords(
   return {prefix, suffix};
 }
 
+const NOT_SPACE = /\S/;
+const isSpaceAt = (s: string, i: number): boolean =>
+  i >= 0 && i < s.length && SPACE.test(s[i]);
+
+/**
+ * The common start and end that text made in place of removed text (`b`,
+ * see TextReplay#stretch) keeps of that text (`a`), as the characters they
+ * were: the diff anchored at the caret (diffStrings). An insertion or a
+ * deletion keeps every other character; where it could be at several
+ * places (`t9z ` inserted in `t1z t2z`, at `t1z t|9z t2z` or at
+ * `t1z |t9z t2z`) and the caret does not place it, it goes at the last of
+ * them that is at a word boundary of `a`, so that no word of `a` is cut. A
+ * replacement keeps whole words (snapToWords), and a kept start or end that
+ * is only white space is written with it: a separator alone carries no
+ * word, and the old one is the one a concurrent rewrite of the words around
+ * it deletes (a node `Note: ` replaced by `Tip: ` while a collaborator
+ * rewrites the line kept `Tip:` and lost the space).
+ */
+export function keptEnds(
+  a: string,
+  b: string,
+  cursor: number,
+  composing: boolean,
+): {prefix: number; suffix: number} {
+  const diff = diffStrings(a, b, cursor);
+  const n = Math.min(a.length, b.length);
+  if (diff.prefix + diff.suffix === n) {
+    // An insertion or a deletion: where the caret placed it, else at a word
+    // boundary between the furthest the common start and the common end
+    // reach (diffStrings takes the common start first: `diff.prefix`).
+    let longest = diff.prefix;
+    while (longest < n && a.charCodeAt(longest) === b.charCodeAt(longest)) {
+      longest++;
+    }
+    if (longest > diff.prefix) {
+      return diff;
+    }
+    let end = 0;
+    while (
+      end < n &&
+      a.charCodeAt(a.length - 1 - end) === b.charCodeAt(b.length - 1 - end)
+    ) {
+      end++;
+    }
+    for (let k = diff.prefix; k >= n - end; k--) {
+      if (k === 0 || k === a.length || isSpaceAt(a, k - 1) || isSpaceAt(a, k)) {
+        return {prefix: k, suffix: n - k};
+      }
+    }
+    return diff;
+  }
+  const {prefix, suffix} = snapToWords(
+    a,
+    b,
+    diff.prefix,
+    diff.suffix,
+    composing,
+  );
+  return {
+    prefix: NOT_SPACE.test(a.slice(0, prefix)) ? prefix : 0,
+    suffix: NOT_SPACE.test(a.slice(a.length - suffix)) ? suffix : 0,
+  };
+}
+
 const isHighSurrogate = (c: number): boolean => c >= 0xd800 && c <= 0xdbff;
 const isLowSurrogate = (c: number): boolean => c >= 0xdc00 && c <= 0xdfff;

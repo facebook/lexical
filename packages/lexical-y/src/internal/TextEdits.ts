@@ -19,7 +19,15 @@ import {
   type NodeMap,
 } from 'lexical';
 
-import {diffStrings, snapToWords} from './Inline';
+import {
+  diffStrings,
+  diffWords,
+  graphemeStarts,
+  readsGraphemes,
+  snapToWords,
+  wordCut,
+  wordsAround,
+} from './Inline';
 import {$isWrapper} from './Schema';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
@@ -148,7 +156,16 @@ type Item = {
  * Text that left a stretch: at old position `at` (see resolve), `from` the
  * place of the removed node that held it (null: a text set replaced it).
  */
-type Left = {readonly run: Run; readonly from: Entry | null; at: number};
+type Left = {
+  readonly run: Run;
+  readonly from: Entry | null;
+  at: number;
+  /**
+   * The old line it was in and where in that line's old text (see
+   * oldText), or null where not known.
+   */
+  readonly old: readonly [NodeKey, number] | null;
+};
 
 /**
  * A stretch of a line between two pins (see resolve): its runs in the new
@@ -156,6 +173,18 @@ type Left = {readonly run: Run; readonly from: Entry | null; at: number};
  * left it, in order.
  */
 type Stretch = {live: Item[]; left: Left[]; unknown?: true};
+
+/**
+ * A line's text, with where its graphemes start (see graphemeStarts): read
+ * at many places, so segmented once.
+ */
+type LineText = {text: string; starts: Uint8Array | null};
+
+/**
+ * A line's text after the commit (see keepWords), leaving out what is
+ * deleted, and where each item of it starts in it (`at`).
+ */
+type LineView = LineText & {at: Map<Item, number>};
 
 /**
  * Characters `a` to `a + n` of the text that arrived in a stretch (in line
@@ -300,6 +329,51 @@ function linkBefore(list: List, e: Entry, at: Entry | null): void {
 }
 
 /**
+ * The text of runs `left` (in order) but those `skip` marks, and where each
+ * of its runs starts there and in the text of all of them, with its length.
+ */
+function textLeft(
+  left: readonly Left[],
+  skip: Uint8Array,
+): [string, [number, number, number][]] {
+  let w = '';
+  const at: [number, number, number][] = [];
+  for (let k = 0, pos = 0; k < left.length; k++) {
+    const n = length(left[k].run);
+    if (skip[k] === 0) {
+      at.push([w.length, pos, n]);
+      w += textOf(left[k].run);
+    }
+    pos += n;
+  }
+  return [w, at];
+}
+
+/**
+ * Blocks `blocks` of a text of runs (see textLeft: `at` are its runs) as
+ * blocks of the text of all runs, cut where a run ends.
+ */
+function inAll(
+  blocks: readonly Block[],
+  at: readonly (readonly [number, number, number])[],
+): Block[] {
+  const out: Block[] = [];
+  let r = 0;
+  for (const b of blocks) {
+    while (r < at.length && at[r][0] + at[r][2] <= b.o) {
+      r++;
+    }
+    for (let k = r; k < at.length && at[k][0] < b.o + b.n; k++) {
+      const [o0, p0, n] = at[k];
+      const lo = Math.max(b.o, o0);
+      const hi = Math.min(b.o + b.n, o0 + n);
+      out.push({a: b.a + lo - b.o, n: hi - lo, o: p0 + lo - o0});
+    }
+  }
+  return out;
+}
+
+/**
  * The identities of the characters of a commit's lines (see the header),
  * replayed from its record over the previous state, inside a read of the new
  * state; each line resolved on first use.
@@ -325,6 +399,9 @@ export class TextReplay {
   >();
   /** Old characters in a node of the new state, sorted (see notLive). */
   private live: Map<string, [number, number][]> | null = null;
+  /** The old text and layout of each line read so far (see oldText). */
+  private oldTexts = new Map<NodeKey, LineText>();
+  private oldLayouts = new Map<NodeKey, Map<string, number>>();
   /** An entry this binding does not know: nothing is known. */
   private broken = false;
   private ids = 0;
@@ -345,9 +422,9 @@ export class TextReplay {
     if (log !== null) {
       // Where a text set reaches text whose history a move split or joined,
       // or a removed node still holds such text at the end (its text is
-      // aligned whole or not at all, see stretch), the replay starts over
-      // with that move as the text sets it stands for (see the move entry):
-      // at most once per move.
+      // aligned with a set's whole or not at all, see stretch), the replay
+      // starts over with that move as the text sets it stands for (see the
+      // move entry): at most once per move.
       for (;;) {
         for (let i = 0; i < log.length && this.restart === null; i++) {
           this.at = i;
@@ -517,12 +594,12 @@ export class TextReplay {
         // Text that left a node earlier in the commit, and what arrived in
         // its place (a set, typed text deleted again), are aligned with each
         // other when that node is set whole again (see compose and stretch),
-        // and a removed node's text is aligned whole or not at all (see
-        // stretch). Where the move splits such a history between the two
-        // nodes, or joins two, those runs are marked with it, wherever they
-        // go; where a text set later in the commit reaches one, or a removed
-        // node still holds one at the end, the replay starts over with the
-        // move as the two text sets it stands for.
+        // and a removed node's text is aligned with a set's whole or not at
+        // all (see stretch). Where the move splits such a history between
+        // the two nodes, or joins two, those runs are marked with it,
+        // wherever they go; where a text set later in the commit reaches
+        // one, or a removed node still holds one at the end, the replay
+        // starts over with the move as the two text sets it stands for.
         const [, from, to, count, fromText, toText] = e;
         const a = this.text(to, toText);
         const b = this.text(from, fromText);
@@ -1128,7 +1205,12 @@ export class TextReplay {
    * started in its old content (wrappers flattened), by key.
    */
   private oldLayout(key: NodeKey): Map<string, number> {
+    const known = this.oldLayouts.get(key);
+    if (known !== undefined) {
+      return known;
+    }
     const out = new Map<string, number>();
+    this.oldLayouts.set(key, out);
     let pos = 0;
     const walk = (k: NodeKey) => {
       const el = this.prevMap.get(k);
@@ -1154,6 +1236,71 @@ export class TextReplay {
     };
     walk(key);
     return out;
+  }
+
+  /**
+   * The old line an old run that left from another line was in, and where
+   * in that line's old text (see oldText); null where not known.
+   */
+  private oldPlace(r: Run): readonly [NodeKey, number] | null {
+    if (r.kind !== OLD) {
+      return null;
+    }
+    const line = this.oldLine(r.src);
+    const at = line === null ? undefined : this.oldLayout(line).get(r.src);
+    return line === null || at === undefined ? null : [line, at + r.start];
+  }
+
+  /** The old line node `key` was in (past wrappers), or null. */
+  private oldLine(key: NodeKey): NodeKey | null {
+    const node = this.prevMap.get(key);
+    let line = node === undefined ? null : node.__parent;
+    while (line !== null) {
+      const parent = this.prevMap.get(line);
+      if (parent === undefined || kindOf(parent) !== 'wrapper') {
+        break;
+      }
+      line = parent.__parent;
+    }
+    return line;
+  }
+
+  /**
+   * The old text of line `key`, as oldLayout counts it: a text node's text,
+   * a line feed for a line break, and OBJ for any other inline node; with
+   * where its graphemes start.
+   */
+  private oldText(key: NodeKey): LineText {
+    const known = this.oldTexts.get(key);
+    if (known !== undefined) {
+      return known;
+    }
+    let out = '';
+    const walk = (k: NodeKey) => {
+      const el = this.prevMap.get(k);
+      if (!$isElementNode(el)) {
+        return;
+      }
+      for (let c = el.__first; c !== null; ) {
+        const node = this.prevMap.get(c);
+        if (node === undefined) {
+          return;
+        }
+        const kind = kindOf(node);
+        if (kind === 'text') {
+          out += (node as LexicalNode & {__text: string}).__text;
+        } else if (kind === 'wrapper') {
+          walk(c);
+        } else {
+          out += kind === 'break' ? '\n' : OBJ;
+        }
+        c = node.__next;
+      }
+    };
+    walk(key);
+    const text = {starts: graphemeStarts(out), text: out};
+    this.oldTexts.set(key, text);
+    return text;
   }
 
   /**
@@ -1190,6 +1337,22 @@ export class TextReplay {
     for (let s = 0; s <= anchors.length; s++) {
       stretches.push({left: [], live: []});
     }
+    // The line's text in both states, built where a stretch first needs it.
+    let view: LineView | null = null;
+    const lineView = (): LineView => {
+      if (view === null) {
+        const at = new Map<Item, number>();
+        let text = '';
+        for (const x of items) {
+          if (x.node !== null && x.run.dead !== true) {
+            at.set(x, text.length);
+            text += textOf(x.run);
+          }
+        }
+        view = {at, starts: graphemeStarts(text), text};
+      }
+      return view;
+    };
     // The stretch an old position is in.
     const byOld = (at: number): number => {
       let lo = 0;
@@ -1228,6 +1391,7 @@ export class TextReplay {
           stretches[t].left.push({
             at: at < 0 ? lastOld : at,
             from: x.from ?? null,
+            old: at >= 0 ? [key, at] : this.oldPlace(run),
             run,
           });
         }
@@ -1245,14 +1409,14 @@ export class TextReplay {
     s = 0;
     items.forEach((x, k) => {
       if (s < anchors.length && anchors[s] === k) {
-        if (!this.stretch(stretches[s], add)) {
+        if (!this.stretch(stretches[s], add, lineView)) {
           s = -Infinity;
         }
         add(x.node!, segmentOf(x.run));
         s++;
       }
     });
-    if (s < 0 || !this.stretch(stretches[anchors.length], add)) {
+    if (s < 0 || !this.stretch(stretches[anchors.length], add, lineView)) {
       return null;
     }
     return out;
@@ -1280,17 +1444,34 @@ export class TextReplay {
    *    text it replaced left (it stays in the text that left, where it was,
    *    and is new: no old character is aligned with it), and nothing is
    *    pinned there any more.
-   * 4. A removed node's text is aligned whole or not at all.
+   * 4. A removed node's text is aligned with a set's text whole or not at
+   *    all (a set's text has the node's own old text to keep, and takes a
+   *    removed neighbour's where all of it is there: an entity grown over
+   *    it). The text of nodes made in the stretch also keeps a removed
+   *    node's text that continues the common start or end in part, in whole
+   *    words of both whole lines, the new one after the update and the old
+   *    one (a word that gained or lost letters is a new word, and so is one
+   *    a neighbour's text runs into, or ran into before), besides what it
+   *    keeps otherwise; where the platform reads graphemes (see
+   *    readsGraphemes). Why: aligned with the end of a removed
+   *    neighbour (`. ` of `will verify timing. `), a set's text moved a
+   *    peer's concurrent typing to the start of an agent's rewritten line;
+   *    aligned whole or not at all, a block's nodes made again from their
+   *    JSON with one word changed wrote every character again, so a peer's
+   *    concurrent letter in an unchanged word moved out of it.
    * Priority: the diff runs over all that arrived, in line order, and text
    * that goes on a node's text (a set) keeps what it is aligned with; set
    * text still new is then aligned with what is left between what is kept,
    * and the text of nodes made last, keeping only what the diff that takes
    * the common end first keeps too (where it could be either of two equal
-   * runs, neither). False where a text in it is not known.
+   * runs, neither); then the text of nodes made still new, with the text of
+   * removed nodes invariant 4 lets it keep. False where a text in it is not
+   * known.
    */
   private stretch(
     st: Stretch,
     add: (node: NodeKey, s: Segment) => void,
+    lineView: () => LineView,
   ): boolean {
     if (st.unknown === true) {
       return false;
@@ -1331,13 +1512,14 @@ export class TextReplay {
         }
       }
       if (s !== '') {
-        // A removed node's text is aligned whole or not at all: where the
-        // common start of the two texts meets one it does not cover whole,
-        // the common start stops there; where the common end meets one it
-        // does not cover whole, that text is deleted and the common end goes
-        // on past it; and text the common start stopped at that the common
-        // end does not cover either is deleted. The text left is `w`; each
-        // of its runs starts at `at[k][0]` there and `at[k][1]` in `d`.
+        // A removed node's text is aligned whole or not at all with all that
+        // arrived (see invariant 4): where the common start of the two texts
+        // meets one it does not cover whole, the common start stops there;
+        // where the common end meets one it does not cover whole, that text
+        // is deleted and the common end goes on past it; and text the common
+        // start stopped at that the common end does not cover either is
+        // deleted. The text left is `w`; each of its runs starts at
+        // `at[k][0]` there and `at[k][1]` in `d`.
         const left = st.left;
         const drop = new Uint8Array(left.length);
         const removed = left.some(x => x.from !== null);
@@ -1399,6 +1581,8 @@ export class TextReplay {
         // text, equal to what arrived after the break, all deleted and
         // written again.
         let blocked = -1;
+        // The group the common end did not take as text there twice.
+        let twice = -1;
         while (pk < left.length && pj < s.length) {
           const [g, t] = group(pk, false);
           if (left[pk].from === null) {
@@ -1424,14 +1608,15 @@ export class TextReplay {
             if (m < t.length) {
               break;
             }
-          } else if (
-            j - t.length >= pj &&
-            s.startsWith(t, j - t.length) &&
+          } else if (j - t.length >= pj && s.startsWith(t, j - t.length)) {
             // The text the common start stopped at is taken only where it
             // is there once: equal text twice could be either.
-            (g !== pk || blocked < 0 || s.indexOf(t, pj) === j - t.length)
-          ) {
-            j -= t.length;
+            if (g !== pk || blocked < 0 || s.indexOf(t, pj) === j - t.length) {
+              j -= t.length;
+            } else {
+              drop.fill(1, g, back);
+              twice = g;
+            }
           } else {
             drop.fill(1, g, back);
           }
@@ -1440,16 +1625,7 @@ export class TextReplay {
         if (blocked >= 0 && back >= blocked) {
           drop.fill(1, pk, blocked);
         }
-        let w = '';
-        const at: [number, number, number][] = [];
-        for (let k = 0, pos = 0; k < left.length; k++) {
-          const n = length(left[k].run);
-          if (drop[k] === 0) {
-            at.push([w.length, pos, n]);
-            w += textOf(left[k].run);
-          }
-          pos += n;
-        }
+        const [w, at] = textLeft(left, drop);
         // The priority (see above).
         const aligned = this.align(
           made,
@@ -1466,18 +1642,117 @@ export class TextReplay {
           undefined,
           {at, text: d},
         );
-        const kept: Block[] = [];
-        let r = 0;
-        for (const b of aligned) {
-          while (r < at.length && at[r][0] + at[r][2] <= b.o) {
-            r++;
+        let kept = inAll(aligned, at);
+        if (made.length > 0 && removed && readsGraphemes()) {
+          // The text of nodes made here also keeps a removed node's text
+          // the walks above dropped, where it continues the common start or
+          // end in part (see invariant 4): the same walks again, taking a
+          // removed node's text in part, as set text, and passing over one
+          // that shares nothing there (it is deleted). The text the common
+          // end did not take as there twice is taken only where the whole
+          // words it is in are there once (a piece of a word a highlighter
+          // split off, made again after pasted text that holds it too, but
+          // not a word an app made a copy of).
+          const once = (from: number, to: number) => {
+            const [x, y] = wordsAround(s, from, to);
+            const t = s.slice(x, y);
+            return s.indexOf(t) === x && s.lastIndexOf(t) === x;
+          };
+          const more = drop.slice();
+          // The groups the common start passed over are the common end's
+          // to take still.
+          let lo = 0;
+          let j = 0;
+          for (let k = 0; k < left.length && j < s.length; ) {
+            const [g, t] = group(k, false);
+            const m = same(t, j, s.length, false);
+            if (m > 0 || left[k].from === null) {
+              if (k === twice && !once(j, j + m)) {
+                break;
+              }
+              more.fill(0, k, g);
+              lo = g;
+              j += m;
+              if (m < t.length) {
+                break;
+              }
+            }
+            k = g;
           }
-          for (let k = r; k < at.length && at[k][0] < b.o + b.n; k++) {
-            const [o0, p0, n] = at[k];
-            const lo = Math.max(b.o, o0);
-            const hi = Math.min(b.o + b.n, o0 + n);
-            kept.push({a: b.a + lo - b.o, n: hi - lo, o: p0 + lo - o0});
+          for (let e = left.length, i = s.length; e > lo && i > j; ) {
+            const [g, t] = group(e, true);
+            const m = same(t, i, j, true);
+            if (m > 0 || left[e - 1].from === null) {
+              if (g === twice && !once(i - m, i)) {
+                break;
+              }
+              more.fill(0, g, e);
+              i -= m;
+              if (m < t.length) {
+                break;
+              }
+            }
+            e = g;
           }
+          // Where the group refused as there twice is in `d`.
+          let t0 = 0;
+          let t1 = 0;
+          if (twice >= 0) {
+            for (let k = 0; k < twice; k++) {
+              t0 += textOf(left[k].run).length;
+            }
+            t1 = t0;
+            for (
+              let k = twice;
+              k < left.length && left[k].from === left[twice].from;
+              k++
+            ) {
+              t1 += textOf(left[k].run).length;
+            }
+          }
+          // Where each character of `s` is in the new line (-1: deleted
+          // again in this commit), and each of `d` in the old one (-1: not
+          // known, text that came from elsewhere).
+          const view = lineView();
+          const inLine = new Int32Array(s.length).fill(-1);
+          for (const x of all) {
+            const start = view.at.get(x.x);
+            if (start !== undefined) {
+              for (let k = 0; k < x.n; k++) {
+                inLine[x.a + k] = start + k;
+              }
+            }
+          }
+          // Where each character of `d` was in its old line's text (the
+          // text in `oldIn`; null: not known).
+          const oldOf = new Int32Array(d.length).fill(-1);
+          const oldIn: (LineText | null)[] = new Array(d.length).fill(null);
+          // (And the removed node each character left from: see keepWords.)
+          const fromIn: (Entry | null)[] = new Array(d.length).fill(null);
+          for (let k = 0, o = 0; k < left.length; k++) {
+            const n = length(left[k].run);
+            const place = left[k].old;
+            const text = place !== null ? this.oldText(place[0]) : null;
+            for (let t = 0; t < n; t++) {
+              fromIn[o + t] = left[k].from;
+              if (place !== null) {
+                oldOf[o + t] = place[1] + t;
+                oldIn[o + t] = text;
+              }
+            }
+            o += n;
+          }
+          kept = this.keepWords(
+            s,
+            made,
+            textLeft(left, more),
+            d,
+            kept,
+            view,
+            inLine,
+            [oldIn, oldOf, fromIn],
+            [t0, t1],
+          );
         }
         if (__DEV__) {
           let a = 0;
@@ -1519,6 +1794,294 @@ export class TextReplay {
       }
     });
     return true;
+  }
+
+  /**
+   * Blocks `kept` (in order, of the text that left `d`, see Block), with
+   * the text of nodes made in stretch `st` (spans `made` of what arrived,
+   * `s`) that they leave new aligned with the text left `w` (its runs at
+   * `at` in `d`, see textLeft) by the common start and end of the two in
+   * whole words, as both the diff that takes the common start first and
+   * the one that takes the common end first keep them (see diffWords). What
+   * a block keeps already, and what is not in order with it, is left out;
+   * so is a run it would add to that does not hold whole words of both
+   * lines: in the new line (`line`, the stretch's text there, where
+   * character `i` of `s` is character `inLine[i]`) and in all the text that
+   * left (`d`, with what `w` leaves out), a run's end inside a word goes on
+   * there only with the characters it keeps, or into the same pin. Why:
+   * `w` leaves out text deleted whole, so a word cut from its neighbour
+   * there (`one` of `onex`) reads as whole in it.
+   */
+  private keepWords(
+    s: string,
+    made: readonly Span[],
+    [w, at]: [string, [number, number, number][]],
+    d: string,
+    kept: readonly Block[],
+    view: LineView,
+    inLine: Int32Array,
+    [oldIn, oldOf, fromIn]: [
+      readonly (LineText | null)[],
+      Int32Array,
+      readonly (Entry | null)[],
+    ],
+    [t0, t1]: [number, number] = [0, 0],
+  ): Block[] {
+    const shift = w.length - s.length;
+    const ranges: [number, number, number][] = [];
+    const startFirst = diffWords(w, s);
+    const endFirst = diffWords(w, s, true);
+    for (const [x0, x1, dx] of [
+      [0, startFirst.prefix, 0],
+      [s.length - startFirst.suffix, s.length, shift],
+    ]) {
+      for (const [y0, y1, dy] of [
+        [0, endFirst.prefix, 0],
+        [s.length - endFirst.suffix, s.length, shift],
+      ]) {
+        if (dx === dy && Math.min(x1, y1) > Math.max(x0, y0)) {
+          ranges.push([Math.max(x0, y0), Math.min(x1, y1), dx]);
+        }
+      }
+    }
+    if (ranges.length === 0) {
+      return kept as Block[];
+    }
+    // Character `k` of `w` is character `inD[k]` of `d`.
+    const inD = new Int32Array(w.length);
+    for (const [w0, d0, n] of at) {
+      for (let k = 0; k < n; k++) {
+        inD[w0 + k] = d0 + k;
+      }
+    }
+    // Character `i` of `s` keeps character `of[i]` of `d` (-1: none), and
+    // `taken[o]` says whether a block keeps character `o` already.
+    const of = new Int32Array(s.length).fill(-1);
+    const taken = new Uint8Array(d.length);
+    for (const k of kept) {
+      for (let t = 0; t < k.n; t++) {
+        of[k.a + t] = k.o + t;
+        taken[k.o + t] = 1;
+      }
+    }
+    const isMade = new Uint8Array(s.length);
+    for (const x of made) {
+      isMade.fill(1, x.a, x.a + x.n);
+    }
+    // Added only where in order with what is kept around it.
+    const next = new Int32Array(s.length + 1).fill(d.length);
+    for (let i = s.length - 1; i >= 0; i--) {
+      next[i] = of[i] >= 0 ? of[i] : next[i + 1];
+    }
+    const want = new Int32Array(s.length).fill(-1);
+    for (const [x0, x1, dx] of ranges) {
+      for (let i = x0; i < x1; i++) {
+        want[i] = inD[i + dx];
+      }
+    }
+    const added = new Uint8Array(s.length);
+    let prev = -1;
+    for (let i = 0; i < s.length; i++) {
+      const o = want[i];
+      if (of[i] >= 0) {
+        prev = of[i];
+      } else if (
+        o >= 0 &&
+        isMade[i] === 1 &&
+        taken[o] === 0 &&
+        o > prev &&
+        o < next[i + 1]
+      ) {
+        of[i] = o;
+        added[i] = 1;
+        prev = o;
+      }
+    }
+    // Added text of the group refused as there twice (`d` from `t0` to
+    // `t1`, see stretch) stays only where the whole words it is in are
+    // there once.
+    for (let i0 = 0; i0 < s.length; ) {
+      if (added[i0] === 0 || of[i0] < t0 || of[i0] >= t1) {
+        i0++;
+        continue;
+      }
+      let i1 = i0 + 1;
+      while (
+        i1 < s.length &&
+        added[i1] === 1 &&
+        of[i1] === of[i1 - 1] + 1 &&
+        of[i1] < t1
+      ) {
+        i1++;
+      }
+      const [x, y] = wordsAround(s, i0, i1);
+      const t = s.slice(x, y);
+      if (s.indexOf(t) !== x || s.lastIndexOf(t) !== x) {
+        for (let i = i0; i < i1; i++) {
+          of[i] = -1;
+          added[i] = 0;
+        }
+      }
+      i0 = i1;
+    }
+    // Whether a run of `s` from `i0` to `i1`, keeping `d` from `o0` to
+    // `o1`, holds whole words of both lines at each end (see wordCut): read
+    // in all of the new line and all of the old line each end was in, so
+    // that a word or a character that goes on past the stretch is seen
+    // whole. (An end in text whose old place is not known holds only inside
+    // `d`.)
+    const whole = (i0: number, i1: number, o0: number, o1: number) => {
+      // (Characters deleted again in this commit are not in the line.)
+      let first = i0;
+      while (first < i1 && inLine[first] < 0) {
+        first++;
+      }
+      let last = i1 - 1;
+      while (last >= first && inLine[last] < 0) {
+        last--;
+      }
+      const a = oldIn[o0];
+      const b = oldIn[o1 - 1];
+      return (
+        (first === i1 ||
+          (wordCut(view.text, inLine[first], view.starts) &&
+            wordCut(view.text, inLine[last] + 1, view.starts))) &&
+        (a !== null
+          ? wordCut(a.text, oldOf[o0], a.starts)
+          : o0 > 0 && wordCut(d, o0)) &&
+        (b !== null
+          ? wordCut(b.text, oldOf[o1 - 1] + 1, b.starts)
+          : o1 < d.length && wordCut(d, o1))
+      );
+    };
+    // Whether every island of a run from `i0` to `i1` that holds an added
+    // character holds whole words of both lines too (see whole): an island
+    // is a part of the run whose characters' old places follow each other
+    // in one old line (text whose old place is not known, typed before it
+    // was removed, goes with the island it is in or follows, and bridges
+    // old characters that followed each other). Removed text from other
+    // places, read as one, must not make a piece of an old word look whole,
+    // nor join a different word or character of the new line.
+    const islands = (i0: number, i1: number) => {
+      let j0 = i0;
+      let first = -1;
+      let last = -1;
+      let fresh = false;
+      const holds = (j1: number) => {
+        if (!fresh) {
+          return true;
+        }
+        if (first < 0) {
+          return whole(j0, j1, of[j0], of[j1 - 1] + 1);
+        }
+        // (Its edges are its first and last characters with a known old
+        // place that are in the line: text typed at an edge is not old
+        // text, so it does not make the old text start or end a word.)
+        let x = first;
+        while (x <= last && (inLine[x] < 0 || oldIn[of[x]] === null)) {
+          x++;
+        }
+        let y = last;
+        while (y >= x && (inLine[y] < 0 || oldIn[of[y]] === null)) {
+          y--;
+        }
+        const a = oldIn[of[first]];
+        const b = oldIn[of[last]];
+        return (
+          (x > last ||
+            (wordCut(view.text, inLine[x], view.starts) &&
+              wordCut(view.text, inLine[y] + 1, view.starts))) &&
+          a !== null &&
+          b !== null &&
+          wordCut(a.text, oldOf[of[first]], a.starts) &&
+          wordCut(b.text, oldOf[of[last]] + 1, b.starts)
+        );
+      };
+      // (Text with no known old place bridges two old characters that
+      // followed each other only where all three left from one removed
+      // node, the text between them there: typed exactly between them.)
+      let gap = false;
+      let bridged = true;
+      for (let i = i0; i < i1; i++) {
+        const o = of[i];
+        const c = oldIn[o];
+        if (c !== null) {
+          if (
+            last >= 0 &&
+            (oldIn[of[last]] !== c ||
+              oldOf[o] !== oldOf[of[last]] + 1 ||
+              (gap && (!bridged || fromIn[o] !== fromIn[of[last]])))
+          ) {
+            if (!holds(i)) {
+              return false;
+            }
+            j0 = i;
+            first = -1;
+            fresh = false;
+          }
+          if (first < 0) {
+            first = i;
+          }
+          last = i;
+          gap = false;
+          bridged = true;
+        } else if (last >= 0) {
+          gap = true;
+          bridged =
+            bridged && fromIn[o] !== null && fromIn[o] === fromIn[of[last]];
+        }
+        fresh = fresh || added[i] === 1;
+      }
+      return holds(i1);
+    };
+    // Runs that do not hold whole words lose what was added to them, until
+    // every run that was added to does.
+    for (let again = true; again; ) {
+      again = false;
+      for (let i0 = 0; i0 < s.length; ) {
+        if (of[i0] < 0) {
+          i0++;
+          continue;
+        }
+        let i1 = i0 + 1;
+        let any = added[i0] === 1;
+        while (i1 < s.length && of[i1] === of[i1 - 1] + 1) {
+          any = any || added[i1] === 1;
+          i1++;
+        }
+        if (
+          any &&
+          (!whole(i0, i1, of[i0], of[i1 - 1] + 1) || !islands(i0, i1))
+        ) {
+          for (let i = i0; i < i1; i++) {
+            if (added[i] === 1) {
+              of[i] = -1;
+              added[i] = 0;
+            }
+          }
+          again = true;
+        }
+        i0 = i1;
+      }
+    }
+    const out: Block[] = [];
+    for (let i = 0; i < s.length; i++) {
+      const o = of[i];
+      if (o < 0) {
+        continue;
+      }
+      const last = out[out.length - 1];
+      if (
+        last !== undefined &&
+        last.a + last.n === i &&
+        last.o + last.n === o
+      ) {
+        out[out.length - 1] = {a: last.a, n: last.n + 1, o: last.o};
+      } else {
+        out.push({a: i, n: 1, o});
+      }
+    }
+    return out;
   }
 
   /**

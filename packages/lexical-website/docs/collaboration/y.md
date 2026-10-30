@@ -673,8 +673,12 @@ person's:
   their characters (the hashtag plugin, a keyword highlighter or another
   transform making a part of a node again, an entity grown over the word
   after it, two entities made plain text at once), also when the update
-  then edits them; text made where the line's text changed (a node with
-  other text, a line break, an inline node) is new where it is put. Prefer
+  then edits them. Where the line's text changed and the platform has
+  `Intl.Segmenter`, a text node made in place of removed ones keeps the
+  whole words it shares with their text before and after what changed (a
+  block's text nodes made again from their JSON with one word changed write
+  that word alone), and other text made there (a line break, an inline node)
+  is new where it is put. Prefer
   these to `setTextContent`, which sets a node's text whole: such a change
   (and a change the browser makes to the DOM text, as an IME composition
   does) keeps the start and end its text shares with the node's old text,

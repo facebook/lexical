@@ -567,6 +567,293 @@ const isWordChar = (s: string, i: number): boolean => {
 };
 
 /**
+ * The common start and end of `a` and `b` in whole words, compared whole
+ * (see wordCut: a run of letters, digits and connectors, or a single other
+ * character, each with the marks and joined characters that go with it);
+ * with `endFirst`, the common end is taken first. As character counts. The
+ * diff of text whose edits are not known (text of nodes made again): a word
+ * is kept only where it is there whole, so a word that gained or lost
+ * letters (`t1z` written as `t91z`) is new, and a word next to an equal one
+ * cannot lend it a letter (the common start of `t68z ` pasted before `t50z`
+ * takes no `t` of `t50z`).
+ */
+export function diffWords(
+  a: string,
+  b: string,
+  endFirst = false,
+): {prefix: number; suffix: number} {
+  // The end of the word starting at `i`, and the start of the one ending at
+  // `j` (graphemes of each text read once).
+  const startsA = graphemes(a);
+  const startsB = graphemes(b);
+  const end = (s: string, starts: Uint8Array | null, i: number): number => {
+    let k = i + charLength(s, i);
+    while (k < s.length && !wordCut(s, k, starts)) {
+      k += charLength(s, k);
+    }
+    return k;
+  };
+  const start = (s: string, starts: Uint8Array | null, j: number): number => {
+    let k = charStart(s, j - 1);
+    while (k > 0 && !wordCut(s, k, starts)) {
+      k = charStart(s, k - 1);
+    }
+    return k;
+  };
+  const max = Math.min(a.length, b.length);
+  // Where the two texts part, from the start and from the end. A word cut
+  // reads the character after it and, before it, only runs of characters
+  // that join (see wordCut), so before where they part from the start, and
+  // after the first character that joins nothing in the common end, the
+  // texts have the same cuts: the walks below start from there.
+  let same = 0;
+  while (same < max && a.charCodeAt(same) === b.charCodeAt(same)) {
+    same++;
+  }
+  // (Where they part inside a character, they part where it starts.)
+  if (same > 0 && isHighSurrogate(a.charCodeAt(same - 1))) {
+    same--;
+  }
+  let sameEnd = 0;
+  while (
+    sameEnd < max &&
+    a.charCodeAt(a.length - 1 - sameEnd) ===
+      b.charCodeAt(b.length - 1 - sameEnd)
+  ) {
+    sameEnd++;
+  }
+  let plain = a.length - sameEnd;
+  while (plain < a.length && joins(a, plain)) {
+    plain++;
+  }
+  const fromStart = (limit: number): number => {
+    let p = Math.min(limit, same - 1);
+    while (p > 0 && !(wordCut(a, p, startsA) && wordCut(b, p, startsB))) {
+      p = charStart(a, p - 1);
+    }
+    p = Math.max(p, 0);
+    while (p < limit) {
+      const e = end(a, startsA, p);
+      if (
+        e > limit ||
+        end(b, startsB, p) !== e ||
+        a.slice(p, e) !== b.slice(p, e)
+      ) {
+        break;
+      }
+      p = e;
+    }
+    return p;
+  };
+  const fromEnd = (limit: number): number => {
+    let q = Math.min(limit, a.length - plain - 2);
+    while (
+      q > 0 &&
+      !(wordCut(a, a.length - q, startsA) && wordCut(b, b.length - q, startsB))
+    ) {
+      q -= charLength(a, a.length - q);
+    }
+    q = Math.max(q, 0);
+    while (q < limit) {
+      const n = a.length - q - start(a, startsA, a.length - q);
+      if (
+        q + n > limit ||
+        b.length - q - start(b, startsB, b.length - q) !== n ||
+        a.slice(a.length - q - n, a.length - q) !==
+          b.slice(b.length - q - n, b.length - q)
+      ) {
+        break;
+      }
+      q += n;
+    }
+    return q;
+  };
+  if (endFirst) {
+    const suffix = fromEnd(max);
+    return {prefix: fromStart(max - suffix), suffix};
+  }
+  const prefix = fromStart(max);
+  return {prefix, suffix: fromEnd(max - prefix)};
+}
+
+// Whether the character at `i` of `s` may join what is before it or after
+// it, or is part of a character (a low surrogate): a run a word cut reads
+// back through (see wordCut, diffWords).
+const joins = (s: string, i: number): boolean => {
+  if (isLowSurrogate(s.charCodeAt(i))) {
+    return true;
+  }
+  const c = String.fromCodePoint(s.codePointAt(i)!);
+  return (
+    GOES_WITH_PREVIOUS.test(c) ||
+    JOINER.test(c) ||
+    REGIONAL.test(c) ||
+    PICTOGRAPHIC.test(c)
+  );
+};
+
+/**
+ * The range of whole words (see wordCut) that covers characters `from` to
+ * `to` of `s`.
+ */
+export function wordsAround(
+  s: string,
+  from: number,
+  to: number,
+): [number, number] {
+  const starts = graphemes(s);
+  while (!wordCut(s, from, starts)) {
+    from = charStart(s, from - 1);
+  }
+  while (!wordCut(s, to, starts)) {
+    to += charLength(s, to);
+  }
+  return [from, to];
+}
+
+/**
+ * Whether two words of `s` meet at code unit `at` (true at either end of
+ * `s`). A word is a run of letters, digits and connectors (`_`), or any
+ * single other character (a space, punctuation, a character of a script
+ * written without spaces, an emoji), each whole: with its marks, the
+ * characters a joiner or a stacking sign joins to it, and the second of
+ * two regional indicators. So a changed word or character is never kept in
+ * part: neither a letter of `t1z` in `t91z`, nor `\u200dار` of a word
+ * whose first letter changed, nor the mark of a kana or the stacked
+ * consonant of a Khmer conjunct whose base changed. `starts` is where the
+ * graphemes of `s` start (see graphemeStarts), for a text read often.
+ */
+export function wordCut(
+  s: string,
+  at: number,
+  starts: Uint8Array | null = graphemes(s),
+): boolean {
+  if (at <= 0 || at >= s.length) {
+    return true;
+  }
+  if (
+    isLowSurrogate(s.charCodeAt(at)) &&
+    isHighSurrogate(s.charCodeAt(at - 1))
+  ) {
+    return false;
+  }
+  if (starts !== null && starts[at] !== 1) {
+    return false;
+  }
+  const prev = charStart(s, at - 1);
+  const c = String.fromCodePoint(s.codePointAt(at)!);
+  const b = String.fromCodePoint(s.codePointAt(prev)!);
+  if (GOES_WITH_PREVIOUS.test(c) || (REGIONAL.test(b) && REGIONAL.test(c))) {
+    return false;
+  }
+  // A joiner joins across the marks after it (a coeng, a vowel sign, the
+  // next consonant).
+  for (let k = prev; ; k = charStart(s, k - 1)) {
+    const p = String.fromCodePoint(s.codePointAt(k)!);
+    if (JOINER.test(p)) {
+      return false;
+    }
+    if (k === 0 || !GOES_WITH_PREVIOUS.test(p)) {
+      break;
+    }
+  }
+  return !(isLetter(s, prev) && isLetter(s, at));
+}
+
+let segmenter: Intl.Segmenter | null | undefined;
+const seen: [string, Uint8Array | null][] = [];
+
+/**
+ * Whether the platform reads graphemes (`Intl.Segmenter`): without it,
+ * text of nodes made keeps no removed node's text in part (see TextReplay
+ * invariant 4), as the rules of wordCut alone do not know every grapheme.
+ */
+export function readsGraphemes(): boolean {
+  if (segmenter === undefined) {
+    segmenter =
+      typeof Intl === 'object' && typeof Intl.Segmenter === 'function'
+        ? new Intl.Segmenter(undefined, {granularity: 'grapheme'})
+        : null;
+  }
+  return segmenter !== null;
+}
+
+/**
+ * Where the graphemes of `s` start (1 at each start and at its end), as the
+ * platform's `Intl.Segmenter` reads them; null where there is none (the
+ * rules of wordCut alone apply then).
+ */
+export function graphemeStarts(s: string): Uint8Array | null {
+  if (!readsGraphemes() || segmenter === null || segmenter === undefined) {
+    return null;
+  }
+  const starts = new Uint8Array(s.length + 1);
+  for (const {index} of segmenter.segment(s)) {
+    starts[index] = 1;
+  }
+  starts[s.length] = 1;
+  return starts;
+}
+
+/**
+ * graphemeStarts, keeping the last texts read: a diff reads the same two
+ * again and again. (A line read often keeps its own, see wordCut.)
+ */
+const graphemes = (s: string): Uint8Array | null => {
+  for (let k = 0; k < seen.length; k++) {
+    if (seen[k][0] === s) {
+      const hit = seen[k];
+      seen.splice(k, 1);
+      seen.unshift(hit);
+      return hit[1];
+    }
+  }
+  const starts = graphemeStarts(s);
+  seen.unshift([s, starts]);
+  if (seen.length > 4) {
+    seen.pop();
+  }
+  return starts;
+};
+
+const LETTER = /[\p{L}\p{M}\p{N}\p{Pc}]/u;
+// What is one character (one grapheme) with the character before it: what
+// extends a grapheme (marks, joiners, tags, the halfwidth kana sound
+// marks), emoji modifiers, and the vowel signs AM of Thai and Lao (letters
+// by category, yet spacing marks of the consonant). Also what a word reads
+// through: a soft hyphen, a word joiner, and an inline node (OBJ), whose
+// own text may go on the word.
+const GOES_WITH_PREVIOUS =
+  /^(?:\p{M}|\p{Grapheme_Extend}|\p{Emoji_Modifier}|\u200d|\u0e33|\u0eb3|\u00ad|\u2060|\ufeff|\ufffc)$/u;
+// What is one character with the character after it: a joiner, the signs
+// that join the next consonant to the one before (the Khmer coeng, the
+// Myanmar virama, the Thai phinthu and Lao Pali virama, which Pali uses
+// so, and the viramas Unicode's grapheme rules join conjuncts with), the
+// prepend characters of those rules (signs written before what they go
+// with), and what a word reads through (see above).
+const JOINER =
+  /^(?:\u200c|\u200d|\u17d2|\u1039|\u0e3a|\u0eba|\u00ad|\u2060|\ufeff|\ufffc|[\u0600-\u0605]|\u06dd|\u070f|\u0890|\u0891|\u08e2|\u0d4e|\u{110bd}|\u{110cd}|\u{111c2}|\u{111c3}|\u{1193f}|\u{11941}|\u{11a3a}|[\u{11a84}-\u{11a89}]|\u{11d46}|\u{11f02}|\u{113d1}|\u094d|\u09cd|\u0acd|\u0b4d|\u0c4d|\u0d4d)$/u;
+const REGIONAL = /\p{Regional_Indicator}/u;
+const PICTOGRAPHIC = /\p{Extended_Pictographic}/u;
+
+/** Whether the character at `i` is in a run of letters (see wordCut). */
+const isLetter = (s: string, i: number): boolean => {
+  if (i < 0 || i >= s.length) {
+    return false;
+  }
+  const c = String.fromCodePoint(s.codePointAt(charStart(s, i))!);
+  return LETTER.test(c) && !UNSPACED.test(c);
+};
+
+/** The length in code units of the character that starts at `i`. */
+const charLength = (s: string, i: number): number =>
+  i + 1 < s.length &&
+  isHighSurrogate(s.charCodeAt(i)) &&
+  isLowSurrogate(s.charCodeAt(i + 1))
+    ? 2
+    : 1;
+
+/**
  * Snap a replacement's common prefix and suffix back to word boundaries, so
  * that replaced words are replaced whole. Character-level diffs keep the
  * letters a rewritten line happens to share with the old one (`R` of `Risk`

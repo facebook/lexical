@@ -22,10 +22,12 @@ import {
 } from '@lexical/extension';
 import {HashtagNode, registerLexicalHashtag} from '@lexical/hashtag';
 import {$createLinkNode, type LinkNode} from '@lexical/link';
+import {$createMarkNode} from '@lexical/mark';
 import {registerLexicalTextEntity} from '@lexical/text';
 import * as Y from '@y/y';
 import {
   $create,
+  $createLineBreakNode,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
@@ -33,6 +35,7 @@ import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
+  $setCompositionKey,
   $setSelection,
   configExtension,
   defineExtension,
@@ -40,9 +43,10 @@ import {
   INTERNAL_$recordTextMove,
   INTERNAL_$recordTextRetype,
   type LexicalEditor,
+  type LexicalNode,
   TextNode,
 } from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {describe, expect, test, vi} from 'vitest';
 
 import {createYDoc, YCollabExtension} from '../../..';
 import {
@@ -1551,13 +1555,14 @@ describe('S6-5: Enter inside a code token the highlighter makes again', () => {
 
 // S7-39: a line's children made again as one plain node with one word
 // changed (an agent's rewrite of the block), where a node that held the
-// changed word was deleted whole (a removed node's text is aligned whole or
+// changed word was deleted whole (a removed node's text was aligned whole or
 // not at all). The check that keeps only what both diffs keep read the text
 // that left without that node, so the characters on its two sides (or the
 // last characters before it and the end of the line) were next to each
 // other, and it took the end of the word before as possibly a part of the
 // new word: the rewrite wrote it again, and a peer's concurrent edit of the
-// changed word landed inside the word before ("t16t83zz t80z  t19z").
+// changed word landed inside the word before ("t16t83zz t80z  t19z"). The
+// node that held the word now keeps its other characters too (S9-7).
 describe('S7-39: a line made again as one node, where a node that held the changed word went whole', () => {
   // The line's text nodes (italic or not), the word changed and its new
   // text, and what the rewrite deletes and inserts.
@@ -1570,8 +1575,8 @@ describe('S7-39: a line made again as one node, where a node that held the chang
       ],
       't63z',
       't80z',
-      't63z ',
-      't80z ',
+      't63z',
+      't80z',
     ],
     [
       [
@@ -1581,8 +1586,8 @@ describe('S7-39: a line made again as one node, where a node that held the chang
       ],
       'cd',
       'gh',
-      'cd ',
-      'gh ',
+      'cd',
+      'gh',
     ],
     [
       [
@@ -1591,8 +1596,8 @@ describe('S7-39: a line made again as one node, where a node that held the chang
       ],
       't60z',
       't70z',
-      ' t60z t61z',
-      ' t70z t61z',
+      't60z',
+      't70z',
     ],
   ];
   for (const [nodes, word, next, del, ins] of cases) {
@@ -1637,9 +1642,8 @@ describe('S7-39: a line made again as one node, where a node that held the chang
           }
           $setSelection(null);
         });
-        // The rewrite writes again only the node that held the word (a
-        // removed node's text is matched whole or not at all), and keeps
-        // every character of the nodes around it.
+        // The rewrite writes only the word, and keeps every other
+        // character of the line.
         expect(writes).toEqual({del, ins});
         await t.sync();
         // The text of the nodes before the one that held the word stays
@@ -1656,6 +1660,1090 @@ describe('S7-39: a line made again as one node, where a node that held the chang
           expect(lineText(p).startsWith(start)).toBe(true);
         }
         await expectConverged(t.peers);
+      });
+    }
+  }
+});
+
+// S9-7 (#9556): a line's text nodes made again with other text, as an
+// agent's rewrite of a block from its JSON with one word changed does. A
+// removed node's text was aligned with what replaced it whole or not at
+// all, so the rewrite wrote the line again: a collaborator's letter typed
+// concurrently into an unchanged word stayed in front of the rewritten
+// line, and a collaborator's concurrent delete there came back. The text of
+// the node made in their place keeps the words they shared.
+describe('S9-7: a line made again with one word changed keeps its other words', () => {
+  // The line's text nodes (bold or not), the word changed and its new text,
+  // where the peer edits (a text node, and offsets in it), and the line
+  // after the peer types "Q" at the first offset, or deletes the character
+  // at the second.
+  const cases: [
+    string,
+    [string, boolean][],
+    string,
+    string,
+    [number, number, number],
+    string,
+    string,
+  ][] = [
+    [
+      'one node',
+      [['t63 t71z t13z t69z t15z', false]],
+      't69z',
+      't81z',
+      [0, 3, 5],
+      't63Q t71z t13z t81z t15z',
+      't63 t1z t13z t81z t15z',
+    ],
+    [
+      'three nodes, the word in a bold one',
+      [
+        ['t12z ', false],
+        ['t13z t69z', true],
+        [' t15z', false],
+      ],
+      't69z',
+      't81z',
+      [1, 2, 2],
+      't12z t1Q3z t81z t15z',
+      't12z t1z t81z t15z',
+    ],
+  ];
+  for (const [
+    name,
+    nodes,
+    word,
+    next,
+    [node, at, del],
+    typed,
+    deleted,
+  ] of cases) {
+    for (const edit of ['types', 'deletes'] as const) {
+      for (const ids of IDS) {
+        test(`S9-7 ${name}: the peer ${edit} in an unchanged word (ids ${ids})`, async () => {
+          const t = await setup(
+            () => {
+              $getRoot().append(
+                $createParagraphNode().append($createTextNode('Title')),
+                $createParagraphNode().append(
+                  ...nodes.map(([text, bold]) =>
+                    bold
+                      ? $createTextNode(text).toggleFormat('bold')
+                      : $createTextNode(text),
+                  ),
+                ),
+              );
+            },
+            {ids},
+          );
+          const writes = track(t.a.doc);
+          t.offline();
+          t.a.update(() => {
+            const line = $line();
+            const text = line.getTextContent().replace(word, next);
+            for (const child of line.getChildren()) {
+              child.remove();
+            }
+            line.append($createTextNode(text));
+            $setSelection(null);
+          });
+          const written = {...writes};
+          t.b.update(() => {
+            const text = $line().getAllTextNodes()[node];
+            if (edit === 'types') {
+              text.spliceText(at, 0, 'Q', false);
+            } else {
+              text.spliceText(del, 1, '', false);
+            }
+            $setSelection(null);
+          });
+          await t.sync();
+          await expectEverywhere(t.peers, edit === 'types' ? typed : deleted);
+          expect(written).toEqual({del: word, ins: next});
+        });
+      }
+    }
+  }
+
+  // A removed node that shares no text with the node made in its place is
+  // deleted, and the text after it is still kept: "xyz " goes, "one two" is
+  // kept and " X" is new.
+  for (const ids of IDS) {
+    test(`S9-7 a removed node with none of the new text before one with all of it: the peer deletes "n" (ids ${ids})`, async () => {
+      const t = await setup(
+        () => {
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('Title')),
+            $createParagraphNode().append(
+              $createTextNode('xyz ').toggleFormat('bold'),
+              $createTextNode('one two'),
+            ),
+          );
+        },
+        {ids},
+      );
+      const writes = track(t.a.doc);
+      t.offline();
+      t.a.update(() => {
+        for (const child of $line().getChildren()) {
+          child.remove();
+        }
+        $line().append($createTextNode('one two X'));
+        $setSelection(null);
+      });
+      const written = {...writes};
+      t.b.update(() => {
+        $line().getAllTextNodes()[1].spliceText(1, 1, '', false);
+        $setSelection(null);
+      });
+      await t.sync();
+      await expectEverywhere(t.peers, 'oe two X');
+      expect(written).toEqual({del: 'xyz ', ins: ' X'});
+    });
+  }
+
+  // Text pasted where tokens are made again (a highlighted code line) that
+  // starts with the letter the word after it starts with: the common start
+  // of the pasted "t68z" took the "t" of "t50z", and the end kept stopped
+  // short of it, so the "t" was written again (L2 soak, 18 sessions in
+  // 1,500). It keeps its character.
+  for (const [edit, expected] of [
+    ['deletes the "t" of "t50z"', '// t46z note t68z t69z t70z\n\n 50z t51z'],
+    [
+      'types "Q" after the "t" of "t50z"',
+      '// t46z note t68z t69z t70z\n\n tQ50z t51z',
+    ],
+  ] as const) {
+    for (const ids of IDS) {
+      test(`S9-7 a paste before a word that starts with the paste's first letter: the peer ${edit} (ids ${ids})`, async () => {
+        const t = await setup(
+          () => {
+            $getRoot().append(
+              $createParagraphNode().append($createTextNode('Title')),
+              $createParagraphNode().append(
+                $createTextNode('// t46z note ').toggleFormat('italic'),
+                $createTextNode(' '),
+                $createTextNode('t50z').toggleFormat('bold'),
+                $createTextNode(' t51z'),
+              ),
+            );
+          },
+          {ids},
+        );
+        const writes = track(t.a.doc);
+        t.offline();
+        t.a.update(() => {
+          for (const child of $line().getChildren()) {
+            child.remove();
+          }
+          $line().append(
+            $createTextNode('// t46z note t68z t69z t70z'),
+            $createLineBreakNode(),
+            $createLineBreakNode(),
+            $createTextNode(' t50z t51z'),
+          );
+          $setSelection(null);
+        });
+        const written = {...writes};
+        t.b.update(() => {
+          const word = $line().getAllTextNodes()[2];
+          if (edit.startsWith('deletes')) {
+            word.spliceText(0, 1, '', false);
+          } else {
+            word.spliceText(1, 0, 'Q', false);
+          }
+          $setSelection(null);
+        });
+        await t.sync();
+        await expectEverywhere(t.peers, expected);
+        expect(written).toEqual({del: ' ', ins: 't68z t69z t70z\n\n '});
+      });
+    }
+  }
+
+  // Review findings on the first version of this change, each a loss main
+  // does not have:
+  // - the editor composing in another line made the made text's alignment
+  //   keep letters of a changed word ("9t94z" for "t91z" ‖ "t94z");
+  // - a made word joined to the set word after it ("one" + "two" as
+  //   "onetwo") kept "one" of the old "one ", which the peer then deleted
+  //   from the new word: a word is now seen whole across what is kept;
+  // - a removed word made again twice (a template that repeats it) gave the
+  //   last copy the old characters, which the peer's delete then took.
+  for (const ids of IDS) {
+    test(`S9-7 a word made again as another word while the editor composes in another line (ids ${ids})`, async () => {
+      const t = await setup(
+        () => {
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('Title')),
+            $createParagraphNode().append(
+              $createTextNode('t1z  '),
+              $createTextNode('t3z').toggleFormat('bold'),
+            ),
+          );
+        },
+        {ids},
+      );
+      t.a.update(() => {
+        const title = $getRoot().getFirstDescendant() as TextNode;
+        title.select(5, 5);
+        $setCompositionKey(title.getKey());
+      });
+      t.offline();
+      t.a.update(() => {
+        const title = $getRoot().getFirstDescendant() as TextNode;
+        title.setTextContent('Title日');
+        title.select(6, 6);
+        for (const child of $line().getChildren()) {
+          child.remove();
+        }
+        $line().append($createTextNode('t91z  t3z'));
+      });
+      t.b.update(() => {
+        ($line().getFirstChild() as TextNode).spliceText(0, 3, 't94z', false);
+        $setSelection(null);
+      });
+      await t.sync();
+      for (const p of t.peers) {
+        p.update(() => $setCompositionKey(null));
+      }
+      await t.sync();
+      const text = lineText(t.a);
+      expect([text.includes('t91z'), text.includes('t94z')]).toEqual([
+        true,
+        true,
+      ]);
+      await expectConverged(t.peers);
+    });
+  }
+  // Second review round: a word is judged whole in all of the old text
+  // (`one` of `onex` is not a whole word because `x` was deleted with it)
+  // and in the line around the stretch (`red` of `foored` is not the `red`
+  // of a new `ored`); text an app made twice keeps the old characters for
+  // neither copy.
+  const $bold = (text: string) => $createTextNode(text).toggleFormat('bold');
+  const $italic = (text: string) =>
+    $createTextNode(text).toggleFormat('italic');
+  const REVIEW: {
+    name: string;
+    seed: () => LexicalNode[];
+    a: (leaves: TextNode[]) => void;
+    b: [leaf: number, offset: number, count: number][];
+    expected: string;
+  }[] = [
+    {
+      a: ([first, second]) => {
+        first.replace($bold('one'));
+        second.setTextContent('two');
+      },
+      b: [[0, 0, 3]],
+      expected: 'onetwo tail',
+      name: 'a made word joined to the set word after it',
+      seed: () => [$bold('one '), $italic('two!'), $createTextNode(' tail')],
+    },
+    {
+      a: ([first]) => {
+        first.replace($createTextNode('blue red red '));
+      },
+      b: [[0, 0, 4]],
+      expected: 'blue red red tail',
+      name: 'a removed word made again twice',
+      seed: () => [$createTextNode('red '), $italic('tail')],
+    },
+    {
+      a: ([first]) => {
+        first.replace($createTextNode('red blue red gold red gold '));
+      },
+      b: [[0, 4, 4]],
+      expected: 'red blue red gold red gold tail',
+      name: 'removed words made again twice after a piece of them',
+      seed: () => [$createTextNode('red gold '), $italic('tail')],
+    },
+    {
+      a: ([first, second]) => {
+        second.remove();
+        first.replace($bold('gold one'));
+      },
+      b: [
+        [1, 0, 1],
+        [0, 5, 3],
+      ],
+      expected: 'gold one tail',
+      name: 'a word whose last letter was a removed node of its own',
+      seed: () => [$bold('blue one'), $italic('x'), $createTextNode(' tail')],
+    },
+    {
+      a: ([first, second]) => {
+        first.remove();
+        second.replace($bold('one gold'));
+      },
+      b: [
+        [1, 0, 3],
+        [0, 0, 1],
+      ],
+      expected: 'one gold tail',
+      name: 'a word whose first letter was a removed node of its own',
+      seed: () => [$italic('x'), $bold('one blue'), $createTextNode(' tail')],
+    },
+    {
+      a: ([, second]) => {
+        second.replace($createTextNode('blue red ored'));
+      },
+      b: [[1, 0, 3]],
+      expected: 'fooblue red ored tail',
+      name: 'a removed node that was one word with the node before it',
+      seed: () => [$bold('foo'), $createTextNode('red'), $italic(' tail')],
+    },
+    // Third review round: a word is judged in the line as it is after the
+    // update (not with text made and deleted again in it), and a word or
+    // character is whatever goes with it (a joiner, a mark, an emoji's
+    // parts); text made twice is checked where it is kept.
+    {
+      a: ([first]) => {
+        const made = $bold('one!gold');
+        first.replace(made);
+        made.spliceText(3, 1, '', false);
+      },
+      b: [[0, 0, 3]],
+      expected: 'onegold tail',
+      name: 'a made word whose separator was deleted again',
+      seed: () => [$bold('one blue'), $italic(' tail')],
+    },
+    ...(
+      [
+        ['ب\u200dار', 'د\u200dار', 'an Arabic word joined by a ZWJ'],
+        ['👩\u200d💻', '👨\u200d💻', 'an emoji sequence'],
+        ['か\u3099', 'は\u3099', 'a kana with a combining mark'],
+        // (Fourth round: what a stacking sign joins, and Thai and Lao AM.)
+        ['\u1780\u17d2\u1781', '\u1782\u17d2\u1781', 'a Khmer conjunct'],
+        ['\u1000\u1039\u1001', '\u1002\u1039\u1001', 'a Myanmar conjunct'],
+        ['\u0e01\u0e33', '\u0e02\u0e33', 'a Thai consonant with AM'],
+        ['\u0e81\u0eb3', '\u0e82\u0eb3', 'a Lao consonant with AM'],
+      ] as const
+    ).map(([was, now, what]) => ({
+      a: ([first]: TextNode[]) => {
+        first.replace($createTextNode(`gold ${now}`));
+      },
+      b: [[0, 5, was.length]] as [number, number, number][],
+      expected: `gold ${now} tail`,
+      name: `${what} whose first character changed`,
+      seed: () => [$createTextNode(`blue ${was}`), $italic(' tail')],
+    })),
+    {
+      a: ([first]) => {
+        first.replace($createTextNode('\u1780\u17d2\u1782 gold'));
+      },
+      b: [[0, 0, 3]],
+      expected: '\u1780\u17d2\u1782 gold tail',
+      name: 'a Khmer conjunct whose stacked consonant changed',
+      seed: () => [
+        $createTextNode('\u1780\u17d2\u1781 blue'),
+        $italic(' tail'),
+      ],
+    },
+    {
+      a: ([first]) => {
+        first.replace($createTextNode('red green red gold red gold '));
+      },
+      b: [[0, 4, 4]],
+      expected: 'red green red gold red gold tail',
+      name: 'removed words made again twice after a different word',
+      seed: () => [$createTextNode('red gold '), $italic('tail')],
+    },
+    // Fifth round: a character that spans an unchanged node (a Khmer
+    // conjunct whose mark is a node of its own) is read in the whole line.
+    {
+      a: ([first, , third]) => {
+        first.replace($bold('\u1782\u17d2'));
+        third.replace($createTextNode('\u1781 gold').toggleFormat('underline'));
+      },
+      b: [[2, 0, 1]],
+      expected: '\u1782\u17d2\u17c9\u1781 gold tail',
+      name: 'a Khmer conjunct across an unchanged node',
+      seed: () => [
+        $bold('\u1780\u17d2'),
+        $italic('\u17c9'),
+        $createTextNode('\u1781 blue').toggleFormat('underline'),
+        $createTextNode(' tail'),
+      ],
+    },
+    {
+      a: ([first, , third]) => {
+        first.replace($bold('\u1783\u17d2'));
+        third.replace(
+          $createTextNode('\u17d2\u1782 gold').toggleFormat('underline'),
+        );
+      },
+      b: [[2, 0, 2]],
+      expected: '\u1783\u17d2\u17c9\u1781\u17d2\u1782 gold tail',
+      name: 'a Khmer conjunct whose middle is an unchanged node',
+      seed: () => [
+        $bold('\u1780\u17d2'),
+        $italic('\u17c9\u1781'),
+        $createTextNode('\u17d2\u1782 blue').toggleFormat('underline'),
+        $createTextNode(' tail'),
+      ],
+    },
+    // Sixth round: a word reads through a soft hyphen, a word joiner and
+    // an inline node with text of its own (a mark).
+    ...(
+      [
+        ['be\u00adcome', 'in\u00adcome', 'a word with a soft hyphen'],
+        ['be\u2060come', 'in\u2060come', 'a word with a word joiner'],
+      ] as const
+    ).map(([was, now, what]) => ({
+      a: ([first]: TextNode[]) => {
+        first.replace($createTextNode(`gold ${now}`));
+      },
+      b: [[0, 5, was.length]] as [number, number, number][],
+      expected: `gold ${now} tail`,
+      name: `${what} whose first syllable changed`,
+      seed: () => [$createTextNode(`blue ${was}`), $italic(' tail')],
+    })),
+    {
+      a: ([, first, x]) => {
+        x.remove();
+        first.replace($bold('gold one'));
+      },
+      b: [
+        [2, 0, 1],
+        [1, 5, 3],
+      ],
+      expected: '\u{10400} gold one tail',
+      name: 'a word that went on into a mark',
+      seed: () => [
+        $createTextNode('\u{10400} ').toggleFormat('underline'),
+        $createLinkNode('https://example.com/').append(
+          $bold('blue one'),
+          $createMarkNode(['m']).append($italic('x')),
+        ),
+        $createTextNode(' tail').toggleFormat('strikethrough'),
+      ],
+    },
+  ];
+  for (const {name, seed, a, b, expected} of REVIEW) {
+    for (const ids of IDS) {
+      test(`S9-7 ${name}: the peer deletes old text in it (ids ${ids})`, async () => {
+        const t = await setup(
+          () => {
+            $getRoot().append(
+              $createParagraphNode().append($createTextNode('Title')),
+              $createParagraphNode().append(...seed()),
+            );
+          },
+          {ids},
+        );
+        t.offline();
+        t.a.update(() => {
+          a($line().getAllTextNodes());
+          $setSelection(null);
+        });
+        t.b.update(() => {
+          // (Each splice in a leaf of the old line, by index then.)
+          const leaves = $line().getAllTextNodes();
+          for (const [leaf, offset, count] of b) {
+            leaves[leaf].spliceText(offset, count, '', false);
+          }
+          $setSelection(null);
+        });
+        await t.sync();
+        await expectEverywhere(t.peers, expected);
+      });
+    }
+  }
+
+  // Removed text of two places read as one: links emptied, moved into a new
+  // line, then text made in one of them. The end of the first link's old
+  // text and the rest of the old word after the second link's start must
+  // not make a piece of that word look whole.
+  for (const [first, pin, second, next, drop] of [
+    ['in', 'be', 'come blue', 'income gold', 4],
+    // (Both sides whole words of their old lines, joined into one new word.)
+    ['in', ' ', 'come blue', 'income gold', 4],
+    [
+      '\u{1f469}\u200d',
+      '\u{1f468}\u200d',
+      '\u{1f4bb} blue',
+      '\u{1f469}\u200d\u{1f4bb} gold',
+      2,
+    ],
+  ] as const) {
+    for (const ids of [
+      [1, 2],
+      [2, 1],
+    ]) {
+      test(`S9-7 removed text of two lines read as one: ${first}|${pin}${second} as ${next} (ids ${ids})`, async () => {
+        const t = await setup(
+          () => {
+            $getRoot().append(
+              $createParagraphNode().append($createTextNode('Title')),
+              $createParagraphNode().append(
+                $createLinkNode('https://example.com/a').append($bold(first)),
+              ),
+              $createParagraphNode().append(
+                $createTextNode(pin).toggleFormat('underline'),
+                $createLinkNode('https://example.com/b').append(
+                  $italic(second),
+                ),
+              ),
+            );
+          },
+          {ids},
+        );
+        t.offline();
+        t.a.update(() => {
+          const one = $getRoot().getChildAtIndex(1) as ElementNode;
+          const two = $getRoot().getChildAtIndex(2) as ElementNode;
+          const a = one.getFirstChildOrThrow() as ElementNode;
+          const b = two.getLastChildOrThrow() as ElementNode;
+          a.getFirstChildOrThrow().remove();
+          b.getFirstChildOrThrow().remove();
+          const line = $createParagraphNode();
+          line.append(a, b);
+          one.replace(line);
+          two.remove();
+          a.append($bold(next));
+          b.remove();
+          $setSelection(null);
+        });
+        t.b.update(() => {
+          const [x, y] = (
+            $getRoot().getChildAtIndex(2) as ElementNode
+          ).getAllTextNodes();
+          x.spliceText(0, pin.length, '', false);
+          y.spliceText(0, drop, '', false);
+          $setSelection(null);
+        });
+        await t.sync();
+        for (const p of t.peers) {
+          expect(
+            p.read(() => $getRoot().getChildAtIndex(1)!.getTextContent()),
+          ).toBe(next);
+        }
+      });
+    }
+  }
+
+  for (const ids of [
+    [1, 2],
+    [2, 1],
+  ]) {
+    // The same with text typed and removed in the update before the old
+    // text of the other line: it does not make that text start a word.
+    test(`S9-7 removed text of two lines read as one after typed text (ids ${ids})`, async () => {
+      const t = await setup(
+        () => {
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('Title')),
+            $createParagraphNode().append(
+              $createLinkNode('https://example.com/pad').append(
+                $createTextNode('red ').toggleFormat('code'),
+              ),
+              $createLinkNode('https://example.com/a').append($bold('X')),
+            ),
+            $createParagraphNode().append(
+              $createTextNode('be').toggleFormat('underline'),
+              $createLinkNode('https://example.com/b').append(
+                $italic('come blue'),
+              ),
+            ),
+          );
+        },
+        {ids},
+      );
+      t.offline();
+      t.a.update(() => {
+        const one = $getRoot().getChildAtIndex(1) as ElementNode;
+        const two = $getRoot().getChildAtIndex(2) as ElementNode;
+        const [pad, a] = one.getChildren() as ElementNode[];
+        const b = two.getLastChildOrThrow() as ElementNode;
+        const typed = a.getFirstChildOrThrow() as TextNode;
+        typed.spliceText(0, 1, 'in', false);
+        pad.getFirstChildOrThrow().remove();
+        typed.remove();
+        b.getFirstChildOrThrow().remove();
+        one.replace($createParagraphNode().append(pad, a, b));
+        two.remove();
+        a.append($bold('income gold'));
+        b.remove();
+        pad.remove();
+        $setSelection(null);
+      });
+      t.b.update(() => {
+        const [x, y] = (
+          $getRoot().getChildAtIndex(2) as ElementNode
+        ).getAllTextNodes();
+        x.spliceText(0, 2, '', false);
+        y.spliceText(0, 4, '', false);
+        $setSelection(null);
+      });
+      await t.sync();
+      for (const p of t.peers) {
+        expect(
+          p.read(() => $getRoot().getChildAtIndex(1)!.getTextContent()),
+        ).toBe('income gold');
+      }
+    });
+
+    // And where main keeps a letter on each side of where the two lines
+    // meet: what follows still needs that place to start a word.
+    test(`S9-7 removed text of two lines read as one between kept letters (ids ${ids})`, async () => {
+      const t = await setup(
+        () => {
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('Title')),
+            $createParagraphNode().append(
+              $createLinkNode('https://example.com/a').append($bold('in')),
+            ),
+            $createParagraphNode().append(
+              $createTextNode('be').toggleFormat('underline'),
+              $createLinkNode('https://example.com/b').append(
+                $createTextNode('c').toggleFormat('code'),
+                $italic('ome blue'),
+              ),
+            ),
+          );
+        },
+        {ids},
+      );
+      t.offline();
+      t.a.update(() => {
+        const one = $getRoot().getChildAtIndex(1) as ElementNode;
+        const two = $getRoot().getChildAtIndex(2) as ElementNode;
+        const a = one.getFirstChildOrThrow() as ElementNode;
+        const b = two.getLastChildOrThrow() as ElementNode;
+        for (const leaf of [...a.getChildren(), ...b.getChildren()]) {
+          leaf.remove();
+        }
+        one.replace($createParagraphNode().append(a, b));
+        two.remove();
+        a.append($bold('inc'));
+        b.append($italic('ome gold'));
+        $setSelection(null);
+      });
+      t.b.update(() => {
+        const link = (
+          $getRoot().getChildAtIndex(2) as ElementNode
+        ).getChildren()[1] as ElementNode;
+        (link.getChildren()[1] as TextNode).spliceText(0, 3, '', false);
+        $setSelection(null);
+      });
+      await t.sync();
+      for (const p of t.peers) {
+        expect(
+          p.read(() => $getRoot().getChildAtIndex(1)!.getTextContent()),
+        ).toBe('income gold');
+      }
+    });
+  }
+
+  for (const ids of [
+    [1, 2],
+    [2, 1],
+  ]) {
+    // Text typed and removed at an island's edge is not old text: the old
+    // text after it (` come`, a whole word of its old line) still joins the
+    // new word `income`.
+    test(`S9-7 removed text of two lines read as one, typed text before a whole old word (ids ${ids})`, async () => {
+      const t = await setup(
+        () => {
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('Title')),
+            $createParagraphNode().append(
+              $createLinkNode('https://example.com/pad').append(
+                $createTextNode('red ').toggleFormat('code'),
+              ),
+              $createLinkNode('https://example.com/a').append($bold('X')),
+            ),
+            $createParagraphNode().append(
+              $createTextNode(' ').toggleFormat('underline'),
+              $createLinkNode('https://example.com/b').append(
+                $italic('come blue'),
+              ),
+            ),
+          );
+        },
+        {ids},
+      );
+      t.offline();
+      t.a.update(() => {
+        const one = $getRoot().getChildAtIndex(1) as ElementNode;
+        const two = $getRoot().getChildAtIndex(2) as ElementNode;
+        const [pad, a] = one.getChildren() as ElementNode[];
+        const b = two.getLastChildOrThrow() as ElementNode;
+        const typed = a.getFirstChildOrThrow() as TextNode;
+        typed.spliceText(0, 1, 'in', false);
+        pad.getFirstChildOrThrow().remove();
+        typed.remove();
+        b.getFirstChildOrThrow().remove();
+        one.replace($createParagraphNode().append(pad, a, b));
+        two.remove();
+        a.append($bold('income gold'));
+        b.remove();
+        pad.remove();
+        $setSelection(null);
+      });
+      t.b.update(() => {
+        const [, y] = (
+          $getRoot().getChildAtIndex(2) as ElementNode
+        ).getAllTextNodes();
+        y.spliceText(0, 4, '', false);
+        $setSelection(null);
+      });
+      await t.sync();
+      for (const p of t.peers) {
+        expect(
+          p.read(() => $getRoot().getChildAtIndex(1)!.getTextContent()),
+        ).toBe('income gold');
+      }
+    });
+
+    // The same at the end: `one`, a whole word of its old line, before
+    // text typed and removed (`ness`) in the new word `oneness`.
+    test(`S9-7 removed text of two lines read as one, a whole old word before typed text (ids ${ids})`, async () => {
+      const t = await setup(
+        () => {
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('Title')),
+            $createParagraphNode().append(
+              $createLinkNode('https://example.com/a').append(
+                $bold('blue one'),
+              ),
+            ),
+            $createParagraphNode().append(
+              $createLinkNode('https://example.com/b').append($italic('X')),
+              $createLinkNode('https://example.com/pad').append(
+                $createTextNode(' red').toggleFormat('code'),
+              ),
+            ),
+          );
+        },
+        {ids},
+      );
+      t.offline();
+      t.a.update(() => {
+        const one = $getRoot().getChildAtIndex(1) as ElementNode;
+        const two = $getRoot().getChildAtIndex(2) as ElementNode;
+        const a = one.getFirstChildOrThrow() as ElementNode;
+        const [b, pad] = two.getChildren() as ElementNode[];
+        const typed = b.getFirstChildOrThrow() as TextNode;
+        typed.spliceText(0, 1, 'ness', false);
+        a.getFirstChildOrThrow().remove();
+        typed.remove();
+        pad.getFirstChildOrThrow().remove();
+        one.replace($createParagraphNode().append(a, b));
+        two.remove();
+        a.append($bold('gold oneness'));
+        b.remove();
+        $setSelection(null);
+      });
+      t.b.update(() => {
+        const [x] = (
+          $getRoot().getChildAtIndex(1) as ElementNode
+        ).getAllTextNodes();
+        x.spliceText(5, 3, '', false);
+        $setSelection(null);
+      });
+      await t.sync();
+      for (const p of t.peers) {
+        expect(
+          p.read(() => $getRoot().getChildAtIndex(1)!.getTextContent()),
+        ).toBe('gold oneness');
+      }
+    });
+  }
+
+  for (const ids of [
+    [1, 2],
+    [2, 1],
+  ]) {
+    // Text typed in another line and removed does not join old letters
+    // that followed each other (`o` and `ne` of `one`) into one word.
+    test(`S9-7 text typed elsewhere between old letters of a word (ids ${ids})`, async () => {
+      const t = await setup(
+        () => {
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('Title')),
+            $createParagraphNode().append(
+              $createLinkNode('https://example.com/l').append($bold('o')),
+              $createLinkNode('https://example.com/r').append(
+                $italic('ne blue'),
+              ),
+            ),
+            $createParagraphNode().append(
+              $createLinkNode('https://example.com/m').append(
+                $createTextNode('Q').toggleFormat('code'),
+              ),
+            ),
+          );
+        },
+        {ids},
+      );
+      t.offline();
+      t.a.update(() => {
+        const one = $getRoot().getChildAtIndex(1) as ElementNode;
+        const two = $getRoot().getChildAtIndex(2) as ElementNode;
+        const [l, r] = one.getChildren() as ElementNode[];
+        const m = two.getFirstChildOrThrow() as ElementNode;
+        const typed = m.getFirstChildOrThrow() as TextNode;
+        typed.spliceText(0, 1, 'X', false);
+        l.getFirstChildOrThrow().remove();
+        r.getFirstChildOrThrow().remove();
+        typed.remove();
+        one.replace($createParagraphNode().append(l, m, r));
+        two.remove();
+        l.append($bold('oXne gold'));
+        m.remove();
+        r.remove();
+        $setSelection(null);
+      });
+      t.b.update(() => {
+        const [, y] = (
+          $getRoot().getChildAtIndex(1) as ElementNode
+        ).getAllTextNodes();
+        y.spliceText(0, 2, '', false);
+        $setSelection(null);
+      });
+      await t.sync();
+      for (const p of t.peers) {
+        expect(
+          p.read(() => $getRoot().getChildAtIndex(1)!.getTextContent()),
+        ).toBe('oXne gold');
+      }
+    });
+  }
+
+  for (const ids of [
+    [1, 2],
+    [2, 1],
+  ]) {
+    // Nor does text typed elsewhere in the same line: only text typed
+    // exactly between two old letters joins them.
+    test(`S9-7 text typed elsewhere in the line between old letters of a word (ids ${ids})`, async () => {
+      const t = await setup(
+        () => {
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('Title')),
+            $createParagraphNode().append(
+              $createLinkNode('https://example.com/l').append($bold('o')),
+              $createLinkNode('https://example.com/r').append(
+                $italic('ne blue'),
+              ),
+              $createTextNode(' '),
+              $createLinkNode('https://example.com/m').append(
+                $createTextNode('Q').toggleFormat('code'),
+              ),
+            ),
+          );
+        },
+        {ids},
+      );
+      t.offline();
+      t.a.update(() => {
+        const one = $getRoot().getChildAtIndex(1) as ElementNode;
+        const [l, r, space, m] = one.getChildren() as ElementNode[];
+        const typed = m.getFirstChildOrThrow() as TextNode;
+        typed.spliceText(0, 1, 'X', false);
+        l.getFirstChildOrThrow().remove();
+        r.getFirstChildOrThrow().remove();
+        typed.remove();
+        space.remove();
+        one.replace($createParagraphNode().append(l, m, r));
+        l.append($bold('oXne gold'));
+        m.remove();
+        r.remove();
+        $setSelection(null);
+      });
+      t.b.update(() => {
+        const [, y] = (
+          $getRoot().getChildAtIndex(1) as ElementNode
+        ).getAllTextNodes();
+        y.spliceText(0, 2, '', false);
+        $setSelection(null);
+      });
+      await t.sync();
+      for (const p of t.peers) {
+        expect(
+          p.read(() => $getRoot().getChildAtIndex(1)!.getTextContent()),
+        ).toBe('oXne gold');
+      }
+    });
+  }
+
+  test('S9-7 without Intl.Segmenter, text of nodes made keeps no removed text in part', async () => {
+    vi.resetModules();
+    vi.stubGlobal('Intl', {...Intl, Segmenter: undefined});
+    try {
+      // (Fresh modules, Lexical's too: the binding reads the platform once.)
+      const lexical = await import('lexical');
+      const harness = await import('../../utils/harness');
+      const $lineOf = () =>
+        lexical.$getRoot().getChildAtIndex(1) as ElementNode;
+      const t = await harness.setup(() => {
+        lexical
+          .$getRoot()
+          .append(
+            lexical
+              .$createParagraphNode()
+              .append(lexical.$createTextNode('Title')),
+            lexical
+              .$createParagraphNode()
+              .append(lexical.$createTextNode('t63 t71z t69z')),
+          );
+      });
+      t.offline();
+      t.a.update(() => {
+        $lineOf().getFirstChildOrThrow().remove();
+        $lineOf().append(lexical.$createTextNode('t63 t71z t81z'));
+        lexical.$setSelection(null);
+      });
+      t.b.update(() => {
+        ($lineOf().getFirstChildOrThrow() as TextNode).spliceText(
+          3,
+          0,
+          'Q',
+          false,
+        );
+        lexical.$setSelection(null);
+      });
+      await t.sync();
+      // (The line is written again whole, as before this rule, so Q stays
+      // where its old characters were.)
+      expect(
+        t.peers.map(p => p.read(() => $lineOf().getTextContent())),
+      ).toEqual(['Qt63 t71z t81z', 'Qt63 t71z t81z']);
+    } finally {
+      vi.unstubAllGlobals();
+      vi.resetModules();
+    }
+  });
+
+  test('S9-7 without Intl.Segmenter, a stacking sign joins across the marks after it', async () => {
+    vi.resetModules();
+    vi.stubGlobal('Intl', {...Intl, Segmenter: undefined});
+    try {
+      const {wordCut} = await import('../../../internal/Inline');
+      const cuts = (t: string) =>
+        Array.from({length: t.length - 1}, (_, k) => k + 1).filter(k =>
+          wordCut(t, k),
+        );
+      // KA, COENG, MUUSIKATOAN, KHA; KA, VIRAMA, VOWEL SIGN I, KHA
+      expect(cuts('\u1780\u17d2\u17c9\u1781')).toEqual([]);
+      expect(cuts('\u1000\u1039\u102d\u1001')).toEqual([]);
+      expect(cuts('\u0e01\u0e33\u0e02')).toEqual([2]);
+      // halfwidth KA and its voiced sound mark
+      expect(cuts('\uff76\uff9e')).toEqual([]);
+      // KA, VIRAMA, an emoji modifier, KHA; a prepend sign (U+113D1) and A
+      expect(cuts('\u0915\u094d\u{1f3fb}\u0916')).toEqual([]);
+      expect(cuts('\u{113d1}\u3042')).toEqual([]);
+    } finally {
+      vi.unstubAllGlobals();
+      vi.resetModules();
+    }
+  });
+
+  // A word made again as another word that holds its letters ("t1z" as
+  // "t91z") is a new word, not a "9" typed into it: a peer's concurrent
+  // replacement of the old word deletes its letters, which a write that
+  // kept them would have taken from the new word ("9t94z", L2 soak C
+  // 9310469). Both new words stay. With a text set (`setTextContent`), the
+  // text is still written as the letters typed: a known failure.
+  for (const how of ['made', 'set'] as const) {
+    for (const ids of IDS) {
+      (how === 'set' ? test.fails : test)(
+        `S9-7 "t1z" ${how} again as "t91z" ‖ the peer replaces "t1z" with "t94z" (ids ${ids})`,
+        async () => {
+          const t = await setup(
+            () => {
+              $getRoot().append(
+                $createParagraphNode().append($createTextNode('Title')),
+                $createParagraphNode().append(
+                  $createTextNode('t1z  '),
+                  $createTextNode('t3z').toggleFormat('bold'),
+                ),
+              );
+            },
+            {ids},
+          );
+          t.offline();
+          t.a.update(() => {
+            const line = $line();
+            if (how === 'set') {
+              (line.getFirstChild() as TextNode).setTextContent('t91z  ');
+            } else {
+              for (const child of line.getChildren()) {
+                child.remove();
+              }
+              line.append($createTextNode('t91z  t3z'));
+            }
+            $setSelection(null);
+          });
+          t.b.update(() => {
+            ($line().getFirstChild() as TextNode).spliceText(
+              0,
+              3,
+              't94z',
+              false,
+            );
+            $setSelection(null);
+          });
+          await t.sync();
+          const text = lineText(t.a);
+          expect([text.includes('t91z'), text.includes('t94z')]).toEqual([
+            true,
+            true,
+          ]);
+          await expectConverged(t.peers);
+        },
+      );
+    }
+  }
+
+  // A removed node whose text the made text holds twice, once right before
+  // the old text that followed it (a piece of a word, which a highlighter
+  // splits off where a NodeState changes, and text pasted before it, #9563):
+  // it keeps its characters there.
+  for (const [edit, expected] of [
+    ['deletes the old "t"', 't48zQ t78z 49z t50z'],
+    ['types "Z" after the old "t"', 't48zQ t78z tZ49z t50z'],
+  ] as const) {
+    for (const ids of IDS) {
+      test(`S9-7 a piece of a word made again after text that holds it too: the peer ${edit} (ids ${ids})`, async () => {
+        const t = await setup(
+          () => {
+            $getRoot().append(
+              $createParagraphNode().append($createTextNode('Title')),
+              $createParagraphNode().append(
+                $createTextNode('t48z'),
+                $createTextNode(' t').toggleFormat('italic'),
+                $createTextNode('49z t50z'),
+              ),
+            );
+          },
+          {ids},
+        );
+        const writes = track(t.a.doc);
+        t.offline();
+        t.a.update(() => {
+          for (const child of $line().getChildren()) {
+            child.remove();
+          }
+          $line().append($createTextNode('t48zQ t78z t49z t50z'));
+          $setSelection(null);
+        });
+        const written = {...writes};
+        t.b.update(() => {
+          const piece = $line().getAllTextNodes()[1];
+          if (edit.startsWith('deletes')) {
+            piece.spliceText(1, 1, '', false);
+          } else {
+            piece.spliceText(2, 0, 'Z', false);
+          }
+          $setSelection(null);
+        });
+        await t.sync();
+        await expectEverywhere(t.peers, expected);
+        expect(written).toEqual({del: '', ins: 'Q t78z'});
       });
     }
   }

@@ -18,6 +18,7 @@ import {
   configExtension,
   getExtensionDependencyFromEditor,
   type LexicalEditorWithDispose,
+  type Signal,
 } from '@lexical/extension';
 import {
   $generateDOMFromNodes,
@@ -44,7 +45,7 @@ import {
   type LexicalEditor,
   type LexicalNode,
 } from 'lexical';
-import {assert, describe, expect, test} from 'vitest';
+import {assert, describe, expect, expectTypeOf, test} from 'vitest';
 
 import {$setBlockText} from '../utils/setBlockText';
 
@@ -341,10 +342,8 @@ describe('BlockIdHTMLExtension', () => {
   test('export: false leaves the export override out of every export session', () => {
     using editor = build({html: {export: false}});
     append(editor, parseFixture('<p>a</p>'));
-    const {export: exportSignal} = getExtensionDependencyFromEditor(
-      editor,
-      BlockIdHTMLExtension,
-    ).output;
+    const {export: exportSignal, handles: handlesSignal} =
+      getExtensionDependencyFromEditor(editor, BlockIdHTMLExtension).output;
     // Whether an export session runs with the editor's own render config
     // (every override, this extension's included) or one compiled without
     // an override that its disabledForSession turned off.
@@ -354,15 +353,51 @@ describe('BlockIdHTMLExtension', () => {
       );
     expect(sessionHasAllOverrides()).toBe(false);
     expect(exportHTML(editor)).not.toContain('data-block');
-    exportSignal.value = 'handle';
+    // handles alone does not turn the export on.
+    handlesSignal.value = true;
+    expect(sessionHasAllOverrides()).toBe(false);
+    expect(exportHTML(editor)).not.toContain('data-block');
+    exportSignal.value = true;
     expect(sessionHasAllOverrides()).toBe(true);
     expect(exportHTML(editor)).toContain('data-block-handle');
-    exportSignal.value = true;
+    handlesSignal.value = false;
     expect(sessionHasAllOverrides()).toBe(true);
     expect(exportHTML(editor)).toContain('data-block-id');
     exportSignal.value = false;
     expect(sessionHasAllOverrides()).toBe(false);
     expect(exportHTML(editor)).not.toContain('data-block');
+  });
+
+  test('the released types of export still hold: a boolean, and a Signal<boolean>', () => {
+    using editor = build({html: {handles: true}});
+    const output = getExtensionDependencyFromEditor(
+      editor,
+      BlockIdHTMLExtension,
+    ).output;
+    // Code written against v0.53.0's types: these must keep compiling
+    // (pnpm run tsc-test type-checks this file).
+    const on: boolean = output.export.value;
+    const exportSignal: Signal<boolean> = output.export;
+    // A whole config as written for v0.53.0, without handles.
+    const config: BlockIdHTMLConfig = {export: true, import: true};
+    const partial: Partial<BlockIdHTMLConfig> = {export: false};
+    expectTypeOf(output.export).toEqualTypeOf<Signal<boolean>>();
+    expectTypeOf<BlockIdHTMLConfig['export']>().toEqualTypeOf<boolean>();
+    expectTypeOf(output.handles).toEqualTypeOf<Signal<boolean>>();
+    expectTypeOf(output.import).toEqualTypeOf<Signal<boolean>>();
+    expect([on, exportSignal.value, config.export, partial.export]).toEqual([
+      true,
+      true,
+      true,
+      false,
+    ]);
+    // The default configuration is unchanged, with handles off.
+    using defaults = build();
+    const {handles} = getExtensionDependencyFromEditor(
+      defaults,
+      BlockIdHTMLExtension,
+    ).output;
+    expect(handles.value).toBe(false);
   });
 
   test('import: false ignores the attribute; export: false omits it', () => {
@@ -404,7 +439,7 @@ describe('BlockIdHTMLExtension: documents read without ids', () => {
   });
 });
 
-describe("BlockIdHTMLExtension: export: 'handle'", () => {
+describe('BlockIdHTMLExtension: handles: true', () => {
   const IDS = [
     'V1StGXR8_Z5jdHi6B-myT',
     '9xQeLm2Pq0aK7cTb_wYuA',
@@ -415,7 +450,7 @@ describe("BlockIdHTMLExtension: export: 'handle'", () => {
   ];
 
   test('exports data-block-handle instead of data-block-id', () => {
-    using editor = build({html: {export: 'handle'}, ids: IDS});
+    using editor = build({html: {handles: true}, ids: IDS});
     append(
       editor,
       parseFixture(
@@ -486,13 +521,13 @@ describe("BlockIdHTMLExtension: export: 'handle'", () => {
       'heading:real-id',
     ]);
     // With the import on, as by default, and an export of handles.
-    using handles = build({html: {export: 'handle'}});
+    using handles = build({html: {handles: true}});
     append(handles, parseFixture('<p data-block-handle="from-html">a</p>'));
     expect(tree(handles)).toEqual(['paragraph:b1']);
   });
 
   test('round trip: export handles, edit by handle, resolve', () => {
-    using editor = build({html: {export: 'handle'}, ids: IDS});
+    using editor = build({html: {handles: true}, ids: IDS});
     append(
       editor,
       parseFixture(
@@ -559,7 +594,7 @@ describe("BlockIdHTMLExtension: export: 'handle'", () => {
 
   test('a handle from exported HTML never names a block added since whose handle would be the same', () => {
     using editor = build({
-      html: {export: 'handle'},
+      html: {handles: true},
       ids: ['p18f', 'Rk8pZc41'],
     });
     append(editor, parseFixture('<p>Revenue grew 4%.</p><p>Hiring.</p>'));

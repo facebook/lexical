@@ -19,10 +19,11 @@
 // - each handle, and each whole id, resolves to its own block;
 // - the handles of the previous read, resolved with that read, name the
 //   blocks they named then, or are not found once those are deleted;
-// - typo safety: no one-character change of a handle (substitute, drop,
-//   add) resolves to a different block, unless the changed string is that
-//   block's id or a prefix of its key that starts with its current handle (a
-//   handle it could have been given while another key shared more of it).
+// - consistency of typos with the handle table: a one-character change of a
+//   handle (substitute, drop, add) resolves to a different block only as
+//   that block's id or a prefix of its key that starts with its current
+//   handle. (How rarely that happens, the typo-safety claim, is asserted by
+//   the rate checks here and in BlockIdExtension.handles.test.ts.)
 //
 // The default run is small. Set BLOCK_HANDLE_PROPERTY_RUNS to run more
 // documents locally, and BLOCK_HANDLE_TYPO_DOCS to measure and print handle

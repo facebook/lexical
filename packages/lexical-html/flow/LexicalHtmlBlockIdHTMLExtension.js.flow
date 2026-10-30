@@ -15,7 +15,8 @@ declare export var BLOCK_ID_ATTRIBUTE: 'data-block-id';
 declare export var BLOCK_HANDLE_ATTRIBUTE: 'data-block-handle';
 
 export type BlockIdHTMLConfig = {
-  export: boolean | 'handle',
+  export: boolean,
+  handles?: boolean,
   import: boolean,
 };
 
@@ -23,7 +24,8 @@ declare export var BlockIdHTMLExtension: LexicalExtension<
   BlockIdHTMLConfig,
   '@lexical/html/BlockIdHTML',
   {
-    export: Signal<boolean | 'handle'>,
+    export: Signal<boolean>,
+    handles: Signal<boolean>,
     import: Signal<boolean>,
   },
   unknown,

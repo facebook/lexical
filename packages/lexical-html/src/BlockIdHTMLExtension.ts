@@ -53,7 +53,7 @@ export const BLOCK_ID_ATTRIBUTE = 'data-block-id';
 
 /**
  * The attribute that carries a block handle (see `$getBlockHandle` in
- * `@lexical/extension`) in HTML exported with `export: 'handle'`. Import
+ * `@lexical/extension`) in HTML exported with `handles: true`. Import
  * never reads it.
  *
  * @experimental
@@ -63,20 +63,26 @@ export const BLOCK_HANDLE_ATTRIBUTE = 'data-block-handle';
 /** @experimental */
 export interface BlockIdHTMLConfig {
   /**
-   * With `true`, write {@link BLOCK_ID_ATTRIBUTE} on the exported element of
-   * every identified block (`$generateHtmlFromNodes`, copy as HTML, …).
+   * Write {@link BLOCK_ID_ATTRIBUTE} on the exported element of every
+   * identified block (`$generateHtmlFromNodes`, copy as HTML, …).
    *
-   * Showing blocks to a model? Use `'handle'`: it writes
-   * {@link BLOCK_HANDLE_ATTRIBUTE} with the block's handle (a short opaque
-   * name derived from a hash of its id, see `$getBlockHandle`) instead of the
-   * id. Keep the handles of the export (`$getBlockHandles()`, in the same
-   * read), and resolve what the model answers with
-   * `$resolveBlockHandle(handle, {read})`, so that a handle names the block
-   * the model was shown, never a block added since. Import does not read
-   * handles, so a handle is never mistaken for an id.
+   * Showing blocks to a model? Set {@link BlockIdHTMLConfig.handles} too.
+   */
+  export: boolean;
+  /**
+   * With {@link BlockIdHTMLConfig.export} on, write each block's handle in
+   * {@link BLOCK_HANDLE_ATTRIBUTE} instead of its id in
+   * {@link BLOCK_ID_ATTRIBUTE}: a short opaque name derived from a hash of
+   * the id (see `$getBlockHandle`), for HTML shown to a model. Keep the
+   * handles of the export (`$getBlockHandles()`, in the same read), and
+   * resolve what the model answers with `$resolveBlockHandle(handle, {read})`,
+   * so that a handle names the block the model was shown, never a block added
+   * since. Import does not read handles, so a handle is never mistaken for an
+   * id. Default: `false`. Optional, so that a whole `BlockIdHTMLConfig`
+   * written for an earlier version still type-checks.
    *
    * ```ts
-   * configExtension(BlockIdHTMLExtension, {export: 'handle'});
+   * configExtension(BlockIdHTMLExtension, {handles: true});
    * // The HTML the model reads, and the handles it is shown, in one read.
    * const [html, shown] = editor.read(() => [
    *   $generateHtmlFromNodes(editor),
@@ -94,7 +100,7 @@ export interface BlockIdHTMLConfig {
    * });
    * ```
    */
-  export: boolean | 'handle';
+  handles?: boolean;
   /**
    * Read {@link BLOCK_ID_ATTRIBUTE} back when HTML is imported through
    * {@link DOMImportExtension}, onto the block that the element produced.
@@ -156,8 +162,8 @@ const $installBlockIdImportOverlay: DOMPreprocessFn = (dom, ctx, $next) => {
  * through {@link DOMImportExtension} reads it back (through the uniqueness
  * rule, so ids in pasted HTML never clash with ids in the document).
  *
- * For HTML shown to a model, `export: 'handle'` writes short handles in
- * `data-block-handle` instead (see {@link BlockIdHTMLConfig.export}).
+ * For HTML shown to a model, `handles: true` writes short handles in
+ * `data-block-handle` instead (see {@link BlockIdHTMLConfig.handles}).
  *
  * This lives in `@lexical/html` rather than in {@link BlockIdExtension}
  * because `@lexical/html` depends on `@lexical/extension`. The legacy
@@ -166,8 +172,17 @@ const $installBlockIdImportOverlay: DOMPreprocessFn = (dom, ctx, $next) => {
  * @experimental
  */
 export const BlockIdHTMLExtension = defineExtension({
-  build: (editor, config) => namedSignals(config),
-  config: safeCast<BlockIdHTMLConfig>({export: true, import: true}),
+  build: (editor, config) =>
+    namedSignals({
+      export: config.export,
+      handles: config.handles === true,
+      import: config.import,
+    }),
+  config: safeCast<BlockIdHTMLConfig>({
+    export: true,
+    handles: false,
+    import: true,
+  }),
   dependencies: [
     BlockIdExtension,
     configExtension(DOMRenderExtension, {
@@ -177,14 +192,13 @@ export const BlockIdHTMLExtension = defineExtension({
           {
             $exportDOM(node, $next) {
               const output = $next();
-              const mode =
-                $getExtensionOutput(BlockIdHTMLExtension).export.peek();
+              const html = $getExtensionOutput(BlockIdHTMLExtension);
               if (
                 isHTMLElement(output.element) &&
-                mode &&
+                html.export.peek() &&
                 $getExtensionOutput(BlockIdExtension).$isIdentifiedBlock(node)
               ) {
-                if (mode === 'handle') {
+                if (html.handles.peek()) {
                   const handle = $getBlockHandle(node);
                   if (handle !== null) {
                     output.element.setAttribute(BLOCK_HANDLE_ATTRIBUTE, handle);

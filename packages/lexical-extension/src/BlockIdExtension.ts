@@ -147,7 +147,7 @@ export function $getBlockId(node: LexicalNode): string | null {
  *
  * Showing blocks to a model? Use handles, which cost a few tokens instead of
  * a whole id: {@link $getBlockHandle} / {@link $resolveBlockHandle}, or
- * `export: 'handle'` in `BlockIdHTMLExtension`.
+ * `handles: true` in `BlockIdHTMLExtension`.
  *
  * ```ts
  * // What the model reads, and the handles it is shown:
@@ -1889,7 +1889,7 @@ function createRuntime(config: BlockIdConfig): BlockIdRuntime {
  * Showing blocks to a model? Use handles, short opaque names derived from a
  * hash of each id (almost always 4 characters), instead of whole ids:
  * {@link $getBlockHandle} / {@link $resolveBlockHandle}, or
- * `export: 'handle'` in `BlockIdHTMLExtension`. A mistyped or outdated
+ * `handles: true` in `BlockIdHTMLExtension`. A mistyped or outdated
  * handle almost always resolves as not found or ambiguous rather than as
  * another block.
  *

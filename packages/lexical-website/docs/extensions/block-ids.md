@@ -140,8 +140,8 @@ almost always 4 characters long. `V1StGXR8_Z5jdHi6B-myT` is shown as `2bNo`,
 which costs 3 to 4 tokens. A handle is the shortest prefix, at least 4
 characters long, of a 64-bit hash of the block's id that no other block's
 hash starts with, like a short git hash. The document keeps its ids; handles
-are derived from them when they are read and are never stored, so nothing
-has to be kept between an agent's turns.
+are derived from them when they are read, so nothing is stored in the
+document.
 
 | | Tokens per block (o200k) |
 | --- | --- |
@@ -372,9 +372,9 @@ time.
 are computed from the same blocks as `$getBlockById`: the identified blocks of
 the last committed state, all at once and cached until a commit changes an
 id, so reading the handle of each of 10,000 blocks takes a few milliseconds.
-While the extension is disabled, they come from a scan of the document, kept
-while the document has not changed; each call still checks every block for
-changes, so read every block's handle with one `$getBlockHandles()`.
+While the extension is disabled, they come from a scan of the last committed
+state, kept until the next commit, so reading each block's handle costs
+about the same either way.
 
 ### Handles and collaboration
 
@@ -439,8 +439,8 @@ if (target.status !== 'found') {
 
 ### Handles in HTML
 
-With [`BlockIdHTMLExtension`](#html), `export: 'handle'` writes handles
-instead of ids, in a `data-block-handle` attribute (`BLOCK_HANDLE_ATTRIBUTE`):
+With [`BlockIdHTMLExtension`](#html), `handles: true` writes handles instead
+of ids, in a `data-block-handle` attribute (`BLOCK_HANDLE_ATTRIBUTE`):
 
 ```ts
 import {
@@ -457,7 +457,7 @@ const editor = buildEditorFromExtensions({
   dependencies: [
     RichTextExtension,
     BlockIdExtension,
-    configExtension(BlockIdHTMLExtension, {export: 'handle'}),
+    configExtension(BlockIdHTMLExtension, {handles: true}),
   ],
   name: 'my-editor',
 });
@@ -642,9 +642,10 @@ Ids are not part of HTML by default. Add `BlockIdHTMLExtension` (from
 
 Set `export: false` or `import: false` to use only one direction. Keep the
 export off in editors whose HTML must be byte-for-byte deterministic
-(snapshot comparisons, content hashing). `export: 'handle'` writes handles
-in `data-block-handle` instead of ids, for HTML shown to a model (see
-[Handles in HTML](#handles-in-html)).
+(snapshot comparisons, content hashing). `handles: true` (default `false`)
+makes the export write handles in `data-block-handle` instead of ids, for
+HTML shown to a model (see [Handles in HTML](#handles-in-html)); it has no
+effect while `export` is off.
 
 ## Configuration
 

@@ -976,13 +976,15 @@ describe('Block IDs documentation examples', () => {
       dependencies: [
         RichTextExtension,
         BlockIdExtension,
-        configExtension(BlockIdHTMLExtension, {export: 'handle'}),
+        configExtension(BlockIdHTMLExtension, {handles: true}),
       ],
       name: 'my-editor',
     });
-    expect(
-      getExtensionDependencyFromEditor(editor, BlockIdHTMLExtension).output
-        .export.value,
-    ).toBe('handle');
+    const output = getExtensionDependencyFromEditor(
+      editor,
+      BlockIdHTMLExtension,
+    ).output;
+    expect(output.export.value).toBe(true);
+    expect(output.handles.value).toBe(true);
   });
 });

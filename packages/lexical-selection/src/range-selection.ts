@@ -189,7 +189,9 @@ export function $setBlocksType<T extends ElementNode>(
   // ListItemNode.replace override): both remap an element-anchored point
   // on the replaced block to {key: replacement, offset: prevSize + offset}.
   for (const prevNode of blockMap.values()) {
-    if ($getSlotHost(prevNode) !== null) {
+    // An empty block container (a declared one: roots and shadow roots are
+    // never in the map) is not a block to convert.
+    if ($getSlotHost(prevNode) !== null || $isBlockContainer(prevNode)) {
       continue;
     }
     const element = $createElement();

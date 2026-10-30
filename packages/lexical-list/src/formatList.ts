@@ -137,7 +137,7 @@ export function $insertList(listType: ListType): void {
     }
 
     const handled = new Set();
-    const kept = new Map<NodeKey, boolean>();
+    const kept = $keptTops(nodes);
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
 
@@ -218,11 +218,39 @@ function $isListItemContent(node: LexicalNode): boolean {
 }
 
 /**
+ * Where NodeStructureExtension enforces declared structure: for the node in
+ * the nearest block container that holds each selected node, whether it is
+ * kept (see {@link $listTarget}). Decided for the whole command before
+ * anything is converted, so that every selected block of one node is treated
+ * alike, whichever is converted first.
+ */
+function $keptTops(nodes: LexicalNode[]): Map<NodeKey, boolean> {
+  const kept = new Map<NodeKey, boolean>();
+  if (!INTERNAL_isNodeStructureEnforced($getEditor())) {
+    return kept;
+  }
+  for (const node of nodes) {
+    let top: LexicalNode | null = node;
+    while (top !== null && !$isBlockContainer(top.getParent())) {
+      top = top.getParent();
+    }
+    if (
+      $isElementNode(top) &&
+      !$isBlockContainer(top) &&
+      !kept.has(top.getKey())
+    ) {
+      kept.set(top.getKey(), !top.getChildren().every($isListItemContent));
+    }
+  }
+  return kept;
+}
+
+/**
  * The node `$insertList` turns into a list item for the selected `leaf`,
  * where `top` is its ancestor in the nearest block container, or null for
  * none. It is `top` unless NodeStructureExtension enforces declared
  * structure and `top` holds a block a list item cannot hold (a quote, a
- * box), as decided in `kept`: the normalization would lift that block, and the selected text with
+ * box), as decided in `kept` (see {@link $keptTops}): the normalization would lift that block, and the selected text with
  * it, out of the new list item and remove the list as empty, so `top` stays
  * and the block that holds `leaf` is converted instead, in place.
  */
@@ -234,8 +262,6 @@ function $listTarget(
   if (!INTERNAL_isNodeStructureEnforced($getEditor())) {
     return top;
   }
-  // Decided once per command, before converting a block in it changes what
-  // `top` holds, so that every selected block of `top` is treated alike.
   let keep = kept.get(top.getKey());
   if (keep === undefined) {
     keep = !top.getChildren().every($isListItemContent);

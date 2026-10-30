@@ -1159,6 +1159,36 @@ describe('selections that pass over or sit on a container', () => {
       },
       'component{body:dbox(quote("abc"))}()',
     ],
+    [
+      'an empty quote and a paragraph of a box that declares nothing, node selected: $insertList',
+      () => {
+        const quote = $createQuoteNode();
+        const text = $createTextNode('x');
+        const box = $create(PlainBoxNode).append(
+          quote,
+          $createParagraphNode().append(text),
+        );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        $setSlot(box as any, 'aside', $p('slot'));
+        $getRoot().clear().append(box);
+        const selection = $createNodeSelection();
+        selection.add(quote.getKey());
+        selection.add(text.getKey());
+        $setSelection(selection);
+        $insertList('bullet');
+      },
+      'box{aside:p("slot")}(list[bullet](li() li("x")))',
+    ],
+    [
+      'removing the only, empty, declared box of a shadow root',
+      () => {
+        const shadow = $create(ShadowBoxNode).append($create(DeclaredBoxNode));
+        $getRoot().clear().append(shadow);
+        shadow.select(0, 1);
+        ($getSelection() as RangeSelection).removeText();
+      },
+      'sbox(p())',
+    ],
   ] as const)('%s (NodeStructureExtension)', (_name, $act, expected) => {
     using editor = buildEditor(true);
     editor.update($act, {discrete: true});

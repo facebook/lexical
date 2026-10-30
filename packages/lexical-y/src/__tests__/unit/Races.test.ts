@@ -25,6 +25,8 @@ import {
   $isTableCellNode,
   $isTableNode,
   $isTableRowNode,
+  $mergeCells,
+  type TableCellNode,
 } from '@lexical/table';
 import {
   $createParagraphNode,
@@ -271,6 +273,47 @@ const CASES: Case[] = [
     // and the line after stays apart.
     id: 'block inserted at a join ‖ Backspace join',
     init: () => $getRoot().append($p('Revenue grew 4%'), $p(' in Q3.')),
+  },
+  {
+    a: () => {
+      const row = $block([0, 0]);
+      $mergeCells([
+        row.getChildAtIndex(0) as TableCellNode,
+        row.getChildAtIndex(1) as TableCellNode,
+      ]);
+    },
+    b: () => $selectIn([0, 0, 1, 0], 5).insertText('X'),
+    // Documented (Moves): merging cells moves the content of the merged-away
+    // cell, so the typing in it is lost.
+    expected:
+      'table(tablerow(tablecell(paragraph("left") paragraph("right"))))',
+    id: 'merge cells ‖ type in the cell merged away',
+    init: () => {
+      const table = $createTableNodeWithDimensions(1, 2, false);
+      $getRoot().append(table);
+      $block([0, 0, 0]).clear().append($p('left'));
+      $block([0, 0, 1]).clear().append($p('right'));
+    },
+  },
+  {
+    // Documented (Moves, Undo): the box keeps the moved paragraph once B
+    // typed in it, and the undo restores the paragraph next to it.
+    expected:
+      'test_box[b](paragraph("movedX para")) / paragraph("moved para") / paragraph("end")',
+    id: 'undo of a box wrap after a collaborator types in the wrapped block',
+    init: () => $getRoot().append($p('moved para'), $p('end')),
+    run: async t => {
+      t.a.update(() => {
+        const box = $createBoxNode('b');
+        $block([0]).insertBefore(box);
+        box.append($block([1]));
+      });
+      await t.sync();
+      t.b.update(() => $selectIn([0, 0], 5).insertText('X'));
+      await t.sync();
+      t.a.undo();
+      await t.sync();
+    },
   },
   {
     a: () => $selectIn([0, 1], 1).insertParagraph(),

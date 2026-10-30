@@ -795,7 +795,9 @@ not merge as a user might expect:
   and two collaborators moving the same block at once can duplicate it.
   Undoing the move restores the block as it was before the move: what
   collaborators typed in it since is lost or, in a moved line, stays where
-  the moved copy was. The moved block is the node Lexical recorded as moved:
+  the moved copy was. A block moved into a container the move made (wrapping
+  it in a box) stays there whole once a collaborator typed in it, next to
+  the restored block, so its text shows twice (see Undo). The moved block is the node Lexical recorded as moved:
   an existing node passed to `insertBefore`, `insertAfter`, `append` or
   `splice` in the update (as a block drag does), even one put back where it
   was. The blocks it passes that Lexical did not record keep what
@@ -808,7 +810,8 @@ not merge as a user might expect:
   content moves into the list; in a table cell or another shadow root the
   paragraph becomes a list item in place and keeps what collaborators type
   in it),
-  indenting list items that hold blocks, and the first edit that
+  indenting list items that hold blocks, merging table cells (the content
+  of the cells merged away moves into the first one), and the first edit that
   restructures a list stored in an older shape (a nested list kept as a node
   inside an item's line): its items move into the list's own sequence. A Backspace
   that outdents an item of such a list is a delete in the nested list's

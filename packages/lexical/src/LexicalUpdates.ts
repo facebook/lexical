@@ -893,6 +893,12 @@ function triggerTextContentListeners(
   currentEditorState: EditorState,
   pendingEditorState: EditorState,
 ): void {
+  // Computing the text walks the whole document where no reconcile cached
+  // it (a headless editor never has it cached): skipped when nothing
+  // listens.
+  if (editor._listeners.textcontent.size === 0) {
+    return;
+  }
   const currentTextContent = getEditorStateTextContent(currentEditorState);
   const latestTextContent = getEditorStateTextContent(pendingEditorState);
 

@@ -9,6 +9,7 @@
 import {
   $isCodeHighlightNode,
   $isCodeNode,
+  $keepNodeStateOf,
   $plainifyCodeContent,
   CodeExtension,
   CodeHighlightNode,
@@ -17,6 +18,7 @@ import {
   DEFAULT_CODE_LANGUAGE,
   registerCodeGutter,
   registerCodeIndentation,
+  sameNodeState,
 } from '@lexical/code-core';
 import {effect, namedSignals} from '@lexical/extension';
 import {
@@ -226,11 +228,15 @@ function $codeNodeTransform(
     }
 
     const lang = currentNode.getLanguage() || tokenizer.defaultLanguage;
-    const highlightNodes =
+    const children = currentNode.getChildren();
+    // Every character keeps the NodeState it had (see $keepNodeStateOf).
+    const highlightNodes = $keepNodeStateOf(
+      children,
       lang && !isCodeLanguageLoaded(lang)
         ? $plainifyCodeContent(currentNode.getTextContent())
-        : tokenizer.$tokenize(currentNode, lang ?? undefined);
-    const diffRange = getDiffRange(currentNode.getChildren(), highlightNodes);
+        : tokenizer.$tokenize(currentNode, lang ?? undefined),
+    );
+    const diffRange = getDiffRange(children, highlightNodes);
     const {from, to, nodesForReplacement} = diffRange;
 
     if (from !== to || nodesForReplacement.length) {
@@ -380,13 +386,14 @@ function isEqual(nodeA: LexicalNode, nodeB: LexicalNode): boolean {
   // Only checking for code highlight nodes, tabs and linebreaks. If it's regular text node
   // returning false so that it's transformed into code highlight node
   return (
-    ($isCodeHighlightNode(nodeA) &&
+    (($isCodeHighlightNode(nodeA) &&
       $isCodeHighlightNode(nodeB) &&
       nodeA.__text === nodeB.__text &&
       nodeA.__highlightType === nodeB.__highlightType &&
       nodeA.__style === nodeB.__style) ||
-    ($isTabNode(nodeA) && $isTabNode(nodeB)) ||
-    ($isLineBreakNode(nodeA) && $isLineBreakNode(nodeB))
+      ($isTabNode(nodeA) && $isTabNode(nodeB)) ||
+      ($isLineBreakNode(nodeA) && $isLineBreakNode(nodeB))) &&
+    sameNodeState(nodeA, nodeB)
   );
 }
 

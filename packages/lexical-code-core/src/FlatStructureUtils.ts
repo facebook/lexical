@@ -11,13 +11,16 @@ import {
   $createLineBreakNode,
   $createTabNode,
   $getSiblingCaret,
+  $getWritableNodeState,
   $isElementNode,
   $isLineBreakNode,
   $isTabNode,
+  $isTextNode,
   type CaretDirection,
   getTextDirection,
   type LexicalNode,
   type LineBreakNode,
+  NODE_STATE_KEY,
   type RangeSelection,
   type SiblingCaret,
   type TabNode,
@@ -247,6 +250,159 @@ export function $plainifyCodeContent(text: string): LexicalNode[] {
     tab: () => out.push($createTabNode()),
     text: part => out.push($createCodeHighlightNode(part)),
   });
+  return out;
+}
+
+/** The NodeState of `node` as JSON, or null where it has none. */
+function nodeStateJSON(node: LexicalNode): null | Record<string, unknown> {
+  // @internal access, like `__text`: the NodeState of the node
+  const json = node.__state ? node.__state.toJSON() : null;
+  return json !== null && Object.keys(json).length > 0
+    ? (json as Record<string, unknown>)
+    : null;
+}
+
+/**
+ * Give `to` the NodeState `json` (see nodeStateJSON), flat states included,
+ * keeping the state `to` has for the keys it does not set.
+ */
+function $setNodeStateJSON(
+  to: LexicalNode,
+  json: Record<string, unknown>,
+): void {
+  const state = $getWritableNodeState(to);
+  for (const [key, value] of Object.entries(json)) {
+    if (key === NODE_STATE_KEY) {
+      for (const [nestedKey, nestedValue] of Object.entries(
+        value as Record<string, unknown>,
+      )) {
+        state.updateFromUnknown(nestedKey, nestedValue);
+      }
+    } else {
+      state.updateFromUnknown(key, value);
+    }
+  }
+}
+
+/**
+ * Whether two nodes of a code block hold the same NodeState (see
+ * {@link $keepNodeStateOf}).
+ *
+ * @internal
+ */
+export function sameNodeState(a: LexicalNode, b: LexicalNode): boolean {
+  const ja = nodeStateJSON(a);
+  const jb = nodeStateJSON(b);
+  return ja === jb || JSON.stringify(ja) === JSON.stringify(jb);
+}
+
+/**
+ * The nodes `next` that a highlighter made for the code `prev` holds (the
+ * children of a code block, retokenized), with the NodeState each character
+ * had in `prev`: a token whose text had more than one state is split where
+ * the state changes. Highlighting changes how code is shown, never the state
+ * its text carries (comment ids, suggestions or any other annotation an app
+ * keeps in NodeState): without this, every token a highlighter replaced (all
+ * tokens between the first and the last it changed) lost it. `prev` and
+ * `next` hold the same text (a retokenization); `next` itself is returned
+ * where no node of `prev` has NodeState, or, defensively, where their
+ * lengths differ.
+ *
+ * @internal
+ */
+export function $keepNodeStateOf(
+  prev: readonly LexicalNode[],
+  next: LexicalNode[],
+): LexicalNode[] {
+  // The runs of `prev` that hold NodeState: [start, end) in the code.
+  const runs: {end: number; json: Record<string, unknown>; start: number}[] =
+    [];
+  let length = 0;
+  for (const node of prev) {
+    const size = node.getTextContentSize();
+    const json = nodeStateJSON(node);
+    if (json !== null && size > 0) {
+      runs.push({end: length + size, json, start: length});
+    }
+    length += size;
+  }
+  if (runs.length === 0) {
+    return next;
+  }
+  let total = 0;
+  for (const node of next) {
+    total += node.getTextContentSize();
+  }
+  if (total !== length) {
+    return next;
+  }
+  const out: LexicalNode[] = [];
+  let offset = 0;
+  let r = 0;
+  for (const node of next) {
+    const size = node.getTextContentSize();
+    const start = offset;
+    const end = offset + size;
+    offset = end;
+    while (r < runs.length && runs[r].end <= start) {
+      r++;
+    }
+    if (size === 0 || r >= runs.length || runs[r].start >= end) {
+      out.push(node);
+      continue;
+    }
+    // Where the state changes within the node: cut points, and the state of
+    // each piece (null where `prev` had none).
+    const pieces: {end: number; json: null | Record<string, unknown>}[] = [];
+    let at = start;
+    for (let i = r; i < runs.length && runs[i].start < end; i++) {
+      const run = runs[i];
+      if (run.start > at) {
+        pieces.push({end: run.start, json: null});
+        at = run.start;
+      }
+      const stop = Math.min(run.end, end);
+      const last = pieces[pieces.length - 1];
+      if (
+        last !== undefined &&
+        last.json !== null &&
+        JSON.stringify(last.json) === JSON.stringify(run.json)
+      ) {
+        last.end = stop;
+      } else {
+        pieces.push({end: stop, json: run.json});
+      }
+      at = stop;
+    }
+    if (at < end) {
+      pieces.push({end, json: null});
+    }
+    if (pieces.length === 1 || !$isCodeHighlightNode(node)) {
+      // One state over the whole node (a tab or a line break is one
+      // character): it takes that state.
+      const json = pieces.find(piece => piece.json !== null)!.json!;
+      if ($isTextNode(node) || $isLineBreakNode(node)) {
+        $setNodeStateJSON(node, json);
+      }
+      out.push(node);
+      continue;
+    }
+    const text = node.getTextContent();
+    let from = start;
+    for (const piece of pieces) {
+      const part = $createCodeHighlightNode(
+        text.slice(from - start, piece.end - start),
+        node.getHighlightType(),
+      )
+        .setFormat(node.getFormat())
+        .setStyle(node.getStyle());
+      if (piece.json !== null) {
+        $setNodeStateJSON(part, piece.json);
+      }
+      out.push(part);
+      from = piece.end;
+    }
+  }
   return out;
 }
 

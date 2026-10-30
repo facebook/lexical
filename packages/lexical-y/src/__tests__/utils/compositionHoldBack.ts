@@ -177,6 +177,11 @@ export const REMOTE: Record<
     third?: boolean;
     /** The cases a known limit skips (see where it is set). */
     limit?: (shape: Shape, end: string) => boolean;
+    /**
+     * A self-check warning A is known to give in a case (see where it is
+     * set): expected, not failed on; every other check still runs.
+     */
+    diagnostic?: (shape: Shape, end: string) => RegExp | null;
   }
 > = {
   // B centers the line: its marker's attributes are held back.
@@ -200,11 +205,29 @@ export const REMOTE: Record<
     $edit: path => {
       $addMarkID('c1', $selectIn(path, 6, 10));
     },
+    // A known diagnostic (as S7-8): in a highlighted code line, A shows B's
+    // comment on "beta", a word it is not composing in, as soon as it is
+    // read, and keeps it through its own keystrokes (the highlighter keeps
+    // each character's NodeState), while the hold counts the comment as
+    // held. When A changes the line's type while composing, the self-check
+    // (opt-in) of that write notes the comment, until the hold ends: then
+    // every client shows the same.
+    diagnostic: (shape, end) =>
+      shape.highlight === true && end === 'a change of the line type'
+        ? /^self-check: line \d+: format s:markIds.c1 at 6$/
+        : null,
     promise: () => 'held',
   },
   // B composes at the same place too, commits, and comments the word it
   // committed (S7-28).
   composition: {
+    // A known diagnostic (as for the comment): B's comment c2 on the
+    // character B composed and committed next to A's composition, read by
+    // A and kept by its highlighter while the hold counts it as held.
+    diagnostic: (shape, end) =>
+      shape.highlight === true && end === 'a change of the line type'
+        ? /^self-check: line \d+: format s:markIds.c2 at \d+$/
+        : null,
     promise: () => 'held',
     run: async (t, path) => {
       let key: NodeKey = '';
@@ -534,6 +557,13 @@ export async function runCase(
       $setCompositionKey(null);
     });
     await t.sync();
+  }
+  const diagnostic =
+    remote.diagnostic === undefined ? null : remote.diagnostic(shape, end);
+  if (diagnostic !== null) {
+    const known = t.a.warnings.filter(w => diagnostic.test(w));
+    expect(known.length).toBeGreaterThan(0);
+    t.a.warnings = t.a.warnings.filter(w => !diagnostic.test(w));
   }
   await expectConverged(t.peers);
   // Nothing B did is lost.

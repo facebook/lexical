@@ -818,12 +818,13 @@ function joinPieces({kinds, values}: MarkdownPieces): string {
  * is not bare text, so it ends a run.
  */
 function findLinkEdges(kinds: PieceKind[], values: string[]): Uint8Array {
-  // Raw output ends a run, so it is joined as a single space.
+  // Raw output ends a run, so it is joined as a single space, except a code
+  // span: GFM autolinks run on through backticks, as in `https://a.com/`v`s`.
   let text = '';
   const starts = new Uint32Array(values.length + 1);
   for (let i = 0; i < values.length; i++) {
     starts[i] = text.length;
-    text += kinds[i] === RAW ? ' ' : values[i];
+    text += kinds[i] === RAW && values[i][0] !== '`' ? ' ' : values[i];
   }
   starts[values.length] = text.length;
   const inLink = new Uint8Array(text.length);

@@ -5378,6 +5378,25 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     ]);
   });
 
+  it('writes no reference after a code span inside a bare URL', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createTextNode('see https://a.com/'),
+            $createTextNode('v2').toggleFormat('code'),
+            $createTextNode('s'),
+            $createTextNode('(beta)').toggleFormat('bold'),
+          ),
+        ),
+      {discrete: true},
+    );
+    expect(
+      editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
+    ).toBe('see https://a.com/`v2`s**(beta)**');
+  });
+
   it("guards a letter right after an inline link's destination", () => {
     const editor = createTestEditor();
     editor.update(

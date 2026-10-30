@@ -343,7 +343,7 @@ type Cmd = {
   inner: () => LexicalNode[];
   run: (editor: LexicalEditor) => void;
   type?: string;
-  $check: (ctx: Ctx, before: number) => Outcome;
+  $check: (ctx: Ctx, before: number) => string;
 };
 
 /**
@@ -385,6 +385,39 @@ const $selectEmpty = () =>
       n => $isParagraphNode(n) && n.getTextContent() === '',
     )[0] as ElementNode
   ).select(0, 0);
+
+/** The text of every paragraph, in document order. */
+const $paragraphs = () => $all($isParagraphNode).map(n => n.getTextContent());
+
+/**
+ * An edge row's outcome: blocked (every paragraph as it was, `inside` still
+ * in the container) or joined (the two paragraphs at the edge are one,
+ * `joined`, and the other paragraphs are as they were); anything else is
+ * described as is.
+ */
+function $edge(
+  ctx: Ctx,
+  texts: string[],
+  joined: string,
+  inside: string,
+): string {
+  const now = $paragraphs();
+  if (
+    JSON.stringify(now) === JSON.stringify(texts) &&
+    $all($isParagraphNode)
+      .find(n => n.getTextContent() === inside)
+      ?.getParent() === $container(ctx)
+  ) {
+    return 'blocked at the edge';
+  }
+  const expected = joined.startsWith('before')
+    ? [joined, ...texts.slice(2)]
+    : [...texts.slice(0, 2), joined];
+  if (JSON.stringify(now) === JSON.stringify(expected)) {
+    return 'joins across the edge';
+  }
+  return `paragraphs ${JSON.stringify(now)}`;
+}
 
 /** `made` is inside the container, which is still there, once. */
 function $inside(
@@ -541,15 +574,8 @@ const CMDS: Cmd[] = [
     }),
   ),
   {
-    $check: ctx => {
-      const before = $text('before');
-      return before !== undefined &&
-        before.getTextContent() === 'before' &&
-        $text('abc')?.getTextContent() === 'abc' &&
-        $text('abc')!.getParent()!.getParent() === $container(ctx)
-        ? 'blocked at the edge'
-        : 'joins across the edge';
-    },
+    $check: ctx =>
+      $edge(ctx, ['before', 'abc', 'def', 'after'], 'beforeabc', 'abc'),
     inner: $paras,
     kind: 'edge',
     name: "Backspace at the start of the container's first block",
@@ -559,15 +585,8 @@ const CMDS: Cmd[] = [
     },
   },
   {
-    $check: ctx => {
-      const after = $text('after');
-      return after !== undefined &&
-        after.getTextContent() === 'after' &&
-        $text('def')?.getTextContent() === 'def' &&
-        $text('def')!.getParent()!.getParent() === $container(ctx)
-        ? 'blocked at the edge'
-        : 'joins across the edge';
-    },
+    $check: ctx =>
+      $edge(ctx, ['before', 'abc', 'def', 'after'], 'defafter', 'def'),
     inner: $paras,
     kind: 'edge',
     name: "Delete at the end of the container's last block",

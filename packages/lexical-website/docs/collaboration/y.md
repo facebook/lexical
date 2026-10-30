@@ -146,9 +146,14 @@ provider.once('sync', () => {
 - `binding.initialize()`, called after the provider's first sync, writes the
   editor's content into an empty document (an `editor.update()` still
   pending is part of it). Two clients that initialize the same content in a
-  new document at once write it once, when they would write the same items
+  document at once write it once, when they would write the same items
   (clients with different block id configurations, or different
-  `schemaVersion`s, write different ones, so the content shows twice). The editor then shows the content as stored, as
+  `schemaVersion`s, write different ones, so the content shows twice). That
+  holds for a root inside another shared type and for a root that held
+  content before, when both clients loaded the same state of the document
+  (the initial content of such a root is written on a copy of the whole
+  document, a cost that grows with the other content the document holds;
+  seed large documents in one place instead). The editor then shows the content as stored, as
   every reader does (a line break written inside a text node shows as a
   line break node), with its selection kept (a node selection keeps its
   nodes, found by the Yjs identity they are stored or shown by: a node's
@@ -1014,9 +1019,9 @@ not merge as a user might expect:
   document at once write it once only when their content is identical. An
   extension that gives new blocks random ids makes it differ, so the content
   shows twice; so do different block id configurations (with and without
-  `BlockIdExtension`, or another `$isIdentifiedBlock`), initializing a root
-  that held content before, and initializing a root inside another shared
-  type. Seed new documents in one place (on the server with `seedYState`, for
+  `BlockIdExtension`, or another `$isIdentifiedBlock`), and initializing a
+  root that held content before, or a root inside another shared type, after
+  the clients loaded different states of the document. Seed new documents in one place (on the server with `seedYState`, for
   example), or give the initial blocks fixed ids.
 - **Client ids add up.** A document keeps every client id that ever wrote
   to it, in its state vector (which every sync sends) and in the

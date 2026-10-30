@@ -802,11 +802,15 @@ not merge as a user might expect:
   collaborators type in them. Between recorded blocks, and in a reorder that
   Lexical did not record (an editor state set whole), the binding rewrites
   as few blocks as it can, the smaller ones on a tie.
-  Lexical operations that move content (turning a
-  paragraph into a list inside a container, indenting list items that hold
-  blocks) behave the same way, and so does the first edit that restructures
-  a list stored in an older shape (a nested list kept as a node inside an
-  item's line): its items move into the list's own sequence. A Backspace
+  Lexical operations that move content behave the same way: turning a
+  paragraph that holds text into a list inside a container that is not a
+  shadow root (Lexical replaces the whole container with the list, so its
+  content moves into the list; in a table cell or another shadow root the
+  paragraph becomes a list item in place and keeps what collaborators type
+  in it),
+  indenting list items that hold blocks, and the first edit that
+  restructures a list stored in an older shape (a nested list kept as a node
+  inside an item's line): its items move into the list's own sequence. A Backspace
   that outdents an item of such a list is a delete in the nested list's
   container and an insert in the list's: text a collaborator types in those
   items at the same time is lost (only lists stored in that older shape).
@@ -947,6 +951,11 @@ not merge as a user might expect:
   collaborator moved out of the removed range at the same time shows twice
   (the original next to the moved copy), and when two
   collaborators remove the same text and both undo, it shows twice.
+  Undoing a block replacement (`replace`, written as a removal and a new
+  block) after a collaborator edited the new block brings the old block's
+  text back and keeps their edit next to it: text they typed there, or the
+  text of a block they put in its place, shows after the old text (twice,
+  where they put the same text back).
   Undoing a format change does not undo a collaborator's later change of
   part of its range, nor the value that change restored after itself: color
   `abc`, let a collaborator recolor `b`, then undo the color, and `c` keeps
@@ -1002,7 +1011,12 @@ not merge as a user might expect:
   same way, not in the order the author's editor exported them (a Yjs map
   does not keep one). Compare node JSON without relying on key order.
 - **Other races.** A split racing a change of the line's type gives the
-  first half the splitter's type. Bold ‖ bold on adjacent ranges of one line
+  first half the splitter's type. A join (Backspace at the start of a line,
+  or undoing a split) while a collaborator inserts or moves a block to the
+  place of the join joins the line before to that block instead: its text
+  becomes part of the block, which keeps its own type (a paragraph joined
+  into a code block that way becomes code), and the line after stays as it
+  was. Bold ‖ bold on adjacent ranges of one line
   can leave part unformatted. A format removed from a range while a
   collaborator types inside it without that format (unbolding a word as
   they type into it, resolving a comment as they paste into it) comes back

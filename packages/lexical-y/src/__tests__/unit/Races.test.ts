@@ -37,6 +37,7 @@ import {describe, expect, test} from 'vitest';
 
 import {
   $block,
+  $createBoxNode,
   $p,
   $selectIn,
   type Delivery,
@@ -218,6 +219,58 @@ const CASES: Case[] = [
       'list[number](listitem("one") listitem("twoX") listitem("three"))',
     id: 'list type ‖ type',
     init: $initList,
+  },
+  {
+    a: () => {
+      $selectIn([0, 0, 0, 0], 1);
+      $insertList('bullet');
+    },
+    b: () => $selectIn([0, 0, 0, 0], 3).insertText('X'),
+    expected: 'table(tablerow(tablecell(list[bullet](listitem("twoX")))))',
+    id: 'list in a table cell ‖ type',
+    init: () => {
+      const table = $createTableNodeWithDimensions(1, 1, false);
+      $getRoot().append(table);
+      const cell = $block([0, 0, 0]);
+      cell.clear();
+      cell.append($p('two'));
+    },
+  },
+  {
+    a: () => {
+      $selectIn([0, 0], 1);
+      $insertList('bullet');
+    },
+    b: () => $selectIn([0, 0], 3).insertText('X'),
+    expected: 'list[bullet](listitem("two"))',
+    // Documented (Moves): Lexical replaces the container with the list, a
+    // move, so the typing is lost.
+    id: 'list in a container that is not a shadow root ‖ type',
+    init: () => $getRoot().append($createBoxNode('b').append($p('two'))),
+  },
+  {
+    // Documented (Undo): the undo restores the old block, and the edit of
+    // the new block stays next to it.
+    expected: 'paragraph("Revenue grew 4% in Q3.by ")',
+    id: 'undo of a block replacement after a collaborator edits the new block',
+    init: $initPara,
+    run: async t => {
+      t.a.update(() => $block([0]).replace($p(P)));
+      await t.sync();
+      t.b.update(() => $selectIn([0], 13).insertText('by '));
+      await t.sync();
+      t.a.undo();
+      await t.sync();
+    },
+  },
+  {
+    a: () => $block([0]).insertAfter($p('New.')),
+    b: () => $selectIn([1], 0).deleteCharacter(true),
+    expected: 'paragraph("Revenue grew 4%New.") / paragraph(" in Q3.")',
+    // Documented (Other races): the line before joins the inserted block,
+    // and the line after stays apart.
+    id: 'block inserted at a join ‖ Backspace join',
+    init: () => $getRoot().append($p('Revenue grew 4%'), $p(' in Q3.')),
   },
   {
     a: () => $selectIn([0, 1], 1).insertParagraph(),

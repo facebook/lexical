@@ -41,6 +41,7 @@ import {
   getDeclaredSlots,
   type LexicalNode,
   type NodeKey,
+  type PointType,
   RootNode,
   TextNode,
 } from 'lexical';
@@ -302,6 +303,36 @@ export const $createOrUpdateNodeFromYElement = (
   return latestNode;
 };
 
+/**
+ * Move `point` beside `node`, as Lexical moves a selection point out of a node
+ * it removes: to the end of the node's previous sibling, else the start of
+ * its next sibling (a text or element node), else its parent at its index.
+ */
+const $movePointBeside = (point: PointType, node: LexicalNode): void => {
+  const prev = node.getPreviousSibling();
+  const next = node.getNextSibling();
+  const sibling = prev || next;
+  if ($isTextNode(sibling)) {
+    point.set(
+      sibling.getKey(),
+      prev === null ? 0 : sibling.getTextContentSize(),
+      'text',
+    );
+  } else if (sibling instanceof ElementNode) {
+    point.set(
+      sibling.getKey(),
+      prev === null ? 0 : sibling.getChildrenSize(),
+      'element',
+    );
+  } else {
+    point.set(
+      node.getParentOrThrow().getKey(),
+      node.getIndexWithinParent(),
+      'element',
+    );
+  }
+};
+
 const $spliceChildren = (node: ElementNode, nextChildren: LexicalNode[]) => {
   const prevChildren = node.getChildren();
   const prevChildrenKeySet = new Set(prevChildren.map(child => child.getKey()));
@@ -360,9 +391,26 @@ const $spliceChildren = (node: ElementNode, nextChildren: LexicalNode[]) => {
       // The Y element holds no children any more: keep the node, empty, as
       // the document holds it. (With a range selection, splice would also
       // remove an element that cannot be empty, such as a list, and the Y
-      // element would stay mapped to a removed node.)
+      // element would stay mapped to a removed node.) `remove` runs each
+      // child's override: ListItemNode's merges the nested lists around an
+      // item only when it has siblings on both sides, which never holds when
+      // children are removed first to last.
       for (const child of node.getChildren()) {
         child.remove(true);
+      }
+      if (!node.canBeEmpty()) {
+        // A selection point that was in a removed child is now in the
+        // element, where typing would put text straight into it (a text node
+        // in a list): move it beside the element, where removing the element
+        // would have moved it.
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          for (const point of [selection.anchor, selection.focus]) {
+            if (point.key === node.getKey()) {
+              $movePointBeside(point, node);
+            }
+          }
+        }
       }
     } else {
       node.splice(

@@ -187,57 +187,88 @@ const SELECTIONS = {
 };
 
 for (const [where, $select] of Object.entries(SELECTIONS)) {
-  test(`v2: a list emptied by two clients' removals, the receiver with ${where}`, () => {
-    const a = new Peer(1);
-    const b = new Peer(2);
-    const c = new Peer(3);
-    a.update(() => {
-      $getRoot()
-        .clear()
-        .append(
-          $p('before'),
-          $createListNode('bullet').append(
-            $createListItemNode().append($createTextNode('x')),
-            $createListItemNode().append($createTextNode('y')),
-          ),
-          $p('after'),
-        );
+  for (const ids of [
+    [1, 2, 3],
+    [3, 2, 1],
+  ]) {
+    test(`v2: a list emptied by two clients' removals, the receiver with ${where} (client ids ${ids.join(',')})`, () => {
+      const a = new Peer(ids[0]);
+      const b = new Peer(ids[1]);
+      const c = new Peer(ids[2]);
+      a.update(() => {
+        $getRoot()
+          .clear()
+          .append(
+            $p('before'),
+            $createListNode('bullet').append(
+              $createListItemNode().append($createTextNode('x')),
+              $createListItemNode().append($createTextNode('y')),
+            ),
+            $p('after'),
+          );
+      });
+      b.sync(a);
+      c.sync(a);
+      b.update($select);
+      // At the same time, A removes the first item and C the second.
+      a.update(() => {
+        $getRoot()
+          .getChildren()
+          .find($isListNode)!
+          .getFirstChildOrThrow()
+          .remove();
+      });
+      c.update(() => {
+        $getRoot()
+          .getChildren()
+          .find($isListNode)!
+          .getLastChildOrThrow()
+          .remove();
+      });
+      b.sync(a);
+      b.sync(c);
+      // B's editor shows what its document holds: an empty list.
+      const fresh = new Peer(99);
+      fresh.sync(b);
+      expect(b.json()).toEqual(fresh.json());
+      if (where.includes('item')) {
+        // B's caret, which was in a removed item, is beside the list, where
+        // removing the list would have put it: at the end of "before".
+        expect(
+          b.editor.read(() => {
+            const selection = $getSelection();
+            return $isRangeSelection(selection) && selection.isCollapsed()
+              ? selection.anchor.getNode().getTextContent()
+              : null;
+          }),
+        ).toBe('before');
+      }
+      // A gets C's removal, keeps the empty list and adds an item to it.
+      a.sync(c);
+      a.update(() => {
+        $getRoot()
+          .getChildren()
+          .find($isListNode)!
+          .append($createListItemNode().append($createTextNode('z')));
+      });
+      b.sync(a);
+      c.sync(a);
+      expect(b.json()).toEqual(a.json());
+      expect(c.json()).toEqual(a.json());
+      // B types where its selection is, and every client gets it.
+      b.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertText('q');
+        }
+      });
+      a.sync(b);
+      c.sync(b);
+      const reader = new Peer(98);
+      reader.sync(b);
+      expect(a.json()).toEqual(b.json());
+      expect(c.json()).toEqual(b.json());
+      expect(reader.json()).toEqual(b.json());
     });
-    b.sync(a);
-    c.sync(a);
-    b.update($select);
-    // At the same time, A removes the first item and C the second.
-    a.update(() => {
-      $getRoot()
-        .getChildren()
-        .find($isListNode)!
-        .getFirstChildOrThrow()
-        .remove();
-    });
-    c.update(() => {
-      $getRoot()
-        .getChildren()
-        .find($isListNode)!
-        .getLastChildOrThrow()
-        .remove();
-    });
-    b.sync(a);
-    b.sync(c);
-    // B's editor shows what its document holds: an empty list.
-    const fresh = new Peer(99);
-    fresh.sync(b);
-    expect(b.json()).toEqual(fresh.json());
-    // A gets C's removal, keeps the empty list and adds an item to it.
-    a.sync(c);
-    a.update(() => {
-      $getRoot()
-        .getChildren()
-        .find($isListNode)!
-        .append($createListItemNode().append($createTextNode('z')));
-    });
-    b.sync(a);
-    c.sync(a);
-    expect(b.json()).toEqual(a.json());
-    expect(c.json()).toEqual(a.json());
-  });
+  }
 }

@@ -1422,6 +1422,32 @@ describe('a new block put in an empty declared container', () => {
       }),
     ).toEqual(['heading:0', 'text:2']);
   });
+
+  test('$setBlocksType keeps a backward range that ends in the empty container', () => {
+    using editor = buildEditor(true);
+    editor.update(
+      () => {
+        const box = $emptyBox();
+        const selection = $createRangeSelection();
+        selection.anchor.set($findText('after').getKey(), 2, 'text');
+        selection.focus.set(box.getKey(), 0, 'element');
+        $setSelection(selection);
+        $setBlocksType($getSelection(), () => $createHeadingNode('h1'));
+      },
+      {discrete: true},
+    );
+    expect(editor.read(() => $shape())).toBe(
+      'p("before") / dbox[indent1](h()) / h("after")',
+    );
+    expect(
+      editor.read(() => {
+        const selection = $getSelection() as RangeSelection;
+        const at = (point: RangeSelection['anchor']) =>
+          `${point.getNode().getType()}:${point.offset}`;
+        return [at(selection.anchor), at(selection.focus)];
+      }),
+    ).toEqual(['text:2', 'heading:0']);
+  });
 });
 
 describe("the character limit's OverflowNode", () => {

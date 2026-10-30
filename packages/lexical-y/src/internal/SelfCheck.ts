@@ -518,11 +518,7 @@ export function checkContainer(
   cs: CS,
   editorState: EditorState,
 ): string[] {
-  if (
-    state.hidden !== null ||
-    state.unknownTypes.size > 0 ||
-    state.unreadable.size > 0
-  ) {
+  if (state.differsOnPurpose()) {
     return [];
   }
   const live = editorState.read(() => {

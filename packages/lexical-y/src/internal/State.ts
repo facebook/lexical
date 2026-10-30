@@ -234,6 +234,24 @@ export class State {
   ) {}
 
   /**
+   * Whether the editor may show something other than the document on
+   * purpose, for a reason this state holds: remote content held back for a
+   * composition (see Hidden), or node types the editor cannot show or read
+   * (unknownTypes, unreadable: the binding is read only). A comparison of
+   * the two (the self-check, the follow-up check) is skipped then: a
+   * difference it found would be no bug. Not a test of whether they differ;
+   * a binding that failed closed differs too, and its own checks skip it
+   * (see YBinding#writesEdits).
+   */
+  differsOnPurpose(): boolean {
+    return (
+      this.hidden !== null ||
+      this.unknownTypes.size > 0 ||
+      this.unreadable.size > 0
+    );
+  }
+
+  /**
    * A new state for `doc` and `root` with this one's configuration (what the
    * binding sets when it starts: `blockIds`, `blockIdHolder`), which writes
    * what this one would write.

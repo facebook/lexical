@@ -22,7 +22,9 @@ import {$createLinkNode, LinkExtension} from '@lexical/link';
 import {RichTextExtension} from '@lexical/rich-text';
 import * as Y from '@y/y';
 import {
+  $createLineBreakNode,
   $createParagraphNode,
+  $createTabNode,
   $createTextNode,
   $getRoot,
   $isTextNode,
@@ -392,6 +394,57 @@ describe('a separator of the old line is not taken for the new text', () => {
         await expectEverywhere(t.peers, expected);
       });
     }
+  }
+});
+
+// A separator alone at the edge of a changed word is written with it, but
+// not one main keeps (a node of its own, as a tab or a line break), and a
+// line break is never taken for a separator: their items stay, so a
+// collaborator's concurrent delete of them holds.
+describe('a tab or line break alone at the edge of a change keeps its item', () => {
+  for (const ids of IDS) {
+    test(`tab | "t1z t2z", made again with "t1z" → "t9z" ‖ the peer deletes the tab (ids ${ids})`, async () => {
+      const t = await setup(
+        $doc(() => [$createTabNode(), $bold('t1z t2z')]),
+        {ids},
+      );
+      t.offline();
+      t.a.update(() => {
+        for (const child of $line().getChildren()) {
+          child.remove();
+        }
+        $line().append($createTabNode(), $plain('t9z t2z'));
+        $setSelection(null);
+      });
+      t.b.update(() => {
+        $line().getChildren()[0].remove();
+        $setSelection(null);
+      });
+      await t.sync();
+      await expectEverywhere(t.peers, 't9z t2z');
+    });
+  }
+  for (const ids of IDS) {
+    test(`"t1z" | br | **"t2z"**, the br and "t2z" made again as br "t9z" ‖ the peer deletes the br (ids ${ids})`, async () => {
+      const t = await setup(
+        $doc(() => [$plain('t1z'), $createLineBreakNode(), $bold('t2z')]),
+        {ids},
+      );
+      t.offline();
+      t.a.update(() => {
+        const [, br, word] = $line().getChildren();
+        br.remove();
+        word.remove();
+        $line().append($createLineBreakNode(), $plain('t9z'));
+        $setSelection(null);
+      });
+      t.b.update(() => {
+        $line().getChildren()[1].remove();
+        $setSelection(null);
+      });
+      await t.sync();
+      await expectEverywhere(t.peers, 't1zt9z');
+    });
   }
 });
 

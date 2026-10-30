@@ -634,7 +634,9 @@ export function snapToWords(
   return {prefix, suffix};
 }
 
-const NOT_SPACE = /\S/;
+// More than spaces: a character that is not white space, or a line feed (a
+// line break is a node of its own, not a separator).
+const NOT_SPACE = /\S|\n/;
 const isSpaceAt = (s: string, i: number): boolean =>
   i >= 0 && i < s.length && SPACE.test(s[i]);
 
@@ -647,10 +649,10 @@ const isSpaceAt = (s: string, i: number): boolean =>
  * `t1z |t9z t2z`) and the caret does not place it, it goes at the last of
  * them that is at a word boundary of `a`, so that no word of `a` is cut. A
  * replacement keeps whole words (snapToWords), and a kept start or end that
- * is only white space is written with it: a separator alone carries no
- * word, and the old one is the one a concurrent rewrite of the words around
- * it deletes (a node `Note: ` replaced by `Tip: ` while a collaborator
- * rewrites the line kept `Tip:` and lost the space).
+ * is only spaces is written with it: a separator alone carries no word, and
+ * the old one is the one a concurrent rewrite of the words around it
+ * deletes (a node `Note: ` replaced by `Tip: ` while a collaborator rewrites
+ * the line kept `Tip:` and lost the space).
  */
 export function keptEnds(
   a: string,

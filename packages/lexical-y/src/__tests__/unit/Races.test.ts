@@ -8,11 +8,13 @@
 
 // @vitest-environment node
 
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {$toggleLink} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
   $insertList,
+  ListExtension,
   type ListItemNode,
 } from '@lexical/list';
 import {
@@ -20,7 +22,11 @@ import {
   $getNodeMarkIDs,
   $wrapSelectionInMarkNode,
 } from '@lexical/mark';
-import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
+import {
+  $createHeadingNode,
+  $createQuoteNode,
+  RichTextExtension,
+} from '@lexical/rich-text';
 import {$setBlocksType} from '@lexical/selection';
 import {
   $createTableNodeWithDimensions,
@@ -36,12 +42,17 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  configExtension,
+  defineExtension,
   type ElementNode,
+  type LexicalEditor,
   type LexicalNode,
   type TextNode,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
+import {YCollabExtension} from '../..';
+import {createYDoc, seedYState} from '../../headless';
 import {
   $block,
   $createBoxNode,
@@ -653,3 +664,73 @@ describe('@lexical/y undo of writes inside a comment ‖ delete across its end',
     });
   }
 });
+
+// #9591: nested lists of the same type in adjacent list items are stored as
+// one list (y.md, Adjacent equal links merge), so a bound editor merges a
+// nested list turned into that type into the previous item's nested list,
+// where an editor without collaboration keeps them apart.
+test.fails(
+  '#9591: $insertList gives the same result in a bound editor as in an unbound one',
+  async () => {
+    const extensions = [RichTextExtension, ListExtension];
+    const config = {extensions, onWarn: () => {}, schemaVersion: 1};
+    // A number list whose item holds only a check list (start 99) holding an
+    // item with only a number list (start 0, one empty item) and an item with
+    // only a bullet list (start 99, the item "t5043z").
+    const $build = () => {
+      const inner1 = $createListNode('number', 0).append($createListItemNode());
+      const inner2 = $createListNode('bullet', 99).append(
+        $createListItemNode().append($createTextNode('t5043z')),
+      );
+      const check = $createListNode('check', 99).append(
+        $createListItemNode().append(inner1),
+        $createListItemNode().append(inner2),
+      );
+      $getRoot()
+        .clear()
+        .append(
+          $createListNode('number', 1).append(
+            $createListItemNode().append(check),
+          ),
+        );
+    };
+    const json = (editor: LexicalEditor) =>
+      JSON.stringify(editor.getEditorState().toJSON(), (k, v) =>
+        k === '$' ? undefined : v,
+      );
+    const doc = createYDoc(seedYState(config, $build));
+    const bound = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        dependencies: [
+          ...extensions,
+          configExtension(YCollabExtension, {doc, schemaVersion: 1}),
+        ],
+        name: 'bound',
+      }),
+    );
+    const unbound = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: $build,
+        dependencies: extensions,
+        name: 'unbound',
+      }),
+    );
+    await Promise.resolve();
+    expect(json(bound)).toBe(json(unbound));
+    for (const editor of [bound, unbound]) {
+      editor.update(
+        () => {
+          const t = $getRoot()
+            .getAllTextNodes()
+            .find(n => n.getTextContent() === 't5043z')!;
+          t.select(6, 6);
+          $insertList('number');
+        },
+        {discrete: true},
+      );
+    }
+    await Promise.resolve();
+    expect(json(bound)).toBe(json(unbound));
+  },
+);

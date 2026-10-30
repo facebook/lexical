@@ -598,8 +598,11 @@ block-beta
 ```
 
 **Adjacent equal links merge** (same URL, target, rel and title), and so do
-adjacent lists of the same type. Inline content directly in the root or in a
-table cell (text, a link, a mark) is wrapped in a paragraph.
+adjacent lists of the same type. Nested lists of the same type in adjacent
+list items merge too, keeping the first list's start: turning a nested bullet
+list into a number list right after another item's nested number list makes
+it part of that list. Inline content directly in the root or in a table cell
+(text, a link, a mark) is wrapped in a paragraph.
 
 ```mermaid
 block-beta

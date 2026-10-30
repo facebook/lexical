@@ -2409,7 +2409,7 @@ declare export function getDeclaredNodeStructure(
 
 declare export function $isBlockContainer(
   node: ?LexicalNode,
-): node is ElementNode;
+): implies node is ElementNode;
 
 /**
  * This is the type of LexicalNode.$config() that can be

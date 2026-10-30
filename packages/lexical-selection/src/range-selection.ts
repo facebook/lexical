@@ -148,12 +148,10 @@ export function $setBlocksType<T extends ElementNode>(
   let skipFocus = false;
   let focusBlock: ElementNode | DecoratorNode<unknown> | null = null;
   const blockMap = new Map<NodeKey, ElementNode>();
+  let anchorBlock: ElementNode | DecoratorNode<unknown> | null = null;
   if (anchorAndFocus) {
     const [anchor, focus] = anchorAndFocus;
-    const anchorBlock = $findMatchingParent(
-      anchor.getNode(),
-      INTERNAL_$isBlock,
-    );
+    anchorBlock = $findMatchingParent(anchor.getNode(), INTERNAL_$isBlock);
     focusBlock = $findMatchingParent(focus.getNode(), INTERNAL_$isBlock);
     // The focus is the moving edge of the selection, travelling in `direction`
     // (towards the end of the document for a forward selection). When a
@@ -189,9 +187,19 @@ export function $setBlocksType<T extends ElementNode>(
   // ListItemNode.replace override): both remap an element-anchored point
   // on the replaced block to {key: replacement, offset: prevSize + offset}.
   for (const prevNode of blockMap.values()) {
-    // An empty block container (a declared one: roots and shadow roots are
-    // never in the map) is not a block to convert.
-    if ($getSlotHost(prevNode) !== null || $isBlockContainer(prevNode)) {
+    if ($getSlotHost(prevNode) !== null) {
+      continue;
+    }
+    if ($isBlockContainer(prevNode)) {
+      // An empty declared container (roots and shadow roots are never in
+      // the map) is not a block to convert: with the selection in it, the
+      // new block goes in it, as with $insertList and $wrapNodes.
+      if (prevNode.is(anchorBlock) && prevNode.isEmpty()) {
+        const element = $createElement();
+        $afterCreateElement(prevNode, element);
+        prevNode.append(element);
+        element.selectStart();
+      }
       continue;
     }
     const element = $createElement();

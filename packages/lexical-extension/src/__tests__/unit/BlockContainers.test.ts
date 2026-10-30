@@ -31,6 +31,11 @@ import {
 } from '@lexical/list';
 import {registerMarkdownShortcuts} from '@lexical/markdown';
 import {
+  MdastCommonMarkExtension,
+  MdastGfmExtension,
+  MdastShortcutsExtension,
+} from '@lexical/mdast';
+import {
   $createHeadingNode,
   $createQuoteNode,
   RichTextExtension,
@@ -1189,6 +1194,16 @@ describe('selections that pass over or sit on a container', () => {
       },
       'sbox(p())',
     ],
+    [
+      'the caret in an empty declared box: $setBlocksType',
+      () => {
+        const box = $create(DeclaredBoxNode);
+        $getRoot().clear().append($p('before'), box, $p('after'));
+        box.select(0, 0);
+        $setBlocksType($getSelection(), () => $createHeadingNode('h1'));
+      },
+      'p("before") / dbox(h()) / p("after")',
+    ],
   ] as const)('%s (NodeStructureExtension)', (_name, $act, expected) => {
     using editor = buildEditor(true);
     editor.update($act, {discrete: true});
@@ -1214,6 +1229,60 @@ describe('selections that pass over or sit on a container', () => {
       editor.read(() => $isBlockContainer($getRoot().getFirstChild())),
     ).toBe(true);
   });
+});
+
+describe('@lexical/mdast shortcuts in block containers', () => {
+  function buildMdastEditor(structure: boolean) {
+    return buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          MdastCommonMarkExtension,
+          MdastGfmExtension,
+          MdastShortcutsExtension,
+          ...(structure ? [NodeStructureExtension] : []),
+        ],
+        name: 'block-containers-mdast',
+        nodes: () => [PlainBoxNode, DeclaredBoxNode, ShadowBoxNode],
+        onError: (e: Error) => {
+          throw e;
+        },
+      }),
+    );
+  }
+  test.each([
+    ['root', false, '# ', 'h("x") / p("def")'],
+    ['declared', false, '# ', 'dbox(p("# x") p("def"))'],
+    ['declared', true, '# ', 'dbox(h("x") p("def"))'],
+    ['declared', true, '- ', 'dbox(list[bullet](li("x")) p("def"))'],
+    ['declared', true, '> ', 'dbox(quote("x") p("def"))'],
+    ['plain', true, '# ', 'box(p("# x") p("def"))'],
+    ['shadow', false, '# ', 'sbox(h("x") p("def"))'],
+  ] as const)(
+    'typing %s in %s (NodeStructureExtension: %s) %s',
+    (ctx, structure, marker, expected) => {
+      using editor = buildMdastEditor(structure);
+      editor.update(
+        () => {
+          $build(ctx, () => [$createParagraphNode(), $p('def')]);
+          const def = $findText('def');
+          (def.getParentOrThrow().getPreviousSibling() as ElementNode).select();
+        },
+        {discrete: true},
+      );
+      for (const ch of marker + 'x') {
+        editor.update(
+          () => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+              selection.insertText(ch);
+            }
+          },
+          {discrete: true},
+        );
+      }
+      expect(editor.read(() => $strip($shape()))).toBe(expected);
+    },
+  );
 });
 
 // https://github.com/meta/lexical/issues/9570

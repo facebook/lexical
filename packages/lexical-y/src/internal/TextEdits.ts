@@ -106,6 +106,8 @@ type Run = {
    * of its node's, or joined it with another node's (see the move entry).
    */
   readonly moved?: number;
+  /** The one character of an inline node (not a line break). */
+  readonly atom?: true;
 };
 
 /**
@@ -971,19 +973,15 @@ export class TextReplay {
   private atom(key: NodeKey, kind: Kind | null): Run {
     const old = kindOf(this.prevMap.get(key));
     if (old !== null && old === kind) {
-      return {
-        base: kind === 'break' ? '\n' : OBJ,
-        end: 1,
-        kind: OLD,
-        src: key,
-        start: 0,
-      };
+      return kind === 'break'
+        ? {base: '\n', end: 1, kind: OLD, src: key, start: 0}
+        : {atom: true, base: OBJ, end: 1, kind: OLD, src: key, start: 0};
     }
     // Made in this commit: a line break may be a line feed made again (see
     // stretch), any other node is new.
     return kind === 'break'
       ? this.inserted('\n', LOOSE)
-      : this.inserted(OBJ, NEW);
+      : {...this.inserted(OBJ, NEW), atom: true};
   }
 
   /**
@@ -1508,7 +1506,7 @@ export class TextReplay {
           const inT = new Int32Array(d.length + 1);
           for (let k = 0, pos = 0; k < left.length; k++) {
             const text = textOf(left[k].run);
-            if (text !== OBJ) {
+            if (left[k].run.atom !== true) {
               runs.push([t.length, pos, text.length]);
               for (let i = 0; i < text.length; i++) {
                 inT[pos + i] = t.length + i;

@@ -664,14 +664,23 @@ export function keptEnds(
     // An insertion or a deletion: where the caret placed it, else at a word
     // boundary between the furthest the common start and the common end
     // reach (diffStrings takes the common start first: `diff.prefix`).
-    let longest = diff.prefix;
-    while (longest < n && a.charCodeAt(longest) === b.charCodeAt(longest)) {
-      longest++;
-    }
-    if (longest > diff.prefix) {
+    if (
+      diff.prefix < n &&
+      a.charCodeAt(diff.prefix) === b.charCodeAt(diff.prefix)
+    ) {
+      // The caret stopped the common start.
       return diff;
     }
-    let end = 0;
+    // The common end, from the end, a chunk at a time where equal.
+    const CHUNK = 256;
+    let end = diff.suffix;
+    while (
+      end + CHUNK <= n &&
+      a.substring(a.length - end - CHUNK, a.length - end) ===
+        b.substring(b.length - end - CHUNK, b.length - end)
+    ) {
+      end += CHUNK;
+    }
     while (
       end < n &&
       a.charCodeAt(a.length - 1 - end) === b.charCodeAt(b.length - 1 - end)

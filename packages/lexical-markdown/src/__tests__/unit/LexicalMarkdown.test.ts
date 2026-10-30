@@ -5070,6 +5070,28 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     ).toBe(true);
   });
 
+  it.each(['www.example.com', 'me@example.com', 'https://example.com/a'])(
+    'writes no reference inside %j, which readers may autolink',
+    link => {
+      const editor = createTestEditor();
+      editor.update(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append(
+              $createTextNode(`see ${link}`),
+              $createTextNode(
+                `${LEFT_DOUBLE_QUOTE}x${RIGHT_DOUBLE_QUOTE}`,
+              ).toggleFormat('bold'),
+            ),
+          ),
+        {discrete: true},
+      );
+      expect(
+        editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
+      ).toMatch(new RegExp(`^see ${link.replace(/\./g, '\\.')}\\*\\*`));
+    },
+  );
+
   it('guards word characters in a selection export', () => {
     const editor = createTestEditor();
     editor.update(

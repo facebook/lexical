@@ -847,8 +847,38 @@ function decideReferences(
     });
     start = end;
   }
-  const isText = (index: number) =>
-    index >= 0 && index < merged.length && merged[index].kind === 'text';
+  // Whether the word at the end (or start) of the piece at `index` is a bare
+  // URL, `www.` host, email or mention. A reference inside one would change
+  // what an autolinking reader links to, so the format is lost there instead,
+  // as before.
+  const linkish: boolean[][] = [[], []];
+  const isLinkish = (index: number, atEnd: boolean): boolean => {
+    const known = linkish[atEnd ? 1 : 0];
+    if (known[index] === undefined) {
+      const {value} = merged[index];
+      let start = atEnd ? value.length : 0;
+      let end = start;
+      if (atEnd) {
+        while (start > 0 && /\S/.test(value[start - 1])) {
+          start--;
+        }
+      } else {
+        while (end < value.length && /\S/.test(value[end])) {
+          end++;
+        }
+      }
+      known[index] = /:\/\/|www\.|@/i.test(value.slice(start, end));
+    }
+    return known[index];
+  };
+  // Whether the last (or first) character of the piece at `index` can go out
+  // as a reference.
+  const canReference = (index: number, atEnd: boolean): boolean =>
+    index >= 0 &&
+    index < merged.length &&
+    merged[index].kind === 'text' &&
+    isWordCharacter(atEnd ? endChar(index) : startChar(index)) &&
+    !isLinkish(index, atEnd);
   // A one-character piece written as a reference reads as punctuation at
   // both ends: `&#97;`.
   const firstChars = merged.map(({value}) => characterAt(value, 0)!);
@@ -903,10 +933,10 @@ function decideReferences(
         : run.closes && run.beforeLast === undefined;
       const next = leftward ? run.before : run.after;
       const char = leftward ? endChar(next) : startChar(next);
-      if (!isAffected || isFlankedBy('&', char)) {
+      if (!isAffected || isFlankedBy(leftward ? '&' : ';', char)) {
         break;
       }
-      if (!isText(next) || !isWordCharacter(char)) {
+      if (!canReference(next, leftward)) {
         result = false;
         break;
       }
@@ -937,8 +967,7 @@ function decideReferences(
     const charAfter = startChar(after);
     if (
       opens &&
-      isText(before) &&
-      isWordCharacter(charBefore) &&
+      canReference(before, true) &&
       !isFlankedBy(afterFirst || charAfter, charBefore) &&
       isFlankedBy(afterFirst || charAfter, ';') &&
       isFree(before, true)
@@ -950,8 +979,7 @@ function decideReferences(
     }
     if (
       closes &&
-      isText(after) &&
-      isWordCharacter(charAfter) &&
+      canReference(after, false) &&
       !isFlankedBy(beforeLast || charBefore, charAfter) &&
       isFlankedBy(beforeLast || charBefore, '&') &&
       isFree(after, false)

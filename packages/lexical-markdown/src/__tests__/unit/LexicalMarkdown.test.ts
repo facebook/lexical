@@ -4877,8 +4877,6 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       ],
       '**a**~~!~~',
     ],
-    // The sentinels that mark markers during export stay text.
-    [[['a\uFDD0**\uFDD2b', ['bold']]], '**a&#64976;\\*\\*&#64978;b**'],
     // A word character beside a word character needs no reference.
     [
       [
@@ -4926,6 +4924,64 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       ).toEqual(runs);
     },
   );
+
+  it('guards a word character after a raw backslash when preserving newlines', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createTextNode('x\\b'),
+            $createTextNode(
+              `${LEFT_DOUBLE_QUOTE}y${RIGHT_DOUBLE_QUOTE}`,
+            ).toggleFormat('bold'),
+          ),
+        ),
+      {discrete: true},
+    );
+    const markdown = editor.read('latest', () =>
+      $convertToMarkdownString(TRANSFORMERS, undefined, true),
+    );
+    expect(markdown).toBe(
+      `x&#92;&#98;**${LEFT_DOUBLE_QUOTE}y${RIGHT_DOUBLE_QUOTE}**`,
+    );
+    editor.update(
+      () => $convertFromMarkdownString(markdown, TRANSFORMERS, undefined, true),
+      {discrete: true},
+    );
+    expect(
+      editor.read('latest', () =>
+        $getRoot()
+          .getAllTextNodes()
+          .map(node => [node.getTextContent(), node.hasFormat('bold')]),
+      ),
+    ).toEqual([
+      ['x\\b', false],
+      [`${LEFT_DOUBLE_QUOTE}y${RIGHT_DOUBLE_QUOTE}`, true],
+    ]);
+  });
+
+  it('guards word characters in a selection export', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const bold = $createTextNode(
+          `${LEFT_DOUBLE_QUOTE}bar${RIGHT_DOUBLE_QUOTE}`,
+        ).toggleFormat('bold');
+        const after = $createTextNode('baz');
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('foo'), bold, after),
+        );
+        bold.select(0, 0).focus.set(after.getKey(), 2, 'text');
+      },
+      {discrete: true},
+    );
+    expect(
+      editor.read('latest', () =>
+        $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+      ),
+    ).toBe(`**${LEFT_DOUBLE_QUOTE}bar${RIGHT_DOUBLE_QUOTE}**&#98;a`);
+  });
 
   it('guards word characters across an inline element without a transformer', () => {
     const transformers = TRANSFORMERS.filter(

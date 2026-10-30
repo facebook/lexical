@@ -38,9 +38,9 @@ import {
   characterBefore,
   isEmptyParagraph,
   PUNCTUATION,
+  PUNCTUATION_OR_SPACE,
   toCharacterReference,
   transformersByType,
-  WHITESPACE,
 } from './utils';
 
 /**
@@ -95,7 +95,7 @@ export function createMarkdownExport(
     }
     // Ensure consecutive groups of texts are at least \n\n apart while each empty paragraph render as a newline.
     // Eg. ["hello", "", "", "hi", "\nworld"] -> "hello\n\n\nhi\n\nworld"
-    return resolveMarkers(output.join('\n'));
+    return output.join('\n');
   };
 }
 
@@ -161,7 +161,7 @@ export function createSelectionMarkdownExport(
         previousExported = child;
       }
     }
-    return resolveMarkers(output.join('\n'));
+    return output.join('\n');
   };
 }
 
@@ -183,13 +183,15 @@ function $processNodeForSelection(
     const result = transformer.export(
       node,
       node_ =>
-        $exportChildrenForSelection(
-          node_,
-          selection,
-          textFormatTransformers,
-          textMatchTransformers,
-          shouldPreserveNewLines,
-        ).markdown,
+        joinPieces(
+          $exportChildrenForSelection(
+            node_,
+            selection,
+            textFormatTransformers,
+            textMatchTransformers,
+            shouldPreserveNewLines,
+          ).pieces,
+        ),
       selection,
     );
 
@@ -222,7 +224,7 @@ function $processNodeForSelection(
       shouldPreserveNewLines,
     );
     return {
-      markdown: childResult.markdown,
+      markdown: joinPieces(childResult.pieces),
       shouldInclude: shouldInclude || childResult.shouldInclude,
     };
   } else if ($isDecoratorNode(node)) {
@@ -247,8 +249,8 @@ function $exportChildrenForSelection(
   shouldPreserveNewLines: boolean,
   unclosedTags?: OpenTag[],
   unclosableTags?: OpenTag[],
-): {shouldInclude: boolean; markdown: string} {
-  const output = [];
+): {shouldInclude: boolean; pieces: MarkdownPiece[]} {
+  const output: MarkdownPiece[] = [];
   const children = node.getChildren();
   let anyChildIncluded = false;
 
@@ -271,24 +273,28 @@ function $exportChildrenForSelection(
       const result = transformer.export(
         child,
         parentNode =>
-          $exportChildrenForSelection(
-            parentNode,
-            selection,
-            textFormatTransformers,
-            textMatchTransformers,
-            shouldPreserveNewLines,
-            unclosedTags,
-            [...unclosableTags, ...unclosedTags],
-          ).markdown,
+          joinPieces(
+            $exportChildrenForSelection(
+              parentNode,
+              selection,
+              textFormatTransformers,
+              textMatchTransformers,
+              shouldPreserveNewLines,
+              unclosedTags,
+              [...unclosableTags, ...unclosedTags],
+            ).pieces,
+          ),
         textNode =>
-          $exportTextFormat(
-            textNode,
-            $exportedText(textNode, selection),
-            textFormatTransformers,
-            unclosedTags,
-            unclosableTags,
-            shouldPreserveNewLines,
-            selection,
+          joinPieces(
+            $exportTextFormat(
+              textNode,
+              $exportedText(textNode, selection),
+              textFormatTransformers,
+              unclosedTags,
+              unclosableTags,
+              shouldPreserveNewLines,
+              selection,
+            ),
           ),
       );
 
@@ -303,7 +309,7 @@ function $exportChildrenForSelection(
           childIncluded = true;
         }
         if (childIncluded) {
-          output.push(result);
+          output.push(rawPiece(result));
           anyChildIncluded = true;
         }
         continue mainLoop;
@@ -312,12 +318,13 @@ function $exportChildrenForSelection(
 
     if ($isLineBreakNode(child)) {
       if (childIncluded) {
-        output.push($exportLineBreak(child));
+        output.push(rawPiece($exportLineBreak(child)));
         anyChildIncluded = true;
       }
     } else if ($isTextNode(child)) {
       if (childIncluded) {
-        output.push(
+        appendPieces(
+          output,
           $exportTextFormat(
             child,
             $exportedText(child, selection),
@@ -351,18 +358,18 @@ function $exportChildrenForSelection(
       }
 
       if (childIncluded || childResult.shouldInclude) {
-        output.push(childResult.markdown);
+        appendPieces(output, childResult.pieces);
         anyChildIncluded = true;
       }
     } else if ($isDecoratorNode(child)) {
       if (childIncluded) {
-        output.push(child.getTextContent());
+        output.push(rawPiece(child.getTextContent()));
         anyChildIncluded = true;
       }
     }
   }
 
-  return {markdown: output.join(''), shouldInclude: anyChildIncluded};
+  return {pieces: output, shouldInclude: anyChildIncluded};
 }
 
 function $exportTopLevelElements(
@@ -416,7 +423,27 @@ function $exportChildren(
   unclosableTags?: OpenTag[],
   shouldPreserveNewLines: boolean = false,
 ): string {
-  const output = [];
+  return joinPieces(
+    $exportChildPieces(
+      node,
+      textTransformersIndex,
+      textMatchTransformers,
+      unclosedTags,
+      unclosableTags,
+      shouldPreserveNewLines,
+    ),
+  );
+}
+
+function $exportChildPieces(
+  node: ElementNode,
+  textTransformersIndex: TextFormatTransformer[],
+  textMatchTransformers: TextMatchTransformer[],
+  unclosedTags?: OpenTag[],
+  unclosableTags?: OpenTag[],
+  shouldPreserveNewLines: boolean = false,
+): MarkdownPiece[] {
+  const output: MarkdownPiece[] = [];
   const children = node.getChildren();
   // keep track of unclosed tags from the very beginning
   if (!unclosedTags) {
@@ -449,27 +476,30 @@ function $exportChildren(
             shouldPreserveNewLines,
           ),
         (textNode, textContent) =>
-          $exportTextFormat(
-            textNode,
-            textContent,
-            textTransformersIndex,
-            unclosedTags,
-            unclosableTags,
-            shouldPreserveNewLines,
-            null,
+          joinPieces(
+            $exportTextFormat(
+              textNode,
+              textContent,
+              textTransformersIndex,
+              unclosedTags,
+              unclosableTags,
+              shouldPreserveNewLines,
+              null,
+            ),
           ),
       );
 
       if (result != null) {
-        output.push(result);
+        output.push(rawPiece(result));
         continue mainLoop;
       }
     }
 
     if ($isLineBreakNode(child)) {
-      output.push($exportLineBreak(child));
+      output.push(rawPiece($exportLineBreak(child)));
     } else if ($isTextNode(child)) {
-      output.push(
+      appendPieces(
+        output,
         $exportTextFormat(
           child,
           child.getTextContent(),
@@ -482,8 +512,9 @@ function $exportChildren(
       );
     } else if ($isElementNode(child)) {
       // empty paragraph returns ""
-      output.push(
-        $exportChildren(
+      appendPieces(
+        output,
+        $exportChildPieces(
           child,
           textTransformersIndex,
           textMatchTransformers,
@@ -493,11 +524,11 @@ function $exportChildren(
         ),
       );
     } else if ($isDecoratorNode(child)) {
-      output.push(child.getTextContent());
+      output.push(rawPiece(child.getTextContent()));
     }
   }
 
-  return output.join('');
+  return output;
 }
 
 function $exportLineBreak(node: LineBreakNode): string {
@@ -514,7 +545,7 @@ function $exportTextFormat(
   shouldPreserveNewLines: boolean,
   // the selection being exported, which ends the text a tag can extend over
   selection: BaseSelection | null,
-): string {
+): MarkdownPiece[] {
   // This function handles the case of a string looking like this: "   foo   "
   // Where it would be invalid markdown to generate: "**   foo   **"
   // so the tags go inside the whitespace instead: "   **foo**   ".
@@ -527,28 +558,22 @@ function $exportTextFormat(
     // Default mode guards numeric references; named references keep legacy output.
     // Numeric escapes avoid changing emphasis flanking beside formatting.
     // Guard ambiguous '<' and '&' at node ends for constructs split across nodes.
-    // Marker sentinels in the text go out as references, so that only the
-    // markers this export writes read as markers.
     output = shouldPreserveNewLines
-      ? output.replace(/([*_`~])|[\uFDD0-\uFDD2]/g, (character, marker) =>
-          marker ? `\\${marker}` : toCharacterReference(character),
-        )
-      : output.replace(
-          /([[\]*_`~\\]|<(?=\S|$)|&(?=#|$)|[\uFDD0-\uFDD2])/g,
-          character =>
-            /[*_`~\\]/.test(character)
-              ? `\\${character}`
-              : toCharacterReference(character),
+      ? output.replace(/([*_`~])/g, '\\$1')
+      : output.replace(/([[\]*_`~\\]|<(?=\S|$)|&(?=#|$))/g, character =>
+          /[*_`~\\]/.test(character)
+            ? `\\${character}`
+            : toCharacterReference(character),
         );
   }
 
   const holdsTag = canHoldTag(textContent);
 
   // the opening tags to be added to the result
-  let openingTags = '';
+  const openingTags: MarkdownPiece[] = [];
   // the closing tags to be added to the result
-  let closingTagsBefore = '';
-  let closingTagsAfter = '';
+  const closingTagsBefore: MarkdownPiece[] = [];
+  const closingTagsAfter: MarkdownPiece[] = [];
 
   const prevNode = getTextSibling(node, true);
 
@@ -576,7 +601,7 @@ function $exportTextFormat(
         !unclosedTags.find(element => element.tag === tag)
       ) {
         unclosedTags.push({answers: new Map(), format, tag});
-        openingTags += OPENER + tag + MARKER_END;
+        openingTags.push({kind: 'opener', value: tag});
       }
     }
   }
@@ -607,9 +632,9 @@ function $exportTextFormat(
         if (!nodeHasFormat) {
           // Handles cases where the tag has not been closed before, e.g. if the previous node
           // was a text match transformer that did not account for closing tags of the next node (e.g. a link)
-          closingTagsBefore += CLOSER + unclosedTag.tag + MARKER_END;
+          closingTagsBefore.push({kind: 'closer', value: unclosedTag.tag});
         } else {
-          closingTagsAfter += CLOSER + unclosedTag.tag + MARKER_END;
+          closingTagsAfter.push({kind: 'closer', value: unclosedTag.tag});
         }
       }
       // Mutate the original array to remove the closed tag
@@ -625,7 +650,7 @@ function $exportTextFormat(
   } else if (!holdsTag) {
     // If the node is entirely whitespace, we don't apply opening/closing tags
     // around it, but it must still output any closing tags.
-    return closingTagsBefore + closingTagsAfter + output;
+    return [...closingTagsBefore, ...closingTagsAfter, textPiece(output)];
   }
 
   // Flanking Compliance: CommonMark flanking rules require formatting tags to be
@@ -636,97 +661,159 @@ function $exportTextFormat(
   const trimmedOutput = trimmedStart.trimEnd();
   const leadingSpace = output.slice(0, output.length - trimmedStart.length);
   const trailingSpace = trimmedStart.slice(trimmedOutput.length);
+  return [
+    ...closingTagsBefore,
+    textPiece(leadingSpace),
+    ...openingTags,
+    // Inline code is a literal span: a character reference would show as is.
+    isCode ? rawPiece(trimmedOutput) : textPiece(trimmedOutput),
+    ...closingTagsAfter,
+    textPiece(trailingSpace),
+  ];
+}
+
+/**
+ * Exported inline Markdown, with the format markers kept apart from the text
+ * until `joinPieces` can see the characters on both sides of each delimiter
+ * run. `text` is text this export escaped, which a character reference can
+ * stand in for; `raw` is anything else, such as code spans, line breaks and
+ * the output of transformers and decorators.
+ */
+interface MarkdownPiece {
+  kind: 'text' | 'raw' | 'opener' | 'closer';
+  value: string;
+}
+
+function textPiece(value: string): MarkdownPiece {
+  return {kind: 'text', value};
+}
+
+function rawPiece(value: string): MarkdownPiece {
+  return {kind: 'raw', value};
+}
+
+function appendPieces(output: MarkdownPiece[], pieces: MarkdownPiece[]) {
+  for (const piece of pieces) {
+    output.push(piece);
+  }
+}
+
+function isMarker(piece: MarkdownPiece | undefined): boolean {
   return (
-    closingTagsBefore +
-    leadingSpace +
-    openingTags +
-    trimmedOutput +
-    closingTagsAfter +
-    trailingSpace
+    piece !== undefined && (piece.kind === 'opener' || piece.kind === 'closer')
   );
 }
 
-// Format markers are written between sentinels, noncharacters that Unicode
-// keeps for internal use, until the whole export is joined, so that
-// `resolveMarkers` sees each run of markers beside the characters a reader
-// will see, whichever node, element or transformer wrote them.
-const OPENER = '\uFDD0';
-const CLOSER = '\uFDD1';
-const MARKER_END = '\uFDD2';
-const MARKER_RUN = /((?:[\uFDD0\uFDD1][^\uFDD0-\uFDD2]*\uFDD2)+)/;
-const MARKER = /([\uFDD0\uFDD1])([^\uFDD0-\uFDD2]*)\uFDD2/g;
-
+/** Whether a character reference can stand in for `character` beside a marker. */
 function isWordCharacter(character: string | undefined): boolean {
   return (
     character !== undefined &&
-    !WHITESPACE.test(character) &&
-    !PUNCTUATION.test(character)
+    !PUNCTUATION_OR_SPACE.test(character) &&
+    // An unpaired surrogate reads back from a reference as U+FFFD.
+    !/\p{Cs}/u.test(character)
   );
 }
 
 /**
- * Removes the marker sentinels. A delimiter run between a word character and
- * punctuation can only open or close on the punctuation side (CommonMark
- * flanking), so plain `a` before a bold `*` cannot go out as `a**\***`. The
- * word character beside such a run goes out as a numeric reference instead,
- * whose `&` or `;` is punctuation: `&#97;**\***`.
+ * Joins exported pieces into Markdown. A delimiter run between a word
+ * character and punctuation can only open or close on the punctuation side
+ * (CommonMark flanking), so plain `a` before a bold `*` cannot go out as
+ * `a**\***`. The word character beside such a run goes out as a numeric
+ * reference instead, whose `&` or `;` is punctuation: `&#97;**\***`.
  */
-function resolveMarkers(markdown: string): string {
-  // Text and marker runs alternate, starting and ending with text.
-  const parts = markdown.split(MARKER_RUN);
-  const encodeStart: boolean[] = [];
-  const encodeEnd: boolean[] = [];
-  for (let i = 1; i < parts.length; i += 2) {
-    // Markers of one character form one delimiter run; only the first and
-    // the last of them touch text.
-    const runs: {closes: boolean; markers: string; opens: boolean}[] = [];
-    for (const [, kind, tag] of parts[i].matchAll(MARKER)) {
+function joinPieces(pieces: MarkdownPiece[]): string {
+  // Drop empty pieces and merge adjacent text, so that each run of markers
+  // sits between the pieces whose characters a reader sees beside it.
+  const merged: MarkdownPiece[] = [];
+  for (const piece of pieces) {
+    const last = merged[merged.length - 1];
+    if (piece.value === '') {
+      continue;
+    } else if (last && !isMarker(piece) && last.kind === piece.kind) {
+      merged[merged.length - 1] = {
+        kind: last.kind,
+        value: last.value + piece.value,
+      };
+    } else {
+      merged.push(piece);
+    }
+  }
+  const encodeStart = new Set<MarkdownPiece>();
+  const encodeEnd = new Set<MarkdownPiece>();
+  for (let start = 0; start < merged.length; start++) {
+    if (!isMarker(merged[start])) {
+      continue;
+    }
+    let end = start;
+    while (isMarker(merged[end + 1])) {
+      end++;
+    }
+    // Markers of one character form one delimiter run, and only the first
+    // and the last run touch text.
+    const runs: {closes: boolean; opens: boolean; value: string}[] = [];
+    for (let i = start; i <= end; i++) {
+      const {kind, value} = merged[i];
       let run = runs[runs.length - 1];
-      if (!run || run.markers[0] !== tag[0]) {
-        run = {closes: false, markers: '', opens: false};
+      if (!run || run.value[0] !== value[0]) {
+        run = {closes: false, opens: false, value: ''};
         runs.push(run);
       }
-      run.markers += tag;
-      run.opens ||= kind === OPENER;
-      run.closes ||= kind === CLOSER;
+      run.value += value;
+      run.opens ||= kind === 'opener';
+      run.closes ||= kind === 'closer';
     }
-    const markers = runs.map(run => run.markers);
-    const first = runs[0];
-    const last = runs[runs.length - 1];
-    const before = characterBefore(parts[i - 1], parts[i - 1].length);
-    const after = characterAt(parts[i + 1], 0);
-    const afterFirst = runs.length > 1 ? markers[1][0] : after;
+    const firstOpens = runs[0].opens;
+    const lastCloses = runs[runs.length - 1].closes;
+    const before = merged[start - 1];
+    const after = merged[end + 1];
+    const charBefore =
+      before && characterBefore(before.value, before.value.length);
+    const charAfter = after && characterAt(after.value, 0);
+    const afterFirst = runs.length > 1 ? runs[1].value[0] : charAfter;
     const beforeLast =
-      runs.length > 1 ? markers[runs.length - 2].slice(-1) : before;
-    encodeEnd[i - 1] =
-      first.opens &&
-      isWordCharacter(before) &&
-      afterFirst !== undefined &&
-      PUNCTUATION.test(afterFirst);
-    encodeStart[i + 1] =
-      last.closes &&
-      isWordCharacter(after) &&
-      beforeLast !== undefined &&
-      PUNCTUATION.test(beforeLast);
-    parts[i] = markers.join('');
-  }
-  for (let i = 0; i < parts.length; i += 2) {
-    let text = parts[i];
-    let start = '';
-    let end = '';
-    const first = characterAt(text, 0);
-    if (encodeStart[i] && first !== undefined) {
-      start = toCharacterReference(first);
-      text = text.slice(first.length);
+      runs.length > 1 ? runs[runs.length - 2].value.slice(-1) : charBefore;
+    if (
+      before !== undefined &&
+      before.kind === 'text' &&
+      firstOpens &&
+      isWordCharacter(charBefore) &&
+      PUNCTUATION.test(afterFirst ?? '')
+    ) {
+      encodeEnd.add(before);
     }
-    const last = characterBefore(text, text.length);
-    if (encodeEnd[i] && last !== undefined) {
-      end = toCharacterReference(last);
-      text = text.slice(0, -last.length);
+    if (
+      after !== undefined &&
+      after.kind === 'text' &&
+      lastCloses &&
+      isWordCharacter(charAfter) &&
+      PUNCTUATION.test(beforeLast ?? '')
+    ) {
+      encodeStart.add(after);
     }
-    parts[i] = start + text + end;
+    start = end;
   }
-  return parts.join('');
+  let markdown = '';
+  for (const piece of merged) {
+    let {value} = piece;
+    if (encodeStart.has(piece)) {
+      const first = characterAt(value, 0)!;
+      value = toCharacterReference(first) + value.slice(first.length);
+    }
+    // A reference already written for the start counts as punctuation.
+    const last = characterBefore(value, value.length)!;
+    if (encodeEnd.has(piece) && isWordCharacter(last)) {
+      let body = value.slice(0, -last.length);
+      // A backslash left unescaped (when preserving newlines) would escape
+      // the reference's `&`, so it goes out as a reference too.
+      const backslashes = body.length - body.replace(/\\+$/, '').length;
+      if (backslashes % 2 === 1) {
+        body = body.slice(0, -1) + toCharacterReference('\\');
+      }
+      value = body + toCharacterReference(last);
+    }
+    markdown += value;
+  }
+  return markdown;
 }
 
 function getTextSibling(node: TextNode, backward: boolean): TextNode | null {

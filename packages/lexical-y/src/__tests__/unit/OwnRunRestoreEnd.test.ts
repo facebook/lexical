@@ -239,5 +239,53 @@ describe('@lexical/y a restore of a comment its own client opened', () => {
         expect(words(t.a)).toBe('aa Kilome[c1] cc dd');
       },
     );
+    for (const value of ['comment', 'bold'] as const) {
+      test(`a later write's hole is not a run end (${value}, ids ${ids})`, async () => {
+        // A's second write inside its own run ("Z") opens a hole with a
+        // null of A's; B's restore in front of that hole must not take that
+        // null for the run's end (it is followed by A's text and A's
+        // restore of the run's value), or A's undo of "Z" leaves B's null
+        // ending the run early.
+        const t = await setup(
+          () => $getRoot().append($p('aa Kilometer bb cc'), $p('tail line')),
+          {ids, prepare},
+        );
+        const shown = (peer: Peer) =>
+          value === 'comment'
+            ? words(peer)
+            : peer.read(() =>
+                ($block([0]).getAllTextNodes() as TextNode[])
+                  .map(
+                    n => n.getTextContent() + (n.hasFormat('bold') ? '*' : ''),
+                  )
+                  .join('|'),
+              );
+        t.a.update(() => {
+          const selection = $selectIn([0], 3, 12);
+          if (value === 'comment') {
+            $addMarkID('c1', selection);
+          } else {
+            selection.formatText('bold');
+          }
+        });
+        await t.sync();
+        t.b.update(() => $insertPlainAt(10, 'Y'));
+        await t.sync();
+        t.a.update(() => $insertPlainAt(6, 'X'));
+        await t.sync();
+        t.a.update(() => $insertPlainAt(9, 'Z'));
+        await t.sync();
+        t.b.update(() => $insertPlainAt(8, 'Q'));
+        await t.sync();
+        t.a.undo();
+        await t.sync();
+        await expectConverged(t.peers);
+        expect(shown(t.a)).toBe(
+          value === 'comment'
+            ? 'aa Kil[c1] X o[c1] Q met[c1] Y er[c1] bb cc'
+            : 'aa |Kil*|X|o*|Q|met*|Y|er*| bb cc',
+        );
+      });
+    }
   }
 });

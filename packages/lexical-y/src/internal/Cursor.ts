@@ -205,6 +205,37 @@ function isChangeEnd(doc: Doc, item: Item): boolean {
   );
 }
 
+/**
+ * Whether null `item` opens a hole its client wrote in a run of `value`: the
+ * next item of its key that its client made after it (in clock order, among
+ * the next 64 structs) gives `value` back, with text of that client between
+ * the two (one write's null, text and restore). Such a null ends no run, also
+ * where changeEnd of an earlier restore of that client finds it (that
+ * restore's own write ended its run at another client's item).
+ */
+function opensHole(doc: Doc, item: Item, value: unknown): boolean {
+  const key = keyOf(item);
+  const {client} = item.id;
+  const end = doc.store.getClock(client);
+  let clock = item.id.clock + item.length;
+  let text = false;
+  for (let steps = 0; clock < end && steps < 64; steps++) {
+    const next = doc.store.getItem(createID(client, clock));
+    if (!(next instanceof Item)) {
+      return false;
+    }
+    if (next.content instanceof ContentFormat) {
+      if (next.content.key === key) {
+        return text && equalFormatValue(next.content.value, value);
+      }
+    } else if (next.countable) {
+      text = true;
+    }
+    clock = next.id.clock + next.length;
+  }
+  return false;
+}
+
 /** The nearest live item of `key` before `item`, among the 4096 before it. */
 function liveItemBefore(item: Item, key: string): Item | null {
   let steps = 0;
@@ -678,7 +709,9 @@ export class Cursor {
       ) {
         continue;
       }
-      return valueOf(it) === null && chain.some(c => changeEnd(doc, c) === it)
+      return valueOf(it) === null &&
+        !opensHole(doc, it, value) &&
+        chain.some(c => changeEnd(doc, c) === it)
         ? it
         : null;
     }

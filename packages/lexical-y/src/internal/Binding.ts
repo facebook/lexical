@@ -2902,7 +2902,7 @@ export class YBinding {
    */
   private $composedCharacter(
     cursor: YCursor | null,
-  ): {client: number; clock: number} | null {
+  ): {client: number; clock: number; offset: number} | null {
     const key = this._editor._compositionKey;
     const selection = $getSelection();
     if (
@@ -2917,7 +2917,13 @@ export class YBinding {
       return null;
     }
     const rel = createRelativePositionFromJSON(cursor.anchor);
-    return rel.assoc < 0 ? rel.item : null;
+    return rel.assoc < 0 && rel.item !== null
+      ? {
+          client: rel.item.client,
+          clock: rel.item.clock,
+          offset: selection.anchor.offset,
+        }
+      : null;
   }
 
   /**
@@ -3087,6 +3093,24 @@ export class YBinding {
         {discrete: true, skipTransforms: true},
       );
       return;
+    }
+    if (!this._editor._updating && !this.isIdle()) {
+      // Outside any update, with a local update still pending or queued:
+      // committed first (see commitPending), so that the refresh commits
+      // now, on its own, rather than once the editor is idle. Such an update
+      // is one made in reply to the read the refresh follows, also by
+      // Lexical itself: an editor with named slots re-renders in an update
+      // of its own whenever its editable state changes, which the binding's
+      // status change after a read does (activation after the first read,
+      // read only after a remote change it cannot write past).
+      //
+      // Invariant: once a read's work is done, the editor shows the derived
+      // fields the read left (list numbering), as a fresh reader of the
+      // document does (see readYState). Why: deferred to a microtask, the
+      // refresh left a freshly bound editor numbering every list item 1
+      // until then, and code that reads the editor right after
+      // `initialize()` or a remote change saw that.
+      this.commitPending();
     }
     if (!this.isIdle()) {
       // Inside another update (a change applied from one of its listeners):

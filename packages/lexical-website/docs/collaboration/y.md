@@ -41,13 +41,38 @@ other clients cannot move to Yjs 14, or when you need the
 ## Install
 
 ```bash
-npm i @lexical/y @lexical/extension lexical @y/y@14.0.0-rc.29
+# @lexical/rich-text, @lexical/list and @y/websocket are for the example
+# below; use the extensions and the provider your app needs.
+npm i --save-exact @lexical/y@nightly @lexical/extension@nightly \
+  lexical@nightly @lexical/rich-text@nightly @lexical/list@nightly \
+  @y/y@14.0.0-rc.29 @y/websocket@4.0.0-rc.2
 ```
 
 `@y/y` is a peer dependency pinned to the release candidate `@lexical/y` is
 tested with; npm's `latest` tag points at an older one, so name the version.
 The type declarations `@y/y` ships do not type-check on their own (an
-upstream issue): if you run `tsc`, set `skipLibCheck: true`.
+upstream issue): if you run `tsc`, set `skipLibCheck: true`. Lexical's types
+also need TypeScript 5.2 or later with `moduleResolution` set to `bundler`,
+`node16` or `nodenext`. With an older setting (`node`, `node10`), TypeScript
+reads a stub instead, and every import fails with "Module '@lexical/y' has
+no exported member" rather than an error that names the setting.
+
+- **`@nightly` until a Lexical release includes `@lexical/y`.** Until then,
+  `npm install @lexical/y` does not install a working copy, so install every Lexical package of your app from the
+  same nightly, in one command so that they resolve to the same version.
+  Each nightly `@lexical/y` depends on the `lexical` of its own nightly, so
+  a `lexical` from another version puts
+  [two copies of Lexical](/docs/concepts/one-lexical-per-app) in the app.
+  Once a release includes it, install that release (without `@nightly`).
+- **Name the version of the `@y/*` packages you install.** The `latest`
+  tags of `@y/websocket` (4.0.0-0) and `@y/protocols` (1.0.6-0) are builds
+  for the earlier `yjs@14.0.0-*` prereleases, not `@y/y`: npm installs that
+  `yjs` next to `@y/y`, and the provider then applies updates to your
+  document with a second copy of Yjs that `@lexical/y` is not tested with.
+  The release candidates that peer on `@y/y` (`@y/websocket@4.0.0-rc.2`,
+  `@y/protocols@1.0.6-rc.1`) are the ones the Lexical playground is tested
+  with. `npm ls yjs` should show no `yjs@14.0.0-*` (a Yjs 13 `yjs` for
+  `@lexical/yjs` documents is fine).
 
 ## Set up an editor
 
@@ -598,8 +623,11 @@ block-beta
 ```
 
 **Adjacent equal links merge** (same URL, target, rel and title), and so do
-adjacent lists of the same type. Inline content directly in the root or in a
-table cell (text, a link, a mark) is wrapped in a paragraph.
+adjacent lists of the same type. Nested lists of the same type in adjacent
+list items merge too, keeping the first list's start: turning a nested bullet
+list into a number list right after another item's nested number list makes
+it part of that list. Inline content directly in the root or in a table cell
+(text, a link, a mark) is wrapped in a paragraph.
 
 ```mermaid
 block-beta
@@ -654,8 +682,12 @@ person's:
 
 - **Edit text in place** (insert and delete characters in a text node)
   rather than replacing blocks or whole documents. A replaced block is a
-  delete and an insert, so what collaborators type into it at the same time
-  is lost (see [Limits](#limits)). Lexical records the text edits of an
+  delete and an insert: in a line such as a paragraph, what collaborators
+  type into it at the same time survives, with its own formatting, at the
+  start of the new text (typed at the end of the line, it can also stay at
+  the end), and the formatting of the replaced characters does not carry
+  over; replacing a block stored as a node of its own, such as a table,
+  deletes what was typed in it (see [Limits](#limits)). Lexical records the text edits of an
   update while the binding is attached: `TextNode#spliceText`, the
   selection's `insertText` and `removeText` (and the commands built on
   them), splits and merges of text nodes, text typed into a node Lexical
@@ -721,7 +753,9 @@ merge the `update` it returns into the live document (see
 
 ## Servers
 
-Any Yjs 14 server or relay can host the documents. Clients of
+A Yjs 14 (`@y/y`) server or relay can host the documents when it meets
+the requirements below (format cleanup off, updates delivered in order, and
+for yrs, its version and client ids). Clients of
 `@lexical/yjs` write to other roots (`root`, `root-v2`), never to
 `DEFAULT_ROOT_NAME` (`'lexical-y'`), so they cannot change a `@lexical/y`
 document's content and the server needs no check to keep them out.
@@ -745,6 +779,33 @@ A relay that cannot import it sets the flag on a new document itself
 Otherwise, when Yjs applies an update there it deletes format items that
 it finds redundant but the clients keep, and the state the server stores
 reads differently from what the clients show.
+
+**A relay for `@y/websocket` clients.** The published
+`@y/websocket-server` does not fit: its latest version, 0.1.5, depends on
+the `yjs@14.0.0-*` prereleases, not `@y/y`, and keeps each room in a plain
+`Doc`, with the format cleanup on. The Lexical playground's development
+relay,
+[`collab-y-server.mjs`](https://github.com/meta/lexical/blob/main/packages/lexical-playground/scripts/collab-y-server.mjs),
+is a complete in-memory example (no persistence, authentication or room
+eviction) that `@y/websocket` clients connect to at `ws://host:port/<room>`;
+drop its test-only `/health` and `/delay` endpoints before you build a relay
+on it. It keeps one
+document per room, applies what each connection sends to it, and sends the
+updates the document emits to the room's connections, in the order it
+applied them. It uses `@y/y`, `@y/protocols` (the sync and awareness
+messages), `lib0` (their encoding) and `ws`; create each room's document
+with `createYDoc()` from `@lexical/y` (or set
+`doc.cleanupFormatting = false`, as that script does):
+
+```bash
+npm i --save-exact @y/y@14.0.0-rc.29 @y/protocols@1.0.6-rc.1 \
+  lib0@1.0.0-rc.36 ws @lexical/y@nightly
+```
+
+To persist a room, load its stored state with `createYDoc(stored)` before
+the first connection syncs, and store `encodeStateAsUpdate(doc)` (from
+`@y/y`) after the updates it applies, one write at a time per room, so that
+an older snapshot never replaces a newer one.
 
 Servers built on **yrs before 0.28** (y-crdt) read client ids as 32-bit
 numbers, while Yjs 14 draws 53-bit ones: an author can receive its own
@@ -795,7 +856,9 @@ not merge as a user might expect:
   and two collaborators moving the same block at once can duplicate it.
   Undoing the move restores the block as it was before the move: what
   collaborators typed in it since is lost or, in a moved line, stays where
-  the moved copy was. The moved block is the node Lexical recorded as moved:
+  the moved copy was. A block moved into a container the move made (wrapping
+  it in a box) stays there whole once a collaborator typed in it, next to
+  the restored block, so its text shows twice (see Undo). The moved block is the node Lexical recorded as moved:
   an existing node passed to `insertBefore`, `insertAfter`, `append` or
   `splice` in the update (as a block drag does), even one put back where it
   was. The blocks it passes that Lexical did not record keep what
@@ -803,20 +866,22 @@ not merge as a user might expect:
   Lexical did not record (an editor state set whole), the binding rewrites
   as few blocks as it can, the smaller ones on a tie.
   Lexical operations that move content behave the same way: turning a
-  paragraph into a list inside a container that is neither a shadow root
-  nor declared `children: 'block'` (Lexical replaces the container with the
-  list; if the container also holds a block a list item cannot hold, such
-  as a quote, the block holding the selected text becomes a list in place,
-  inside the container, instead), indenting list items that hold blocks,
-  and the first edit that
-  restructures a list stored in an older shape (a nested list kept as a
-  node inside an item's line): its items move into the list's own sequence.
-  In a shadow root or a container declared `children: 'block'`, the
-  paragraph becomes a list item in place and keeps what collaborators type
-  in it (see [block containers](../serialization/serialization.md#node-structure)).
-  A Backspace that outdents an item of a list stored in that older shape is
-  a delete in the nested list's container and an insert in the list's: text
-  a collaborator types in those items at the same time is lost.
+  paragraph that holds text into a list inside a container that is neither
+  a shadow root nor declared `children: 'block'` (Lexical replaces the
+  whole container with the list, so its content moves into the list; if the
+  container also holds a block a list item cannot hold, such as a quote,
+  the block holding the selected text becomes a list in place, inside the
+  container, instead), indenting list items that hold blocks, merging table
+  cells (the content of the cells merged away moves into the first one), and
+  the first edit that restructures a list stored in an older shape (a nested
+  list kept as a node inside an item's line): its items move into the list's
+  own sequence. In a table cell or another shadow root, or a container
+  declared `children: 'block'`, the paragraph becomes a list item in place
+  and keeps what collaborators type in it (see
+  [block containers](../serialization/serialization.md#node-structure)). A
+  Backspace that outdents an item of a list stored in that older shape is a
+  delete in the nested list's container and an insert in the list's: text a
+  collaborator types in those items at the same time is lost.
 - **Delete wins.** Text typed into a container that a collaborator deletes at
   the same time is deleted with it, and so is a block moved into it.
 - **Last writer wins** for the fields of one link (URL and target change
@@ -954,18 +1019,40 @@ not merge as a user might expect:
   collaborator moved out of the removed range at the same time shows twice
   (the original next to the moved copy), and when two
   collaborators remove the same text and both undo, it shows twice.
+  Undoing the replacement of a block with a new one (`replace` without
+  `includeChildren`, written as a removal and a new block) after a
+  collaborator edited the new block brings the old block's text back and
+  keeps their edit next to it: text they typed there, or the text of a
+  block they put in its place, shows after the old text (twice, where they
+  put the same text back). `replace(node, true)`, which `$setBlocksType`
+  uses, keeps the block's children, and undoing it keeps their text once.
   Undoing a format change does not undo a collaborator's later change of
   part of its range, nor the value that change restored after itself: color
   `abc`, let a collaborator recolor `b`, then undo the color, and `c` keeps
-  the old color, up to the end of the range (the same holds for text a
-  collaborator types or pastes inside the range as you undo). Undoing a link
+  the old color, up to the end of the range. The same holds for text a
+  collaborator types or pastes inside the range without that format,
+  whether you saw it before you undo or it arrives as you undo: bold
+  `one two`, let a collaborator type plain ` mid` after `one`, then undo
+  the bold, and ` two` stays bold. Undoing a link
   while a collaborator formats text inside it keeps the link on its text:
   formatting text in a link also sets the link's text format, which writes
   the link there again. Where a collaborator overwrote a step of yours
   entirely, the undo manager skips that step as changing nothing, and the
   same undo also reverts your step before it. When you undo a format change
   while a collaborator removes that format and undoes the removal, the text
-  keeps the format: the collaborator's undo brings it back.
+  keeps the format: the collaborator's undo brings it back. A comment or
+  format can run on past its end when writes two collaborators made inside
+  it are undone while another client deletes text across its end: it
+  carries on over the following words, possibly into the next line. No
+  text is lost. A format a collaborator applies
+  starting right where a run of that format ends, or from inside the run
+  past its end, can be lost on their text after the run when a client
+  other than the one that formatted the run, at the same time, removes the
+  format from part of the run or types inside it without the format: with
+  `Kilo` bolded by one client, another unbolds `il` or types plain text
+  inside `Kilo` as the first or a third bolds ` bb` (or `lo bb`), and with
+  some client id orders ` bb` stays plain. No text is lost, and when that
+  client undoes its edit, ` bb` is bold again.
 - **Large lists.** A structural edit in a list costs time proportional to
   the list on every client.
 - **Older app versions.** Clients of different `schemaVersion`s never
@@ -1009,7 +1096,14 @@ not merge as a user might expect:
   same way, not in the order the author's editor exported them (a Yjs map
   does not keep one). Compare node JSON without relying on key order.
 - **Other races.** A split racing a change of the line's type gives the
-  first half the splitter's type. Bold ‖ bold on adjacent ranges of one line
+  first half the splitter's type. A join (Backspace at the start of a line,
+  or undoing a split) while a collaborator inserts or moves a block to the
+  place of the join joins the line before to that block instead: its text
+  becomes part of the block, which keeps its own type (a paragraph joined
+  into a code block that way becomes code), and the line after stays apart:
+  after a Backspace it takes the type of the line before (a paragraph after
+  a heading becomes a heading), after undoing a split it keeps its own.
+  Bold ‖ bold on adjacent ranges of one line
   can leave part unformatted. A format removed from a range while a
   collaborator types inside it without that format (unbolding a word as
   they type into it, resolving a comment as they paste into it) comes back
@@ -1017,9 +1111,11 @@ not merge as a user might expect:
   format they saw there, which the removal could not see. It stops at the
   end of the range. Text typed inside or at the edge of text a
   collaborator deletes at the same time keeps the formats it was typed
-  with; text typed at the start of a range a collaborator formats at the
-  same time can take that format, by the order Yjs gives the two inserts
-  (the same on Yjs 13), and keeps it when that range is then deleted. A
+  with. Text typed inside a range a collaborator formats at the same time
+  takes that format (also when the range comes from an older read, as an
+  agent's does), and text typed at the start or the end of the range can
+  take it, by the order Yjs gives the two inserts (at the start the same on
+  Yjs 13, and it keeps the format when that range is then deleted). A
   node whose `isInline()` changes is written again in its new form, so
   text typed inside it at the same time lands next to it, in an inline
   element of its old form. Where text was deleted, the format items it

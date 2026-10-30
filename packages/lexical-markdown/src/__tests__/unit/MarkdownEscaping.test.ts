@@ -38,8 +38,8 @@ const LITERALS = [
   ['<+@a.b>', '&#60;+@a.b>'],
   ['&#65;', '&#38;#65;'],
   ['&#x41;', '&#38;#x41;'],
-  ['[label](uri)', '&#91;label&#93;(uri)'],
-  ['[ref]: uri', '&#91;ref&#93;: uri'],
+  ['[label](uri)', '[label&#93;(uri)'],
+  ['[ref]: uri', '[ref&#93;: uri'],
 ];
 
 describe('literal Markdown text', () => {
@@ -202,7 +202,7 @@ describe('literal Markdown text', () => {
       editor.read(() =>
         $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
       ),
-    ).toBe('&#60;b>&copy; &#91;x&#93;(u)&#60;/b>');
+    ).toBe('&#60;b>&copy; [x&#93;(u)&#60;/b>');
   });
 
   it.each(['[label]', 'a]b', 'a[b', 'a](other)'])(
@@ -710,6 +710,133 @@ describe('literal Markdown text', () => {
     });
     expect(calls).toBe(1);
     expect(editor.read(() => $getRoot().getTextContent())).toBe('\\seen');
+  });
+});
+
+describe('brackets that cannot become Markdown syntax', () => {
+  function $exportParagraph(...texts: string[]) {
+    $getRoot()
+      .clear()
+      .append(
+        $createParagraphNode().append(
+          ...texts.map((text, index) =>
+            $createTextNode(text).setStyle(`color: #${index}${index}${index}`),
+          ),
+        ),
+      );
+  }
+
+  it.each([
+    'cleared review [1][2]',
+    'Narrative claim [1].',
+    '[x] done and [ ] todo',
+    'array[0] and map[key]',
+    'see [1]: the note',
+    'a [label] (not a link)',
+    '[label]\n(next line)',
+    'nested [[1]] and [a [b] c]',
+    '[',
+    ']',
+    '][',
+  ])('leaves %j as typed', text => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    for (let split = 0; split <= text.length; split++) {
+      editor.update(
+        () => $exportParagraph(text.slice(0, split), text.slice(split)),
+        {discrete: true},
+      );
+      const written = editor.read(() => $convertToMarkdownString());
+      expect(written).toBe(text);
+      editor.update(() => $convertFromMarkdownString(written), {
+        discrete: true,
+      });
+      expect(editor.read(() => $getRoot().getTextContent())).toBe(text);
+    }
+  });
+
+  it.each([
+    ['[a](b)', '[a&#93;(b)'],
+    ['![a](b)', '![a&#93;(b)'],
+    ['[a]: b', '[a&#93;: b'],
+    ['   [a]: b', '   [a&#93;: b'],
+    ['[a](b) and [c](d)', '[a&#93;(b) and [c&#93;(d)'],
+    ['x](y)', 'x&#93;(y)'],
+    ['[[1]](url)', '[[1]&#93;(url)'],
+  ])('escapes the closing bracket of %j', (text, expected) => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    for (let split = 0; split <= text.length; split++) {
+      editor.update(
+        () => $exportParagraph(text.slice(0, split), text.slice(split)),
+        {discrete: true},
+      );
+      const written = editor.read(() => $convertToMarkdownString());
+      expect(written).toBe(expected);
+      editor.update(() => $convertFromMarkdownString(written), {
+        discrete: true,
+      });
+      expect(editor.read(() => $getRoot().getTextContent())).toBe(text);
+      editor.read(() => {
+        const paragraph = $getRoot().getFirstChildOrThrow();
+        assert($isElementNode(paragraph));
+        expect(paragraph.getChildren().some($isLinkNode)).toBe(false);
+      });
+    }
+  });
+
+  it('escapes a definition label after a line break', () => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(() => $exportParagraph('intro\n[a]: b'), {discrete: true});
+    expect(editor.read(() => $convertToMarkdownString())).toBe(
+      'intro\n[a&#93;: b',
+    );
+  });
+
+  it.each([
+    ['[1]', '[[1]](uri)'],
+    ['claim [2]', '[claim [2]](uri)'],
+    ['[a [b] c]', '[[a [b] c]](uri)'],
+    ['a]b', '[a&#93;b](uri)'],
+    ['a[b', '[a&#91;b](uri)'],
+    ['[x](y)', '[&#91;x&#93;(y)](uri)'],
+    ['a](other)', '[a&#93;(other)](uri)'],
+  ])('writes link text %j as %j', (label, expected) => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(
+      () =>
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $createLinkNode('uri').append($createTextNode(label)),
+            ),
+          ),
+      {discrete: true},
+    );
+    const written = editor.read(() => $convertToMarkdownString());
+    expect(written).toBe(expected);
+    editor.update(() => $convertFromMarkdownString(written), {
+      discrete: true,
+    });
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isElementNode(paragraph));
+      expect(paragraph.getChildrenSize()).toBe(1);
+      const link = paragraph.getFirstChildOrThrow();
+      assert($isLinkNode(link));
+      expect(link.getURL()).toBe('uri');
+      expect(link.getTextContent()).toBe(label);
+    });
+  });
+
+  it('reads brackets written as references by earlier versions', () => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(
+      () => $convertFromMarkdownString('cleared review &#91;1&#93;&#91;2&#93;'),
+      {discrete: true},
+    );
+    expect(editor.read(() => $getRoot().getTextContent())).toBe(
+      'cleared review [1][2]',
+    );
   });
 });
 

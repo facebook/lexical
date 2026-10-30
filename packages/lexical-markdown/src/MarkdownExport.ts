@@ -6,6 +6,7 @@
  *
  */
 
+import {$isLinkNode} from '@lexical/link';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
   $getRoot,
@@ -519,13 +520,19 @@ function $exportTextFormat(
     // Default mode guards numeric references; named references keep legacy output.
     // Numeric escapes avoid changing emphasis flanking beside formatting.
     // Guard ambiguous '<' and '&' at node ends for constructs split across nodes.
-    output = shouldPreserveNewLines
-      ? output.replace(/([*_`~])/g, '\\$1')
-      : output.replace(/([[\]*_`~\\]|<(?=\S|$)|&(?=#|$))/g, character =>
+    if (shouldPreserveNewLines) {
+      output = output.replace(/([*_`~])/g, '\\$1');
+    } else {
+      output = $escapeLiteralBrackets(
+        node,
+        output.replace(/([*_`~\\]|<(?=\S|$)|&(?=#|$))/g, character =>
           /[*_`~\\]/.test(character)
             ? `\\${character}`
             : `&#${character.charCodeAt(0)};`,
-        );
+        ),
+        selection,
+      );
+    }
   }
 
   const holdsTag = canHoldTag(textContent);
@@ -629,6 +636,118 @@ function $exportTextFormat(
     trimmedOutput +
     closingTagsAfter +
     trailingSpace
+  );
+}
+
+/**
+ * Escape only the literal brackets that would otherwise turn into Markdown
+ * syntax, and leave every other bracket as typed, so `[1]` citations and
+ * `[x]` checkboxes keep their exported text.
+ *
+ * Outside a link a bracket only matters where it would close a link label:
+ * a `]` followed by `(` (an inline link or image, see
+ * https://spec.commonmark.org/0.31.2/#inline-link) or by `:` after a label
+ * that starts a line (a link reference definition, see
+ * https://spec.commonmark.org/0.31.2/#link-reference-definitions). Escaping
+ * that `]` is enough: without it no link can form, whatever precedes it.
+ *
+ * Inside a link's text, brackets are allowed only as matched pairs
+ * (https://spec.commonmark.org/0.31.2/#link-text), and a pair followed by `(`
+ * would read as a nested link. Those brackets, and unmatched ones, are
+ * escaped; other matched pairs stay as typed.
+ *
+ * Brackets are matched within one text node, so a pair split across nodes is
+ * escaped conservatively. The character after the node comes from the next
+ * text sibling, which covers constructs split across differently styled nodes.
+ */
+function $escapeLiteralBrackets(
+  node: TextNode,
+  text: string,
+  selection: BaseSelection | null,
+): string {
+  if (!/[[\]]/.test(text)) {
+    return text;
+  }
+  const nextSibling = getTextSibling(node, false);
+  const nextChar =
+    nextSibling && (!selection || nextSibling.isSelected(selection))
+      ? $exportedText(nextSibling, selection).charAt(0)
+      : '';
+  const charAfter = (index: number) =>
+    index + 1 < text.length ? text[index + 1] : nextChar;
+  const escaped = new Set<number>();
+  const openers: number[] = [];
+  const isInLink = $isInsideLink(node);
+  for (let index = 0; index < text.length; index++) {
+    const character = text[index];
+    if (character === '[') {
+      openers.push(index);
+    } else if (character === ']') {
+      const opener = openers.pop();
+      const after = charAfter(index);
+      if (isInLink) {
+        if (opener === undefined) {
+          escaped.add(index);
+        } else if (after === '(') {
+          escaped.add(opener);
+          escaped.add(index);
+        }
+      } else if (
+        after === '(' ||
+        (after === ':' && $endsDefinitionLabel(node, text, index))
+      ) {
+        escaped.add(index);
+      }
+    }
+  }
+  if (isInLink) {
+    for (const opener of openers) {
+      escaped.add(opener);
+    }
+  }
+  if (escaped.size === 0) {
+    return text;
+  }
+  let output = '';
+  for (let index = 0; index < text.length; index++) {
+    output += escaped.has(index) ? `&#${text.charCodeAt(index)};` : text[index];
+  }
+  return output;
+}
+
+function $isInsideLink(node: LexicalNode): boolean {
+  for (let parent = node.getParent(); parent; parent = parent.getParent()) {
+    if ($isLinkNode(parent)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Whether the `]` at `index` in `node`'s exported `text` closes a label that
+ * starts its line, as a link reference definition's does: up to three spaces,
+ * `[`, then no unescaped brackets. The line may begin in earlier siblings.
+ */
+function $endsDefinitionLabel(
+  node: TextNode,
+  text: string,
+  index: number,
+): boolean {
+  let line = text.slice(0, index);
+  for (
+    let sibling = node.getPreviousSibling();
+    sibling !== null && !line.includes('\n');
+    sibling = sibling.getPreviousSibling()
+  ) {
+    if ($isLineBreakNode(sibling)) {
+      line = '\n' + line;
+    } else {
+      line = sibling.getTextContent() + line;
+    }
+  }
+  return /^ {0,3}\[(?:[^[\]\\]|\\.)*$/.test(
+    line.slice(line.lastIndexOf('\n') + 1),
   );
 }
 

@@ -27,6 +27,7 @@ import {
   MARKER,
   SEGMENT_KEY,
   TYPE_KEY,
+  WRAPPER_PREFIX,
 } from './Schema';
 import {deleteItem, isGone} from './Unread';
 
@@ -266,6 +267,32 @@ function isNodeTypeOpener(content: ContentFormat): boolean {
   );
 }
 
+/**
+ * Whether live format item `item` is part of a node's opener: a node type or
+ * segment key opener, or an item of the write that wrote one right after it
+ * (one client, consecutive format items).
+ */
+function opensNodeRun(item: Item): boolean {
+  let prev: Item | null = null;
+  for (
+    let it: Item | null = item;
+    it !== null && isFormat(it);
+    prev = it, it = it.right
+  ) {
+    if (
+      prev !== null &&
+      (it.id.client !== prev.id.client ||
+        it.id.clock !== prev.id.clock + prev.length)
+    ) {
+      return false;
+    }
+    if (!it.deleted && isNodeTypeOpener(it.content as ContentFormat)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export class Cursor {
   left: Item | null;
   right: Item | null;
@@ -466,12 +493,13 @@ export class Cursor {
       } else if (
         isFormat(r) &&
         this.unitGives(r, formats) &&
-        !isNodeTypeOpener(r.content as ContentFormat)
+        !opensNodeRun(r)
       ) {
-        // a format that already matches (never another node's type key
-        // opener: content written past it would be inside that node's run,
-        // between its opener and its content, and depend on closers that
-        // node's author owns)
+        // a format that already matches (never an item of another node's
+        // opener, its type and segment keys and the formats its write
+        // opened with them: content written past it would be inside that
+        // node's run, between its opener and its content, and depend on
+        // items that node's author owns)
       } else {
         break;
       }
@@ -519,31 +547,102 @@ export class Cursor {
 
   /**
    * The keys content with `formats` writes items of its own for even where
-   * the cursor already has their values: every key it gives a value, when
-   * it starts a segment (a node Lexical keeps apart from an equal neighbour,
-   * see SEGMENT_KEY) other than the one in effect at the cursor. Why: a
-   * segment's run is its author's, opened and closed by items its author
-   * wrote; content inside it that only changes the segment key reads its
-   * type and formats from that author's opener, and the author's undo
-   * deletes the opener and its closers (a tab written right after another
-   * client's tab, which that client undid, read as a "\t" in the text
-   * before it). Null when there are none.
+   * the cursor already has their values: where the cursor is inside another
+   * segment's run (a node Lexical keeps apart from an equal neighbour, see
+   * SEGMENT_KEY) and the content starts a segment of its own, the keys whose
+   * value at the cursor that segment's own write opened (its type, and the
+   * formats and fields it was written with), never a wrapper. Why: that run
+   * is its author's, opened and closed by the items of one write; content
+   * inside it that writes only its segment key reads its type and formats
+   * from that write, and the author's undo deletes it (a tab written right
+   * after another client's tab, which that client undid, read as a "\t" in
+   * the text before it). A value the cursor has from elsewhere (a link or a
+   * format of the text around) is not owned: a restore of it after the
+   * content would bring it back where a peer removed it at the same time.
+   * Null when there are none.
    */
   private ownSegmentKeys(formats: Record<string, unknown>): Set<string> | null {
     const segment = formats[SEGMENT_KEY] ?? null;
+    const current = this.formats.get(SEGMENT_KEY) ?? null;
     if (
       segment === null ||
-      equalFormatValue(this.formats.get(SEGMENT_KEY) ?? null, segment)
+      current === null ||
+      equalFormatValue(current, segment)
     ) {
       return null;
     }
-    const own = new Set<string>();
+    const opener = this.valueSource(SEGMENT_KEY);
+    if (opener === null) {
+      return null;
+    }
+    let own: Set<string> | null = null;
     for (const key in formats) {
-      if (formats[key] !== null) {
-        own.add(key);
+      if (
+        key === SEGMENT_KEY ||
+        key.startsWith(WRAPPER_PREFIX) ||
+        formats[key] === null ||
+        !equalFormatValue(this.formats.get(key) ?? null, formats[key])
+      ) {
+        continue;
+      }
+      const source = this.valueSource(key);
+      if (source !== null && this.oneWrite(opener, source)) {
+        (own || (own = new Set())).add(key);
       }
     }
     return own;
+  }
+
+  /**
+   * The live format item that gives `key` its value at the cursor: the last
+   * one the cursor passed, or the nearest one before where it started.
+   */
+  private valueSource(key: string): Item | null {
+    const passed = this.sources.get(key);
+    if (passed !== undefined) {
+      return passed;
+    }
+    let steps = 0;
+    for (let it = this.left; it !== null && steps < 4096; it = it.left) {
+      steps++;
+      if (
+        isFormat(it) &&
+        !isGone(it) &&
+        !this.isHeldFormat(it) &&
+        keyOf(it) === key
+      ) {
+        return it;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Whether format items `a` and `b` are of one write: one client wrote
+   * them with only format items between them.
+   */
+  private oneWrite(a: Item, b: Item): boolean {
+    if (a === b) {
+      return true;
+    }
+    if (a.id.client !== b.id.client) {
+      return false;
+    }
+    const [first, last] = a.id.clock < b.id.clock ? [a, b] : [b, a];
+    const store = this.tr.doc.store;
+    let steps = 0;
+    for (let clock = first.id.clock + first.length; clock < last.id.clock; ) {
+      const struct = store.getItem(createID(first.id.client, clock));
+      if (
+        !(struct instanceof Item) ||
+        !(struct.content instanceof ContentFormat) ||
+        ++steps > 64
+      ) {
+        return false;
+      }
+      clock = struct.id.clock + struct.length;
+    }
+    return true;
   }
 
   private insertFormats(

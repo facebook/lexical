@@ -2369,11 +2369,18 @@ export class Reader {
     if (extraPool !== undefined) {
       collect(extraPool);
     }
-    const bySegment = new Map<string, TextNode>();
+    // The nodes showing each segment, in order: several where a run's tab
+    // characters are each a tab node (see tabRuns).
+    const bySegment = new Map<string, TextNode[]>();
     for (const t of texts) {
       const s = state.segments.get(t.getKey());
       if (s !== undefined) {
-        bySegment.set(s, t);
+        const list = bySegment.get(s);
+        if (list === undefined) {
+          bySegment.set(s, [t]);
+        } else {
+          list.push(t);
+        }
       }
     }
     const usedTexts = new Set<TextNode>();
@@ -2383,8 +2390,10 @@ export class Reader {
       segment: string | null,
     ): TextNode | null => {
       if (segment !== null) {
-        const t = bySegment.get(segment);
-        if (t !== undefined && !usedTexts.has(t) && t.getType() === type) {
+        const t = (bySegment.get(segment) || []).find(
+          n => !usedTexts.has(n) && n.getType() === type,
+        );
+        if (t !== undefined) {
           usedTexts.add(t);
           return t;
         }

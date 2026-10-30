@@ -60,26 +60,32 @@ export function transformersByType(transformers: Transformer[]): Readonly<{
 // (symbol) general categories as punctuation, which includes all of the ASCII
 // punctuation characters. Delimiter flanking depends on it.
 // https://spec.commonmark.org/0.31.2/#unicode-punctuation-character
-export const PUNCTUATION_OR_SPACE = /[\p{P}\p{S}\s]/u;
-export const WHITESPACE = /\s/;
+// CommonMark's Unicode whitespace is Zs plus tab, line feed, form feed and
+// carriage return; JavaScript's `\s` adds others, such as U+FEFF.
+// https://spec.commonmark.org/0.31.2/#unicode-whitespace-character
+export const PUNCTUATION_OR_SPACE = /[\p{P}\p{S}\p{Zs}\t\n\f\r]/u;
+export const WHITESPACE = /[\p{Zs}\t\n\f\r]/u;
 export const PUNCTUATION = /[\p{P}\p{S}]/u;
 
-/** The code point that starts at `index`, if any, whole when it is astral. */
-export function codePointAt(text: string, index: number): string | undefined {
+/** The character (code point) that starts at `index`, if any. */
+export function characterAt(text: string, index: number): string | undefined {
   const codePoint = text.codePointAt(index);
   return codePoint === undefined ? undefined : String.fromCodePoint(codePoint);
 }
 
-/** The code point that ends just before `index`, if any. */
-export function codePointBefore(
+/** The character (code point) that ends just before `index`, if any. */
+export function characterBefore(
   text: string,
   index: number,
 ): string | undefined {
-  if (index < 1) {
-    return undefined;
-  }
-  const pair = index >= 2 ? text.slice(index - 2, index) : '';
-  return /^[\uD800-\uDBFF][\uDC00-\uDFFF]$/.test(pair) ? pair : text[index - 1];
+  const codePoint = index >= 2 ? text.codePointAt(index - 2) : undefined;
+  return codePoint !== undefined && codePoint > 0xffff
+    ? String.fromCodePoint(codePoint)
+    : text[index - 1];
+}
+
+export function toCharacterReference(character: string): string {
+  return `&#${character.codePointAt(0)};`;
 }
 
 const MARKDOWN_EMPTY_LINE_REG_EXP = /^\s{0,3}$/;

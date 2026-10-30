@@ -10,7 +10,7 @@ import type {TextFormatTransformersIndex} from './MarkdownImport';
 import type {TextFormatTransformer} from './MarkdownTransformers';
 import type {TextNode} from 'lexical';
 
-import {codePointAt, codePointBefore, PUNCTUATION, WHITESPACE} from './utils';
+import {characterAt, characterBefore, PUNCTUATION, WHITESPACE} from './utils';
 
 interface Delimiter {
   index: number;
@@ -397,8 +397,8 @@ function canEmphasis(
       return true;
     }
     const adjacentChar = isOpen
-      ? codePointBefore(text, index)
-      : codePointAt(text, index + length);
+      ? characterBefore(text, index)
+      : characterAt(text, index + length);
     return adjacentChar !== undefined && PUNCTUATION.test(adjacentChar);
   }
   return true;
@@ -410,8 +410,8 @@ function isFlanking(
   length: number,
   isLeft: boolean,
 ): boolean {
-  const charBefore = codePointBefore(text, index);
-  const charAfter = codePointAt(text, index + length);
+  const charBefore = characterBefore(text, index);
+  const charAfter = characterAt(text, index + length);
 
   const [primary, secondary] = isLeft
     ? [charAfter, charBefore]

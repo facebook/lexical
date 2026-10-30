@@ -34,10 +34,11 @@ import {
   type Transformer,
 } from './MarkdownTransformers';
 import {
-  codePointAt,
-  codePointBefore,
+  characterAt,
+  characterBefore,
   isEmptyParagraph,
   PUNCTUATION,
+  toCharacterReference,
   transformersByType,
   WHITESPACE,
 } from './utils';
@@ -94,7 +95,7 @@ export function createMarkdownExport(
     }
     // Ensure consecutive groups of texts are at least \n\n apart while each empty paragraph render as a newline.
     // Eg. ["hello", "", "", "hi", "\nworld"] -> "hello\n\n\nhi\n\nworld"
-    return output.join('\n');
+    return resolveMarkers(output.join('\n'));
   };
 }
 
@@ -160,7 +161,7 @@ export function createSelectionMarkdownExport(
         previousExported = child;
       }
     }
-    return output.join('\n');
+    return resolveMarkers(output.join('\n'));
   };
 }
 
@@ -526,12 +527,18 @@ function $exportTextFormat(
     // Default mode guards numeric references; named references keep legacy output.
     // Numeric escapes avoid changing emphasis flanking beside formatting.
     // Guard ambiguous '<' and '&' at node ends for constructs split across nodes.
+    // Marker sentinels in the text go out as references, so that only the
+    // markers this export writes read as markers.
     output = shouldPreserveNewLines
-      ? output.replace(/([*_`~])/g, '\\$1')
-      : output.replace(/([[\]*_`~\\]|<(?=\S|$)|&(?=#|$))/g, character =>
-          /[*_`~\\]/.test(character)
-            ? `\\${character}`
-            : `&#${character.charCodeAt(0)};`,
+      ? output.replace(/([*_`~])|[\uFDD0-\uFDD2]/g, (character, marker) =>
+          marker ? `\\${marker}` : toCharacterReference(character),
+        )
+      : output.replace(
+          /([[\]*_`~\\]|<(?=\S|$)|&(?=#|$)|[\uFDD0-\uFDD2])/g,
+          character =>
+            /[*_`~\\]/.test(character)
+              ? `\\${character}`
+              : toCharacterReference(character),
         );
   }
 
@@ -569,7 +576,7 @@ function $exportTextFormat(
         !unclosedTags.find(element => element.tag === tag)
       ) {
         unclosedTags.push({answers: new Map(), format, tag});
-        openingTags += tag;
+        openingTags += OPENER + tag + MARKER_END;
       }
     }
   }
@@ -600,9 +607,9 @@ function $exportTextFormat(
         if (!nodeHasFormat) {
           // Handles cases where the tag has not been closed before, e.g. if the previous node
           // was a text match transformer that did not account for closing tags of the next node (e.g. a link)
-          closingTagsBefore += unclosedTag.tag;
+          closingTagsBefore += CLOSER + unclosedTag.tag + MARKER_END;
         } else {
-          closingTagsAfter += unclosedTag.tag;
+          closingTagsAfter += CLOSER + unclosedTag.tag + MARKER_END;
         }
       }
       // Mutate the original array to remove the closed tag
@@ -633,121 +640,93 @@ function $exportTextFormat(
     closingTagsBefore +
     leadingSpace +
     openingTags +
-    (isCode
-      ? trimmedOutput
-      : $guardWordEdges(
-          node,
-          trimmedOutput,
-          leadingSpace === '',
-          trailingSpace === '',
-          textTransformers,
-          selection,
-        )) +
+    trimmedOutput +
     closingTagsAfter +
     trailingSpace
   );
 }
 
-/**
- * A marker between a word character and punctuation can only open or close
- * on the punctuation side (CommonMark flanking), so plain `a` before a bold
- * `*` cannot go out as `a**\***`. A word character of `node`'s text that
- * meets such a marker goes out as a numeric reference instead, whose `&` or
- * `;` is punctuation: `&#97;**\***`.
- */
-function $guardWordEdges(
-  node: TextNode,
-  output: string,
-  startsAtEdge: boolean,
-  endsAtEdge: boolean,
-  textTransformers: TextFormatTransformer[],
-  selection: BaseSelection | null,
-): string {
-  const prevNode = startsAtEdge
-    ? $exportedSibling(node, true, selection)
-    : null;
-  const nextNode = endsAtEdge ? $exportedSibling(node, false, selection) : null;
-  const first = codePointAt(output, 0);
-  const last = codePointBefore(output, output.length);
-  // A tag that `prevNode` has and `node` lacks closes between them.
-  const encodeFirst =
-    prevNode !== null &&
-    isWordChar(first) &&
-    hasTagMissingFrom(prevNode, node, textTransformers) &&
-    PUNCTUATION.test($edgeChar(prevNode, selection, true));
-  // A tag that `nextNode` has and `node` lacks opens between them.
-  const encodeLast =
-    nextNode !== null &&
-    isWordChar(last) &&
-    hasTagMissingFrom(nextNode, node, textTransformers) &&
-    PUNCTUATION.test($edgeChar(nextNode, selection, false));
-  let start = '';
-  let end = '';
-  let body = output;
-  if (encodeFirst) {
-    start = toCharacterReference(first!);
-    body = body.slice(first!.length);
-  }
-  if (encodeLast && body !== '') {
-    end = toCharacterReference(last!);
-    body = body.slice(0, -last!.length);
-  }
-  return start + body + end;
-}
+// Format markers are written between sentinels, noncharacters that Unicode
+// keeps for internal use, until the whole export is joined, so that
+// `resolveMarkers` sees each run of markers beside the characters a reader
+// will see, whichever node, element or transformer wrote them.
+const OPENER = '\uFDD0';
+const CLOSER = '\uFDD1';
+const MARKER_END = '\uFDD2';
+const MARKER_RUN = /((?:[\uFDD0\uFDD1][^\uFDD0-\uFDD2]*\uFDD2)+)/;
+const MARKER = /([\uFDD0\uFDD1])([^\uFDD0-\uFDD2]*)\uFDD2/g;
 
-function $exportedSibling(
-  node: TextNode,
-  backward: boolean,
-  selection: BaseSelection | null,
-): TextNode | null {
-  const sibling = getTextSibling(node, backward);
-  return sibling && (!selection || sibling.isSelected(selection))
-    ? sibling
-    : null;
+function isWordCharacter(character: string | undefined): boolean {
+  return (
+    character !== undefined &&
+    !WHITESPACE.test(character) &&
+    !PUNCTUATION.test(character)
+  );
 }
 
 /**
- * The exported character of `node` at its edge beside a tag, or `''` when
- * `node` puts no tag there.
+ * Removes the marker sentinels. A delimiter run between a word character and
+ * punctuation can only open or close on the punctuation side (CommonMark
+ * flanking), so plain `a` before a bold `*` cannot go out as `a**\***`. The
+ * word character beside such a run goes out as a numeric reference instead,
+ * whose `&` or `;` is punctuation: `&#97;**\***`.
  */
-function $edgeChar(
-  node: TextNode,
-  selection: BaseSelection | null,
-  atEnd: boolean,
-): string {
-  const text = $exportedText(node, selection);
-  // Text that cannot hold a tag has no tag at its edges.
-  if (!canHoldTag(text)) {
-    return '';
+function resolveMarkers(markdown: string): string {
+  // Text and marker runs alternate, starting and ending with text.
+  const parts = markdown.split(MARKER_RUN);
+  const encodeStart: boolean[] = [];
+  const encodeEnd: boolean[] = [];
+  for (let i = 1; i < parts.length; i += 2) {
+    // Markers of one character form one delimiter run; only the first and
+    // the last of them touch text.
+    const runs: {closes: boolean; markers: string; opens: boolean}[] = [];
+    for (const [, kind, tag] of parts[i].matchAll(MARKER)) {
+      let run = runs[runs.length - 1];
+      if (!run || run.markers[0] !== tag[0]) {
+        run = {closes: false, markers: '', opens: false};
+        runs.push(run);
+      }
+      run.markers += tag;
+      run.opens ||= kind === OPENER;
+      run.closes ||= kind === CLOSER;
+    }
+    const markers = runs.map(run => run.markers);
+    const first = runs[0];
+    const last = runs[runs.length - 1];
+    const before = characterBefore(parts[i - 1], parts[i - 1].length);
+    const after = characterAt(parts[i + 1], 0);
+    const afterFirst = runs.length > 1 ? markers[1][0] : after;
+    const beforeLast =
+      runs.length > 1 ? markers[runs.length - 2].slice(-1) : before;
+    encodeEnd[i - 1] =
+      first.opens &&
+      isWordCharacter(before) &&
+      afterFirst !== undefined &&
+      PUNCTUATION.test(afterFirst);
+    encodeStart[i + 1] =
+      last.closes &&
+      isWordCharacter(after) &&
+      beforeLast !== undefined &&
+      PUNCTUATION.test(beforeLast);
+    parts[i] = markers.join('');
   }
-  // Inline code goes out inside a backtick fence.
-  if (node.hasFormat('code')) {
-    return '`';
+  for (let i = 0; i < parts.length; i += 2) {
+    let text = parts[i];
+    let start = '';
+    let end = '';
+    const first = characterAt(text, 0);
+    if (encodeStart[i] && first !== undefined) {
+      start = toCharacterReference(first);
+      text = text.slice(first.length);
+    }
+    const last = characterBefore(text, text.length);
+    if (encodeEnd[i] && last !== undefined) {
+      end = toCharacterReference(last);
+      text = text.slice(0, -last.length);
+    }
+    parts[i] = start + text + end;
   }
-  return (
-    (atEnd ? codePointBefore(text, text.length) : codePointAt(text, 0)) || ''
-  );
-}
-
-function hasTagMissingFrom(
-  node: TextNode,
-  other: TextNode,
-  textTransformers: TextFormatTransformer[],
-): boolean {
-  return textTransformers.some(
-    ({format: [format]}) =>
-      format !== 'code' && node.hasFormat(format) && !other.hasFormat(format),
-  );
-}
-
-function isWordChar(char: string | undefined): boolean {
-  return (
-    char !== undefined && !WHITESPACE.test(char) && !PUNCTUATION.test(char)
-  );
-}
-
-function toCharacterReference(char: string): string {
-  return `&#${char.codePointAt(0)};`;
+  return parts.join('');
 }
 
 function getTextSibling(node: TextNode, backward: boolean): TextNode | null {

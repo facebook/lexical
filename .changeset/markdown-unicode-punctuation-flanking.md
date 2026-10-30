@@ -2,8 +2,8 @@
 '@lexical/markdown': patch
 ---
 
-[fix] Treat Unicode punctuation and symbols as punctuation when deciding whether `*`, `_` and `~~` markers open or close formatting
+[fix] Follow CommonMark's Unicode punctuation and whitespace when deciding whether `*`, `_` and `~~` markers open or close formatting
 
-Markdown import and the typing shortcuts now follow CommonMark here: an en dash, a curly quote, a currency sign or an emoji next to a marker counts as punctuation, not as a letter, so `See –**[here](https://example.com)**` imports as a bold link. The backslash, which was missing from the ASCII list, counts too.
+Markdown import and the typing shortcuts now count every character in the Unicode punctuation (P) and symbol (S) categories as punctuation, so an en dash, a curly quote, a currency sign or an emoji next to a marker no longer reads as a letter, and `See –**[here](https://example.com)**` imports as a bold link. The backslash, which was missing from the ASCII list, counts too. Whitespace is the Zs category plus tab, line feed, form feed and carriage return, so U+FEFF no longer counts as whitespace.
 
-Verify: export of formatting that starts or ends with punctuation right beside a letter, such as plain `foo` then bold `“bar”`, now writes that letter as a numeric character reference (`fo&#111;**“bar”**&#98;az`), so that the formatting survives a round trip through any CommonMark reader.
+Verify: export of formatting that starts or ends with punctuation right beside a letter, such as plain `foo` then bold `“bar”`, now writes that letter as a numeric character reference (`fo&#111;**“bar”**&#98;az`), so that the formatting survives a round trip through a CommonMark reader.

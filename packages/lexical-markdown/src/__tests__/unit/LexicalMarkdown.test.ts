@@ -4815,6 +4815,12 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
         [GRINNING_FACE, 'bold'],
       ],
     ],
+    // U+FEFF is a format character (Cf), not CommonMark whitespace.
+    // markdown-it agrees; micromark uses JavaScript's `\s`.
+    [
+      `x\uFEFF**${LEFT_DOUBLE_QUOTE}a${RIGHT_DOUBLE_QUOTE}**`,
+      [[`x\uFEFF**${LEFT_DOUBLE_QUOTE}a${RIGHT_DOUBLE_QUOTE}**`, 'plain']],
+    ],
   ] as [string, Run[]][])('imports %j', (md, runs) => {
     expect(importRuns(md)).toEqual(runs);
   });
@@ -4855,6 +4861,24 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       ],
       '**x.**&#98;**(y)**',
     ],
+    // Italic closes and reopens around the bold's end.
+    [
+      [
+        ['b', ['bold', 'italic']],
+        [`${LEFT_DOUBLE_QUOTE}y${RIGHT_DOUBLE_QUOTE}`, ['italic']],
+      ],
+      '***&#98;****“y”*',
+    ],
+    // Markers of different characters are separate delimiter runs.
+    [
+      [
+        ['a', ['bold']],
+        ['!', ['strikethrough']],
+      ],
+      '**a**~~!~~',
+    ],
+    // The sentinels that mark markers during export stay text.
+    [[['a\uFDD0**\uFDD2b', ['bold']]], '**a&#64976;\\*\\*&#64978;b**'],
     // A word character beside a word character needs no reference.
     [
       [
@@ -4894,14 +4918,39 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
             .getAllTextNodes()
             .map(node => [
               node.getTextContent(),
-              (['bold', 'italic', 'code'] as const).filter(format =>
-                node.hasFormat(format),
+              (['bold', 'italic', 'strikethrough', 'code'] as const).filter(
+                format => node.hasFormat(format),
               ),
             ]),
         ),
       ).toEqual(runs);
     },
   );
+
+  it('guards word characters across an inline element without a transformer', () => {
+    const transformers = TRANSFORMERS.filter(
+      transformer => transformer !== LINK,
+    );
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createTextNode('foo'),
+            $createLinkNode('https://example.com').append(
+              $createTextNode(
+                `${LEFT_DOUBLE_QUOTE}bar${RIGHT_DOUBLE_QUOTE}`,
+              ).toggleFormat('bold'),
+            ),
+            $createTextNode('baz'),
+          ),
+        ),
+      {discrete: true},
+    );
+    expect(
+      editor.read('latest', () => $convertToMarkdownString(transformers)),
+    ).toBe(`fo&#111;**${LEFT_DOUBLE_QUOTE}bar${RIGHT_DOUBLE_QUOTE}**&#98;az`);
+  });
 });
 
 describe('decimal character references that name no character', () => {

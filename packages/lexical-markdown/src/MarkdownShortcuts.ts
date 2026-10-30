@@ -43,8 +43,8 @@ import {
   TRANSFORMERS,
 } from './MarkdownTransformers';
 import {
-  codePointAt,
-  codePointBefore,
+  characterAt,
+  characterBefore,
   indexBy,
   PUNCTUATION_OR_SPACE,
   transformersByType,
@@ -254,7 +254,7 @@ function $runTextFormatTransformers(
     }
 
     // Some tags can not be used within words, hence should have newline/space/punctuation after it
-    const afterCloseTagChar = codePointAt(textContent, closeTagEndIndex + 1);
+    const afterCloseTagChar = characterAt(textContent, closeTagEndIndex + 1);
 
     if (
       matcher.intraword === false &&
@@ -319,7 +319,7 @@ function $runTextFormatTransformers(
     }
 
     // Some tags can not be used within words, hence should have newline/space/punctuation before it
-    const beforeOpenTagChar = codePointBefore(
+    const beforeOpenTagChar = characterBefore(
       prevOpenNodeText,
       openTagStartIndex,
     );

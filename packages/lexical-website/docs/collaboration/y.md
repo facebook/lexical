@@ -959,8 +959,11 @@ not merge as a user might expect:
   Undoing a format change does not undo a collaborator's later change of
   part of its range, nor the value that change restored after itself: color
   `abc`, let a collaborator recolor `b`, then undo the color, and `c` keeps
-  the old color, up to the end of the range (the same holds for text a
-  collaborator types or pastes inside the range as you undo). Undoing a link
+  the old color, up to the end of the range. The same holds for text a
+  collaborator types or pastes inside the range without that format,
+  whether you saw it before you undo or it arrives as you undo: bold
+  `one two`, let a collaborator type plain ` mid` after `one`, then undo
+  the bold, and ` two` stays bold. Undoing a link
   while a collaborator formats text inside it keeps the link on its text:
   formatting text in a link also sets the link's text format, which writes
   the link there again. Where a collaborator overwrote a step of yours

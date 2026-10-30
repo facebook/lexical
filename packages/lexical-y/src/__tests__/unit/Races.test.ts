@@ -401,3 +401,56 @@ describe.each(ORDERS)('@lexical/y races, $name', ({ids, delivery}) => {
     });
   }
 });
+
+// AUDIT-U1: an undo of a format while a collaborator's plain text inside its
+// range restored that format after itself (y.md Limits, Undo). Arriving as
+// the undo is made, the restore keeps the format on the text after the
+// typing: the undoing client cannot see it. Seen before the undo, the
+// undoing client holds the restore and can end the value past it.
+describe('@lexical/y undo of a format ‖ plain text typed inside its range', () => {
+  const $init = () => $getRoot().append($p('one two'), $p('tail'));
+  const bold = (t: Setup) => {
+    t.a.update(() => void $selectIn([0], 0, 7).formatText('bold'));
+  };
+  const typePlain = (t: Setup) => {
+    t.b.update(() => {
+      const selection = $selectIn([0], 3);
+      selection.format = 0;
+      selection.insertText(' mid');
+    });
+  };
+  for (const ids of [
+    [1, 2, 3],
+    [2, 1, 3],
+  ]) {
+    test(`AUDIT-U1 arriving as the undo is made: the text after the typing keeps the format (${ids})`, async () => {
+      const t = await setup($init, {ids});
+      bold(t);
+      await t.sync();
+      t.offline();
+      typePlain(t);
+      t.a.undo();
+      await t.sync();
+      await expectConverged(t.peers);
+      expect(t.a.describe()).toBe(
+        'paragraph("one mid" " two"{1}) / paragraph("tail")',
+      );
+    });
+    test.fails(
+      `AUDIT-U1 seen before the undo: the undo removes the format everywhere (${ids})`,
+      async () => {
+        const t = await setup($init, {ids});
+        bold(t);
+        await t.sync();
+        typePlain(t);
+        await t.sync();
+        t.a.undo();
+        await t.sync();
+        await expectConverged(t.peers);
+        expect(t.a.describe()).toBe(
+          'paragraph("one mid two") / paragraph("tail")',
+        );
+      },
+    );
+  }
+});

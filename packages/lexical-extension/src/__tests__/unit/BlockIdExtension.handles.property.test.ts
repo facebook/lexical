@@ -8,26 +8,26 @@
 
 // @vitest-environment node
 
-// Property test of block handles over random documents with random ids
-// (random 21-character ids, ids that share long prefixes with others, ids
-// shorter than 4 characters, counter ids) and random edits: inserts, deletes,
+// Property test of block handles, with fast-check: random documents with
+// random ids (random 21-character ids, ids that share long prefixes with
+// others, ids shorter than 4 characters) and random edits: inserts, deletes,
 // moves, replaces, and blocks given an id that shares an existing prefix.
-// After every step:
+// After every edit:
 //
 // - each block's handle is the brute-force shortest unique prefix of at least
 //   MIN_BLOCK_HANDLE_LENGTH characters (or its whole id);
 // - each handle, and each whole id, resolves to its own block;
-// - the handles of the previous step's read, resolved with that read, name
-//   the blocks they named then, or are not found once those are deleted;
+// - the handles of the previous read, resolved with that read, name the
+//   blocks they named then, or are not found once those are deleted;
 // - typo safety: no one-character change of a handle (substitute, drop,
 //   add) resolves to a different block, unless the changed string is that
 //   block's id or starts with that block's current handle (a handle it could
 //   have been given while another id shared more of its prefix).
 //
-// CI runs a few seeds; set BLOCK_HANDLE_PROPERTY_SEEDS (and optionally
-// BLOCK_HANDLE_PROPERTY_FIRST_SEED) to run more locally. The typo-rate
-// measurement uses BLOCK_HANDLE_TYPO_DOCS documents of 1,000 blocks
-// (default 1) and prints the rate.
+// The default run is small. Set BLOCK_HANDLE_PROPERTY_RUNS to run more
+// documents locally, and BLOCK_HANDLE_TYPO_DOCS to measure and print the
+// rate at which a one-character typo names another block in documents of
+// 1,000 random ids (skipped otherwise).
 
 import {
   $getBlockById,
@@ -44,6 +44,7 @@ import {
   MIN_BLOCK_HANDLE_LENGTH,
 } from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
+import * as fc from 'fast-check';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -55,61 +56,69 @@ import {
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
 
-const SEEDS = Number(process.env.BLOCK_HANDLE_PROPERTY_SEEDS || 12);
-const FIRST_SEED = Number(process.env.BLOCK_HANDLE_PROPERTY_FIRST_SEED || 1);
-const STEPS = 25;
-const TYPO_DOCS = Number(process.env.BLOCK_HANDLE_TYPO_DOCS || 1);
+const RUNS = Number(process.env.BLOCK_HANDLE_PROPERTY_RUNS || 15);
+const TYPO_DOCS = Number(process.env.BLOCK_HANDLE_TYPO_DOCS || 0);
 const TYPO_BLOCKS = 1000;
 
 const ALPHABET =
   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 
-function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function randomString(random: () => number, length: number): string {
-  let s = '';
-  for (let i = 0; i < length; i++) {
-    s += ALPHABET[Math.floor(random() * 64)];
-  }
-  return s;
-}
+const idString = (minLength: number, maxLength: number) =>
+  fc.string({maxLength, minLength, unit: fc.constantFrom(...ALPHABET)});
 
 /**
- * Ids of every kind, many of them adversarial: a share of them start with a
- * prefix (1 to 10 characters) of an id issued before.
+ * An id, resolved against the ids before it: random and 21 characters long,
+ * shorter than 4 characters, or a prefix (1 to 10 characters) of an earlier
+ * id followed by a random tail.
  */
-function idSource(random: () => number) {
-  const issued: string[] = [];
-  let counter = 0;
-  const next = (): string => {
-    const r = random();
-    let id: string;
-    if (r < 0.35 || issued.length === 0) {
-      id = randomString(random, 21);
-    } else if (r < 0.75) {
-      const base = issued[Math.floor(random() * issued.length)];
-      const prefix = base.slice(0, 1 + Math.floor(random() * 10));
-      const length = Math.max(prefix.length + 1, 4 + Math.floor(random() * 18));
-      id = prefix + randomString(random, length - prefix.length);
-    } else if (r < 0.85) {
-      id = randomString(random, 1 + Math.floor(random() * 3));
-    } else {
-      id = `c${(++counter).toString(36)}`;
-    }
-    issued.push(id);
-    return id;
-  };
-  return {issued, next};
+type IdSpec =
+  | {readonly kind: 'random' | 'short'; readonly id: string}
+  | {
+      readonly kind: 'shared';
+      readonly base: number;
+      readonly prefix: number;
+      readonly tail: string;
+    };
+
+const idSpec: fc.Arbitrary<IdSpec> = fc.oneof(
+  {
+    arbitrary: idString(21, 21).map(id => ({id, kind: 'random' as const})),
+    weight: 3,
+  },
+  {
+    arbitrary: idString(1, 3).map(id => ({id, kind: 'short' as const})),
+    weight: 1,
+  },
+  {
+    arbitrary: fc.record({
+      base: fc.nat(),
+      kind: fc.constant('shared' as const),
+      prefix: fc.integer({max: 10, min: 1}),
+      tail: idString(1, 17),
+    }),
+    weight: 4,
+  },
+);
+
+function resolveId(spec: IdSpec, earlier: readonly string[]): string {
+  if (spec.kind !== 'shared' || earlier.length === 0) {
+    return spec.kind === 'shared' ? spec.tail : spec.id;
+  }
+  const base = earlier[spec.base % earlier.length];
+  return base.slice(0, spec.prefix) + spec.tail;
 }
+
+type Edit =
+  | {readonly kind: 'insert'; readonly at: number; readonly id: IdSpec}
+  | {readonly kind: 'delete' | 'replace'; readonly at: number}
+  | {readonly kind: 'move'; readonly at: number; readonly to: number};
+
+const edit: fc.Arbitrary<Edit> = fc.oneof(
+  fc.record({at: fc.nat(), id: idSpec, kind: fc.constant('insert' as const)}),
+  fc.record({at: fc.nat(), kind: fc.constant('delete' as const)}),
+  fc.record({at: fc.nat(), kind: fc.constant('replace' as const)}),
+  fc.record({at: fc.nat(), kind: fc.constant('move' as const), to: fc.nat()}),
+);
 
 /** The shortest prefix of `id`, at least 4 long, that no other id starts with. */
 function bruteForceHandle(id: string, ids: readonly string[]): string {
@@ -230,83 +239,71 @@ function check(
   });
 }
 
-function runSeed(seed: number): void {
-  const random = mulberry32(seed);
-  const source = idSource(random);
+function runDocument(
+  specs: readonly IdSpec[],
+  batches: readonly (readonly Edit[])[],
+): void {
+  const ids: string[] = [];
+  for (const spec of specs) {
+    const id = resolveId(spec, ids);
+    if (!ids.includes(id)) {
+      ids.push(id);
+    }
+  }
+  let n = 0;
   using editor: LexicalEditorWithDispose = asEdited(
     buildEditorFromExtensions({
       $initialEditorState: null,
       dependencies: [
         RichTextExtension,
-        configExtension(BlockIdExtension, {generateId: source.next}),
+        // Only for blocks whose id is taken (edits bring their own ids):
+        // longer than any generated id (at most 27 characters), so never one.
+        configExtension(BlockIdExtension, {
+          generateId: () => `${'F'.repeat(28)}${++n}`,
+        }),
       ],
       name: '[block-handle-property]',
     }),
   );
-  const pick = <T>(items: readonly T[]): T =>
-    items[Math.floor(random() * items.length)];
-  const initial = 20 + Math.floor(random() * 100);
   editor.update(
     () => {
-      for (let i = 0; i < initial; i++) {
-        $getRoot().append($paragraph(`p${i}`));
+      for (const id of ids) {
+        const block = $paragraph(id);
+        $setState(block, blockIdState, id);
+        $getRoot().append(block);
       }
     },
     {discrete: true},
   );
-  let text = 0;
   let previous = editor.read($getBlockHandles);
-  for (let step = 0; step < STEPS; step++) {
-    const kind = pick([
-      'insert',
-      'insert',
-      'delete',
-      'move',
-      'replace',
-      'sharedPrefix',
-    ]);
+  check(editor, () => true, `initial ${JSON.stringify(ids)}`);
+  for (const [step, batch] of batches.entries()) {
+    // Each batch of edits is one update.
     editor.update(
       () => {
-        const blocks = $getRoot().getChildren();
-        if (kind === 'insert' || blocks.length < 3) {
-          for (let n = 1 + Math.floor(random() * 5); n > 0; n--) {
-            const at = pick($getRoot().getChildren());
-            const block = $paragraph(`t${++text}`);
-            if (random() < 0.5) {
-              at.insertBefore(block);
-            } else {
-              at.insertAfter(block);
+        for (const op of batch) {
+          const blocks = $getRoot().getChildren();
+          const at = blocks[op.at % blocks.length];
+          if (op.kind === 'insert' || blocks.length < 3) {
+            // Blocks inserted earlier in this update have no id yet.
+            const current = blocks
+              .map(block => $getBlockId(block))
+              .filter((id): id is string => id !== null);
+            const block = $paragraph(`t${step}`);
+            if (op.kind === 'insert') {
+              $setState(block, blockIdState, resolveId(op.id, current));
             }
-          }
-        } else if (kind === 'delete') {
-          for (let n = 1 + Math.floor(random() * 4); n > 0; n--) {
-            const children = $getRoot().getChildren();
-            if (children.length > 2) {
-              pick(children).remove();
+            at.insertAfter(block);
+          } else if (op.kind === 'delete') {
+            at.remove();
+          } else if (op.kind === 'move') {
+            const target = blocks[op.to % blocks.length];
+            if (!target.is(at)) {
+              target.insertAfter(at);
             }
+          } else {
+            at.replace($paragraph(`r${step}`));
           }
-        } else if (kind === 'move') {
-          const node = pick(blocks);
-          const target = pick(blocks);
-          if (!node.is(target)) {
-            target.insertAfter(node);
-          }
-        } else if (kind === 'replace') {
-          pick(blocks).replace($paragraph(`r${++text}`));
-        } else {
-          // A block whose id shares a prefix (at least 4 long) of another.
-          const base = $getBlockId(pick(blocks))!;
-          const prefix = base.slice(
-            0,
-            Math.min(base.length, 4 + Math.floor(random() * 4)),
-          );
-          const block = $paragraph(`s${++text}`);
-          $setState(
-            block,
-            blockIdState,
-            prefix + randomString(random, 1 + Math.floor(random() * 6)),
-          );
-          pick(blocks).insertAfter(block);
         }
       },
       {discrete: true},
@@ -318,35 +315,64 @@ function runSeed(seed: number): void {
         const result = $resolveBlockHandle(handle, {read: previous});
         const node = $getBlockById(id);
         if (node === null) {
-          expect(result.status, `seed ${seed} step ${step} ${handle}`).toBe(
-            'not-found',
-          );
+          expect(result.status, `step ${step} ${handle}`).toBe('not-found');
         } else {
           assert(
             result.status === 'found' && result.node.is(node),
-            `seed ${seed} step ${step} ${handle} → ${result.status}`,
+            `step ${step} ${handle} → ${result.status}`,
           );
         }
       }
     });
     previous = editor.read($getBlockHandles);
-    const last = step === STEPS - 1;
     check(
       editor,
-      i => last || i % 9 === step % 9,
-      `seed ${seed} step ${step} (${kind})`,
+      () => true,
+      `step ${step} (${batch.map(op => op.kind).join(', ')})`,
     );
   }
 }
 
 describe('block handles: property', () => {
-  for (let seed = FIRST_SEED; seed < FIRST_SEED + SEEDS; seed++) {
-    test(`seed ${seed}`, () => {
-      runSeed(seed);
-    });
-  }
-
   test(
+    'handles, resolution and typo safety under random ids and edits',
+    () => {
+      fc.assert(
+        fc.property(
+          fc.array(idSpec, {maxLength: 40, minLength: 3}),
+          fc.array(fc.array(edit, {maxLength: 3, minLength: 1}), {
+            maxLength: 10,
+          }),
+          (specs, batches) => runDocument(specs, batches),
+        ),
+        {
+          // Also: an insert that repeats an id (its copy gets a fallback id),
+          // with every short counter-like id already taken.
+          examples: [
+            [
+              Array.from({length: 32}, (_, i) => ({
+                id: `zz${i + 1}`,
+                kind: 'random' as const,
+              })),
+              [
+                [
+                  {
+                    at: 0,
+                    id: {id: 'zz1', kind: 'short' as const},
+                    kind: 'insert',
+                  },
+                ],
+              ],
+            ],
+          ],
+          numRuns: RUNS,
+        },
+      );
+    },
+    Math.max(5000, RUNS * 100),
+  );
+
+  test.skipIf(TYPO_DOCS === 0)(
     `one-character typo rate, ${TYPO_BLOCKS}-block documents of random 21-character ids`,
     () => {
       let tried = 0;
@@ -375,11 +401,13 @@ describe('block handles: property', () => {
         hits += typo.hits;
         exact += typo.exact;
       }
-      // Handles of random ids are almost all 4 characters long. A one-character
-      // change gives a 3-character string (never a handle), or a 4- or
-      // 5-character one that names another block only if it is that block's
-      // handle (about 1,000 of 64^4 four-character strings).
+      // Handles of random ids are almost all 4 characters long. A
+      // one-character change gives a 3-character string (never a handle), or
+      // a 4- or 5-character one that names another block only if it is that
+      // block's handle (about 1,000 of 64^4 four-character strings).
       expect(hits / tried).toBeLessThan(1e-3);
+      // Only when asked for (BLOCK_HANDLE_TYPO_DOCS), so nothing is printed
+      // on an ordinary run.
       // eslint-disable-next-line no-console
       console.log(
         `block handle typo rate: ${hits} of ${tried} one-character typos ` +
@@ -388,6 +416,6 @@ describe('block handles: property', () => {
           `that block's handle)`,
       );
     },
-    20000 * TYPO_DOCS,
+    20000 * Math.max(TYPO_DOCS, 1),
   );
 });

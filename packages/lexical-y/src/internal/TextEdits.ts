@@ -152,10 +152,17 @@ type Left = {readonly run: Run; readonly from: Entry | null; at: number};
 
 /**
  * A stretch of a line between two pins (see resolve): its runs in the new
- * line (`live`, with text that arrived and was deleted), and the text that
- * left it, in order.
+ * line (`live`, with text that arrived and was deleted), the text that left
+ * it, in order, and the text that arrived there and left again in this
+ * commit (`passed`, after the old position `at`), which is neither state's
+ * but was there between the old characters around it (see align's `sure`).
  */
-type Stretch = {live: Item[]; left: Left[]; unknown?: true};
+type Stretch = {
+  live: Item[];
+  left: Left[];
+  passed: {readonly text: string; readonly at: number}[];
+  unknown?: true;
+};
 
 /**
  * Characters `a` to `a + n` of the text that arrived in a stretch (in line
@@ -1188,7 +1195,7 @@ export class TextReplay {
     });
     const stretches: Stretch[] = [];
     for (let s = 0; s <= anchors.length; s++) {
-      stretches.push({left: [], live: []});
+      stretches.push({left: [], live: [], passed: []});
     }
     // The stretch an old position is in.
     const byOld = (at: number): number => {
@@ -1216,6 +1223,8 @@ export class TextReplay {
         stretches[s].unknown = true;
       } else if (x.node !== null || x.run.dead === true) {
         stretches[s].live.push(x);
+      } else if (x.run.gone === true && x.run.kind === LOOSE) {
+        stretches[s].passed.push({at: lastOld + 0.5, text: textOf(x.run)});
       } else if (x.run.gone === true && x.run.kind !== LOOSE) {
         // (Text that arrived and left again in this commit is neither
         // state's: what it stood for left too.)
@@ -1440,12 +1449,36 @@ export class TextReplay {
         if (blocked >= 0 && back >= blocked) {
           drop.fill(1, pk, blocked);
         }
+        // The text that left as it was, also with the text that arrived and
+        // left again in place (`passed`, see Stretch): read without it, the
+        // characters on its two sides are next to each other, and the diff
+        // that takes the common end first can align the end of the old text
+        // with an equal character at the end of what arrived (a paste over
+        // part of a highlighted line, whose nodes the highlighter made again
+        // with the pasted text: `t55z` before the paste, `t87z` at its end).
+        const passed = st.passed;
+        let was = '';
+        const wasAt: number[] = [];
+        for (let k = 0, g = 0; k <= left.length; k++) {
+          while (
+            g < passed.length &&
+            (k === left.length || passed[g].at < left[k].at)
+          ) {
+            was += passed[g++].text;
+          }
+          if (k < left.length) {
+            wasAt.push(was.length);
+            was += textOf(left[k].run);
+          }
+        }
         let w = '';
         const at: [number, number, number][] = [];
+        const sureAt: [number, number, number][] = [];
         for (let k = 0, pos = 0; k < left.length; k++) {
           const n = length(left[k].run);
           if (drop[k] === 0) {
             at.push([w.length, pos, n]);
+            sureAt.push([w.length, wasAt[k], n]);
             w += textOf(left[k].run);
           }
           pos += n;
@@ -1464,7 +1497,7 @@ export class TextReplay {
           ),
           cursor,
           undefined,
-          {at, text: d},
+          {at: sureAt, text: was},
         );
         const kept: Block[] = [];
         let r = 0;
@@ -1530,8 +1563,9 @@ export class TextReplay {
    * the diff that takes the common end first keeps too: where the text could
    * be either of two equal runs, neither. That diff reads `d`, and also the
    * text that left as it was (`sure.text`, of which `d` holds the runs
-   * `sure.at` says, see stretch), with the text deleted whole still in
-   * place; what either reading keeps as the diff does is kept. Why: read
+   * `sure.at` says, see stretch), with the text deleted whole and the text
+   * that arrived and left again in this commit still in place; what either
+   * reading keeps as the diff does is kept. Why: read
    * without that text, the characters on its two sides are next to each
    * other, which makes the diff's alignment one of two where the line had
    * one (a line made again as one node with one word changed, where that

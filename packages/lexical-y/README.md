@@ -117,8 +117,11 @@ The binding writes through Yjs internals, so a new `@y/y` is a deliberate
 change, never a range:
 
 1. Set the exact version in both `peerDependencies` and `devDependencies`,
-   then run `pnpm install` and `pnpm run update-version` (which regenerates
-   `SUPPORTED_YJS_VERSION` in `src/internal/SupportedYjs.ts`).
+   and in the playground's own `@y/y` pin
+   (`packages/lexical-playground/package.json`; nothing in the workspace ties
+   it to this one, and a playground on the old version would load two copies
+   of Yjs), then run `pnpm install` and `pnpm run update-version` (which
+   regenerates `SUPPORTED_YJS_VERSION` in `src/internal/SupportedYjs.ts`).
 2. Run `YjsContract.test.ts`: update the exports, members and events in
    `src/internal/YjsContract.ts` to what the binding uses of the new
    version, and re-check each changed one in the code that uses it.

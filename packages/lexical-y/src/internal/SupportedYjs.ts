@@ -14,4 +14,4 @@
  * @experimental The one `@y/y` version this `@lexical/y` supports: its exact
  * peer dependency. `YUnsupportedYjsError` reports it as `data.supported`.
  */
-export const SUPPORTED_YJS_VERSION = '14.0.0-rc.29';
+export const SUPPORTED_YJS_VERSION: string = '14.0.0-rc.29';

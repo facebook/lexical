@@ -681,7 +681,8 @@ person's:
   into another word of the line at the same time stays in that word, and a
   character a collaborator deletes there stays deleted. Such a replacement
   replaces whole words, as below, and a separator alone between them and
-  the kept text is written with them; text between two separate changes is
+  the kept text is written with them, unless it was a node of its own (a
+  tab, a line break, a node of spaces); text between two separate changes is
   written again, and an inline node made there is new where it is put. Prefer
   these to `setTextContent`, which sets a node's text whole: such a change
   (and a change the browser makes to the DOM text, as an IME composition

@@ -15,7 +15,11 @@ import {
   $insertList,
   type ListItemNode,
 } from '@lexical/list';
-import {$wrapSelectionInMarkNode} from '@lexical/mark';
+import {
+  $addMarkID,
+  $getNodeMarkIDs,
+  $wrapSelectionInMarkNode,
+} from '@lexical/mark';
 import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
 import {$setBlocksType} from '@lexical/selection';
 import {
@@ -34,6 +38,7 @@ import {
   $getRoot,
   type ElementNode,
   type LexicalNode,
+  type TextNode,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
@@ -49,6 +54,7 @@ import {
   type Setup,
   setup,
 } from '../utils/harness';
+import {prepareMarkState} from '../utils/sizeOps';
 
 // Concurrent edits racing typing or each other, run
 // headless: A and B edit offline, C is a third peer, then all sync. Both id
@@ -569,5 +575,81 @@ describe('@lexical/y undo of a format ‖ plain text typed inside its range', ()
         );
       },
     );
+  }
+});
+
+// #9575: writes inside a comment undone (here two collaborators', three
+// writes) while another client deletes text across the comment's end. Each
+// write ended the comment before its text and restored it after, leaving a
+// null of its writer right after the comment's end; the delete collapses
+// the deleted run there and keeps those nulls but not the comment's own end,
+// and the undos then remove them, so the comment runs on (y.md Limits).
+describe('@lexical/y undo of writes inside a comment ‖ delete across its end', () => {
+  /** Inserts uncommented `text` in the first line right after `prefix`. */
+  function typeAfter(peer: Peer, prefix: string, text: string) {
+    peer.update(() => {
+      let off = $block([0]).getTextContent().indexOf(prefix) + prefix.length;
+      for (const node of $block([0]).getAllTextNodes() as TextNode[]) {
+        if (off > 0 && off < node.getTextContentSize()) {
+          const [, tail] = node.splitText(off);
+          tail.insertBefore($createTextNode(text));
+          return;
+        }
+        off -= node.getTextContentSize();
+      }
+      throw new Error(`no "${prefix}" inside a text node`);
+    });
+  }
+  function words(peer: Peer, line: number): string {
+    return peer.read(() =>
+      ($block([line]).getAllTextNodes() as TextNode[])
+        .map(
+          n =>
+            n.getTextContent() + ($getNodeMarkIDs(n).length > 0 ? '[c1]' : ''),
+        )
+        .join('|'),
+    );
+  }
+  async function run(ids: number[]): Promise<[string, string]> {
+    const t = await setup(
+      () => $getRoot().append($p('aa Kilometer bb cc dd'), $p('tail line')),
+      {ids, prepare: prepareMarkState},
+    );
+    const [a, b, c, d] = t.peers;
+    a.update(() => void $addMarkID('c1', $selectIn([0], 3, 12)));
+    await t.sync();
+    typeAfter(b, 'K', 'Z');
+    await t.sync();
+    typeAfter(c, 'KZil', 'X');
+    typeAfter(c, 'KZilXome', 'Y');
+    await t.sync();
+    expect(words(a, 0)).toBe(
+      'aa |K[c1]|Z|il[c1]|X|ome[c1]|Y|ter[c1]| bb cc dd',
+    );
+    t.offline();
+    b.undo();
+    c.undo();
+    c.undo();
+    // D, which has not seen the undos, deletes "ter" and then " bb".
+    for (const text of ['ter', ' bb']) {
+      d.update(() => {
+        const at = $block([0]).getTextContent().indexOf(text);
+        $selectIn([0], at, at + text.length).removeText();
+      });
+    }
+    await t.sync();
+    await expectConverged(t.peers);
+    return [words(a, 0), words(a, 1)];
+  }
+  for (const ids of [
+    [1, 2, 3, 4],
+    [4, 3, 2, 1],
+  ]) {
+    test(`#9575 as documented: the comment runs on over the next words and line (${ids})`, async () => {
+      expect(await run(ids)).toEqual(['aa |Kilome cc dd[c1]', 'tail line[c1]']);
+    });
+    test.fails(`#9575: the comment ends where it ended (${ids})`, async () => {
+      expect(await run(ids)).toEqual(['aa |Kilome[c1]| cc dd', 'tail line']);
+    });
   }
 });

@@ -975,7 +975,11 @@ not merge as a user might expect:
   entirely, the undo manager skips that step as changing nothing, and the
   same undo also reverts your step before it. When you undo a format change
   while a collaborator removes that format and undoes the removal, the text
-  keeps the format: the collaborator's undo brings it back.
+  keeps the format: the collaborator's undo brings it back. A comment or
+  format can run on past its end when writes inside it are undone (one
+  client's two writes, or two clients' writes) while another client deletes
+  text across its end: it carries on over the following words, possibly
+  into the next line. No text is lost.
 - **Large lists.** A structural edit in a list costs time proportional to
   the list on every client.
 - **Older app versions.** Clients of different `schemaVersion`s never

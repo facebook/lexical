@@ -70,28 +70,34 @@ const WHITESPACE_CLASS = 0;
 const PUNCTUATION_CLASS = 1;
 const OTHER_CLASS = 2;
 
+function classifyByCategory(character: string): number {
+  return WHITESPACE.test(character)
+    ? WHITESPACE_CLASS
+    : PUNCTUATION.test(character)
+      ? PUNCTUATION_CLASS
+      : OTHER_CLASS;
+}
+
+// ASCII classes, filled from the categories on first use so that the common
+// case needs no regular expression.
+let asciiClasses: Uint8Array | undefined;
+
 /** How flanking sees `character`; the edge of the line is whitespace. */
 function classify(character: string | undefined): number {
   if (character === undefined) {
     return WHITESPACE_CLASS;
   }
   const code = character.charCodeAt(0);
-  // ASCII, without a regular expression
-  if (code < 0x80) {
-    return code === 0x20 || (code >= 0x09 && code <= 0x0d && code !== 0x0b)
-      ? WHITESPACE_CLASS
-      : (code >= 0x21 && code <= 0x2f) ||
-          (code >= 0x3a && code <= 0x40) ||
-          (code >= 0x5b && code <= 0x60) ||
-          (code >= 0x7b && code <= 0x7e)
-        ? PUNCTUATION_CLASS
-        : OTHER_CLASS;
+  if (code >= 0x80) {
+    return classifyByCategory(character);
   }
-  return WHITESPACE.test(character)
-    ? WHITESPACE_CLASS
-    : PUNCTUATION.test(character)
-      ? PUNCTUATION_CLASS
-      : OTHER_CLASS;
+  if (asciiClasses === undefined) {
+    asciiClasses = new Uint8Array(0x80);
+    for (let c = 0; c < 0x80; c++) {
+      asciiClasses[c] = classifyByCategory(String.fromCharCode(c));
+    }
+  }
+  return asciiClasses[code];
 }
 
 /**

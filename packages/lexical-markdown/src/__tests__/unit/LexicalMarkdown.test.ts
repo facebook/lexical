@@ -5175,6 +5175,26 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     },
   );
 
+  it('writes no reference inside a URL that runs on through formats', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createTextNode('https://x.com/').toggleFormat('bold'),
+            $createTextNode('ab'),
+            $createTextNode(
+              `${LEFT_DOUBLE_QUOTE}c${RIGHT_DOUBLE_QUOTE}`,
+            ).toggleFormat('italic'),
+          ),
+        ),
+      {discrete: true},
+    );
+    expect(
+      editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
+    ).toBe(`**https://x.com/**ab*${LEFT_DOUBLE_QUOTE}c${RIGHT_DOUBLE_QUOTE}*`);
+  });
+
   it('guards word characters in a selection export', () => {
     const editor = createTestEditor();
     editor.update(

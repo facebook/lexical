@@ -719,15 +719,26 @@ function isMarker(kind: PieceKind | undefined): boolean {
 
 // Characters a URL, email or mention can hold: GFM ends an autolink at
 // whitespace or `<`. This takes in the backslash that escapes a marker too.
-const LINK_CHARACTER = /[!-;=-~]/;
-// How far the export looks for one, which keeps the look linear.
-const LINK_LOOKAHEAD = 2048;
-// A URL, `www.` host, email or mention at the end of the text before it, or
-// at the start of the text after it.
-const LINK_AT_END =
-  /:\/\/|(?:^|[^\w.-])www\.|(?:^|[^\w.+-])(?:mailto|xmpp):|@[\w.-]*\w$/i;
-const LINK_AT_START =
-  /^(?:[a-z][\w+.-]*:\/\/|www\.|mailto:|xmpp:)|^[\w.+-]*@\w/i;
+function isLinkCharacter(code: number): boolean {
+  return code > 0x20 && code < 0x7f && code !== 0x3c;
+}
+// A URL or `www.` host in a run of link characters.
+const LINK_URL = /:\/\/|(?:^|[^\w.-])www\.|(?:^|[^\w.+-])(?:mailto|xmpp):/i;
+// Characters an email or mention can hold (word characters, `.+@-`, and the
+// backslash that escapes one), and what makes one.
+function isAddressCharacter(code: number): boolean {
+  return (
+    (code >= 0x30 && code <= 0x39) ||
+    (code >= 0x40 && code <= 0x5a) ||
+    (code >= 0x61 && code <= 0x7a) ||
+    code === 0x5f ||
+    code === 0x2e ||
+    code === 0x2b ||
+    code === 0x2d ||
+    code === 0x5c
+  );
+}
+const ADDRESS = /@\w/;
 
 // Characters that a reference does not stand in for everywhere: CommonMark
 // readers and HTML decode references to control characters, unpaired
@@ -796,6 +807,60 @@ function joinPieces({kinds, values}: MarkdownPieces): string {
     markdown += start + value + end;
   }
   return markdown;
+}
+
+/**
+ * For each piece, 1 when its first character is part of a bare URL, `www.`
+ * host, email or mention, plus 2 when its last one is. A reference inside one
+ * would change what an autolinking reader links to, so the format is lost
+ * there instead, as before. The pieces are read as one text, since a URL can
+ * run on through markers and other formats, and each character is looked at
+ * a bounded number of times.
+ */
+function findLinkEdges(values: string[]): Uint8Array {
+  const text = values.join('');
+  const inLink = new Uint8Array(text.length);
+  const runEnd = (
+    start: number,
+    isPart: (code: number) => boolean,
+    limit: number,
+  ) => {
+    let end = start;
+    while (end < limit && isPart(text.charCodeAt(end))) {
+      end++;
+    }
+    return end;
+  };
+  for (let start = 0; start < text.length; ) {
+    const end = runEnd(start, isLinkCharacter, text.length);
+    if (end === start) {
+      start++;
+      continue;
+    }
+    if (LINK_URL.test(text.slice(start, end).replace(/\\/g, ''))) {
+      inLink.fill(1, start, end);
+    } else {
+      for (let from = start; from < end; ) {
+        const to = runEnd(from, isAddressCharacter, end);
+        if (to === from) {
+          from++;
+          continue;
+        }
+        if (ADDRESS.test(text.slice(from, to).replace(/\\/g, ''))) {
+          inLink.fill(1, from, to);
+        }
+        from = to;
+      }
+    }
+    start = end;
+  }
+  const edges = new Uint8Array(values.length);
+  for (let i = 0, offset = 0; i < values.length; i++) {
+    const length = values[i].length;
+    edges[i] = inLink[offset] | (inLink[offset + length - 1] << 1);
+    offset += length;
+  }
+  return edges;
 }
 
 /**
@@ -909,38 +974,15 @@ function decideReferences(
       : encodeEnd[index] || isEncoded(index)
         ? ';'
         : lastChar(index);
-  // Whether the end (or start) of the piece at `index` is a bare URL, `www.`
-  // host, email or mention. A reference inside one would change what an
-  // autolinking reader links to, so the format is lost there instead, as
-  // before.
-  const findsLink = (index: number, atEnd: boolean): boolean => {
-    const value = values[index];
-    let start = atEnd ? value.length : 0;
-    let end = start;
-    if (atEnd) {
-      const limit = Math.max(0, start - LINK_LOOKAHEAD);
-      while (start > limit && LINK_CHARACTER.test(value[start - 1])) {
-        start--;
-      }
-    } else {
-      const limit = Math.min(value.length, LINK_LOOKAHEAD);
-      while (end < limit && LINK_CHARACTER.test(value[end])) {
-        end++;
-      }
-    }
-    return (atEnd ? LINK_AT_END : LINK_AT_START).test(
-      value.slice(start, end).replace(/\\/g, ''),
-    );
-  };
-  // `findsLink` for each piece edge, worked out once: by side, 0 while
-  // unknown, then 1 when it finds one and 2 when it does not.
-  const linkish = [new Uint8Array(count), new Uint8Array(count)];
+  // Whether the last (or first) character of the piece at `index` is part of
+  // a bare URL, `www.` host, email or mention, worked out for every piece the
+  // first time it is asked.
+  let linkEdges: Uint8Array | undefined;
   const isLinkish = (index: number, atEnd: boolean): boolean => {
-    const side = atEnd ? 1 : 0;
-    if (linkish[side][index] === 0) {
-      linkish[side][index] = findsLink(index, atEnd) ? 1 : 2;
+    if (linkEdges === undefined) {
+      linkEdges = findLinkEdges(values);
     }
-    return linkish[side][index] === 1;
+    return (linkEdges[index] & (atEnd ? 2 : 1)) !== 0;
   };
   // Whether the last (or first) character of the piece at `index` can go out
   // as a reference.

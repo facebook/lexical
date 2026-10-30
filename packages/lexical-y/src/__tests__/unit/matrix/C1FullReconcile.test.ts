@@ -153,11 +153,6 @@ function unbound(shape: NodeShape): string[] {
   return out;
 }
 
-const FORMATTED_FIRST = [
-  'paragraph/formatted-first-text',
-  'heading/formatted-first-text',
-];
-
 describe('C1: derived element fields do not depend on reconcile history', () => {
   for (const shape of NODE_SHAPES) {
     // A paragraph loaded into a mounted editor derives its textFormat and
@@ -170,14 +165,11 @@ describe('C1: derived element fields do not depend on reconcile history', () => 
       },
     );
     for (const mode of ['binding', 'extension'] as const) {
-      // A full reconcile derives those fields again on elements the update
-      // did not change, and the binding writes them; fixed by #9553.
-      (FORMATTED_FIRST.includes(shape.name) ? test.fails : test)(
-        `${mode}: ${shape.name}`,
-        async () => {
-          expect(await bound(shape, mode)).toEqual([]);
-        },
-      );
+      // A full reconcile keeps the textFormat and textStyle of elements the
+      // update did not change, so the binding writes nothing for them.
+      test(`${mode}: ${shape.name}`, async () => {
+        expect(await bound(shape, mode)).toEqual([]);
+      });
     }
   }
 });

@@ -193,12 +193,20 @@ export function $setBlocksType<T extends ElementNode>(
     if ($isBlockContainer(prevNode)) {
       // An empty declared container (roots and shadow roots are never in
       // the map) is not a block to convert: with the selection in it, the
-      // new block goes in it, as with $insertList and $wrapNodes.
+      // new block goes in it, as with $insertList and $wrapNodes. The
+      // container stays, so its indent and format are not copied, and the
+      // selection points in it move into the new block (a range keeps its
+      // other end).
       if (prevNode.is(anchorBlock) && prevNode.isEmpty()) {
         const element = $createElement();
-        $afterCreateElement(prevNode, element);
         prevNode.append(element);
-        element.selectStart();
+        if ($isRangeSelection(selection)) {
+          for (const point of [selection.anchor, selection.focus]) {
+            if (point.key === prevNode.getKey()) {
+              point.set(element.getKey(), 0, 'element');
+            }
+          }
+        }
       }
       continue;
     }
@@ -271,16 +279,20 @@ export function $wrapNodes(
         : anchor.getNode();
     const children = target.getChildren();
     let element = createElement();
-    element.setFormat(target.getFormatType());
-    element.setIndent(target.getIndent());
+    // An empty container stays and the new block goes in it, so the new
+    // block does not take the container's indent and format.
+    const intoContainer = $isBlockContainer(target);
+    if (!intoContainer) {
+      element.setFormat(target.getFormatType());
+      element.setIndent(target.getIndent());
+    }
     children.forEach(child => element.append(child));
 
     if (wrappingElement) {
       element = wrappingElement.append(element);
     }
 
-    if ($isBlockContainer(target)) {
-      // An empty container stays: the new block goes in it.
+    if (intoContainer) {
       target.append(element);
       element.selectStart();
     } else {

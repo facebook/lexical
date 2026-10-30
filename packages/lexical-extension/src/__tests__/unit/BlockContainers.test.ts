@@ -1285,6 +1285,144 @@ describe('@lexical/mdast shortcuts in block containers', () => {
   );
 });
 
+describe('fixes every editor gets', () => {
+  const $emptyShadowInRange = () => {
+    const a = $createTextNode('before');
+    const b = $createTextNode('after');
+    $getRoot()
+      .clear()
+      .append(
+        $createParagraphNode().append(a),
+        $create(ShadowBoxNode),
+        $createParagraphNode().append(b),
+      );
+    $selectRange(a, 1, b, 1);
+  };
+  const $hrInShadow = () => {
+    const hr = $createHorizontalRuleNode();
+    $getRoot()
+      .clear()
+      .append($create(ShadowBoxNode).append($p('abc'), hr));
+    const selection = $createNodeSelection();
+    selection.add(hr.getKey());
+    $setSelection(selection);
+  };
+  const cases = [
+    [
+      '$wrapNodes in an empty root',
+      () => {
+        $getRoot().clear().select(0, 0);
+        $wrapNodes($getSelection()!, () => $createQuoteNode());
+      },
+      'quote()',
+    ],
+    [
+      '$wrapNodes in an empty shadow root',
+      () => {
+        const shadow = $create(ShadowBoxNode);
+        $getRoot().clear().append($p('before'), shadow, $p('after'));
+        shadow.select(0, 0);
+        $wrapNodes($getSelection()!, () => $createQuoteNode());
+      },
+      'p("before") / sbox(quote()) / p("after")',
+    ],
+    [
+      '$insertList over an empty shadow root in a range',
+      () => {
+        $emptyShadowInRange();
+        $insertList('bullet');
+      },
+      'list[bullet](li("before")) / sbox() / list[bullet](li("after"))',
+    ],
+    [
+      '$insertList with a horizontal rule selected in a shadow root',
+      () => {
+        $hrInShadow();
+        $insertList('bullet');
+      },
+      'sbox(p("abc") horizontalrule())',
+    ],
+  ] as const;
+  test.each(
+    cases.flatMap(([name, $act, expected]) =>
+      [false, true].map(
+        structure => [name, structure, $act, expected] as const,
+      ),
+    ),
+  )('%s (NodeStructureExtension: %s)', (_name, structure, $act, expected) => {
+    using editor = buildEditor(structure);
+    editor.update($act, {discrete: true});
+    expect(editor.read(() => $shape())).toBe(expected);
+  });
+});
+
+describe('a new block put in an empty declared container', () => {
+  const $emptyBox = () => {
+    const box = $create(DeclaredBoxNode).setIndent(1).setFormat('center');
+    $getRoot().clear().append($p('before'), box, $p('after'));
+    return box;
+  };
+  test.each([
+    [
+      '$setBlocksType',
+      () => $setBlocksType($getSelection(), () => $createHeadingNode('h1')),
+      'p("before") / dbox[indent1](h()) / p("after")',
+    ],
+    [
+      '$wrapNodes',
+      () => $wrapNodes($getSelection()!, () => $createQuoteNode()),
+      'p("before") / dbox[indent1](quote()) / p("after")',
+    ],
+  ] as const)(
+    "%s does not take the container's indent and format",
+    (_name, $act, expected) => {
+      using editor = buildEditor(true);
+      editor.update(
+        () => {
+          $emptyBox().select(0, 0);
+          $act();
+        },
+        {discrete: true},
+      );
+      expect(editor.read(() => $shape())).toBe(expected);
+      expect(
+        editor.read(() => {
+          const block = (
+            $getRoot().getChildAtIndex(1) as ElementNode
+          ).getFirstChild() as ElementNode;
+          return block.getFormatType();
+        }),
+      ).toBe('');
+    },
+  );
+
+  test('$setBlocksType keeps a range that starts in the empty container', () => {
+    using editor = buildEditor(true);
+    editor.update(
+      () => {
+        const box = $emptyBox();
+        const selection = $createRangeSelection();
+        selection.anchor.set(box.getKey(), 0, 'element');
+        selection.focus.set($findText('after').getKey(), 2, 'text');
+        $setSelection(selection);
+        $setBlocksType($getSelection(), () => $createHeadingNode('h1'));
+      },
+      {discrete: true},
+    );
+    expect(editor.read(() => $shape())).toBe(
+      'p("before") / dbox[indent1](h()) / h("after")',
+    );
+    expect(
+      editor.read(() => {
+        const selection = $getSelection() as RangeSelection;
+        const at = (point: RangeSelection['anchor']) =>
+          `${point.getNode().getType()}:${point.offset}`;
+        return [at(selection.anchor), at(selection.focus)];
+      }),
+    ).toEqual(['heading:0', 'text:2']);
+  });
+});
+
 // https://github.com/meta/lexical/issues/9570
 describe('#9570: $insertList in a box inside a box', () => {
   test.each([

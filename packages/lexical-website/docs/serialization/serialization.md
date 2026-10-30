@@ -676,7 +676,8 @@ inserting a block such as a table or a horizontal rule
 on the blocks inside it and keeps the container, where otherwise the
 container itself would be replaced, split or left. Converting a block's type
 (`$setBlocksType`) and indenting already act on the block in place in any
-container, and leave an empty container in place. Unlike a shadow root
+container; with the selection in an empty container, `$setBlocksType` puts
+the new block in it. Unlike a shadow root
 (`isShadowRoot()`), a declared container is not a selection boundary:
 select-all, the arrow keys, and Backspace or Delete at its edges treat it
 like any other element, so Backspace at the start of its first paragraph

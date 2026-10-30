@@ -26,8 +26,9 @@ import {
   type TextFormatType,
   type TextNode,
 } from 'lexical';
-import {expect, test} from 'vitest';
+import {expect, test, vi} from 'vitest';
 
+import {Cursor} from '../../../internal/Cursor';
 import {
   $block,
   $selectIn,
@@ -324,16 +325,32 @@ test('restored text takes no comment of the word before it (1861)', async () => 
 });
 
 // A comment over words that deletes and undos around them never touch
-// stays: main's collapse dropped c9 from "wxq4xq56abcd" (3645) and c2 from
-// "wk75" (4694), as a document read without any collapse shows them.
-test('a comment stays on text that deletes around it never touched (3645)', async () => {
-  const t = await replay(session(3645));
-  expect(idsOn(t.a, 0, 'wxq4xq56abcd').every(ids => ids === '[c9]')).toBe(true);
-  t.peers.forEach(p => p.stop());
-});
-
+// stays where a document read without any collapse has it: main's
+// collapse dropped c2 from "wk75" (4694).
 test('a comment stays on text that deletes around it never touched (4694)', async () => {
   const t = await replay(session(4694));
   expect(idsOn(t.a, 1, 'wk75')).toEqual(Array(4).fill('[c2,c20]'));
   t.peers.forEach(p => p.stop());
+});
+
+// Main's collapse dropped c9 from "wxq4xq56abcd" (3645), where a document
+// read without any collapse keeps it. (With every undo press changing what
+// the document shows, the session's last undo now also removes c9.)
+test('a comment is where a document without any collapse has it (3645)', async () => {
+  const t = await replay(session(3645));
+  const kept = chars(t.a, 0);
+  t.peers.forEach(p => p.stop());
+  const spy = vi
+    .spyOn(
+      Cursor.prototype as unknown as {collapseGap: () => void},
+      'collapseGap',
+    )
+    .mockImplementation(() => {});
+  try {
+    const u = await replay(session(3645));
+    expect(kept).toEqual(chars(u.a, 0));
+    u.peers.forEach(p => p.stop());
+  } finally {
+    spy.mockRestore();
+  }
 });

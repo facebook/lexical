@@ -1172,8 +1172,10 @@ not merge as a user might expect:
   while a collaborator formats text inside it keeps the link on its text:
   formatting text in a link also sets the link's text format, which writes
   the link there again. Where a collaborator overwrote a step of yours
-  entirely, the undo manager skips that step as changing nothing, and the
-  same undo also reverts your step before it. When you undo a format change
+  entirely, or left nothing of it that anyone sees (you formatted text that
+  a collaborator then deleted), the same undo also reverts your step before
+  it: every undo or redo press changes what the document shows, or takes
+  every step there is. When you undo a format change
   while a collaborator removes that format and undoes the removal, the text
   keeps the format: the collaborator's undo brings it back. A format a
   collaborator applies starting right where a run of that format ends, or

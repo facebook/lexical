@@ -633,6 +633,63 @@ function recordSetMembersLayout(root: YNode, tr: Transaction): void {
  * remote change has been applied in full: never from inside a Yjs observer
  * or transaction. A handler that throws does not affect syncing.
  */
+
+/**
+ * What any reader of `type` can show: its live content in order, each with
+ * the format values it has there, and its attributes, nested types
+ * included. Two documents with the same digest read the same.
+ */
+function visibleDigest(type: YNode): string {
+  const parts: string[] = [];
+  const values = new Map<string, string>();
+  const t = type as unknown as {
+    _start: Item | null;
+    _map: Map<string, Item>;
+  };
+  for (let it = t._start; it !== null; it = it.right) {
+    if (it.deleted) {
+      continue;
+    }
+    const c = it.content;
+    if (c instanceof ContentFormat) {
+      if (c.value === null) {
+        values.delete(c.key);
+      } else {
+        values.set(c.key, JSON.stringify(c.value));
+      }
+      continue;
+    }
+    if (!it.countable) {
+      continue;
+    }
+    const fmt = [...values.entries()]
+      .sort((x, y) => (x[0] < y[0] ? -1 : x[0] > y[0] ? 1 : 0))
+      .map(([k, v]) => `${k}=${v}`)
+      .join(',');
+    parts.push(`${fmt}|${contentDigest(c)}`);
+  }
+  const keys = [...t._map.keys()].sort();
+  for (const k of keys) {
+    const item = t._map.get(k)!;
+    if (!item.deleted) {
+      parts.push(`@${k}=${contentDigest(item.content)}`);
+    }
+  }
+  return parts.join('\n');
+}
+
+function contentDigest(c: Item['content']): string {
+  if (c instanceof ContentType) {
+    const nested = c.type as unknown as YNode & {name?: string};
+    return `<${String(nested.name ?? '')}>${visibleDigest(nested)}</>`;
+  }
+  try {
+    return JSON.stringify(c.getContent());
+  } catch {
+    return '?';
+  }
+}
+
 export class YBinding {
   private readonly _editor: LexicalEditor;
   private readonly _doc: YDoc;
@@ -810,6 +867,9 @@ export class YBinding {
   private restoring: Set<string> | null = null;
   /** Stored nodes the running undo/redo deletes (it inserted them). */
   private removing: Set<Item> | null = null;
+  /** How many undos or redos are running (see applyUndo). */
+  private undoDepth = 0;
+
   /** The items the running undo/redo deletes (see isKeptByUndo). */
   private undoing: Set<Item> | null = null;
   private wasEditable = true;
@@ -5153,6 +5213,38 @@ export class YBinding {
   }
 
   private applyUndo(um: UndoManager, undo: boolean): boolean {
+    // Invariant: an undo or redo press changes what a fresh read of the
+    // document shows, or takes every step there is. Why: a step whose items
+    // another client's change made invisible (a format change on text a
+    // collaborator deleted, the end of a comment a collaborator's delete
+    // kept) restored or removed only those, and the press showed nothing.
+    // An undo or redo a listener starts while one runs takes one step, as
+    // Yjs runs it: none, as the running step is not done yet.
+    if (this.undoDepth > 0) {
+      return this.applyUndoStep(um, undo);
+    }
+    this.undoDepth++;
+    try {
+      let any = false;
+      for (;;) {
+        if ((undo ? um.undoStack : um.redoStack).length === 0) {
+          return any;
+        }
+        const before = visibleDigest(this._root);
+        if (!this.applyUndoStep(um, undo)) {
+          return any;
+        }
+        any = true;
+        if (visibleDigest(this._root) !== before) {
+          return true;
+        }
+      }
+    } finally {
+      this.undoDepth--;
+    }
+  }
+
+  private applyUndoStep(um: UndoManager, undo: boolean): boolean {
     const stack = undo ? um.undoStack : um.redoStack;
     this.undoCache = new WeakMap();
     this.scanStackItem(stack);

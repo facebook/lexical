@@ -15,12 +15,10 @@ import {
   $createParagraphNode,
   $createTextNode,
   $findMatchingParent,
-  $getEditor,
   $getSelection,
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
-  type EditorState,
   type ElementNode,
   type LexicalNode,
   type NodeKey,
@@ -1184,112 +1182,16 @@ export function $computeTableMapSkipCellCheck(
  * a column) are merged, since remote updates are applied with transforms
  * skipped.
  *
+ * `$shouldPad` limits the padding to the rows it accepts (all by default):
+ * the table transform pads only the rows an update changed when nothing
+ * else about the table changed.
+ *
  * @experimental
  */
-/**
- * Per update (its pending editor state), by table, the grid width and the
- * grid positions each row covers, computed once (see $padTableRow): a
- * column insert changes every row, and computing the map for each would be
- * quadratic. Rows $padTableRow pads are updated in place; a change to the
- * table's rows (their number, first or last) computes it again.
- */
-const rowWidths = new WeakMap<
-  EditorState,
-  Map<
-    NodeKey,
-    {
-      size: number;
-      first: NodeKey | null;
-      last: NodeKey | null;
-      width: number;
-      lengths: Map<NodeKey, [length: number, children: number]>;
-    }
-  >
->();
-
-/**
- * Pad `row`, a row of `tableNode`, to the table's width (that of its widest
- * row, spans included), as {@link $padTableRows} pads each row, and leave
- * the other rows as they are. For the row transform: a row whose cells
- * changed is padded again where that left it short. Returns true if a cell
- * was added.
- *
- * @internal
- */
-export function $padTableRow(tableNode: TableNode, row: TableRowNode): boolean {
-  const editor = $getEditor();
-  // Only a row that lost cells in this update (a delete across cells): one
-  // that gained some was given them by its author (a column insert, an
-  // app's own padding, which may count spans another way), and one the
-  // update added belongs to a table it changed, which the table's transform
-  // pads.
-  const previous = editor._editorState._nodeMap.get(row.getKey());
-  if (!$isTableRowNode(previous) || row.getChildrenSize() >= previous.__size) {
-    return false;
-  }
-  const pending = editor._pendingEditorState;
-  let tables = pending === null ? undefined : rowWidths.get(pending);
-  if (tables === undefined) {
-    tables = new Map();
-    if (pending !== null) {
-      rowWidths.set(pending, tables);
-    }
-  }
-  const table = tableNode.getLatest();
-  let entry = tables.get(table.__key);
-  const known =
-    entry === undefined ? undefined : entry.lengths.get(row.getKey());
-  if (
-    entry === undefined ||
-    entry.size !== table.__size ||
-    entry.first !== table.__first ||
-    entry.last !== table.__last ||
-    known === undefined ||
-    known[1] !== row.getChildrenSize()
-  ) {
-    const [gridMap] = $computeTableMapSkipCellCheck(tableNode, null, null);
-    const lengths = new Map<NodeKey, [number, number]>();
-    const rowNodes = tableNode.getChildren();
-    let width = 0;
-    for (let i = 0; i < gridMap.length; i++) {
-      width = Math.max(width, gridMap[i].length);
-      const rowNode = rowNodes[i];
-      if ($isTableRowNode(rowNode)) {
-        lengths.set(rowNode.getKey(), [
-          gridMap[i].reduce((acc, cell) => (cell ? 1 + acc : acc), 0),
-          rowNode.getChildrenSize(),
-        ]);
-      }
-    }
-    entry = {
-      first: table.__first,
-      last: table.__last,
-      lengths,
-      size: table.__size,
-      width,
-    };
-    tables.set(table.__key, entry);
-  }
-  const cached = entry.lengths.get(row.getKey());
-  if (cached === undefined || cached[0] >= entry.width) {
-    return false;
-  }
-  const length = cached[0];
-  // The same header bit as $padTableRows gives its padding cells.
-  const lastCell = row.getLastChild();
-  const headerState = $isTableCellNode(lastCell)
-    ? lastCell.getHeaderStyles() & TableCellHeaderStates.ROW
-    : TableCellHeaderStates.NO_STATUS;
-  for (let j = length; j < entry.width; ++j) {
-    row.append(
-      $createTableCellNode(headerState).append($createParagraphNode()),
-    );
-  }
-  entry.lengths.set(row.getKey(), [entry.width, row.getChildrenSize()]);
-  return true;
-}
-
-export function $padTableRows(tableNode: TableNode): boolean {
+export function $padTableRows(
+  tableNode: TableNode,
+  $shouldPad: (row: TableRowNode) => boolean = () => true,
+): boolean {
   const [gridMap] = $computeTableMapSkipCellCheck(tableNode, null, null);
   const maxRowLength = gridMap.reduce(
     (curLength, row) => Math.max(curLength, row.length),
@@ -1299,7 +1201,7 @@ export function $padTableRows(tableNode: TableNode): boolean {
   let changed = false;
   for (let i = 0; i < gridMap.length; ++i) {
     const rowNode = rowNodes[i];
-    if (!$isTableRowNode(rowNode)) {
+    if (!$isTableRowNode(rowNode) || !$shouldPad(rowNode)) {
       continue;
     }
     // Count the grid positions this row covers, including those covered by a
@@ -1326,14 +1228,6 @@ export function $padTableRows(tableNode: TableNode): boolean {
       );
     }
     changed = true;
-  }
-  if (changed) {
-    // The rows' lengths $padTableRow knows are stale.
-    const pending = $getEditor()._pendingEditorState;
-    const tables = pending === null ? undefined : rowWidths.get(pending);
-    if (tables !== undefined) {
-      tables.delete(tableNode.getKey());
-    }
   }
   return changed;
 }

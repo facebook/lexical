@@ -8,11 +8,12 @@
 
 import {
   $getBlockById,
-  $getBlockHandle,
+  $getBlockHandles,
   $getBlockId,
   $isRootChildBlock,
   $resolveBlockHandle,
   BlockIdExtension,
+  blockIdState,
   buildEditorFromExtensions,
   configExtension,
   getExtensionDependencyFromEditor,
@@ -37,11 +38,14 @@ import {
   $getEditor,
   $getRoot,
   $isElementNode,
+  $setState,
   HISTORY_MERGE_TAG,
   type LexicalEditor,
   type LexicalNode,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
+
+import {$setBlockText} from '../utils/setBlockText';
 
 function counter(prefix = 'b') {
   let n = 0;
@@ -146,6 +150,21 @@ function exportDocument(editor: LexicalEditor): Document {
   const doc = document.implementation.createHTMLDocument('');
   editor.read(() => $generateDOMFromNodes(doc.body, null, editor));
   return doc;
+}
+
+/**
+ * The editor's content exported as a DOM document, and the handles it shows,
+ * in one read (`$generateHtmlFromNodes` and `$getBlockHandles()` in the
+ * JSDoc example of `BlockIdHTMLConfig.export`; a DOM rather than a string).
+ */
+function exportWithHandles(
+  editor: LexicalEditor,
+): [Document, Map<string, string>] {
+  const doc = document.implementation.createHTMLDocument('');
+  return editor.read(() => {
+    $generateDOMFromNodes(doc.body, null, editor);
+    return [doc, $getBlockHandles()];
+  });
 }
 
 function exportHTML(editor: LexicalEditor): string {
@@ -451,8 +470,9 @@ describe("BlockIdHTMLExtension: export: 'handle'", () => {
         '<h2>Q3 plan</h2><p>Revenue grew 4% in Q3.</p><p>Hiring is on track.</p>',
       ),
     );
-    // 1. What the model reads.
-    const exported = exportDocument(editor);
+    // 1. The HTML the model reads, and the handles it is shown, in one read
+    //    (as in BlockIdHTMLConfig.export's example).
+    const [exported, shown] = exportWithHandles(editor);
     const elements = Array.from(
       exported.querySelectorAll(`[${BLOCK_HANDLE_ATTRIBUTE}]`),
     );
@@ -462,6 +482,10 @@ describe("BlockIdHTMLExtension: export: 'handle'", () => {
     expect(
       elements.map(element => element.getAttribute(BLOCK_HANDLE_ATTRIBUTE)),
     ).toEqual(['V1St', '9xQe', 'Rk8p']);
+    expect(Array.from(shown.values())).toEqual(
+      expect.arrayContaining(['V1St', '9xQe', 'Rk8p']),
+    );
+    const keyBefore = editor.read(() => $getBlockById(IDS[1])!.getKey());
     // 2. What the model answers.
     const revenue = elements.find(element =>
       element.textContent!.startsWith('Revenue'),
@@ -469,53 +493,83 @@ describe("BlockIdHTMLExtension: export: 'handle'", () => {
     const ops = [
       {
         block: revenue.getAttribute(BLOCK_HANDLE_ATTRIBUTE)!,
-        op: 'replace',
-        text: 'Revenue grew 6%.',
+        text: 'Revenue grew 6% in Q3.',
       },
-      {block: '9xQf', op: 'replace', text: 'a typo'},
-      {block: 'Rk8p', op: 'delete', text: ''},
+      {block: '9xQf', text: 'a typo'},
     ];
-    // 3. Applied by the app, one update per operation.
+    // 3. Applied by the app, one update per operation, in place.
     const statuses: string[] = [];
     for (const op of ops) {
       editor.update(
         () => {
-          const result = $resolveBlockHandle(op.block);
+          const result = $resolveBlockHandle(op.block, {read: shown});
           statuses.push(result.status);
-          if (result.status !== 'found') {
-            return;
-          }
-          if (op.op === 'delete') {
-            result.node.remove();
-          } else {
-            result.node.replace(
-              $createParagraphNode().append($createTextNode(op.text)),
-            );
+          if (result.status === 'found') {
+            expect($setBlockText(result.node, op.text)).toBe(true);
           }
         },
         {discrete: true},
       );
     }
-    expect(statuses).toEqual(['found', 'not-found', 'found']);
+    expect(statuses).toEqual(['found', 'not-found']);
     editor.read(() => {
-      expect(
-        $getRoot()
-          .getChildren()
-          .map(node => [$getBlockHandle(node), node.getTextContent()]),
-      ).toEqual([
-        ['V1St', 'Q3 plan'],
-        ['9xQe', 'Revenue grew 6%.'],
-      ]);
-      // The replacement kept the id that the handle was derived from.
       const block = $getBlockById(IDS[1]);
       assert(block !== null);
-      expect(block.getTextContent()).toBe('Revenue grew 6%.');
+      expect(block.getTextContent()).toBe('Revenue grew 6% in Q3.');
+      // Changed in place: the same block.
+      expect(block.getKey()).toBe(keyBefore);
     });
     expect(exportHTML(editor)).toBe(
       [
         '<h2 data-block-handle="V1St"><span style="white-space: pre-wrap;">Q3 plan</span></h2>',
-        '<p data-block-handle="9xQe"><span style="white-space: pre-wrap;">Revenue grew 6%.</span></p>',
+        '<p data-block-handle="9xQe"><span style="white-space: pre-wrap;">Revenue grew 6% in Q3.</span></p>',
+        '<p data-block-handle="Rk8p"><span style="white-space: pre-wrap;">Hiring is on track.</span></p>',
       ].join(''),
     );
+  });
+
+  test('a handle from exported HTML never names a block added since that took its prefix', () => {
+    using editor = build({
+      html: {export: 'handle'},
+      ids: ['9xQe1111', 'Rk8pZc41'],
+    });
+    append(editor, parseFixture('<p>Revenue grew 4%.</p><p>Hiring.</p>'));
+    const [exported, shown] = exportWithHandles(editor);
+    expect(
+      exported.querySelector('p')!.getAttribute(BLOCK_HANDLE_ATTRIBUTE),
+    ).toBe('9xQe');
+    // Before the model's answer arrives, the block it was shown is deleted
+    // and a block whose id takes the same prefix is added.
+    editor.update(
+      () => {
+        $getBlockById('9xQe1111')!.remove();
+        const node = $createParagraphNode().append(
+          $createTextNode('Not shown to the model.'),
+        );
+        $setState(node, blockIdState, '9xQe2222');
+        $getRoot().append(node);
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        // Without the read, the handle names the new block.
+        const unpinned = $resolveBlockHandle('9xQe');
+        assert(unpinned.status === 'found');
+        expect($getBlockId(unpinned.node)).toBe('9xQe2222');
+        // With the handles of the export, as in the JSDoc: not found.
+        const result = $resolveBlockHandle('9xQe', {read: shown});
+        expect(result.status).toBe('not-found');
+        if (result.status === 'found') {
+          $setBlockText(result.node, 'Revenue grew 6%.');
+        }
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($getBlockById('9xQe2222')!.getTextContent()).toBe(
+        'Not shown to the model.',
+      );
+    });
   });
 });

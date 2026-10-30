@@ -29,9 +29,11 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getSlotNames,
   $isElementNode,
   $isTextNode,
   $setState,
+  type ElementNode,
   type LexicalNode,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
@@ -47,17 +49,15 @@ import {
 // Changes a block's text in place: only the characters that differ, in the
 // block's own text nodes. block.replace(newBlock) would re-create the block,
 // and what a collaborator types in it meanwhile would not stay where they
-// typed it. Returns false, changing nothing, for a block whose text is not
-// just its text nodes (line breaks, nested blocks, inline decorators).
+// typed it. Returns false, changing nothing, unless the block holds only text,
+// directly or in inline elements such as links: no line breaks, nested blocks,
+// named slots or decorators, even ones without text.
 function $setBlockText(block: LexicalNode, text: string): boolean {
-  if (!$isElementNode(block)) {
+  if (!$isElementNode(block) || !$holdsOnlyText(block)) {
     return false;
   }
   const nodes = block.getAllTextNodes();
   const old = nodes.map(node => node.getTextContent()).join('');
-  if (old !== block.getTextContent()) {
-    return false;
-  }
   let start = 0;
   while (start < old.length && old[start] === text[start]) {
     start++;
@@ -96,6 +96,20 @@ function $setBlockText(block: LexicalNode, text: string): boolean {
     block.append($createTextNode(inserted));
   }
   return true;
+}
+
+function $holdsOnlyText(element: ElementNode): boolean {
+  // Named slots hold blocks of their own (and count in getTextContent).
+  return (
+    $getSlotNames(element).length === 0 &&
+    element
+      .getChildren()
+      .every(
+        child =>
+          $isTextNode(child) ||
+          ($isElementNode(child) && child.isInline() && $holdsOnlyText(child)),
+      )
+  );
 }
 
 describe('block handles with @lexical/y', () => {

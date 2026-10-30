@@ -68,17 +68,28 @@ export interface BlockIdHTMLConfig {
    *
    * Showing blocks to a model? Use `'handle'`: it writes
    * {@link BLOCK_HANDLE_ATTRIBUTE} with the block's handle, the shortest
-   * unique prefix of its id (4 characters or more), instead of the id. Resolve
-   * what the model answers with `$resolveBlockHandle`. Import does not read
-   * handles, so a handle is never mistaken for an id.
+   * unique prefix of its id (4 characters or more), instead of the id. Keep
+   * the handles of the export (`$getBlockHandles()`, in the same read), and
+   * resolve what the model answers with `$resolveBlockHandle(handle, {read})`,
+   * so that a handle names the block the model was shown, never a block added
+   * since that took its prefix. Import does not read handles, so a handle is
+   * never mistaken for an id.
    *
    * ```ts
    * configExtension(BlockIdHTMLExtension, {export: 'handle'});
+   * // The HTML the model reads, and the handles it is shown, in one read.
+   * const [html, shown] = editor.read(() => [
+   *   $generateHtmlFromNodes(editor),
+   *   $getBlockHandles(),
+   * ]);
    * // <p data-block-handle="9xQe">Revenue grew 4% in Q3.</p>
+   * // The model answers {block: '9xQe', text: 'Revenue grew 6% in Q3.'}
    * editor.update(() => {
-   *   const result = $resolveBlockHandle('9xQe');
+   *   const result = $resolveBlockHandle(op.block, {read: shown});
    *   if (result.status === 'found') {
-   *     result.node.remove();
+   *     // In place, only the characters that differ (the Block IDs page has
+   *     // this `$setBlockText`), rather than re-creating the block.
+   *     $setBlockText(result.node, op.text);
    *   }
    * });
    * ```

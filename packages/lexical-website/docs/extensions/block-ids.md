@@ -163,7 +163,10 @@ import {
 import {
   $createTextNode,
   $getRoot,
+  $getSlotNames,
   $isElementNode,
+  $isTextNode,
+  type ElementNode,
   type LexicalNode,
 } from 'lexical';
 
@@ -215,17 +218,15 @@ editor.update(
 // Changes a block's text in place: only the characters that differ, in the
 // block's own text nodes. block.replace(newBlock) would re-create the block,
 // and what a collaborator types in it meanwhile would not stay where they
-// typed it. Returns false, changing nothing, for a block whose text is not
-// just its text nodes (line breaks, nested blocks, inline decorators).
+// typed it. Returns false, changing nothing, unless the block holds only text,
+// directly or in inline elements such as links: no line breaks, nested blocks,
+// named slots or decorators, even ones without text.
 function $setBlockText(block: LexicalNode, text: string): boolean {
-  if (!$isElementNode(block)) {
+  if (!$isElementNode(block) || !$holdsOnlyText(block)) {
     return false;
   }
   const nodes = block.getAllTextNodes();
   const old = nodes.map(node => node.getTextContent()).join('');
-  if (old !== block.getTextContent()) {
-    return false;
-  }
   let start = 0;
   while (start < old.length && old[start] === text[start]) {
     start++;
@@ -264,6 +265,20 @@ function $setBlockText(block: LexicalNode, text: string): boolean {
     block.append($createTextNode(inserted));
   }
   return true;
+}
+
+function $holdsOnlyText(element: ElementNode): boolean {
+  // Named slots hold blocks of their own (and count in getTextContent).
+  return (
+    $getSlotNames(element).length === 0 &&
+    element
+      .getChildren()
+      .every(
+        child =>
+          $isTextNode(child) ||
+          ($isElementNode(child) && child.isInline() && $holdsOnlyText(child)),
+      )
+  );
 }
 ```
 
@@ -371,7 +386,12 @@ With [`BlockIdHTMLExtension`](#html), `export: 'handle'` writes handles
 instead of ids, in a `data-block-handle` attribute (`BLOCK_HANDLE_ATTRIBUTE`):
 
 ```ts
-import {BlockIdExtension, buildEditorFromExtensions} from '@lexical/extension';
+import {
+  $getBlockHandles,
+  BlockIdExtension,
+  buildEditorFromExtensions,
+} from '@lexical/extension';
+import {$generateHtmlFromNodes} from '@lexical/html';
 import {BlockIdHTMLExtension} from '@lexical/html/BlockIdHTMLExtension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {configExtension} from 'lexical';
@@ -384,9 +404,17 @@ const editor = buildEditorFromExtensions({
   ],
   name: 'my-editor',
 });
-// $generateHtmlFromNodes(editor):
+// The HTML the model reads, and the handles it is shown, in one read.
+const [html, shown] = editor.read(() => [
+  $generateHtmlFromNodes(editor),
+  $getBlockHandles(),
+]);
 // <h2 data-block-handle="V1St">…</h2><p data-block-handle="9xQe">…</p>
 ```
+
+Resolve the model's answers with `$resolveBlockHandle(handle, {read: shown})`
+and apply them in place, as above, so that a handle names the block the
+model was shown.
 
 Import reads only `data-block-id`, never `data-block-handle`, so a handle is
 never mistaken for an id: HTML with handles that is pasted back gives its

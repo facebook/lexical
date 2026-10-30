@@ -26,6 +26,7 @@ import {
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
 import {BlockIdHTMLExtension} from '@lexical/html/BlockIdHTMLExtension';
+import {$createLinkNode, $isLinkNode, LinkExtension} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
@@ -41,12 +42,41 @@ import {
   $getSelection,
   $isElementNode,
   $isRangeSelection,
+  $setSlot,
   $setState,
   configExtension,
+  DecoratorNode,
+  defineExtension,
   type LexicalEditor,
-  type LexicalNode,
 } from 'lexical';
+import fs from 'node:fs';
 import {assert, describe, expect, test} from 'vitest';
+
+import {$setBlockText} from '../utils/setBlockText';
+
+/** An inline decorator without text. */
+class EmptyInlineNode extends DecoratorNode<null> {
+  $config() {
+    return this.config('block-id-docs-empty-inline', {extends: DecoratorNode});
+  }
+  createDOM(): HTMLElement {
+    throw new Error('headless only');
+  }
+  updateDOM(): false {
+    return false;
+  }
+  isInline(): true {
+    return true;
+  }
+  decorate(): null {
+    return null;
+  }
+}
+
+const EmptyInlineExtension = defineExtension({
+  name: 'block-id-docs/empty-inline',
+  nodes: () => [EmptyInlineNode],
+});
 
 interface Op {
   op: 'replace' | 'insertAfter' | 'delete';
@@ -88,60 +118,6 @@ function applyOps(editor: LexicalEditor, ops: Op[]): void {
       {discrete: true},
     );
   }
-}
-
-// Changes a block's text in place: only the characters that differ, in the
-// block's own text nodes. block.replace(newBlock) would re-create the block,
-// and what a collaborator types in it meanwhile would not stay where they
-// typed it. Returns false, changing nothing, for a block whose text is not
-// just its text nodes (line breaks, nested blocks, inline decorators).
-function $setBlockText(block: LexicalNode, text: string): boolean {
-  if (!$isElementNode(block)) {
-    return false;
-  }
-  const nodes = block.getAllTextNodes();
-  const old = nodes.map(node => node.getTextContent()).join('');
-  if (old !== block.getTextContent()) {
-    return false;
-  }
-  let start = 0;
-  while (start < old.length && old[start] === text[start]) {
-    start++;
-  }
-  let end = 0;
-  while (
-    end < old.length - start &&
-    end < text.length - start &&
-    old[old.length - 1 - end] === text[text.length - 1 - end]
-  ) {
-    end++;
-  }
-  const inserted = text.slice(start, text.length - end);
-  const deleteEnd = old.length - end;
-  let offset = 0;
-  let done = false;
-  for (const node of nodes) {
-    const size = node.getTextContentSize();
-    const from = Math.max(start - offset, 0);
-    const to = Math.min(deleteEnd - offset, size);
-    if (
-      !done &&
-      (start - offset < size ||
-        (start - offset === size && start === deleteEnd))
-    ) {
-      // The node where the change starts (for an insert at a node boundary,
-      // the node before it): delete and insert there.
-      node.spliceText(from, Math.max(to - from, 0), inserted);
-      done = true;
-    } else if (to > from) {
-      node.spliceText(from, to - from, '');
-    }
-    offset += size;
-  }
-  if (!done && inserted !== '') {
-    block.append($createTextNode(inserted));
-  }
-  return true;
 }
 
 describe('Block IDs documentation examples', () => {
@@ -490,7 +466,12 @@ describe('Block IDs documentation examples', () => {
   test('Showing blocks to a model: $setBlockText refuses blocks that are not just text', () => {
     using editor = buildEditorFromExtensions({
       $initialEditorState: null,
-      dependencies: [RichTextExtension, ListExtension, BlockIdExtension],
+      dependencies: [
+        RichTextExtension,
+        ListExtension,
+        BlockIdExtension,
+        EmptyInlineExtension,
+      ],
       name: 'set-block-text-refuses',
     });
     editor.update(
@@ -507,21 +488,155 @@ describe('Block IDs documentation examples', () => {
               $createListItemNode().append($createTextNode('one')),
               $createListItemNode().append($createTextNode('two')),
             ),
+            // One item: the list's text is its item's text.
+            $createListNode('number').append(
+              $createListItemNode().append($createTextNode('one')),
+            ),
+            // An inline decorator without text.
+            $createParagraphNode().append(
+              $createTextNode('left'),
+              new EmptyInlineNode(),
+              $createTextNode('right'),
+            ),
           );
       },
       {discrete: true},
     );
-    const before = editor.read(() => $getRoot().getTextContent());
+    const before = editor.read(() => JSON.stringify(editor.getEditorState()));
     editor.update(
       () => {
-        const [paragraph, list] = $getRoot().getChildren();
-        expect($setBlockText(paragraph, 'a\nb')).toBe(false);
-        expect($setBlockText(paragraph, '')).toBe(false);
+        const [lineBreak, list, oneItem, decorated] = $getRoot().getChildren();
+        expect($setBlockText(lineBreak, 'a\nb')).toBe(false);
+        expect($setBlockText(lineBreak, '')).toBe(false);
         expect($setBlockText(list, 'one\n\ntwo')).toBe(false);
+        expect(oneItem.getTextContent()).toBe('one');
+        expect($setBlockText(oneItem, 'rewritten')).toBe(false);
+        expect(decorated.getTextContent()).toBe('leftright');
+        expect($setBlockText(decorated, 'changed')).toBe(false);
       },
       {discrete: true},
     );
-    expect(editor.read(() => $getRoot().getTextContent())).toBe(before);
+    // Nothing changed.
+    expect(editor.read(() => JSON.stringify(editor.getEditorState()))).toBe(
+      before,
+    );
+  });
+
+  test('Showing blocks to a model: $setBlockText refuses a block or inline element that hosts a slot', () => {
+    using editor = buildEditorFromExtensions({
+      $initialEditorState: null,
+      dependencies: [RichTextExtension, LinkExtension, BlockIdExtension],
+      name: 'set-block-text-slots',
+    });
+    editor.update(
+      () => {
+        // A text-only block whose caption slot holds a line break.
+        const host = $createParagraphNode().append($createTextNode('body'));
+        $setSlot(
+          host,
+          'caption',
+          $createParagraphNode().append(
+            $createTextNode('a'),
+            $createLineBreakNode(),
+            $createTextNode('b'),
+          ),
+        );
+        // A link, inline, that hosts a slot.
+        const link = $createLinkNode('https://example.com').append(
+          $createTextNode('link'),
+        );
+        $setSlot(
+          link,
+          'note',
+          $createParagraphNode().append($createTextNode('note')),
+        );
+        $getRoot()
+          .clear()
+          .append(
+            host,
+            $createParagraphNode().append($createTextNode('see '), link),
+          );
+      },
+      {discrete: true},
+    );
+    const before = editor.read(() => JSON.stringify(editor.getEditorState()));
+    editor.update(
+      () => {
+        const [host, withLink] = $getRoot().getChildren();
+        expect($setBlockText(host, host.getTextContent())).toBe(false);
+        expect($setBlockText(host, 'changed')).toBe(false);
+        expect($setBlockText(withLink, withLink.getTextContent())).toBe(false);
+        expect($setBlockText(withLink, 'see changed')).toBe(false);
+      },
+      {discrete: true},
+    );
+    expect(editor.read(() => JSON.stringify(editor.getEditorState()))).toBe(
+      before,
+    );
+  });
+
+  test('Showing blocks to a model: $setBlockText edits text in inline elements', () => {
+    using editor = buildEditorFromExtensions({
+      $initialEditorState: null,
+      dependencies: [RichTextExtension, LinkExtension, BlockIdExtension],
+      name: 'set-block-text-link',
+    });
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $createTextNode('See '),
+              $createLinkNode('https://example.com').append(
+                $createTextNode('the plan'),
+              ),
+              $createTextNode(' for Q3.'),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+    for (const text of [
+      'See the new plan for Q3.',
+      'See the new plan for Q4.',
+    ]) {
+      editor.update(
+        () => {
+          expect($setBlockText($getRoot().getFirstChildOrThrow(), text)).toBe(
+            true,
+          );
+        },
+        {discrete: true},
+      );
+    }
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isElementNode(paragraph));
+      expect(paragraph.getTextContent()).toBe('See the new plan for Q4.');
+      const link = paragraph.getChildren()[1];
+      assert($isLinkNode(link));
+      expect(link.getTextContent()).toBe('the new plan');
+    });
+  });
+
+  test('Showing blocks to a model: $setBlockText is the same in the docs and the tests', () => {
+    const between = (path: string) => {
+      const source = fs
+        .readFileSync(new URL(path, import.meta.url), 'utf8')
+        .replace('export function $setBlockText', 'function $setBlockText');
+      const start = source.indexOf("// Changes a block's text in place");
+      const holds = source.indexOf('function $holdsOnlyText', start);
+      return source.slice(start, source.indexOf('\n}\n', holds) + 2);
+    };
+    const docs = between(
+      '../../../../lexical-website/docs/extensions/block-ids.md',
+    );
+    expect(docs).toContain('function $holdsOnlyText');
+    expect(between('../utils/setBlockText.ts')).toBe(docs);
+    expect(
+      between('../../../../lexical-y/src/__tests__/unit/BlockHandles.test.ts'),
+    ).toBe(docs);
   });
 
   test('Showing blocks to a model: $setBlockText edits only what differs', () => {

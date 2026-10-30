@@ -185,6 +185,28 @@ export type YDocOptions = {
   shouldLoad?: boolean,
 };
 
+// The one @y/y version this @lexical/y supports (its exact peer dependency).
+declare export var SUPPORTED_YJS_VERSION: string;
+
+declare export var UNSUPPORTED_YJS_ERROR: '@lexical/y/unsupported-yjs';
+
+export type YUnsupportedYjsReason = 'changed-internals' | 'other-copy';
+
+export type YUnsupportedYjsData = {
+  readonly supported: string,
+  readonly found: ReadonlyArray<string>,
+  readonly reason: YUnsupportedYjsReason,
+};
+
+// Thrown by createYDoc, the YBinding constructor (so YCollabExtension) and
+// the headless helpers when the app's @y/y is not the supported one, before
+// anything is written. Fix: install exactly @y/y@<data.supported>, once.
+declare export class YUnsupportedYjsError extends Error {
+  readonly code: typeof UNSUPPORTED_YJS_ERROR;
+  readonly data: YUnsupportedYjsData;
+  constructor(data: YUnsupportedYjsData): void;
+}
+
 // A Y.Doc for @lexical/y (a client's, a relay's or a server's), with Yjs's
 // format cleanup turned off before `state` is applied (when given).
 declare export function createYDoc(

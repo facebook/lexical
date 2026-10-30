@@ -13,8 +13,11 @@ npm i --save-exact @lexical/y@nightly @lexical/extension@nightly \
   @lexical/rich-text@nightly lexical@nightly @y/y@14.0.0-rc.29
 ```
 
-`@y/y` is a peer dependency pinned to the release candidate this package is
-tested with. Its type declarations do not type-check on their own (an
+`@y/y` is a peer dependency pinned to the one release candidate this package
+supports: install exactly that version, once. `createYDoc`, `YBinding` and
+the headless helpers throw a `YUnsupportedYjsError` (`data.supported` names
+the version) when the `@y/y` the app loaded lacks what the binding uses, or
+the document comes from a second copy. Its type declarations do not type-check on their own (an
 upstream issue): projects that run `tsc` need `skipLibCheck: true`.
 
 Until a Lexical release includes `@lexical/y`, npm's `latest` for it is a
@@ -102,6 +105,22 @@ these to run more (from the repository root, with
 To replay one seed with its trace: `FUZZ_SEED=<seed>` (add `FUZZ_GC=1` for
 the garbage-collected run), `NORMALIZE_FUZZ_TRACE=<seed>` or
 `STORAGE_FUZZ_TRACE=<seed>`.
+
+## Bumping `@y/y`
+
+The binding writes through Yjs internals, so a new `@y/y` is a deliberate
+change, never a range:
+
+1. Set the exact version in both `peerDependencies` and `devDependencies`,
+   then run `pnpm install` and `pnpm run update-version` (which regenerates
+   `SUPPORTED_YJS_VERSION` in `src/internal/SupportedYjs.ts`).
+2. Run `YjsContract.test.ts`: update the arities, members and events in
+   `src/internal/YjsContract.ts` to what the binding uses of the new
+   version, and re-check each changed one in the code that uses it.
+3. Run the equivalence test (`Cursor.test.ts`, the binding's cursor against
+   `Y.Node#applyDelta`), the catalog matrix (`src/__tests__/unit/matrix`)
+   and the long fuzz above, then update the version in the install
+   commands here and in the docs (`docs/collaboration/y.md`).
 
 ## Storage
 

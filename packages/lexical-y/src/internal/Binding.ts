@@ -145,6 +145,7 @@ import {
 } from './Warnings';
 import {$holdsLines, type WritePlan, Writer} from './Write';
 import {createYDoc, type YDoc} from './YDoc';
+import {assertOwnYjsDoc, assertSupportedYjs} from './YjsContract';
 
 // YBinding: one editor bound to one shared root. It owns the lifecycle (the
 // layout gate, pins, initialization, dispose), the local pipeline (onUpdate:
@@ -922,6 +923,10 @@ export class YBinding {
   }
 
   constructor(editor: LexicalEditor, doc: YDoc, options: YBindingOptions) {
+    // Before anything else: the @y/y the app loaded is the one this package
+    // supports (once per module), and the document and root come from it.
+    assertSupportedYjs();
+    assertOwnYjsDoc(doc);
     invariant(
       options != null && isSchemaVersion(options.schemaVersion),
       "@lexical/y: YBinding needs options.schemaVersion (got %s): start at 1 and increase it whenever a node's stored fields or node types change",
@@ -931,6 +936,7 @@ export class YBinding {
     this._doc = doc;
     this.options = options;
     this._root = options.root || doc.get(DEFAULT_ROOT_NAME);
+    assertOwnYjsDoc(doc, this._root);
     this.state = new State(editor, doc, this._root);
     this.afterTransaction = tr =>
       this.guard(() => withPins(this._pins, () => this.onAfterTransaction(tr)));

@@ -48,8 +48,27 @@ npm i --save-exact @lexical/y@nightly @lexical/extension@nightly \
   @y/y@14.0.0-rc.29 @y/websocket@4.0.0-rc.2
 ```
 
-`@y/y` is a peer dependency pinned to the release candidate `@lexical/y` is
-tested with; npm's `latest` tag points at an older one, so name the version.
+**`@lexical/y` supports exactly one Yjs version: install the `@y/y`
+version it names** (its exact peer dependency, also exported as
+`SUPPORTED_YJS_VERSION`), and only one copy of it. npm's `latest` tag points
+at an older release candidate, so name the version. The binding writes
+through Yjs internals, so `createYDoc`, `YBinding` (and so
+`YCollabExtension`) and the headless helpers check, once per app, that the
+`@y/y` they loaded provides what the binding uses, and throw a
+`YUnsupportedYjsError` before anything is written when it does not:
+
+- `data.reason: 'changed-internals'`: the app runs another `@y/y` (pnpm
+  only warns about an unmet peer dependency, and npm installs one with
+  `--legacy-peer-deps`); `data.found` lists what differs.
+- `data.reason: 'other-copy'`: the document (or `root`) comes from a second
+  copy of `@y/y`.
+
+The fix for both is the same: install `@y/y@<data.supported>` once
+(`npm ls @y/y` shows one version, deduped) and create documents with
+`createYDoc`. There is no option to skip the check. A different `@y/y` that
+happens to provide the same internals passes it, so pin the version all the
+same.
+
 The type declarations `@y/y` ships do not type-check on their own (an
 upstream issue): if you run `tsc`, set `skipLibCheck: true`. Lexical's types
 also need TypeScript 5.2 or later with `moduleResolution` set to `bundler`,

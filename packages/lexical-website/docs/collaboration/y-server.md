@@ -344,7 +344,9 @@ const {update} = editYState(
   config,
   () => {
     const text = $getRoot().getFirstDescendant();
-    if ($isTextNode(text)) {
+    // Plain text only: a tab, a hashtag or a code token is a text node
+    // that does not take any text.
+    if ($isTextNode(text) && text.isSimpleText()) {
       text.spliceText(0, 5, 'Hi');
     }
   },
@@ -383,7 +385,14 @@ things differ from a single editor:
 ```ts
 import {$getBlockById, $getBlockId} from '@lexical/extension';
 import {editYState, readYState} from '@lexical/y/headless';
-import {$getRoot, $isElementNode, $isTextNode, type TextNode} from 'lexical';
+import {
+  $getRoot,
+  $getSlotNames,
+  $isElementNode,
+  $isTextNode,
+  type LexicalNode,
+  type TextNode,
+} from 'lexical';
 
 // Changes a text node's text to `next` with one splice: the start and end
 // the two texts share stay (and what collaborators type in them), and
@@ -411,6 +420,22 @@ function $setTextInPlace(text: TextNode, next: string): void {
   );
 }
 
+// The text node of a block that this sketch edits in place, or null: the
+// block's only child, plain text, and no named slots. A tab, a hashtag or a
+// code token is a text node that does not take any text, and the text of a
+// named slot is part of the block's text but not of that child.
+function $plainTextOf(block: LexicalNode | null): TextNode | null {
+  if (
+    !$isElementNode(block) ||
+    $getSlotNames(block).length > 0 ||
+    block.getChildrenSize() !== 1
+  ) {
+    return null;
+  }
+  const text = block.getFirstChild();
+  return $isTextNode(text) && text.isSimpleText() ? text : null;
+}
+
 // 1. What the agent reads, from `seen`.
 const blocks = readYState(seen, config, () =>
   $getRoot()
@@ -436,12 +461,8 @@ const {update} = editYState(
   () => {
     for (const op of ops) {
       const block = live.has(op.id) ? $getBlockById(op.id) : null;
-      // This sketch handles blocks that hold one text node.
-      const text =
-        $isElementNode(block) && block.getChildrenSize() === 1
-          ? block.getFirstChild()
-          : null;
-      if ($isTextNode(text)) {
+      const text = $plainTextOf(block);
+      if (text !== null) {
         $setTextInPlace(text, op.text);
       } else if (block !== null) {
         unsupported.push(op);

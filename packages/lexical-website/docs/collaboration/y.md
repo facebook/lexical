@@ -120,6 +120,19 @@ provider.once('sync', () => {
 });
 ```
 
+:::warning Initial content must be the same on every client
+
+`binding.initialize()` writes this client's initial content into a new
+document. When two clients open a new document at once, each writes its
+own, and the document keeps one copy only if the two are identical: a
+welcome line with the user's name, a template with random block ids, or a
+`$initialEditorState` that differs between app versions shows twice, with
+no warning. Create such documents in one place instead, on the server with
+[`seedYState`](./y-server.md), and have clients start empty (see "Initial
+content with random values" in [Limits](#limits)).
+
+:::
+
 - Create the document with **`createYDoc`** (`createYDoc(stored)` for a
   stored state) and hand it to the provider: it turns Yjs's format cleanup
   off before anything is applied to it. In a plain `new Y.Doc()` the
@@ -284,6 +297,44 @@ right after that update commits, in an update of its own.
 `binding.getCursor()` and `binding.$resolveCursor()` convert the selection
 to and from Yjs relative positions for an awareness-based cursor UI; the
 binding does not render remote cursors itself.
+`getCursor()` returns plain JSON, so it can go in the awareness state the
+provider shares:
+
+```ts
+// Share this client's selection.
+editor.registerUpdateListener(() => {
+  provider.awareness.setLocalStateField('cursor', binding.getCursor());
+});
+
+// Find where each collaborator's selection is.
+provider.awareness.on('change', () => {
+  for (const [clientID, state] of provider.awareness.getStates()) {
+    if (clientID === provider.awareness.clientID || !state.cursor) {
+      continue;
+    }
+    editor.read(() => {
+      const points = binding.$resolveCursor(state.cursor);
+      if (points === null) {
+        // The text the cursor was in is gone: remove its caret.
+        return;
+      }
+      // Lexical points ({key, offset, type}): draw the caret from them here,
+      // for example at editor.getElementByKey(points.anchor.key).
+    });
+  }
+});
+```
+
+To tear a client down (a test, a closed tab in a single-page app), dispose
+of the editor, which disconnects the binding, and destroy the provider and
+the awareness it created: `provider.destroy()` leaves the awareness's
+timers running, which keeps a Node process from exiting.
+
+```ts
+editor.dispose();
+provider.destroy();
+provider.awareness.destroy();
+```
 
 ### Warnings
 

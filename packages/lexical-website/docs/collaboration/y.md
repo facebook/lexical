@@ -48,8 +48,41 @@ npm i --save-exact @lexical/y@nightly @lexical/extension@nightly \
   @y/y@14.0.0-rc.29 @y/websocket@4.0.0-rc.2
 ```
 
-`@y/y` is a peer dependency pinned to the release candidate `@lexical/y` is
-tested with; npm's `latest` tag points at an older one, so name the version.
+**`@lexical/y` supports exactly one Yjs version: install the `@y/y`
+version it names** (its exact peer dependency, also exported as
+`SUPPORTED_YJS_VERSION`), and only one copy of it. npm's `latest` tag points
+at an older release candidate, so name the version. The exact version is
+enforced by that peer dependency: `@y/y` exposes no version at run time, so
+`@lexical/y` cannot compare it there. What it checks at run time is the
+Yjs it writes through: `createYDoc`, `YBinding` (and so `YCollabExtension`)
+and the headless helpers check, once per app, that the `@y/y` they loaded
+provides the exports, fields and events the binding uses, and throw a
+`YUnsupportedYjsError` before anything is written when it does not:
+
+- `data.reason: 'changed-internals'`: the app runs a `@y/y` without
+  something the binding uses (pnpm only warns about an unmet peer
+  dependency, and npm installs one with `--legacy-peer-deps`); `data.found`
+  lists what differs.
+- `data.reason: 'other-copy'`: the document (or `root`) comes from a second
+  copy of `@y/y`.
+
+A release candidate older than `14.0.0-rc.25` (npm's `latest` among them)
+fails earlier, when the app is built or loaded, because it lacks the
+`Node` export: esbuild reports `No matching export in
+"node_modules/@y/y/src/index.js" for import "Node"` (other bundlers word it
+their own way), and native ES modules throw `SyntaxError: The requested module
+'@y/y' does not provide an export named 'Node'`. One that provides
+everything the binding uses passes the check (`14.0.0-rc.25` to `rc.28`
+do), and so would a later one that kept the same shape with different
+behaviour, which is why the peer dependency names one version.
+
+The fix in every case is the same: install `@y/y@<data.supported>` once
+(`npm ls @y/y` shows one version, deduped) and create documents with
+`createYDoc`. There is no option to skip the check. The check makes two
+scratch documents, once, and each draws a client id: a test that seeds
+Yjs's randomness to replay documents sees the random ids of later
+documents shift (give those documents explicit client ids).
+
 The type declarations `@y/y` ships do not type-check on their own (an
 upstream issue): if you run `tsc`, set `skipLibCheck: true`. Lexical's types
 also need TypeScript 5.2 or later with `moduleResolution` set to `bundler`,
@@ -1178,6 +1211,14 @@ not merge as a user might expect:
   place (or replaced by a block node) sends it to the start of the line
   after, or to the end of the line before where a block node follows,
   never onto the block node.
+- **Yjs versions the run-time check cannot tell apart.** `@y/y` exposes no
+  version at run time, so `@lexical/y` refuses a `@y/y` that lacks an
+  export, member or event it uses (see [Install](#install)), but one with
+  the same ones passes (`14.0.0-rc.25` to `rc.28` do), even if its
+  functions behave differently, and so does a provider that bundles its own
+  copy of Yjs and applies updates to your document after the binding
+  started. The exact version is the peer dependency's to enforce: install
+  the `@y/y` version `@lexical/y` names, once (`npm ls @y/y`).
 - **NodeState key order.** Other clients (and any later reader) get a node's
   NodeState with its keys in sorted order, which every client builds the
   same way, not in the order the author's editor exported them (a Yjs map

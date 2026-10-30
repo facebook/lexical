@@ -136,7 +136,7 @@ async function regenerateSupportedYjsVersion() {
   const next = fs
     .readFileSync(modulePath, 'utf8')
     .replace(
-      /(export const SUPPORTED_YJS_VERSION = )'[^']*'/,
+      /(export const SUPPORTED_YJS_VERSION: string = )'[^']*'/,
       `$1'${supported}'`,
     );
   const prettierConfig = (await prettier.resolveConfig(modulePath)) || {};

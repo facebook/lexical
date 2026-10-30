@@ -54,6 +54,12 @@ describe('the supported version', () => {
     expect(SUPPORTED_YJS_VERSION).toBe(pkg.peerDependencies['@y/y']);
     expect(pkg.devDependencies['@y/y']).toBe(SUPPORTED_YJS_VERSION);
     expect(installed.version).toBe(SUPPORTED_YJS_VERSION);
+    // The playground pins @y/y on its own: a bump updates it too, or its
+    // document and its provider would load two copies.
+    const playground = readJson(
+      path.join(REPO_DIR, 'packages/lexical-playground/package.json'),
+    );
+    expect(playground.dependencies['@y/y']).toBe(SUPPORTED_YJS_VERSION);
     expect(SUPPORTED_YJS_VERSION).toMatch(/^\d+\.\d+\.\d+(-[\w.]+)?$/);
   });
 });

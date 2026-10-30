@@ -979,7 +979,12 @@ not merge as a user might expect:
   format can run on past its end when writes inside it are undone (one
   client's two writes, or two clients' writes) while another client deletes
   text across its end: it carries on over the following words, possibly
-  into the next line. No text is lost.
+  into the next line. No text is lost. A format a collaborator applies
+  starting right where a run of that format ends can be lost on their text
+  when another client, at the same time, removes the format from part of
+  the run or types inside it without the format: with `Kilo` bold, one
+  client unbolds `il` as another bolds ` bb`, and with some client id
+  orders ` bb` stays plain. No text is lost.
 - **Large lists.** A structural edit in a list costs time proportional to
   the list on every client.
 - **Older app versions.** Clients of different `schemaVersion`s never

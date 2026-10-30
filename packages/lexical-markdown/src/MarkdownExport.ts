@@ -708,16 +708,15 @@ function isMarker(piece: MarkdownPiece | undefined): boolean {
   );
 }
 
-// An unpaired surrogate reads back from a reference as U+FFFD. (U+0000 does
-// too, but CommonMark reads a raw one as U+FFFD as well.)
-const UNPAIRED_SURROGATE = /\p{Cs}/u;
+// U+0000 and unpaired surrogates read back from a reference as U+FFFD.
+const UNREFERENCEABLE = /[\0\p{Cs}]/u;
 
 /** Whether a character reference can stand in for `character` beside a marker. */
 function isWordCharacter(character: string | undefined): boolean {
   return (
     character !== undefined &&
     !PUNCTUATION_OR_SPACE.test(character) &&
-    !UNPAIRED_SURROGATE.test(character)
+    !UNREFERENCEABLE.test(character)
   );
 }
 
@@ -780,11 +779,11 @@ function joinPieces(pieces: MarkdownPiece[]): string {
       end = toCharacterReference(last);
       value = value.slice(0, -last.length);
     }
-    // A backslash left unescaped (when preserving newlines) would escape what
-    // follows it: a reference's `&`, a marker or raw output.
+    // A backslash left unescaped (when preserving newlines) would escape the
+    // reference or marker written after it.
     if (
       kind === 'text' &&
-      (end !== '' || index + 1 < merged.length) &&
+      (end !== '' || isMarker(merged[index + 1])) &&
       isEscaped(value, value.length)
     ) {
       value = value.slice(0, -1) + toCharacterReference('\\');
@@ -846,15 +845,14 @@ function decideReferences(
     });
     start = end;
   }
-  const isOneCharacter = merged.map(
-    ({value}) => characterAt(value, 0)!.length === value.length,
-  );
   const isText = (index: number) =>
     index >= 0 && index < merged.length && merged[index].kind === 'text';
   // A one-character piece written as a reference reads as punctuation at
   // both ends: `&#97;`.
+  const isOneCharacter = (index: number) =>
+    characterAt(merged[index].value, 0)!.length === merged[index].value.length;
   const isEncoded = (index: number) =>
-    (encodeStart[index] || encodeEnd[index]) && isOneCharacter[index];
+    (encodeStart[index] || encodeEnd[index]) && isOneCharacter(index);
   const startChar = (index: number) =>
     index >= merged.length
       ? undefined
@@ -867,6 +865,59 @@ function decideReferences(
       : encodeEnd[index] || isEncoded(index)
         ? ';'
         : characterBefore(merged[index].value, merged[index].value.length);
+  // Writing a one-character piece as a reference makes its other edge
+  // punctuation too. That can stop the delimiter run touching that edge from
+  // flanking unless the piece past it is written as a reference as well, and
+  // so on along a chain of one-character pieces. Where the chain ends at
+  // something that cannot be (raw output, say), writing the first reference
+  // would only trade one lost format for another, so it is not written.
+  // References only turn letters into punctuation, which never stops a run
+  // from flanking, so an answer found for a piece holds from then on, and
+  // each piece is walked at most twice (once in each direction).
+  const blocked: boolean[][] = [[], []];
+  const spreads: boolean[][] = [[], []];
+  const canSpread = (index: number, leftward: boolean): boolean => {
+    const side = leftward ? 0 : 1;
+    const visited: number[] = [];
+    let result = true;
+    for (let piece = index; ; ) {
+      if (blocked[side][piece] || spreads[side][piece]) {
+        result = !blocked[side][piece];
+        break;
+      }
+      visited.push(piece);
+      const runIndex = (leftward ? runBefore : runAfter)[piece];
+      if (runIndex === -1) {
+        break;
+      }
+      const run = runs[runIndex];
+      // Only a run of a single delimiter character touches both pieces.
+      const isAffected = leftward
+        ? run.opens && run.afterFirst === undefined
+        : run.closes && run.beforeLast === undefined;
+      const next = leftward ? run.before : run.after;
+      const char = leftward ? endChar(next) : startChar(next);
+      if (!isAffected || isFlankedBy('&', char)) {
+        break;
+      }
+      if (!isText(next) || !isWordCharacter(char)) {
+        result = false;
+        break;
+      }
+      if (!isOneCharacter(next)) {
+        break;
+      }
+      piece = next;
+    }
+    for (const piece of visited) {
+      (result ? spreads : blocked)[side][piece] = true;
+    }
+    return result;
+  };
+  const isFree = (index: number, leftward: boolean) =>
+    !isOneCharacter(index) ||
+    (leftward ? encodeStart[index] : encodeEnd[index]) ||
+    canSpread(index, leftward);
   // Writing a one-character piece as a reference changes what the run on its
   // other side sees, so that run is decided again. Each piece changes at most
   // twice, so this stays linear.
@@ -883,7 +934,8 @@ function decideReferences(
       isText(before) &&
       isWordCharacter(charBefore) &&
       !isFlankedBy(afterFirst || charAfter, charBefore) &&
-      isFlankedBy(afterFirst || charAfter, ';')
+      isFlankedBy(afterFirst || charAfter, ';') &&
+      isFree(before, true)
     ) {
       encodeEnd[before] = true;
       if (isEncoded(before) && runBefore[before] !== -1) {
@@ -895,7 +947,8 @@ function decideReferences(
       isText(after) &&
       isWordCharacter(charAfter) &&
       !isFlankedBy(beforeLast || charBefore, charAfter) &&
-      isFlankedBy(beforeLast || charBefore, '&')
+      isFlankedBy(beforeLast || charBefore, '&') &&
+      isFree(after, false)
     ) {
       encodeStart[after] = true;
       if (isEncoded(after) && runAfter[after] !== -1) {

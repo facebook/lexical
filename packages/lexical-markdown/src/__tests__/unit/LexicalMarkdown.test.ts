@@ -4989,9 +4989,9 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
 
   it.each([
     ['bold', 'a&#92;**b**'],
-    ['code', 'a&#92;`b`'],
+    ['italic', 'a&#92;*b*'],
   ] as [TextFormatType, string][])(
-    'keeps a raw backslash from escaping %s markup when preserving newlines',
+    'keeps a raw backslash from escaping a %s marker when preserving newlines',
     (format, exported) => {
       const editor = createTestEditor();
       editor.update(
@@ -5025,6 +5025,50 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       ]);
     },
   );
+
+  it('writes no reference that would break a run beside raw output', () => {
+    // Writing `a` as a reference for the italic would leave the bold's `**`
+    // between the raw `x` and the reference's `&`, unable to open.
+    const MENTION: TextMatchTransformer = {
+      dependencies: [],
+      export: node =>
+        $isTextNode(node) && node.getTextContent() === '@x' ? '@x' : null,
+      regExp: /@x$/,
+      replace: () => {},
+      type: 'text-match',
+    };
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createTextNode('@x'),
+            $createTextNode('a').toggleFormat('bold'),
+            $createTextNode(`${LEFT_DOUBLE_QUOTE}y${RIGHT_DOUBLE_QUOTE}`)
+              .toggleFormat('bold')
+              .toggleFormat('italic'),
+          ),
+        ),
+      {discrete: true},
+    );
+    const markdown = editor.read('latest', () =>
+      $convertToMarkdownString([MENTION, ...TRANSFORMERS]),
+    );
+    expect(markdown).not.toContain('&#97;');
+    editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
+      discrete: true,
+    });
+    expect(
+      editor.read('latest', () =>
+        $getRoot()
+          .getAllTextNodes()
+          .some(
+            node =>
+              node.getTextContent().startsWith('a') && node.hasFormat('bold'),
+          ),
+      ),
+    ).toBe(true);
+  });
 
   it('guards word characters in a selection export', () => {
     const editor = createTestEditor();

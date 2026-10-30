@@ -34,6 +34,7 @@ import {
   $getSelection,
   $isElementNode,
   $isTextNode,
+  DecoratorNode,
   defineExtension,
   ElementNode,
 } from 'lexical';
@@ -57,6 +58,44 @@ class TestInlineNode extends ElementNode {
     return false;
   }
 }
+
+/** An inline decorator exported as its text content. */
+class TestDecoratorNode extends DecoratorNode<null> {
+  $config() {
+    return this.config('markdown-test-decorator', {extends: DecoratorNode});
+  }
+  isInline(): true {
+    return true;
+  }
+  getTextContent(): string {
+    return 'foo';
+  }
+  createDOM(): HTMLElement {
+    throw new Error('not rendered');
+  }
+  updateDOM(): false {
+    return false;
+  }
+  decorate(): null {
+    return null;
+  }
+}
+
+class TestXDecoratorNode extends TestDecoratorNode {
+  $config() {
+    return this.config('markdown-test-x-decorator', {
+      extends: TestDecoratorNode,
+    });
+  }
+  getTextContent(): string {
+    return 'x';
+  }
+}
+
+const TestDecoratorExtension = defineExtension({
+  name: '@lexical/markdown/test-decorator',
+  nodes: [TestDecoratorNode, TestXDecoratorNode],
+});
 
 const AutoLinkNodeExtension = defineExtension({
   name: '@lexical/markdown/test-autolink',
@@ -1079,6 +1118,94 @@ describe('brackets that cannot become Markdown syntax', () => {
         const written = editor.read(() => $convertToMarkdownString());
         expect(written).toContain('&#93;:');
       },
+    );
+  });
+
+  describe('around a decorator', () => {
+    it.each([
+      [TestDecoratorNode, ']: done', '&#91;foo&#93;: done'],
+      [TestXDecoratorNode, '] todo', '&#91;x&#93; todo'],
+      [TestDecoratorNode, '](b)', '&#91;foo&#93;(b)'],
+    ])('escapes the brackets around %o', (Klass, after, expected) => {
+      using editor = buildEditorFromExtensions(
+        MarkdownTestExtension,
+        TestDecoratorExtension,
+      );
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $createTextNode('['),
+                $create(Klass),
+                $createTextNode(after),
+              ),
+            ),
+        {discrete: true},
+      );
+      expect(
+        editor.read(() =>
+          $convertToMarkdownString([CHECK_LIST, ...TRANSFORMERS]),
+        ),
+      ).toBe(expected);
+    });
+
+    it('leaves a bracket away from a decorator as typed', () => {
+      using editor = buildEditorFromExtensions(
+        MarkdownTestExtension,
+        TestDecoratorExtension,
+      );
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $create(TestDecoratorNode),
+                $createTextNode(' cleared review [1][2]'),
+              ),
+            ),
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertToMarkdownString())).toBe(
+        'foo cleared review [1][2]',
+      );
+    });
+  });
+
+  it.each([
+    [['[a', ']:b'], '&#91;a`]:b`'],
+    [['[a b', 'c]: d'], '&#91;a b`c]: d`'],
+    [['[a', 'b]'], '[a`b]`'],
+    [['[a', '[b]: c'], '[a`[b]: c`'],
+  ])(
+    'escapes the [ of a label that inline code %j would close',
+    (parts, expected) => {
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $createTextNode(parts[0]),
+                $createTextNode(parts[1]).toggleFormat('code'),
+              ),
+            ),
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertToMarkdownString())).toBe(expected);
+    },
+  );
+
+  it('reads typed control characters as text', () => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(() => $exportParagraph('[a\u0001]: /url'), {
+      discrete: true,
+    });
+    expect(editor.read(() => $convertToMarkdownString())).toBe(
+      '[a\u0001&#93;: /url',
     );
   });
 

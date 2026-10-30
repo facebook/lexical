@@ -831,7 +831,7 @@ describe('Markdown', () => {
     {
       html: '<p><span style="white-space: pre-wrap;">[foo </span><a href="/uri"><span style="white-space: pre-wrap;">bar</span></a><span style="white-space: pre-wrap;">](/uri)</span></p>',
       md: '[foo [bar](/uri)](/uri)',
-      mdAfterExport: '[foo [bar](/uri)&#93;(/uri)',
+      mdAfterExport: '&#91;foo [bar](/uri)&#93;(/uri)',
     },
     {
       // https://spec.commonmark.org/0.31.2/#link-destination allows a balanced
@@ -966,11 +966,13 @@ describe('Markdown', () => {
     {
       html: '<p><span style="white-space: pre-wrap;">[h</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
       md: '[h[ello](https://lexical.dev)[world](https://lexical.dev)',
+      mdAfterExport:
+        '&#91;h[ello](https://lexical.dev)[world](https://lexical.dev)',
     },
     {
       html: '<p><i><em style="white-space: pre-wrap;">[h</em></i><a href="https://lexical.dev"><i><em style="white-space: pre-wrap;">ello</em></i></a></p>',
       md: '*[h[ello](https://lexical.dev)*',
-      mdAfterExport: '*[h*[*ello*](https://lexical.dev)',
+      mdAfterExport: '*&#91;h*[*ello*](https://lexical.dev)',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">[](https://lexical.dev)</span></p>',

@@ -679,10 +679,12 @@ function $escapeLiteralBrackets(
   const isInLink = $isInsideLink(node);
   const escaped = isInLink
     ? linkTextBracketsToEscape(text, $nextExportedChar(node, selection))
-    : literalBracketsToEscape(
+    : $literalBracketsToEscape(
         $lineStateBefore(node, selection),
         text,
         $nextExportedChar(node, selection),
+        budget => $labelClosesInCodeAfter(node, selection, budget),
+        budget => $closersBeforeLink(node, selection, budget),
       );
   if (escaped.size === 0) {
     return text;
@@ -706,6 +708,13 @@ const UNKNOWN = '\u0002';
  * (https://spec.commonmark.org/0.31.2/#link-label) and the `[` itself.
  */
 const MAX_LABEL_DISTANCE = 1000;
+
+/** Typed text that matches a sentinel is read as an ordinary character. */
+function asLiteral(text: string): string {
+  return text.includes(BARRIER) || text.includes(UNKNOWN)
+    ? text.split(BARRIER).join('\uFFFD').split(UNKNOWN).join('\uFFFD')
+    : text;
+}
 
 /**
  * Where a line of exported text stands so far: only whitespace and the
@@ -782,10 +791,16 @@ function advanceLineState(state: LineState, character: string): void {
     return;
   }
   if (character === '[' || character === BARRIER || character === UNKNOWN) {
+    // Unknown text inside a label that starts a line keeps its line start.
+    const keepsLineStart =
+      character === UNKNOWN &&
+      state.openerDistance !== -1 &&
+      state.openerChar !== BARRIER &&
+      state.openerAtLineStart;
     state.openerDistance = 0;
     state.openerChar = character;
     state.openerNext = '';
-    state.openerAtLineStart = state.phase === 'start';
+    state.openerAtLineStart = state.phase === 'start' || keepsLineStart;
   }
   state.phase = nextLinePhase(state.phase, character);
 }
@@ -819,15 +834,25 @@ function linkTextBracketsToEscape(text: string, nextChar: string): Set<number> {
  * the state of the exported text before it in its block and the exported
  * character after it.
  */
-function literalBracketsToEscape(
+function $literalBracketsToEscape(
   before: LineState,
   text: string,
   nextChar: string,
+  $labelClosesAfter: (budget: number) => boolean,
+  $closersAfter: (budget: number) => number,
 ): Set<number> {
   const escaped = new Set<number>();
   const state = {...before};
+  const unclosed: number[] = [];
   for (let index = 0; index < text.length; index++) {
-    const character = text[index];
+    const character = asLiteral(text[index]);
+    if (character === '[') {
+      unclosed.push(index);
+    } else if (character === ']') {
+      unclosed.pop();
+    } else if (character === '\n') {
+      unclosed.length = 0;
+    }
     if (character === ']') {
       const after = index + 1 < text.length ? text[index + 1] : nextChar;
       // The distance to the nearest opener, counting this `]`.
@@ -850,10 +875,138 @@ function literalBracketsToEscape(
       ) {
         escaped.add(index);
       }
+    } else if (
+      character === '[' &&
+      state.phase === 'start' &&
+      $labelClosesInCode(text, index, $labelClosesAfter)
+    ) {
+      // The `]` that would close this label is in inline code, where it
+      // cannot be escaped, so the `[` is.
+      escaped.add(index);
     }
     advanceLineState(state, character);
   }
+  if (unclosed.length > 0) {
+    // A `[` still open when a link starts on the same line would be read
+    // into that link's text by `LINK` on import, so the ones the text before
+    // the link does not close are escaped.
+    const closers = $closersAfter(MAX_LABEL_DISTANCE);
+    const open = closers === -1 ? 0 : unclosed.length - closers;
+    for (let index = 0; index < open; index++) {
+      escaped.add(unclosed[index]);
+    }
+  }
   return escaped;
+}
+
+/**
+ * How many `]` close a `[` left open before them, in the exported text after
+ * `node` up to the next link on the same line, or -1 when no link follows on
+ * it. Unknown text, or more than `budget` characters, may hold a link, so it
+ * counts as one.
+ */
+function $closersBeforeLink(
+  node: LexicalNode,
+  selection: BaseSelection | null,
+  budget: number,
+): number {
+  let remaining = budget;
+  let depth = 0;
+  let closers = 0;
+  for (
+    let leaf = $nextLeaf(node, selection);
+    leaf !== null;
+    leaf = $nextLeaf(leaf, selection)
+  ) {
+    const kind = $exportKind(leaf);
+    if (kind === 'link' || kind === 'unknown') {
+      return closers;
+    } else if ($isLineBreakNode(leaf)) {
+      return -1;
+    } else if ($isTextNode(leaf)) {
+      const text = asLiteral($exportedText(leaf, selection));
+      if (!leaf.hasFormat('code')) {
+        for (const character of text) {
+          if (character === '\n') {
+            return -1;
+          } else if (character === '[') {
+            depth++;
+          } else if (character === ']') {
+            if (depth > 0) {
+              depth--;
+            } else {
+              closers++;
+            }
+          }
+        }
+      }
+      remaining -= text.length;
+      if (remaining <= 0) {
+        return closers;
+      }
+    }
+  }
+  return -1;
+}
+
+/**
+ * Whether the label opened by the `[` at `index` in `text` would close at a
+ * `]` inside inline code followed by `:`, making a link reference definition.
+ * A label ends at the first `]` and cannot hold another `[`
+ * (https://spec.commonmark.org/0.31.2/#link-label), and definitions are read
+ * before code spans. `$rest` reads past the end of `text`.
+ */
+function $labelClosesInCode(
+  text: string,
+  index: number,
+  $rest: (budget: number) => boolean,
+): boolean {
+  for (let next = index + 1; next < text.length; next++) {
+    if (text[next] === '[' || text[next] === ']') {
+      return false;
+    }
+  }
+  const budget = MAX_LABEL_DISTANCE - (text.length - index);
+  return budget > 0 && $rest(budget);
+}
+
+/**
+ * Continues `$labelClosesInCode` past `node`: reads the leaves after it in its
+ * block until a bracket, a link, the end of the block or `budget` characters.
+ * Unknown text may hold the `]`, so it answers yes.
+ */
+function $labelClosesInCodeAfter(
+  node: LexicalNode,
+  selection: BaseSelection | null,
+  budget: number,
+): boolean {
+  let remaining = budget;
+  for (
+    let leaf = $nextLeaf(node, selection);
+    leaf !== null && remaining > 0;
+    leaf = $nextLeaf(leaf, selection)
+  ) {
+    const kind = $exportKind(leaf);
+    if (kind === 'link') {
+      return false;
+    } else if (kind === 'unknown') {
+      return true;
+    } else if ($isTextNode(leaf)) {
+      const text = asLiteral($exportedText(leaf, selection));
+      const bracket = text.search(/[[\]]/);
+      if (bracket !== -1) {
+        return (
+          leaf.hasFormat('code') &&
+          text[bracket] === ']' &&
+          text[bracket + 1] === ':'
+        );
+      }
+      remaining -= text.length;
+    } else if ($isLineBreakNode(leaf)) {
+      remaining--;
+    }
+  }
+  return false;
 }
 
 /**
@@ -895,12 +1048,17 @@ function withBracketContext<T>(
 type ExportKind = 'link' | 'text' | 'transparent' | 'unknown';
 
 function $exportKind(node: LexicalNode): ExportKind {
+  if ($isLineBreakNode(node) || ($isElementNode(node) && !node.isInline())) {
+    return 'text';
+  } else if (!$isTextNode(node) && !$isElementNode(node)) {
+    // A decorator is exported as its text content, or by a transformer.
+    return 'unknown';
+  }
   const context = bracketContext;
   const cached = context && context.exportKinds.get(node.getKey());
   if (cached) {
     return cached;
   }
-  let kind: ExportKind;
   const isWritten = context
     ? context.textMatchTransformers.some(transformer => {
         try {
@@ -917,15 +1075,15 @@ function $exportKind(node: LexicalNode): ExportKind {
         }
       })
     : $isLinkNode(node) && !$isAutoLinkNode(node);
-  if ($isTextNode(node)) {
-    kind = isWritten ? 'unknown' : 'text';
-  } else if ($isElementNode(node) && node.isInline()) {
-    kind = isWritten ? ($isLinkNode(node) ? 'link' : 'unknown') : 'transparent';
-  } else if ($isLineBreakNode(node) || $isElementNode(node)) {
-    kind = 'text';
-  } else {
-    kind = 'unknown';
-  }
+  const kind: ExportKind = $isTextNode(node)
+    ? isWritten
+      ? 'unknown'
+      : 'text'
+    : isWritten
+      ? $isLinkNode(node)
+        ? 'link'
+        : 'unknown'
+      : 'transparent';
   if (context) {
     context.exportKinds.set(node.getKey(), kind);
   }
@@ -993,13 +1151,38 @@ function $nextExportedChar(
     } else if ($isTextNode(next)) {
       const exported = $exportedText(next, selection);
       if (exported !== '') {
-        return next.hasFormat('code') ? '`' : exported[0];
+        return next.hasFormat('code') ? '`' : asLiteral(exported[0]);
       }
     } else if ($isLineBreakNode(next)) {
       return '\n';
     }
     current = next;
   }
+}
+
+/**
+ * The leaf exported just after `node` in its block, read through inline
+ * elements whose children are exported in place, or null at the end of the
+ * block or of the exported selection.
+ */
+function $nextLeaf(
+  node: LexicalNode,
+  selection: BaseSelection | null,
+): LexicalNode | null {
+  let current: LexicalNode = node;
+  let next = current.getNextSibling();
+  while (next === null) {
+    const parent = current.getParent();
+    if (!$isTransparentInline(parent)) {
+      return null;
+    }
+    current = parent;
+    next = current.getNextSibling();
+  }
+  while ($isTransparentInline(next) && next.getFirstChild() !== null) {
+    next = next.getFirstChildOrThrow();
+  }
+  return selection !== null && !next.isSelected(selection) ? null : next;
 }
 
 /**
@@ -1041,7 +1224,7 @@ function $leafText(leaf: LexicalNode, selection: BaseSelection | null): string {
   } else if (kind === 'unknown') {
     return UNKNOWN;
   } else if ($isTextNode(leaf)) {
-    const text = $exportedText(leaf, selection);
+    const text = asLiteral($exportedText(leaf, selection));
     return leaf.hasFormat('code') ? text.replace(/[[\] \t]/g, '`') : text;
   } else if ($isLineBreakNode(leaf)) {
     return '\n';

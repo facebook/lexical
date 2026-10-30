@@ -38,6 +38,14 @@ import {createYDoc, YBinding, YCollabExtension} from '../..';
 // check that read the whole container would cost about ten times as much.
 // The two documents are measured in turns, after a warm-up, and compared by
 // their medians, so a burst of load or a cold first check lands on both.
+// Comparing the same block of both cancels a cost that grows with the
+// follow-up's position, so the last block of the larger document is
+// measured in the same turns too, against a generous absolute ceiling: a
+// check that walks every unit before the follow-up's costs tens of
+// milliseconds there.
+
+/** Median ceiling for the check at the larger document's last block. */
+const END_CEILING_MS = 20;
 
 const BLOCKS = 10000;
 const SMALL = 1000;
@@ -87,7 +95,12 @@ function build(blocks: number): LexicalEditor {
  * follow-up that renames that block, as BlockIdExtension's naming update
  * does: tagged as it, in an update of its own.
  */
-function keystroke(editor: LexicalEditor, at: number, k: number): void {
+function keystroke(
+  editor: LexicalEditor,
+  at: number,
+  k: number,
+  name = `renamed-${k}`,
+): void {
   editor.update(
     () => {
       const line = $getRoot().getChildAtIndex(at) as ElementNode;
@@ -97,7 +110,7 @@ function keystroke(editor: LexicalEditor, at: number, k: number): void {
   );
   editor.update(
     () => {
-      $setState($getRoot().getChildAtIndex(at)!, blockIdState, `renamed-${k}`);
+      $setState($getRoot().getChildAtIndex(at)!, blockIdState, name);
     },
     {discrete: true, tag: 'block-id-repair'},
   );
@@ -127,36 +140,43 @@ describe('the follow-up check in a long document', () => {
       };
       const bigMs: number[] = [];
       const smallMs: number[] = [];
+      const endMs: number[] = [];
       try {
         for (let k = 0; k < WARM + KEYS; k++) {
           into = k < WARM ? null : bigMs;
           keystroke(big, at, k);
           into = k < WARM ? null : smallMs;
           keystroke(small, at, k);
+          into = k < WARM ? null : endMs;
+          keystroke(big, BLOCKS - 1, k, `end-${k}`);
         }
       } finally {
         proto.$checkFollowUp = original;
       }
       // Every rename was written (none read again).
-      const stored = (editor: LexicalEditor) =>
+      const stored = (editor: LexicalEditor, index = at) =>
         editor.read(() =>
-          $getState($getRoot().getChildAtIndex(at)!, blockIdState),
+          $getState($getRoot().getChildAtIndex(index)!, blockIdState),
         );
       const last = `renamed-${WARM + KEYS - 1}`;
       expect(stored(big)).toBe(last);
       expect(stored(small)).toBe(last);
+      expect(stored(big, BLOCKS - 1)).toBe(`end-${WARM + KEYS - 1}`);
       (big as LexicalEditor & {dispose: () => void}).dispose();
       (small as LexicalEditor & {dispose: () => void}).dispose();
-      expect(checks).toBe(2 * (WARM + KEYS));
+      expect(checks).toBe(3 * (WARM + KEYS));
       const b = median(bigMs);
       const m = median(smallMs);
+      const e = median(endMs);
       // eslint-disable-next-line no-console
       console.log(
-        `FOLLOWUP_COST ${where}: median check ${b.toFixed(3)} ms in ${BLOCKS} blocks, ${m.toFixed(3)} ms in ${SMALL} blocks (${(b / m).toFixed(2)}x)`,
+        `FOLLOWUP_COST ${where}: median check ${b.toFixed(3)} ms in ${BLOCKS} blocks, ${m.toFixed(3)} ms in ${SMALL} blocks (${(b / m).toFixed(2)}x); ${e.toFixed(3)} ms at block ${BLOCKS - 1}`,
       );
       // About the same in both; a check reading the whole container would
       // cost about ten times as much in the larger document.
       expect(b).toBeLessThan(3 * m + 0.1);
+      // At the end of the larger document, well under the ceiling.
+      expect(e).toBeLessThan(END_CEILING_MS);
     }, 120000);
   }
 });

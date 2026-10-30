@@ -217,18 +217,20 @@ function liveItemBefore(item: Item, key: string): Item | null {
 }
 
 /**
- * The item that opened the run live format item `item` gives its value in:
- * `item` itself, or, where it is a restore (its client wrote it after text
- * it inserted inside the run, with a null of the key before that text), the
- * opener of the run that restore restates, and so on.
+ * The items that opened the run live format item `item` gives its value in,
+ * from `item` back: `item` itself, and, where it is a restore (its client
+ * wrote it after text it inserted inside the run, with a null of the key
+ * before that text), the item that gave the run its value before that text,
+ * and so on; the last one opened the run.
  */
-export function runOpener(doc: Doc, item: Item): Item {
+function runChain(doc: Doc, item: Item): Item[] {
   const {key, value} = item.content as ContentFormat;
+  const chain = [item];
   let current = item;
   for (let depth = 0; depth < 16; depth++) {
     const negation = lastOwnItemBefore(doc, current, key);
     if (negation === null || valueOf(negation) !== null) {
-      return current;
+      return chain;
     }
     let found = false;
     let steps = 0;
@@ -247,11 +249,12 @@ export function runOpener(doc: Doc, item: Item): Item {
     }
     const source = found ? liveItemBefore(negation, key) : null;
     if (source === null || !equalFormatValue(valueOf(source), value)) {
-      return current;
+      return chain;
     }
     current = source;
+    chain.push(current);
   }
-  return current;
+  return chain;
 }
 
 /** A live countable item: text, a child node, an embed. */
@@ -611,14 +614,13 @@ export class Cursor {
   }
 
   /**
-   * For a restore of `key` to `value` written at the cursor: where the run it
-   * restates was opened by another client's change (see runOpener; the item
-   * that gave the content the value before this write is the nearest item of
-   * the key before the cursor that this write did not make), and the next
-   * live item of the key after the cursor with another value is that change's
-   * own end of the run (see changeEnd), that end, after which the restore's
-   * run gets an end of this client's own (see format, rule 5). Null
-   * otherwise.
+   * For a restore of `key` to `value` written at the cursor: where the next
+   * live item of the key after the cursor with another value is the end that
+   * a write that gave the restated run its value wrote for it (see runChain,
+   * from the item that gave the content the value before this write: the
+   * nearest item of the key before the cursor that this write did not make;
+   * see changeEnd), that end, after which the restore's run gets an end of
+   * this client's own (see format, rule 5). Null otherwise.
    */
   private restatedEnd(key: string, value: unknown): Item | null {
     const doc = this.tr.doc;
@@ -642,10 +644,7 @@ export class Cursor {
     if (source === null || !equalFormatValue(valueOf(source), value)) {
       return null;
     }
-    const opener = runOpener(doc, source);
-    if (opener.id.client === doc.clientID) {
-      return null;
-    }
+    const chain = runChain(doc, source);
     for (let it = this.right; it !== null; it = it.right) {
       if (
         it.deleted ||
@@ -655,7 +654,9 @@ export class Cursor {
       ) {
         continue;
       }
-      return valueOf(it) === null && changeEnd(doc, opener) === it ? it : null;
+      return valueOf(it) === null && chain.some(c => changeEnd(doc, c) === it)
+        ? it
+        : null;
     }
     return null;
   }
@@ -1105,18 +1106,26 @@ export class Cursor {
    *    characters while a peer typed plain text between them came back on the
    *    second. A key whose old value there is null is restored by no one.
    * 5. Where it restores a value (at the end of the range, as after
-   *    inserted text, see insertNegatedFormats) whose run another client's
-   *    change opened (see runOpener), and the item that ends the restored run
-   *    is that change's own end of the run (see changeEnd), it writes a null
-   *    of its own right after that end. Why: that end can go while the
-   *    restore stays, as the undo of that change deletes it and a concurrent
-   *    delete may drop it (it keeps a bounded number of the items it leaves,
-   *    see collapseGap), and the restored value ran on to the end of the
-   *    document (a format undone while a collaborator typed plain text inside
-   *    it, pasted a list there or removed it from part of the range; a
-   *    comment undone while a collaborator typed right after it where another
-   *    comment ended; a comment whose end a long offline peer's delete
-   *    dropped while a collaborator pasted inside it). Right after the end,
+   *    inserted text, see insertNegatedFormats), and the item that ends the
+   *    restored run is the end that a write that gave that run its value
+   *    wrote for it (see runChain: the change that opened the run, or one
+   *    that restored it there before; see changeEnd), it writes a null of
+   *    its own right after that end, whichever client wrote it, this one
+   *    too. Why: that end can go while the restore stays, as the undo of
+   *    that change deletes it and a concurrent delete may drop it (it keeps
+   *    a bounded number of the items it leaves, see collapseGap), and the
+   *    restored value ran on to the end of the document (a format undone
+   *    while a collaborator typed plain text inside it, pasted a list there
+   *    or removed it from part of the range; a comment undone while a
+   *    collaborator typed right after it where another comment ended; a
+   *    comment whose end a long offline peer's delete dropped while a
+   *    collaborator pasted inside it; a comment whose author typed
+   *    uncommented text into it while a collaborator's delete next to the
+   *    commented word, deleted before, dropped the comment's end). The run's
+   *    end is that of the write that restored it last where there is one: a
+   *    comment written with uncommented text inside it ends with the end its
+   *    restore after that text wrote, not the null before that text. Right
+   *    after the end,
    *    not before it: text a collaborator types at the end of the run at the
    *    same time lands before the end, inside the run, and keeps the run's
    *    value. A null by which a change made text inside the run plain (typed

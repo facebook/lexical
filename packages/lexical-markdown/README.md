@@ -98,7 +98,9 @@ brackets and guarded `<`/`&` use numeric references so escaping does not change
 adjacent emphasis flanking.
 
 Import follows CommonMark's Unicode punctuation and whitespace when deciding
-whether `*`, `_`, `~~` and `==` open or close formatting. When formatted text starts
+whether `*`, `_`, `~~` and `==` open or close formatting, with the
+[CJK-friendly amendment](https://github.com/tats-u/markdown-cjk-friendly/blob/main/specification.md)
+so that `**你好。**世界` is bold. Export does not rely on the amendment. When formatted text starts
 or ends with punctuation right beside a letter, export writes that letter as a
 numeric reference (`fo&#111;**“bar”**`) so that the markers still open and
 close, also with `shouldPreserveNewLines`, where a raw backslash right before

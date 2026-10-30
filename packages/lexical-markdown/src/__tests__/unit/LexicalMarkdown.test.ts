@@ -4682,7 +4682,7 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
   }
 
   // Each expected result matches what micromark, a CommonMark parser, produces
-  // for the same input.
+  // for the same input, apart from the CJK-friendly cases.
   const CASES: [md: string, runs: Run[]][] = [
     [
       `See ${EN_DASH}**${HERE_LINK}** now.`,
@@ -4799,6 +4799,44 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
         ['**', 'plain'],
       ],
     ],
+    // The CJK-friendly amendment: CJK punctuation beside a CJK character does
+    // not stop a run from flanking.
+    // https://github.com/tats-u/markdown-cjk-friendly/blob/main/specification.md
+    [
+      '**\u4f60\u597d\u3002**\u4e16\u754c',
+      [
+        ['\u4f60\u597d\u3002', 'bold'],
+        ['\u4e16\u754c', 'plain'],
+      ],
+    ],
+    [
+      '\u9019\u662f**\u300c\u91cd\u8981\u300d**\u7684',
+      [
+        ['\u9019\u662f', 'plain'],
+        ['\u300c\u91cd\u8981\u300d', 'bold'],
+        ['\u7684', 'plain'],
+      ],
+    ],
+    [
+      '\ud55c\uad6d\uc5b4*\uff08\uac15\uc870\uff09*\uc785\ub2c8\ub2e4',
+      [
+        ['\ud55c\uad6d\uc5b4', 'plain'],
+        ['\uff08\uac15\uc870\uff09', 'italic'],
+        ['\uc785\ub2c8\ub2e4', 'plain'],
+      ],
+    ],
+    // `_` between CJK characters is still inside a word.
+    [
+      '\u65e5\u672c_\u8a9e_\u3067\u3059',
+      [['\u65e5\u672c_\u8a9e_\u3067\u3059', 'plain']],
+    ],
+    // Non-CJK punctuation beside a letter still stops it, and a variation
+    // selector reads as the punctuation it follows.
+    [
+      `a**${LEFT_DOUBLE_QUOTE}\u5b57${RIGHT_DOUBLE_QUOTE}**b`,
+      [[`a**${LEFT_DOUBLE_QUOTE}\u5b57${RIGHT_DOUBLE_QUOTE}**b`, 'plain']],
+    ],
+    ['**"\ufe00**b', [['**"\ufe00**b', 'plain']]],
   ];
 
   for (const [md, runs] of CASES) {
@@ -5248,6 +5286,37 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     expect(
       editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
     ).toBe('see https://x.com/?a===b==');
+  });
+
+  it('keeps export readable without the CJK-friendly amendment', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createTextNode('\u4f60\u597d\u3002').toggleFormat('bold'),
+            $createTextNode('\u4e16\u754c'),
+          ),
+        ),
+      {discrete: true},
+    );
+    const markdown = editor.read('latest', () =>
+      $convertToMarkdownString(TRANSFORMERS),
+    );
+    expect(markdown).toBe('**\u4f60\u597d\u3002**&#19990;\u754c');
+    editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
+      discrete: true,
+    });
+    expect(
+      editor.read('latest', () =>
+        $getRoot()
+          .getAllTextNodes()
+          .map(node => [node.getTextContent(), node.hasFormat('bold')]),
+      ),
+    ).toEqual([
+      ['\u4f60\u597d\u3002', true],
+      ['\u4e16\u754c', false],
+    ]);
   });
 
   it('writes references around an underscore italic between letters', () => {

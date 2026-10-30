@@ -18,7 +18,12 @@ import {
   findOutermostTextMatchTransformer,
   importFoundTextMatchTransformer,
 } from './importTextMatchTransformer';
-import {characterAt, characterBefore, isEscaped, unescapeText} from './utils';
+import {
+  characterAt,
+  characterBeforeRun,
+  isEscaped,
+  unescapeText,
+} from './utils';
 
 /**
  * Returns true if the node can contain transformable markdown.
@@ -60,7 +65,7 @@ function characterBeyondRun(
     ? outside
     : step === 1
       ? characterAt(text, edge)
-      : characterBefore(text, edge);
+      : characterBeforeRun(text, edge);
 }
 
 /**

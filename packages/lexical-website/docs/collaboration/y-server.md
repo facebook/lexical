@@ -315,8 +315,11 @@ the edit arrives. Follow
 
 - **Edit text in place.** Change the characters of a text node
   (`spliceText`) rather than replacing its block: a replaced block is a
-  delete and an insert, and what a collaborator types into it meanwhile is
-  lost.
+  delete and an insert. In a line such as a paragraph, what a collaborator
+  types at the same time survives but lands before the new text, with its
+  own formatting; formatting of the replaced characters does not carry over.
+  Replacing a block stored as a node of its own, such as a table, deletes
+  what was typed in it.
 - **Edit the state the plan was computed from, then merge.** Keep the state
   the agent read, run `editYState` on that state, and merge the returned
   `update` into the latest stored state (and send it to the clients). Yjs
@@ -371,8 +374,11 @@ things differ from a single editor:
   already on its way, or made in between) still lands this way.
 - **Edit the text in place.** Replacing the block (`block.replace(node)`, as
   in the [single-editor example](/docs/extensions/block-ids#addressing-blocks))
-  deletes what a collaborator is typing in it. Splice only the characters
-  that changed.
+  writes it anew. In a line such as a paragraph, what a collaborator types
+  at the same time survives but lands before the new text, with its own
+  formatting; formatting of the replaced characters does not carry over.
+  Replacing a block stored as a node of its own, such as a table, deletes
+  what was typed in it. Splice only the characters that changed.
 
 ```ts
 import {$getBlockById, $getBlockId} from '@lexical/extension';

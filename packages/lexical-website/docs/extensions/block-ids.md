@@ -107,8 +107,12 @@ block's id, as `replace` does. `replace` with a node that has no id keeps
 the replaced block's id, so the agent can keep referring to `b7`. Whether typing that
 another replica made concurrently in the replaced block survives depends on
 how the replicas merge changes, not on this extension. With
-[`@lexical/y`](/docs/collaboration/y) it does not: a replaced block is a
-delete and an insert, so edit its text in place instead (see
+[`@lexical/y`](/docs/collaboration/y), a replaced block is a delete and an
+insert. In a line such as a paragraph, what a collaborator types at the
+same time survives but lands before the new text, with its own formatting;
+formatting of the replaced characters does not carry over. Replacing a
+block stored as a node of its own, such as a table, deletes what was typed
+in it. Edit text in place instead (see
 [Edits by block id](/docs/collaboration/y-server#edits-by-block-id)). To give a new block an id of your choosing, set
 it before inserting it: `$setState(node, blockIdState, 'b7-intro')`. If
 another block already has that id, that block keeps it and the new one gets

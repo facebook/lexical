@@ -29,7 +29,7 @@ const STORAGE_KEY = '@lexical/dev-mdast-editor-example/document';
 
 const DEMO_MARKDOWN = `# Mdast Editor
 
-This is a **WYSIWYG** editor built on [@lexical/mdast](https://github.com/facebook/lexical),
+This is a **WYSIWYG** editor built on [@lexical/mdast](https://github.com/meta/lexical),
 which parses with *micromark* — the same CommonMark + GFM parser used by remark —
 and keeps the markdown on the right in sync as you type.
 

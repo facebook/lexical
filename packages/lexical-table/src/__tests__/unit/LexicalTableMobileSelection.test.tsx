@@ -315,7 +315,7 @@ describe('LexicalTableMobileSelection', () => {
 });
 
 /**
- * Regression tests for https://github.com/facebook/lexical/issues/8538 -
+ * Regression tests for https://github.com/meta/lexical/issues/8538 -
  * placing the text cursor by tapping table cells on a touch device is
  * unreliable: instead of a caret, taps produce multi-cell table selections.
  *

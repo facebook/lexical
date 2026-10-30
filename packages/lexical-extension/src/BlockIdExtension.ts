@@ -263,6 +263,18 @@ export interface BlockIdConfig {
    * {@link generateBlockId}.
    */
   generateId: () => string;
+  /**
+   * Whether the follow-up update that names the blocks an update applied
+   * with `skipTransforms`, or tagged `COLLABORATION_TAG` or `HISTORIC_TAG`,
+   * left without a valid id or with a repeated one runs the editor's
+   * transforms. With `true` (the default) it marks those blocks dirty, so
+   * every transform runs on them, and `NodeStructureExtension`, for example,
+   * repairs their structure in it. With `false` it sets their ids without
+   * running transforms, so it changes nothing else: for code that applies
+   * such updates and repairs or otherwise processes what they bring in an
+   * update of its own.
+   */
+  repairTransforms: boolean;
 }
 
 /**
@@ -1216,25 +1228,51 @@ function registerBlockIds(
 ): () => void {
   const candidates = new Set<NodeKey>();
   const {$isIdentifiedBlock} = runtime.config;
-  const collect = (node: LexicalNode) => {
+  const $collect = (node: LexicalNode) => {
     if ($isIdentifiedBlock(node)) {
       candidates.add(node.getKey());
+    } else if (
+      $getBlockId(node) !== null &&
+      !editor.getEditorState()._nodeMap.has(node.getKey()) &&
+      !$hasUpdateTag(COLLABORATION_TAG) &&
+      !$hasUpdateTag(HISTORIC_TAG)
+    ) {
+      // A block that is not identified has no id: a copy created where it
+      // is not one (a list pasted into a list item, which nests it) does not
+      // keep the id of the block it was copied from.
+      $setState(node, blockIdState, undefined);
     }
   };
   const scheduleRepair = (keys: NodeKey[]) => {
+    const withTransforms = runtime.config.repairTransforms;
     editor.update(
       () => {
+        const attached = new Set<NodeKey>();
         for (const key of keys) {
           const node = $getNodeByKey(key);
           if (node !== null && node.isAttached()) {
-            node.markDirty();
+            if (withTransforms) {
+              node.markDirty();
+            } else {
+              attached.add(key);
+            }
           }
+        }
+        if (!withTransforms) {
+          // What the root transform would do with these blocks marked dirty.
+          $assignBlockIds(editor, runtime, attached);
         }
       },
       // Discrete, so it commits on its own right after the commit that needed
       // it: batched into a later update tagged COLLABORATION_TAG, its changes
       // would be treated as replayed and not propagated.
-      {discrete: true, tag: [HISTORY_MERGE_TAG, BLOCK_ID_REPAIR_TAG]},
+      withTransforms
+        ? {discrete: true, tag: [HISTORY_MERGE_TAG, BLOCK_ID_REPAIR_TAG]}
+        : {
+            discrete: true,
+            skipTransforms: true,
+            tag: [HISTORY_MERGE_TAG, BLOCK_ID_REPAIR_TAG],
+          },
     );
   };
   // Notes the ids every reader gives the blocks a committed state leaves
@@ -1292,7 +1330,7 @@ function registerBlockIds(
     ) {
       continue;
     }
-    cleanups.push(editor.registerNodeTransform(klass, collect));
+    cleanups.push(editor.registerNodeTransform(klass, $collect));
   }
   cleanups.push(
     editor.registerNodeTransform(RootNode, () => {
@@ -1400,6 +1438,7 @@ export const BlockIdExtension = defineExtension({
     $isIdentifiedBlock: $defaultIsIdentifiedBlock,
     disabled: false,
     generateId: generateBlockId,
+    repairTransforms: true,
   }),
   // The per-editor state is the init result, opaque outside this module
   // (`unknown`, as in the Flow types). The parameters are annotated so that

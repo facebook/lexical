@@ -2248,6 +2248,11 @@ export class YBinding {
         this.checkUnknownTypes();
         this.flushRefresh(true);
       },
+      // The whole document as it is, the change being read included (see
+      // startReading): read inside a transaction (a layout record a change
+      // brought, see readChange), it would otherwise show that change's
+      // content as not there yet.
+      before: () => this.startReading(),
       // The whole document: read again, it would throw again.
       recover: (error, shown) => this.failClosed(error, shown),
       replacesPending: true,
@@ -2729,6 +2734,24 @@ export class YBinding {
       // Not nested (in an update, commitPending leaves the updates to it).
       settle();
       return;
+    }
+    if (
+      read.replacesPending === true &&
+      !nested &&
+      editor._updates.length > 0
+    ) {
+      // A read of the whole document takes over what the pending state
+      // shows, but not the updates still queued (an editable listener's
+      // reply to the binding's opening, say): Lexical would run those after
+      // the read, in its update, tagged as a remote change, where they would
+      // be neither written nor refused. They are held as the replies of
+      // notifyApart are, and commit on their own as local updates before
+      // the read where the editor is idle, else right after it: refused and
+      // warned about while read only, and, while still opening, part of what
+      // the read replaces.
+      this.replies.unshift(...editor._updates.splice(0));
+      this.pending.add('replies');
+      this.schedulePending();
     }
     // The state the read makes, which its commit gives the editor.
     let readState: EditorState | null = null;
@@ -4183,6 +4206,13 @@ export class YBinding {
     );
     if (changed.length === 0) {
       return false;
+    }
+    if (state.containers.get(this._root) === undefined) {
+      // Before the read that opens the document: that read, of the whole
+      // document, replaces what the update changed. Refused (and warned
+      // about) where the document turned out read only; still opening, it
+      // is part of the content the read replaces (see replacesPending).
+      return this._status === 'readonly';
     }
     const prevMap = prevEditorState._nodeMap;
     const nowMap = editorState._nodeMap;

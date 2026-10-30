@@ -984,7 +984,11 @@ not merge as a user might expect:
   when another client, at the same time, removes the format from part of
   the run or types inside it without the format: with `Kilo` bold, one
   client unbolds `il` as another bolds ` bb`, and with some client id
-  orders ` bb` stays plain. No text is lost.
+  orders ` bb` stays plain. No text is lost. Undoing a format while a
+  collaborator undoes plain text they typed inside its range, which you
+  had not seen, can leave the text after theirs with the format on every
+  client: bold `one two`, let a collaborator type plain ` mid` after `one`
+  and undo it as you undo the bold, and ` two` stays bold. No text is lost.
 - **Large lists.** A structural edit in a list costs time proportional to
   the list on every client.
 - **Older app versions.** Clients of different `schemaVersion`s never

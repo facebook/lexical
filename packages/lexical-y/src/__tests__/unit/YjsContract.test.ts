@@ -467,6 +467,60 @@ describe('the contract', () => {
     expect(probeYjs()).toEqual([]);
   });
 
+  test('content classes are told apart by identity, not name', () => {
+    // A minifier can give every class the same name.
+    const classes = [
+      Y.ContentAny,
+      Y.ContentBinary,
+      Y.ContentFormat,
+      Y.ContentString,
+      Y.ContentType,
+    ];
+    const names = classes.map(klass =>
+      Object.getOwnPropertyDescriptor(klass, 'name'),
+    );
+    const proto = Y.ContentAny.prototype as {getContent?: unknown};
+    const getContent = proto.getContent;
+    classes.forEach(klass =>
+      Object.defineProperty(klass, 'name', {configurable: true, value: 'e'}),
+    );
+    proto.getContent = undefined;
+    try {
+      expect(probeYjs()).toEqual(['AbstractContent(e)#getContent']);
+    } finally {
+      proto.getContent = getContent;
+      classes.forEach((klass, i) =>
+        Object.defineProperty(klass, 'name', names[i]!),
+      );
+    }
+    expect(probeYjs()).toEqual([]);
+  });
+
+  test('the check runs in another realm than @y/y', async () => {
+    // As a VM-pool test runner or an embedder does: @lexical/y evaluated in
+    // a realm of its own (its own Map, Uint8Array), @y/y loaded by the host.
+    const esbuild = await import('esbuild');
+    const {outputFiles} = await esbuild.build({
+      bundle: true,
+      entryPoints: [path.join(SRC_DIR, 'internal/YjsContract.ts')],
+      external: ['@y/y'],
+      format: 'cjs',
+      platform: 'neutral',
+      write: false,
+    });
+    const context = vm.createContext({});
+    expect(vm.runInContext('Map', context)).not.toBe(Map);
+    const module = {exports: {} as {probeYjs: () => string[]}};
+    vm.runInContext(
+      `(function (module, exports, require) {${outputFiles[0].text}\n})`,
+      context,
+    )(module, module.exports, (id: string) => {
+      expect(id).toBe('@y/y');
+      return Y;
+    });
+    expect(module.exports.probeYjs()).toEqual([]);
+  });
+
   test('every kind of content is checked, attribute values included', () => {
     const proto = Y.ContentAny.prototype as {getContent?: unknown};
     const getContent = proto.getContent;

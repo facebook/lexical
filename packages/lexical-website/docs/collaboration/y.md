@@ -67,7 +67,9 @@ The fix for both is the same: install `@y/y@<data.supported>` once
 (`npm ls @y/y` shows one version, deduped) and create documents with
 `createYDoc`. There is no option to skip the check. A different `@y/y` that
 happens to provide the same internals passes it, so pin the version all the
-same.
+same. The check makes two scratch documents, once, and each draws a client
+id: a test that seeds Yjs's randomness to replay documents sees the random
+ids of later documents shift (give those documents explicit client ids).
 
 The type declarations `@y/y` ships do not type-check on their own (an
 upstream issue): if you run `tsc`, set `skipLibCheck: true`. Lexical's types

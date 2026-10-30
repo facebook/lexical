@@ -265,6 +265,7 @@ export function yjsMembers() {
   };
 }
 
+const PROBE_GUID = '@lexical/y/yjs-probe';
 /** The undo manager options the probe passes, checked on what it kept. */
 const PROBE_ORIGIN = {};
 const PROBE_DELETE_FILTER = () => true;
@@ -420,18 +421,23 @@ function probeMembers(y: YjsExports, found: string[]): void {
     Record<string, (value: object) => boolean>
   >;
   const sampled = new Set<string>();
-  const checked = new Set<string>();
-  /** Check `value` as a `kind`, once per kind (and `variant` of it). */
-  const sample = (kind: string, value: unknown, variant = '') => {
-    if (
-      checked.has(kind + '/' + variant) ||
-      typeof value !== 'object' ||
-      value === null
-    ) {
+  /** The kinds checked, and for content each class (by identity: a
+   * minifier can give every class the same name). */
+  const checked = new Set<unknown>();
+  /** Check `value` as a `kind`, once per kind (once per `variant` of it,
+   * named `label`). */
+  const sample = (
+    kind: string,
+    value: unknown,
+    variant: unknown = kind,
+    label = '',
+  ) => {
+    if (checked.has(variant) || typeof value !== 'object' || value === null) {
       return;
     }
-    checked.add(kind + '/' + variant);
+    checked.add(variant);
     sampled.add(kind);
+    const variantLabel = label;
     for (const [member, check] of Object.entries(members[kind])) {
       let ok = false;
       try {
@@ -440,15 +446,19 @@ function probeMembers(y: YjsExports, found: string[]): void {
         // A getter that throws is a changed member too.
       }
       if (!ok) {
-        found.push(`${kind}${variant === '' ? '' : `(${variant})`}#${member}`);
+        found.push(
+          `${kind}${variantLabel === '' ? '' : `(${variantLabel})`}#${member}`,
+        );
       }
     }
   };
   const events = new Set<string>();
-  const doc = new y.Doc({gc: false});
+  // A fixed guid: each document then draws only its client id from the
+  // app's randomness (a seeded one shifts every later id by each draw).
+  const doc = new y.Doc({gc: false, guid: PROBE_GUID});
   // A garbage collected document, for a GC struct (the items of a deleted
   // node).
-  const collected = new y.Doc();
+  const collected = new y.Doc({guid: PROBE_GUID});
   sample('Doc', doc);
   sample('DocOpts', doc);
   sample('StructStore', doc.store);
@@ -483,7 +493,9 @@ function probeMembers(y: YjsExports, found: string[]): void {
       root.insert(2, [new y.Node('probe')]);
       root.format(0, 1, {probe: true});
       root.setAttr('probe', 1);
-      root.setAttr('probeBinary', new Uint8Array([1]));
+      // Bytes made by @y/y, which may run in another realm (it switches on
+      // the value's constructor).
+      root.setAttr('probeBinary', y.encodeStateAsUpdate(collected));
     }, PROBE_ORIGIN);
     // Every kind of content the binding meets (text, formats, nodes,
     // attribute values), each against the abstract content contract.
@@ -503,11 +515,8 @@ function probeMembers(y: YjsExports, found: string[]): void {
     }
     root._map.forEach(item => contents.push(item.content));
     for (const content of contents) {
-      sample(
-        'AbstractContent',
-        content,
-        (content as {constructor: {name: string}}).constructor.name,
-      );
+      const klass = (content as {constructor: {name: string}}).constructor;
+      sample('AbstractContent', content, klass, klass.name || '?');
     }
     const ids = y.createIdSet();
     ids.add(1, 0, 2);

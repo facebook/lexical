@@ -9,7 +9,12 @@
 // @vitest-environment node
 
 import {buildEditorFromExtensions} from '@lexical/extension';
-import {$createLinkNode, $isLinkNode} from '@lexical/link';
+import {
+  $createAutoLinkNode,
+  $createLinkNode,
+  $isLinkNode,
+  AutoLinkNode,
+} from '@lexical/link';
 import {$createListItemNode, $createListNode, $isListNode} from '@lexical/list';
 import {
   $convertFromMarkdownString,
@@ -52,6 +57,11 @@ class TestInlineNode extends ElementNode {
     return false;
   }
 }
+
+const AutoLinkNodeExtension = defineExtension({
+  name: '@lexical/markdown/test-autolink',
+  nodes: [AutoLinkNode],
+});
 
 const TestInlineExtension = defineExtension({
   name: '@lexical/markdown/test-inline',
@@ -1071,6 +1081,137 @@ describe('brackets that cannot become Markdown syntax', () => {
       },
     );
   });
+
+  describe('links not written in brackets', () => {
+    it('escapes a definition label around autolinks', () => {
+      using editor = buildEditorFromExtensions(
+        MarkdownTestExtension,
+        AutoLinkNodeExtension,
+      );
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $createTextNode('[see '),
+                $createAutoLinkNode('https://example.com').append(
+                  $createTextNode('https://example.com'),
+                ),
+                $createTextNode(' today]: '),
+                $createAutoLinkNode('https://example.com').append(
+                  $createTextNode('https://example.com'),
+                ),
+              ),
+            ),
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertToMarkdownString())).toBe(
+        '[see https://example.com today&#93;: https://example.com',
+      );
+    });
+
+    it('escapes a bracket at the end of an autolink followed by (', () => {
+      using editor = buildEditorFromExtensions(
+        MarkdownTestExtension,
+        AutoLinkNodeExtension,
+      );
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $createAutoLinkNode('https://example.com').append(
+                  $createTextNode('https://example.com/[a]'),
+                ),
+                $createTextNode('(b)'),
+              ),
+            ),
+        {discrete: true},
+      );
+      const written = editor.read(() => $convertToMarkdownString());
+      expect(written).toBe('https://example.com/[a&#93;(b)');
+      editor.update(() => $convertFromMarkdownString(written), {
+        discrete: true,
+      });
+      editor.read(() => {
+        const paragraph = $getRoot().getFirstChildOrThrow();
+        assert($isElementNode(paragraph));
+        expect(paragraph.getChildren().some($isLinkNode)).toBe(false);
+      });
+    });
+
+    const WITHOUT_LINK = TRANSFORMERS.filter(
+      transformer => transformer !== LINK,
+    );
+
+    it('treats link text as literal text when LINK is not exported', () => {
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $createLinkNode('url').append($createTextNode('[a]')),
+                $createTextNode('(b)'),
+              ),
+            ),
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertToMarkdownString(WITHOUT_LINK))).toBe(
+        '[a&#93;(b)',
+      );
+    });
+
+    it('escapes a definition label across a link when LINK is not exported', () => {
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $createTextNode('['),
+                $createLinkNode('url').append($createTextNode('a')),
+                $createTextNode(']: /url'),
+              ),
+            ),
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertToMarkdownString(WITHOUT_LINK))).toBe(
+        '[a&#93;: /url',
+      );
+    });
+  });
+
+  it.each([
+    ['- [x] done', '- [x&#93; done'],
+    ['+ [ ] todo', '+ [ &#93; todo'],
+    ['* [] todo', '\\* [] todo'],
+    ['1. [x] done', '1. [x&#93; done'],
+    ['> [a]: b', '> [a&#93;: b'],
+    ['- [a]: b', '- [a&#93;: b'],
+    ['2) [a]: b', '2) [a&#93;: b'],
+  ])('escapes %j where a container marker precedes it', (text, expected) => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(() => $exportParagraph(text), {discrete: true});
+    expect(
+      editor.read(() =>
+        $convertToMarkdownString([CHECK_LIST, ...TRANSFORMERS]),
+      ),
+    ).toBe(expected);
+  });
+
+  it.each(['a- [x] done', '-[x] done', '1.[a]: b', 'x > [a]: b'])(
+    'leaves %j as typed',
+    text => {
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      editor.update(() => $exportParagraph(text), {discrete: true});
+      expect(editor.read(() => $convertToMarkdownString())).toBe(text);
+    },
+  );
 
   it.each([
     [

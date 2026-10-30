@@ -6,7 +6,7 @@
  *
  */
 
-import {$isLinkNode} from '@lexical/link';
+import {$isAutoLinkNode, $isLinkNode} from '@lexical/link';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
   $getRoot,
@@ -61,7 +61,7 @@ export function createMarkdownExport(
     });
 
   return node =>
-    withLineStateCache(() => {
+    withBracketContext(byType.textMatch, () => {
       const output = [];
       const children = (node || $getRoot()).getChildren();
 
@@ -116,7 +116,7 @@ export function createSelectionMarkdownExport(
     });
 
   return exportedSelection =>
-    withLineStateCache(() => {
+    withBracketContext(byType.textMatch, () => {
       // Every node asks whether it is selected, which reads the selection's
       // nodes. A read-only selection doesn't cache them, so this works on a
       // copy that does, instead of recomputing them for every node.
@@ -696,7 +696,10 @@ function $escapeLiteralBrackets(
 
 /** Stands for exported text that cannot be part of a label: a link. */
 const BARRIER = '\u0001';
-/** Stands for exported text this pass cannot see: a decorator. */
+/**
+ * Stands for exported text this pass cannot see: a decorator, or a node a
+ * text match transformer writes in its own syntax.
+ */
 const UNKNOWN = '\u0002';
 /**
  * How far a label's `]` can be from its `[`: 999 characters of label
@@ -705,30 +708,64 @@ const UNKNOWN = '\u0002';
 const MAX_LABEL_DISTANCE = 1000;
 
 /**
+ * Where a line of exported text stands so far: only whitespace and the
+ * markers a block container can start with (`>`, `-`, `*`, `+`, `1.`, `1)`),
+ * each followed by whitespace, in the middle of such a marker, or past them.
+ * A `[` that comes while the line is still at its start may begin a link
+ * reference definition or a task marker, here or inside the container the
+ * markers would open.
+ */
+type LinePhase = 'start' | 'bullet' | 'digits' | 'text';
+
+/**
  * What the exported text so far in a block says about the next character:
- * whether only whitespace (or unknown text, which may be empty) precedes it on
- * its line and how much, and how far back the nearest `[`, link or unknown
- * text is, with the character after it and the whitespace before it on its
- * line (-1 when something else precedes it there).
+ * the phase of its line, and how far back the nearest `[`, link or unknown
+ * text is, with the character after it and whether it came at a line start.
  */
 interface LineState {
-  lineIsBlank: boolean;
-  lineIndent: number;
+  phase: LinePhase;
   /** -1 when there is none within MAX_LABEL_DISTANCE. */
   openerDistance: number;
   openerChar: string;
   openerNext: string;
-  openerIndent: number;
+  openerAtLineStart: boolean;
 }
 
 const BLOCK_START: LineState = {
-  lineIndent: 0,
-  lineIsBlank: true,
+  openerAtLineStart: false,
   openerChar: '',
   openerDistance: -1,
-  openerIndent: -1,
   openerNext: '',
+  phase: 'start',
 };
+
+function nextLinePhase(phase: LinePhase, character: string): LinePhase {
+  if (character === UNKNOWN) {
+    // Unknown text may be empty, so it leaves the line where it was.
+    return phase;
+  }
+  const isSpace = character === ' ' || character === '\t';
+  switch (phase) {
+    case 'start':
+      return isSpace || character === '>'
+        ? 'start'
+        : character === '-' || character === '*' || character === '+'
+          ? 'bullet'
+          : character >= '0' && character <= '9'
+            ? 'digits'
+            : 'text';
+    case 'bullet':
+      return isSpace ? 'start' : 'text';
+    case 'digits':
+      return character >= '0' && character <= '9'
+        ? 'digits'
+        : character === '.' || character === ')'
+          ? 'bullet'
+          : 'text';
+    default:
+      return 'text';
+  }
+}
 
 /** Advance `state` over one character of exported text, in place. */
 function advanceLineState(state: LineState, character: string): void {
@@ -741,21 +778,16 @@ function advanceLineState(state: LineState, character: string): void {
     }
   }
   if (character === '\n') {
-    state.lineIsBlank = true;
-    state.lineIndent = 0;
+    state.phase = 'start';
     return;
   }
   if (character === '[' || character === BARRIER || character === UNKNOWN) {
     state.openerDistance = 0;
     state.openerChar = character;
     state.openerNext = '';
-    state.openerIndent = state.lineIsBlank ? state.lineIndent : -1;
+    state.openerAtLineStart = state.phase === 'start';
   }
-  if (character === ' ' || character === '\t') {
-    state.lineIndent++;
-  } else if (character !== UNKNOWN) {
-    state.lineIsBlank = false;
-  }
+  state.phase = nextLinePhase(state.phase, character);
 }
 
 function linkTextBracketsToEscape(text: string, nextChar: string): Set<number> {
@@ -801,22 +833,20 @@ function literalBracketsToEscape(
       // The distance to the nearest opener, counting this `]`.
       const distance =
         state.openerDistance === -1 ? -1 : state.openerDistance + 1;
-      const label = distance === 2 ? state.openerNext : '';
-      const atLineStart =
+      const opensLine =
         distance !== -1 &&
         state.openerChar !== BARRIER &&
-        state.openerIndent !== -1;
+        state.openerAtLineStart;
       const isUnknown = state.openerChar === UNKNOWN;
       if (
         after === '(' ||
         after === UNKNOWN ||
-        (atLineStart &&
-          after === ':' &&
-          state.openerIndent <= 3 &&
-          distance <= MAX_LABEL_DISTANCE) ||
-        (atLineStart &&
+        (opensLine && after === ':') ||
+        (opensLine &&
           /\s/.test(after) &&
-          (isUnknown || (distance <= 2 && /^\s?$|^[xX]$/.test(label))))
+          (isUnknown ||
+            distance === 1 ||
+            (distance === 2 && /^\s$|^[xX]$/.test(state.openerNext))))
       ) {
         escaped.add(index);
       }
@@ -826,10 +856,89 @@ function literalBracketsToEscape(
   return escaped;
 }
 
+/**
+ * The state kept for the export in progress: its text match transformers, how
+ * each element and text node they might write is exported, and the line state
+ * after each leaf read so far, so that each leaf is read once however many
+ * brackets follow it.
+ */
+interface BracketContext {
+  textMatchTransformers: TextMatchTransformer[];
+  exportKinds: Map<NodeKey, ExportKind>;
+  lineStates: Map<NodeKey, LineState>;
+}
+
+let bracketContext: BracketContext | null = null;
+
+function withBracketContext<T>(
+  textMatchTransformers: TextMatchTransformer[],
+  callback: () => T,
+): T {
+  const previous = bracketContext;
+  bracketContext = {
+    exportKinds: new Map(),
+    lineStates: new Map(),
+    textMatchTransformers,
+  };
+  try {
+    return callback();
+  } finally {
+    bracketContext = previous;
+  }
+}
+
+/**
+ * How a node's exported text reads around a bracket: a link written as
+ * `[text](url)`, text this pass reads, an inline element whose children are
+ * exported in place, or something written in a syntax it cannot see.
+ */
+type ExportKind = 'link' | 'text' | 'transparent' | 'unknown';
+
+function $exportKind(node: LexicalNode): ExportKind {
+  const context = bracketContext;
+  const cached = context && context.exportKinds.get(node.getKey());
+  if (cached) {
+    return cached;
+  }
+  let kind: ExportKind;
+  const isWritten = context
+    ? context.textMatchTransformers.some(transformer => {
+        try {
+          return (
+            transformer.export !== undefined &&
+            transformer.export(
+              node,
+              () => '',
+              () => '',
+            ) != null
+          );
+        } catch {
+          return true;
+        }
+      })
+    : $isLinkNode(node) && !$isAutoLinkNode(node);
+  if ($isTextNode(node)) {
+    kind = isWritten ? 'unknown' : 'text';
+  } else if ($isElementNode(node) && node.isInline()) {
+    kind = isWritten ? ($isLinkNode(node) ? 'link' : 'unknown') : 'transparent';
+  } else if ($isLineBreakNode(node) || $isElementNode(node)) {
+    kind = 'text';
+  } else {
+    kind = 'unknown';
+  }
+  if (context) {
+    context.exportKinds.set(node.getKey(), kind);
+  }
+  return kind;
+}
+
 function $isInsideLink(node: LexicalNode): boolean {
   for (let parent = node.getParent(); parent; parent = parent.getParent()) {
-    if ($isLinkNode(parent)) {
+    if ($exportKind(parent) === 'link') {
       return true;
+    }
+    if (!parent.isInline()) {
+      return false;
     }
   }
   return false;
@@ -837,15 +946,20 @@ function $isInsideLink(node: LexicalNode): boolean {
 
 /** Whether `node` is an inline element whose exported text is its children's. */
 function $isTransparentInline(node: LexicalNode | null): node is ElementNode {
-  return $isElementNode(node) && node.isInline() && !$isLinkNode(node);
+  return (
+    $isElementNode(node) &&
+    node.isInline() &&
+    $exportKind(node) === 'transparent'
+  );
 }
 
 /**
  * The first character of the exported text after `node` in its block: text
- * read through inline elements other than links, `]` at the end of a link's
- * text, `[` where a link starts, a newline for a line break, a backtick for
- * inline code, and UNKNOWN for a decorator. Empty at the end of the block or
- * of the exported selection.
+ * read through inline elements whose children are exported in place, `]` at
+ * the end of a link's text, `[` where a link starts, a newline for a line
+ * break, a backtick for inline code, and UNKNOWN for anything written in a
+ * syntax this pass cannot see. Empty at the end of the block or of the
+ * exported selection.
  */
 function $nextExportedChar(
   node: LexicalNode,
@@ -856,7 +970,7 @@ function $nextExportedChar(
     let next = current.getNextSibling();
     while (next === null) {
       const parent = current.getParent();
-      if ($isLinkNode(parent)) {
+      if (parent !== null && $exportKind(parent) === 'link') {
         return ']';
       }
       if (!$isTransparentInline(parent)) {
@@ -871,42 +985,27 @@ function $nextExportedChar(
     if (selection !== null && !next.isSelected(selection)) {
       return '';
     }
-    if ($isTextNode(next)) {
+    const kind = $exportKind(next);
+    if (kind === 'link') {
+      return '[';
+    } else if (kind === 'unknown') {
+      return UNKNOWN;
+    } else if ($isTextNode(next)) {
       const exported = $exportedText(next, selection);
       if (exported !== '') {
         return next.hasFormat('code') ? '`' : exported[0];
       }
     } else if ($isLineBreakNode(next)) {
       return '\n';
-    } else if ($isLinkNode(next)) {
-      return '[';
-    } else if (!$isElementNode(next)) {
-      return UNKNOWN;
     }
     current = next;
   }
 }
 
 /**
- * The line state after each leaf exported so far, for the export in progress,
- * so that each leaf's text is read once however many brackets follow it.
- */
-let lineStateCache: Map<NodeKey, LineState> | null = null;
-
-function withLineStateCache<T>(callback: () => T): T {
-  const previous = lineStateCache;
-  lineStateCache = new Map();
-  try {
-    return callback();
-  } finally {
-    lineStateCache = previous;
-  }
-}
-
-/**
  * The leaf exported just before `node` in its block, read through inline
- * elements other than links, or null at the start of the block or of the
- * exported selection.
+ * elements whose children are exported in place, or null at the start of the
+ * block or of the exported selection.
  */
 function $previousLeaf(
   node: LexicalNode,
@@ -933,20 +1032,21 @@ function $previousLeaf(
 /**
  * A leaf's exported text in the terms LineState reads: a line break as a
  * newline, inline code with its brackets and spaces masked, a link as BARRIER
- * and a decorator as UNKNOWN.
+ * and anything this pass cannot see as UNKNOWN.
  */
 function $leafText(leaf: LexicalNode, selection: BaseSelection | null): string {
-  if ($isTextNode(leaf)) {
+  const kind = $exportKind(leaf);
+  if (kind === 'link') {
+    return BARRIER;
+  } else if (kind === 'unknown') {
+    return UNKNOWN;
+  } else if ($isTextNode(leaf)) {
     const text = $exportedText(leaf, selection);
     return leaf.hasFormat('code') ? text.replace(/[[\] \t]/g, '`') : text;
   } else if ($isLineBreakNode(leaf)) {
     return '\n';
-  } else if ($isLinkNode(leaf)) {
-    return BARRIER;
-  } else if ($isElementNode(leaf)) {
-    return '';
   }
-  return UNKNOWN;
+  return '';
 }
 
 function $lineStateBefore(
@@ -954,6 +1054,7 @@ function $lineStateBefore(
   selection: BaseSelection | null,
 ): LineState {
   // Walk back to a leaf whose state is known, then read forward from it.
+  const lineStates = bracketContext && bracketContext.lineStates;
   const pending: LexicalNode[] = [];
   let state = BLOCK_START;
   for (
@@ -961,7 +1062,7 @@ function $lineStateBefore(
     leaf !== null;
     leaf = $previousLeaf(leaf, selection)
   ) {
-    const cached = lineStateCache && lineStateCache.get(leaf.getKey());
+    const cached = lineStates && lineStates.get(leaf.getKey());
     if (cached) {
       state = cached;
       break;
@@ -974,8 +1075,8 @@ function $lineStateBefore(
     for (const character of $leafText(leaf, selection)) {
       advanceLineState(next, character);
     }
-    if (lineStateCache) {
-      lineStateCache.set(leaf.getKey(), next);
+    if (lineStates) {
+      lineStates.set(leaf.getKey(), next);
     }
     state = next;
   }

@@ -154,7 +154,8 @@ synchronous loop over many documents holds one at a time.
 They throw a `YHeadlessError` with a `code`: `'not-initialized'` (no layout
 record yet: seed the document first), `'read-only'` (a newer version of
 the app's schema wrote to the document, a newer layout, content without a
-layout record, a node type the config does not register, content its
+layout record, a node type the config does not register, a node type stored
+in a way its class cannot be (`STORAGE_MISMATCH_WARNING`), content its
 classes throw on, or a named slot the document cannot store, which the
 binding refuses to write; the error's `warnings` are the
 binding's typed warnings that say which, so an app can narrow on each

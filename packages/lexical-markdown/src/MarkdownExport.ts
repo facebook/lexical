@@ -715,9 +715,14 @@ function isMarker(kind: number | undefined): boolean {
   return kind === OPENER || kind === CLOSER;
 }
 
-const SPACE = /\s/;
-// A bare URL, `www.` host, email or mention, which a reader may autolink.
-const LINKISH = /:\/\/|www\.|@/i;
+// Characters a URL, email or mention can hold.
+const LINK_CHARACTER = /[\w!#$%&'()*+,./:;=?@~-]/;
+// How far the export looks for one, which keeps the look linear.
+const LINK_LOOKAHEAD = 2048;
+// A URL, `www.` host, email or mention at the end of the text before it, or
+// at the start of the text after it.
+const LINK_AT_END = /:\/\/|(?:^|[^\w.-])www\.|@[\w.-]*\w$/i;
+const LINK_AT_START = /^[(]*(?:[a-z][\w+.-]*:\/\/|www\.)|^[\w.+-]*@\w/i;
 
 // Characters that a reference does not stand in for everywhere: CommonMark
 // readers and HTML decode references to control characters, unpaired
@@ -898,27 +903,26 @@ function decideReferences(
       : encodeEnd[index] || isEncoded(index)
         ? ';'
         : lastChar(index);
-  // Whether the word at the end (or start) of the piece at `index` is a bare
-  // URL, `www.` host, email or mention. A reference inside one would change
-  // what an autolinking reader links to, so the format is lost there instead,
-  // as before.
+  // Whether the end (or start) of the piece at `index` is a bare URL, `www.`
+  // host, email or mention. A reference inside one would change what an
+  // autolinking reader links to, so the format is lost there instead, as
+  // before.
   const isLinkish = (index: number, atEnd: boolean): boolean => {
     const value = values[index];
-    if (!LINKISH.test(value)) {
-      return false;
-    }
     let start = atEnd ? value.length : 0;
     let end = start;
     if (atEnd) {
-      while (start > 0 && !SPACE.test(value[start - 1])) {
+      const limit = Math.max(0, start - LINK_LOOKAHEAD);
+      while (start > limit && LINK_CHARACTER.test(value[start - 1])) {
         start--;
       }
     } else {
-      while (end < value.length && !SPACE.test(value[end])) {
+      const limit = Math.min(value.length, LINK_LOOKAHEAD);
+      while (end < limit && LINK_CHARACTER.test(value[end])) {
         end++;
       }
     }
-    return LINKISH.test(value.slice(start, end));
+    return (atEnd ? LINK_AT_END : LINK_AT_START).test(value.slice(start, end));
   };
   // Whether the last (or first) character of the piece at `index` can go out
   // as a reference.

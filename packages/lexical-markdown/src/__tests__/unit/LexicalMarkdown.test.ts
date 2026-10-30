@@ -4903,6 +4903,22 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       ],
       '&#120;**&#97;*“b”***',
     ],
+    // An `@` that is not part of a link where the text ends does not stop
+    // the reference.
+    [
+      [
+        ['联系我@微博你好', []],
+        [`${LEFT_DOUBLE_QUOTE}重要${RIGHT_DOUBLE_QUOTE}`, ['bold']],
+      ],
+      `联系我@微博你&#22909;**${LEFT_DOUBLE_QUOTE}重要${RIGHT_DOUBLE_QUOTE}**`,
+    ],
+    [
+      [
+        ['(a@b.co)and', []],
+        [`${LEFT_DOUBLE_QUOTE}x${RIGHT_DOUBLE_QUOTE}`, ['bold']],
+      ],
+      `(a@b.co)an&#100;**${LEFT_DOUBLE_QUOTE}x${RIGHT_DOUBLE_QUOTE}**`,
+    ],
     // A word character beside a word character needs no reference.
     [
       [

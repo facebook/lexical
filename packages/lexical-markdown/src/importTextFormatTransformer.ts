@@ -10,7 +10,12 @@ import type {TextFormatTransformersIndex} from './MarkdownImport';
 import type {TextFormatTransformer} from './MarkdownTransformers';
 import type {TextNode} from 'lexical';
 
-import {characterAt, characterBefore, isFlankedBy, PUNCTUATION} from './utils';
+import {
+  characterAt,
+  characterBefore,
+  isFlankedBy,
+  isPunctuation,
+} from './utils';
 
 interface Delimiter {
   index: number;
@@ -393,8 +398,8 @@ function canEmphasis(
   }
   // `_` opens or closes inside a word only beside punctuation.
   return {
-    canClose: isRight && (!isLeft || PUNCTUATION.test(charAfter || '')),
-    canOpen: isLeft && (!isRight || PUNCTUATION.test(charBefore || '')),
+    canClose: isRight && (!isLeft || isPunctuation(charAfter)),
+    canOpen: isLeft && (!isRight || isPunctuation(charBefore)),
   };
 }
 

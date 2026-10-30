@@ -63,37 +63,35 @@ export function transformersByType(transformers: Transformer[]): Readonly<{
 // U+FEFF. Delimiter flanking depends on both.
 // https://spec.commonmark.org/0.31.2/#unicode-punctuation-character
 // https://spec.commonmark.org/0.31.2/#unicode-whitespace-character
-export const PUNCTUATION = /[\p{P}\p{S}]/u;
-export const WHITESPACE = /[\p{Zs}\t\n\f\r]/u;
+const PUNCTUATION = /[\p{P}\p{S}]/u;
+const WHITESPACE = /[\p{Zs}\t\n\f\r]/u;
 
-const enum CharacterClass {
-  Whitespace,
-  Punctuation,
-  Other,
-}
+const WHITESPACE_CLASS = 0;
+const PUNCTUATION_CLASS = 1;
+const OTHER_CLASS = 2;
 
 /** How flanking sees `character`; the edge of the line is whitespace. */
-function classify(character: string | undefined): CharacterClass {
+function classify(character: string | undefined): number {
   if (character === undefined) {
-    return CharacterClass.Whitespace;
+    return WHITESPACE_CLASS;
   }
   const code = character.charCodeAt(0);
   // ASCII, without a regular expression
   if (code < 0x80) {
     return code === 0x20 || (code >= 0x09 && code <= 0x0d && code !== 0x0b)
-      ? CharacterClass.Whitespace
+      ? WHITESPACE_CLASS
       : (code >= 0x21 && code <= 0x2f) ||
           (code >= 0x3a && code <= 0x40) ||
           (code >= 0x5b && code <= 0x60) ||
           (code >= 0x7b && code <= 0x7e)
-        ? CharacterClass.Punctuation
-        : CharacterClass.Other;
+        ? PUNCTUATION_CLASS
+        : OTHER_CLASS;
   }
   return WHITESPACE.test(character)
-    ? CharacterClass.Whitespace
+    ? WHITESPACE_CLASS
     : PUNCTUATION.test(character)
-      ? CharacterClass.Punctuation
-      : CharacterClass.Other;
+      ? PUNCTUATION_CLASS
+      : OTHER_CLASS;
 }
 
 /**
@@ -108,14 +106,17 @@ export function isFlankedBy(
 ): boolean {
   const primaryClass = classify(primary);
   return (
-    primaryClass === CharacterClass.Other ||
-    (primaryClass === CharacterClass.Punctuation &&
-      classify(secondary) !== CharacterClass.Other)
+    primaryClass === OTHER_CLASS ||
+    (primaryClass === PUNCTUATION_CLASS && classify(secondary) !== OTHER_CLASS)
   );
 }
 
 export function isPunctuationOrSpace(character: string): boolean {
-  return classify(character) !== CharacterClass.Other;
+  return classify(character) !== OTHER_CLASS;
+}
+
+export function isPunctuation(character: string | undefined): boolean {
+  return classify(character) === PUNCTUATION_CLASS;
 }
 
 function isHighSurrogate(code: number): boolean {

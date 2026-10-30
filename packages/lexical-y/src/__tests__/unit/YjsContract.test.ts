@@ -471,6 +471,26 @@ const CHANGES: [string, (y: YModule) => Partial<YModule>, string[]][] = [
     ['Doc#_transactionCleanups'],
   ],
   [
+    'a renamed field the probe assigns',
+    y => ({
+      Doc: sameArity(
+        y.Doc,
+        class extends y.Doc {
+          constructor(...args: ConstructorParameters<YModule['Doc']>) {
+            super(...args);
+            const self = this as {
+              cleanupFormatting?: boolean;
+              cleanupFormattingRenamed?: boolean;
+            };
+            self.cleanupFormattingRenamed = self.cleanupFormatting;
+            delete self.cleanupFormatting;
+          }
+        },
+      ),
+    }),
+    ['Doc#cleanupFormatting'],
+  ],
+  [
     'a missing event',
     y => ({
       UndoManager: sameArity(

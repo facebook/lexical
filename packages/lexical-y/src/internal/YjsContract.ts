@@ -21,7 +21,7 @@ import {
   encodeStateAsUpdate,
   findIndexSS,
   findRootTypeKey,
-  GC,
+  type GC,
   getItemCleanStart,
   type ID,
   type IdSet,
@@ -333,8 +333,9 @@ function unsupportedYjsMessage({
 
 /**
  * The exports the check uses, named statically (a namespace import read by
- * key would keep every export of @y/y in an app's bundle). `GC` is only
- * probed, for the `GC` members.
+ * key would keep every export of @y/y in an app's bundle). Only what the
+ * binding imports: a new named import would fail to link, before this
+ * check, in native ES modules without it.
  *
  * @__NO_SIDE_EFFECTS__
  */
@@ -346,7 +347,6 @@ function yjsExports() {
     ContentString,
     ContentType,
     Doc,
-    GC,
     Item,
     Node: YNode,
     RelativePosition,
@@ -376,7 +376,7 @@ export type YjsExports = ReturnType<typeof yjsExports>;
 export function probeYjs(y: YjsExports = yjsExports()): string[] {
   const found: string[] = [];
   const exportsOf = y as unknown as Record<string, unknown>;
-  for (const name of [...YJS_EXPORTS, 'GC']) {
+  for (const name of YJS_EXPORTS) {
     if (typeof exportsOf[name] !== 'function') {
       found.push(name);
     }
@@ -401,15 +401,37 @@ export function probeYjs(y: YjsExports = yjsExports()): string[] {
  * event of {@link YJS_EVENTS}.
  */
 function probeMembers(y: YjsExports, found: string[]): void {
-  const samples = new Map<string, object>();
+  // Each kind is checked when its first object is made, before the probe
+  // changes it (an assignment would create a renamed field).
+  const members = yjsMembers() as unknown as Record<
+    string,
+    Record<string, (value: object) => boolean>
+  >;
+  const sampled = new Set<string>();
   const sample = (kind: string, value: unknown) => {
-    if (!samples.has(kind) && typeof value === 'object' && value !== null) {
-      samples.set(kind, value);
+    if (sampled.has(kind) || typeof value !== 'object' || value === null) {
+      return;
+    }
+    sampled.add(kind);
+    for (const [member, check] of Object.entries(members[kind])) {
+      let ok = false;
+      try {
+        ok = check(value);
+      } catch {
+        // A getter that throws is a changed member too.
+      }
+      if (!ok) {
+        found.push(`${kind}#${member}`);
+      }
     }
   };
   const events = new Set<string>();
   const doc = new y.Doc({gc: false});
+  // A garbage collected document, for a GC struct (the items of a deleted
+  // node).
+  const collected = new y.Doc();
   sample('Doc', doc);
+  sample('DocOpts', doc);
   sample('StructStore', doc.store);
   const um: {destroy?: () => void} = {};
   let threw: unknown = null;
@@ -462,11 +484,17 @@ function probeMembers(y: YjsExports, found: string[]): void {
     const ranges = ids.clients.get(1);
     sample('IdRanges', ranges);
     sample('IdRange', ranges && ranges.getIds()[0]);
-    sample('GC', new y.GC(y.createID(1, 0), 1));
+    const node = new y.Node('probe');
+    collected.transact(() => collected.get('probe').insert(0, [node]));
+    collected.transact(() => node.insert(0, 'ab'));
+    collected.transact(() => collected.get('probe').delete(0, 1));
+    const structs = collected.store.clients.get(collected.clientID) || [];
+    sample(
+      'GC',
+      structs.find(struct => !(struct instanceof y.Item)),
+    );
     sample('RelativePosition', new y.RelativePosition(null, null, null, 0));
     sample('decodeUpdate', y.decodeUpdate(y.encodeStateAsUpdate(doc)));
-    // Options are checked on what the constructor kept of them.
-    sample('DocOpts', doc);
     undoManager.undo();
     undoManager.clear();
   } catch (error) {
@@ -477,38 +505,23 @@ function probeMembers(y: YjsExports, found: string[]): void {
         um.destroy();
       }
       doc.destroy();
+      collected.destroy();
     } catch (error) {
       threw = threw || error;
     }
   }
-  // After a throw, only what was reached is checked (it usually names the
-  // cause), then the throw itself.
-  const members = yjsMembers() as unknown as Record<
-    string,
-    Record<string, (value: object) => boolean>
-  >;
-  for (const kind of Object.keys(members)) {
-    const value = samples.get(kind);
-    if (value === undefined && threw !== null) {
-      continue;
-    }
-    for (const [member, check] of Object.entries(members[kind])) {
-      let ok = false;
-      try {
-        ok = value !== undefined && check(value);
-      } catch {
-        // A getter that throws is a changed member too.
-      }
-      if (!ok) {
-        found.push(`${kind}#${member}`);
-      }
-    }
-  }
+  // After a throw, what was reached is checked (it usually names the
+  // cause), then the throw itself; otherwise every kind must have been made.
   if (threw !== null) {
     found.push(
       `probe threw: ${threw instanceof Error ? threw.message : String(threw)}`,
     );
     return;
+  }
+  for (const kind of Object.keys(members)) {
+    if (!sampled.has(kind)) {
+      found.push(`${kind} (not made)`);
+    }
   }
   for (const [emitter, names] of Object.entries(YJS_EVENTS)) {
     for (const name of names) {

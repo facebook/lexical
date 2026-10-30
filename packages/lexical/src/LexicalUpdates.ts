@@ -235,6 +235,17 @@ export function internalGetActiveEditorState(): EditorState | null {
   return activeEditorState;
 }
 
+/**
+ * The EditorState that the active read or update works on, or `null` outside
+ * of one. A state whose `_readOnly` is true is frozen, so a package can cache
+ * what it derives from it (keyed by the state) for as long as it holds it.
+ *
+ * @internal
+ */
+export function INTERNAL_getActiveEditorState(): EditorState | null {
+  return activeEditorState;
+}
+
 export function $applyTransforms(
   editor: LexicalEditor,
   node: LexicalNode,

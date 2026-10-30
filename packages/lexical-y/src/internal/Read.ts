@@ -293,6 +293,11 @@ export class Reader {
    */
   private readonly takenOut = new Set<NodeKey>();
   /**
+   * The lines of the containers this read read in full (see $readFullInner
+   * and $checkTakenOut).
+   */
+  private readonly linesTakenOut = new Set<NodeKey>();
+  /**
    * The stored inline elements this read leaves out on purpose: emptied,
    * and unable to be empty (see $readInline). Their Y.Node is still held, and
    * they are no loss (see $checkTakenOut).
@@ -416,6 +421,13 @@ export class Reader {
       this.state.hidden,
     );
     const old = cs.units;
+    // The lines the editor holds here, which a full read sets aside where the
+    // document does not hold them here (see $checkTakenOut).
+    for (const child of el.getChildren()) {
+      if (this.state.unitByKey.has(child.getKey())) {
+        this.linesTakenOut.add(child.getKey());
+      }
+    }
     const {units, tops} = this.$materialize(cs, el, parsed, old);
     this.$setChildren(el, tops);
     this.$commitUnits(cs, 0, old.length, units, old);
@@ -503,8 +515,27 @@ export class Reader {
         '@lexical/y: a read would drop a node the document still holds',
       );
     }
+    // A line a full read of its container set aside that is still out of
+    // the tree, and that another container the document holds still stores
+    // (its unit there was not read): the editor held it in the container
+    // read, where an update tagged SKIP_COLLAB_TAG moved it.
+    for (const key of this.linesTakenOut) {
+      const node = $getNodeByKey(key);
+      if (node === null || node.isAttached()) {
+        continue;
+      }
+      const unit = state.unitByKey.get(key);
+      invariant(
+        unit === undefined ||
+          state.containers.get(unit.cs.y) !== unit.cs ||
+          isDeleted(unit.cs.y) ||
+          !unit.cs.units.includes(unit),
+        '@lexical/y: a read would drop a node the document still holds',
+      );
+    }
     this.takenOut.clear();
     this.leftOut.clear();
+    this.linesTakenOut.clear();
   }
 
   /**

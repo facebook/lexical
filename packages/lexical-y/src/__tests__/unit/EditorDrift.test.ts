@@ -390,6 +390,44 @@ describe.each([false, true])('blockIds %s', blockIds => {
     b.editor.dispose();
   });
 
+  // The same, where the self-check reads the container again in full: A
+  // moves paragraph p2 into box b (unwritten); B types a paragraph into b.
+  // The full read of b set p2 aside (the document stores it in the root,
+  // which nothing read): A read the whole document again instead.
+  test('a container a skipped update moved a line into, read again in full: the line stays', async () => {
+    const [a, b] = clients(2, blockIds);
+    b.editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append($p('top'), $createBoxNode('b').append($p('b1')), $p('p2'));
+      },
+      {discrete: true},
+    );
+    b.binding.initialize();
+    await flush();
+    a.editor.update(
+      () => {
+        const box = $getRoot().getChildAtIndex(1) as ElementNode;
+        box.append($getRoot().getLastChildOrThrow());
+      },
+      {discrete: true, tag: SKIP_COLLAB_TAG},
+    );
+    b.editor.update(
+      () => {
+        ($getRoot().getChildAtIndex(1) as ElementNode).append($p('new'));
+      },
+      {discrete: true},
+    );
+    await flush();
+    const expected =
+      'paragraph("top") / test_box[b](paragraph("b1") paragraph("new")) / paragraph("p2")';
+    expect(show(b)).toBe(expected);
+    expect(show(a)).toBe(expected);
+    a.editor.dispose();
+    b.editor.dispose();
+  });
+
   test('a block inserted after a run whose last node a skipped update moved: placed after what stays', async () => {
     // Without the self-check, which reads such a container again.
     const [a, b] = clients(2, blockIds, {selfCheck: false});

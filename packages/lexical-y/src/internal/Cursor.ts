@@ -29,7 +29,7 @@ import {
   TYPE_KEY,
   WRAPPER_PREFIX,
 } from './Schema';
-import {deleteItem, isGone} from './Unread';
+import {deleteItem, isGone} from './Seen';
 
 /*
  * Anchored editing of a Y.Node's children.

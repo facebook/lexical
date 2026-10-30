@@ -125,11 +125,16 @@ issues and docs that carry it.
 | D62 | **Two app versions that store a type differently insert its first node at once.** | Needs a storage-kind record protocol; `schemaVersion` (D08) covers apps that bump it. | `OPEN` | 10-30 | [#9512] |
 | D63 | **A line without a marker joins a paragraph a collaborator appends.** | Every reader rule considered changes how stored documents read. | `OPEN` | 10-30 | [#9524] |
 | D64 | **Undoing a format while a collaborator edits inside its range.** | Yjs format items cannot be conditional on another item; the remaining option is a core or storage change. | `OPEN` | 10-30 | [#9560], [#9521] |
-| D65 | **A comment spreading after an offline client types plain text into it.** | Keeping the last nulls breaks growth bounds; the alternative needs recorded provenance. | `OPEN` | 10-30 | [#9564] |
+| D65 | **A comment spreading after an offline client types plain text into it.** | Keeping the last nulls breaks growth bounds; the alternative needs recorded provenance. [#9562], which extended the restore's end rule to runs the writer opened itself, is parked: each attempt regressed a case main handles. The case is tracked in [#9609], with the tests moving to main in [#9605]. A restore in a run whose format change wrote more than 64 items gets no end, because the end scan stops there ([#9603]). | `OPEN` | 10-30 | [#9564], [#9609], [#9562], [#9605], [#9603] |
 | D66 | **Server identity:** claim a client id on first use, or server-issued leases. | Claim on first use is the recommendation; not decided. | `OPEN` | 10-29 | |
 | D67 | **The rest of the server-defence proposals:** a relay gate judging version records against a published ceiling, budgets, recovery, an author map, agent write policies. | Researched and proposed; nothing decided beyond D46. | `OPEN` | 10-29 | |
 | D68 | **Splice-based text edit helpers exported from Lexical** for agents that rewrite text, and named APIs for intent that `setTextContent` drops. | Agents should edit text in place; the API shape is undecided. | `OPEN` | 10-27 | [#9483] |
 | D69 | **Comments on block decorators** (an image), as in Google Docs. | Not today, same as `MarkNode`; keep the door open. | `OPEN` | 10-23 | [#9380] |
+| D74 | **Keeping the run ends of text an undo removes from inside a format run.** | [#9561] keeps them, but regressed a concurrent undo ([#9593]) and is parked. Option C: settle the kept ends inside the undo that makes them stale, where the undoing client has seen them; the truly concurrent case would stay a documented limit. Its tests move to main in [#9605]. | `OPEN` | 10-30 | [#9561], [#9593], [#9605] |
+| D75 | **The table padding contract under collaboration.** When every client re-runs the table transforms after remote changes, concurrent pads add cells and the table never settles. | Padding that converges needs a rule: only the client that created a row pads it, or a width that is a function of the document instead of each client's write. Meanwhile the open [#9539] would pad, when an edit leaves the table's rows in place, only the rows that lost cells. Two clients padding at once is the accepted limit D55. | `OPEN` | 10-30 | [#9582], [#9539] |
+| D76 | **A code-token-aware trim for remade text.** A stale replace of a word can take the first letter of the word a rewrite made from it, where a node boundary cut the old word. | Writing a changed word whole fixes it, but also rewrites highlighter tokens glued to a pasted-over token in a code line. A follow-up would apply the rule everywhere except at code highlight token boundaries (D29). | `OPEN` | 10-30 | [#9608] |
+| D77 | **A stale comment on a word a collaborator rewrites** lands on the new word for one client id order only. | Likely the documented race where text typed at the start of a range a collaborator formats takes that format, with a comment instead of a format. Either the docs name comments and whole-word replacements, or a fix makes both orders agree. | `OPEN` | 10-30 | [#9610], [limits] |
+| D78 | **A format spreading after one client's triple undo:** a client formats a run, types plain text, formats again and undoes all three while a collaborator types plain text inside the first run. | Reproduced on main in both client id orders; no design chosen. | `OPEN` | 10-30 | [#9599] |
 
 [root-agents]: ../../AGENTS.md
 [limits]: ../lexical-website/docs/collaboration/y.md#limits
@@ -181,3 +186,13 @@ issues and docs that carry it.
 [#9589]: https://github.com/meta/lexical/issues/9589
 [#9595]: https://github.com/meta/lexical/pull/9595
 [#9596]: https://github.com/meta/lexical/pull/9596
+[#9539]: https://github.com/meta/lexical/pull/9539
+[#9561]: https://github.com/meta/lexical/pull/9561
+[#9582]: https://github.com/meta/lexical/issues/9582
+[#9593]: https://github.com/meta/lexical/issues/9593
+[#9599]: https://github.com/meta/lexical/issues/9599
+[#9603]: https://github.com/meta/lexical/issues/9603
+[#9605]: https://github.com/meta/lexical/pull/9605
+[#9608]: https://github.com/meta/lexical/issues/9608
+[#9609]: https://github.com/meta/lexical/issues/9609
+[#9610]: https://github.com/meta/lexical/issues/9610

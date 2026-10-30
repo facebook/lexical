@@ -363,7 +363,7 @@ function $exportChildrenForSelection(
       }
     } else if ($isDecoratorNode(child)) {
       if (childIncluded) {
-        output.push(rawPiece(child.getTextContent()));
+        output.push(textPiece(child.getTextContent()));
         anyChildIncluded = true;
       }
     }
@@ -524,7 +524,7 @@ function $exportChildPieces(
         ),
       );
     } else if ($isDecoratorNode(child)) {
-      output.push(rawPiece(child.getTextContent()));
+      output.push(textPiece(child.getTextContent()));
     }
   }
 
@@ -675,9 +675,10 @@ function $exportTextFormat(
 /**
  * Exported inline Markdown, with the format markers kept apart from the text
  * until `joinPieces` can see the characters on both sides of each delimiter
- * run. `text` is text this export escaped, which a character reference can
- * stand in for; `raw` is anything else, such as code spans, line breaks and
- * the output of transformers and decorators.
+ * run. A character reference can stand in for a character of `text`, which
+ * is text and decorator content; `raw` is anything else, such as code spans,
+ * line breaks and the output of transformers, whose syntax a reference could
+ * break.
  */
 interface MarkdownPiece {
   kind: 'text' | 'raw' | 'opener' | 'closer';
@@ -704,14 +705,30 @@ function isMarker(piece: MarkdownPiece | undefined): boolean {
   );
 }
 
+// U+0000 and unpaired surrogates read back from a reference as U+FFFD.
+const UNREFERENCEABLE = /[\0\p{Cs}]/u;
+
 /** Whether a character reference can stand in for `character` beside a marker. */
 function isWordCharacter(character: string | undefined): boolean {
   return (
     character !== undefined &&
     !PUNCTUATION_OR_SPACE.test(character) &&
-    // An unpaired surrogate reads back from a reference as U+FFFD.
-    !/\p{Cs}/u.test(character)
+    !UNREFERENCEABLE.test(character)
   );
+}
+
+/** Adjacent markers, between the pieces at `before` and `after`. */
+interface MarkerRun {
+  before: number;
+  after: number;
+  /** Whether the first delimiter run opens a tag. */
+  opens: boolean;
+  /** Whether the last delimiter run closes a tag. */
+  closes: boolean;
+  /** The marker character after the first delimiter run, if any. */
+  afterFirst: string | undefined;
+  /** The marker character before the last delimiter run, if any. */
+  beforeLast: string | undefined;
 }
 
 /**
@@ -738,8 +755,10 @@ function joinPieces(pieces: MarkdownPiece[]): string {
       merged.push(piece);
     }
   }
-  const encodeStart = new Set<MarkdownPiece>();
-  const encodeEnd = new Set<MarkdownPiece>();
+  const runs: MarkerRun[] = [];
+  // The run that follows and the run that precedes each piece.
+  const runAfter: number[] = [];
+  const runBefore: number[] = [];
   for (let start = 0; start < merged.length; start++) {
     if (!isMarker(merged[start])) {
       continue;
@@ -749,67 +768,100 @@ function joinPieces(pieces: MarkdownPiece[]): string {
       end++;
     }
     // Markers of one character form one delimiter run, and only the first
-    // and the last run touch text.
-    const runs: {closes: boolean; opens: boolean; value: string}[] = [];
+    // and the last delimiter run touch text.
+    const groups: {closes: boolean; opens: boolean; value: string}[] = [];
     for (let i = start; i <= end; i++) {
       const {kind, value} = merged[i];
-      let run = runs[runs.length - 1];
-      if (!run || run.value[0] !== value[0]) {
-        run = {closes: false, opens: false, value: ''};
-        runs.push(run);
+      let group = groups[groups.length - 1];
+      if (!group || group.value[0] !== value[0]) {
+        group = {closes: false, opens: false, value: ''};
+        groups.push(group);
       }
-      run.value += value;
-      run.opens ||= kind === 'opener';
-      run.closes ||= kind === 'closer';
+      group.value += value;
+      group.opens ||= kind === 'opener';
+      group.closes ||= kind === 'closer';
     }
-    const firstOpens = runs[0].opens;
-    const lastCloses = runs[runs.length - 1].closes;
-    const before = merged[start - 1];
-    const after = merged[end + 1];
-    const charBefore =
-      before && characterBefore(before.value, before.value.length);
-    const charAfter = after && characterAt(after.value, 0);
-    const afterFirst = runs.length > 1 ? runs[1].value[0] : charAfter;
-    const beforeLast =
-      runs.length > 1 ? runs[runs.length - 2].value.slice(-1) : charBefore;
-    if (
-      before !== undefined &&
-      before.kind === 'text' &&
-      firstOpens &&
-      isWordCharacter(charBefore) &&
-      PUNCTUATION.test(afterFirst ?? '')
-    ) {
-      encodeEnd.add(before);
-    }
-    if (
-      after !== undefined &&
-      after.kind === 'text' &&
-      lastCloses &&
-      isWordCharacter(charAfter) &&
-      PUNCTUATION.test(beforeLast ?? '')
-    ) {
-      encodeStart.add(after);
-    }
+    const last = groups.length - 1;
+    runAfter[start - 1] = runBefore[end + 1] = runs.length;
+    runs.push({
+      after: end + 1,
+      afterFirst: last > 0 ? groups[1].value[0] : undefined,
+      before: start - 1,
+      beforeLast: last > 0 ? groups[last - 1].value.slice(-1) : undefined,
+      closes: groups[last].closes,
+      opens: groups[0].opens,
+    });
     start = end;
   }
-  let markdown = '';
-  for (const piece of merged) {
-    let {value} = piece;
-    if (encodeStart.has(piece)) {
-      const first = characterAt(value, 0)!;
-      value = toCharacterReference(first) + value.slice(first.length);
+  const encodeStart: boolean[] = [];
+  const encodeEnd: boolean[] = [];
+  const isText = (index: number) =>
+    index >= 0 && index < merged.length && merged[index].kind === 'text';
+  // A one-character piece written as a reference reads as punctuation at
+  // both ends: `&#97;`.
+  const isEncoded = (index: number) =>
+    (encodeStart[index] || encodeEnd[index]) &&
+    characterAt(merged[index].value, 0)!.length === merged[index].value.length;
+  const startChar = (index: number) =>
+    index >= merged.length
+      ? undefined
+      : encodeStart[index] || isEncoded(index)
+        ? '&'
+        : characterAt(merged[index].value, 0);
+  const endChar = (index: number) =>
+    index < 0
+      ? undefined
+      : encodeEnd[index] || isEncoded(index)
+        ? ';'
+        : characterBefore(merged[index].value, merged[index].value.length);
+  // Writing a one-character piece as a reference changes what the run on its
+  // other side sees, so that run is decided again. Each piece changes at most
+  // twice, so this stays linear.
+  const pending = runs.map((_run, index) => index);
+  while (pending.length > 0) {
+    const {before, after, opens, closes, afterFirst, beforeLast} =
+      runs[pending.pop()!];
+    if (
+      opens &&
+      isText(before) &&
+      isWordCharacter(endChar(before)) &&
+      PUNCTUATION.test(afterFirst || startChar(after) || '')
+    ) {
+      encodeEnd[before] = true;
+      if (isEncoded(before) && runBefore[before] !== undefined) {
+        pending.push(runBefore[before]);
+      }
     }
-    // A reference already written for the start counts as punctuation.
-    const last = characterBefore(value, value.length)!;
-    if (encodeEnd.has(piece) && isWordCharacter(last)) {
-      let body = value.slice(0, -last.length);
+    if (
+      closes &&
+      isText(after) &&
+      isWordCharacter(startChar(after)) &&
+      PUNCTUATION.test(beforeLast || endChar(before) || '')
+    ) {
+      encodeStart[after] = true;
+      if (isEncoded(after) && runAfter[after] !== undefined) {
+        pending.push(runAfter[after]);
+      }
+    }
+  }
+  let markdown = '';
+  for (let index = 0; index < merged.length; index++) {
+    let {value} = merged[index];
+    if (encodeStart[index]) {
+      const first = characterAt(value, 0)!;
+      markdown += toCharacterReference(first);
+      value = value.slice(first.length);
+    }
+    if (encodeEnd[index] && value !== '') {
+      const last = characterBefore(value, value.length)!;
+      value = value.slice(0, -last.length);
       // A backslash left unescaped (when preserving newlines) would escape
       // the reference's `&`, so it goes out as a reference too.
-      const backslashes = body.length - body.replace(/\\+$/, '').length;
+      const backslashes = value.length - value.replace(/\\+$/, '').length;
       if (backslashes % 2 === 1) {
-        body = body.slice(0, -1) + toCharacterReference('\\');
+        value = value.slice(0, -1) + toCharacterReference('\\');
       }
-      value = body + toCharacterReference(last);
+      value += toCharacterReference(last);
     }
     markdown += value;
   }

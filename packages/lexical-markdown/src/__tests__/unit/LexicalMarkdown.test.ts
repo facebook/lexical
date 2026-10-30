@@ -4877,6 +4877,32 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       ],
       '**a**~~!~~',
     ],
+    // A one-character reference reads as punctuation on its other side too,
+    // so the run there is decided again.
+    [
+      [
+        ['x', []],
+        ['a', ['bold']],
+        [`${LEFT_DOUBLE_QUOTE}b${RIGHT_DOUBLE_QUOTE}`, ['italic']],
+      ],
+      '&#120;**&#97;***“b”*',
+    ],
+    [
+      [
+        [`${LEFT_DOUBLE_QUOTE}a${RIGHT_DOUBLE_QUOTE}`, ['bold', 'italic']],
+        ['b', ['italic']],
+        ['c', []],
+      ],
+      '***“a”****&#98;*&#99;',
+    ],
+    [
+      [
+        ['x', []],
+        ['a', ['bold']],
+        [`${LEFT_DOUBLE_QUOTE}b${RIGHT_DOUBLE_QUOTE}`, ['bold', 'italic']],
+      ],
+      '&#120;**&#97;*“b”***',
+    ],
     // A word character beside a word character needs no reference.
     [
       [

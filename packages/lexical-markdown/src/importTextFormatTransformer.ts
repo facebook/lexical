@@ -10,12 +10,7 @@ import type {TextFormatTransformersIndex} from './MarkdownImport';
 import type {TextFormatTransformer} from './MarkdownTransformers';
 import type {TextNode} from 'lexical';
 
-import {
-  characterAt,
-  characterBefore,
-  isFlankedBy,
-  isPunctuation,
-} from './utils';
+import {characterAt, characterBefore, getEmphasisSides} from './utils';
 
 interface Delimiter {
   index: number;
@@ -49,32 +44,12 @@ export function findOutermostTextFormatTransformer(
   // (e.g., links, raw HTML) may need similar treatment in the future.
   const codeTransformer = textFormatTransformersIndex.transformersByTag['`'];
 
-  const excludeRanges: {start: number; end: number}[] = [];
-  let codeMatch: {
-    content: string;
-    endIndex: number;
-    startIndex: number;
-    tag: string;
-  } | null = null;
-  if (codeTransformer) {
-    const codeSpans = scanCodeSpans(textContent);
-
-    for (const span of codeSpans) {
-      if (!codeMatch) {
-        codeMatch = {
-          content: span.content,
-          endIndex: span.endIndex,
-          startIndex: span.startIndex,
-          tag: '`',
-        };
-      }
-
-      excludeRanges.push({
-        end: span.endIndex,
-        start: span.startIndex,
-      });
-    }
-  }
+  const codeSpans = codeTransformer ? scanCodeSpans(textContent) : [];
+  const codeMatch = codeSpans.length > 0 ? {...codeSpans[0], tag: '`'} : null;
+  const excludeRanges = codeSpans.map(span => ({
+    end: span.endIndex,
+    start: span.startIndex,
+  }));
 
   const delimiters = scanDelimiters(
     textContent,
@@ -123,10 +98,7 @@ export function findOutermostTextFormatTransformer(
   regexMatch.input = textContent;
 
   return {
-    codeSpans: excludeRanges.map(({start, end}) => ({
-      endIndex: end,
-      startIndex: start,
-    })),
+    codeSpans,
     endIndex: resultMatch.endIndex,
     // resultTransformer is the registered code transformer (by identity)
     // exactly when the chosen match is the code span.
@@ -257,7 +229,11 @@ function scanDelimiters(
       len++;
     }
 
-    const {canOpen, canClose} = canEmphasis(char, text, i, len);
+    const {canOpen, canClose} = getEmphasisSides(
+      char,
+      characterBefore(text, i),
+      characterAt(text, i + len),
+    );
 
     if (canOpen || canClose) {
       delimiters.push({
@@ -393,26 +369,6 @@ function processEmphasis(
   }
 
   return result;
-}
-
-function canEmphasis(
-  char: string,
-  text: string,
-  index: number,
-  length: number,
-): {canOpen: boolean; canClose: boolean} {
-  const charBefore = characterBefore(text, index);
-  const charAfter = characterAt(text, index + length);
-  const isLeft = isFlankedBy(charAfter, charBefore);
-  const isRight = isFlankedBy(charBefore, charAfter);
-  if (char !== '_') {
-    return {canClose: isRight, canOpen: isLeft};
-  }
-  // `_` opens or closes inside a word only beside punctuation.
-  return {
-    canClose: isRight && (!isLeft || isPunctuation(charAfter)),
-    canOpen: isLeft && (!isRight || isPunctuation(charBefore)),
-  };
 }
 
 export function importTextFormatTransformer(

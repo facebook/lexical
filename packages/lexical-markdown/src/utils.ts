@@ -113,16 +113,42 @@ export function isFlankedBy(
   const primaryClass = classify(primary);
   return (
     primaryClass === OTHER_CLASS ||
-    (primaryClass === PUNCTUATION_CLASS && classify(secondary) !== OTHER_CLASS)
+    isFlankedByClass(primaryClass, classify(secondary))
   );
+}
+
+function isFlankedByClass(primary: number, secondary: number): boolean {
+  return (
+    primary === OTHER_CLASS ||
+    (primary === PUNCTUATION_CLASS && secondary !== OTHER_CLASS)
+  );
+}
+
+/**
+ * Whether a delimiter run of `marker` between `before` and `after` can open
+ * and close emphasis; `_` opens or closes inside a word only beside
+ * punctuation.
+ * https://spec.commonmark.org/0.31.2/#can-open-emphasis
+ */
+export function getEmphasisSides(
+  marker: string,
+  before: string | undefined,
+  after: string | undefined,
+): {canOpen: boolean; canClose: boolean} {
+  const beforeClass = classify(before);
+  const afterClass = classify(after);
+  const isLeft = isFlankedByClass(afterClass, beforeClass);
+  const isRight = isFlankedByClass(beforeClass, afterClass);
+  return marker === '_'
+    ? {
+        canClose: isRight && (!isLeft || afterClass === PUNCTUATION_CLASS),
+        canOpen: isLeft && (!isRight || beforeClass === PUNCTUATION_CLASS),
+      }
+    : {canClose: isRight, canOpen: isLeft};
 }
 
 export function isPunctuationOrSpace(character: string): boolean {
   return classify(character) !== OTHER_CLASS;
-}
-
-export function isPunctuation(character: string | undefined): boolean {
-  return classify(character) === PUNCTUATION_CLASS;
 }
 
 function isHighSurrogate(code: number): boolean {

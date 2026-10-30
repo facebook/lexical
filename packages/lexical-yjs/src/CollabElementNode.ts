@@ -7,7 +7,7 @@
  */
 
 import type {Binding} from '.';
-import type {AbstractType, Map as YMap, XmlElement, XmlText} from 'yjs';
+import type {AbstractType, XmlElement, XmlText} from 'yjs';
 
 import invariant from '@lexical/internal/invariant';
 import {
@@ -22,6 +22,7 @@ import {
   type NodeKey,
   type NodeMap,
 } from 'lexical';
+import {Map as YMap} from 'yjs';
 
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabLineBreakNode} from './CollabLineBreakNode';
@@ -218,6 +219,7 @@ export class CollabElementNode {
     const children = this._children;
     let currIndex = 0;
     let pendingSplitText = null;
+    let orphaned = false;
 
     for (let i = 0; i < deltas.length; i++) {
       const delta = deltas[i];
@@ -261,8 +263,10 @@ export class CollabElementNode {
                   // Merge the text node with previous.
                   prevCollabNode._text += danglingText;
                 } else {
-                  // No previous text node to merge into, just delete the text.
-                  this._xmlText.delete(offset, danglingText.length);
+                  // No previous text node to merge into: the text is removed
+                  // from the shared type once all the deltas are applied (see
+                  // settleOrphanedText).
+                  orphaned = true;
                 }
               }
             } else {
@@ -291,10 +295,10 @@ export class CollabElementNode {
             // never can be dangling text.
 
             // We have a conflict where there was likely a CollabTextNode and
-            // an Lexical TextNode too, but they were removed in a merge. So
-            // let's just ignore the text and trigger a removal for it from our
-            // shared type.
-            this._xmlText.delete(offset, insertDelta.length);
+            // an Lexical TextNode too, but they were removed in a merge: the
+            // text has no text node to go in. It is removed from the shared
+            // type once all the deltas are applied (see settleOrphanedText).
+            orphaned = true;
           }
 
           currIndex += insertDelta.length;
@@ -350,6 +354,78 @@ export class CollabElementNode {
         throw new Error('Unexpected delta format');
       }
     }
+    if (orphaned) {
+      this.settleOrphanedText(binding);
+    }
+  }
+
+  /**
+   * Remove the text of this element's shared type that no text node holds
+   * (no text node's properties map comes before it: that map was deleted in
+   * a merge, or the text was inserted where no text node is), and build this
+   * element's collab children again from the shared type. The removal is
+   * made with the binding as its origin, so it is not read back as a remote
+   * change: removing it from the shared type at the index it held, and then
+   * reading that delete against collab children that never held the text,
+   * deleted another child (a mark next to the text vanished from the editor
+   * while its document kept it), and removing it at an offset into a text
+   * node instead of an index into the element deleted other text.
+   */
+  private settleOrphanedText(binding: Binding): void {
+    const xmlText = this._xmlText;
+    const orphans: [index: number, length: number][] = [];
+    let index = 0;
+    let inText = false;
+    for (const op of xmlText.toDelta() as {insert: unknown}[]) {
+      const insert = op.insert;
+      if (typeof insert === 'string') {
+        if (!inText) {
+          orphans.push([index, insert.length]);
+        }
+        index += insert.length;
+      } else {
+        inText =
+          insert instanceof YMap &&
+          getNodeTypeFromSharedType(insert as YMap<unknown>) !== 'linebreak';
+        index += 1;
+      }
+    }
+    if (orphans.length > 0) {
+      binding.doc.transact(() => {
+        for (let i = orphans.length - 1; i >= 0; i--) {
+          xmlText.delete(orphans[i][0], orphans[i][1]);
+        }
+      }, binding);
+    }
+    const children: CollabElementNode['_children'] = [];
+    let text: CollabTextNode | null = null;
+    for (const op of xmlText.toDelta() as {insert: unknown}[]) {
+      const insert = op.insert;
+      if (typeof insert === 'string') {
+        if (text !== null) {
+          text._text += insert;
+        }
+        continue;
+      }
+      const sharedType = insert as XmlText | YMap<unknown> | XmlElement;
+      if (getNodeTypeFromSharedType(sharedType) === undefined) {
+        text = null;
+        continue;
+      }
+      const child = $getOrInitCollabNodeFromSharedType(
+        binding,
+        sharedType,
+        this,
+      );
+      if (child instanceof CollabTextNode) {
+        child._text = '';
+        text = child;
+      } else {
+        text = null;
+      }
+      children.push(child);
+    }
+    this._children = children;
   }
 
   syncChildrenFromYjs(binding: Binding): void {

@@ -701,6 +701,44 @@ describe('an insertion or deletion in a remade line keeps the words around it', 
   }
 });
 
+// An insertion or deletion at a word's edge, or next to punctuation, keeps
+// the old characters, as typed text does: a collaborator's concurrent
+// replacement of that word takes them out of the new one. main wrote a word
+// that was a node of its own whole and kept both words; writing such a word
+// whole here would also write again a collaborator's delete in a word joined
+// to it by punctuation (`foo.bar`, above), so the typed-text merge is kept
+// and pinned.
+describe("an edit at a word's edge merges as typed text does", () => {
+  const ROWS: [string, string, string, string, string, string][] = [
+    ['x ', 't49z', ' y', 't49', 't77z', 'x t77z y'],
+    ['x ', 'file', ' y', 'files', 'note', 'x notes y'],
+    ['use ', 'v1.2.3', ' now', 'v1.20.3', 'v2.0.0', 'use 0v2.0.0 now'],
+  ];
+  for (const [pre, word, post, made, replaced, expected] of ROWS) {
+    for (const ids of IDS) {
+      test(`"${pre}" | **"${word}"** | "${post}" made again as "${pre}${made}${post}" ‖ the peer replaces "${word}" with "${replaced}" (ids ${ids})`, async () => {
+        const t = await setup(
+          $doc(() => [$plain(pre), $bold(word), $plain(post)]),
+          {ids},
+        );
+        t.offline();
+        t.a.update($remake(pre + made + post));
+        t.b.update(() => {
+          ($line().getChildAtIndex(1) as TextNode).spliceText(
+            0,
+            word.length,
+            replaced,
+            false,
+          );
+          $setSelection(null);
+        });
+        await t.sync();
+        await expectEverywhere(t.peers, expected);
+      });
+    }
+  }
+});
+
 // A replacement keeps whole words: a token made again with one piece
 // changed while a collaborator replaces the old token ends with both tokens
 // whole, as two concurrent replacements of one token always do (in client

@@ -41,13 +41,71 @@ other clients cannot move to Yjs 14, or when you need the
 ## Install
 
 ```bash
-npm i @lexical/y @lexical/extension lexical @y/y@14.0.0-rc.29
+# @lexical/rich-text, @lexical/list and @y/websocket are for the example
+# below; use the extensions and the provider your app needs.
+npm i --save-exact @lexical/y@nightly @lexical/extension@nightly \
+  lexical@nightly @lexical/rich-text@nightly @lexical/list@nightly \
+  @y/y@14.0.0-rc.29 @y/websocket@4.0.0-rc.2
 ```
 
-`@y/y` is a peer dependency pinned to the release candidate `@lexical/y` is
-tested with; npm's `latest` tag points at an older one, so name the version.
+**`@lexical/y` supports exactly one Yjs version: install the `@y/y`
+version it names** (its exact peer dependency, also exported as
+`SUPPORTED_YJS_VERSION`), and only one copy of it. npm's `latest` tag points
+at an older release candidate, so name the version. The exact version is
+enforced by that peer dependency: `@y/y` exposes no version at run time, so
+`@lexical/y` cannot compare it there. What it checks at run time is the
+Yjs it writes through: `createYDoc`, `YBinding` (and so `YCollabExtension`)
+and the headless helpers check, once per app, that the `@y/y` they loaded
+provides the exports, fields and events the binding uses, and throw a
+`YUnsupportedYjsError` before anything is written when it does not:
+
+- `data.reason: 'changed-internals'`: the app runs a `@y/y` without
+  something the binding uses (pnpm only warns about an unmet peer
+  dependency, and npm installs one with `--legacy-peer-deps`); `data.found`
+  lists what differs.
+- `data.reason: 'other-copy'`: the document (or `root`) comes from a second
+  copy of `@y/y`.
+
+A release candidate older than `14.0.0-rc.25` (npm's `latest` among them)
+fails earlier, when the app is built or loaded, because it lacks the
+`Node` export: esbuild reports `No matching export in
+"node_modules/@y/y/src/index.js" for import "Node"` (other bundlers word it
+their own way), and native ES modules throw `SyntaxError: The requested module
+'@y/y' does not provide an export named 'Node'`. One that provides
+everything the binding uses passes the check (`14.0.0-rc.25` to `rc.28`
+do), and so would a later one that kept the same shape with different
+behaviour, which is why the peer dependency names one version.
+
+The fix in every case is the same: install `@y/y@<data.supported>` once
+(`npm ls @y/y` shows one version, deduped) and create documents with
+`createYDoc`. There is no option to skip the check. The check makes two
+scratch documents, once, and each draws a client id: a test that seeds
+Yjs's randomness to replay documents sees the random ids of later
+documents shift (give those documents explicit client ids).
+
 The type declarations `@y/y` ships do not type-check on their own (an
-upstream issue): if you run `tsc`, set `skipLibCheck: true`.
+upstream issue): if you run `tsc`, set `skipLibCheck: true`. Lexical's types
+also need TypeScript 5.2 or later with `moduleResolution` set to `bundler`,
+`node16` or `nodenext`. With an older setting (`node`, `node10`), TypeScript
+reads a stub instead, and every import fails with "Module '@lexical/y' has
+no exported member" rather than an error that names the setting.
+
+- **`@nightly` until a Lexical release includes `@lexical/y`.** Until then,
+  `npm install @lexical/y` does not install a working copy, so install every Lexical package of your app from the
+  same nightly, in one command so that they resolve to the same version.
+  Each nightly `@lexical/y` depends on the `lexical` of its own nightly, so
+  a `lexical` from another version puts
+  [two copies of Lexical](/docs/concepts/one-lexical-per-app) in the app.
+  Once a release includes it, install that release (without `@nightly`).
+- **Name the version of the `@y/*` packages you install.** The `latest`
+  tags of `@y/websocket` (4.0.0-0) and `@y/protocols` (1.0.6-0) are builds
+  for the earlier `yjs@14.0.0-*` prereleases, not `@y/y`: npm installs that
+  `yjs` next to `@y/y`, and the provider then applies updates to your
+  document with a second copy of Yjs that `@lexical/y` is not tested with.
+  The release candidates that peer on `@y/y` (`@y/websocket@4.0.0-rc.2`,
+  `@y/protocols@1.0.6-rc.1`) are the ones the Lexical playground is tested
+  with. `npm ls yjs` should show no `yjs@14.0.0-*` (a Yjs 13 `yjs` for
+  `@lexical/yjs` documents is fine).
 
 ## Set up an editor
 
@@ -95,6 +153,19 @@ provider.once('sync', () => {
 });
 ```
 
+:::warning Initial content must be the same on every client
+
+`binding.initialize()` writes this client's initial content into a new
+document. When two clients open a new document at once, each writes its
+own, and the document keeps one copy only if the two are identical: a
+welcome line with the user's name, a template with random block ids, or a
+`$initialEditorState` that differs between app versions shows twice, with
+no warning. Create such documents in one place instead, on the server with
+[`seedYState`](./y-server.md), and have clients start empty (see "Initial
+content with random values" in [Limits](#limits)).
+
+:::
+
 - Create the document with **`createYDoc`** (`createYDoc(stored)` for a
   stored state) and hand it to the provider: it turns Yjs's format cleanup
   off before anything is applied to it. In a plain `new Y.Doc()` the
@@ -121,9 +192,14 @@ provider.once('sync', () => {
 - `binding.initialize()`, called after the provider's first sync, writes the
   editor's content into an empty document (an `editor.update()` still
   pending is part of it). Two clients that initialize the same content in a
-  new document at once write it once, when they would write the same items
+  document at once write it once, when they would write the same items
   (clients with different block id configurations, or different
-  `schemaVersion`s, write different ones, so the content shows twice). The editor then shows the content as stored, as
+  `schemaVersion`s, write different ones, so the content shows twice). That
+  holds for a root inside another shared type and for a root that held
+  content before, when both clients loaded the same state of the document
+  (the initial content of such a root is written on a copy of the whole
+  document, a cost that grows with the other content the document holds;
+  seed large documents in one place instead). The editor then shows the content as stored, as
   every reader does (a line break written inside a text node shows as a
   line break node), with its selection kept (a node selection keeps its
   nodes, found by the Yjs identity they are stored or shown by: a node's
@@ -254,6 +330,44 @@ right after that update commits, in an update of its own.
 `binding.getCursor()` and `binding.$resolveCursor()` convert the selection
 to and from Yjs relative positions for an awareness-based cursor UI; the
 binding does not render remote cursors itself.
+`getCursor()` returns plain JSON, so it can go in the awareness state the
+provider shares:
+
+```ts
+// Share this client's selection.
+editor.registerUpdateListener(() => {
+  provider.awareness.setLocalStateField('cursor', binding.getCursor());
+});
+
+// Find where each collaborator's selection is.
+provider.awareness.on('change', () => {
+  for (const [clientID, state] of provider.awareness.getStates()) {
+    if (clientID === provider.awareness.clientID || !state.cursor) {
+      continue;
+    }
+    editor.read(() => {
+      const points = binding.$resolveCursor(state.cursor);
+      if (points === null) {
+        // The text the cursor was in is gone: remove its caret.
+        return;
+      }
+      // Lexical points ({key, offset, type}): draw the caret from them here,
+      // for example at editor.getElementByKey(points.anchor.key).
+    });
+  }
+});
+```
+
+To tear a client down (a test, a closed tab in a single-page app), dispose
+of the editor, which disconnects the binding, and destroy the provider and
+the awareness it created: `provider.destroy()` leaves the awareness's
+timers running, which keeps a Node process from exiting.
+
+```ts
+editor.dispose();
+provider.destroy();
+provider.awareness.destroy();
+```
 
 ### Warnings
 
@@ -262,17 +376,18 @@ extension, see [Errors and warnings](/docs/extensions/defining-extensions#errors
 Each warning is a `LexicalWarning` with a stable `code` and typed `data`;
 `isYWarning(error)` narrows it to the `YWarning` union, where `code` decides
 the type of `data`, and `data.reason` says which case it is. The `message` is
-a short note for developers: render your own text from `code` and `data`.
+for developers (what happened and what to do): render your own text from
+`code` and `data`.
 
 | Constant | Reported when | `data` (`reason`: other fields) |
 | -- | -- | -- |
 | `UNSUPPORTED_SCHEMA_WARNING` | A client of a newer version of your app (a higher `schemaVersion`) wrote to the document, on open or mid-session; see [Versioning your schema](#versioning-your-schema). Read only. | `'newer'`: `found`; `'malformed'`: `key`, `found`. All: `supported` (your `schemaVersion`) |
 | `UNSUPPORTED_LAYOUT_WARNING` | The layout is one this version cannot read. Read only. | `'newer'`: `found`; `'malformed'`: `key`, `found`; `'missing'`, `'removed'`; `'legacy-roots'`: `roots`. All: `supported` |
-| `UNKNOWN_NODE_TYPES_WARNING` | The document has node types the editor cannot build: types it does not register, however they are stored (a link class it lacks too), or content its classes throw on. Read only. | `'unregistered'`, `'malformed-slot'`: `types`; `'unreadable'`: `types`, `error` |
+| `UNKNOWN_NODE_TYPES_WARNING` | The document has node types the editor cannot build: types it does not register, however they are stored (a link class it lacks too), or content its classes throw on; or the document could not be read at all (`'unreadable'` with empty `types`, the cause in `error`). Read only. | `'unregistered'`, `'malformed-slot'`: `types`; `'unreadable'`: `types`, `error` |
 | `STORAGE_MISMATCH_WARNING` | A node type is stored in a way its class cannot be (one warning per type). Read only. | `'declaration-changed'`: `type`, `stored`, `declared`; `'malformed'`: `type`, `key`, `found` |
 | `UNSUPPORTED_SLOTS_WARNING` | Named slots where the document cannot store them. Not written; read only. | `'stored-host'`, `'root'`: `types` |
 | `UNSUPPORTED_CONFIG_WARNING` | `BlockIdExtension` with `repairTransforms: true`, or a document with Yjs's format cleanup on (not from `createYDoc`), see [Set up an editor](#set-up-an-editor). Nothing is written; read only. | `'repair-transforms'`: `options`; `'cleanup-formatting'` |
-| `NESTED_FALLBACK_WARNING` | A class that declares a line, format or group is stored as a node of its own (see [How content is stored](#how-content-is-stored)). Once per binding, class and reason. | `type`, and `method` (`'merge-override'`) or `properties` (`'undeclared-properties'`) |
+| `NESTED_FALLBACK_WARNING` | A class that declares a line, format or group is stored as a node of its own (see [How content is stored](#how-content-is-stored)). Once per binding, class and reason. | `'merge-override'`: `type`, `method`; `'undeclared-properties'`: `type`, `properties`; `'inline-slots'`, `'inline-incomplete-schema'`, `'type-name'`, `'merge-incomplete-schema'`, `'merge-slots'`, `'group-children'`, `'group-state-merge'`, `'group-incomplete-schema'`: `type` |
 | `UNSYNCED_VALUE_WARNING` | A property or NodeState value is not plain JSON, so it is not synchronized. Once per binding and property. | `'not-json'`: `property` |
 | `UNSUPPORTED_EDIT_WARNING` | A local update changed the editor while the binding is read only (reported once each time it goes read only). Not written; what it changed is read again, or, once the document cannot be read, the editor shows again the last state it showed before the update. | `'read-only'` |
 | `SELF_CHECK_WARNING` | The self-check (`selfCheck`) found the editor and the document disagree. | `'local'`, `'remote'`: `problems` |
@@ -288,6 +403,7 @@ import {
   UNSUPPORTED_SCHEMA_WARNING,
   type YWarning,
 } from '@lexical/y';
+import {defineExtension} from 'lexical';
 
 function banner(warning: YWarning): string | null {
   switch (warning.code) {
@@ -307,6 +423,7 @@ function banner(warning: YWarning): string | null {
 
 defineExtension({
   // ...
+  name: 'my-app/editor',
   onWarn(error) {
     if (isYWarning(error)) {
       showBanner(banner(error));
@@ -368,7 +485,7 @@ release's clients with the version of the schema they were built with.
   older client then only loses the ability to edit documents a newer one
   wrote to, never what they hold. An app that never bumps keeps today's
   behavior between versions (see "Older app versions" in [Limits](#limits)).
-- **Rendering the warning.** The message is a short note for developers.
+- **Rendering the warning.** The message is for developers.
   Render your own banner from `code` and `data`, for example "This document
   was edited with a newer version of the app. Reload to get the latest
   version." (see the banner example in [Warnings](#warnings)). Where the
@@ -598,8 +715,11 @@ block-beta
 ```
 
 **Adjacent equal links merge** (same URL, target, rel and title), and so do
-adjacent lists of the same type. Inline content directly in the root or in a
-table cell (text, a link, a mark) is wrapped in a paragraph.
+adjacent lists of the same type. Nested lists of the same type in adjacent
+list items merge too, keeping the first list's start: turning a nested bullet
+list into a number list right after another item's nested number list makes
+it part of that list. Inline content directly in the root or in a table cell
+(text, a link, a mark) is wrapped in a paragraph.
 
 ```mermaid
 block-beta
@@ -654,8 +774,12 @@ person's:
 
 - **Edit text in place** (insert and delete characters in a text node)
   rather than replacing blocks or whole documents. A replaced block is a
-  delete and an insert, so what collaborators type into it at the same time
-  is lost (see [Limits](#limits)). Lexical records the text edits of an
+  delete and an insert: in a line such as a paragraph, what collaborators
+  type into it at the same time survives, with its own formatting, at the
+  start of the new text (typed at the end of the line, it can also stay at
+  the end), and the formatting of the replaced characters does not carry
+  over; replacing a block stored as a node of its own, such as a table,
+  deletes what was typed in it (see [Limits](#limits)). Lexical records the text edits of an
   update while the binding is attached: `TextNode#spliceText`, the
   selection's `insertText` and `removeText` (and the commands built on
   them), splits and merges of text nodes, text typed into a node Lexical
@@ -673,8 +797,24 @@ person's:
   their characters (the hashtag plugin, a keyword highlighter or another
   transform making a part of a node again, an entity grown over the word
   after it, two entities made plain text at once), also when the update
-  then edits them; text made where the line's text changed (a node with
-  other text, a line break, an inline node) is new where it is put. Prefer
+  then edits them. Where the line's text changed, the text of nodes made in
+  place of removed ones keeps the start and end it shares with the line's
+  text as it was, by character, whatever nodes held it (as y-prosemirror
+  keeps a text run's): a block's text nodes made again from its JSON with
+  one word changed write that word alone, so a letter a collaborator types
+  into another word of the line at the same time stays in that word, and a
+  character a collaborator deletes there stays deleted. A replacement
+  replaces whole words, as below, and so does an insertion between two
+  letters or digits of a word or a deletion inside one, so that an edit
+  computed before it that replaces the old word takes nothing out of the new
+  one; an insertion or deletion at a word's edge or next to punctuation
+  keeps the old characters, as typed text does, and a concurrent
+  replacement of that word takes them out of the new one. A separator alone
+  between the changed words and the kept text is written with them, unless
+  it was a node of its own (a tab, a line break, a node of spaces). A word
+  joined to a changed word through an inline node, with no space between, is
+  written again with it; text between two separate changes is written
+  again, and an inline node made there is new where it is put. Prefer
   these to `setTextContent`, which sets a node's text whole: such a change
   (and a change the browser makes to the DOM text, as an IME composition
   does) keeps the start and end its text shares with the node's old text,
@@ -721,7 +861,9 @@ merge the `update` it returns into the live document (see
 
 ## Servers
 
-Any Yjs 14 server or relay can host the documents. Clients of
+A Yjs 14 (`@y/y`) server or relay can host the documents when it meets
+the requirements below (format cleanup off, updates delivered in order, and
+for yrs, its version and client ids). Clients of
 `@lexical/yjs` write to other roots (`root`, `root-v2`), never to
 `DEFAULT_ROOT_NAME` (`'lexical-y'`), so they cannot change a `@lexical/y`
 document's content and the server needs no check to keep them out.
@@ -745,6 +887,33 @@ A relay that cannot import it sets the flag on a new document itself
 Otherwise, when Yjs applies an update there it deletes format items that
 it finds redundant but the clients keep, and the state the server stores
 reads differently from what the clients show.
+
+**A relay for `@y/websocket` clients.** The published
+`@y/websocket-server` does not fit: its latest version, 0.1.5, depends on
+the `yjs@14.0.0-*` prereleases, not `@y/y`, and keeps each room in a plain
+`Doc`, with the format cleanup on. The Lexical playground's development
+relay,
+[`collab-y-server.mjs`](https://github.com/meta/lexical/blob/main/packages/lexical-playground/scripts/collab-y-server.mjs),
+is a complete in-memory example (no persistence, authentication or room
+eviction) that `@y/websocket` clients connect to at `ws://host:port/<room>`;
+drop its test-only `/health` and `/delay` endpoints before you build a relay
+on it. It keeps one
+document per room, applies what each connection sends to it, and sends the
+updates the document emits to the room's connections, in the order it
+applied them. It uses `@y/y`, `@y/protocols` (the sync and awareness
+messages), `lib0` (their encoding) and `ws`; create each room's document
+with `createYDoc()` from `@lexical/y` (or set
+`doc.cleanupFormatting = false`, as that script does):
+
+```bash
+npm i --save-exact @y/y@14.0.0-rc.29 @y/protocols@1.0.6-rc.1 \
+  lib0@1.0.0-rc.36 ws @lexical/y@nightly
+```
+
+To persist a room, load its stored state with `createYDoc(stored)` before
+the first connection syncs, and store `encodeStateAsUpdate(doc)` (from
+`@y/y`) after the updates it applies, one write at a time per room, so that
+an older snapshot never replaces a newer one.
 
 Servers built on **yrs before 0.28** (y-crdt) read client ids as 32-bit
 numbers, while Yjs 14 draws 53-bit ones: an author can receive its own
@@ -795,21 +964,47 @@ not merge as a user might expect:
   and two collaborators moving the same block at once can duplicate it.
   Undoing the move restores the block as it was before the move: what
   collaborators typed in it since is lost or, in a moved line, stays where
-  the moved copy was. The moved block is the node Lexical recorded as moved:
+  the moved copy was. A block moved into a container the move made (wrapping
+  it in a box) stays there whole once a collaborator typed in it, next to
+  the restored block, so its text shows twice (see Undo). The moved block is the node Lexical recorded as moved:
   an existing node passed to `insertBefore`, `insertAfter`, `append` or
   `splice` in the update (as a block drag does), even one put back where it
   was. The blocks it passes that Lexical did not record keep what
   collaborators type in them. Between recorded blocks, and in a reorder that
   Lexical did not record (an editor state set whole), the binding rewrites
   as few blocks as it can, the smaller ones on a tie.
-  Lexical operations that move content (turning a
-  paragraph into a list inside a container, indenting list items that hold
-  blocks) behave the same way, and so does the first edit that restructures
-  a list stored in an older shape (a nested list kept as a node inside an
-  item's line): its items move into the list's own sequence. A Backspace
-  that outdents an item of such a list is a delete in the nested list's
-  container and an insert in the list's: text a collaborator types in those
-  items at the same time is lost (only lists stored in that older shape).
+  Lexical operations that move content behave the same way: turning a
+  paragraph that holds text into a list inside a container that is neither
+  a shadow root nor declared `children: 'block'` (Lexical replaces the
+  whole container with the list, so its content moves into the list; if the
+  container also holds a block a list item cannot hold, such as a quote,
+  the block holding the selected text becomes a list in place, inside the
+  container, instead), indenting list items that hold blocks, merging table
+  cells (the content of the cells merged away moves into the first one), and
+  the first edit that restructures a list stored in an older shape (a nested
+  list kept as a node inside an item's line): its items move into the list's
+  own sequence. In a table cell or another shadow root, or a container
+  declared `children: 'block'`, the paragraph becomes a list item in place
+  and keeps what collaborators type in it (see
+  [block containers](../serialization/serialization.md#node-structure)). A
+  Backspace that outdents an item of a list stored in that older shape is a
+  delete in the nested list's container and an insert in the list's: text a
+  collaborator types in those items at the same time is lost.
+- **Text nodes made again with other text.** Where an update replaces a
+  line's text nodes with new ones and the line's text changed (an AI rewrite
+  that makes a block's text nodes again with one word changed, or removes a
+  block's children and appends one new text node), a replaced node whose
+  text is not all there unchanged is written again whole: its characters are
+  deleted, and the new text is inserted. What a collaborator types into that
+  text at the same time, which the update's author has not seen, stays where
+  it was, so it lands outside the new text, before it (a letter typed at the
+  end of a word ends up in front of the rewritten text, out of its word),
+  and the collaborator's formatting of that text at the same time is not
+  kept. The concurrent typed text is kept, and every client shows the same
+  result. Edit the changed
+  words in place instead (`TextNode#spliceText`, the selection's
+  `insertText`; see [Edits made by code](#edits-made-by-code-agents-tools)):
+  only the changed characters are written.
 - **Delete wins.** Text typed into a container that a collaborator deletes at
   the same time is deleted with it, and so is a block moved into it.
 - **Last writer wins** for the fields of one link (URL and target change
@@ -875,6 +1070,14 @@ not merge as a user might expect:
     nothing and recomputes no column widths: the update in which Lexical
     runs a newly registered transform over the document writes nothing, and
     the editor reads what it changed again.
+  - Code stored without highlighting (written by a headless seed or
+    `editYState` whose extensions lack `CodePrismExtension` or
+    `CodeShikiExtension`) shows unhighlighted on every client until a local
+    edit in that code block, which highlights the whole block and writes it.
+    The highlighter's pass over the document when it registers writes
+    nothing, like the table plugin's above, and the binding reads content
+    without running transforms: a transform never rewrites what a client
+    read. Seed and edit documents with the same extensions as the clients.
   - A list item that holds its nested list next to other content (text, a
     second list) stays so until a local edit changes that item (its
     children, or the item itself; typing in its text does not). Lexical's
@@ -930,9 +1133,9 @@ not merge as a user might expect:
   document at once write it once only when their content is identical. An
   extension that gives new blocks random ids makes it differ, so the content
   shows twice; so do different block id configurations (with and without
-  `BlockIdExtension`, or another `$isIdentifiedBlock`), initializing a root
-  that held content before, and initializing a root inside another shared
-  type. Seed new documents in one place (on the server with `seedYState`, for
+  `BlockIdExtension`, or another `$isIdentifiedBlock`), and initializing a
+  root that held content before, or a root inside another shared type, after
+  the clients loaded different states of the document. Seed new documents in one place (on the server with `seedYState`, for
   example), or give the initial blocks fixed ids.
 - **Client ids add up.** A document keeps every client id that ever wrote
   to it, in its state vector (which every sync sends) and in the
@@ -947,18 +1150,40 @@ not merge as a user might expect:
   collaborator moved out of the removed range at the same time shows twice
   (the original next to the moved copy), and when two
   collaborators remove the same text and both undo, it shows twice.
+  Undoing the replacement of a block with a new one (`replace` without
+  `includeChildren`, written as a removal and a new block) after a
+  collaborator edited the new block brings the old block's text back and
+  keeps their edit next to it: text they typed there, or the text of a
+  block they put in its place, shows after the old text (twice, where they
+  put the same text back). `replace(node, true)`, which `$setBlocksType`
+  uses, keeps the block's children, and undoing it keeps their text once.
   Undoing a format change does not undo a collaborator's later change of
   part of its range, nor the value that change restored after itself: color
   `abc`, let a collaborator recolor `b`, then undo the color, and `c` keeps
-  the old color, up to the end of the range (the same holds for text a
-  collaborator types or pastes inside the range as you undo). Undoing a link
+  the old color, up to the end of the range. The same holds for text a
+  collaborator types or pastes inside the range without that format,
+  whether you saw it before you undo or it arrives as you undo: bold
+  `one two`, let a collaborator type plain ` mid` after `one`, then undo
+  the bold, and ` two` stays bold. Undoing a link
   while a collaborator formats text inside it keeps the link on its text:
   formatting text in a link also sets the link's text format, which writes
   the link there again. Where a collaborator overwrote a step of yours
   entirely, the undo manager skips that step as changing nothing, and the
   same undo also reverts your step before it. When you undo a format change
   while a collaborator removes that format and undoes the removal, the text
-  keeps the format: the collaborator's undo brings it back.
+  keeps the format: the collaborator's undo brings it back. A comment or
+  format can run on past its end when writes two collaborators made inside
+  it are undone while another client deletes text across its end: it
+  carries on over the following words, possibly into the next line. No
+  text is lost. A format a collaborator applies
+  starting right where a run of that format ends, or from inside the run
+  past its end, can be lost on their text after the run when a client
+  other than the one that formatted the run, at the same time, removes the
+  format from part of the run or types inside it without the format: with
+  `Kilo` bolded by one client, another unbolds `il` or types plain text
+  inside `Kilo` as the first or a third bolds ` bb` (or `lo bb`), and with
+  some client id orders ` bb` stays plain. No text is lost, and when that
+  client undoes its edit, ` bb` is bold again.
 - **Large lists.** A structural edit in a list costs time proportional to
   the list on every client.
 - **Older app versions.** Clients of different `schemaVersion`s never
@@ -988,7 +1213,10 @@ not merge as a user might expect:
   an older version of it deletes the fields a newer one added. Declare fields
   in `$config` to keep them.
 - **The caret when a collaborator rewrites its line.** A caret stays after
-  the text it was after. When a collaborator replaces the line holding it,
+  the text it was after; a caret in an empty line stays at that line's
+  start when a collaborator types there (and so does the end of a range
+  that ends there; a range that starts there does not take in what they
+  type). When a collaborator replaces the line holding it,
   deleting all the line showed and putting new content at its place in one
   change (an agent's block-level write, a paste over the line), the caret
   keeps its offset in the new line, clamped to its end (in the first line,
@@ -997,12 +1225,27 @@ not merge as a user might expect:
   place (or replaced by a block node) sends it to the start of the line
   after, or to the end of the line before where a block node follows,
   never onto the block node.
+- **Yjs versions the run-time check cannot tell apart.** `@y/y` exposes no
+  version at run time, so `@lexical/y` refuses a `@y/y` that lacks an
+  export, member or event it uses (see [Install](#install)), but one with
+  the same ones passes (`14.0.0-rc.25` to `rc.28` do), even if its
+  functions behave differently, and so does a provider that bundles its own
+  copy of Yjs and applies updates to your document after the binding
+  started. The exact version is the peer dependency's to enforce: install
+  the `@y/y` version `@lexical/y` names, once (`npm ls @y/y`).
 - **NodeState key order.** Other clients (and any later reader) get a node's
   NodeState with its keys in sorted order, which every client builds the
   same way, not in the order the author's editor exported them (a Yjs map
   does not keep one). Compare node JSON without relying on key order.
 - **Other races.** A split racing a change of the line's type gives the
-  first half the splitter's type. Bold ‖ bold on adjacent ranges of one line
+  first half the splitter's type. A join (Backspace at the start of a line,
+  or undoing a split) while a collaborator inserts or moves a block to the
+  place of the join joins the line before to that block instead: its text
+  becomes part of the block, which keeps its own type (a paragraph joined
+  into a code block that way becomes code), and the line after stays apart:
+  after a Backspace it takes the type of the line before (a paragraph after
+  a heading becomes a heading), after undoing a split it keeps its own.
+  Bold ‖ bold on adjacent ranges of one line
   can leave part unformatted. A format removed from a range while a
   collaborator types inside it without that format (unbolding a word as
   they type into it, resolving a comment as they paste into it) comes back
@@ -1010,9 +1253,11 @@ not merge as a user might expect:
   format they saw there, which the removal could not see. It stops at the
   end of the range. Text typed inside or at the edge of text a
   collaborator deletes at the same time keeps the formats it was typed
-  with; text typed at the start of a range a collaborator formats at the
-  same time can take that format, by the order Yjs gives the two inserts
-  (the same on Yjs 13), and keeps it when that range is then deleted. A
+  with. Text typed inside a range a collaborator formats at the same time
+  takes that format (also when the range comes from an older read, as an
+  agent's does), and text typed at the start or the end of the range can
+  take it, by the order Yjs gives the two inserts (at the start the same on
+  Yjs 13, and it keeps the format when that range is then deleted). A
   node whose `isInline()` changes is written again in its new form, so
   text typed inside it at the same time lands next to it, in an inline
   element of its old form. Where text was deleted, the format items it
@@ -1026,6 +1271,42 @@ not merge as a user might expect:
   write its type, and Yjs keeps one of them by client id: a heading joined
   across a quote to the paragraph after it, while a collaborator joins that
   paragraph into the quote, can become a quote.
+
+### Open issues
+
+These are bugs, not intended behavior; each issue has a test that
+reproduces it:
+
+- Two joins at once into a code block or heading can change its block type
+  (see Other races above):
+  [#9511](https://github.com/meta/lexical/issues/9511).
+- Two versions of an app that store a node type differently, and insert
+  its first node at the same time, turn one of the two nodes into a
+  paragraph and leave the room read only:
+  [#9512](https://github.com/meta/lexical/issues/9512).
+- An update listener that throws stops the listeners registered after it,
+  so when it was registered before the binding, that commit is never
+  written: [#9514](https://github.com/meta/lexical/issues/9514).
+- Undoing a link while a collaborator formats text over the link's start
+  keeps the link on its own text (see Undo above):
+  [#9521](https://github.com/meta/lexical/issues/9521).
+- A line without a marker joins the start of a paragraph a collaborator
+  appends at the same time:
+  [#9524](https://github.com/meta/lexical/issues/9524).
+- Undoing a format while a collaborator moves a word into its range can
+  leave the format on text typed next to the range (see Undo above):
+  [#9560](https://github.com/meta/lexical/issues/9560).
+- A comment can spread onto later words when a client types uncommented
+  text inside it offline while a collaborator's deletes there drop the item
+  that ended it: [#9564](https://github.com/meta/lexical/issues/9564).
+- Turning a paragraph inside a container that is itself inside a
+  container (both not shadow roots) into a list removes the outer
+  container and makes no list, in every `@lexical/y` editor (it runs
+  `NodeStructureExtension`):
+  [#9570](https://github.com/meta/lexical/issues/9570).
+
+For `MarkStateExtension` comments, see the
+[comments limitations](./comments.md#limitations).
 
 ## Changing the layout and migrating
 

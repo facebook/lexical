@@ -44,7 +44,7 @@ import {$appendAll, spliceAll} from './Arrays';
 import {$innerBlockIdsOf, BlockIdSettler, NO_IDS} from './BlockIds';
 import {type Formats} from './Cursor';
 import {groupKeySig, groupSig} from './Groups';
-import {Hidden, isShown, shownText} from './Hidden';
+import {Hidden} from './Hidden';
 import {
   $foreignFlatKeys,
   $groupFields,
@@ -102,16 +102,21 @@ import {
   wrappersFromAttrs,
   type WrapperValue,
 } from './Schema';
+import {
+  isHeld,
+  isShown,
+  isShownEnd,
+  prevLiveEnd,
+  shownAttrs,
+  shownText,
+} from './Seen';
 import {$holds, $readSlots, $replaceStored, SLOT_PREFIX} from './Slots';
 import {
   type CS,
   EMPTY_FORMATS,
   isEndItem,
-  isShownEnd,
   type Kind,
   nameOf,
-  prevLiveEnd,
-  shownAttrs,
   type State,
   typeOf,
   type Unit,
@@ -149,8 +154,11 @@ type Piece = (
       tattrs: Attrs;
       tsig: string;
       wrappers: WrapperValue[];
-      /** Its text holds the composition's character (see composedAt). */
-      caret?: boolean;
+      /**
+       * Where in its text the composition's character is (see composedAt),
+       * when it holds it.
+       */
+      caretAt?: number;
       /** This text is the node being composed (see $readInline). */
       composed?: boolean;
     }
@@ -218,7 +226,7 @@ function parseRange(
       }
       continue;
     }
-    if (!it.countable || (hidden !== null && hidden.hides(it))) {
+    if (!it.countable || isHeld(it, hidden)) {
       continue;
     }
     if (isEndItem(it)) {
@@ -268,6 +276,9 @@ function parseRange(
   return {after: current, parsed};
 }
 
+/** Whether UTF-16 code unit `c` is the second half of a surrogate pair. */
+const isLowSurrogate = (c: number): boolean => c >= 0xdc00 && c <= 0xdfff;
+
 export class Reader {
   /**
    * The fields this editor owns in the value of a format wrapper (see
@@ -288,6 +299,22 @@ export class Reader {
    */
   private depth = 0;
   /**
+   * The nodes this read took out of where the editor held them (see
+   * $checkTakenOut).
+   */
+  private readonly takenOut = new Set<NodeKey>();
+  /**
+   * The lines of the containers this read read in full (see $readFullInner
+   * and $checkTakenOut).
+   */
+  private readonly linesTakenOut = new Set<NodeKey>();
+  /**
+   * The stored inline elements this read leaves out on purpose: emptied,
+   * and unable to be empty (see $readInline). Their Y.Node is still held, and
+   * they are no loss (see $checkTakenOut).
+   */
+  private readonly leftOut = new Set<NodeKey>();
+  /**
    * The line or inline container the local editor is composing in (set by
    * the binding): what a remote change does to it is held back where Yjs
    * keeps it (see Hidden and $hold), and every read shows it without what
@@ -300,7 +327,7 @@ export class Reader {
    * its text, it keeps it for the text holding that character (see
    * $readInline).
    */
-  composedAt: {client: number; clock: number} | null = null;
+  composedAt: {client: number; clock: number; offset: number} | null = null;
   /**
    * The values attributes `keys` of marker `y` had before the change read
    * (set by the binding, see Hidden#marker).
@@ -369,11 +396,34 @@ export class Reader {
   // -------------------------------------------------------------------------
   // Entry points
 
+  /**
+   * Run `read`, one logical read made of several entry points (the
+   * containers a re-read reads in full, one after the other): what each
+   * takes out is checked once, at the end (see $checkTakenOut), as a node
+   * one container sets aside can be placed again by the read of another.
+   */
+  $reading(read: () => void): void {
+    this.depth++;
+    try {
+      read();
+      if (this.depth === 1) {
+        this.$checkTakenOut();
+      }
+    } finally {
+      if (--this.depth === 0) {
+        this.settler.$settleIds();
+      }
+    }
+  }
+
   /** Read a whole container into its Lexical node. */
   $readFull(cs: CS, el: ElementNode): void {
     this.depth++;
     try {
       this.$readFullInner(cs, el);
+      if (this.depth === 1) {
+        this.$checkTakenOut();
+      }
     } finally {
       if (--this.depth === 0) {
         this.settler.$settleIds();
@@ -402,6 +452,13 @@ export class Reader {
       this.state.hidden,
     );
     const old = cs.units;
+    // The lines the editor holds here, which a full read sets aside where the
+    // document does not hold them here (see $checkTakenOut).
+    for (const child of el.getChildren()) {
+      if (this.state.unitByKey.has(child.getKey())) {
+        this.linesTakenOut.add(child.getKey());
+      }
+    }
     const {units, tops} = this.$materialize(cs, el, parsed, old);
     this.$setChildren(el, tops);
     this.$commitUnits(cs, 0, old.length, units, old);
@@ -444,12 +501,76 @@ export class Reader {
     this.changedAttrs = attrKeys;
     try {
       this.$applyInner(childItems, attrKeys);
+      if (this.depth === 1) {
+        this.$checkTakenOut();
+      }
     } finally {
       this.changedAttrs = changedAttrs;
       if (--this.depth === 0) {
         this.settler.$settleIds();
       }
     }
+  }
+
+  /**
+   * A read never drops a node the document still holds. A read takes nodes
+   * out of a container it reads where the document no longer has them
+   * there, and places every node the document moved where it now is: in a
+   * container this read reads, as a change moves a node by deleting it in
+   * one container and inserting it in another. A node it took out that is
+   * still out of the tree at the end, and that the document still holds (a
+   * stored node whose item is not deleted, other than an inline element
+   * this read left out because it is empty and cannot be), is one the editor held
+   * elsewhere than the document stores it: an update tagged SKIP_COLLAB_TAG
+   * moved it there, into the content read, or put the content that stores
+   * it inside it (see $setChildren). Left out, it would be dropped with everything it holds,
+   * and the editor would miss a part of the document until it reloads. The
+   * read throws instead, which reads the whole document again (see
+   * YBinding#recoverRead).
+   */
+  private $checkTakenOut(): void {
+    const state = this.state;
+    for (const key of this.takenOut) {
+      const node = $getNodeByKey(key);
+      if (node === null || node.isAttached()) {
+        continue;
+      }
+      const y = state.yByKey.get(key);
+      const held =
+        y !== undefined &&
+        state.keyByY.get(y) === key &&
+        !isDeleted(y) &&
+        !this.leftOut.has(key);
+      invariant(
+        !held,
+        '@lexical/y: a read would drop a node the document still holds',
+      );
+    }
+    // A line a full read of its container set aside that is still out of
+    // the tree, and that another container the document holds still stores
+    // (its unit there was not read): the editor held it in the container
+    // read, where an update tagged SKIP_COLLAB_TAG moved it.
+    for (const key of this.linesTakenOut) {
+      const node = $getNodeByKey(key);
+      if (node === null || node.isAttached()) {
+        continue;
+      }
+      // Its unit, still its own: a read that made the line's node anew (a
+      // line whose type changed) keeps its unit for the new node, and the
+      // old key's entry, stale, names it.
+      const unit = state.unitByKey.get(key);
+      invariant(
+        unit === undefined ||
+          unit.key !== key ||
+          state.containers.get(unit.cs.y) !== unit.cs ||
+          isDeleted(unit.cs.y) ||
+          !unit.cs.units.includes(unit),
+        '@lexical/y: a read would drop a node the document still holds',
+      );
+    }
+    this.takenOut.clear();
+    this.leftOut.clear();
+    this.linesTakenOut.clear();
   }
 
   /**
@@ -639,7 +760,7 @@ export class Reader {
         break;
       }
       passed.push(p);
-      if (isEndItem(p) && (hidden === null || !hidden.hides(p))) {
+      if (isEndItem(p) && !isHeld(p, hidden)) {
         const u = this.state.unitByEnd.get(p);
         if (u !== undefined && u.cs === cs) {
           // Content before a node unit (concurrent typing next to an
@@ -833,7 +954,7 @@ export class Reader {
     }
     let hidden = state.hidden;
     for (const it of items) {
-      if (it.deleted && (hidden === null || !hidden.hides(it))) {
+      if (it.deleted && !isHeld(it, hidden)) {
         return false;
       }
     }
@@ -1070,24 +1191,41 @@ export class Reader {
       // before materializing (which may move pooled nodes). A unit the
       // editor holds no node for (a node of a type it cannot build, read
       // only) covers none.
+      // Each unit's own nodes: the editor holds them in the units' order,
+      // unless an update the binding did not write (SKIP_COLLAB_TAG) moved
+      // one: then a node between them is not theirs, and stays.
       const oldTops: LexicalNode[] = [];
       let prev: LexicalNode | null = null;
-      const oldFirst = firstChildKey(old);
-      const oldLast = lastChildKey(old);
-      if (oldFirst !== null && oldLast !== null) {
-        const first = $getNodeByKey(oldFirst);
-        const last = $getNodeByKey(oldLast);
-        if (first !== null && last !== null && el.is(first.getParent())) {
+      const covered = new Set<NodeKey>();
+      for (const u of old) {
+        if (u.first === null || u.last === null) {
+          continue;
+        }
+        const first = $getNodeByKey(u.first);
+        const last = $getNodeByKey(u.last);
+        if (first === null || last === null || !el.is(first.getParent())) {
+          continue;
+        }
+        if (covered.size === 0) {
           prev = first.getPreviousSibling();
-          for (
-            let n: LexicalNode | null = first;
-            n !== null;
-            n = n.getNextSibling()
-          ) {
+        }
+        const span: LexicalNode[] = [];
+        let reached = false;
+        for (
+          let n: LexicalNode | null = first;
+          n !== null;
+          n = n.getNextSibling()
+        ) {
+          span.push(n);
+          if (n.is(last)) {
+            reached = true;
+            break;
+          }
+        }
+        for (const n of reached ? span : [first]) {
+          if (!covered.has(n.getKey())) {
+            covered.add(n.getKey());
             oldTops.push(n);
-            if (n.is(last)) {
-              break;
-            }
           }
         }
       }
@@ -1104,6 +1242,7 @@ export class Reader {
         const parent = n.getParent();
         // Nodes the read moved elsewhere (reused groups) stay where they are.
         if (!keep.has(n.getKey()) && parent !== null && parent.is(el)) {
+          this.takenOut.add(n.getKey());
           $keepingSelection(() => n.remove(true));
         }
       }
@@ -2173,7 +2312,16 @@ export class Reader {
     );
     if ($isElementNode(node)) {
       const kind: Kind = attrs[KIND_KEY] === 'i' ? 'i' : 'b';
-      const cs = this.state.newCS(y, node.getKey(), kind);
+      // One container state per Y.Node: a stored node made again (its
+      // editor node was dropped by an update the binding did not write, say)
+      // keeps the one its earlier node had, which mapNode moved to it. A
+      // second one would leave two states claiming the same items, and a
+      // read of the older one would take them from the one the binding
+      // reads remote changes with.
+      const known = this.state.containers.get(y);
+      const cs =
+        known === undefined ? this.state.newCS(y, node.getKey(), kind) : known;
+      cs.kind = kind;
       this.$readFull(cs, node);
     }
     $readSlots(this, node, y, attrs);
@@ -2239,19 +2387,23 @@ export class Reader {
           }
           for (const run of tabRuns(part, tattrs!, tsig)) {
             const holds = caret >= pos && caret < pos + run.text.length;
+            const inRun = caret - pos;
             pos += run.text.length;
             const last = pieces[pieces.length - 1];
             if (
               last !== undefined &&
               last.kind === 'text' &&
               last.tsig === run.tsig &&
+              !isTabText(run.tattrs) &&
               sameWrappers(last.wrappers, wrappers)
             ) {
+              if (holds) {
+                last.caretAt = last.text.length + inRun;
+              }
               last.text += run.text;
-              last.caret = last.caret === true || holds;
             } else {
               pieces.push({
-                caret: holds,
+                ...(holds ? {caretAt: inRun} : {}),
                 item: it,
                 kind: 'text',
                 tattrs: run.tattrs,
@@ -2368,11 +2520,18 @@ export class Reader {
     if (extraPool !== undefined) {
       collect(extraPool);
     }
-    const bySegment = new Map<string, TextNode>();
+    // The nodes showing each segment, in order: several where a run's tab
+    // characters are each a tab node (see tabRuns).
+    const bySegment = new Map<string, TextNode[]>();
     for (const t of texts) {
       const s = state.segments.get(t.getKey());
       if (s !== undefined) {
-        bySegment.set(s, t);
+        const list = bySegment.get(s);
+        if (list === undefined) {
+          bySegment.set(s, [t]);
+        } else {
+          list.push(t);
+        }
       }
     }
     const usedTexts = new Set<TextNode>();
@@ -2382,8 +2541,10 @@ export class Reader {
       segment: string | null,
     ): TextNode | null => {
       if (segment !== null) {
-        const t = bySegment.get(segment);
-        if (t !== undefined && !usedTexts.has(t) && t.getType() === type) {
+        const t = (bySegment.get(segment) || []).find(
+          n => !usedTexts.has(n) && n.getType() === type,
+        );
+        if (t !== undefined) {
           usedTexts.add(t);
           return t;
         }
@@ -2394,8 +2555,7 @@ export class Reader {
         if (
           !usedTexts.has(t) &&
           t.getType() === type &&
-          !state.segments.has(t.getKey()) &&
-          !(composedPlaced && t.getKey() === composedKey)
+          !state.segments.has(t.getKey())
         ) {
           usedTexts.add(t);
           return t;
@@ -2420,36 +2580,76 @@ export class Reader {
       const sameType = (piece: Piece): piece is Piece & {kind: 'text'} =>
         piece.kind === 'text' &&
         (piece.tattrs[TYPE_KEY] ?? 'text') === composed.getType();
+      // Where the composition's character is known (see composedAt), the
+      // node is the text around that character, with as many characters
+      // before and after it as the node had: the browser goes on composing
+      // at its offset in the node's DOM text, which stays right after that
+      // character. Another occurrence of the node's text elsewhere holds
+      // other characters (a collaborator's text, typed at the same place at
+      // the same time, that came in before the composition's own) and is
+      // not the node. Otherwise the node is the first occurrence of its
+      // text.
+      const caretAt = this.composedAt;
+      const anchor =
+        caretAt === null
+          ? -1
+          : pieces.findIndex(
+              piece => sameType(piece) && piece.caretAt !== undefined,
+            );
       for (let k = 0; ct !== '' && k < pieces.length; k++) {
         const piece = pieces[k];
-        if (!sameType(piece)) {
+        if (!sameType(piece) || (anchor >= 0 && k !== anchor)) {
           continue;
         }
-        const at = piece.text.indexOf(ct);
-        if (at < 0) {
-          continue;
+        const text = piece.text;
+        let at: number;
+        let end: number;
+        if (anchor >= 0) {
+          const from = piece.caretAt! - (caretAt!.offset - 1);
+          at = Math.max(0, from);
+          end = Math.min(text.length, from + ct.length);
+          // Never between the halves of a surrogate pair: where the start
+          // would be, the node starts before the pair, and the browser's
+          // offset then falls one unit before the character (a collaborator
+          // put an astral character just there)
+          if (at > 0 && isLowSurrogate(text.charCodeAt(at))) {
+            at--;
+          }
+          if (end < text.length && isLowSurrogate(text.charCodeAt(end))) {
+            end++;
+          }
+        } else {
+          at = text.indexOf(ct);
+          if (at < 0) {
+            continue;
+          }
+          end = at + ct.length;
+        }
+        if (typeof piece.tattrs[SEGMENT_KEY] === 'string') {
+          // A node kept apart from its neighbours (its run has a segment
+          // key) is never split around the composition: its parts would be
+          // nodes of one segment that Lexical does not merge when the
+          // composition ends, and the editor would keep two nodes where the
+          // document holds one. The composed node is the whole run.
+          at = 0;
+          end = text.length;
         }
         const parts: Piece[] = [];
         if (at > 0) {
-          parts.push({...piece, text: piece.text.slice(0, at)});
+          parts.push({...piece, text: text.slice(0, at)});
         }
-        parts.push({...piece, composed: true, text: ct});
-        if (at + ct.length < piece.text.length) {
-          parts.push({...piece, text: piece.text.slice(at + ct.length)});
+        parts.push({...piece, composed: true, text: text.slice(at, end)});
+        if (end < text.length) {
+          parts.push({...piece, text: text.slice(end)});
         }
         pieces.splice(k, 1, ...parts);
         composedPlaced = true;
         break;
       }
-      // Its text is not there whole (a collaborator deleted part of it, or
-      // put an inline node in it): it keeps its key for the text that holds
-      // the composition, so the browser goes on composing in its DOM node.
-      for (let k = 0; !composedPlaced && k < pieces.length; k++) {
-        const piece = pieces[k];
-        if (sameType(piece) && piece.caret === true) {
-          pieces[k] = {...piece, composed: true};
-          composedPlaced = true;
-        }
+      // Kept for its piece: no other piece reuses it, by position or by its
+      // segment (a code token split by NodeState shares one segment).
+      if (composedPlaced) {
+        usedTexts.add(composed);
       }
     }
     // Reading nested inline nodes reads their own content: keep this
@@ -2609,12 +2809,12 @@ export class Reader {
         // deleted concurrently) is not shown, as Lexical would remove it.
         if (
           node !== null &&
-          !(
-            $isElementNode(node) &&
-            !node.canBeEmpty() &&
-            node.getChildrenSize() === 0
-          )
+          $isElementNode(node) &&
+          !node.canBeEmpty() &&
+          node.getChildrenSize() === 0
         ) {
+          this.leftOut.add(node.getKey());
+        } else if (node !== null) {
           push(node);
         }
       }
@@ -2746,9 +2946,13 @@ export class Reader {
     ) {
       this.state.refresh.add(holder!.getKey());
     }
+    for (let i = left; i < prev.length - right; i++) {
+      this.takenOut.add(prev[i].getKey());
+    }
     // A reused node can hold `el` (concurrent edits moved a list into the
     // line of an item that list held): take `el` out first, or the tree
-    // would get a cycle. Its own container's read places it again.
+    // would get a cycle. Its own container's read places it again (see
+    // $checkTakenOut).
     if (middle.some($isElementNode)) {
       const ancestors = new Set<NodeKey>();
       for (let p = el.getParent(); p !== null; p = p.getParent()) {
@@ -2756,6 +2960,7 @@ export class Reader {
       }
       if (middle.some(c => ancestors.has(c.getKey()))) {
         writable.remove(true);
+        this.takenOut.add(el.getKey());
       }
     }
     const removeCount = prev.length - left - right;
@@ -3026,7 +3231,10 @@ function $applyJSON<T extends LexicalNode>(node: T, json: Attrs): T {
  * (`t: 'tab'`) and segment key apply to its `\t` only: other text inside
  * a tab's format range (left open there when the client that wrote the tab
  * removed it, while another client's content written inside it stays) is
- * read as plain text, never as tabs.
+ * read as plain text, never as tabs. Each `\t` is a run of its own (a tab
+ * node holds one): two clients' `\t` can share one tab's range (one
+ * written inside the other's run), and read as one tab node, one of them
+ * was not shown.
  */
 function tabRuns(
   text: string,
@@ -3036,19 +3244,23 @@ function tabRuns(
   if (text.length === 0) {
     return [];
   }
-  if (decodeFormatValue(tattrs[TYPE_KEY]) !== 'tab' || /^\t+$/.test(text)) {
+  if (decodeFormatValue(tattrs[TYPE_KEY]) !== 'tab') {
     return [{tattrs, text, tsig}];
   }
   const plain: Attrs = {...tattrs};
   delete plain[TYPE_KEY];
   delete plain[SEGMENT_KEY];
   const plainSig = stableStringify(plain);
-  return (text.match(/\t+|[^\t]+/g) || []).map(run =>
-    run[0] === '\t'
+  return (text.match(/\t|[^\t]+/g) || []).map(run =>
+    run === '\t'
       ? {tattrs, text: run, tsig}
       : {tattrs: plain, text: run, tsig: plainSig},
   );
 }
+
+/** Whether text read with `tattrs` is a tab's (one node per `\t`). */
+const isTabText = (tattrs: Attrs): boolean =>
+  decodeFormatValue(tattrs[TYPE_KEY]) === 'tab';
 
 function lineGroupSig(attrs: Attrs, group: GroupItemInfo | null): string {
   if (group === null) {
@@ -3384,27 +3596,6 @@ function collectPool(node: ElementNode, pool: Pool, state: State): void {
       }
     }
   }
-}
-
-/** The first child the units cover, or null when they cover none. */
-function firstChildKey(units: readonly Unit[]): NodeKey | null {
-  for (const u of units) {
-    if (u.first !== null) {
-      return u.first;
-    }
-  }
-  return null;
-}
-
-/** The last child the units cover, or null when they cover none. */
-function lastChildKey(units: readonly Unit[]): NodeKey | null {
-  for (let k = units.length - 1; k >= 0; k--) {
-    const last = units[k].last;
-    if (last !== null) {
-      return last;
-    }
-  }
-  return null;
 }
 
 /**

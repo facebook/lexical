@@ -12,10 +12,10 @@ import {
   $addUpdateTag,
   $createRangeSelection,
   $getSelection,
+  $isBlockContainer,
   $isElementNode,
   $isLineBreakNode,
   $isRangeSelection,
-  $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
   COLLABORATION_TAG,
@@ -60,7 +60,7 @@ function runElementTransformers(
   const grandParentNode = parentNode.getParent();
 
   if (
-    !$isRootOrShadowRoot(grandParentNode) ||
+    !$isBlockContainer(grandParentNode) ||
     parentNode.getFirstChild() !== anchorNode
   ) {
     return false;
@@ -114,7 +114,7 @@ function runMultilineElementTransformers(
   const grandParentNode = parentNode.getParent();
 
   if (
-    !$isRootOrShadowRoot(grandParentNode) ||
+    !$isBlockContainer(grandParentNode) ||
     parentNode.getFirstChild() !== anchorNode
   ) {
     return false;

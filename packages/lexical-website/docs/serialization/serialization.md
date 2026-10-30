@@ -665,6 +665,39 @@ its `isInline()` is false. Each editor enforces its own registration: a
 nested editor (an image caption) needs the extension too. For an editor
 built without extensions, `registerNodeStructure(editor)` does the same.
 
+Where the declarations are enforced (the extension, `registerNodeStructure`,
+or a `@lexical/y` binding, which always enforces them), a class that
+declares `children: 'block'` (a callout, a box) is also a block container
+for the structural commands, as the root and shadow roots are: turning one
+of its paragraphs into a list (`$insertList`, or a markdown shortcut),
+wrapping it (`$wrapNodes`), pasting several blocks into it (`insertNodes`),
+inserting a block such as a table or a horizontal rule
+(`$insertNodeToNearestRoot`), or pressing Enter in an empty list item acts
+on the blocks inside it and keeps the container, where otherwise the
+container itself would be replaced, split or left. Converting a block's type
+(`$setBlocksType`) and indenting already act on the block in place in any
+container; with the selection in an empty container, `$setBlocksType` puts
+the new block in it. Unlike a shadow root
+(`isShadowRoot()`), a declared container is not a selection boundary:
+select-all, the arrow keys, and Backspace or Delete at its edges treat it
+like any other element, so Backspace at the start of its first paragraph
+still joins that paragraph to the block before the container.
+[`$isBlockContainer(node)`](/docs/api/modules/lexical#isblockcontainer)
+tells whether a node is one. A container that declares nothing keeps the
+usual behavior, where `$insertList` replaces the whole container with the
+list; but if it also holds a block a list item cannot hold (a quote,
+another box), the paragraph (or heading, or quote) holding the selected
+text becomes a list in place, inside the container, instead of the list
+being dropped.
+
+```ts
+class CalloutNode extends ElementNode {
+  $config() {
+    return this.config('callout', {children: 'block', extends: ElementNode});
+  }
+}
+```
+
 Each key is inherited by subclasses that do not declare it. In development,
 the keys a class declares in its own `$config()` are checked when an editor
 is created: `by` must name known, non-derived values, a declared `inline`

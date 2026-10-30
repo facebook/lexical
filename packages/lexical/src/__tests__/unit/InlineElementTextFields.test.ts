@@ -177,47 +177,91 @@ describe('textFormat and textStyle of a block', () => {
   });
 });
 
+/** getFirstChild calls while `fn` runs. */
+function countGetFirstChild(fn: () => void): number {
+  const getFirstChild = ElementNode.prototype.getFirstChild;
+  let count = 0;
+  const spy = vi
+    .spyOn(ElementNode.prototype, 'getFirstChild')
+    .mockImplementation(function (this: ElementNode) {
+      count++;
+      return getFirstChild.call(this);
+    });
+  try {
+    fn();
+  } finally {
+    spy.mockRestore();
+  }
+  return count;
+}
+
+/** Each node's exportJSON, as the clipboard exports a selection. */
+function $exportEach(node: LexicalNode): unknown {
+  const json = node.exportJSON() as {children?: unknown[]};
+  if (node instanceof ElementNode) {
+    json.children = node.getChildren().map($exportEach);
+  }
+  return json;
+}
+
 describe('serializing inline elements nested inside each other', () => {
-  test('stays linear in the depth when each carries text fields', () => {
-    const calls: number[] = [];
-    for (const depth of [64, 128, 256]) {
-      using editor = buildEditorFromExtensions(
-        defineExtension({
-          $initialEditorState: null,
-          name: '[inline-element-text-fields-depth]',
-          nodes: [InlineWrapperNode],
-        }),
-      );
-      editor.update(
-        () => {
-          let node: LexicalNode = $createTextNode('leaf');
-          for (let i = 0; i < depth; i++) {
-            node = $wrapper(node);
-          }
-          $getRoot().append($createParagraphNode().append(node));
-        },
-        {discrete: true},
-      );
-      const getFirstChild = ElementNode.prototype.getFirstChild;
-      let count = 0;
-      const spy = vi
-        .spyOn(ElementNode.prototype, 'getFirstChild')
-        .mockImplementation(function (this: ElementNode) {
-          count++;
-          return getFirstChild.call(this);
-        });
-      try {
-        expect(JSON.stringify(editor.getEditorState().toJSON())).toContain(
-          'leaf',
+  for (const where of ['a committed state', 'an update'] as const) {
+    test(`stays linear in the depth when each carries text fields, in ${where}`, () => {
+      const calls: number[] = [];
+      for (const depth of [64, 128, 256]) {
+        using editor = buildEditorFromExtensions(
+          defineExtension({
+            $initialEditorState: null,
+            name: '[inline-element-text-fields-depth]',
+            nodes: [InlineWrapperNode],
+          }),
         );
-      } finally {
-        spy.mockRestore();
+        editor.update(
+          () => {
+            let node: LexicalNode = $createTextNode('leaf');
+            for (let i = 0; i < depth; i++) {
+              node = $wrapper(node);
+            }
+            $getRoot().append($createParagraphNode().append(node));
+          },
+          {discrete: true},
+        );
+        let json = '';
+        calls.push(
+          countGetFirstChild(() => {
+            if (where === 'a committed state') {
+              json = JSON.stringify(editor.getEditorState().toJSON());
+            } else {
+              editor.update(
+                () => {
+                  json = JSON.stringify($exportEach($getRoot()));
+                },
+                {discrete: true},
+              );
+            }
+          }),
+        );
+        expect(json).toContain('leaf');
       }
-      calls.push(count);
-    }
-    // Doubling the depth doubles the walk (about 2x), where a walk of each
-    // element's whole subtree would quadruple it.
-    expect(calls[1] / calls[0]).toBeLessThan(3);
-    expect(calls[2] / calls[1]).toBeLessThan(3);
+      // Doubling the depth doubles the walk (about 2x), where a walk of
+      // each element's whole subtree would quadruple it.
+      expect(calls[1] / calls[0]).toBeLessThan(3);
+      expect(calls[2] / calls[1]).toBeLessThan(3);
+    });
+  }
+
+  test('a change in an update is seen by the next serialization in it', () => {
+    withEditor(() => {
+      const text = $createTextNode('text');
+      const inner = $wrapper(text);
+      const outer = $wrapper(inner);
+      $getRoot().append($createParagraphNode().append(outer));
+      expect(fields(outer)).toEqual(OMITTED);
+      text.remove();
+      inner.append($createLineBreakNode());
+      expect(fields(outer)).toEqual(PERSISTED);
+      inner.append($createTextNode('again'));
+      expect(fields(outer)).toEqual(OMITTED);
+    });
   });
 });

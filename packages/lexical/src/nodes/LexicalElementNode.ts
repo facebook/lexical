@@ -6,7 +6,6 @@
  *
  */
 
-import type {EditorState} from '../LexicalEditorState';
 import type {
   KlassConstructor,
   LexicalEditor,
@@ -71,14 +70,11 @@ import {
   $getSlotsTextContentSize,
 } from '../LexicalSlot';
 import {INTERNAL_isNodeStructureEnforced} from '../LexicalStructure';
-import {
-  errorOnReadOnly,
-  getActiveEditor,
-  internalGetActiveEditorState,
-} from '../LexicalUpdates';
+import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
   $getDOMSlot,
   $getNodeByKey,
+  $getTextInsideCache,
   $isRootOrShadowRoot,
   getNodeKeyFromDOMNode,
   isDOMUnmanaged,
@@ -1085,14 +1081,6 @@ export function $isElementNode(
 }
 
 /**
- * For each element of a frozen EditorState, whether it holds a TextNode at
- * any depth. An inline element asks that of its whole subtree, so without
- * it serializing inline elements nested inside each other, each with a
- * textFormat or textStyle, would walk the same subtree once per level.
- */
-const textInsideCache = new WeakMap<EditorState, Map<NodeKey, boolean>>();
-
-/**
  * Whether `element` has a TextNode child or, when `deep`, a TextNode at any
  * depth inside it. Walked rather than materialized with getChildren(), and it
  * exits at the first TextNode. Both callers of shouldSerializeTextStyles test
@@ -1101,36 +1089,28 @@ const textInsideCache = new WeakMap<EditorState, Map<NodeKey, boolean>>();
  * this at all.
  */
 function $hasTextChild(element: ElementNode, deep: boolean): boolean {
-  if (!deep) {
-    for (
-      let child = element.getFirstChild();
-      child !== null;
-      child = child.getNextSibling()
-    ) {
-      if ($isTextNode(child)) {
-        return true;
-      }
-    }
-    return false;
+  if (deep) {
+    return $hasTextInside(element, $getTextInsideCache());
   }
-  const editorState = internalGetActiveEditorState();
-  let cache: Map<NodeKey, boolean> | null = null;
-  if (editorState !== null && editorState._readOnly) {
-    cache = textInsideCache.get(editorState) || null;
-    if (cache === null) {
-      cache = new Map();
-      textInsideCache.set(editorState, cache);
+  for (
+    let child = element.getFirstChild();
+    child !== null;
+    child = child.getNextSibling()
+  ) {
+    if ($isTextNode(child)) {
+      return true;
     }
   }
-  return $hasTextInside(element, cache);
+  return false;
 }
 
+/** $hasTextChild's deep walk; every element it visits is cached. */
 function $hasTextInside(
   element: ElementNode,
-  cache: Map<NodeKey, boolean> | null,
+  cache: Map<NodeKey, boolean>,
 ): boolean {
   const key = element.getKey();
-  const cached = cache !== null ? cache.get(key) : undefined;
+  const cached = cache.get(key);
   if (cached !== undefined) {
     return cached;
   }
@@ -1144,9 +1124,7 @@ function $hasTextInside(
       $isTextNode(child) ||
       ($isElementNode(child) && $hasTextInside(child, cache));
   }
-  if (cache !== null) {
-    cache.set(key, found);
-  }
+  cache.set(key, found);
   return found;
 }
 

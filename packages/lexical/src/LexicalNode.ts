@@ -87,6 +87,7 @@ import {
   getStaticNodeConfig,
   getSuperclassOf,
   internalMarkNodeAsDirty,
+  internalResetTextInsideCache,
 } from './LexicalUtils';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
@@ -1656,6 +1657,7 @@ export class LexicalNode {
     if (selection !== null) {
       selection.setCachedNodes(null);
     }
+    internalResetTextInsideCache(editorState);
     if (writableNode !== undefined) {
       // Transforms clear the dirty node set on each iteration to keep track on newly dirty nodes
       internalMarkNodeAsDirty(writableNode);

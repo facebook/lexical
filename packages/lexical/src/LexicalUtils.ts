@@ -3129,6 +3129,32 @@ export function $isKeyInSelectionNodes(
   return nodes.some(node => node.__key === key);
 }
 
+/**
+ * For each element of an EditorState, whether it holds a TextNode at any
+ * depth, as ElementNode#shouldSerializeTextStyles asks for an inline element.
+ * Without it, serializing inline elements nested inside each other, each with
+ * a textFormat or textStyle, walks the same subtree once per level. A pending
+ * state's entry is dropped by getWritable, since a change to any node can
+ * change what its ancestors hold.
+ */
+const textInsideCache = new WeakMap<EditorState, Map<NodeKey, boolean>>();
+
+/** @internal */
+export function $getTextInsideCache(): Map<NodeKey, boolean> {
+  const editorState = getActiveEditorState();
+  let cache = textInsideCache.get(editorState);
+  if (cache === undefined) {
+    cache = new Map();
+    textInsideCache.set(editorState, cache);
+  }
+  return cache;
+}
+
+/** @internal */
+export function internalResetTextInsideCache(editorState: EditorState): void {
+  textInsideCache.delete(editorState);
+}
+
 /** @internal */
 export type TypeToNodeMap = Map<string, NodeMap>;
 /**

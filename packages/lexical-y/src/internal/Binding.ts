@@ -2215,6 +2215,11 @@ export class YBinding {
         this.checkUnknownTypes();
         this.flushRefresh(true);
       },
+      // The whole document as it is, the change being read included (see
+      // startReading): read inside a transaction (a layout record a change
+      // brought, see readChange), it would otherwise show that change's
+      // content as not there yet.
+      before: () => this.startReading(),
       // The whole document: read again, it would throw again.
       recover: (error, shown) => this.failClosed(error, shown),
       replacesPending: true,

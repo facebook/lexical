@@ -46,18 +46,33 @@ import {
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {createYDoc, YBinding, YCollabExtension, type YDoc} from '../../..';
+import {
+  createYDoc,
+  isYWarning,
+  UNSUPPORTED_EDIT_WARNING,
+  UNSUPPORTED_SCHEMA_WARNING,
+  YBinding,
+  YCollabExtension,
+  type YDoc,
+} from '../../..';
 
 type Client = {
   binding: YBinding;
   doc: YDoc;
   editor: LexicalEditor & {dispose(): void};
-  warnings: string[];
+  warnings: Error[];
 };
+
+/** The codes of the binding's warnings, with their reason where they give one. */
+const codes = (warnings: Error[]) =>
+  warnings.filter(isYWarning).map(w => {
+    const reason = (w.data as {reason?: unknown} | undefined)?.reason;
+    return typeof reason === 'string' ? `${w.code}:${reason}` : w.code;
+  });
 
 function client(schemaVersion: number, selfCheck: boolean): Client {
   const doc = createYDoc(null, {gc: false});
-  const warnings: string[] = [];
+  const warnings: Error[] = [];
   const editor = buildEditorFromExtensions(
     defineExtension({
       $initialEditorState: null,
@@ -71,7 +86,7 @@ function client(schemaVersion: number, selfCheck: boolean): Client {
         throw e;
       },
       onWarn: w => {
-        warnings.push(w.message);
+        warnings.push(w);
       },
     }),
   );
@@ -188,9 +203,12 @@ describe('S9-1: a refused update that removed stored nodes, then remote changes 
           ]),
         );
         expect(show(older)).toBe(show(newer));
-        expect(older.warnings.filter(w => w.includes('self-check'))).toEqual(
-          [],
-        );
+        // Read only, the refused update warned once; nothing was recovered
+        // and the self-check found nothing.
+        expect(codes(older.warnings)).toEqual([
+          `${UNSUPPORTED_SCHEMA_WARNING}:newer`,
+          `${UNSUPPORTED_EDIT_WARNING}:read-only`,
+        ]);
         older.editor.dispose();
         newer.editor.dispose();
       });
@@ -209,7 +227,7 @@ describe('S9-3: an update queued while the binding opens a document', () => {
     doc: YDoc;
     editor: LexicalEditor;
     replies: boolean[];
-    warnings: string[];
+    warnings: Error[];
   };
   /** A binding started by hand, with the app's listener registered first. */
   function opener(
@@ -221,14 +239,14 @@ describe('S9-3: an update queued while the binding opens a document', () => {
     if (state !== null) {
       Y.applyUpdate(doc, state);
     }
-    const warnings: string[] = [];
+    const warnings: Error[] = [];
     const editor = createEditor({
       nodes: [TableNode, TableRowNode, TableCellNode],
       onError: e => {
         throw e;
       },
       onWarn: w => {
-        warnings.push(w.message);
+        warnings.push(w);
       },
     });
     const binding = new YBinding(editor, doc, {schemaVersion, selfCheck: true});
@@ -294,9 +312,9 @@ describe('S9-3: an update queued while the binding opens a document', () => {
         expect(b.binding.status).toBe('readonly');
         expect(b.replies).toEqual([false]);
         expect(blocks(b)).toEqual(['hello']);
-        expect(b.warnings).toContain(
-          'a local change is not written while read only',
-        );
+        expect(
+          codes(b.warnings).filter(c => c.startsWith(UNSUPPORTED_EDIT_WARNING)),
+        ).toEqual([`${UNSUPPORTED_EDIT_WARNING}:read-only`]);
       }
       expect(blocks(b)).toEqual(fresh(b));
       if (cause === 'a newer layout') {

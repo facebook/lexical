@@ -10,6 +10,7 @@
 
 import {$addMarkID, $getNodeMarkIDs} from '@lexical/mark';
 import {$patchStyleText} from '@lexical/selection';
+import {ContentFormat, type Item} from '@y/y';
 import {
   $createTextNode,
   $getRoot,
@@ -244,6 +245,29 @@ describe('@lexical/y a delete collapsing a run keeps the end a concurrent restor
       // B only deleted: it wrote no item (a collapse that ended c1 before
       // "cc" made B's writer write c1 on "cc" again).
       expect(t.b.doc.store.getClock(t.b.doc.clientID)).toBe(0);
+      // What the run keeps: c1's opener before "aa" (the first change of
+      // the comments' value), c1's end after "aa" and c4's end after "bb"
+      // (each key's last end), and, since c1's end would end c1 before "cc",
+      // c1's last item, its opener before "cc", with those of c2 and c3;
+      // then the closers after "cc". So a key whose run starts again before
+      // the content after the run keeps two more items than before (main
+      // keeps 6 here, c1 [true, null]), not one.
+      const items = (peer: Peer, key?: string) => {
+        const out: unknown[] = [];
+        const root = peer.binding.root as unknown as {_start: Item | null};
+        for (let it = root._start; it !== null; it = it.right) {
+          if (
+            !it.deleted &&
+            it.content instanceof ContentFormat &&
+            (key === undefined || it.content.key.endsWith(key))
+          ) {
+            out.push(it.content.value);
+          }
+        }
+        return out;
+      };
+      expect(items(t.b, '\u001fc1')).toEqual([true, null, true, null]);
+      expect(items(t.b)).toHaveLength(9);
     });
 
     test(`a bold restore ends where the bold ended (ids ${ids})`, async () => {

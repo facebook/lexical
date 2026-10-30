@@ -144,12 +144,15 @@ describe('a set stored one format key per member', () => {
       }
     }
     expect(members(a).join('')).toBe('start middle end');
-    // As above, but each member's last run in the run is its first word's
-    // (later words go in front of it): the run keeps the closers of words 2
-    // to 5 (c2, c3, c4, c0), word 1's opener and closer (c1, the run's last
-    // two units), the last word's two items and the opener of the word
-    // before it: 9, whatever the number of words.
-    expect(counts).toEqual([9, 9, 9]);
+    // As above, but later words go in front of earlier ones: a member's
+    // newest word comes first in the run, and a closer of an earlier word,
+    // whose opener a collapse removed, comes after it and ends a run too.
+    // The run keeps, of c0, the last word's opener and closer and such a
+    // closer after them; of c4, the opener and closer of the word before it
+    // and such a closer; of c3, its newest word's closer and such a closer;
+    // of c2, one closer; and word 1's opener and closer (c1, the run's last
+    // two units): 11, whatever the number of words.
+    expect(counts).toEqual([11, 11, 11]);
   });
 
   // S6-9: where a run keeps a unit of a family of several keys, the value

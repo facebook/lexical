@@ -593,8 +593,11 @@ describe('@lexical/y undo of a format ‖ plain text typed inside its range', ()
 // writes) while another client deletes text across the comment's end. Each
 // write ended the comment before its text and restored it after, leaving a
 // null of its writer right after the comment's end; the delete collapses
-// the deleted run there and keeps those nulls but not the comment's own end,
-// and the undos then remove them, so the comment runs on (y.md Limits).
+// the deleted run there. It used to keep those nulls (the comment's last
+// items) but not the comment's own end, and the undos then removed them, so
+// the comment ran on over the next words and line. The collapse keeps the
+// end of each key's last run now (Cursor#collapseGap): of nulls right after
+// one another, the first, the comment's own end, which the undos leave.
 describe('@lexical/y undo of writes inside a comment ‖ delete across its end', () => {
   /** Inserts uncommented `text` in the first line right after `prefix`. */
   function typeAfter(peer: Peer, prefix: string, text: string) {
@@ -656,10 +659,7 @@ describe('@lexical/y undo of writes inside a comment ‖ delete across its end',
     [1, 2, 3, 4],
     [4, 3, 2, 1],
   ]) {
-    test(`#9575 as documented: the comment runs on over the next words and line (${ids})`, async () => {
-      expect(await run(ids)).toEqual(['aa |Kilome cc dd[c1]', 'tail line[c1]']);
-    });
-    test.fails(`#9575: the comment ends where it ended (${ids})`, async () => {
+    test(`#9575: the comment ends where it ended (${ids})`, async () => {
       expect(await run(ids)).toEqual(['aa |Kilome[c1]| cc dd', 'tail line']);
     });
   }

@@ -1300,9 +1300,6 @@ reproduces it:
 - Undoing a format while a collaborator moves a word into its range can
   leave the format on text typed next to the range (see Undo above):
   [#9560](https://github.com/meta/lexical/issues/9560).
-- A comment can spread onto later words when a client types uncommented
-  text inside it offline while a collaborator's deletes there drop the item
-  that ended it: [#9564](https://github.com/meta/lexical/issues/9564).
 - Turning a paragraph inside a container that is itself inside a
   container (both not shadow roots) into a list removes the outer
   container and makes no list, in every `@lexical/y` editor (it runs

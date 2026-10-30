@@ -5114,6 +5114,33 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     },
   );
 
+  it.each([
+    'www.example.com',
+    'me@example.com',
+    'https://example.com',
+    'mailto:me@example.com',
+  ])(
+    'writes no reference at the start of %j, which readers may autolink',
+    link => {
+      const editor = createTestEditor();
+      editor.update(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append(
+              $createTextNode(
+                `${LEFT_DOUBLE_QUOTE}x${RIGHT_DOUBLE_QUOTE}`,
+              ).toggleFormat('bold'),
+              $createTextNode(link),
+            ),
+          ),
+        {discrete: true},
+      );
+      expect(
+        editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
+      ).toBe(`**${LEFT_DOUBLE_QUOTE}x${RIGHT_DOUBLE_QUOTE}**${link}`);
+    },
+  );
+
   it('guards word characters in a selection export', () => {
     const editor = createTestEditor();
     editor.update(

@@ -337,7 +337,6 @@ function $exportChildrenForSelection(
         anyChildIncluded = true;
       }
     } else if ($isElementNode(child)) {
-      const childStart = output.kinds.length;
       const childResult = $exportChildrenForSelection(
         child,
         selection,
@@ -358,11 +357,9 @@ function $exportChildrenForSelection(
         childIncluded = true;
       }
 
+      // An element child writes pieces only when it has included ones.
       if (childIncluded || childResult.shouldInclude) {
         anyChildIncluded = true;
-      } else {
-        output.kinds.length = childStart;
-        output.values.length = childStart;
       }
     } else if ($isDecoratorNode(child)) {
       if (childIncluded) {
@@ -718,7 +715,8 @@ const LINK_LOOKAHEAD = 2048;
 // A URL, `www.` host, email or mention at the end of the text before it, or
 // at the start of the text after it.
 const LINK_AT_END = /:\/\/|(?:^|[^\w.-])www\.|@[\w.-]*\w$/i;
-const LINK_AT_START = /^(?:[a-z][\w+.-]*:\/\/|www\.)|^[\w.+-]*@\w/i;
+const LINK_AT_START =
+  /^(?:[a-z][\w+.-]*:\/\/|www\.|mailto:|xmpp:)|^[\w.+-]*@\w/i;
 
 // Characters that a reference does not stand in for everywhere: CommonMark
 // readers and HTML decode references to control characters, unpaired
@@ -822,15 +820,15 @@ function scanDelimiterRun(
   let hasKind = false;
   for (let i = from; i !== to + step; i += step) {
     const value = values[i];
-    let c = step === 1 ? 0 : value.length - 1;
-    if (value[c] !== delimiter) {
-      return [hasKind, value[c]];
-    }
-    hasKind ||= kinds[i] === kind;
-    for (c += step; c >= 0 && c < value.length; c += step) {
+    for (
+      let c = step === 1 ? 0 : value.length - 1;
+      c >= 0 && c < value.length;
+      c += step
+    ) {
       if (value[c] !== delimiter) {
         return [hasKind, value[c]];
       }
+      hasKind ||= kinds[i] === kind;
     }
   }
   return [hasKind, undefined];
@@ -937,9 +935,7 @@ function decideReferences(
       value.slice(start, end).replace(/\\/g, ''),
     );
   };
-  // `findsLink` for each piece edge, worked out once: 0 while unknown, then 1
-  // when it finds one and 2 when it does not.
-  const linkish = [new Uint8Array(count), new Uint8Array(count)];
+  // `findsLink` for each piece edge, worked out once.
   const isLinkish = (index: number, atEnd: boolean): boolean => {
     const side = atEnd ? 1 : 0;
     if (linkish[side][index] === 0) {
@@ -965,8 +961,6 @@ function decideReferences(
   // walked at most twice. Raw output and unreferenceable characters stay
   // what they are, and other references only make edges punctuation, so a
   // remembered answer can only go stale toward writing fewer references.
-  // 0 while unknown, then 1 when it spreads and 2 when it is blocked.
-  const spreads = [new Uint8Array(count), new Uint8Array(count)];
   const canSpread = (index: number, leftward: boolean): boolean => {
     const side = leftward ? 0 : 1;
     const visited: number[] = [];
@@ -1009,21 +1003,37 @@ function decideReferences(
     !isOneCharacter(index) ||
     (leftward ? encodeStart[index] : encodeEnd[index]) ||
     canSpread(index, leftward);
+  // A reference helps only where the run would flank if the character
+  // beside it were punctuation.
+  const opensWithReference = ({opens, before, after, afterFirst}: MarkerRun) =>
+    opens &&
+    !isFlankedBy(afterFirst || startChar(after), endChar(before)) &&
+    isFlankedBy(afterFirst || startChar(after), ';');
+  const closesWithReference = ({
+    closes,
+    before,
+    after,
+    beforeLast,
+  }: MarkerRun) =>
+    closes &&
+    !isFlankedBy(beforeLast || endChar(before), startChar(after)) &&
+    isFlankedBy(beforeLast || endChar(before), '&');
+  if (!runs.some(run => opensWithReference(run) || closesWithReference(run))) {
+    return {encodeEnd, encodeStart};
+  }
+  // By side, 0 while unknown, then 1 when the edge is a link (or spreads) and
+  // 2 when it is not (or is blocked).
+  const linkish = [new Uint8Array(count), new Uint8Array(count)];
+  const spreads = [new Uint8Array(count), new Uint8Array(count)];
   // Writing a one-character piece as a reference changes what the run on its
   // other side sees, so that run is decided again. Each piece changes at most
   // twice, so this stays linear.
   const pending = runs.map((_run, index) => index);
   while (pending.length > 0) {
-    const {before, after, opens, closes, afterFirst, beforeLast} =
-      runs[pending.pop()!];
-    // A reference helps only where the run would flank if the character
-    // beside it were punctuation.
-    const charBefore = endChar(before);
-    const charAfter = startChar(after);
+    const run = runs[pending.pop()!];
+    const {before, after} = run;
     if (
-      opens &&
-      !isFlankedBy(afterFirst || charAfter, charBefore) &&
-      isFlankedBy(afterFirst || charAfter, ';') &&
+      opensWithReference(run) &&
       canReference(before, true) &&
       isFree(before, true)
     ) {
@@ -1033,9 +1043,7 @@ function decideReferences(
       }
     }
     if (
-      closes &&
-      !isFlankedBy(beforeLast || charBefore, charAfter) &&
-      isFlankedBy(beforeLast || charBefore, '&') &&
+      closesWithReference(run) &&
       canReference(after, false) &&
       isFree(after, false)
     ) {

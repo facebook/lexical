@@ -5138,6 +5138,7 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     ['@john_doe', '@john\\_doe'],
     ['xmpp:a@b.co/res', 'xmpp:a@b.co/res'],
     ['https://example.com/a|b', 'https://example.com/a|b'],
+    ['x_www.example.co', 'x\\_www.example.co'],
   ])(
     'writes no reference inside %j, which readers may autolink',
     (link, markdown) => {
@@ -5189,6 +5190,23 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       ).toBe(`**${LEFT_DOUBLE_QUOTE}x${RIGHT_DOUBLE_QUOTE}**${link}`);
     },
   );
+
+  it('writes no reference for a tag character inside a URL', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createTextNode('see https://x.com/?a='),
+            $createTextNode('b').toggleFormat('highlight'),
+          ),
+        ),
+      {discrete: true},
+    );
+    expect(
+      editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
+    ).toBe('see https://x.com/?a===b==');
+  });
 
   it("guards a letter right after an inline link's destination", () => {
     const editor = createTestEditor();

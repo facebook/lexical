@@ -723,7 +723,9 @@ function isLinkCharacter(code: number): boolean {
   return code > 0x20 && code < 0x7f && code !== 0x3c;
 }
 // A URL or `www.` host in a run of link characters.
-const LINK_URL = /:\/\/|(?:^|[^\w.-])www\.|(?:^|[^\w.+-])(?:mailto|xmpp):/i;
+// GFM starts one after `_` too.
+const LINK_URL =
+  /:\/\/|(?:^|[^a-z\d.-])www\.|(?:^|[^a-z\d.+-])(?:mailto|xmpp):/i;
 // Characters an email or mention can hold (word characters, `.+@-`, and the
 // backslash that escapes one), and what makes one.
 function isAddressCharacter(code: number): boolean {
@@ -911,27 +913,6 @@ function decideReferences(
   const count = kinds.length;
   const encodeStart = new Uint8Array(count);
   const encodeEnd = new Uint8Array(count);
-  // Text does not escape every tag character (the `=` of `==`, say), and one
-  // right beside a marker of the same character would join its delimiter
-  // run, so it goes out as a reference.
-  for (let i = 0; i < count; i++) {
-    const value = values[i];
-    if (kinds[i] === TEXT) {
-      if (
-        isMarker(kinds[i + 1]) &&
-        value[value.length - 1] === values[i + 1][0] &&
-        !isEscaped(value, value.length - 1)
-      ) {
-        encodeEnd[i] = 1;
-      }
-      if (
-        isMarker(kinds[i - 1]) &&
-        value[0] === values[i - 1][values[i - 1].length - 1]
-      ) {
-        encodeStart[i] = 1;
-      }
-    }
-  }
   const runs: MarkerRun[] = [];
   // The run that follows and the run that precedes each piece, or -1.
   const runAfter = new Int32Array(count).fill(-1);
@@ -1086,6 +1067,30 @@ function decideReferences(
     closes &&
     !isFlankedBy(beforeLast || endChar(before), startChar(after)) &&
     isFlankedBy(beforeLast || endChar(before), '&');
+  // Text does not escape every tag character (the `=` of `==`, say), and one
+  // right beside a marker of the same character would join its delimiter
+  // run, so it goes out as a reference, except in a bare URL, as with any
+  // reference.
+  for (let i = 0; i < count; i++) {
+    const value = values[i];
+    if (kinds[i] === TEXT) {
+      if (
+        isMarker(kinds[i + 1]) &&
+        value[value.length - 1] === values[i + 1][0] &&
+        !isEscaped(value, value.length - 1) &&
+        !isLinkish(i, true)
+      ) {
+        encodeEnd[i] = 1;
+      }
+      if (
+        isMarker(kinds[i - 1]) &&
+        value[0] === values[i - 1][values[i - 1].length - 1] &&
+        !isLinkish(i, false)
+      ) {
+        encodeStart[i] = 1;
+      }
+    }
+  }
   const pending: number[] = [];
   runs.forEach((run, index) => {
     if (opensWithReference(run) || closesWithReference(run)) {

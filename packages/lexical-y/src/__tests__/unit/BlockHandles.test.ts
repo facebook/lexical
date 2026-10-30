@@ -35,6 +35,7 @@ import {
   $setState,
   type ElementNode,
   type LexicalNode,
+  type TextNode,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
 
@@ -49,9 +50,12 @@ import {
 // Changes a block's text in place: only the characters that differ, in the
 // block's own text nodes. block.replace(newBlock) would re-create the block,
 // and what a collaborator types in it meanwhile would not stay where they
-// typed it. Returns false, changing nothing, unless the block holds only text,
-// directly or in inline elements such as links: no line breaks, nested blocks,
-// named slots or decorators, even ones without text.
+// typed it. Returns false, changing nothing, unless the block holds only
+// simple text (no tabs, hashtags or other special text nodes), directly or
+// in inline elements such as links: no line breaks, nested blocks, named
+// slots or decorators, even ones without text. Text added at the edge of an
+// inline element that takes no text there (a link) goes beside it, as typing
+// does.
 function $setBlockText(block: LexicalNode, text: string): boolean {
   if (!$isElementNode(block) || !$holdsOnlyText(block)) {
     return false;
@@ -85,7 +89,11 @@ function $setBlockText(block: LexicalNode, text: string): boolean {
     ) {
       // The node where the change starts (for an insert at a node boundary,
       // the node before it): delete and insert there.
-      node.spliceText(from, Math.max(to - from, 0), inserted);
+      if (start === deleteEnd) {
+        $insertText(node, from, inserted);
+      } else {
+        node.spliceText(from, to - from, inserted);
+      }
       done = true;
     } else if (to > from) {
       node.spliceText(from, to - from, '');
@@ -106,10 +114,72 @@ function $holdsOnlyText(element: ElementNode): boolean {
       .getChildren()
       .every(
         child =>
-          $isTextNode(child) ||
+          ($isTextNode(child) && child.isSimpleText()) ||
           ($isElementNode(child) && child.isInline() && $holdsOnlyText(child)),
       )
   );
+}
+
+// Inserts text at `at` in `node`, or, at an edge of inline elements that
+// take no text there (canInsertTextAfter or canInsertTextBefore is false, as
+// for a link or a mark), beside the outermost of them.
+function $insertText(node: TextNode, at: number, text: string): void {
+  if (text === '') {
+    return;
+  }
+  const atEnd = at === node.getTextContentSize();
+  let outermost: ElementNode | null = null;
+  for (
+    let inner: LexicalNode = node, parent = node.getParent();
+    $isElementNode(parent) && parent.isInline();
+    inner = parent, parent = parent.getParent()
+  ) {
+    if (
+      atEnd
+        ? inner.getNextSibling() !== null
+        : at !== 0 || inner.getPreviousSibling() !== null
+    ) {
+      break;
+    }
+    if (atEnd ? !parent.canInsertTextAfter() : !parent.canInsertTextBefore()) {
+      outermost = parent;
+    }
+  }
+  if (outermost === null) {
+    node.spliceText(at, 0, text);
+    return;
+  }
+  const beside = atEnd
+    ? outermost.getNextSibling()
+    : outermost.getPreviousSibling();
+  if ($isTextNode(beside) && beside.isSimpleText()) {
+    beside.spliceText(atEnd ? 0 : beside.getTextContentSize(), 0, text);
+  } else if (atEnd) {
+    outermost.insertAfter($createTextNode(text));
+  } else {
+    outermost.insertBefore($createTextNode(text));
+  }
+}
+
+const ALPHABET =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+
+/** Every string one substitution, deletion or insertion away from `s`. */
+function oneCharTypos(s: string): string[] {
+  const result = new Set<string>();
+  for (let i = 0; i < s.length; i++) {
+    result.add(s.slice(0, i) + s.slice(i + 1));
+    for (const c of ALPHABET) {
+      result.add(s.slice(0, i) + c + s.slice(i + 1));
+    }
+  }
+  for (let i = 0; i <= s.length; i++) {
+    for (const c of ALPHABET) {
+      result.add(s.slice(0, i) + c + s.slice(i));
+    }
+  }
+  result.delete(s);
+  return Array.from(result);
 }
 
 describe('block handles with @lexical/y', () => {
@@ -123,11 +193,13 @@ describe('block handles with @lexical/y', () => {
     const person = createYWriter('Person');
     const seed = seedYState(config, () => {
       for (const [id, text] of [
-        ['abcd1111', 'Q3 plan'],
+        // Ids picked for their hashes: p13e and p20d, p18f and p2cs, p1i4
+        // and p2pq each start with the same 4 characters.
+        ['p13e', 'Q3 plan'],
         ['wxyz2222', 'Revenue grew 4%.'],
-        ['mnop3333', 'Hiring is on track.'],
-        ['b123', 'Short id'],
-        ['b123456', 'Its prefix is the short id'],
+        ['p18f', 'Hiring is on track.'],
+        ['p1i4', 'Shares its hash start'],
+        ['p2pq', 'with this one'],
       ]) {
         const node = $createParagraphNode().append($createTextNode(text));
         $setState(node, blockIdState, id);
@@ -186,16 +258,16 @@ describe('block handles with @lexical/y', () => {
 
     // What the model reads.
     expect(handlesOf(seen)).toEqual([
-      ['abcd', 'Q3 plan'],
-      ['wxyz', 'Revenue grew 4%.'],
-      ['mnop', 'Hiring is on track.'],
-      ['b123', 'Short id'],
-      ['b1234', 'Its prefix is the short id'],
+      ['0ydd', 'Q3 plan'],
+      ['GAZ0', 'Revenue grew 4%.'],
+      ['NnGk', 'Hiring is on track.'],
+      ['KwuaJ', 'Shares its hash start'],
+      ['KwuaB', 'with this one'],
     ]);
 
     // Meanwhile, a person types in the block the model rewrites, deletes the
-    // third block and the one with the short id, and adds one whose id shares
-    // the first's prefix.
+    // third and fourth blocks, and adds one whose hash starts like the
+    // first's.
     const typed = editYState(
       seed,
       config,
@@ -207,9 +279,9 @@ describe('block handles with @lexical/y', () => {
         // "Revenue grew |4%." → "Revenue grew about 4%."
         text.spliceText(13, 0, 'about ');
         hiring.remove();
-        $getBlockById('b123')!.remove();
+        $getBlockById('p1i4')!.remove();
         const node = $createParagraphNode().append($createTextNode('Q4 plan'));
-        $setState(node, blockIdState, 'abcd9999');
+        $setState(node, blockIdState, 'p20d');
         $getRoot().append(node);
       },
       {writer: person},
@@ -219,13 +291,13 @@ describe('block handles with @lexical/y', () => {
     // The model's answers, made from what it read.
     const told: (string | null)[] = [];
     for (const op of [
-      {block: 'wxyz', text: 'Revenue grew 6%.'},
+      {block: 'GAZ0', text: 'Revenue grew 6%.'},
       // Deleted since the read.
-      {block: 'mnop', text: 'Hiring is ahead.'},
-      // Deleted since the read; without the read, b123456 would take it.
-      {block: 'b123', text: 'Edited'},
+      {block: 'NnGk', text: 'Hiring is ahead.'},
+      // Deleted since the read, though p2pq's hash shares its start.
+      {block: 'KwuaJ', text: 'Edited'},
       // A block added since shares the prefix: still the block read.
-      {block: 'abcd', text: 'Q3 goals'},
+      {block: '0ydd', text: 'Q3 goals'},
     ]) {
       const result = applyByHandle(stored, op);
       stored = result.stored;
@@ -233,11 +305,11 @@ describe('block handles with @lexical/y', () => {
     }
     expect(told).toEqual([null, 'not-found', 'not-found', null]);
     expect(
-      readYState(stored, config, () => $resolveBlockHandle('b123').status),
+      readYState(stored, config, () => $resolveBlockHandle('Kwua').status),
     ).toBe('found');
     // The edits landed in place: the person's typing stays where they typed.
     expect(readYState(stored, config, () => $getRoot().getTextContent())).toBe(
-      'Q3 goals\n\nRevenue grew about 6%.\n\nIts prefix is the short id\n\nQ4 plan',
+      'Q3 goals\n\nRevenue grew about 6%.\n\nwith this one\n\nQ4 plan',
     );
 
     // A prefix freed by a deletion and taken by a block added since: without
@@ -246,24 +318,24 @@ describe('block handles with @lexical/y', () => {
       seed,
       config,
       () => {
-        $getBlockById('mnop3333')!.remove();
+        $getBlockById('p18f')!.remove();
         const node = $createParagraphNode().append($createTextNode('New'));
-        $setState(node, blockIdState, 'mnop4444');
+        $setState(node, blockIdState, 'p2cs');
         $getRoot().append(node);
       },
       {writer: person},
     ).state;
     expect(
-      readYState(reused, config, () => $resolveBlockHandle('mnop').status),
+      readYState(reused, config, () => $resolveBlockHandle('NnGk').status),
     ).toBe('found');
     expect(
-      applyByHandle(reused, {block: 'mnop', text: 'Hiring is ahead.'}).told,
+      applyByHandle(reused, {block: 'NnGk', text: 'Hiring is ahead.'}).told,
     ).toBe('not-found');
 
     // Resolved inside the edit of the read instead, the deleted block is
     // always found.
     expect(
-      readYState(seen, config, () => $resolveBlockHandle('mnop').status),
+      readYState(seen, config, () => $resolveBlockHandle('NnGk').status),
     ).toBe('found');
 
     // Why in place: replacing the block re-creates it, and the person's
@@ -282,8 +354,89 @@ describe('block handles with @lexical/y', () => {
       readYState(merge(typed.state, replaced!), config, () =>
         $getRoot().getTextContent(),
       ),
-    ).toBe(
-      'Q3 plan\n\nabout Revenue grew 6%.\n\nIts prefix is the short id\n\nQ4 plan',
-    );
+    ).toBe('Q3 plan\n\nabout Revenue grew 6%.\n\nwith this one\n\nQ4 plan');
+  });
+});
+
+describe('block handles of derived ids', () => {
+  test('lines written without BlockIdExtension, read with it: derived ids get short, typo-safe handles', () => {
+    const plain = {
+      extensions: [RichTextExtension],
+      onWarn: () => {},
+      schemaVersion: 1,
+    };
+    const withIds = {
+      ...plain,
+      extensions: [RichTextExtension, BlockIdExtension],
+    };
+    // A document written by clients without BlockIdExtension: a seed, then
+    // lines appended by two writers.
+    let state = seedYState(plain, () => {
+      for (let i = 0; i < 100; i++) {
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode(`Seeded line ${i}`)),
+        );
+      }
+    });
+    for (const writer of [createYWriter('First'), createYWriter('Second')]) {
+      for (let round = 0; round < 3; round++) {
+        state = editYState(
+          state,
+          plain,
+          () => {
+            for (let i = 0; i < 50; i++) {
+              $getRoot().append(
+                $createParagraphNode().append(
+                  $createTextNode(`${writer.author} line ${round}.${i}`),
+                ),
+              );
+            }
+          },
+          {writer},
+        ).state;
+      }
+    }
+    const result = readYState(state, withIds, () => {
+      const blocks = $getRoot().getChildren();
+      const handles = $getBlockHandles();
+      let tried = 0;
+      let hits = 0;
+      for (const [id, handle] of handles) {
+        for (const typo of oneCharTypos(handle)) {
+          tried++;
+          const found = $resolveBlockHandle(typo);
+          if (found.status === 'found' && $getBlockId(found.node) !== id) {
+            hits++;
+            // Only by being that block's handle (or a longer prefix of its
+            // hash, never shorter).
+            expect(
+              typo.startsWith(handles.get($getBlockId(found.node)!)!),
+            ).toBe(true);
+          }
+        }
+      }
+      return {
+        hits,
+        ids: blocks.map(block => $getBlockId(block)),
+        lengths: Array.from(handles.values(), handle => handle.length),
+        resolved: blocks.every(block => {
+          const found = $resolveBlockHandle(handles.get($getBlockId(block)!)!);
+          return found.status === 'found' && found.node.is(block);
+        }),
+        tried,
+      };
+    });
+    expect(result.ids).toHaveLength(400);
+    // Every line shows an id derived from its Yjs identity.
+    for (const id of result.ids) {
+      expect(id).toMatch(/^y[0-9a-z]+_[0-9a-z]+/);
+    }
+    expect(new Set(result.ids).size).toBe(400);
+    // Ids of one client share their first characters, and their clocks are
+    // close: handles still take 4 or 5 characters.
+    expect(Math.min(...result.lengths)).toBe(4);
+    expect(Math.max(...result.lengths)).toBeLessThanOrEqual(5);
+    expect(result.resolved).toBe(true);
+    expect(result.hits / result.tried).toBeLessThan(1e-3);
   });
 });

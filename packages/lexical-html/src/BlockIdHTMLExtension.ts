@@ -67,13 +67,13 @@ export interface BlockIdHTMLConfig {
    * every identified block (`$generateHtmlFromNodes`, copy as HTML, …).
    *
    * Showing blocks to a model? Use `'handle'`: it writes
-   * {@link BLOCK_HANDLE_ATTRIBUTE} with the block's handle, the shortest
-   * unique prefix of its id (4 characters or more), instead of the id. Keep
-   * the handles of the export (`$getBlockHandles()`, in the same read), and
-   * resolve what the model answers with `$resolveBlockHandle(handle, {read})`,
-   * so that a handle names the block the model was shown, never a block added
-   * since that took its prefix. Import does not read handles, so a handle is
-   * never mistaken for an id.
+   * {@link BLOCK_HANDLE_ATTRIBUTE} with the block's handle (a short opaque
+   * name derived from a hash of its id, see `$getBlockHandle`) instead of the
+   * id. Keep the handles of the export (`$getBlockHandles()`, in the same
+   * read), and resolve what the model answers with
+   * `$resolveBlockHandle(handle, {read})`, so that a handle names the block
+   * the model was shown, never a block added since. Import does not read
+   * handles, so a handle is never mistaken for an id.
    *
    * ```ts
    * configExtension(BlockIdHTMLExtension, {export: 'handle'});
@@ -82,8 +82,8 @@ export interface BlockIdHTMLConfig {
    *   $generateHtmlFromNodes(editor),
    *   $getBlockHandles(),
    * ]);
-   * // <p data-block-handle="9xQe">Revenue grew 4% in Q3.</p>
-   * // The model answers {block: '9xQe', text: 'Revenue grew 6% in Q3.'}
+   * // <p data-block-handle="gTtF">Revenue grew 4% in Q3.</p>
+   * // The model answers {block: 'gTtF', text: 'Revenue grew 6% in Q3.'}
    * editor.update(() => {
    *   const result = $resolveBlockHandle(op.block, {read: shown});
    *   if (result.status === 'found') {

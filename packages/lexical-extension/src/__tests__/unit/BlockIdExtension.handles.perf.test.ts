@@ -22,6 +22,7 @@ import {
   $resolveBlockHandle,
   BlockIdExtension,
   buildEditorFromExtensions,
+  configExtension,
   generateBlockId,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
@@ -56,10 +57,13 @@ function documentJSON(ids: string[]): string {
   });
 }
 
-function build(withIds: boolean): LexicalEditorWithDispose {
+function build(withIds: boolean, disabled = false): LexicalEditorWithDispose {
   return buildEditorFromExtensions({
     $initialEditorState: null,
-    dependencies: [RichTextExtension, ...(withIds ? [BlockIdExtension] : [])],
+    dependencies: [
+      RichTextExtension,
+      ...(withIds ? [configExtension(BlockIdExtension, {disabled})] : []),
+    ],
     name: '[block-handle-perf]',
   });
 }
@@ -156,6 +160,65 @@ describe.skipIf(process.env.BLOCK_ID_PERF !== '1')(
           `  handle lengths: ${JSON.stringify(Object.fromEntries(lengths))}`,
         ].join('\n'),
       );
-    });
+    }, 120000);
+
+    test('every handle while the extension is disabled, and derived ids', () => {
+      const lines: string[] = [];
+      for (const count of [2000, BLOCKS]) {
+        const ids = Array.from({length: count}, generateBlockId);
+        const json = documentJSON(ids);
+        for (const disabled of [false, true]) {
+          using editor = build(true, disabled);
+          editor.setEditorState(editor.parseEditorState(json));
+          const runs: number[] = [];
+          for (let round = 0; round < 5; round++) {
+            runs.push(
+              time(() =>
+                editor.read(() => {
+                  for (const node of $getRoot().getChildren()) {
+                    $getBlockHandle(node);
+                  }
+                }),
+              ),
+            );
+          }
+          const all = time(() => editor.read(() => $getBlockHandles()));
+          lines.push(
+            `  ${count} blocks, ${disabled ? 'disabled (scan)' : 'enabled (index)'}: ` +
+              `$getBlockHandle for every block in one read: ${median(runs).toFixed(2)} ms; ` +
+              `$getBlockHandles() once: ${all.toFixed(2)} ms`,
+          );
+        }
+      }
+      // Ids shaped like @lexical/y's derived ids: one client, close clocks.
+      let clock = 0;
+      const derived = Array.from({length: BLOCKS}, () => {
+        clock += 10 + Math.floor(Math.random() * 70);
+        return `y${(2 ** 50).toString(36)}_${clock.toString(36)}`;
+      });
+      using editor = build(true);
+      editor.setEditorState(editor.parseEditorState(documentJSON(derived)));
+      const lengths = new Map<number, number>();
+      const runs: number[] = [];
+      for (let round = 0; round < 5; round++) {
+        editor.update(
+          () => {
+            $getRoot().append($createParagraphNode());
+          },
+          {discrete: true},
+        );
+        runs.push(time(() => editor.read(() => $getBlockHandles())));
+      }
+      for (const handle of editor.read($getBlockHandles).values()) {
+        lengths.set(handle.length, (lengths.get(handle.length) || 0) + 1);
+      }
+      lines.push(
+        `  ${BLOCKS} derived ids: $getBlockHandles() after a commit ` +
+          `${median(runs).toFixed(2)} ms, handle lengths ` +
+          JSON.stringify(Object.fromEntries(lengths)),
+      );
+      // eslint-disable-next-line no-console
+      console.log(`block handles, medians of 5:\n${lines.join('\n')}`);
+    }, 120000);
   },
 );

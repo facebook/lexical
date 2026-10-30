@@ -135,12 +135,13 @@ only reads gets the same ids without writing first.
 ## Showing blocks to a model
 
 A whole id costs a language model about 14 tokens to read and to copy back.
-To show blocks to a model, give it **handles** instead: the shortest prefix of
-each id that no other block's id starts with, at least 4 characters long, like
-a short git hash. `V1StGXR8_Z5jdHi6B-myT` is shown as `V1St`, which costs 3 to
-4 tokens. The document keeps its ids; handles are derived from them when they
-are read and are never stored, so nothing has to be kept between an agent's
-turns.
+To show blocks to a model, give it **handles** instead: short, opaque names,
+almost always 4 characters long. `V1StGXR8_Z5jdHi6B-myT` is shown as `2bNo`,
+which costs 3 to 4 tokens. A handle is the shortest prefix, at least 4
+characters long, of a 64-bit hash of the block's id that no other block's
+hash starts with, like a short git hash. The document keeps its ids; handles
+are derived from them when they are read and are never stored, so nothing
+has to be kept between an agent's turns.
 
 | | Tokens per block (o200k) |
 | --- | --- |
@@ -168,6 +169,7 @@ import {
   $isTextNode,
   type ElementNode,
   type LexicalNode,
+  type TextNode,
 } from 'lexical';
 
 // 1. What the model reads, and the handles it is shown (id → handle).
@@ -177,9 +179,9 @@ const [blocks, shown] = editor.read(() => [
     .map(node => ({block: $getBlockHandle(node), text: node.getTextContent()})),
   $getBlockHandles(),
 ]);
-// [{block: 'V1St', text: 'Q3 plan'}, {block: '9xQe', text: 'Revenue grew 4%.'}]
+// [{block: '2bNo', text: 'Q3 plan'}, {block: 'gTtF', text: 'Revenue grew 4%.'}]
 
-// 2. What the model answers, e.g. {block: '9xQe', text: 'Revenue grew 6%.'}
+// 2. What the model answers, e.g. {block: 'gTtF', text: 'Revenue grew 6%.'}
 
 // 3. Applying it, in its own update: the handle names the block it named in
 //    the read, if that block still exists now.
@@ -218,9 +220,12 @@ editor.update(
 // Changes a block's text in place: only the characters that differ, in the
 // block's own text nodes. block.replace(newBlock) would re-create the block,
 // and what a collaborator types in it meanwhile would not stay where they
-// typed it. Returns false, changing nothing, unless the block holds only text,
-// directly or in inline elements such as links: no line breaks, nested blocks,
-// named slots or decorators, even ones without text.
+// typed it. Returns false, changing nothing, unless the block holds only
+// simple text (no tabs, hashtags or other special text nodes), directly or
+// in inline elements such as links: no line breaks, nested blocks, named
+// slots or decorators, even ones without text. Text added at the edge of an
+// inline element that takes no text there (a link) goes beside it, as typing
+// does.
 function $setBlockText(block: LexicalNode, text: string): boolean {
   if (!$isElementNode(block) || !$holdsOnlyText(block)) {
     return false;
@@ -254,7 +259,11 @@ function $setBlockText(block: LexicalNode, text: string): boolean {
     ) {
       // The node where the change starts (for an insert at a node boundary,
       // the node before it): delete and insert there.
-      node.spliceText(from, Math.max(to - from, 0), inserted);
+      if (start === deleteEnd) {
+        $insertText(node, from, inserted);
+      } else {
+        node.spliceText(from, to - from, inserted);
+      }
       done = true;
     } else if (to > from) {
       node.spliceText(from, to - from, '');
@@ -275,56 +284,97 @@ function $holdsOnlyText(element: ElementNode): boolean {
       .getChildren()
       .every(
         child =>
-          $isTextNode(child) ||
+          ($isTextNode(child) && child.isSimpleText()) ||
           ($isElementNode(child) && child.isInline() && $holdsOnlyText(child)),
       )
   );
+}
+
+// Inserts text at `at` in `node`, or, at an edge of inline elements that
+// take no text there (canInsertTextAfter or canInsertTextBefore is false, as
+// for a link or a mark), beside the outermost of them.
+function $insertText(node: TextNode, at: number, text: string): void {
+  if (text === '') {
+    return;
+  }
+  const atEnd = at === node.getTextContentSize();
+  let outermost: ElementNode | null = null;
+  for (
+    let inner: LexicalNode = node, parent = node.getParent();
+    $isElementNode(parent) && parent.isInline();
+    inner = parent, parent = parent.getParent()
+  ) {
+    if (
+      atEnd
+        ? inner.getNextSibling() !== null
+        : at !== 0 || inner.getPreviousSibling() !== null
+    ) {
+      break;
+    }
+    if (atEnd ? !parent.canInsertTextAfter() : !parent.canInsertTextBefore()) {
+      outermost = parent;
+    }
+  }
+  if (outermost === null) {
+    node.spliceText(at, 0, text);
+    return;
+  }
+  const beside = atEnd
+    ? outermost.getNextSibling()
+    : outermost.getPreviousSibling();
+  if ($isTextNode(beside) && beside.isSimpleText()) {
+    beside.spliceText(atEnd ? 0 : beside.getTextContentSize(), 0, text);
+  } else if (atEnd) {
+    outermost.insertAfter($createTextNode(text));
+  } else {
+    outermost.insertBefore($createTextNode(text));
+  }
 }
 ```
 
 `$resolveBlockHandle` never throws for bad input, since a model's answer
 cannot be trusted. With `read`, the handles the model was shown, a handle
 names the block it named in that read: `found` while that block still
-exists, `not-found` once it is deleted, even if another block's id now
-starts with the same characters, and never `ambiguous` because of a block
-added since. Pass it whenever the document can change between the read and
+exists, `not-found` once it is deleted, even if a block added since now has
+the same handle, and never `ambiguous` because of a block added since. Pass it whenever the document can change between the read and
 the edit (with collaboration, always). The result says what to tell the
 model:
 
 | Status | Meaning | Tell the model |
 | --- | --- | --- |
 | `found` | `result.node` is the block | Nothing: apply the edit |
-| `not-found` | The block was deleted since the read, or no block's id starts with the handle (a typo) | The block does not exist; send the current document if it needs one |
-| `ambiguous` | Several blocks' ids start with it: a handle shorter than the one shown (or, without `read`, a block whose id shares the prefix was added since) | Retry with one of `result.candidates` |
-| `invalid` | `reason: 'too-short'`: fewer than 4 characters and not a whole id. `reason: 'malformed'`: not 1 to 64 characters of `A`–`Z`, `a`–`z`, `0`–`9`, `-`, `_` | Too short: handles have at least 4 characters. Malformed: it is not a handle |
+| `not-found` | The block was deleted since the read, or the handle names no block (a typo) | The block does not exist; send the current document if it needs one |
+| `ambiguous` | It names several blocks: a handle shorter than the one shown (or, without `read`, a block added since has a handle that starts the same way) | Retry with one of `result.candidates` |
+| `invalid` | `reason: 'too-short'`: fewer than 4 characters. `reason: 'malformed'`: not 1 to 64 characters of `A`–`Z`, `a`–`z`, `0`–`9`, `-`, `_` | Too short: handles have at least 4 characters. Malformed: it is not a handle |
 
-A whole id is accepted too, and an exact id wins: with ids `b1` and `b12`,
-`b1` finds `b1`. A prefix longer than the current handle still finds its
-block, so a handle read while another id shared more of its prefix keeps
-working after that block is deleted. A prefix shorter than 4 characters is
-`invalid` (`'too-short'`) unless it is a whole id.
+A handle has 4 to 11 characters. A longer prefix of the same hash still finds
+its block, so a handle read while another block's hash shared more of it
+keeps working after that block is deleted. A string longer than 11
+characters is taken as a whole id, so whole ids of 12 characters or more
+(the default 21-character ids included) are accepted too; only handles are
+typo-safe.
 
-Short handles depend on ids whose first characters are random. Ids that
-share a prefix get handles at least as long as that prefix, so an id that
-starts with a timestamp or a version is a poor `generateId` for handles: a
-UUIDv7 in its standard layout starts with a millisecond time and a version
-digit, and ids made close together share their first characters, so their
-handles are much longer than the usual 4 characters. Keep the default
-(`generateBlockId`), or put the random part first.
+Because handles come from a hash, they are short and typo-safe whatever the
+ids look like. Over 30 documents of 1,000 blocks each, one-character typos of
+a handle (a character changed, dropped or added) named another block this
+often, nearly always by being exactly that block's handle:
 
-Random ids leave almost every short prefix unused, so a mistyped handle
-almost never names another block: over 30 documents of 1,000 blocks, 2.6 in
-100,000 one-character typos of a handle (a character changed, dropped or
-added) named another block, nearly always by being exactly that block's
-handle. A sequential alias such as `b12` mistyped as `b13` names a real block
-every time. Ids that are not random (counters, `b` + a number) share long
-prefixes, so their handles are longer, up to the whole id.
+| Ids | Handle length (mean, max) | Typos that name another block |
+| --- | --- | --- |
+| Random, 21 characters (the default) | 4.0, 5 | 2.8 in 100,000 |
+| UUIDv7, made milliseconds apart | 4.0, 4 | 2.6 in 100,000 |
+| `@lexical/y` derived ids (one client, close clocks) | 4.0, 5 | 2.4 in 100,000 |
+
+A sequential alias such as `b12` mistyped as `b13` names a real block every
+time.
 
 `$getBlockHandles()` returns every block's handle at once, keyed by id. Handles
 are computed from the same blocks as `$getBlockById`: the identified blocks of
 the last committed state, all at once and cached until a commit changes an
 id, so reading the handle of each of 10,000 blocks takes a few milliseconds.
-While the extension is disabled, each call scans the document.
+While the extension is disabled, they come from a scan of the document, kept
+while the document has not changed; each call still checks every block for
+changes, so read every block's handle with one `$getBlockHandles()`.
 
 ### Handles and collaboration
 
@@ -333,10 +383,9 @@ two replicas can show different handles for the same block while they have
 different blocks; the ids underneath are the same. Resolve a handle against
 the latest state, with the `read` it was shown in: a block deleted since
 then is `not-found`, the intended failure. Report it to the model and let it
-read the document again. Without `read`, a handle names whichever block's id
-starts with it now: once its block is deleted, a block added since whose id
-shares the prefix, or a block whose id the deleted one's prefixed (`b123`
-deleted, `b123456` kept), would take it.
+read the document again. Without `read`, a handle names whichever block it
+names now: once its block is deleted, a block added since whose hash starts
+the same way would take it.
 
 With [`@lexical/y`](/docs/collaboration/y) on a server, an agent's edit is
 applied to the state the model read and merged into the stored state (see
@@ -417,7 +466,7 @@ const [html, shown] = editor.read(() => [
   $generateHtmlFromNodes(editor),
   $getBlockHandles(),
 ]);
-// <h2 data-block-handle="V1St">…</h2><p data-block-handle="9xQe">…</p>
+// <h2 data-block-handle="2bNo">…</h2><p data-block-handle="gTtF">…</p>
 ```
 
 Resolve the model's answers with `$resolveBlockHandle(handle, {read: shown})`
@@ -607,9 +656,8 @@ in `data-block-handle` instead of ids, for HTML shown to a model (see
   coordination. A value that is invalid
   or already used in the editor is discarded and `generateId` is called
   again; 32 such values in a row throw. Tests can use a counter:
-  ``generateId: () => `b${++n}` ``. Short handles need ids whose first
-  characters are random, so a UUIDv7 (a timestamp first) is a poor choice
-  (see [Showing blocks to a model](#showing-blocks-to-a-model)).
+  ``generateId: () => `b${++n}` ``. Any id format gets short, typo-safe
+  [handles](#showing-blocks-to-a-model), since handles hash the ids.
 - `disabled`: stops assigning, repairing and indexing ids (also an output
   signal). Ids already in the document are kept, and `$getBlockById` scans
   the document. Enabling it again assigns and repairs ids in one update.

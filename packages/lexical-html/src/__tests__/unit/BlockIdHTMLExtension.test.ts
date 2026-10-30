@@ -409,7 +409,8 @@ describe("BlockIdHTMLExtension: export: 'handle'", () => {
     'V1StGXR8_Z5jdHi6B-myT',
     '9xQeLm2Pq0aK7cTb_wYuA',
     'Rk8pZc41Uo-HsVd2NnFjB',
-    'V1StQ9mWc0-bE3rT7yLpA',
+    // Its hash starts like the first id's: both handles take 5 characters.
+    'qfapyr',
     'u7NnPz2Kq0aK7cTb_wYuA',
   ];
 
@@ -423,11 +424,11 @@ describe("BlockIdHTMLExtension: export: 'handle'", () => {
     );
     expect(exportHTML(editor)).toBe(
       [
-        '<h2 data-block-handle="V1StG"><span style="white-space: pre-wrap;">Q3 plan</span></h2>',
-        '<p data-block-handle="9xQe"><span style="white-space: pre-wrap;">Revenue grew 4% in Q3.</span></p>',
-        '<ul data-block-handle="Rk8p">',
-        '<li value="1" data-block-handle="V1StQ"><span style="white-space: pre-wrap;">a</span></li>',
-        '<li value="2" data-block-handle="u7Nn"><span style="white-space: pre-wrap;">b</span></li>',
+        '<h2 data-block-handle="2bNoq"><span style="white-space: pre-wrap;">Q3 plan</span></h2>',
+        '<p data-block-handle="gTtF"><span style="white-space: pre-wrap;">Revenue grew 4% in Q3.</span></p>',
+        '<ul data-block-handle="xt6z">',
+        '<li value="1" data-block-handle="2bNoV"><span style="white-space: pre-wrap;">a</span></li>',
+        '<li value="2" data-block-handle="Wbjb"><span style="white-space: pre-wrap;">b</span></li>',
         '</ul>',
       ].join(''),
     );
@@ -455,7 +456,7 @@ describe("BlockIdHTMLExtension: export: 'handle'", () => {
         '<h2 data-block-id="V1StGXR8_Z5jdHi6B-myT"><span style="white-space: pre-wrap;">Q3 plan</span></h2>',
         '<p data-block-id="9xQeLm2Pq0aK7cTb_wYuA"><span style="white-space: pre-wrap;">Revenue grew 4% in Q3.</span></p>',
         '<ul data-block-id="Rk8pZc41Uo-HsVd2NnFjB">',
-        '<li value="1" data-block-id="V1StQ9mWc0-bE3rT7yLpA"><span style="white-space: pre-wrap;">a</span></li>',
+        '<li value="1" data-block-id="qfapyr"><span style="white-space: pre-wrap;">a</span></li>',
         '<li value="2" data-block-id="u7NnPz2Kq0aK7cTb_wYuA"><span style="white-space: pre-wrap;">b</span></li>',
         '</ul>',
       ].join(''),
@@ -509,9 +510,9 @@ describe("BlockIdHTMLExtension: export: 'handle'", () => {
     );
     expect(
       elements.map(element => element.getAttribute(BLOCK_HANDLE_ATTRIBUTE)),
-    ).toEqual(['V1St', '9xQe', 'Rk8p']);
+    ).toEqual(['2bNo', 'gTtF', 'xt6z']);
     expect(Array.from(shown.values())).toEqual(
-      expect.arrayContaining(['V1St', '9xQe', 'Rk8p']),
+      expect.arrayContaining(['2bNo', 'gTtF', 'xt6z']),
     );
     const keyBefore = editor.read(() => $getBlockById(IDS[1])!.getKey());
     // 2. What the model answers.
@@ -549,32 +550,32 @@ describe("BlockIdHTMLExtension: export: 'handle'", () => {
     });
     expect(exportHTML(editor)).toBe(
       [
-        '<h2 data-block-handle="V1St"><span style="white-space: pre-wrap;">Q3 plan</span></h2>',
-        '<p data-block-handle="9xQe"><span style="white-space: pre-wrap;">Revenue grew 6% in Q3.</span></p>',
-        '<p data-block-handle="Rk8p"><span style="white-space: pre-wrap;">Hiring is on track.</span></p>',
+        '<h2 data-block-handle="2bNo"><span style="white-space: pre-wrap;">Q3 plan</span></h2>',
+        '<p data-block-handle="gTtF"><span style="white-space: pre-wrap;">Revenue grew 6% in Q3.</span></p>',
+        '<p data-block-handle="xt6z"><span style="white-space: pre-wrap;">Hiring is on track.</span></p>',
       ].join(''),
     );
   });
 
-  test('a handle from exported HTML never names a block added since that took its prefix', () => {
+  test('a handle from exported HTML never names a block added since whose handle would be the same', () => {
     using editor = build({
       html: {export: 'handle'},
-      ids: ['9xQe1111', 'Rk8pZc41'],
+      ids: ['p18f', 'Rk8pZc41'],
     });
     append(editor, parseFixture('<p>Revenue grew 4%.</p><p>Hiring.</p>'));
     const [exported, shown] = exportWithHandles(editor);
     expect(
       exported.querySelector('p')!.getAttribute(BLOCK_HANDLE_ATTRIBUTE),
-    ).toBe('9xQe');
+    ).toBe('NnGk');
     // Before the model's answer arrives, the block it was shown is deleted
-    // and a block whose id takes the same prefix is added.
+    // and a block whose hash starts the same way is added.
     editor.update(
       () => {
-        $getBlockById('9xQe1111')!.remove();
+        $getBlockById('p18f')!.remove();
         const node = $createParagraphNode().append(
           $createTextNode('Not shown to the model.'),
         );
-        $setState(node, blockIdState, '9xQe2222');
+        $setState(node, blockIdState, 'p2cs');
         $getRoot().append(node);
       },
       {discrete: true},
@@ -582,11 +583,11 @@ describe("BlockIdHTMLExtension: export: 'handle'", () => {
     editor.update(
       () => {
         // Without the read, the handle names the new block.
-        const unpinned = $resolveBlockHandle('9xQe');
+        const unpinned = $resolveBlockHandle('NnGk');
         assert(unpinned.status === 'found');
-        expect($getBlockId(unpinned.node)).toBe('9xQe2222');
+        expect($getBlockId(unpinned.node)).toBe('p2cs');
         // With the handles of the export, as in the JSDoc: not found.
-        const result = $resolveBlockHandle('9xQe', {read: shown});
+        const result = $resolveBlockHandle('NnGk', {read: shown});
         expect(result.status).toBe('not-found');
         if (result.status === 'found') {
           $setBlockText(result.node, 'Revenue grew 6%.');
@@ -595,7 +596,7 @@ describe("BlockIdHTMLExtension: export: 'handle'", () => {
       {discrete: true},
     );
     editor.read(() => {
-      expect($getBlockById('9xQe2222')!.getTextContent()).toBe(
+      expect($getBlockById('p2cs')!.getTextContent()).toBe(
         'Not shown to the model.',
       );
     });

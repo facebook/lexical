@@ -17,14 +17,18 @@ import {
   $isTextNode,
   type ElementNode,
   type LexicalNode,
+  type TextNode,
 } from 'lexical';
 
 // Changes a block's text in place: only the characters that differ, in the
 // block's own text nodes. block.replace(newBlock) would re-create the block,
 // and what a collaborator types in it meanwhile would not stay where they
-// typed it. Returns false, changing nothing, unless the block holds only text,
-// directly or in inline elements such as links: no line breaks, nested blocks,
-// named slots or decorators, even ones without text.
+// typed it. Returns false, changing nothing, unless the block holds only
+// simple text (no tabs, hashtags or other special text nodes), directly or
+// in inline elements such as links: no line breaks, nested blocks, named
+// slots or decorators, even ones without text. Text added at the edge of an
+// inline element that takes no text there (a link) goes beside it, as typing
+// does.
 export function $setBlockText(block: LexicalNode, text: string): boolean {
   if (!$isElementNode(block) || !$holdsOnlyText(block)) {
     return false;
@@ -58,7 +62,11 @@ export function $setBlockText(block: LexicalNode, text: string): boolean {
     ) {
       // The node where the change starts (for an insert at a node boundary,
       // the node before it): delete and insert there.
-      node.spliceText(from, Math.max(to - from, 0), inserted);
+      if (start === deleteEnd) {
+        $insertText(node, from, inserted);
+      } else {
+        node.spliceText(from, to - from, inserted);
+      }
       done = true;
     } else if (to > from) {
       node.spliceText(from, to - from, '');
@@ -79,8 +87,49 @@ function $holdsOnlyText(element: ElementNode): boolean {
       .getChildren()
       .every(
         child =>
-          $isTextNode(child) ||
+          ($isTextNode(child) && child.isSimpleText()) ||
           ($isElementNode(child) && child.isInline() && $holdsOnlyText(child)),
       )
   );
+}
+
+// Inserts text at `at` in `node`, or, at an edge of inline elements that
+// take no text there (canInsertTextAfter or canInsertTextBefore is false, as
+// for a link or a mark), beside the outermost of them.
+function $insertText(node: TextNode, at: number, text: string): void {
+  if (text === '') {
+    return;
+  }
+  const atEnd = at === node.getTextContentSize();
+  let outermost: ElementNode | null = null;
+  for (
+    let inner: LexicalNode = node, parent = node.getParent();
+    $isElementNode(parent) && parent.isInline();
+    inner = parent, parent = parent.getParent()
+  ) {
+    if (
+      atEnd
+        ? inner.getNextSibling() !== null
+        : at !== 0 || inner.getPreviousSibling() !== null
+    ) {
+      break;
+    }
+    if (atEnd ? !parent.canInsertTextAfter() : !parent.canInsertTextBefore()) {
+      outermost = parent;
+    }
+  }
+  if (outermost === null) {
+    node.spliceText(at, 0, text);
+    return;
+  }
+  const beside = atEnd
+    ? outermost.getNextSibling()
+    : outermost.getPreviousSibling();
+  if ($isTextNode(beside) && beside.isSimpleText()) {
+    beside.spliceText(atEnd ? 0 : beside.getTextContentSize(), 0, text);
+  } else if (atEnd) {
+    outermost.insertAfter($createTextNode(text));
+  } else {
+    outermost.insertBefore($createTextNode(text));
+  }
 }

@@ -14,20 +14,21 @@
 // moves, replaces, and blocks given an id that shares an existing prefix.
 // After every edit:
 //
-// - each block's handle is the brute-force shortest unique prefix of at least
-//   MIN_BLOCK_HANDLE_LENGTH characters (or its whole id);
+// - each block's handle is the brute-force shortest unique prefix, at least
+//   MIN_BLOCK_HANDLE_LENGTH characters long, of the hash key of its id;
 // - each handle, and each whole id, resolves to its own block;
 // - the handles of the previous read, resolved with that read, name the
 //   blocks they named then, or are not found once those are deleted;
 // - typo safety: no one-character change of a handle (substitute, drop,
 //   add) resolves to a different block, unless the changed string is that
-//   block's id or starts with that block's current handle (a handle it could
-//   have been given while another id shared more of its prefix).
+//   block's id or a prefix of its key that starts with its current handle (a
+//   handle it could have been given while another key shared more of it).
 //
 // The default run is small. Set BLOCK_HANDLE_PROPERTY_RUNS to run more
-// documents locally, and BLOCK_HANDLE_TYPO_DOCS to measure and print the
-// rate at which a one-character typo names another block in documents of
-// 1,000 random ids (skipped otherwise).
+// documents locally, and BLOCK_HANDLE_TYPO_DOCS to measure and print handle
+// lengths and the rate at which a one-character typo names another block in
+// documents of 1,000 ids of each shape (random, `@lexical/y`-style derived,
+// UUIDv7), skipped otherwise.
 
 import {
   $getBlockById,
@@ -55,6 +56,8 @@ import {
   type LexicalNode,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
+
+import {HANDLE_KEY_LENGTH, handleKey} from '../../internal/blockHandles';
 
 const RUNS = Number(process.env.BLOCK_HANDLE_PROPERTY_RUNS || 15);
 const TYPO_DOCS = Number(process.env.BLOCK_HANDLE_TYPO_DOCS || 0);
@@ -120,16 +123,21 @@ const edit: fc.Arbitrary<Edit> = fc.oneof(
   fc.record({at: fc.nat(), kind: fc.constant('move' as const), to: fc.nat()}),
 );
 
-/** The shortest prefix of `id`, at least 4 long, that no other id starts with. */
+/**
+ * The shortest prefix of `id`'s hash key, at least 4 long, that no other
+ * id's key starts with (or the whole key).
+ */
 function bruteForceHandle(id: string, ids: readonly string[]): string {
-  let length = Math.min(MIN_BLOCK_HANDLE_LENGTH, id.length);
+  const key = handleKey(id);
+  const others = ids.filter(other => other !== id).map(handleKey);
+  let length = MIN_BLOCK_HANDLE_LENGTH;
   while (
-    length < id.length &&
-    ids.some(other => other !== id && other.startsWith(id.slice(0, length)))
+    length < key.length &&
+    others.some(other => other.startsWith(key.slice(0, length)))
   ) {
     length++;
   }
-  return id.slice(0, length);
+  return key.slice(0, length);
 }
 
 /** Every string one substitution, deletion or insertion away from `s`. */
@@ -198,7 +206,10 @@ function check(
       );
       expect(handles.get(id), context).toBe(handle);
       handleOfId.set(id, handle);
-      for (const input of [handle, id]) {
+      // A whole id is accepted when it is longer than any handle.
+      for (const input of id.length > HANDLE_KEY_LENGTH
+        ? [handle, id]
+        : [handle]) {
         const result = $resolveBlockHandle(input);
         assert(
           result.status === 'found' && result.node.is(blocks[i]),
@@ -223,7 +234,7 @@ function check(
           }
           assert(
             s === otherId ||
-              (otherId.startsWith(s) && s.startsWith(otherHandle)),
+              (handleKey(otherId).startsWith(s) && s.startsWith(otherHandle)),
             `${context}: typo ${s} of ${handleOfId.get(ids[i])} named ${otherId} (handle ${otherHandle})`,
           );
         } else if (result.status === 'ambiguous') {
@@ -372,50 +383,91 @@ describe('block handles: property', () => {
     Math.max(5000, RUNS * 100),
   );
 
+  // Ids of one shape for a typo-rate document: random 21-character ids,
+  // `@lexical/y`-style derived ids (one client, increasing clocks), and
+  // UUIDv7s made 0 to 2 ms apart.
+  const shapes: Record<string, (doc: number) => string[]> = {
+    derived: doc => {
+      const client = (doc * 7919 + 104729) * 2 ** 20;
+      let clock = 0;
+      return Array.from({length: TYPO_BLOCKS}, (_, i) => {
+        clock += 10 + ((i * 37) % 70);
+        return `y${client.toString(36)}_${clock.toString(36)}`;
+      });
+    },
+    random: () => Array.from({length: TYPO_BLOCKS}, generateBlockId),
+    uuidv7: doc => {
+      let ms = 1793357300000 + doc * 10000000;
+      return Array.from({length: TYPO_BLOCKS}, (_, i) => {
+        ms += i % 3;
+        const time = ms.toString(16).padStart(12, '0');
+        const rest = generateBlockId()
+          .split('')
+          .map(c => (c.charCodeAt(0) % 16).toString(16))
+          .join('');
+        return `${time.slice(0, 8)}-${time.slice(8)}-7${rest.slice(0, 3)}-a${rest.slice(3, 6)}-${rest.slice(6, 18)}`;
+      });
+    },
+  };
+
   test.skipIf(TYPO_DOCS === 0)(
-    `one-character typo rate, ${TYPO_BLOCKS}-block documents of random 21-character ids`,
+    `one-character typo rate and handle length, ${TYPO_BLOCKS}-block documents`,
     () => {
-      let tried = 0;
-      let hits = 0;
-      let exact = 0;
-      for (let doc = 0; doc < TYPO_DOCS; doc++) {
-        using editor = buildEditorFromExtensions({
-          $initialEditorState: null,
-          dependencies: [RichTextExtension, BlockIdExtension],
-          name: '[block-handle-typo-rate]',
-        });
-        editor.setEditorState(
-          editor.parseEditorState({
-            root: {
-              children: Array.from({length: TYPO_BLOCKS}, (_, i) => ({
-                $: {blockId: generateBlockId()},
-                children: [{text: `Block ${i}`, type: 'text'}],
-                type: 'paragraph',
-              })),
-              type: 'root',
-            },
-          } as never),
+      const lines: string[] = [];
+      for (const [shape, makeIds] of Object.entries(shapes)) {
+        let tried = 0;
+        let hits = 0;
+        let exact = 0;
+        const lengths: number[] = [];
+        for (let doc = 0; doc < TYPO_DOCS; doc++) {
+          using editor = buildEditorFromExtensions({
+            $initialEditorState: null,
+            dependencies: [RichTextExtension, BlockIdExtension],
+            name: '[block-handle-typo-rate]',
+          });
+          editor.setEditorState(
+            editor.parseEditorState({
+              root: {
+                children: makeIds(doc).map((id, i) => ({
+                  $: {blockId: id},
+                  children: [{text: `Block ${i}`, type: 'text'}],
+                  type: 'paragraph',
+                })),
+                type: 'root',
+              },
+            } as never),
+          );
+          const typo = check(editor, () => true, `${shape} doc ${doc}`);
+          tried += typo.tried;
+          hits += typo.hits;
+          exact += typo.exact;
+          for (const handle of editor.read($getBlockHandles).values()) {
+            lengths.push(handle.length);
+          }
+        }
+        // Handles are almost all 4 characters long, whatever the ids look
+        // like. A one-character change gives a 3-character string (never a
+        // handle), or a 4- or 5-character one that names another block only
+        // if it is that block's handle (about 1,000 of 64^4 four-character
+        // strings).
+        expect(hits / tried, shape).toBeLessThan(1e-3);
+        expect(Math.max(...lengths), shape).toBeLessThanOrEqual(6);
+        const mean = lengths.reduce((a, b) => a + b, 0) / lengths.length;
+        lines.push(
+          `${shape}: handle length mean ${mean.toFixed(2)}, max ` +
+            `${Math.max(...lengths)}; ${hits} of ${tried} one-character ` +
+            `typos named another block: ${(hits / tried).toExponential(2)} ` +
+            `(${exact} of them exactly that block's handle)`,
         );
-        const typo = check(editor, () => true, `typo doc ${doc}`);
-        tried += typo.tried;
-        hits += typo.hits;
-        exact += typo.exact;
       }
-      // Handles of random ids are almost all 4 characters long. A
-      // one-character change gives a 3-character string (never a handle), or
-      // a 4- or 5-character one that names another block only if it is that
-      // block's handle (about 1,000 of 64^4 four-character strings).
-      expect(hits / tried).toBeLessThan(1e-3);
       // Only when asked for (BLOCK_HANDLE_TYPO_DOCS), so nothing is printed
       // on an ordinary run.
       // eslint-disable-next-line no-console
       console.log(
-        `block handle typo rate: ${hits} of ${tried} one-character typos ` +
-          `(${TYPO_DOCS} × ${TYPO_BLOCKS} blocks) named another block: ` +
-          `${(hits / tried).toExponential(2)} (${exact} of them exactly ` +
-          `that block's handle)`,
+        `block handles, ${TYPO_DOCS} × ${TYPO_BLOCKS} blocks per shape:\n` +
+          lines.join('\n'),
       );
     },
-    20000 * Math.max(TYPO_DOCS, 1),
+    60000 * Math.max(TYPO_DOCS, 1),
   );
 });

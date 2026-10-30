@@ -31,16 +31,19 @@ import {createYDoc, YBinding, YCollabExtension} from '../..';
 // The follow-up check (YBinding#$checkFollowUp) reads only the part of a
 // container the follow-up changed: in a long document, a follow-up after
 // each keystroke (BlockIdExtension's naming path) costs that part, not the
-// document.
+// document. So the check costs about the same in a document ten times
+// longer; measured in the same process, the comparison holds on a loaded
+// machine, where an absolute bound in milliseconds does not.
 
 const BLOCKS = 10000;
+const SMALL = 1000;
 const KEYS = 60;
 
 type Check = (this: YBinding, ...args: unknown[]) => void;
 const proto = YBinding.prototype as unknown as {$checkFollowUp: Check};
 const original = proto.$checkFollowUp;
 
-function build(): {editor: LexicalEditor; binding: YBinding} {
+function build(blocks: number): {editor: LexicalEditor; binding: YBinding} {
   const doc = createYDoc();
   const editor = buildEditorFromExtensions(
     defineExtension({
@@ -62,7 +65,7 @@ function build(): {editor: LexicalEditor; binding: YBinding} {
   editor.update(
     () => {
       const root = $getRoot().clear();
-      for (let i = 0; i < BLOCKS; i++) {
+      for (let i = 0; i < blocks; i++) {
         root.append(
           $createParagraphNode().append($createTextNode(`line ${i} of text`)),
         );
@@ -97,8 +100,8 @@ function keystroke(editor: LexicalEditor, at: number, k: number): number {
   return performance.now() - t0;
 }
 
-function run(where: 'end' | 'middle', withCheck: boolean) {
-  const {editor} = build();
+function run(where: 'end' | 'middle', withCheck: boolean, blocks = BLOCKS) {
+  const {editor} = build(blocks);
   let checks = 0;
   let checkMs = 0;
   proto.$checkFollowUp = function (this: YBinding, ...args: unknown[]) {
@@ -113,7 +116,7 @@ function run(where: 'end' | 'middle', withCheck: boolean) {
   const times: number[] = [];
   try {
     for (let k = 0; k < KEYS; k++) {
-      const at = where === 'end' ? BLOCKS - 1 : BLOCKS / 2;
+      const at = where === 'end' ? blocks - 1 : blocks / 2;
       times.push(keystroke(editor, at, k));
     }
   } finally {
@@ -122,7 +125,7 @@ function run(where: 'end' | 'middle', withCheck: boolean) {
   times.sort((a, b) => a - b);
   // Every rename was written (none read again).
   const stored = editor.read(() => {
-    const at = where === 'end' ? BLOCKS - 1 : BLOCKS / 2;
+    const at = where === 'end' ? blocks - 1 : blocks / 2;
     return $getState($getRoot().getChildAtIndex(at)!, blockIdState);
   });
   (editor as LexicalEditor & {dispose: () => void}).dispose();
@@ -139,14 +142,17 @@ describe('the follow-up check in a long document', () => {
     test(`${BLOCKS} blocks, ${KEYS} keystrokes at the ${where}, each followed by a naming update: the check costs the part it changed`, () => {
       const off = run(where, false);
       const on = run(where, true);
+      const small = run(where, true, SMALL);
       // eslint-disable-next-line no-console
       console.log(
-        `FOLLOWUP_COST ${where}: ${on.checks} follow-ups checked; median follow-up ${off.median.toFixed(2)} ms without the check, ${on.median.toFixed(2)} ms with it; the check ${on.checkMs.toFixed(3)} ms per follow-up`,
+        `FOLLOWUP_COST ${where}: ${on.checks} follow-ups checked; median follow-up ${off.median.toFixed(2)} ms without the check, ${on.median.toFixed(2)} ms with it; the check ${on.checkMs.toFixed(3)} ms per follow-up, ${small.checkMs.toFixed(3)} ms in ${SMALL} blocks`,
       );
       expect(on.checks).toBe(KEYS);
       expect(on.stored).toBe(`renamed-${KEYS - 1}`);
-      // The check reads a few blocks, not the 10,000.
-      expect(on.checkMs).toBeLessThan(5);
+      expect(small.stored).toBe(`renamed-${KEYS - 1}`);
+      // The check reads a few blocks, not the 10,000: ten times the blocks
+      // would cost about ten times as much.
+      expect(on.checkMs).toBeLessThan(5 * small.checkMs + 0.5);
     }, 120000);
   }
 });

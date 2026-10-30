@@ -979,17 +979,18 @@ not merge as a user might expect:
   same undo also reverts your step before it. When you undo a format change
   while a collaborator removes that format and undoes the removal, the text
   keeps the format: the collaborator's undo brings it back. A comment or
-  format can run on past its end when writes inside it are undone (one
-  client's two writes, or two clients' writes) while another client deletes
-  text across its end: it carries on over the following words, possibly
-  into the next line. No text is lost. A format a collaborator applies
+  format can run on past its end when writes two collaborators made inside
+  it are undone while another client deletes text across its end: it
+  carries on over the following words, possibly into the next line. No
+  text is lost. A format a collaborator applies
   starting right where a run of that format ends, or from inside the run
-  past its end, can be lost on their text after the run when another
-  client, at the same time, removes the format from part of the run or
-  types inside it without the format: with `Kilo` bold, one client unbolds
-  `il` or types plain text inside `Kilo` as another bolds ` bb` (or
-  `lo bb`), and with some client id orders ` bb` stays plain. No text is
-  lost, and when that client undoes its edit, ` bb` is bold again.
+  past its end, can be lost on their text after the run when a client
+  other than the one that formatted the run, at the same time, removes the
+  format from part of the run or types inside it without the format: with
+  `Kilo` bolded by one client, another unbolds `il` or types plain text
+  inside `Kilo` as the first or a third bolds ` bb` (or `lo bb`), and with
+  some client id orders ` bb` stays plain. No text is lost, and when that
+  client undoes its edit, ` bb` is bold again.
 - **Large lists.** A structural edit in a list costs time proportional to
   the list on every client.
 - **Older app versions.** Clients of different `schemaVersion`s never

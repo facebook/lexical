@@ -19,6 +19,7 @@ import {
 import {
   $createParagraphNode,
   $findMatchingParent,
+  $getEditor,
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getRoot,
@@ -33,6 +34,7 @@ import {
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
   type CommandPayloadType,
+  type EditorState,
   type ElementNode,
   isDOMNode,
   type LexicalEditor,
@@ -117,6 +119,13 @@ function $tableCellTransform(node: TableCellNode) {
   }
 }
 
+/**
+ * Per update (its pending editor state), by table, the rows whose cells the
+ * update changed (see $tableRowTransform): what the table's transform pads
+ * when the update did not change the table's rows (see $tableTransform).
+ */
+const rowsChanged = new WeakMap<EditorState, Map<NodeKey, Set<NodeKey>>>();
+
 function $tableRowTransform(node: TableRowNode) {
   const table = node.getParent();
   if (!$isTableNode(table)) {
@@ -125,12 +134,48 @@ function $tableRowTransform(node: TableRowNode) {
     node.remove();
   } else {
     $unwrapAndFilterDescendants(node, $isTableCellNode);
-    // A row whose cells changed (a delete across cells removes some) can
-    // leave the table ragged. The table's transform pads its rows, and
-    // Lexical runs it only on a table marked dirty itself, which a change
-    // to one of its rows does not do.
+    // A row whose cells changed (a delete across cells removes some) can be
+    // shorter than the table. The table's transform pads it, and Lexical
+    // runs that only on a table marked dirty itself, which a change to one
+    // of its rows does not do.
+    const pending = $getEditor()._pendingEditorState;
+    if (pending !== null) {
+      let tables = rowsChanged.get(pending);
+      if (tables === undefined) {
+        tables = new Map();
+        rowsChanged.set(pending, tables);
+      }
+      let rows = tables.get(table.getKey());
+      if (rows === undefined) {
+        rows = new Set();
+        tables.set(table.getKey(), rows);
+      }
+      rows.add(node.getKey());
+    }
     table.markDirty();
   }
+}
+
+/**
+ * Whether the running update left the rows of `table` as they were (the
+ * same rows in the same order, in a table that was there before it).
+ */
+function $sameRows(table: TableNode): boolean {
+  const before = $getEditor()._editorState._nodeMap;
+  const previous = before.get(table.getKey());
+  if (!$isTableNode(previous)) {
+    return false;
+  }
+  const keys = table.getChildrenKeys();
+  let key = previous.__first;
+  for (const current of keys) {
+    if (key !== current) {
+      return false;
+    }
+    const row = before.get(key);
+    key = row === undefined ? null : row.__next;
+  }
+  return key === null;
 }
 
 function $tableTransform(node: TableNode) {
@@ -138,7 +183,21 @@ function $tableTransform(node: TableNode) {
   // TODO: Future support of tbody/thead/tfoot/caption may change this
   $unwrapAndFilterDescendants(node, $isTableRowNode);
 
-  $padTableRows(node);
+  // A table whose rows the update changed (a row added, removed or moved)
+  // gets all its rows padded. One whose rows are the ones it had gets the
+  // rows whose cells changed padded, and no other: the other short rows (a
+  // table ragged by collaborators' concurrent row and column inserts) are
+  // their authors' to pad, and a client padding them at the same time as
+  // their authors duplicates cells, which makes the other rows short in
+  // turn.
+  const pending = $getEditor()._pendingEditorState;
+  const changed = pending === null ? undefined : rowsChanged.get(pending);
+  const rows = changed === undefined ? undefined : changed.get(node.getKey());
+  if (rows !== undefined && $sameRows(node)) {
+    $padTableRows(node, row => rows.has(row.getKey()));
+  } else {
+    $padTableRows(node);
+  }
   const colWidths = node.getColWidths();
   const columnCount = node.getColumnCount();
   if (colWidths && colWidths.length !== columnCount) {

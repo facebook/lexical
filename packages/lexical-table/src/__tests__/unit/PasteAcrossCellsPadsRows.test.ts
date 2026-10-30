@@ -25,6 +25,7 @@ import {
   $isTableNode,
   $isTableRowNode,
   TableExtension,
+  TableRowNode,
 } from '@lexical/table';
 import {
   $createParagraphNode,
@@ -119,3 +120,112 @@ describe.each([
     expect(editor.read($cellsPerRow)).toBe('3,3,3');
   });
 });
+
+test('a change to one row pads that row only, not the other short rows', () => {
+  // Rows ragged before the update (a concurrent row and column insert from
+  // collaborators, merged without transforms) belong to whoever made them:
+  // padding them here would race with their authors' own padding.
+  using editor = buildEditorFromExtensions(
+    defineExtension({
+      $initialEditorState: null,
+      dependencies: [
+        RichTextExtension,
+        configExtension(TableExtension, {hasHorizontalScroll: false}),
+      ],
+      name: 'pad-changed-row',
+      onError: e => {
+        throw e;
+      },
+    }),
+  );
+  editor.update(
+    () => {
+      const table = $createTableNode();
+      for (const width of [3, 2, 3]) {
+        const row = $createTableRowNode();
+        for (let c = 0; c < width; c++) {
+          row.append($createTableCellNode(0).append($createParagraphNode()));
+        }
+        table.append(row);
+      }
+      $getRoot().clear().append(table, $createParagraphNode());
+    },
+    {discrete: true, skipTransforms: true},
+  );
+  expect(editor.read($cellsPerRow)).toBe('3,2,3');
+  editor.update(
+    () => {
+      const table = $getRoot().getFirstChild();
+      assert($isTableNode(table), 'expected a TableNode at the root');
+      const last = table.getLastChild();
+      assert($isTableRowNode(last), 'expected a row');
+      last.getLastChildOrThrow().remove();
+    },
+    {discrete: true},
+  );
+  expect(editor.read($cellsPerRow)).toBe('3,2,3');
+});
+
+test.each([false, true])(
+  'an update that adds a row pads every short row, also when a row transform adds it after rows changed (in a transform: %s)',
+  inTransform => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        dependencies: [
+          RichTextExtension,
+          configExtension(TableExtension, {hasHorizontalScroll: false}),
+        ],
+        name: 'pad-after-row-added',
+        onError: e => {
+          throw e;
+        },
+      }),
+    );
+    const $row = (width: number) => {
+      const row = $createTableRowNode();
+      for (let c = 0; c < width; c++) {
+        row.append($createTableCellNode(0).append($createParagraphNode()));
+      }
+      return row;
+    };
+    let first = '';
+    let armed = false;
+    // Registered before the table exists, so that registering it does not
+    // run the transforms on the ragged table.
+    const remove = editor.registerNodeTransform(TableRowNode, row => {
+      if (armed && row.getKey() === first) {
+        armed = false;
+        row.insertBefore($row(3));
+      }
+    });
+    editor.update(
+      () => {
+        const table = $createTableNode();
+        for (const width of [3, 3, 2]) {
+          table.append($row(width));
+        }
+        $getRoot().clear().append(table, $createParagraphNode());
+        first = table.getFirstChildOrThrow().getKey();
+      },
+      {discrete: true, skipTransforms: true},
+    );
+    expect(editor.read($cellsPerRow)).toBe('3,3,2');
+    armed = inTransform;
+    editor.update(
+      () => {
+        const table = $getRoot().getFirstChild();
+        assert($isTableNode(table), 'expected a TableNode at the root');
+        const row = table.getFirstChild();
+        assert($isTableRowNode(row), 'expected a row');
+        row.getLastChildOrThrow().remove();
+        if (!inTransform) {
+          row.insertBefore($row(3));
+        }
+      },
+      {discrete: true},
+    );
+    remove();
+    expect(editor.read($cellsPerRow)).toBe('3,3,3,3');
+  },
+);

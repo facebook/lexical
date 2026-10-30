@@ -19,10 +19,8 @@ import {
   $getSelection,
   $getSlotHost,
   $isBlockContainer,
-  $isDecoratorNode,
   $isElementNode,
   $isLeafNode,
-  $isLineBreakNode,
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
@@ -30,6 +28,7 @@ import {
   $setPointFromCaret,
   ElementNode,
   INTERNAL_$isBlock,
+  INTERNAL_isInlineContent,
   INTERNAL_isNodeStructureEnforced,
   type LexicalNode,
   type NodeKey,
@@ -204,16 +203,15 @@ export function $insertList(listType: ListType): void {
 
 /**
  * Whether a list item can hold `node` where NodeStructureExtension enforces
- * declared structure: inline content, a list, or a plain paragraph (which
- * becomes a line of the item). Anything else is lifted out of the item.
+ * declared structure: inline content as the normalization counts it, a
+ * list, or a plain paragraph (which becomes a line of the item). Anything
+ * else is lifted out of the item.
  */
 function $isListItemContent(node: LexicalNode): boolean {
   return (
-    $isTextNode(node) ||
-    $isLineBreakNode(node) ||
+    INTERNAL_isInlineContent(node) ||
     $isListNode(node) ||
-    ($isParagraphNode(node) && !node.isShadowRoot()) ||
-    (($isElementNode(node) || $isDecoratorNode(node)) && node.isInline())
+    ($isParagraphNode(node) && !node.isShadowRoot())
   );
 }
 
@@ -275,7 +273,12 @@ function $listTarget(
   if (!keep) {
     return top;
   }
-  const block = $findMatchingParent(leaf, INTERNAL_$isBlock);
+  // The block that holds the selected text, never inline content (the
+  // character limit's OverflowNode is a block to INTERNAL_$isBlock).
+  const block = $findMatchingParent(
+    leaf,
+    n => INTERNAL_$isBlock(n) && !INTERNAL_isInlineContent(n),
+  );
   return $isElementNode(block) ? block : null;
 }
 

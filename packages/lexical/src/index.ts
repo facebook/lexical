@@ -367,6 +367,7 @@ export {
   $isBlockContainer,
   getDeclaredNodeStructure,
   INTERNAL_$normalizeNodeStructure,
+  INTERNAL_isInlineContent,
   INTERNAL_isNodeStructureEnforced,
   INTERNAL_registerNodeStructure,
 } from './LexicalStructure';

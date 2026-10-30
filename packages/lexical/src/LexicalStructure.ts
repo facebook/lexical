@@ -349,6 +349,18 @@ function isInlineChild(node: LexicalNode): boolean {
   }
 }
 
+/**
+ * @internal For Lexical's own code; not public API.
+ *
+ * Whether the node structure normalization treats `node` as inline content
+ * (what a holder of `'inline'` keeps in its line): text, line breaks, inline
+ * elements and decorators, and the character limit's `OverflowNode`, which
+ * is inline content although its `isInline()` is false.
+ */
+export function INTERNAL_isInlineContent(node: LexicalNode): boolean {
+  return isInlineChild(node);
+}
+
 /** A leaf the normalization never removes and that sits in a line. */
 function isInlineLeaf(node: LexicalNode): boolean {
   return (

@@ -35,6 +35,7 @@ import {
   MdastGfmExtension,
   MdastShortcutsExtension,
 } from '@lexical/mdast';
+import {$createOverflowNode, OverflowNode} from '@lexical/overflow';
 import {
   $createHeadingNode,
   $createQuoteNode,
@@ -1421,6 +1422,84 @@ describe('a new block put in an empty declared container', () => {
       }),
     ).toEqual(['heading:0', 'text:2']);
   });
+});
+
+describe("the character limit's OverflowNode", () => {
+  function buildOverflowEditor(structure: boolean) {
+    return buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          RichTextExtension,
+          ListExtension,
+          ...(structure ? [NodeStructureExtension] : []),
+        ],
+        name: 'block-containers-overflow',
+        nodes: () => [OverflowNode, PlainBoxNode],
+        onError: (e: Error) => {
+          throw e;
+        },
+      }),
+    );
+  }
+  test.each([
+    [
+      'in a paragraph',
+      () => [
+        $createParagraphNode().append(
+          $createTextNode('abc'),
+          $createOverflowNode().append($createTextNode('def')),
+        ),
+      ],
+      'def',
+      'list[bullet](li("abc" overflow("def")))',
+    ],
+    [
+      'alone in a paragraph after another',
+      () => [
+        $p('abc'),
+        $createParagraphNode().append(
+          $createOverflowNode().append($createTextNode('ghi')),
+        ),
+      ],
+      'ghi',
+      'p("abc") / list[bullet](li(overflow("ghi")))',
+    ],
+    [
+      'in a box that holds a quote',
+      () => [
+        $create(PlainBoxNode).append(
+          $createQuoteNode().append($createTextNode('q')),
+          $createParagraphNode().append(
+            $createTextNode('abc'),
+            $createOverflowNode().append($createTextNode('def')),
+          ),
+        ),
+      ],
+      'def',
+      'box(quote("q") list[bullet](li("abc" overflow("def"))))',
+    ],
+  ] as const)(
+    '$insertList with the caret in an OverflowNode %s',
+    (name, $inner, text, expected) => {
+      for (const structure of [false, true]) {
+        if (name === 'in a box that holds a quote' && !structure) {
+          continue;
+        }
+        using editor = buildOverflowEditor(structure);
+        editor.update(
+          () => {
+            $getRoot()
+              .clear()
+              .append(...$inner());
+            $findText(text).select(1, 1);
+            $insertList('bullet');
+          },
+          {discrete: true},
+        );
+        expect(editor.read(() => $shape())).toBe(expected);
+      }
+    },
+  );
 });
 
 // https://github.com/meta/lexical/issues/9570

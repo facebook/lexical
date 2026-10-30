@@ -5234,6 +5234,47 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     ).toBe('[API](https://e.com)&#115;**(beta)** end');
   });
 
+  it.each([
+    [
+      '*)**a*',
+      [
+        ['*)*', false],
+        ['a', true],
+      ],
+    ],
+    [
+      '“_)__a(“[)_',
+      [
+        ['“_)_', false],
+        ['a(“[)', true],
+      ],
+    ],
+    [
+      '*a**`x`*',
+      [
+        ['a', true],
+        ['*', false],
+        ['x', false],
+        ['*', false],
+      ],
+    ],
+  ] as [string, [string, boolean][]][])(
+    'reads a delimiter run cut by an earlier match as it was in %j',
+    (markdown, runs) => {
+      const editor = createTestEditor();
+      editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
+        discrete: true,
+      });
+      expect(
+        editor.read('latest', () =>
+          $getRoot()
+            .getAllTextNodes()
+            .map(node => [node.getTextContent(), node.hasFormat('italic')]),
+        ),
+      ).toEqual(runs);
+    },
+  );
+
   it('keeps a link from taking part of a later code span', () => {
     const editor = createTestEditor();
     editor.update(

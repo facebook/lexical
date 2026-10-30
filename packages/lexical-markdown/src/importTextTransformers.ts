@@ -18,7 +18,7 @@ import {
   findOutermostTextMatchTransformer,
   importFoundTextMatchTransformer,
 } from './importTextMatchTransformer';
-import {unescapeText} from './utils';
+import {characterAt, characterBefore, unescapeText} from './utils';
 
 /**
  * Returns true if the node can contain transformable markdown.
@@ -33,6 +33,39 @@ export function canContainTransformableMarkdown(
 }
 
 /**
+ * What a delimiter run that starts at `index` of `text` sees before it, once
+ * the text before `index` is split off: the character before the whole run,
+ * or `outside` when the run reaches the start of the text.
+ */
+function characterBeforeRun(
+  text: string,
+  index: number,
+  outside: string | undefined,
+): string | undefined {
+  let start = index;
+  while (start > 0 && text[start - 1] === text[index]) {
+    start--;
+  }
+  return start > 0 ? characterBefore(text, start) : outside;
+}
+
+/**
+ * What a delimiter run that ends at `index` of `text` sees after it, once the
+ * text from `index` is split off.
+ */
+function characterAfterRun(
+  text: string,
+  index: number,
+  outside: string | undefined,
+): string | undefined {
+  let end = index;
+  while (end < text.length && text[end] === text[index - 1]) {
+    end++;
+  }
+  return end < text.length ? characterAt(text, end) : outside;
+}
+
+/**
  * Handles applying both text format and text match transformers.
  * It finds the outermost text format or text match and applies it,
  * then recursively calls itself to apply the next outermost transformer,
@@ -42,10 +75,17 @@ export function importTextTransformers(
   textNode: TextNode,
   textFormatTransformersIndex: TextFormatTransformersIndex,
   textMatchTransformers: TextMatchTransformer[],
+  // The characters around this text in the text it was split from, so that
+  // a delimiter run at its edge reads as it did there.
+  before?: string,
+  after?: string,
 ) {
+  const text = textNode.getTextContent();
   let foundTextFormat = findOutermostTextFormatTransformer(
     textNode,
     textFormatTransformersIndex,
+    before,
+    after,
   );
 
   let foundTextMatch = findOutermostTextMatchTransformer(
@@ -100,12 +140,16 @@ export function importTextTransformers(
       foundTextFormat.transformer,
       foundTextFormat.match,
     );
+    const {startIndex, endIndex} = foundTextFormat;
+    const tagLength = foundTextFormat.match[1].length;
 
     if (canContainTransformableMarkdown(result.nodeAfter)) {
       importTextTransformers(
         result.nodeAfter,
         textFormatTransformersIndex,
         textMatchTransformers,
+        characterBeforeRun(text, endIndex, before),
+        after,
       );
     }
     if (canContainTransformableMarkdown(result.nodeBefore)) {
@@ -113,6 +157,8 @@ export function importTextTransformers(
         result.nodeBefore,
         textFormatTransformersIndex,
         textMatchTransformers,
+        before,
+        characterAfterRun(text, startIndex, after),
       );
     }
     if (canContainTransformableMarkdown(result.transformedNode)) {
@@ -120,6 +166,8 @@ export function importTextTransformers(
         result.transformedNode,
         textFormatTransformersIndex,
         textMatchTransformers,
+        characterBeforeRun(text, startIndex + tagLength, before),
+        characterAfterRun(text, endIndex - tagLength, after),
       );
     }
   } else if (foundTextMatch) {
@@ -139,6 +187,8 @@ export function importTextTransformers(
         result.nodeAfter,
         textFormatTransformersIndex,
         textMatchTransformers,
+        characterBeforeRun(text, foundTextMatch.endIndex, before),
+        after,
       );
     }
     if (canContainTransformableMarkdown(result.nodeBefore)) {
@@ -146,6 +196,8 @@ export function importTextTransformers(
         result.nodeBefore,
         textFormatTransformersIndex,
         textMatchTransformers,
+        before,
+        characterAfterRun(text, foundTextMatch.startIndex, after),
       );
     }
     if (canContainTransformableMarkdown(result.transformedNode)) {

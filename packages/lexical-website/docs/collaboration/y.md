@@ -983,15 +983,13 @@ not merge as a user might expect:
   client's two writes, or two clients' writes) while another client deletes
   text across its end: it carries on over the following words, possibly
   into the next line. No text is lost. A format a collaborator applies
-  starting right where a run of that format ends can be lost on their text
-  when another client, at the same time, removes the format from part of
-  the run or types inside it without the format: with `Kilo` bold, one
-  client unbolds `il` as another bolds ` bb`, and with some client id
-  orders ` bb` stays plain. No text is lost. Undoing a format while a
-  collaborator undoes plain text they typed inside its range, which you
-  had not seen, can leave the text after theirs with the format on every
-  client: bold `one two`, let a collaborator type plain ` mid` after `one`
-  and undo it as you undo the bold, and ` two` stays bold. No text is lost.
+  starting right where a run of that format ends, or from inside the run
+  past its end, can be lost on their text after the run when another
+  client, at the same time, removes the format from part of the run or
+  types inside it without the format: with `Kilo` bold, one client unbolds
+  `il` or types plain text inside `Kilo` as another bolds ` bb` (or
+  `lo bb`), and with some client id orders ` bb` stays plain. No text is
+  lost, and when that client undoes its edit, ` bb` is bold again.
 - **Large lists.** A structural edit in a list costs time proportional to
   the list on every client.
 - **Older app versions.** Clients of different `schemaVersion`s never

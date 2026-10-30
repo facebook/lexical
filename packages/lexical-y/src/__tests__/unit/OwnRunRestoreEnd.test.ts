@@ -52,7 +52,10 @@ import {prepareMarkState as prepare} from '../utils/sizeOps';
 // the cases it regressed are the plain tests here (S9-12b, the #9589 tie,
 // and OwnCommentGapCollapse.test.ts).
 
-/** Each word of `peer`'s first line, with its comment ids. */
+/**
+ * Each word of `peer`'s first line, with its comment ids (spaces collapse:
+ * the tests assert the line's text too).
+ */
 function words(peer: Peer): string {
   return peer.read(() =>
     ($block([0]).getAllTextNodes() as TextNode[])
@@ -192,6 +195,7 @@ describe('@lexical/y a restore of a comment its own client opened', () => {
         await t.sync();
         await expectConverged(t.peers);
         // A's "X" is uncommented, and so is everything after it
+        expect(t.a.read(() => $block([0]).getTextContent())).toBe('aa Xbb cc');
         expect(words(t.a)).toBe('aa Xbb cc');
         expect(
           t.a.read(() =>
@@ -239,6 +243,7 @@ describe('@lexical/y a restore of a comment its own client opened', () => {
         expect(words(t.b)).toBe('aa bb cc');
         await t.sync();
         await expectConverged(t.peers);
+        expect(t.a.read(() => $block([0]).getTextContent())).toBe('aa Ybb cc');
         expect(words(t.a)).toBe('aa Ybb cc');
       },
     );
@@ -271,6 +276,9 @@ describe('@lexical/y a restore of a comment its own client opened', () => {
       expect(words(t.b)).toBe('aa Kil[c1] X ome[c1] Y cc dd');
       await t.sync();
       await expectConverged(t.peers);
+      expect(t.a.read(() => $block([0]).getTextContent())).toBe(
+        'aa Kilome cc dd',
+      );
       expect(words(t.a)).toBe('aa Kilome[c1] cc dd');
       expect(
         t.a.read(() =>
@@ -305,6 +313,9 @@ describe('@lexical/y a restore of a comment its own client opened', () => {
       expect(words(t.b)).toBe('aa Kil[c1] X ome[c1] Y cc dd');
       await t.sync();
       await expectConverged(t.peers);
+      expect(t.a.read(() => $block([0]).getTextContent())).toBe(
+        'aa Kilome cc dd',
+      );
       expect(words(t.a)).toBe('aa Kilome[c1] cc dd');
     });
     test(`a restore in another client's run keeps its end after that client wrote the value again (ids ${ids})`, async () => {

@@ -88,6 +88,9 @@ describe('@lexical/y undo of one write inside a comment its author opened ‖ a 
         }
         await t.sync();
         await expectConverged(t.peers);
+        expect(t.a.read(() => $block([0]).getTextContent())).toBe(
+          variant === 'o then space' ? 'aa Kilbb cc dd' : 'aa Kil cc dd',
+        );
         expect(line(t.a, 0)).toBe(
           variant === 'o then space'
             ? 'aa Kil[c1] bb[c2] cc dd'

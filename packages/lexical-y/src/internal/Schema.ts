@@ -1995,7 +1995,14 @@ export function $wrapperAttrs(
     putValue(own, f, json[f], `${node.getType()}.${f}`);
   }
   $stateAttrs(node.getLatest(), own);
-  $putTextFields(node.getLatest(), own);
+  // Only while the wrapper has no text of its own, as Lexical serializes
+  // them: with text, they follow its text (a format of that text sets
+  // them), and a write of them alone would write the whole value again over
+  // the wrapper's text, which a collaborator's concurrent removal of the
+  // wrapper does not delete (the removed link came back).
+  if (node.getLatest().shouldSerializeTextStyles()) {
+    $putTextFields(node.getLatest(), own);
+  }
   for (const k in own) {
     const v = own[k];
     // Yjs compares format values one level deep: a value that is not a

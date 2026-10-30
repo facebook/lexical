@@ -112,6 +112,15 @@ const isObject = (value: unknown): boolean =>
 const isSet = (value: unknown): boolean => value !== undefined;
 const isNumber = (value: unknown): boolean => typeof value === 'number';
 const isBoolean = (value: unknown): boolean => typeof value === 'boolean';
+/** A Map from any realm (@y/y may run in another one, such as a VM's). */
+const isMap = (value: unknown): boolean => {
+  try {
+    Map.prototype.has.call(value, undefined);
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 /**
  * The members (fields, getters, methods) the binding reads or calls, by the
@@ -147,7 +156,7 @@ export function yjsMembers() {
       get: (d: Doc) => isFunction(d.get),
       off: (d: Doc) => isFunction(d.off),
       on: (d: Doc) => isFunction(d.on),
-      share: (d: Doc) => d.share instanceof Map,
+      share: (d: Doc) => isMap(d.share),
       store: (d: Doc) => isObject(d.store),
       transact: (d: Doc) => isFunction(d.transact),
     },
@@ -170,7 +179,7 @@ export function yjsMembers() {
     },
     IdSet: {
       add: (s: IdSet) => isFunction(s.add),
-      clients: (s: IdSet) => s.clients instanceof Map,
+      clients: (s: IdSet) => isMap(s.clients),
       hasId: (s: IdSet) => isFunction(s.hasId),
     },
     Item: {
@@ -194,22 +203,25 @@ export function yjsMembers() {
       assoc: (p: RelativePosition) => isNumber(p.assoc),
       item: (p: RelativePosition) => isSet(p.item),
     },
+    Skip: {
+      id: (k: Skip) => isObject(k.id),
+    },
     StackItem: {
       deletes: (s: StackItem) => isObject(s.deletes),
       inserts: (s: StackItem) => isObject(s.inserts),
-      meta: (s: StackItem) => s.meta instanceof Map,
+      meta: (s: StackItem) => isMap(s.meta),
     },
     StackItemEvent: {
       origin: (e: StackItemEvent) => isSet(e.origin),
       stackItem: (e: StackItemEvent) => isObject(e.stackItem),
     },
     StructStore: {
-      clients: (s: StructStore) => s.clients instanceof Map,
+      clients: (s: StructStore) => isMap(s.clients),
       getClock: (s: StructStore) => isFunction(s.getClock),
       getItem: (s: StructStore) => isFunction(s.getItem),
     },
     Transaction: {
-      changed: (tr: Transaction) => tr.changed instanceof Map,
+      changed: (tr: Transaction) => isMap(tr.changed),
       deleteSet: (tr: Transaction) => isObject(tr.deleteSet),
       doc: (tr: Transaction) => isObject(tr.doc),
       insertSet: (tr: Transaction) => isObject(tr.insertSet),
@@ -234,7 +246,7 @@ export function yjsMembers() {
     YNode: {
       _hasFormatting: (n: YNode) => isBoolean(n._hasFormatting),
       _item: (n: YNode) => isSet(n._item),
-      _map: (n: YNode) => n._map instanceof Map,
+      _map: (n: YNode) => isMap(n._map),
       _searchMarker: (n: YNode) => isSet(n._searchMarker),
       _start: (n: YNode) => isSet(n._start),
       deleteAttr: (n: YNode) => isFunction(n.deleteAttr),
@@ -408,10 +420,17 @@ function probeMembers(y: YjsExports, found: string[]): void {
     Record<string, (value: object) => boolean>
   >;
   const sampled = new Set<string>();
-  const sample = (kind: string, value: unknown) => {
-    if (sampled.has(kind) || typeof value !== 'object' || value === null) {
+  const checked = new Set<string>();
+  /** Check `value` as a `kind`, once per kind (and `variant` of it). */
+  const sample = (kind: string, value: unknown, variant = '') => {
+    if (
+      checked.has(kind + '/' + variant) ||
+      typeof value !== 'object' ||
+      value === null
+    ) {
       return;
     }
+    checked.add(kind + '/' + variant);
     sampled.add(kind);
     for (const [member, check] of Object.entries(members[kind])) {
       let ok = false;
@@ -421,7 +440,7 @@ function probeMembers(y: YjsExports, found: string[]): void {
         // A getter that throws is a changed member too.
       }
       if (!ok) {
-        found.push(`${kind}#${member}`);
+        found.push(`${kind}${variant === '' ? '' : `(${variant})`}#${member}`);
       }
     }
   };
@@ -464,11 +483,15 @@ function probeMembers(y: YjsExports, found: string[]): void {
       root.insert(2, [new y.Node('probe')]);
       root.format(0, 1, {probe: true});
       root.setAttr('probe', 1);
+      root.setAttr('probeBinary', new Uint8Array([1]));
     }, PROBE_ORIGIN);
+    // Every kind of content the binding meets (text, formats, nodes,
+    // attribute values), each against the abstract content contract.
+    const contents: unknown[] = [];
     for (let it = root._start; it !== null; it = it.right) {
       sample('Item', it);
       sample('ID', it.id);
-      sample('AbstractContent', it.content);
+      contents.push(it.content);
       if (it.content instanceof y.ContentString) {
         sample('ContentString', it.content);
       } else if (it.content instanceof y.ContentFormat) {
@@ -477,6 +500,14 @@ function probeMembers(y: YjsExports, found: string[]): void {
         sample('ContentType', it.content);
         sample('YNode', it.content.type);
       }
+    }
+    root._map.forEach(item => contents.push(item.content));
+    for (const content of contents) {
+      sample(
+        'AbstractContent',
+        content,
+        (content as {constructor: {name: string}}).constructor.name,
+      );
     }
     const ids = y.createIdSet();
     ids.add(1, 0, 2);
@@ -494,6 +525,7 @@ function probeMembers(y: YjsExports, found: string[]): void {
       structs.find(struct => !(struct instanceof y.Item)),
     );
     sample('RelativePosition', new y.RelativePosition(null, null, null, 0));
+    sample('Skip', new y.Skip(y.createID(1, 0), 1));
     sample('decodeUpdate', y.decodeUpdate(y.encodeStateAsUpdate(doc)));
     undoManager.undo();
     undoManager.clear();

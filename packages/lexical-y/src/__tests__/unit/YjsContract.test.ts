@@ -18,6 +18,7 @@
 import * as Y from '@y/y';
 import fs from 'node:fs';
 import path from 'node:path';
+import vm from 'node:vm';
 import ts from 'typescript';
 import {afterEach, describe, expect, expectTypeOf, test, vi} from 'vitest';
 
@@ -56,6 +57,82 @@ describe('the supported version', () => {
     expect(SUPPORTED_YJS_VERSION).toMatch(/^\d+\.\d+\.\d+(-[\w.]+)?$/);
   });
 });
+
+/**
+ * A program over `files` in which the types @y/y's declarations name
+ * without importing them (`Transaction#doc: Doc`, `RelativePosition#item:
+ * ID | null`: the reason apps need `skipLibCheck`) resolve, so that values
+ * of those types are not `any` and their members are seen. The names are
+ * declared as globals in a virtual file, for this test only.
+ */
+function programWithResolvedYjsTypes(
+  files: string[],
+  options: ts.CompilerOptions,
+  yDir: string,
+): ts.Program {
+  const base = {...options, noEmit: true};
+  // skipLibCheck would hide the missing names.
+  const first = ts.createProgram(files, {...base, skipLibCheck: false});
+  const inYDir = (sf: ts.SourceFile) =>
+    fs.realpathSync(sf.fileName).startsWith(yDir);
+  const missing = new Set<string>();
+  for (const sf of first.getSourceFiles()) {
+    if (inYDir(sf)) {
+      for (const d of first.getSemanticDiagnostics(sf)) {
+        const m = ts
+          .flattenDiagnosticMessageText(d.messageText, '\n')
+          .match(/^Cannot find name '(\w+)'/);
+        if (m) {
+          missing.add(m[1]);
+        }
+      }
+    }
+  }
+  // Where @y/y declares each missing name, and how many type parameters
+  // it takes.
+  const declared = new Map<string, {file: string; params: number}>();
+  for (const sf of first.getSourceFiles()) {
+    if (!inYDir(sf)) {
+      continue;
+    }
+    for (const statement of sf.statements) {
+      if (
+        (ts.isClassDeclaration(statement) ||
+          ts.isInterfaceDeclaration(statement) ||
+          ts.isTypeAliasDeclaration(statement)) &&
+        statement.name &&
+        missing.has(statement.name.text) &&
+        !declared.has(statement.name.text) &&
+        (ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0
+      ) {
+        declared.set(statement.name.text, {
+          file: sf.fileName.replace(/\.d\.ts$/, ''),
+          params: statement.typeParameters
+            ? statement.typeParameters.length
+            : 0,
+        });
+      }
+    }
+  }
+  const lines = [...declared].map(([name, {file, params}]) => {
+    const args = Array.from({length: params}, (_, i) => `T${i}`);
+    const formal = args.map(a => `${a} = any`).join(', ');
+    return params === 0
+      ? `  type ${name} = import(${JSON.stringify(file)}).${name};`
+      : `  type ${name}<${formal}> = import(${JSON.stringify(file)}).${name}<${args.join(', ')}>;`;
+  });
+  const virtual = path.join(PACKAGE_DIR, '__yjs_contract_globals__.d.ts');
+  const text = `export {};\ndeclare global {\n${lines.join('\n')}\n}\n`;
+  const host = ts.createCompilerHost(base);
+  const getSourceFile = host.getSourceFile.bind(host);
+  host.getSourceFile = (fileName, languageVersion, ...rest) =>
+    fileName === virtual
+      ? ts.createSourceFile(fileName, text, languageVersion)
+      : getSourceFile(fileName, languageVersion, ...rest);
+  const fileExists = host.fileExists.bind(host);
+  host.fileExists = fileName => fileName === virtual || fileExists(fileName);
+  return ts.createProgram([...files, virtual], base, host, first);
+}
 
 /**
  * Everything the package's sources (not tests) use of @y/y, as the
@@ -99,9 +176,9 @@ function inventory(): Map<string, Set<string>> {
   if (parsed === undefined) {
     throw new Error('tsconfig.json did not parse');
   }
-  const program = ts.createProgram(files, {...parsed.options, noEmit: true});
-  const checker = program.getTypeChecker();
   const yDir = fs.realpathSync(path.join(PACKAGE_DIR, 'node_modules/@y/y'));
+  const program = programWithResolvedYjsTypes(files, parsed.options, yDir);
+  const checker = program.getTypeChecker();
   const inY = (decl: ts.Node) =>
     fs.realpathSync(decl.getSourceFile().fileName).startsWith(yDir);
   const nameOf = (decl: ts.Node): string => {
@@ -166,6 +243,53 @@ function inventory(): Map<string, Set<string>> {
     }
     return false;
   };
+  // Whether `node`, typed `any`, holds a value from @y/y: a member @y/y
+  // declares (`tr.doc`, whose declared type does not resolve), a call of a
+  // method @y/y declares, an untyped local initialized from either, or an
+  // untyped parameter of a callback given to a method of a value from @y/y
+  // (`tr.changed.forEach((subs, type) => ...)`).
+  const fromYUntyped = (node: ts.Expression): boolean => {
+    if (ts.isParenthesizedExpression(node) || ts.isNonNullExpression(node)) {
+      return fromYUntyped(node.expression);
+    }
+    if (ts.isPropertyAccessExpression(node)) {
+      const symbol = checker.getSymbolAtLocation(node.name);
+      const decl = symbol && symbol.declarations && symbol.declarations[0];
+      return decl !== undefined && inY(decl);
+    }
+    if (ts.isCallExpression(node)) {
+      return (
+        ts.isPropertyAccessExpression(node.expression) &&
+        (fromYUntyped(node.expression) || fromY(node.expression.expression))
+      );
+    }
+    if (!ts.isIdentifier(node)) {
+      return false;
+    }
+    const symbol = checker.getSymbolAtLocation(node);
+    const decl = symbol && symbol.valueDeclaration;
+    if (!decl) {
+      return false;
+    }
+    if (ts.isVariableDeclaration(decl)) {
+      return (
+        !decl.type &&
+        decl.initializer !== undefined &&
+        (fromYUntyped(decl.initializer) || fromY(decl.initializer))
+      );
+    }
+    if (ts.isParameter(decl) && !decl.type) {
+      const fn = decl.parent;
+      const call = fn.parent;
+      return (
+        (ts.isArrowFunction(fn) || ts.isFunctionExpression(fn)) &&
+        ts.isCallExpression(call) &&
+        ts.isPropertyAccessExpression(call.expression) &&
+        fromY(call.expression.expression)
+      );
+    }
+    return false;
+  };
   const uses = new Map<string, Set<string>>();
   const add = (key: string, file: string) => {
     const where = uses.get(key) || new Set<string>();
@@ -195,32 +319,18 @@ function inventory(): Map<string, Set<string>> {
       }
       if (
         receiver &&
-        ts.isIdentifier(receiver) &&
-        checker.getTypeAtLocation(receiver).flags & ts.TypeFlags.Any
+        checker.getTypeAtLocation(receiver).flags & ts.TypeFlags.Any &&
+        fromYUntyped(receiver)
       ) {
-        // An untyped parameter of a callback given to a method of a value
-        // from @y/y (`tr.changed.forEach((subs, type) => ...)`, whose
-        // element type @y/y does not resolve): its members would escape the
-        // inventory. Type the parameter.
-        const symbol = checker.getSymbolAtLocation(receiver);
-        const decl = symbol && symbol.valueDeclaration;
-        const fn = decl && ts.isParameter(decl) ? decl.parent : undefined;
-        const call = fn && fn.parent;
-        if (
-          decl &&
-          !(decl as ts.ParameterDeclaration).type &&
-          fn &&
-          (ts.isArrowFunction(fn) || ts.isFunctionExpression(fn)) &&
-          call &&
-          ts.isCallExpression(call) &&
-          ts.isPropertyAccessExpression(call.expression) &&
-          fromY(call.expression.expression)
-        ) {
-          const {line} = sourceFile.getLineAndCharacterOfPosition(
-            receiver.getStart(),
-          );
-          add(`untyped parameter '${receiver.text}' at line ${line + 1}`, file);
-        }
+        // A value from @y/y whose type does not resolve (`any`): its
+        // members would escape the inventory. Type it.
+        const {line} = sourceFile.getLineAndCharacterOfPosition(
+          receiver.getStart(),
+        );
+        add(
+          `untyped @y/y value '${receiver.getText()}' at line ${line + 1}`,
+          file,
+        );
       }
       if (receiver && nameNode) {
         const of = owners(
@@ -354,6 +464,20 @@ describe('the contract', () => {
   });
 
   test('the installed @y/y passes the probe', () => {
+    expect(probeYjs()).toEqual([]);
+  });
+
+  test('every kind of content is checked, attribute values included', () => {
+    const proto = Y.ContentAny.prototype as {getContent?: unknown};
+    const getContent = proto.getContent;
+    proto.getContent = undefined;
+    try {
+      expect(probeYjs()).toEqual([
+        expect.stringMatching(/^AbstractContent\(\w*ContentAny\)#getContent$/),
+      ]);
+    } finally {
+      proto.getContent = getContent;
+    }
     expect(probeYjs()).toEqual([]);
   });
 });
@@ -693,6 +817,24 @@ describe('with the supported @y/y', () => {
       }) as unknown as YModule['Doc'],
       findIndexSS: ((...args: Parameters<YModule['findIndexSS']>) =>
         y.findIndexSS(...args)) as unknown as YModule['findIndexSS'],
+    }));
+    expect(contract.probeYjs()).toEqual([]);
+  });
+
+  test('a @y/y whose collections come from another realm passes', async () => {
+    // As when @y/y is loaded in a VM context: its Maps are not this realm's.
+    const OtherMap = vm.runInNewContext('Map') as MapConstructor;
+    const {contract} = await loadWith(y => ({
+      Doc: Object.defineProperty(
+        class extends y.Doc {
+          constructor(...args: ConstructorParameters<YModule['Doc']>) {
+            super(...args);
+            this.share = new OtherMap(this.share);
+          }
+        },
+        'length',
+        {value: y.Doc.length},
+      ) as unknown as YModule['Doc'],
     }));
     expect(contract.probeYjs()).toEqual([]);
   });

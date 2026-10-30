@@ -31,6 +31,7 @@ import {
   $isLine,
   $isWrapper,
   $nestedGroupOf,
+  type Attrs,
   BLOCK_PREFIX,
   getGroupSpec,
   getLineSpec,
@@ -39,6 +40,7 @@ import {
   MARKER,
   RUN_END,
 } from './Schema';
+import {isGone} from './Unread';
 
 // The state the reader and the writer share for one binding (State): the
 // containers (the root, and every node stored as its own Y.Node) and their
@@ -117,10 +119,43 @@ export function isEndItem(it: Item): boolean {
   );
 }
 
-/** The previous live end item before `it` in its container, or null. */
-export function prevLiveEnd(it: Item | null): Item | null {
+/**
+ * Whether `it` ends a unit as the editor shows its container: a live end
+ * item that is not held back (see Hidden).
+ */
+export function isShownEnd(it: Item, hidden: Hidden | null): boolean {
+  return !isGone(it) && isEndItem(it) && (hidden === null || !hidden.hides(it));
+}
+
+/**
+ * Marker `end`'s attributes as the editor shows them: those a held change
+ * set have the values they had (see Hidden#marker).
+ */
+export function shownAttrs(end: Item, hidden: Hidden | null): Attrs {
+  const attrs = typeOf(end).getAttrs() as Attrs;
+  const held = hidden === null ? null : hidden.marker;
+  if (held !== null && held.ends.has(end)) {
+    for (const [k, v] of held.was) {
+      if (v === undefined) {
+        delete attrs[k];
+      } else {
+        attrs[k] = v;
+      }
+    }
+  }
+  return attrs;
+}
+
+/**
+ * The end item before `it` in its container that the editor shows (see
+ * isShownEnd), or null.
+ */
+export function prevLiveEnd(
+  it: Item | null,
+  hidden: Hidden | null,
+): Item | null {
   for (let p = it === null ? null : it.left; p !== null; p = p.left) {
-    if (!p.deleted && isEndItem(p)) {
+    if (isShownEnd(p, hidden)) {
       return p;
     }
   }
@@ -169,6 +204,12 @@ export class State {
    * only rather than hide it and then delete it on the next edit.
    */
   readonly unknownTypes = new Set<string>();
+  /**
+   * Node types whose stored content this editor's classes throw on when they
+   * read it (see Reader#$readStored), each with the first error: as with
+   * unknownTypes, the binding goes read only.
+   */
+  readonly unreadable = new Map<string, unknown>();
   /**
    * Of unknownTypes, the slots that are not a block node: a slot's key, or
    * the type of the inline node in it (see Slots).

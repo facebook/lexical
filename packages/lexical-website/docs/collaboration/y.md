@@ -63,19 +63,19 @@ import {
 } from '@lexical/extension';
 import {ListExtension} from '@lexical/list';
 import {RichTextExtension} from '@lexical/rich-text';
-import {YCollabExtension} from '@lexical/y';
+import {createYDoc, YCollabExtension} from '@lexical/y';
 import {WebsocketProvider} from '@y/websocket';
-import * as Y from '@y/y';
 import {configExtension, defineExtension} from 'lexical';
 
-const doc = new Y.Doc();
+const doc = createYDoc();
 
 const editor = buildEditorFromExtensions(
   defineExtension({
     dependencies: [
       RichTextExtension,
       ListExtension,
-      configExtension(YCollabExtension, {doc}),
+      // schemaVersion is required: see "Versioning your schema".
+      configExtension(YCollabExtension, {doc, schemaVersion: 1}),
     ],
     name: 'my-app/editor',
   }),
@@ -95,18 +95,35 @@ provider.once('sync', () => {
 });
 ```
 
-- The editor stays **read only** until the document's layout record has
-  been read. `status` is a signal: `'pending'`, then `'active'`, or
+- Create the document with **`createYDoc`** (`createYDoc(stored)` for a
+  stored state) and hand it to the provider: it turns Yjs's format cleanup
+  off before anything is applied to it. In a plain `new Y.Doc()` the
+  cleanup deletes format items the binding keeps for concurrent edits
+  (already before the binding is attached, when a state is applied first),
+  and that write reaches every client. So `doc` takes no other document,
+  and the binding is read only on one that has the cleanup on (see
+  [Warnings](#warnings)).
+- The editor stays **read only** until the document has been read and
+  found writable. `status` is a signal: `'pending'`, then `'active'`, or
   `'readonly'` when the binding cannot write the document safely (a newer
-  layout, a node type this editor does not register; a
+  version of your app wrote to it, a newer layout, a node type this editor
+  does not register, stored content its classes throw on; a
   [warning](#warnings) says why).
-  Register the same node classes on every client.
+  Register the same node classes on every client. A read-only editor keeps
+  showing the document: what a local update changes there (code that calls
+  `editor.update()`, as the editor is not editable) is not written and is
+  read again, with a warning (`UNSUPPORTED_EDIT_WARNING`); once the
+  document cannot be read at all, the editor shows what it showed before
+  the update again. A binding that went read only to keep showing a change
+  it cannot store (a slot, see
+  [How content is stored](#how-content-is-stored)) leaves later updates as
+  they are too.
 - `binding.initialize()`, called after the provider's first sync, writes the
   editor's content into an empty document (an `editor.update()` still
   pending is part of it). Two clients that initialize the same content in a
   new document at once write it once, when they would write the same items
-  (clients with different block id configurations write different ones, so
-  the content shows twice). The editor then shows the content as stored, as
+  (clients with different block id configurations, or different
+  `schemaVersion`s, write different ones, so the content shows twice). The editor then shows the content as stored, as
   every reader does (a line break written inside a text node shows as a
   line break node), with its selection kept (a node selection keeps its
   nodes, found by the Yjs identity they are stored or shown by: a node's
@@ -114,9 +131,19 @@ provider.once('sync', () => {
   a link the first of those inside it). It
   does nothing on a document that already has content, and it refuses a
   document whose `@lexical/yjs` roots hold content.
+- The binding starts once the editor has its initial state
+  (`$initialEditorState`, and what extensions write while they register),
+  so that state is only ever the content of an empty document. On a
+  document that has content (an editor built again on the same document, a
+  document loaded from a cache before the editor), the editor shows the
+  document and writes nothing. `binding.initialize()` called before the
+  binding starts (from an extension's `register`) runs when it starts. An
+  extension that depends on `YCollabExtension` and changes content in its
+  own `afterRegistration` makes an edit, as an update made after
+  `buildEditorFromExtensions` returns does.
 - Pass `synced: true` instead when the document is already loaded (a test,
-  an editor bound to a stored state): the extension initializes as soon as
-  it registers.
+  an editor bound to a stored state, `createYDoc(stored)`): the extension
+  initializes as soon as the binding starts.
 - Several `editor.update()` calls made in one task are committed, written
   and sent together, as in any Lexical editor. Once the editor has
   committed in a task (an update an app's listener queues after a commit),
@@ -125,16 +152,19 @@ provider.once('sync', () => {
   local update waiting to be written; so does one made while the binding
   has updates of its own waiting. A remote change a provider applies
   synchronously in the same task as updates made before any commit is
-  integrated before them, and they are written after it (providers that
+  integrated before them, and they are written after it, on the document as
+  it was before that change, which they were made on: their edits land
+  where they were made, and the change is read after them (providers that
   apply changes from network or channel events never do this).
 - To seed or convert a document on a server, use `seedYState` (see
   [Server-side editing](./y-server.md)).
 
 | Option | Default | |
 | -- | -- | -- |
-| `doc` | (required) | The Yjs document. |
+| `doc` | (required) | The Yjs document, from `createYDoc`. |
+| `schemaVersion` | (required) | The version of your app's document schema, an integer from 1: see [Versioning your schema](#versioning-your-schema). The extension throws without one. |
 | `root` | `doc.get('lexical-y')` | The shared root to bind. |
-| `synced` | `false` | Initialize as soon as the extension registers. |
+| `synced` | `false` | Initialize as soon as the binding starts. |
 | `captureTimeout` | `500` | Undo capture timeout in ms; `null` turns collaborative undo off. |
 | `clientIDRange` | `'uint53'` | `'uint32'` for servers on yrs before 0.28, see [Servers](#servers). |
 | `selfCheck` | `false` | Reads every local write (and every container a remote change rebuilt) back from Yjs and compares it with the editor; a mismatch is a `'@lexical/y/self-check'` [warning](#warnings). A debugging aid: turn it on in tests and development builds. |
@@ -213,10 +243,12 @@ it shows. Every client reads these the same
 way, and the next edit there stores them.
 
 Without the extension API, `new YBinding(editor, doc, options)` does the
-same: call `binding.start()` to connect it, `binding.initialize()` after the
-first sync, and `binding.undo()` / `binding.redo()` for undo. An undo puts
-back the selection from before the step it undoes (as `HistoryExtension`
-does), and a redo the one from when it was undone. Called while the editor
+same (`options.schemaVersion` is required there too): call `binding.start()` to connect it once the editor has its initial
+state (an update made after it, on a document that has content, is an
+edit), `binding.initialize()` after the first sync, and `binding.undo()` /
+`binding.redo()` for undo. An undo puts back the selection from before the
+step it undoes (as `HistoryExtension` does), and a redo the one from when it
+was undone. Called while the editor
 is updating (from a command handler, an update or its `$onUpdate`), it runs
 right after that update commits, in an update of its own.
 `binding.getCursor()` and `binding.$resolveCursor()` convert the selection
@@ -234,13 +266,15 @@ a short note for developers: render your own text from `code` and `data`.
 
 | Constant | Reported when | `data` (`reason`: other fields) |
 | -- | -- | -- |
+| `UNSUPPORTED_SCHEMA_WARNING` | A client of a newer version of your app (a higher `schemaVersion`) wrote to the document, on open or mid-session; see [Versioning your schema](#versioning-your-schema). Read only. | `'newer'`: `found`; `'malformed'`: `key`, `found`. All: `supported` (your `schemaVersion`) |
 | `UNSUPPORTED_LAYOUT_WARNING` | The layout is one this version cannot read. Read only. | `'newer'`: `found`; `'malformed'`: `key`, `found`; `'missing'`, `'removed'`; `'legacy-roots'`: `roots`. All: `supported` |
-| `UNKNOWN_NODE_TYPES_WARNING` | The document has node types the editor cannot build. Read only. | `'unregistered'`, `'malformed-slot'`: `types` |
+| `UNKNOWN_NODE_TYPES_WARNING` | The document has node types the editor cannot build: types it does not register, however they are stored (a link class it lacks too), or content its classes throw on. Read only. | `'unregistered'`, `'malformed-slot'`: `types`; `'unreadable'`: `types`, `error` |
 | `STORAGE_MISMATCH_WARNING` | A node type is stored in a way its class cannot be (one warning per type). Read only. | `'declaration-changed'`: `type`, `stored`, `declared`; `'malformed'`: `type`, `key`, `found` |
 | `UNSUPPORTED_SLOTS_WARNING` | Named slots where the document cannot store them. Not written; read only. | `'stored-host'`, `'root'`: `types` |
-| `UNSUPPORTED_CONFIG_WARNING` | `BlockIdExtension` with `repairTransforms: true` (see [Set up an editor](#set-up-an-editor)). Nothing is written; read only. | `'repair-transforms'`: `options` |
+| `UNSUPPORTED_CONFIG_WARNING` | `BlockIdExtension` with `repairTransforms: true`, or a document with Yjs's format cleanup on (not from `createYDoc`), see [Set up an editor](#set-up-an-editor). Nothing is written; read only. | `'repair-transforms'`: `options`; `'cleanup-formatting'` |
 | `NESTED_FALLBACK_WARNING` | A class that declares a line, format or group is stored as a node of its own (see [How content is stored](#how-content-is-stored)). Once per binding, class and reason. | `type`, and `method` (`'merge-override'`) or `properties` (`'undeclared-properties'`) |
 | `UNSYNCED_VALUE_WARNING` | A property or NodeState value is not plain JSON, so it is not synchronized. Once per binding and property. | `'not-json'`: `property` |
+| `UNSUPPORTED_EDIT_WARNING` | A local update changed the editor while the binding is read only (reported once each time it goes read only). Not written; what it changed is read again, or, once the document cannot be read, the editor shows again the last state it showed before the update. | `'read-only'` |
 | `SELF_CHECK_WARNING` | The self-check (`selfCheck`) found the editor and the document disagree. | `'local'`, `'remote'`: `problems` |
 | `RECOVERED_READ_WARNING` | A change could not be read; the editor was rebuilt from the document. | `'remote-change'`, `'reread'`: `error` |
 | `RECOVERED_WRITE_WARNING` | A local change could not be written; the document was rewritten. | `'local-change'`: `error` |
@@ -248,10 +282,19 @@ a short note for developers: render your own text from `code` and `data`.
 A read-only banner of your own, from the fields:
 
 ```ts
-import {isYWarning, UNSUPPORTED_LAYOUT_WARNING, type YWarning} from '@lexical/y';
+import {
+  isYWarning,
+  UNSUPPORTED_LAYOUT_WARNING,
+  UNSUPPORTED_SCHEMA_WARNING,
+  type YWarning,
+} from '@lexical/y';
 
 function banner(warning: YWarning): string | null {
   switch (warning.code) {
+    case UNSUPPORTED_SCHEMA_WARNING:
+      return warning.data.reason === 'newer'
+        ? t('doc.reloadForNewerVersion')
+        : t('doc.cannotOpen');
     case UNSUPPORTED_LAYOUT_WARNING:
       return warning.data.reason === 'newer'
         ? t('doc.needsNewerApp')
@@ -284,6 +327,55 @@ defineExtension({
 - Codes are never renamed or reused; new ones may be added. A `default`
   that assigns the warning to `never` makes the compiler point at a code
   your `switch` does not handle.
+
+## Versioning your schema
+
+Your app's node types and the fields they store are its document schema.
+`schemaVersion` (required, on `YCollabExtension` and in the
+[headless config](./y-server.md#api)) is its version: start at 1 and
+increase it whenever a node's stored fields or node types change. Ship each
+release's clients with the version of the schema they were built with.
+
+- **What is recorded.** A client records its version in the document with
+  its first write there (an edit, `initialize()` of a new document, a
+  `seedYState` or an `editYState`), in the same Yjs update, so no one
+  receives that write without it. Opening a document records nothing; an
+  update your app or one of its extensions makes as the document opens (a
+  value it assigns on open) is a write, and records the version. The
+  record only grows (undo never removes it), and two versions that write at
+  once both record theirs: every client reads the highest.
+- **What an older client sees.** A client whose `schemaVersion` is lower
+  than the highest recorded opens the document read only (`status`
+  `'readonly'`, as for a newer layout) and reports
+  `UNSUPPORTED_SCHEMA_WARNING` with `{reason: 'newer', found, supported}`.
+  It keeps showing the document and the newer clients' edits, and what code
+  changes in its editor is not written (see
+  [Set up an editor](#set-up-an-editor)). This also happens mid-session,
+  the moment a newer client's first write arrives: the older client keeps
+  what it shows and its edits made until then, and turns read only. It is
+  read only for good; reloading the newer app makes it editable. Servers
+  behave the same way: an older `editYState` or `readYState` refuses with
+  a `YHeadlessError` (`'read-only'`) that carries the warning, and writes
+  nothing.
+- **What an equal or newer client does.** It edits as before. It keeps the
+  fields, text formats and NodeState it does not declare when it edits a
+  node, so a field you remove in a newer version is kept for the documents
+  that have it (see [Changing the layout and migrating](#changing-the-layout-and-migrating)).
+- **When to bump.** Adding, removing or renaming a node type, adding or
+  removing a stored field, changing what a field's values mean, or anything
+  else an older client would show or edit wrongly. A change that touches no
+  stored data (rendering, commands) needs no bump. When in doubt, bump: an
+  older client then only loses the ability to edit documents a newer one
+  wrote to, never what they hold. An app that never bumps keeps today's
+  behavior between versions (see "Older app versions" in [Limits](#limits)).
+- **Rendering the warning.** The message is a short note for developers.
+  Render your own banner from `code` and `data`, for example "This document
+  was edited with a newer version of the app. Reload to get the latest
+  version." (see the banner example in [Warnings](#warnings)). Where the
+  newer version also added node types or changed how one is stored, the
+  binding reports `UNKNOWN_NODE_TYPES_WARNING` or
+  `STORAGE_MISMATCH_WARNING` after it: prefer the schema warning in your
+  banner, it says what to do.
 
 ## How content is stored
 
@@ -614,8 +706,9 @@ person's:
 - **Apply an edit to the state it was computed from, then merge.** An edit
   planned from an older read (a model's answer arrives seconds later) can
   land in the wrong place if it is applied to the current state. Load that
-  read's update into a new `Y.Doc`, bind a headless editor to it with
-  `YBinding`, apply the edit there, and apply the update it produced
+  read's update into a document (`createYDoc(readState)`), bind a headless
+  editor to it with `YBinding`, apply the edit there, and apply the update
+  it produced
   (`Y.encodeStateAsUpdate(copy, readStateVector)`) to the live document:
   Yjs merges it with what changed since. The copy's writes go into the live
   document, so give its `YBinding` the same `clientIDRange` as the other
@@ -637,8 +730,8 @@ To seed, edit or read documents on the server, see
 
 A server or relay that loads a document into a Yjs `Doc` and stores its
 state must turn off Yjs's format cleanup on that document before it applies
-updates. `createYDoc` from `@lexical/y/headless` makes such a document, with
-the stored state applied:
+updates, as the clients do. `createYDoc` (from `@lexical/y`, or
+`@lexical/y/headless`) makes such a document, with the stored state applied:
 
 ```ts
 import {createYDoc} from '@lexical/y/headless';
@@ -650,9 +743,8 @@ A relay that cannot import it sets the flag on a new document itself
 (`doc.cleanupFormatting = false`).
 
 Otherwise, when Yjs applies an update there it deletes format items that
-it finds redundant but the clients keep (the binding stops that cleanup on
-the clients, and the headless entry turns it off on its documents), and the
-state the server stores reads differently from what the clients show.
+it finds redundant but the clients keep, and the state the server stores
+reads differently from what the clients show.
 
 Servers built on **yrs before 0.28** (y-crdt) read client ids as 32-bit
 numbers, while Yjs 14 draws 53-bit ones: an author can receive its own
@@ -699,8 +791,18 @@ not merge as a user might expect:
 
 - **Moves.** Moving a block is a delete and a re-insert, so text a
   collaborator types into the moved block at the same time is lost or lands
-  at its old position, and two collaborators moving the same block at once
-  can duplicate it. Lexical operations that move content (turning a
+  at its old position, a collaborator's caret in it stays at that position,
+  and two collaborators moving the same block at once can duplicate it.
+  Undoing the move restores the block as it was before the move: what
+  collaborators typed in it since is lost or, in a moved line, stays where
+  the moved copy was. The moved block is the node Lexical recorded as moved:
+  an existing node passed to `insertBefore`, `insertAfter`, `append` or
+  `splice` in the update (as a block drag does), even one put back where it
+  was. The blocks it passes that Lexical did not record keep what
+  collaborators type in them. Between recorded blocks, and in a reorder that
+  Lexical did not record (an editor state set whole), the binding rewrites
+  as few blocks as it can, the smaller ones on a tie.
+  Lexical operations that move content (turning a
   paragraph into a list inside a container, indenting list items that hold
   blocks) behave the same way, and so does the first edit that restructures
   a list stored in an older shape (a nested list kept as a node inside an
@@ -720,6 +822,15 @@ not merge as a user might expect:
   stays outside, and a collaborator's concurrent delete of a character there
   does not apply to the moved text. Store comments as NodeState instead,
   with [`MarkStateExtension`](./comments.md).
+- **Input method composition.** While the editor composes with an input
+  method (IME) in a line, what collaborators add to that line (text,
+  formats and comments, a split, pasted lines, a change of its type) waits
+  until the composition ends, and the line keeps its nodes, so the browser's
+  composition is not disturbed. Then all of it shows where it is, also after
+  Enter or a paste made while composing. What removes something from the
+  line (a deletion, a join, a `MarkNode` comment, which moves the text into
+  it) shows at once: the text node being composed keeps its key, unless its
+  class changes (a code block made a heading).
 - **Set-valued NodeState** (`arraySetValue`, which `MarkStateExtension` uses)
   merges per member on text, line breaks and nodes stored as their own Yjs
   node (such as decorators), so two collaborators commenting on the same
@@ -839,13 +950,43 @@ not merge as a user might expect:
   Undoing a format change does not undo a collaborator's later change of
   part of its range, nor the value that change restored after itself: color
   `abc`, let a collaborator recolor `b`, then undo the color, and `c` keeps
-  the old color. Where a collaborator overwrote a step of yours entirely,
-  the undo manager skips that step as changing nothing, and the same undo
-  also reverts your step before it. When you undo a format change while a
-  collaborator removes that format and undoes the removal, the text keeps
-  the format: the collaborator's undo brings it back.
+  the old color, up to the end of the range (the same holds for text a
+  collaborator types or pastes inside the range as you undo). Undoing a link
+  while a collaborator formats text inside it keeps the link on its text:
+  formatting text in a link also sets the link's text format, which writes
+  the link there again. Where a collaborator overwrote a step of yours
+  entirely, the undo manager skips that step as changing nothing, and the
+  same undo also reverts your step before it. When you undo a format change
+  while a collaborator removes that format and undoes the removal, the text
+  keeps the format: the collaborator's undo brings it back.
 - **Large lists.** A structural edit in a list costs time proportional to
   the list on every client.
+- **Older app versions.** Clients of different `schemaVersion`s never
+  edit a document together: the older one is read only (see
+  [Versioning your schema](#versioning-your-schema)). What follows applies
+  between clients of the same version whose classes differ (an app that did
+  not bump its version), and to a newer client editing fields an older
+  version wrote, such as one it removed. A client keeps the fields, text
+  formats and NodeState it does not know when it edits a node (see
+  [Changing your own node types](#changing-the-layout-and-migrating)), and
+  in a block it moves, which is written anew (see Moves): the new copy takes
+  what the block stored, and an item that joins another group takes that
+  group's fields. A line it splits keeps a field it does not know on both
+  lines (the empty line Enter makes at the end of a line excepted): it
+  cannot tell whether the newer class copies the field to the new line, and
+  keeping it on both loses nothing. The text of a moved block is written
+  anew from what the client shows, so it loses the text formats it does not
+  know, and the fields of a text class or a link that the client's classes
+  do not declare.
+  A nested list whose item it moves into another list does not take the
+  fields of that list it does not know, so where that item becomes the
+  list's first, every client reads the list without them.
+  A link it replaces with another link of the same type over
+  the same text keeps the ones of the link it replaced: it cannot tell the
+  new link from the old one edited. A class that writes its own `exportJSON`
+  owns every field of its type, since which ones it writes cannot be known:
+  an older version of it deletes the fields a newer one added. Declare fields
+  in `$config` to keep them.
 - **The caret when a collaborator rewrites its line.** A caret stays after
   the text it was after. When a collaborator replaces the line holding it,
   deleting all the line showed and putting new content at its place in one
@@ -881,7 +1022,10 @@ not merge as a user might expect:
   inside the earlier deleted text after that, where its format changed
   more than once along it, takes the format that text had at its start,
   and so does that text where an undo brings it back after another
-  collaborator's delete there.
+  collaborator's delete there. Two joins at once into the same line both
+  write its type, and Yjs keeps one of them by client id: a heading joined
+  across a quote to the paragraph after it, while a collaborator joins that
+  paragraph into the quote, can become a quote.
 
 ## Changing the layout and migrating
 
@@ -901,13 +1045,25 @@ hold one stay readable and editable by layout 1 clients.
   version to a room's record only when it first writes something that needs
   it, in the same transaction; from then on, older clients open that room
   read only. Upgrade every client of a room together.
-- **Changing your own node types:** fields are stored by name, so adding a
+- **Changing your own node types:** bump `schemaVersion` (see
+  [Versioning your schema](#versioning-your-schema)), so that clients still
+  on the older version open the rooms a newer one edited read only instead
+  of editing them. Fields are stored by name, so adding a
   field with a default, or dropping one, works as in
   [Lexical JSON](/docs/serialization/#versioning--breaking-changes): a field
   a room does not have reads as its default, and one your class no longer has
-  is ignored. A change to a class's declared node structure does not apply to
-  rooms that already hold that type (they keep the recorded kind); reseed
-  them to adopt it.
+  is ignored. Where the versions are equal (an app that did not bump
+  `schemaVersion`, or a newer client editing what an older one wrote),
+  clients whose classes differ can edit a room at once: a client writes
+  only the fields its classes declare in `$config`, so its edit of a node
+  keeps the fields the other version declares, and a field a client knows
+  and clears is deleted (see
+  "Older app versions" in the limits). A value an older class throws on (an
+  `updateFromJSON` that rejects a value the newer version writes) opens the
+  room read only for that client, as a type it does not register does. A
+  change to a class's declared node structure does not apply to rooms that
+  already hold that type (they keep the recorded kind); reseed them to adopt
+  it.
 
 ### Reseeding a room
 
@@ -934,7 +1090,7 @@ flowchart LR
    import {readYState, seedYState} from '@lexical/y/headless';
    import {$getEditor, $getRoot, $parseSerializedNode} from 'lexical';
 
-   const config = {extensions: [AppNodesExtension]};
+   const config = {extensions: [AppNodesExtension], schemaVersion: 1};
 
    // 1. The content as Lexical JSON (here read from an @lexical/y room).
    const json = readYState(oldState, config, () =>

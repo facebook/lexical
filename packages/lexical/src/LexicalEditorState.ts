@@ -147,6 +147,15 @@ export interface EditorStateReadOptions {
  *   before it, and the texts of both before;
  * - `set`: any other change (the text set whole, offsets unknown): the
  *   node, and its text before and after;
+ * - `move`: characters moved from the start of a node to the end of its
+ *   previous sibling (an entity grown over the text after it, see
+ *   INTERNAL_$recordTextMove): the node they left, the node they joined, how
+ *   many, and the texts of both before (where they were all of the node they
+ *   left, its `detach` follows);
+ * - `retype`: a node remade as a node of another type with the same text
+ *   (an entity made plain text, or plain text made an entity, see
+ *   INTERNAL_$recordTextRetype), after the replaced node's `detach` and the
+ *   new node's `attach`: the node replaced, the new node, and the text;
  * - `attach`: a node inserted into an element's children: the node, the
  *   element, its previous and next siblings there (null at an end), and its
  *   text when it is a text node;
@@ -161,6 +170,8 @@ export type TextEditRecord =
   | readonly ['split', NodeKey, readonly NodeKey[], readonly number[], string]
   | readonly ['merge', NodeKey, NodeKey, boolean, string, string]
   | readonly ['set', NodeKey, string, string]
+  | readonly ['move', NodeKey, NodeKey, number, string, string]
+  | readonly ['retype', NodeKey, NodeKey, string]
   | readonly [
       'attach',
       NodeKey,
@@ -207,6 +218,8 @@ export class EditorState {
    *   insertion and removal make it, and the nodes the selection removes
    *   whole;
    * - the splits and merges of text nodes;
+   * - text moved between two nodes and text remade in a node of another
+   *   type, where the code that does it says so (text entities);
    * - any other setTextContent, with the text before and after;
    * - every node inserted into or removed from an element's children, with
    *   where, so that a node swapped for another (as transforms do) is seen

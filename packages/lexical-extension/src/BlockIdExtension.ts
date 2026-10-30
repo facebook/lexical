@@ -34,6 +34,7 @@ import {
   HISTORIC_TAG,
   HISTORY_MERGE_TAG,
   type InitialEditorConfig,
+  INTERNAL_getActiveEditorState,
   type Klass,
   type LexicalEditor,
   type LexicalNode,
@@ -569,7 +570,7 @@ interface BlockIdRuntime {
   provisionalSeen: Set<NodeKey>;
   provisionalState: EditorState | null;
   /** The handles of the indexed ids, for the index version they were built at. */
-  handles: {readonly table: HandleTable; readonly version: number} | null;
+  handles: (HandleView & {readonly version: number}) | null;
   /** The scan of the last committed state for handles while disabled. */
   scan: HandleScan | null;
   $getBlockById: (id: string) => LexicalNode | null;
@@ -1592,12 +1593,13 @@ function $getHandleView(
     let {handles} = runtime;
     if (handles === null || handles.version !== index.version) {
       handles = {
+        $lookup: frozenLookup(runtime.$getBlockById),
         table: buildHandleTable(index.keysOfId.keys()),
         version: index.version,
       };
       runtime.handles = handles;
     }
-    return {$lookup: runtime.$getBlockById, table: handles.table};
+    return handles;
   }
   // Not indexed while disabled: a scan of the last committed state, as the
   // index would be, cached until the next commit. Lookups are verified
@@ -1629,7 +1631,7 @@ function $getHandleView(
       {editor},
     );
     scan = {
-      $lookup: id => {
+      $lookup: frozenLookup(id => {
         let found: LexicalNode | null = null;
         for (const key of keysOfId.get(id) || []) {
           const node = $getNodeByKey(key);
@@ -1644,13 +1646,42 @@ function $getHandleView(
           }
         }
         return found;
-      },
+      }),
       state: committed,
       table: buildHandleTable(keysOfId.keys()),
     };
     runtime.scan = scan;
   }
   return scan;
+}
+
+/**
+ * `$lookup`, remembered per id for each frozen state it is asked about (a
+ * read of a committed state), so that reading the handle of every holder of
+ * a repeated id costs the holders once, not once per holder. While the
+ * active state is not frozen (an update), it asks `$lookup` every time.
+ */
+function frozenLookup(
+  $lookup: (id: string) => LexicalNode | null,
+): (id: string) => LexicalNode | null {
+  const byState = new WeakMap<EditorState, Map<string, LexicalNode | null>>();
+  return id => {
+    const state = INTERNAL_getActiveEditorState();
+    if (state === null || !state._readOnly) {
+      return $lookup(id);
+    }
+    let found = byState.get(state);
+    if (found === undefined) {
+      found = new Map();
+      byState.set(state, found);
+    }
+    let node = found.get(id);
+    if (node === undefined) {
+      node = $lookup(id);
+      found.set(id, node);
+    }
+    return node;
+  };
 }
 
 /** A {@link HandleView} of a scan of a committed state. */

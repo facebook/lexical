@@ -297,99 +297,89 @@ describe('ownership scans: one client writes a node kept apart, types, writes an
           [1, 2],
           [2, 1],
         ]) {
-          // A's node written right before B's first one shares its opener
-          // on main; B's undo of that write takes A's token or segmented
-          // node's mode with it (fixed by #9578, and by #9561).
-          const failsUntilFixed =
-            (kind === 'token' || kind === 'segmented') &&
-            edit === 'write one and text before it' &&
-            undos === 3;
-          (failsUntilFixed ? test.fails : test)(
-            `${kind}, A ${edit}, B undoes ${undos} (ids ${ids})`,
-            async () => {
-              const t = await setup(
-                () => $getRoot().append($p(LINE), $p('tail line')),
-                {ids, nodes: [...NODES, HashtagNode]},
-              );
-              t.b.update(() => $insertAt(3, $opener(kind)));
-              await t.sync();
-              t.b.update(() => $insertPlainAt(10 + w.length, ' zz'));
-              await t.sync();
-              t.b.update(() => $insertAt(14 + w.length, $opener(kind)));
-              await t.sync();
-              t.offline();
-              for (let i = 0; i < undos; i++) {
-                t.b.undo();
+          test(`${kind}, A ${edit}, B undoes ${undos} (ids ${ids})`, async () => {
+            const t = await setup(
+              () => $getRoot().append($p(LINE), $p('tail line')),
+              {ids, nodes: [...NODES, HashtagNode]},
+            );
+            t.b.update(() => $insertAt(3, $opener(kind)));
+            await t.sync();
+            t.b.update(() => $insertPlainAt(10 + w.length, ' zz'));
+            await t.sync();
+            t.b.update(() => $insertAt(14 + w.length, $opener(kind)));
+            await t.sync();
+            t.offline();
+            for (let i = 0; i < undos; i++) {
+              t.b.undo();
+            }
+            t.a.update(() => {
+              if (edit === 'type after it') {
+                $insertPlainAt(3 + w.length, 'X');
+              } else if (edit === 'type before it') {
+                $insertPlainAt(3, 'X');
+              } else if (edit === 'write one and text before it') {
+                $insertPlainAt(3, 'Y');
+                $insertAt(3, $opener(kind));
+              } else {
+                const [node, at] = $locateIn($block([0]), 3 + w.length);
+                node.spliceText(at, 1, '');
               }
-              t.a.update(() => {
-                if (edit === 'type after it') {
-                  $insertPlainAt(3 + w.length, 'X');
-                } else if (edit === 'type before it') {
-                  $insertPlainAt(3, 'X');
-                } else if (edit === 'write one and text before it') {
-                  $insertPlainAt(3, 'Y');
-                  $insertAt(3, $opener(kind));
-                } else {
-                  const [node, at] = $locateIn($block([0]), 3 + w.length);
-                  node.spliceText(at, 1, '');
+            });
+            await t.sync();
+            await expectConverged(t.peers);
+            // The model: each character and what it must be.
+            const firstLive = undos < 3;
+            const zzLive = undos < 2;
+            const secondLive = undos < 1;
+            const want: [string, string][] = [];
+            for (let i = 0; i < LINE.length; i++) {
+              if (i === 3) {
+                if (edit === 'type before it') {
+                  want.push(['X', 'plain']);
                 }
-              });
-              await t.sync();
-              await expectConverged(t.peers);
-              // The model: each character and what it must be.
-              const firstLive = undos < 3;
-              const zzLive = undos < 2;
-              const secondLive = undos < 1;
-              const want: [string, string][] = [];
-              for (let i = 0; i < LINE.length; i++) {
-                if (i === 3) {
-                  if (edit === 'type before it') {
-                    want.push(['X', 'plain']);
+                if (edit === 'write one and text before it') {
+                  for (const c of w) {
+                    want.push([c, kind]);
                   }
-                  if (edit === 'write one and text before it') {
-                    for (const c of w) {
-                      want.push([c, kind]);
-                    }
-                    want.push(['Y', 'plain']);
-                  }
-                  if (firstLive) {
-                    for (const c of w) {
-                      want.push([c, kind]);
-                    }
-                  }
-                  if (edit === 'type after it') {
-                    want.push(['X', 'plain']);
-                  }
-                  if (edit === 'delete the letter after it') {
-                    continue;
-                  }
+                  want.push(['Y', 'plain']);
                 }
-                if (i === 10 && zzLive) {
-                  for (const c of ' zz') {
-                    want.push([c, 'plain']);
-                  }
-                }
-                if (i === 11 && secondLive) {
+                if (firstLive) {
                   for (const c of w) {
                     want.push([c, kind]);
                   }
                 }
-                want.push([LINE[i], 'plain']);
+                if (edit === 'type after it') {
+                  want.push(['X', 'plain']);
+                }
+                if (edit === 'delete the letter after it') {
+                  continue;
+                }
               }
-              const got = t.a.read(() =>
-                ($block([0]).getAllTextNodes() as TextNode[]).flatMap(node =>
-                  Array.from(
-                    node.getTextContent(),
-                    c => [c, kindOf(node)] as [string, string],
-                  ),
+              if (i === 10 && zzLive) {
+                for (const c of ' zz') {
+                  want.push([c, 'plain']);
+                }
+              }
+              if (i === 11 && secondLive) {
+                for (const c of w) {
+                  want.push([c, kind]);
+                }
+              }
+              want.push([LINE[i], 'plain']);
+            }
+            const got = t.a.read(() =>
+              ($block([0]).getAllTextNodes() as TextNode[]).flatMap(node =>
+                Array.from(
+                  node.getTextContent(),
+                  c => [c, kindOf(node)] as [string, string],
                 ),
-              );
-              const nextLine = t.a.read(() =>
-                ($block([1]).getAllTextNodes() as TextNode[]).map(kindOf),
-              );
-              expect({got, nextLine}).toEqual({got: want, nextLine: ['plain']});
-            },
-          );
+              ),
+            );
+            const nextLine = t.a.read(() =>
+              ($block([1]).getAllTextNodes() as TextNode[]).map(kindOf),
+            );
+            expect({got, nextLine}).toEqual({got: want, nextLine: ['plain']});
+          });
         }
       }
     }

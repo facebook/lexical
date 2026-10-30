@@ -1009,7 +1009,11 @@ not merge as a user might expect:
   that text at the same time may still rely on it. So the document grows
   with every member removed, not only with its content. Removing the same
   member again at the same place adds nothing, and adding a member and
-  undoing it leaves nothing. For comments, keep resolved ids in the text and
+  undoing it leaves nothing. Deleting text that holds a member leaves one
+  such item too, where the member's last run there ended, once a later
+  delete at that place cleans up the deleted text's format items: one per
+  member deleted at a place, whatever else is typed and deleted there.
+  For comments, keep resolved ids in the text and
   mark the threads resolved in your own store instead (see
   [Resolving comments](./comments.md#resolving-comments)).
 - **Named slots.** A slot holds one node: two collaborators setting the same
@@ -1124,12 +1128,9 @@ not merge as a user might expect:
   entirely, the undo manager skips that step as changing nothing, and the
   same undo also reverts your step before it. When you undo a format change
   while a collaborator removes that format and undoes the removal, the text
-  keeps the format: the collaborator's undo brings it back. A comment or
-  format can run on past its end when writes two collaborators made inside
-  it are undone while another client deletes text across its end: it
-  carries on over the following words, possibly into the next line. No
-  text is lost. A format a collaborator applies
-  starting right where a run of that format ends, or from inside the run
+  keeps the format: the collaborator's undo brings it back. A format a
+  collaborator applies starting right where a run of that format ends, or
+  from inside the run
   past its end, can be lost on their text after the run when a client
   other than the one that formatted the run, at the same time, removes the
   format from part of the run or types inside it without the format: with
@@ -1208,12 +1209,15 @@ not merge as a user might expect:
   element of its old form. Where text was deleted, the format items it
   leaves are kept, so that a collaborator's concurrent edit inside or at
   the deleted text keeps its formats, until a later delete at the same
-  place keeps a few per format key of them; text a collaborator types
-  inside the earlier deleted text after that, where its format changed
-  more than once along it, takes the format that text had at its start,
-  and so does that text where an undo brings it back after another
-  collaborator's delete there. Two joins at once into the same line both
-  write its type, and Yjs keeps one of them by client id: a heading joined
+  place keeps a few per format key of them, among them where each format,
+  link and comment last ended there, so that a format a collaborator
+  restores after text they typed inside the deleted text still ends there;
+  text a collaborator types inside the earlier deleted text after that,
+  where its format changed more than once along it, can take the format of
+  other text deleted there, and so can that text where an undo brings it
+  back after another collaborator's delete there. Two joins at once into
+  the same line both write its type, and Yjs keeps one of them by client
+  id: a heading joined
   across a quote to the paragraph after it, while a collaborator joins that
   paragraph into the quote, can become a quote.
 

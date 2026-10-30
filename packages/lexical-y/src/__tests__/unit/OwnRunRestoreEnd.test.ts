@@ -47,10 +47,15 @@ import {prepareMarkState as prepare} from '../utils/sizeOps';
 //
 // Main writes a restore's own null after the run's end only for runs
 // another client opened (rule 5 of Cursor#format), so the cases where the
-// writer opened the run itself fail on main: they are expected failures,
-// tracked in #9609. #9562 (parked) made them pass but regressed other cases;
-// the cases it regressed are the plain tests here (S9-12b, the #9589 tie,
-// and OwnCommentGapCollapse.test.ts).
+// writer opened the run itself fail here: they are expected failures. A
+// delete's collapse no longer removes that end (it keeps each key's last run
+// end, D65 in DECISIONS.md), so the same case with a real collapse passes
+// (#9609, regressions/CollapseKeepsEnds.test.ts). These cases remove the
+// end with raw Yjs deletes, which no write of the binding makes now, and
+// nothing else ends the restore once its end is gone. #9562 (parked) made
+// them pass with a null of the writer's own after the end, but regressed
+// other cases: the plain tests here (S9-12b, the #9589 tie, and
+// OwnCommentGapCollapse.test.ts).
 
 /**
  * Each word of `peer`'s first line, with its comment ids (spaces collapse:
@@ -206,9 +211,9 @@ describe('@lexical/y a restore of a comment its own client opened', () => {
         ).toBe(false);
       },
     );
-    // Fails on main (#9609): the comment's run ends with the end its restore
-    // after the uncommented text wrote, and rule 5 writes no null for a run
-    // its own client opened.
+    // Fails (passes with #9562, parked): the comment's run ends with the end
+    // its restore after the uncommented text wrote, and rule 5 writes no null
+    // for a run its own client opened.
     test.fails(
       `ends where the comment ended when the comment was written with a hole in it (ids ${ids})`,
       async () => {
@@ -387,9 +392,10 @@ describe('@lexical/y a restore of a comment its own client opened', () => {
         expect(boldAfterLo(t.a)).toBe(' bb zz |cc*| dd|tail line');
       },
     );
-    // Fails on main (#9609): with 64 comment ids the undo of Z removes the
-    // comments from the untouched "et" (rule 5 writes no null for a restore
-    // in a run its own client opened; the one comment id case passes).
+    // Fails (passes with #9562, parked): with 64 comment ids the undo of Z
+    // removes the comments from the untouched "et" (rule 5 writes no null for
+    // a restore in a run its own client opened; the one comment id case
+    // passes). No delete is involved, so keeping ends (D65) does not change it.
     test.fails(
       `a later write's hole is not a run end with 64 comments on the run (ids ${ids})`,
       async () => {
@@ -564,10 +570,13 @@ describe("@lexical/y a restore inside its own client's comment run, with many co
       [1, 2],
       [2, 1],
     ]) {
-      // Fails on main for every count (#9609: no own null for a run its own
-      // client opened). With #9562 it passed up to 64 ids; past 64 structs
-      // rule 5 cannot find where the comment change ended (changeEnd's scan
-      // is capped, #9603).
+      // Fails for every count: the raw deletes stand for a deletion of the
+      // ends that no write of the binding makes now (the same case with a
+      // real collapse passes for every count, CollapseKeepsEnds.test.ts),
+      // and rule 5 writes no own null for a run its own client opened. With
+      // #9562 (parked) it passed up to 64 ids; past 64 structs rule 5 cannot
+      // find where the comment change ended (changeEnd's scan is capped,
+      // #9603).
       test.fails(
         `ends after the run when a collaborator deletes the word and its comment items (${count} ids, ids ${ids})`,
         async () => {

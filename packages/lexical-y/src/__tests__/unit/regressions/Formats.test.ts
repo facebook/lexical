@@ -705,7 +705,9 @@ describe('R24B-F1: a comment resolved ‖ plain text typed before a character it
 // one place and deleted again left two format items live, so a document's
 // items grew with its editing history. The run of deleted content and
 // format items a delete leaves holds a bounded number per key (see
-// Cursor#collapseGap).
+// Cursor#collapseGap): with a few keys (formats) a bounded number in all,
+// and with a key per comment id one item more per comment, the end of its
+// run, but none more per keystroke.
 describe('F24A-1: words typed and deleted again at one place', () => {
   const live = (peer: Peer) => {
     let n = 0;
@@ -725,7 +727,7 @@ describe('F24A-1: words typed and deleted again at one place', () => {
     'code',
   ] as const;
   for (const pattern of ['formats', 'comments'] as const) {
-    test(`leave a bounded number of format items (${pattern})`, async () => {
+    test(`leave a bounded number of format items per key (${pattern})`, async () => {
       const t = await setup(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('start middle end')),
@@ -757,9 +759,20 @@ describe('F24A-1: words typed and deleted again at one place', () => {
         }
       }
       expect(await merged(t)).toBe('"start middle end"');
-      // As many after 60 words as after 20, and at most five per key.
-      expect(counts[2]).toBe(counts[0]);
-      expect(counts[2]).toBeLessThanOrEqual(pattern === 'formats' ? 20 : 5);
+      if (pattern === 'formats') {
+        // As many after 60 words as after 20, and at most four per key.
+        expect(counts[2]).toBe(counts[0]);
+        expect(counts[2]).toBeLessThanOrEqual(20);
+      } else {
+        // Comment i writes its opener before word i and its closer after
+        // the earlier closers, which a comment change ends its range at, so
+        // the closers c1 to cn stand together at the end of the run. The run
+        // keeps, of each comment id (each a key of its own), the end of its
+        // last run: its closer, n of them after n words. Of the openers it
+        // keeps the last word's (around the deleted word) and the opener of
+        // the word deleted before it (it gives that place its value): n + 2.
+        expect(counts).toEqual([22, 42, 62]);
+      }
     });
   }
 });

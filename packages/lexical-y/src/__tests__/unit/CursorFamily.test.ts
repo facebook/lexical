@@ -105,7 +105,7 @@ describe('a set stored one format key per member', () => {
     });
   }
 
-  test('words of new members typed and deleted again at one place leave a bounded number of format items', () => {
+  test('words of new members typed and deleted again at one place leave one format item per member', () => {
     const a = doc(1);
     a.get('t').insert(0, 'start middle end');
     const counts: number[] = [];
@@ -119,11 +119,37 @@ describe('a set stored one format key per member', () => {
       }
     }
     expect(members(a).join('')).toBe('start middle end');
-    expect(counts[2]).toBe(counts[0]);
-    // The last word's two items, the opener and closer of the word deleted
-    // before it (that opener gives the place of the last word's closer its
-    // value), and the run's last two items.
-    expect(counts[2]).toBeLessThanOrEqual(6);
+    // Word i writes its member's opener, the word and its closer, in front
+    // of the earlier words. The run keeps, of each member (each a key of its
+    // own), the end of its last run: its closer, n of them after n words. Of
+    // the openers it keeps the last word's (around the deleted word), the
+    // opener of the word deleted before it (it gives the place of the last
+    // word's closer its value) and the first word's (with its closer, the
+    // run's last two units): n + 3. One item more per member, none more per
+    // word of a member already there (see the next test).
+    expect(counts).toEqual([23, 43, 63]);
+  });
+
+  test('words of five members in turn typed and deleted again at one place leave a bounded number of format items', () => {
+    const a = doc(1);
+    a.get('t').insert(0, 'start middle end');
+    const counts: number[] = [];
+    for (let i = 1; i <= 60; i++) {
+      write(a, 6, cursor =>
+        cursor.insert(new Y.ContentString('word'), {[m(`c${i % 5}`)]: true}),
+      );
+      write(a, 6, cursor => cursor.delete(4));
+      if (i % 20 === 0) {
+        counts.push(liveFormatItems(a));
+      }
+    }
+    expect(members(a).join('')).toBe('start middle end');
+    // As above, but each member's last run in the run is its first word's
+    // (later words go in front of it): the run keeps the closers of words 2
+    // to 5 (c2, c3, c4, c0), word 1's opener and closer (c1, the run's last
+    // two units), the last word's two items and the opener of the word
+    // before it: 9, whatever the number of words.
+    expect(counts).toEqual([9, 9, 9]);
   });
 
   // S6-9: where a run keeps a unit of a family of several keys, the value

@@ -206,5 +206,38 @@ describe('@lexical/y a restore of a comment its own client opened', () => {
         ),
       ).toBe(false);
     });
+    // S9-12b, pinned as failing: as S9-12, but A types "X" and "Y" in two
+    // writes, so each write puts a null of A's own right after the comment's
+    // end. B's collapse keeps those two nulls (a key's last items) and drops
+    // the end, and A undoes both writes: the comment runs on. Main passes
+    // (it writes no null of A's own for A's own run). One own null per end
+    // across writes would leave a restore without its own end when only the
+    // earlier write is undone, so this needs provenance or another collapse
+    // rule.
+    test.fails(
+      `S9-12b: ends where the comment ended when its author undoes two writes inside it while a collaborator deletes past its end (ids ${ids})`,
+      async () => {
+        const t = await setup(
+          () => $getRoot().append($p('aa Kilometer bb cc dd'), $p('tail line')),
+          {ids, prepare},
+        );
+        t.a.update(() => void $addMarkID('c1', $selectIn([0], 3, 12)));
+        await t.sync();
+        t.a.update(() => $insertPlainAt(6, 'X'));
+        t.a.update(() => $insertPlainAt(10, 'Y'));
+        await t.sync();
+        expect(words(t.a)).toBe('aa Kil[c1] X ome[c1] Y ter[c1] bb cc dd');
+        t.offline();
+        t.a.undo();
+        t.a.undo();
+        expect(words(t.a)).toBe('aa Kilometer[c1] bb cc dd');
+        t.b.update(() => void $selectIn([0], 11, 14).removeText());
+        t.b.update(() => void $selectIn([0], 11, 14).removeText());
+        expect(words(t.b)).toBe('aa Kil[c1] X ome[c1] Y cc dd');
+        await t.sync();
+        await expectConverged(t.peers);
+        expect(words(t.a)).toBe('aa Kilome[c1] cc dd');
+      },
+    );
   }
 });

@@ -31,7 +31,7 @@ import {
   probeYjs,
   YJS_EVENTS,
   YJS_EXPORTS,
-  YJS_MEMBERS,
+  yjsMembers,
 } from '../../internal/YjsContract';
 
 const PACKAGE_DIR = path.resolve(__dirname, '../../..');
@@ -118,20 +118,53 @@ function inventory(): Map<string, Set<string>> {
     }
     return parts.join('.') || '?';
   };
-  const owners = (type: ts.Type): string[] => {
-    const out: string[] = [];
-    for (const t of type.isUnion() ? type.types : [type]) {
-      const symbol = t.aliasSymbol || t.getSymbol();
-      const decl = symbol && symbol.declarations && symbol.declarations[0];
-      if (symbol && decl && inY(decl)) {
-        out.push(
-          symbol.name === '__type' || symbol.name === '__object'
-            ? nameOf(decl)
-            : symbol.name,
-        );
-      }
+  // The @y/y types a value's type is or extends: through unions,
+  // intersections, type parameters' constraints and the base types of a
+  // local interface or class (`YDoc extends Doc` is a `Doc`).
+  const owners = (type: ts.Type, seen = new Set<ts.Type>()): string[] => {
+    if (seen.has(type)) {
+      return [];
     }
-    return out;
+    seen.add(type);
+    if (type.isUnionOrIntersection()) {
+      return type.types.flatMap(t => owners(t, seen));
+    }
+    if (type.flags & ts.TypeFlags.TypeParameter) {
+      const constraint = checker.getBaseConstraintOfType(type);
+      return constraint ? owners(constraint, seen) : [];
+    }
+    const symbol = type.aliasSymbol || type.getSymbol();
+    const decl = symbol && symbol.declarations && symbol.declarations[0];
+    if (symbol && decl && inY(decl)) {
+      return [
+        symbol.name === '__type' || symbol.name === '__object'
+          ? nameOf(decl)
+          : symbol.name,
+      ];
+    }
+    if (
+      symbol &&
+      type.flags & ts.TypeFlags.Object &&
+      (type as ts.ObjectType).objectFlags & ts.ObjectFlags.ClassOrInterface
+    ) {
+      return (checker.getBaseTypes(type as ts.InterfaceType) || []).flatMap(t =>
+        owners(t, seen),
+      );
+    }
+    return [];
+  };
+  // Whether `node` is (an expression whose root is) a value @y/y declares:
+  // a member access on such a value.
+  const fromY = (node: ts.Expression): boolean => {
+    if (owners(checker.getTypeAtLocation(node)).length > 0) {
+      return true;
+    }
+    if (ts.isPropertyAccessExpression(node)) {
+      const symbol = checker.getSymbolAtLocation(node.name);
+      const decl = symbol && symbol.declarations && symbol.declarations[0];
+      return (decl !== undefined && inY(decl)) || fromY(node.expression);
+    }
+    return false;
   };
   const uses = new Map<string, Set<string>>();
   const add = (key: string, file: string) => {
@@ -159,6 +192,35 @@ function inventory(): Map<string, Set<string>> {
         receiver = n.expression;
         nameNode = n.argumentExpression;
         name = n.argumentExpression.text;
+      }
+      if (
+        receiver &&
+        ts.isIdentifier(receiver) &&
+        checker.getTypeAtLocation(receiver).flags & ts.TypeFlags.Any
+      ) {
+        // An untyped parameter of a callback given to a method of a value
+        // from @y/y (`tr.changed.forEach((subs, type) => ...)`, whose
+        // element type @y/y does not resolve): its members would escape the
+        // inventory. Type the parameter.
+        const symbol = checker.getSymbolAtLocation(receiver);
+        const decl = symbol && symbol.valueDeclaration;
+        const fn = decl && ts.isParameter(decl) ? decl.parent : undefined;
+        const call = fn && fn.parent;
+        if (
+          decl &&
+          !(decl as ts.ParameterDeclaration).type &&
+          fn &&
+          (ts.isArrowFunction(fn) || ts.isFunctionExpression(fn)) &&
+          call &&
+          ts.isCallExpression(call) &&
+          ts.isPropertyAccessExpression(call.expression) &&
+          fromY(call.expression.expression)
+        ) {
+          const {line} = sourceFile.getLineAndCharacterOfPosition(
+            receiver.getStart(),
+          );
+          add(`untyped parameter '${receiver.text}' at line ${line + 1}`, file);
+        }
       }
       if (receiver && nameNode) {
         const of = owners(
@@ -266,9 +328,9 @@ describe('the contract', () => {
       }
     }
     const listed = new Set<string>([
-      ...Object.keys(YJS_EXPORTS).map(name => `export ${name}`),
-      ...Object.entries(YJS_MEMBERS).flatMap(([owner, members]) =>
-        members.map(m => `${owner}#${m}`),
+      ...YJS_EXPORTS.map(name => `export ${name}`),
+      ...Object.entries(yjsMembers()).flatMap(([owner, members]) =>
+        Object.keys(members).map(m => `${owner}#${m}`),
       ),
       ...Object.entries(YJS_EVENTS).flatMap(([owner, events]) =>
         events.map(e => `${owner}@${e}`),
@@ -289,13 +351,6 @@ describe('the contract', () => {
         .sort()
         .map(k => k + where(k)),
     }).toEqual({listedButUnused: [], usedButNotListed: []});
-  });
-
-  test('the export arities are those of the installed @y/y', () => {
-    const installed = Y as unknown as Record<string, {length: number}>;
-    for (const [name, arity] of Object.entries(YJS_EXPORTS)) {
-      expect([name, installed[name].length]).toEqual([name, arity]);
-    }
   });
 
   test('the installed @y/y passes the probe', () => {
@@ -375,13 +430,29 @@ const CHANGES: [string, (y: YModule) => Partial<YModule>, string[]][] = [
     ['getItemCleanStart'],
   ],
   [
-    'a changed arity',
+    'an emptied method',
     y => ({
-      // Same behaviour, one parameter fewer declared.
-      findIndexSS: ((structs: Parameters<YModule['findIndexSS']>[0]) =>
-        y.findIndexSS(structs, 0)) as unknown as YModule['findIndexSS'],
+      UndoManager: sameArity(
+        y.UndoManager,
+        class extends y.UndoManager {
+          constructor(...args: ConstructorParameters<YModule['UndoManager']>) {
+            super(...args);
+            (this as {canRedo?: unknown}).canRedo = undefined;
+          }
+        },
+      ),
     }),
-    ['findIndexSS/1 (expected 2)'],
+    ['UndoManager#canRedo'],
+  ],
+  [
+    'a field that is null',
+    y => ({
+      decodeUpdate: ((update: Uint8Array) => ({
+        ...y.decodeUpdate(update),
+        ds: null,
+      })) as unknown as YModule['decodeUpdate'],
+    }),
+    ['decodeUpdate#ds'],
   ],
   [
     'a missing member',
@@ -591,6 +662,19 @@ describe('with the supported @y/y', () => {
     );
     editor.dispose();
     expect(contract.getYjsProbeRuns()).toBe(1);
+  });
+
+  test('a build that changes arities or renames properties consistently passes', async () => {
+    // Transpilers change Function#length (Babel's default and destructured
+    // parameters); the check does not compare arities.
+    const {contract} = await loadWith(y => ({
+      Doc: Object.defineProperty(class extends y.Doc {}, 'length', {
+        value: 1,
+      }) as unknown as YModule['Doc'],
+      findIndexSS: ((...args: Parameters<YModule['findIndexSS']>) =>
+        y.findIndexSS(...args)) as unknown as YModule['findIndexSS'],
+    }));
+    expect(contract.probeYjs()).toEqual([]);
   });
 
   test('a document or root from another copy of @y/y is refused', async () => {

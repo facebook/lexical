@@ -493,7 +493,7 @@ function recordSchema(
     return;
   }
   let wrote = false;
-  tr.changed.forEach((_subs, type) => {
+  tr.changed.forEach((_subs: Set<string | null>, type: YNode) => {
     wrote = wrote || under(type);
   });
   if (wrote) {
@@ -807,7 +807,9 @@ export class YBinding {
   private readonly afterTransaction: (tr: Transaction) => void;
   private readonly beforeTransaction: (tr: Transaction) => void;
   private readonly beforeObserverCalls = (tr: Transaction): void => {
-    tr.changed.forEach((subs, type) => {
+    // Typed: @y/y declares `changed` with a YNode it does not import, so
+    // the parameters would be `any` (and the contract test blind to them).
+    tr.changed.forEach((subs: Set<string | null>, type: YNode) => {
       if (this.state.containers.has(type) || this.isUnderRoot(type)) {
         type._hasFormatting = false;
       }
@@ -2409,7 +2411,7 @@ export class YBinding {
     const attrKeys = new Map<YNode, Set<string>>();
     // Whether the change brought a schema record (see gateSchema).
     let schemaChanged = false;
-    tr.changed.forEach((subs, type) => {
+    tr.changed.forEach((subs: Set<string | null>, type: YNode) => {
       const keys = new Set<string>();
       subs.forEach(k => {
         if (k !== null) {

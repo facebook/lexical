@@ -114,7 +114,7 @@ change, never a range:
 1. Set the exact version in both `peerDependencies` and `devDependencies`,
    then run `pnpm install` and `pnpm run update-version` (which regenerates
    `SUPPORTED_YJS_VERSION` in `src/internal/SupportedYjs.ts`).
-2. Run `YjsContract.test.ts`: update the arities, members and events in
+2. Run `YjsContract.test.ts`: update the exports, members and events in
    `src/internal/YjsContract.ts` to what the binding uses of the new
    version, and re-check each changed one in the code that uses it.
 3. Run the equivalence test (`Cursor.test.ts`, the binding's cursor against

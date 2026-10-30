@@ -23,6 +23,8 @@ import {
   findRootTypeKey,
   GC,
   getItemCleanStart,
+  type ID,
+  type IdSet,
   Item,
   iterateStructsByIdSet,
   mergeUpdates,
@@ -30,6 +32,7 @@ import {
   RelativePosition,
   relativePositionToJSON,
   Skip,
+  type Transaction,
   UndoManager,
 } from '@y/y';
 
@@ -46,10 +49,16 @@ import {SUPPORTED_YJS_VERSION} from './SupportedYjs';
  * --legacy-peer-deps), so an app can still run another @y/y. @y/y exposes no
  * version at run time (its `package.json` subpath is not something every
  * bundler or runtime can import), so the check probes the contract itself,
- * once per module, on a scratch document: every export below with the
- * arity it has in the supported version, every member below on an object
- * of that kind, and every event below firing. Any difference refuses the
- * binding with a YUnsupportedYjsError before it writes anything.
+ * once per module, on a scratch document: every export below is a
+ * function, every member below has the kind of value the binding expects on
+ * an object of that kind, and every event below fires. Any difference
+ * refuses the binding with a YUnsupportedYjsError before it writes anything.
+ *
+ * Members are checked through property reads typed against @y/y's
+ * declarations (not by name), so tsc fails on a member the declarations
+ * drop, and a build that renames properties renames them here as it does in
+ * the binding. Arities are not compared: transpilers change
+ * `Function#length` (default and destructured parameters).
  *
  * The lists are the contract. YjsContract.test derives, with the TypeScript
  * checker, everything the package's sources use of @y/y (value imports,
@@ -58,122 +67,205 @@ import {SUPPORTED_YJS_VERSION} from './SupportedYjs';
  * export, field, method, option or event lands with its entry here.
  */
 
-/**
- * The value exports of @y/y the binding uses, with their arity
- * (`Function#length`) in the supported version: a changed parameter list
- * is a changed contract.
- */
-export const YJS_EXPORTS = {
-  ContentAny: 1,
-  ContentBinary: 1,
-  ContentFormat: 2,
-  ContentString: 1,
-  ContentType: 1,
-  Doc: 0,
-  Item: 8,
-  Node: 0,
-  RelativePosition: 3,
-  Skip: 0,
-  UndoManager: 1,
-  applyUpdate: 3,
-  createID: 2,
-  createIdSet: 0,
-  createRelativePositionFromJSON: 1,
-  decodeUpdate: 1,
-  encodeStateAsUpdate: 2,
-  findIndexSS: 2,
-  findRootTypeKey: 1,
-  getItemCleanStart: 2,
-  iterateStructsByIdSet: 3,
-  mergeUpdates: 1,
-  relativePositionToJSON: 1,
-} as const;
+/** The value exports of @y/y the binding uses. */
+export const YJS_EXPORTS = [
+  'ContentAny',
+  'ContentBinary',
+  'ContentFormat',
+  'ContentString',
+  'ContentType',
+  'Doc',
+  'Item',
+  'Node',
+  'RelativePosition',
+  'Skip',
+  'UndoManager',
+  'applyUpdate',
+  'createID',
+  'createIdSet',
+  'createRelativePositionFromJSON',
+  'decodeUpdate',
+  'encodeStateAsUpdate',
+  'findIndexSS',
+  'findRootTypeKey',
+  'getItemCleanStart',
+  'iterateStructsByIdSet',
+  'mergeUpdates',
+  'relativePositionToJSON',
+] as const;
+
+type StructStore = Doc['store'];
+type IdRanges = NonNullable<ReturnType<IdSet['clients']['get']>>;
+type IdRange = ReturnType<IdRanges['getIds']>[number];
+type StackItem = UndoManager['undoStack'][number];
+type AbstractContent = Item['content'];
+type DecodedUpdate = ReturnType<typeof decodeUpdate>;
+interface StackItemEvent {
+  stackItem: StackItem;
+  origin: unknown;
+}
+
+const isFunction = (value: unknown): boolean => typeof value === 'function';
+const isObject = (value: unknown): boolean =>
+  typeof value === 'object' && value !== null;
+/** A field that may hold null (an empty pointer), never undefined. */
+const isSet = (value: unknown): boolean => value !== undefined;
+const isNumber = (value: unknown): boolean => typeof value === 'number';
+const isBoolean = (value: unknown): boolean => typeof value === 'boolean';
 
 /**
  * The members (fields, getters, methods) the binding reads or calls, by the
- * name of the @y/y type that declares them. `DocOpts` and
- * `UndoManagerOptions` are constructor options the binding passes;
- * `StackItemEvent` is the payload of the undo manager's stack events;
- * `decodeUpdate` is that function's result.
+ * name of the @y/y type that declares them, each with the check of its
+ * value. `DocOpts` and `UndoManagerOptions` are constructor options the
+ * binding passes (checked on what the constructor kept); `StackItemEvent`
+ * is the payload of the undo manager's stack events; `decodeUpdate` is that
+ * function's result.
+ *
+ * @__NO_SIDE_EFFECTS__
  */
-export const YJS_MEMBERS = {
-  AbstractContent: ['getContent'],
-  ContentFormat: ['key', 'value'],
-  ContentString: ['str'],
-  ContentType: ['type'],
-  Doc: [
-    '_transaction',
-    '_transactionCleanups',
-    'cleanupFormatting',
-    'clientID',
-    'destroy',
-    'get',
-    'off',
-    'on',
-    'share',
-    'store',
-    'transact',
-  ],
-  DocOpts: ['gc'],
-  GC: ['id'],
-  ID: ['client', 'clock'],
-  IdRange: ['clock', 'len'],
-  IdRanges: ['getIds'],
-  IdSet: ['add', 'clients', 'hasId'],
-  Item: [
-    'content',
-    'countable',
-    'delete',
-    'deleted',
-    'id',
-    'integrate',
-    'lastId',
-    'left',
-    'length',
-    'origin',
-    'parent',
-    'parentSub',
-    'redone',
-    'right',
-    'rightOrigin',
-  ],
-  RelativePosition: ['assoc', 'item'],
-  StackItem: ['deletes', 'inserts', 'meta'],
-  StackItemEvent: ['origin', 'stackItem'],
-  StructStore: ['clients', 'getClock', 'getItem'],
-  Transaction: ['changed', 'deleteSet', 'doc', 'insertSet', 'origin'],
-  UndoManager: [
-    'canRedo',
-    'canUndo',
-    'clear',
-    'destroy',
-    'on',
-    'redo',
-    'redoStack',
-    'undo',
-    'undoStack',
-  ],
-  UndoManagerOptions: ['captureTimeout', 'deleteFilter', 'trackedOrigins'],
-  YNode: [
-    '_item',
-    '_map',
-    '_searchMarker',
-    '_start',
-    'deleteAttr',
-    'doc',
-    'getAttr',
-    'getAttrs',
-    'length',
-    'name',
-    'parent',
-    'setAttr',
-  ],
-  decodeUpdate: ['ds', 'structs'],
-} as const;
+export function yjsMembers() {
+  return {
+    AbstractContent: {
+      getContent: (c: AbstractContent) => isFunction(c.getContent),
+    },
+    ContentFormat: {
+      key: (c: ContentFormat) => typeof c.key === 'string',
+      value: (c: ContentFormat) => isSet(c.value),
+    },
+    ContentString: {
+      str: (c: ContentString) => typeof c.str === 'string',
+    },
+    ContentType: {
+      type: (c: ContentType) => isObject(c.type),
+    },
+    Doc: {
+      _transaction: (d: Doc) => isSet(d._transaction),
+      _transactionCleanups: (d: Doc) => Array.isArray(d._transactionCleanups),
+      cleanupFormatting: (d: Doc) => isBoolean(d.cleanupFormatting),
+      clientID: (d: Doc) => isNumber(d.clientID),
+      destroy: (d: Doc) => isFunction(d.destroy),
+      get: (d: Doc) => isFunction(d.get),
+      off: (d: Doc) => isFunction(d.off),
+      on: (d: Doc) => isFunction(d.on),
+      share: (d: Doc) => d.share instanceof Map,
+      store: (d: Doc) => isObject(d.store),
+      transact: (d: Doc) => isFunction(d.transact),
+    },
+    DocOpts: {
+      gc: (d: Doc) => d.gc === false,
+    },
+    GC: {
+      id: (g: GC) => isObject(g.id),
+    },
+    ID: {
+      client: (id: ID) => isNumber(id.client),
+      clock: (id: ID) => isNumber(id.clock),
+    },
+    IdRange: {
+      clock: (r: IdRange) => isNumber(r.clock),
+      len: (r: IdRange) => isNumber(r.len),
+    },
+    IdRanges: {
+      getIds: (r: IdRanges) => isFunction(r.getIds),
+    },
+    IdSet: {
+      add: (s: IdSet) => isFunction(s.add),
+      clients: (s: IdSet) => s.clients instanceof Map,
+      hasId: (s: IdSet) => isFunction(s.hasId),
+    },
+    Item: {
+      content: (it: Item) => isObject(it.content),
+      countable: (it: Item) => isBoolean(it.countable),
+      delete: (it: Item) => isFunction(it.delete),
+      deleted: (it: Item) => isBoolean(it.deleted),
+      id: (it: Item) => isObject(it.id),
+      integrate: (it: Item) => isFunction(it.integrate),
+      lastId: (it: Item) => isObject(it.lastId),
+      left: (it: Item) => isSet(it.left),
+      length: (it: Item) => isNumber(it.length),
+      origin: (it: Item) => isSet(it.origin),
+      parent: (it: Item) => isSet(it.parent),
+      parentSub: (it: Item) => isSet(it.parentSub),
+      redone: (it: Item) => isSet(it.redone),
+      right: (it: Item) => isSet(it.right),
+      rightOrigin: (it: Item) => isSet(it.rightOrigin),
+    },
+    RelativePosition: {
+      assoc: (p: RelativePosition) => isNumber(p.assoc),
+      item: (p: RelativePosition) => isSet(p.item),
+    },
+    StackItem: {
+      deletes: (s: StackItem) => isObject(s.deletes),
+      inserts: (s: StackItem) => isObject(s.inserts),
+      meta: (s: StackItem) => s.meta instanceof Map,
+    },
+    StackItemEvent: {
+      origin: (e: StackItemEvent) => isSet(e.origin),
+      stackItem: (e: StackItemEvent) => isObject(e.stackItem),
+    },
+    StructStore: {
+      clients: (s: StructStore) => s.clients instanceof Map,
+      getClock: (s: StructStore) => isFunction(s.getClock),
+      getItem: (s: StructStore) => isFunction(s.getItem),
+    },
+    Transaction: {
+      changed: (tr: Transaction) => tr.changed instanceof Map,
+      deleteSet: (tr: Transaction) => isObject(tr.deleteSet),
+      doc: (tr: Transaction) => isObject(tr.doc),
+      insertSet: (tr: Transaction) => isObject(tr.insertSet),
+      origin: (tr: Transaction) => isSet(tr.origin),
+    },
+    UndoManager: {
+      canRedo: (u: UndoManager) => isFunction(u.canRedo),
+      canUndo: (u: UndoManager) => isFunction(u.canUndo),
+      clear: (u: UndoManager) => isFunction(u.clear),
+      destroy: (u: UndoManager) => isFunction(u.destroy),
+      on: (u: UndoManager) => isFunction(u.on),
+      redo: (u: UndoManager) => isFunction(u.redo),
+      redoStack: (u: UndoManager) => Array.isArray(u.redoStack),
+      undo: (u: UndoManager) => isFunction(u.undo),
+      undoStack: (u: UndoManager) => Array.isArray(u.undoStack),
+    },
+    UndoManagerOptions: {
+      captureTimeout: (u: UndoManager) => u.captureTimeout === 0,
+      deleteFilter: (u: UndoManager) => u.deleteFilter === PROBE_DELETE_FILTER,
+      trackedOrigins: (u: UndoManager) => u.trackedOrigins.has(PROBE_ORIGIN),
+    },
+    YNode: {
+      _hasFormatting: (n: YNode) => isBoolean(n._hasFormatting),
+      _item: (n: YNode) => isSet(n._item),
+      _map: (n: YNode) => n._map instanceof Map,
+      _searchMarker: (n: YNode) => isSet(n._searchMarker),
+      _start: (n: YNode) => isSet(n._start),
+      deleteAttr: (n: YNode) => isFunction(n.deleteAttr),
+      doc: (n: YNode) => isSet(n.doc),
+      getAttr: (n: YNode) => isFunction(n.getAttr),
+      getAttrs: (n: YNode) => isFunction(n.getAttrs),
+      length: (n: YNode) => isNumber(n.length),
+      name: (n: YNode) => isSet(n.name),
+      parent: (n: YNode) => isSet(n.parent),
+      setAttr: (n: YNode) => isFunction(n.setAttr),
+    },
+    decodeUpdate: {
+      ds: (u: DecodedUpdate) => isObject(u.ds),
+      structs: (u: DecodedUpdate) => Array.isArray(u.structs),
+    },
+  };
+}
+
+/** The undo manager options the probe passes, checked on what it kept. */
+const PROBE_ORIGIN = {};
+const PROBE_DELETE_FILTER = () => true;
 
 /** The events the binding listens to, by emitter. */
 export const YJS_EVENTS = {
-  Doc: ['afterAllTransactions', 'update'],
+  Doc: [
+    'afterAllTransactions',
+    'afterTransaction',
+    'beforeObserverCalls',
+    'beforeTransaction',
+    'update',
+  ],
   UndoManager: ['stack-cleared', 'stack-item-added', 'stack-item-popped'],
 } as const;
 
@@ -198,7 +290,7 @@ export interface YUnsupportedYjsData {
   /**
    * What the check found instead: for `'changed-internals'`, each missing
    * or changed part of the contract (`'getItemCleanStart'`,
-   * `'Item#parentSub'`, `'Item/7 (expected 8)'`, `'UndoManager@stack-cleared'`);
+   * `'Item#parentSub'`, `'UndoManager@stack-cleared'`);
    * for `'other-copy'`, what came from the other copy.
    */
   readonly found: readonly string[];
@@ -284,13 +376,9 @@ export type YjsExports = ReturnType<typeof yjsExports>;
 export function probeYjs(y: YjsExports = yjsExports()): string[] {
   const found: string[] = [];
   const exportsOf = y as unknown as Record<string, unknown>;
-  for (const name of [...Object.keys(YJS_EXPORTS), 'GC']) {
-    const value = exportsOf[name];
-    const arity = (YJS_EXPORTS as Record<string, number>)[name];
-    if (typeof value !== 'function') {
+  for (const name of [...YJS_EXPORTS, 'GC']) {
+    if (typeof exportsOf[name] !== 'function') {
       found.push(name);
-    } else if (arity !== undefined && value.length !== arity) {
-      found.push(`${name}/${value.length} (expected ${arity})`);
     }
   }
   if (found.length > 0) {
@@ -309,7 +397,7 @@ export function probeYjs(y: YjsExports = yjsExports()): string[] {
 
 /**
  * Exercise, on a scratch document, the kinds of objects the binding meets,
- * and check every member of {@link YJS_MEMBERS} on one of each and every
+ * and check every member of {@link yjsMembers} on one of each and every
  * event of {@link YJS_EVENTS}.
  */
 function probeMembers(y: YjsExports, found: string[]): void {
@@ -328,19 +416,17 @@ function probeMembers(y: YjsExports, found: string[]): void {
   try {
     doc.cleanupFormatting = false;
     const root = doc.get('probe');
-    const origin = {};
-    const deleteFilter = () => true;
-    const trackedOrigins = new Set<unknown>([origin]);
     for (const event of YJS_EVENTS.Doc) {
       doc.on(event, () => events.add(`Doc@${event}`));
     }
     const undoManager = new y.UndoManager(root, {
       captureTimeout: 0,
-      deleteFilter,
-      trackedOrigins,
+      deleteFilter: PROBE_DELETE_FILTER,
+      trackedOrigins: new Set<unknown>([PROBE_ORIGIN]),
     });
     um.destroy = () => undoManager.destroy();
     sample('UndoManager', undoManager);
+    sample('UndoManagerOptions', undoManager);
     for (const event of YJS_EVENTS.UndoManager) {
       undoManager.on(event, (payload: unknown) => {
         events.add(`UndoManager@${event}`);
@@ -356,7 +442,7 @@ function probeMembers(y: YjsExports, found: string[]): void {
       root.insert(2, [new y.Node('probe')]);
       root.format(0, 1, {probe: true});
       root.setAttr('probe', 1);
-    }, origin);
+    }, PROBE_ORIGIN);
     for (let it = root._start; it !== null; it = it.right) {
       sample('Item', it);
       sample('ID', it.id);
@@ -379,22 +465,8 @@ function probeMembers(y: YjsExports, found: string[]): void {
     sample('GC', new y.GC(y.createID(1, 0), 1));
     sample('RelativePosition', new y.RelativePosition(null, null, null, 0));
     sample('decodeUpdate', y.decodeUpdate(y.encodeStateAsUpdate(doc)));
-    // Options are checked by what the constructor kept of them.
-    if (doc.gc === false) {
-      sample('DocOpts', {gc: false});
-    }
-    const kept = undoManager as unknown as Record<string, unknown>;
-    if (
-      kept.captureTimeout === 0 &&
-      kept.deleteFilter === deleteFilter &&
-      kept.trackedOrigins === trackedOrigins
-    ) {
-      sample('UndoManagerOptions', {
-        captureTimeout: 0,
-        deleteFilter,
-        trackedOrigins,
-      });
-    }
+    // Options are checked on what the constructor kept of them.
+    sample('DocOpts', doc);
     undoManager.undo();
     undoManager.clear();
   } catch (error) {
@@ -411,13 +483,23 @@ function probeMembers(y: YjsExports, found: string[]): void {
   }
   // After a throw, only what was reached is checked (it usually names the
   // cause), then the throw itself.
-  for (const [kind, members] of Object.entries(YJS_MEMBERS)) {
+  const members = yjsMembers() as unknown as Record<
+    string,
+    Record<string, (value: object) => boolean>
+  >;
+  for (const kind of Object.keys(members)) {
     const value = samples.get(kind);
     if (value === undefined && threw !== null) {
       continue;
     }
-    for (const member of members) {
-      if (value === undefined || !(member in value)) {
+    for (const [member, check] of Object.entries(members[kind])) {
+      let ok = false;
+      try {
+        ok = value !== undefined && check(value);
+      } catch {
+        // A getter that throws is a changed member too.
+      }
+      if (!ok) {
         found.push(`${kind}#${member}`);
       }
     }

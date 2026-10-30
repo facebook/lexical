@@ -35,7 +35,11 @@ import {
   type ListItemNode,
   type ListNode,
 } from '@lexical/list';
-import {$createQuoteNode, RichTextExtension} from '@lexical/rich-text';
+import {
+  $createHeadingNode,
+  $createQuoteNode,
+  RichTextExtension,
+} from '@lexical/rich-text';
 import * as Y from '@y/y';
 import {
   $create,
@@ -605,6 +609,50 @@ describe.each([false, true])('blockIds %s', blockIds => {
       for (const c of [a, b, fresh]) {
         c.editor.dispose();
       }
+    });
+
+    // S9-8: a change that brings a layout record makes the read-only client
+    // read the whole document again. A line whose type the same change
+    // changed is made anew there, its unit kept for the new node; the old
+    // node's stale entry took it for a line another container still holds,
+    // the read threw, and the client failed closed, showing what it showed
+    // before for good.
+    test('a change that retypes a line and brings a layout record is read', async () => {
+      const {a, b} = await readOnly();
+      b.editor.update(
+        () => {
+          const line = $getRoot().getFirstChildOrThrow() as ElementNode;
+          line.replace($createHeadingNode('h2'), true);
+        },
+        {discrete: true},
+      );
+      await flush();
+      expect(show(a)).toBe(show(b).replace(' / test_widget', ''));
+      // One transaction, so A reads it as one change.
+      b.doc.transact(() => {
+        b.editor.update(
+          () => {
+            const line = $getRoot().getFirstChildOrThrow() as ElementNode;
+            line.replace($createParagraphNode(), true);
+            const quote = $getRoot().getChildAtIndex(1) as ElementNode;
+            (quote.getFirstChildOrThrow() as ElementNode).append(
+              $createTextNode(' typed'),
+            );
+          },
+          {discrete: true},
+        );
+        b.binding.root.setAttr('lexical-y:2', true);
+      });
+      await flush();
+      expect(show(b)).toBe(
+        'paragraph("one") / quote(paragraph("inner typed")) / test_widget',
+      );
+      expect(show(a)).toBe(
+        'paragraph("one") / quote(paragraph("inner typed"))',
+      );
+      expect(edits(a.warnings)).toEqual([]);
+      a.editor.dispose();
+      b.editor.dispose();
     });
 
     test('local updates in separate tasks are each read again, list numbering included', async () => {

@@ -524,9 +524,13 @@ export class Reader {
       if (node === null || node.isAttached()) {
         continue;
       }
+      // Its unit, still its own: a read that made the line's node anew (a
+      // line whose type changed) keeps its unit for the new node, and the
+      // old key's entry, stale, names it.
       const unit = state.unitByKey.get(key);
       invariant(
         unit === undefined ||
+          unit.key !== key ||
           state.containers.get(unit.cs.y) !== unit.cs ||
           isDeleted(unit.cs.y) ||
           !unit.cs.units.includes(unit),

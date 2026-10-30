@@ -33,6 +33,7 @@ import {
   flipDirection,
   getStyleObjectFromCSS,
   INTERNAL_$isBlock,
+  INTERNAL_isInlineContent,
   type LexicalNode,
   type NodeKey,
   type Point,
@@ -236,6 +237,24 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
 }
 
 /**
+ * The block whose content $wrapNodes moves for `node`: `node` itself or its
+ * nearest ancestor that is an element and not inline content, as the node
+ * structure normalization counts it (so a link inside a mark, or the
+ * character limit's OverflowNode, whose isInline() is false, stays in its
+ * block).
+ */
+function $wrappedBlock(node: LexicalNode): ElementNode | null {
+  let block: LexicalNode | null = node;
+  while (
+    block !== null &&
+    (!$isElementNode(block) || INTERNAL_isInlineContent(block))
+  ) {
+    block = block.getParent();
+  }
+  return block;
+}
+
+/**
  * @deprecated In favor of $setBlockTypes
  * Wraps all nodes in the selection into another node of the type returned by createElement.
  * @param selection - The selection of nodes to be wrapped.
@@ -273,10 +292,10 @@ export function $wrapNodes(
         anchor.type === 'element' &&
         anchor.getNode().getChildrenSize() === 0))
   ) {
-    const target =
-      anchor.type === 'text'
-        ? anchor.getNode().getParentOrThrow()
-        : anchor.getNode();
+    const target = $wrappedBlock(anchor.getNode());
+    if (target === null) {
+      return;
+    }
     const children = target.getChildren();
     let element = createElement();
     // An empty container stays and the new block goes in it, so the new
@@ -372,12 +391,11 @@ export function $wrapNodesImpl(
   // either insertAfter/insertBefore/append the corresponding
   // elements to. This is made more complicated due to nested
   // structures.
-  const firstNodeBlock = $isElementNode(firstNode)
-    ? firstNode
-    : firstNode.getParentOrThrow();
-  let target: LexicalNode = firstNodeBlock.isInline()
-    ? firstNodeBlock.getParentOrThrow()
-    : firstNodeBlock;
+  const firstNodeBlock = $wrappedBlock(firstNode);
+  if (firstNodeBlock === null) {
+    return;
+  }
+  let target: LexicalNode = firstNodeBlock;
 
   let targetIsPrevSibling = false;
   while (target !== null) {
@@ -402,23 +420,32 @@ export function $wrapNodesImpl(
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
 
-    if ($isElementNode(node) && node.getChildrenSize() === 0) {
+    if (
+      $isElementNode(node) &&
+      node.getChildrenSize() === 0 &&
+      !INTERNAL_isInlineContent(node)
+    ) {
       emptyElements.add(node.getKey());
     }
   }
 
   const movedNodes: Set<NodeKey> = new Set();
 
+  // The block of each node, decided before anything moves: once a block's
+  // content is in its new element, a node deep inside it would otherwise
+  // find the new element as its block.
+  const blocks: (ElementNode | null)[] = [];
+  for (let i = 0; i < nodesLength; i++) {
+    const nodeParent = nodes[i].getParent();
+    blocks.push(nodeParent === null ? null : $wrappedBlock(nodeParent));
+  }
+
   // Move out all leaf nodes into our elements array.
   // If we find a top level empty element, also move make
   // an element for that.
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
-    let parent = node.getParent();
-
-    if (parent !== null && parent.isInline()) {
-      parent = parent.getParent();
-    }
+    const parent = blocks[i];
 
     if (
       parent !== null &&

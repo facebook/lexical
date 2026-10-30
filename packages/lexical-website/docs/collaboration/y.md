@@ -1108,6 +1108,13 @@ not merge as a user might expect:
   place (or replaced by a block node) sends it to the start of the line
   after, or to the end of the line before where a block node follows,
   never onto the block node.
+- **Yjs versions the guard cannot tell apart.** `@lexical/y` refuses a
+  `@y/y` that lacks an export, member or event it uses (see
+  [Install](#install)), but a `@y/y` with the same ones passes, even if its
+  functions behave differently, and so does a provider that bundles its own
+  copy of Yjs and applies updates to your document after the binding
+  started. Install exactly the `@y/y` version `@lexical/y` names, once
+  (`npm ls @y/y`).
 - **NodeState key order.** Other clients (and any later reader) get a node's
   NodeState with its keys in sorted order, which every client builds the
   same way, not in the order the author's editor exported them (a Yjs map

@@ -17,8 +17,9 @@ npm i --save-exact @lexical/y@nightly @lexical/extension@nightly \
 supports: install exactly that version, once. `createYDoc`, `YBinding` and
 the headless helpers throw a `YUnsupportedYjsError` (`data.supported` names
 the version) when the `@y/y` the app loaded lacks what the binding uses, or
-the document comes from a second copy. Its type declarations do not type-check on their own (an
-upstream issue): projects that run `tsc` need `skipLibCheck: true`.
+the document comes from a second copy. `@y/y`'s type declarations do not
+type-check on their own (an upstream issue): projects that run `tsc` need
+`skipLibCheck: true`.
 
 Until a Lexical release includes `@lexical/y`, npm's `latest` for it is a
 placeholder: install every Lexical package from the same nightly, in one

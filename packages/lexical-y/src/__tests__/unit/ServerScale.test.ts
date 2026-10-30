@@ -13,6 +13,7 @@ import {$getRoot, createEditor} from 'lexical';
 import {describe, expect, test} from 'vitest';
 import * as Y13 from 'yjs';
 
+import {createYDoc} from '../..';
 import {inspectUpdateRoots} from '../../internal/UpdateRoots';
 import {$p, NODES} from '../utils/harness';
 import {writeEditorToYDoc} from '../utils/headless';
@@ -32,7 +33,7 @@ function bigDoc(n: number): Y.Doc {
     },
     {discrete: true},
   );
-  const doc = new Y.Doc({gc: false});
+  const doc = createYDoc(null, {gc: false});
   writeEditorToYDoc(editor, doc);
   return doc;
 }

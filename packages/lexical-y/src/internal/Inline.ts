@@ -36,6 +36,7 @@ import {
   TYPE_KEY,
   WRAPPER_PREFIX,
 } from './Schema';
+import {isGone} from './Unread';
 
 // Inline content as atoms, the form both the editor's side ($pushInline)
 // and the shared side (readAtoms) are compared in: one atom per content unit
@@ -255,7 +256,10 @@ export function $pushInline(
 
 /**
  * Atoms of the shared items from `start` (inclusive) up to `stop`
- * (exclusive, null = end), with the formats in effect at `start`.
+ * (exclusive, null = end), with the formats in effect at `start`, as the
+ * editor shows them: without what is held back (see Hidden). Returns the
+ * formats stored at `stop`, held-back ones too (where a write cursor starts,
+ * see Cursor).
  */
 export function readAtoms(
   start: Item | null,
@@ -265,36 +269,18 @@ export function readAtoms(
   hidden: Hidden | null = null,
 ): Formats {
   const current = new Map(formats);
+  // The formats the editor shows: `current` without held-back ones.
+  const shown = hidden === null ? current : new Map(formats);
   let attrs: Attrs | null = null;
   for (let it = start; it !== null && it !== stop; it = it.right) {
-    if (it.deleted) {
+    if (isGone(it)) {
       continue;
-    }
-    if (hidden !== null && it.countable) {
-      const runs = hidden.runs(it);
-      if (runs.length > 1 || runs[0][1]) {
-        // Partly or wholly hidden: only shown text counts.
-        if (it.content instanceof ContentString) {
-          if (attrs === null) {
-            attrs = Object.fromEntries(current);
-          }
-          let pos = 0;
-          for (const [len, isHidden] of runs) {
-            if (!isHidden) {
-              pushStoredText(out, it.content.str.slice(pos, pos + len), attrs);
-            }
-            pos += len;
-          }
-        }
-        continue;
-      }
     }
     const content = it.content;
     if (content instanceof ContentFormat) {
-      if (content.value === null) {
-        current.delete(content.key);
-      } else {
-        current.set(content.key, content.value);
+      applyFormat(current, content);
+      if (shown !== current && !hidden!.hides(it)) {
+        applyFormat(shown, content);
       }
       attrs = null;
       continue;
@@ -303,7 +289,24 @@ export function readAtoms(
       continue;
     }
     if (attrs === null) {
-      attrs = Object.fromEntries(current);
+      attrs = Object.fromEntries(shown);
+    }
+    if (hidden !== null) {
+      const runs = hidden.runs(it);
+      if (runs.length > 1 || runs[0][1]) {
+        // Partly or wholly held back: only shown text counts (a held node
+        // or marker is not there).
+        if (content instanceof ContentString) {
+          let pos = 0;
+          for (const [len, isHidden] of runs) {
+            if (!isHidden) {
+              pushStoredText(out, content.str.slice(pos, pos + len), attrs);
+            }
+            pos += len;
+          }
+        }
+        continue;
+      }
     }
     if (content instanceof ContentString) {
       pushStoredText(out, content.str, attrs);
@@ -325,6 +328,14 @@ export function readAtoms(
     }
   }
   return current;
+}
+
+function applyFormat(formats: Formats, content: ContentFormat): void {
+  if (content.value === null) {
+    formats.delete(content.key);
+  } else {
+    formats.set(content.key, content.value);
+  }
 }
 
 /**

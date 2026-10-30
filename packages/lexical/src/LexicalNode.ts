@@ -76,6 +76,7 @@ import {
   $getEditorDOMRenderConfig,
   $getNodeByKey,
   $hasAncestor,
+  $isKeyInSelectionNodes,
   $isRootOrShadowRoot,
   $maybeMoveChildrenSelectionToParent,
   $setCompositionKey,
@@ -1313,11 +1314,9 @@ export class LexicalNode {
       return false;
     }
 
-    const isSelected = targetSelection
-      .getNodes()
-      .some(n => n.__key === this.__key);
+    const isSelected = $isKeyInSelectionNodes(targetSelection, this.__key);
 
-    if ($isTextNode(this)) {
+    if (!isSelected || $isTextNode(this)) {
       return isSelected;
     }
     // For inline images inside of element nodes.

@@ -5660,8 +5660,11 @@ export class YBinding {
         const last = node.getLastChild();
         if (last === null) {
           // An empty line: at its marker, which is also where a point at the
-          // end of a line with text can be stored, so the position is
-          // recorded as one in an empty line (see emptyLinePositions).
+          // end of a line with text can be stored, so a caret or a range's
+          // end edge (preferLeft) is recorded as one in an empty line (see
+          // emptyLinePositions). A range's start edge is not: moved before
+          // what a collaborator types into the line, it would grow the range
+          // over their text.
           const unit = state.unitByKey.get(node.getKey());
           if (unit === undefined || unit.end === null) {
             return null;
@@ -5669,7 +5672,9 @@ export class YBinding {
           const json = relativePositionToJSON(
             new RelativePosition(null, null, unit.end.id, 0),
           );
-          emptyLinePositions.add(json);
+          if (preferLeft) {
+            emptyLinePositions.add(json);
+          }
           return json;
         }
         target = last;
@@ -6013,8 +6018,8 @@ export class YBinding {
 }
 
 /**
- * The positions this binding captured in an empty line (see
- * $relativePosition): at the line's marker, with the right association.
+ * The carets and range end edges this binding captured in an empty line
+ * (see $relativePosition): at the line's marker, with the right association.
  * Such a position resolves to the start of that line, not to the marker,
  * so a caret that was after no text in its line stays after none when a
  * collaborator types there (as a caret after text stays after that text).

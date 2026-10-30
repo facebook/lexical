@@ -160,6 +160,80 @@ describe('a collaborator types into the empty line holding my caret', () => {
     }
   });
 
+  test.each([
+    ['forward, its anchor', false],
+    ['backward, its focus', true],
+  ])(
+    'a range starting in the empty line (%s there) does not grow over their word',
+    async (_name, backward) => {
+      for (const ids of IDS) {
+        const t = await setup(
+          () =>
+            $getRoot().append(
+              $createParagraphNode().append($createTextNode('Hello')),
+              $createParagraphNode(),
+              $createParagraphNode().append($createTextNode('World')),
+            ),
+          {ids},
+        );
+        t.b.update(() => {
+          const empty = $block([1]) as ElementNode;
+          const world = $block([2]).getFirstChildOrThrow() as TextNode;
+          if (backward) {
+            world.select(5, 5).focus.set(empty.getKey(), 0, 'element');
+          } else {
+            empty.select(0, 0).focus.set(world.getKey(), 5, 'text');
+          }
+        });
+        t.a.update(() => void ($block([1]) as ElementNode).select(0, 0));
+        for (const ch of ['x', 'y']) {
+          t.a.update(() => $getSelection()!.insertText(ch));
+          await flush();
+        }
+        await t.sync();
+        await expectConverged(t.peers);
+        expect(t.b.read($selectedText)).toBe('\nWorld');
+        // A delete of the range leaves their word.
+        t.b.update(() => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.removeText();
+          }
+        });
+        await t.sync();
+        await expectConverged(t.peers);
+        expect(t.a.read(() => $getRoot().getTextContent())).toBe('Hello\n\nxy');
+      }
+    },
+  );
+
+  test('select all with an empty first line does not grow over their word', async () => {
+    for (const ids of IDS) {
+      const t = await setup(
+        () =>
+          $getRoot().append(
+            $createParagraphNode(),
+            $createParagraphNode().append($createTextNode('World')),
+          ),
+        {ids},
+      );
+      t.b.update(() => {
+        const world = $block([1]).getFirstChildOrThrow() as TextNode;
+        ($block([0]) as ElementNode)
+          .select(0, 0)
+          .focus.set(world.getKey(), 5, 'text');
+      });
+      t.a.update(() => void ($block([0]) as ElementNode).select(0, 0));
+      for (const ch of ['x', 'y']) {
+        t.a.update(() => $getSelection()!.insertText(ch));
+        await flush();
+      }
+      await t.sync();
+      await expectConverged(t.peers);
+      expect(t.b.read($selectedText)).toBe('\nWorld');
+    }
+  });
+
   // A point at the end of a line with text can be stored at the line's
   // marker too (an element point, the start of a forward range or the end of
   // a backward one): it stays at that line's end.

@@ -19,12 +19,17 @@
 // peer A's editor ended with a row that has no cells, while A's own document
 // (read by a fresh v2 peer) and peers B and C have two cells in that row.
 
+import {$createCodeHighlightNode, CodeHighlightNode} from '@lexical/code';
 import {buildEditorFromExtensions} from '@lexical/extension';
+import {$createHashtagNode, HashtagNode} from '@lexical/hashtag';
+import {$createLinkNode, LinkNode} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
   ListExtension,
 } from '@lexical/list';
+import {$createMarkNode, MarkNode} from '@lexical/mark';
+import {$createQuoteNode, RichTextExtension} from '@lexical/rich-text';
 import {
   $createTableCellNode,
   $createTableNode,
@@ -46,21 +51,28 @@ import {
   syncYjsChangesToLexicalV2__EXPERIMENTAL,
 } from '@lexical/yjs';
 import {
+  $create,
+  $createLineBreakNode,
   $createParagraphNode,
   $createRangeSelection,
+  $createTabNode,
   $createTextNode,
   $getRoot,
   $getSelection,
+  $getSlot,
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
   $setSelection,
+  $setSlot,
+  DecoratorNode,
   type LexicalEditor,
   type LexicalNode,
+  ParagraphNode,
   SKIP_COLLAB_TAG,
   type TextNode,
 } from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {describe, expect, onTestFinished, test} from 'vitest';
 import {
   applyUpdate,
   Doc,
@@ -87,9 +99,35 @@ const provider = {
 
 type Message = {from: Peer; to: Peer; update: Uint8Array};
 
+/** A paragraph with a named slot (a slot host). */
+class SlottedNode extends ParagraphNode {
+  $config() {
+    return this.config('v2-equal-slotted', {
+      extends: ParagraphNode,
+      slots: ['title'],
+    });
+  }
+}
+
+/** A decorator with no content. */
+class LeafNode extends DecoratorNode<null> {
+  $config() {
+    return this.config('v2-equal-leaf', {extends: DecoratorNode});
+  }
+  createDOM() {
+    return document.createElement('span');
+  }
+  updateDOM() {
+    return false;
+  }
+  decorate() {
+    return null;
+  }
+}
+
 class Peer {
-  readonly doc = new Doc({gc: false});
-  readonly editor: LexicalEditor;
+  readonly doc: Doc;
+  readonly editor: LexicalEditor & {dispose: () => void};
   readonly binding: BindingV2;
 
   constructor(
@@ -97,12 +135,22 @@ class Peer {
     clientID: number,
     queue: Message[] | null,
     peers: Peer[],
+    gc = false,
   ) {
+    this.doc = new Doc({gc});
     this.doc.clientID = clientID;
     this.editor = buildEditorFromExtensions({
       $initialEditorState: null,
-      dependencies: [ListExtension, TableExtension],
+      dependencies: [ListExtension, TableExtension, RichTextExtension],
       name: `[v2-table-${name}]`,
+      nodes: () => [
+        LinkNode,
+        MarkNode,
+        HashtagNode,
+        CodeHighlightNode,
+        SlottedNode,
+        LeafNode,
+      ],
       onError: e => {
         throw e;
       },
@@ -179,6 +227,17 @@ class Peer {
     for (let i = 0; i < 20 && this.editor._pendingEditorState !== null; i++) {
       this.editor.read(() => {});
     }
+  }
+
+  /** The editor's whole state, as JSON. */
+  json(): unknown {
+    this.flush();
+    return this.editor.getEditorState().toJSON();
+  }
+
+  dispose() {
+    this.editor.dispose();
+    this.doc.destroy();
   }
 
   /** Cells per row of the table. */
@@ -325,6 +384,8 @@ test('v2 peers: every editor shows what its own document holds after concurrent 
   for (const [i, name] of ['A', 'B', 'C'].entries()) {
     peers.push(new Peer(name, 1000 + i, queue, peers));
   }
+  const fresh = new Peer('F', 2000, null, []);
+  onTestFinished(() => [...peers, fresh].forEach(p => p.dispose()));
   const byName = (name: string) => peers.find(p => p.name === name)!;
   const deliver = ([from, to]: [string, string]) => {
     const i = queue.findIndex(m => m.from.name === from && m.to.name === to);
@@ -356,20 +417,14 @@ test('v2 peers: every editor shows what its own document holds after concurrent 
     deliver(pair);
   }
   expect(queue.length).toBe(0);
-  const fresh = new Peer('F', 2000, null, []);
   fresh.apply(encodeStateAsUpdate(byName('A').doc));
-  // main e28f4dd: A shows [2,3,4,3,4,0,2,4]; A's document, B and C [2,3,4,3,4,2,2,4].
-  expect({
-    A: byName('A').rows(),
-    B: byName('B').rows(),
-    C: byName('C').rows(),
-    freshReaderOfA: fresh.rows(),
-  }).toEqual({
-    A: fresh.rows(),
-    B: fresh.rows(),
-    C: fresh.rows(),
-    freshReaderOfA: fresh.rows(),
-  });
+  // Before the fix, cells per row: A shows [2,3,4,3,4,0,2,4]; A's document,
+  // B and C [2,3,4,3,4,2,2,4].
+  expect(byName('A').rows()).toEqual(fresh.rows());
+  // Every editor's whole state is what a fresh reader of the document shows.
+  expect(byName('A').json()).toEqual(fresh.json());
+  expect(byName('B').json()).toEqual(fresh.json());
+  expect(byName('C').json()).toEqual(fresh.json());
 });
 
 /** A deterministic PRNG (mulberry32), so each seed replays the same run. */
@@ -420,6 +475,8 @@ describe('v2 peers editing a table whose rows are equal', () => {
       for (const [i, name] of ['A', 'B', 'C'].entries()) {
         peers.push(new Peer(name, 1000 + i, queue, peers));
       }
+      const fresh = new Peer('F', 2000, null, []);
+      onTestFinished(() => [...peers, fresh].forEach(p => p.dispose()));
       peers[0].update($buildEmpty);
       while (queue.length > 0) {
         const m = queue.shift()!;
@@ -457,13 +514,133 @@ describe('v2 peers editing a table whose rows are equal', () => {
       while (queue.length > 0) {
         deliverOne();
       }
-      const fresh = new Peer('F', 2000, null, []);
       fresh.apply(encodeStateAsUpdate(peers[0].doc));
-      expect({
-        A: peers[0].rows(),
-        B: peers[1].rows(),
-        C: peers[2].rows(),
-      }).toEqual({A: fresh.rows(), B: fresh.rows(), C: fresh.rows()});
+      for (const p of peers) {
+        expect(p.json()).toEqual(fresh.json());
+      }
     },
   );
+});
+
+// Equal subtrees elsewhere: two equal blocks (of each shape) swapped, with
+// the lines around them changed or not (the left, right and middle loops of
+// the matching), then a peer edits the first: every editor shows the same
+// whole state as a fresh reader of the document.
+const SHAPES = {
+  decorator: () => $create(LeafNode),
+  'inline mix': () =>
+    $createParagraphNode().append(
+      $createTextNode('x'),
+      $createLinkNode('https://example.com').append($createTextNode('link')),
+      $createMarkNode(['c1']).append($createTextNode('marked')),
+      $createLineBreakNode(),
+      $createTextNode('tail'),
+    ),
+  list: () =>
+    $createListNode('bullet').append(
+      $createListItemNode().append($createTextNode('x')),
+    ),
+  'nested list': () =>
+    $createListNode('number', 3).append(
+      $createListItemNode().append($createTextNode('x')),
+      $createListItemNode().append(
+        $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('y')),
+        ),
+      ),
+    ),
+  paragraph: () => $p('x'),
+  quote: () => $createQuoteNode().append($p('x')),
+  'slot host': () => {
+    const node = $create(SlottedNode).append($createTextNode('x'));
+    $setSlot(node, 'title', $p('title'));
+    return node;
+  },
+  table: () =>
+    $createTableNode().append(
+      $createTableRowNode().append(
+        $createTableCellNode().append($p('x')),
+        $createTableCellNode().append($p('y')),
+      ),
+    ),
+  'text runs': () =>
+    $createParagraphNode().append(
+      $createTextNode('x'),
+      $createTextNode('b').setFormat('bold'),
+      $createTabNode(),
+      $createHashtagNode('#tag'),
+      $createCodeHighlightNode('code', 'keyword'),
+    ),
+};
+
+describe('v2 peers: an equal block swapped with another', () => {
+  for (const [shape, $shape] of Object.entries(SHAPES)) {
+    for (const route of ['left', 'right', 'middle'] as const) {
+      for (const ids of [
+        [11, 22],
+        [22, 11],
+      ]) {
+        for (const gc of [false, true]) {
+          test(`${shape}, lines changed: ${route}, client ids ${ids.join('/')}, gc ${gc ? 'on' : 'off'}`, () => {
+            const a = new Peer('A', ids[0], null, [], gc);
+            const b = new Peer('B', ids[1], null, [], gc);
+            const fresh = new Peer('F', 99, null, [], gc);
+            onTestFinished(() => [a, b, fresh].forEach(p => p.dispose()));
+            const sync = (to: Peer, from: Peer) =>
+              to.apply(encodeStateAsUpdate(from.doc));
+            a.update(() => {
+              $getRoot()
+                .clear()
+                .append(
+                  $p('lead'),
+                  $shape(),
+                  $p('separator'),
+                  $shape(),
+                  $p('tail'),
+                );
+            });
+            sync(b, a);
+            expect(b.json()).toEqual(a.json());
+            // A swaps the two equal blocks (and changes the lines around
+            // them, so that the matching reaches them from the right or in
+            // the middle).
+            a.update(() => {
+              const [lead, x, mid, y, tail] = $getRoot().getChildren();
+              $getRoot().clear().append(lead, y, mid, x, tail);
+              if (route !== 'left' && $isElementNode(lead)) {
+                lead.getAllTextNodes()[0].setTextContent('changed lead');
+              }
+              if (route === 'middle' && $isElementNode(tail)) {
+                tail.getAllTextNodes()[0].setTextContent('changed tail');
+              }
+            });
+            sync(b, a);
+            // B edits the first of them.
+            b.update(() => {
+              const node = $getRoot().getChildAtIndex(1)!;
+              if (!$isElementNode(node)) {
+                node.replace($p('R'));
+                return;
+              }
+              const text = node.getAllTextNodes()[0];
+              if (text === undefined) {
+                // (A decorator, held by the paragraph made around it.)
+                node.getFirstChildOrThrow().replace($createTextNode('R'));
+                return;
+              }
+              text.setTextContent(text.getTextContent() + 'R');
+              const title = $getSlot(node, 'title');
+              if ($isElementNode(title)) {
+                title.getAllTextNodes()[0].setTextContent('titleR');
+              }
+            });
+            sync(a, b);
+            sync(fresh, a);
+            expect(a.json()).toEqual(b.json());
+            expect(a.json()).toEqual(fresh.json());
+          });
+        }
+      }
+    }
+  }
 });

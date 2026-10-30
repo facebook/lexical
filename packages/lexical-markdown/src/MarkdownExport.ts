@@ -696,6 +696,7 @@ function rawPiece(value: string): MarkdownPiece {
   return {kind: 'raw', value};
 }
 
+// A loop rather than `push(...pieces)`, whose argument count is limited.
 function appendPieces(output: MarkdownPiece[], pieces: MarkdownPiece[]) {
   for (const piece of pieces) {
     output.push(piece);
@@ -816,15 +817,14 @@ function decideReferences(
     }
     // Markers of one character form one delimiter run, and only the first
     // and the last delimiter run touch text.
-    const groups: {closes: boolean; opens: boolean; value: string}[] = [];
+    const groups: {char: string; closes: boolean; opens: boolean}[] = [];
     for (let i = start; i <= end; i++) {
       const {kind, value} = merged[i];
       let group = groups[groups.length - 1];
-      if (!group || group.value[0] !== value[0]) {
-        group = {closes: false, opens: false, value: ''};
+      if (!group || group.char !== value[0]) {
+        group = {char: value[0], closes: false, opens: false};
         groups.push(group);
       }
-      group.value += value;
       group.opens ||= kind === 'opener';
       group.closes ||= kind === 'closer';
     }
@@ -837,9 +837,9 @@ function decideReferences(
     }
     runs.push({
       after: end + 1,
-      afterFirst: last > 0 ? groups[1].value[0] : undefined,
+      afterFirst: last > 0 ? groups[1].char : undefined,
       before: start - 1,
-      beforeLast: last > 0 ? groups[last - 1].value.slice(-1) : undefined,
+      beforeLast: last > 0 ? groups[last - 1].char : undefined,
       closes: groups[last].closes,
       opens: groups[0].opens,
     });
@@ -849,8 +849,12 @@ function decideReferences(
     index >= 0 && index < merged.length && merged[index].kind === 'text';
   // A one-character piece written as a reference reads as punctuation at
   // both ends: `&#97;`.
+  const firstChars = merged.map(({value}) => characterAt(value, 0)!);
+  const lastChars = merged.map(
+    ({value}) => characterBefore(value, value.length)!,
+  );
   const isOneCharacter = (index: number) =>
-    characterAt(merged[index].value, 0)!.length === merged[index].value.length;
+    firstChars[index].length === merged[index].value.length;
   const isEncoded = (index: number) =>
     (encodeStart[index] || encodeEnd[index]) && isOneCharacter(index);
   const startChar = (index: number) =>
@@ -858,31 +862,31 @@ function decideReferences(
       ? undefined
       : encodeStart[index] || isEncoded(index)
         ? '&'
-        : characterAt(merged[index].value, 0);
+        : firstChars[index];
   const endChar = (index: number) =>
     index < 0
       ? undefined
       : encodeEnd[index] || isEncoded(index)
         ? ';'
-        : characterBefore(merged[index].value, merged[index].value.length);
+        : lastChars[index];
   // Writing a one-character piece as a reference makes its other edge
   // punctuation too. That can stop the delimiter run touching that edge from
   // flanking unless the piece past it is written as a reference as well, and
   // so on along a chain of one-character pieces. Where the chain ends at
   // something that cannot be (raw output, say), writing the first reference
   // would only trade one lost format for another, so it is not written.
-  // References only turn letters into punctuation, which never stops a run
-  // from flanking, so an answer found for a piece holds from then on, and
-  // each piece is walked at most twice (once in each direction).
-  const blocked: boolean[][] = [[], []];
-  const spreads: boolean[][] = [[], []];
+  // Each piece's answer is remembered for each direction, so each piece is
+  // walked at most twice. Raw output and unreferenceable characters stay
+  // what they are, and other references only make edges punctuation, so a
+  // remembered answer can only go stale toward writing fewer references.
+  const spreads: (boolean | undefined)[][] = [[], []];
   const canSpread = (index: number, leftward: boolean): boolean => {
     const side = leftward ? 0 : 1;
     const visited: number[] = [];
     let result = true;
     for (let piece = index; ; ) {
-      if (blocked[side][piece] || spreads[side][piece]) {
-        result = !blocked[side][piece];
+      if (spreads[side][piece] !== undefined) {
+        result = spreads[side][piece]!;
         break;
       }
       visited.push(piece);
@@ -910,7 +914,7 @@ function decideReferences(
       piece = next;
     }
     for (const piece of visited) {
-      (result ? spreads : blocked)[side][piece] = true;
+      spreads[side][piece] = result;
     }
     return result;
   };

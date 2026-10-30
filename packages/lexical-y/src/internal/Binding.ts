@@ -2902,7 +2902,7 @@ export class YBinding {
    */
   private $composedCharacter(
     cursor: YCursor | null,
-  ): {client: number; clock: number} | null {
+  ): {client: number; clock: number; offset: number} | null {
     const key = this._editor._compositionKey;
     const selection = $getSelection();
     if (
@@ -2917,7 +2917,13 @@ export class YBinding {
       return null;
     }
     const rel = createRelativePositionFromJSON(cursor.anchor);
-    return rel.assoc < 0 ? rel.item : null;
+    return rel.assoc < 0 && rel.item !== null
+      ? {
+          client: rel.item.client,
+          clock: rel.item.clock,
+          offset: selection.anchor.offset,
+        }
+      : null;
   }
 
   /**

@@ -149,8 +149,11 @@ type Piece = (
       tattrs: Attrs;
       tsig: string;
       wrappers: WrapperValue[];
-      /** Its text holds the composition's character (see composedAt). */
-      caret?: boolean;
+      /**
+       * Where in its text the composition's character is (see composedAt),
+       * when it holds it.
+       */
+      caretAt?: number;
       /** This text is the node being composed (see $readInline). */
       composed?: boolean;
     }
@@ -268,6 +271,9 @@ function parseRange(
   return {after: current, parsed};
 }
 
+/** Whether UTF-16 code unit `c` is the second half of a surrogate pair. */
+const isLowSurrogate = (c: number): boolean => c >= 0xdc00 && c <= 0xdfff;
+
 export class Reader {
   /**
    * The fields this editor owns in the value of a format wrapper (see
@@ -300,7 +306,7 @@ export class Reader {
    * its text, it keeps it for the text holding that character (see
    * $readInline).
    */
-  composedAt: {client: number; clock: number} | null = null;
+  composedAt: {client: number; clock: number; offset: number} | null = null;
   /**
    * The values attributes `keys` of marker `y` had before the change read
    * (set by the binding, see Hidden#marker).
@@ -2239,6 +2245,7 @@ export class Reader {
           }
           for (const run of tabRuns(part, tattrs!, tsig)) {
             const holds = caret >= pos && caret < pos + run.text.length;
+            const inRun = caret - pos;
             pos += run.text.length;
             const last = pieces[pieces.length - 1];
             if (
@@ -2248,11 +2255,13 @@ export class Reader {
               !isTabText(run.tattrs) &&
               sameWrappers(last.wrappers, wrappers)
             ) {
+              if (holds) {
+                last.caretAt = last.text.length + inRun;
+              }
               last.text += run.text;
-              last.caret = last.caret === true || holds;
             } else {
               pieces.push({
-                caret: holds,
+                ...(holds ? {caretAt: inRun} : {}),
                 item: it,
                 kind: 'text',
                 tattrs: run.tattrs,
@@ -2429,36 +2438,71 @@ export class Reader {
       const sameType = (piece: Piece): piece is Piece & {kind: 'text'} =>
         piece.kind === 'text' &&
         (piece.tattrs[TYPE_KEY] ?? 'text') === composed.getType();
+      // Where the composition's character is known (see composedAt), the
+      // node is the text around that character, with as many characters
+      // before and after it as the node had: the browser goes on composing
+      // at its offset in the node's DOM text, which stays right after that
+      // character. Another occurrence of the node's text elsewhere holds
+      // other characters (a collaborator's text, typed at the same place at
+      // the same time, that came in before the composition's own) and is
+      // not the node. Otherwise the node is the first occurrence of its
+      // text.
+      const caretAt = this.composedAt;
+      const anchor =
+        caretAt === null
+          ? -1
+          : pieces.findIndex(
+              piece => sameType(piece) && piece.caretAt !== undefined,
+            );
       for (let k = 0; ct !== '' && k < pieces.length; k++) {
         const piece = pieces[k];
-        if (!sameType(piece)) {
+        if (!sameType(piece) || (anchor >= 0 && k !== anchor)) {
           continue;
         }
-        const at = piece.text.indexOf(ct);
-        if (at < 0) {
-          continue;
+        const text = piece.text;
+        let at: number;
+        let end: number;
+        if (anchor >= 0) {
+          const from = piece.caretAt! - (caretAt!.offset - 1);
+          at = Math.max(0, from);
+          end = Math.min(text.length, from + ct.length);
+          // Never between the halves of a surrogate pair: where the start
+          // would be, the node starts before the pair, and the browser's
+          // offset then falls one unit before the character (a collaborator
+          // put an astral character just there)
+          if (at > 0 && isLowSurrogate(text.charCodeAt(at))) {
+            at--;
+          }
+          if (end < text.length && isLowSurrogate(text.charCodeAt(end))) {
+            end++;
+          }
+        } else {
+          at = text.indexOf(ct);
+          if (at < 0) {
+            continue;
+          }
+          end = at + ct.length;
+        }
+        if (typeof piece.tattrs[SEGMENT_KEY] === 'string') {
+          // A node kept apart from its neighbours (its run has a segment
+          // key) is never split around the composition: its parts would be
+          // nodes of one segment that Lexical does not merge when the
+          // composition ends, and the editor would keep two nodes where the
+          // document holds one. The composed node is the whole run.
+          at = 0;
+          end = text.length;
         }
         const parts: Piece[] = [];
         if (at > 0) {
-          parts.push({...piece, text: piece.text.slice(0, at)});
+          parts.push({...piece, text: text.slice(0, at)});
         }
-        parts.push({...piece, composed: true, text: ct});
-        if (at + ct.length < piece.text.length) {
-          parts.push({...piece, text: piece.text.slice(at + ct.length)});
+        parts.push({...piece, composed: true, text: text.slice(at, end)});
+        if (end < text.length) {
+          parts.push({...piece, text: text.slice(end)});
         }
         pieces.splice(k, 1, ...parts);
         composedPlaced = true;
         break;
-      }
-      // Its text is not there whole (a collaborator deleted part of it, or
-      // put an inline node in it): it keeps its key for the text that holds
-      // the composition, so the browser goes on composing in its DOM node.
-      for (let k = 0; !composedPlaced && k < pieces.length; k++) {
-        const piece = pieces[k];
-        if (sameType(piece) && piece.caret === true) {
-          pieces[k] = {...piece, composed: true};
-          composedPlaced = true;
-        }
       }
       // Kept for its piece: no other piece reuses it, by position or by its
       // segment (a code token split by NodeState shares one segment).

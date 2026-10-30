@@ -718,9 +718,11 @@ function isMarker(kind: PieceKind | undefined): boolean {
 }
 
 // Characters a URL, email or mention can hold: GFM ends an autolink at
-// whitespace or `<`. This takes in the backslash that escapes a marker too.
+// whitespace or `<`, and a URL's host and path may hold any other character.
+// This takes in the backslash that escapes a marker too.
+const LINK_END = /[\s\p{Cc}<]/u;
 function isLinkCharacter(character: string): boolean {
-  return character > ' ' && character <= '~' && character !== '<';
+  return !LINK_END.test(character);
 }
 // A URL or `www.` host in a run of link characters.
 // GFM starts one after `_` too.

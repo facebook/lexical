@@ -5146,6 +5146,10 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     ['xmpp:a@b.co/res', 'xmpp:a@b.co/res'],
     ['https://example.com/a|b', 'https://example.com/a|b'],
     ['x_www.example.co', 'x\\_www.example.co'],
+    ['https://example.com/\u00e9a', 'https://example.com/\u00e9a'],
+    ['https://\u4f8b\u3048.jp/a', 'https://\u4f8b\u3048.jp/a'],
+    ['www.\u4f8b\u3048.jp', 'www.\u4f8b\u3048.jp'],
+    ['https://example.com/a\u{1f600}b', 'https://example.com/a\u{1f600}b'],
   ])(
     'writes no reference inside %j, which readers may autolink',
     (link, markdown) => {

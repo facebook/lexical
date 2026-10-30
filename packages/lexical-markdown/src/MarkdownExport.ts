@@ -719,8 +719,8 @@ function isMarker(kind: PieceKind | undefined): boolean {
 
 // Characters a URL, email or mention can hold: GFM ends an autolink at
 // whitespace or `<`. This takes in the backslash that escapes a marker too.
-function isLinkCharacter(code: number): boolean {
-  return code > 0x20 && code < 0x7f && code !== 0x3c;
+function isLinkCharacter(character: string): boolean {
+  return character > ' ' && character <= '~' && character !== '<';
 }
 // A URL or `www.` host in a run of link characters.
 // GFM starts one after `_` too.
@@ -729,8 +729,8 @@ const LINK_URL =
 // Characters an email or mention can hold (word characters, `.+@-`, and the
 // backslash that escapes one), and what makes one.
 const ADDRESS_CHARACTER = /[\w.+@\\-]/;
-function isAddressCharacter(code: number): boolean {
-  return ADDRESS_CHARACTER.test(String.fromCharCode(code));
+function isAddressCharacter(character: string): boolean {
+  return ADDRESS_CHARACTER.test(character);
 }
 const ADDRESS = /@\w/;
 
@@ -793,7 +793,7 @@ function joinPieces({kinds, values}: MarkdownPieces): string {
     // text) would escape the reference or marker written after it.
     if (
       kinds[index] === TEXT &&
-      (end !== '' || isMarker(kinds[index + 1])) &&
+      isMarker(kinds[index + 1]) &&
       isEscaped(value, value.length)
     ) {
       value = value.slice(0, -1) + toCharacterReference('\\');
@@ -820,11 +820,11 @@ function findLinkEdges(kinds: PieceKind[], values: string[]): Uint8Array {
   const inLink = new Uint8Array(text.length);
   const runEnd = (
     start: number,
-    isPart: (code: number) => boolean,
+    isPart: (character: string) => boolean,
     limit: number,
   ) => {
     let end = start;
-    while (end < limit && isPart(text.charCodeAt(end))) {
+    while (end < limit && isPart(text[end])) {
       end++;
     }
     return end;

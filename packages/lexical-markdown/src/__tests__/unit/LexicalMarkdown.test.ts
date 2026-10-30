@@ -5302,6 +5302,42 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     ]);
   });
 
+  it.each([
+    [
+      '`c` *[a](b)*',
+      [
+        ['c', false],
+        [' ', false],
+        ['a', true],
+      ],
+    ],
+    [
+      '`c` x *[a](b) `d`*',
+      [
+        ['c', false],
+        [' x ', false],
+        ['a', true],
+        [' ', true],
+        ['d', true],
+      ],
+    ],
+  ] as [string, [string, boolean][]][])(
+    'keeps emphasis around a link after a code span in %j',
+    (markdown, runs) => {
+      const editor = createTestEditor();
+      editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
+        discrete: true,
+      });
+      expect(
+        editor.read('latest', () =>
+          $getRoot()
+            .getAllTextNodes()
+            .map(node => [node.getTextContent(), node.hasFormat('italic')]),
+        ),
+      ).toEqual(runs);
+    },
+  );
+
   it('keeps a link from taking part of a later code span', () => {
     const editor = createTestEditor();
     editor.update(

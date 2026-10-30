@@ -107,8 +107,13 @@ export function importTextTransformers(
       // match, which would take part of the span.
       foundTextMatch = null;
     } else if (foundTextFormat.isCodeSpan) {
-      // foundTextMatch wraps the code span - apply foundTextMatch
-      foundTextFormat = null;
+      // The text match goes first when it wraps the code span or ends before
+      // it; one after it waits for the span.
+      if (wraps(foundTextFormat) || endIndex <= foundTextFormat.startIndex) {
+        foundTextFormat = null;
+      } else {
+        foundTextMatch = null;
+      }
     } else if (
       // Find the outermost transformer
       (foundTextFormat.startIndex <= foundTextMatch.startIndex &&

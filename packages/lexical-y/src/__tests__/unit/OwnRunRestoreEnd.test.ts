@@ -15,6 +15,7 @@ import {ContentFormat} from '@y/y';
 import {
   $createTextNode,
   $getRoot,
+  $setSelection,
   type LexicalNode,
   type TextNode,
 } from 'lexical';
@@ -239,6 +240,40 @@ describe('@lexical/y a restore of a comment its own client opened', () => {
         expect(words(t.a)).toBe('aa Kilome[c1] cc dd');
       },
     );
+    test(`a later write's hole is not a run end with 64 comments on the run (ids ${ids})`, async () => {
+      // Each write puts a null and a restore per comment id: the hole is
+      // found however many keys its write has.
+      const t = await setup(
+        () => $getRoot().append($p('aa Kilometer bb cc'), $p('tail line')),
+        {ids, prepare},
+      );
+      const marks = Array.from({length: 64}, (_, i) => `m${i}`);
+      t.a.update(() => {
+        const selection = $selectIn([0], 3, 12);
+        for (const id of marks) {
+          $addMarkID(id, selection);
+        }
+      });
+      await t.sync();
+      t.b.update(() => $insertPlainAt(10, 'Y'));
+      await t.sync();
+      t.a.update(() => $insertPlainAt(6, 'X'));
+      await t.sync();
+      t.a.update(() => $insertPlainAt(9, 'Z'));
+      await t.sync();
+      t.b.update(() => $insertPlainAt(8, 'Q'));
+      await t.sync();
+      t.a.undo();
+      await t.sync();
+      await expectConverged(t.peers);
+      expect(
+        t.a.read(() =>
+          ($block([0]).getAllTextNodes() as TextNode[])
+            .map(n => `${n.getTextContent()}:${$getNodeMarkIDs(n).length}`)
+            .join('|'),
+        ),
+      ).toBe('aa :0|Kil:64|X:0|o:64|Q:0|met:64|Y:0|er:64| bb cc:0');
+    });
     for (const value of ['comment', 'bold'] as const) {
       test(`a later write's hole is not a run end (${value}, ids ${ids})`, async () => {
         // A's second write inside its own run ("Z") opens a hole with a
@@ -287,5 +322,35 @@ describe('@lexical/y a restore of a comment its own client opened', () => {
         );
       });
     }
+    // A unbolds part of its own bold run while B bolds text starting at the
+    // run's end: A's own-run null and B's opener share their origins, and
+    // with A's id higher Yjs puts the null between B's opener and its text,
+    // so " bb" ends plain for ids [2, 1] (main keeps it bold there). A
+    // documented limit, tracked in #9589.
+    (ids[0] === 2 ? test.fails : test)(
+      `keeps a collaborator's bold that starts where the author's bold ends (ids ${ids})`,
+      async () => {
+        const $bold = (from: number, to: number) => () => {
+          const selection = $selectIn([0], from, to);
+          selection.format = (
+            selection.anchor.getNode() as TextNode
+          ).getFormat();
+          selection.formatText('bold');
+          $setSelection(null);
+        };
+        const t = await setup(
+          () => $getRoot().append($p('aa Kilo bb cc'), $p('tail line')),
+          {ids, prepare},
+        );
+        t.a.update($bold(3, 7));
+        await t.sync();
+        t.offline();
+        t.a.update($bold(4, 6));
+        t.b.update($bold(7, 10));
+        await t.sync();
+        await expectConverged(t.peers);
+        expect(t.a.describe()).toContain('"o bb"{1}');
+      },
+    );
   }
 });

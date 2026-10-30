@@ -207,29 +207,39 @@ function isChangeEnd(doc: Doc, item: Item): boolean {
 
 /**
  * Whether null `item` opens a hole its client wrote in a run of `value`: the
- * next item of its key that its client made after it (in clock order, among
- * the next 64 structs) gives `value` back, with text of that client between
- * the two (one write's null, text and restore). Such a null ends no run, also
- * where changeEnd of an earlier restore of that client finds it (that
- * restore's own write ended its run at another client's item).
+ * next item of its key that its client made after it (in clock order) gives
+ * `value` back, with text of that client between the two (one write's null,
+ * text and restore). Such a null ends no run, also where changeEnd of an
+ * earlier restore of that client finds it (that restore's own write ended
+ * its run at another client's item). The scan covers that write's own
+ * structs only, however many keys it wrote (a range with many comment ids
+ * gets a null and a restore per id): format items, then the text, then
+ * format items up to the key's; text after that is a later write's.
  */
 function opensHole(doc: Doc, item: Item, value: unknown): boolean {
   const key = keyOf(item);
   const {client} = item.id;
   const end = doc.store.getClock(client);
   let clock = item.id.clock + item.length;
-  let text = false;
-  for (let steps = 0; clock < end && steps < 64; steps++) {
+  // 0: format items before the text; 1: the text; 2: format items after it.
+  let phase = 0;
+  while (clock < end) {
     const next = doc.store.getItem(createID(client, clock));
     if (!(next instanceof Item)) {
       return false;
     }
     if (next.content instanceof ContentFormat) {
       if (next.content.key === key) {
-        return text && equalFormatValue(next.content.value, value);
+        return phase > 0 && equalFormatValue(next.content.value, value);
+      }
+      if (phase === 1) {
+        phase = 2;
       }
     } else if (next.countable) {
-      text = true;
+      if (phase === 2) {
+        return false;
+      }
+      phase = 1;
     }
     clock = next.id.clock + next.length;
   }

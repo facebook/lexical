@@ -983,6 +983,8 @@ export function triggerListeners<T extends keyof MapListeners>(
     editor._updating = previouslyUpdating;
   }
   if (rethrown !== null) {
+    // A listener may have queued updates before the commit was interrupted.
+    scheduleMicroTask(() => $triggerEnqueuedUpdates(editor));
     throw rethrown.error;
   }
 }

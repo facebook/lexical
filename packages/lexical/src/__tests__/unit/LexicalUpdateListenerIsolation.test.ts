@@ -212,4 +212,58 @@ describe('update listener error isolation', () => {
     commit(editor, 'two');
     expect(cleanups).toBe(1);
   });
+
+  test.each([true, false])(
+    'queued updates run after a listener error, onError rethrows: %s',
+    async rethrows => {
+      const {editor, errors} = setup(rethrows);
+      const failure = new Error('listener bug');
+      editor.registerUpdateListener(({editorState}) => {
+        if (editorState.read(() => $getRoot().getTextContent()) === 'after') {
+          throw failure;
+        }
+      });
+      let queued = false;
+      let queuedCalls = 0;
+      editor.registerUpdateListener(({editorState}) => {
+        if (
+          !queued &&
+          editorState.read(() => $getRoot().getTextContent()) === 'after'
+        ) {
+          queued = true;
+          editor.update(
+            () => {
+              queuedCalls++;
+              ($getRoot().getFirstDescendant() as TextNode).setTextContent(
+                'queued',
+              );
+            },
+            {discrete: true},
+          );
+        }
+      });
+      let thrown: unknown;
+      try {
+        commit(editor, 'after');
+      } catch (error) {
+        thrown = error;
+      }
+      expect(thrown).toBe(failure);
+      expect(queuedCalls).toBe(0);
+      expect(editor._updating).toBe(false);
+
+      await Promise.resolve();
+      const text = editor.getEditorState().read(() => {
+        return $getRoot().getTextContent();
+      });
+      expect(text).toBe('queued');
+      expect(queuedCalls).toBe(1);
+      expect(editor._updates).toHaveLength(0);
+      expect(editor._pendingEditorState).toBe(null);
+      expect(editor._updating).toBe(false);
+      expect(errors).toEqual([]);
+      await Promise.resolve();
+      expect(queuedCalls).toBe(1);
+    },
+  );
 });

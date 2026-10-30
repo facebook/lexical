@@ -129,10 +129,8 @@ function isLowSurrogate(code: number): boolean {
 
 /** The character (code point) that starts at `index`, if any. */
 export function characterAt(text: string, index: number): string | undefined {
-  return isHighSurrogate(text.charCodeAt(index)) &&
-    isLowSurrogate(text.charCodeAt(index + 1))
-    ? text.slice(index, index + 2)
-    : text[index];
+  const code = text.codePointAt(index);
+  return code === undefined ? undefined : String.fromCodePoint(code);
 }
 
 /** The character (code point) that ends just before `index`, if any. */

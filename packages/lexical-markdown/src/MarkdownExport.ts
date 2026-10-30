@@ -726,7 +726,7 @@ const LINK_AT_START = /^(?:[a-z][\w+.-]*:\/\/|www\.)|^[\w.+-]*@\w/i;
 const UNREFERENCEABLE = /[\p{Cc}\p{Cs}\p{Noncharacter_Code_Point}]/u;
 
 /** Whether a character reference can stand in for `character` beside a marker. */
-function isWordCharacter(character: string | undefined): boolean {
+function isReferenceable(character: string | undefined): boolean {
   return (
     character !== undefined &&
     !isPunctuationOrSpace(character) &&
@@ -804,6 +804,39 @@ function joinPieces(pieces: MarkdownPieces): string {
 }
 
 /**
+ * Walks the delimiter run at the edge of the markers from `from` to `to`,
+ * forward when `step` is 1 and backward when it is -1. Returns whether a
+ * marker of `kind` is part of that run, and the character past it within the
+ * markers, if any.
+ */
+function scanDelimiterRun(
+  kinds: number[],
+  values: string[],
+  from: number,
+  to: number,
+  step: 1 | -1,
+  kind: number,
+): [boolean, string | undefined] {
+  const edge = values[from];
+  const delimiter = edge[step === 1 ? 0 : edge.length - 1];
+  let hasKind = false;
+  for (let i = from; i !== to + step; i += step) {
+    const value = values[i];
+    let c = step === 1 ? 0 : value.length - 1;
+    if (value[c] !== delimiter) {
+      return [hasKind, value[c]];
+    }
+    hasKind ||= kinds[i] === kind;
+    for (c += step; c >= 0 && c < value.length; c += step) {
+      if (value[c] !== delimiter) {
+        return [hasKind, value[c]];
+      }
+    }
+  }
+  return [hasKind, undefined];
+}
+
+/**
  * Marks the text pieces whose first or last character has to go out as a
  * reference for the marker run beside it to open or close.
  */
@@ -828,40 +861,22 @@ function decideReferences(
     }
     // Markers of one character form one delimiter run, and only the first
     // and the last delimiter run touch text.
-    const firstMarker = values[start][0];
-    let opens = false;
-    let afterFirst: string | undefined;
-    findAfterFirst: for (let i = start; i <= end; i++) {
-      const value = values[i];
-      if (value[0] !== firstMarker) {
-        afterFirst = value[0];
-        break;
-      }
-      opens ||= kinds[i] === OPENER;
-      for (let c = 1; c < value.length; c++) {
-        if (value[c] !== firstMarker) {
-          afterFirst = value[c];
-          break findAfterFirst;
-        }
-      }
-    }
-    const lastMarker = values[end][values[end].length - 1];
-    let closes = false;
-    let beforeLast: string | undefined;
-    findBeforeLast: for (let i = end; i >= start; i--) {
-      const value = values[i];
-      if (value[value.length - 1] !== lastMarker) {
-        beforeLast = value[value.length - 1];
-        break;
-      }
-      closes ||= kinds[i] === CLOSER;
-      for (let c = value.length - 2; c >= 0; c--) {
-        if (value[c] !== lastMarker) {
-          beforeLast = value[c];
-          break findBeforeLast;
-        }
-      }
-    }
+    const [opens, afterFirst] = scanDelimiterRun(
+      kinds,
+      values,
+      start,
+      end,
+      1,
+      OPENER,
+    );
+    const [closes, beforeLast] = scanDelimiterRun(
+      kinds,
+      values,
+      end,
+      start,
+      -1,
+      CLOSER,
+    );
     if (start > 0) {
       runAfter[start - 1] = runs.length;
     }
@@ -903,7 +918,7 @@ function decideReferences(
   // host, email or mention. A reference inside one would change what an
   // autolinking reader links to, so the format is lost there instead, as
   // before.
-  const isLinkish = (index: number, atEnd: boolean): boolean => {
+  const findsLink = (index: number, atEnd: boolean): boolean => {
     const value = values[index];
     let start = atEnd ? value.length : 0;
     let end = start;
@@ -922,13 +937,23 @@ function decideReferences(
       value.slice(start, end).replace(/\\/g, ''),
     );
   };
+  // `findsLink` for each piece edge, worked out once: 0 while unknown, then 1
+  // when it finds one and 2 when it does not.
+  const linkish = [new Uint8Array(count), new Uint8Array(count)];
+  const isLinkish = (index: number, atEnd: boolean): boolean => {
+    const side = atEnd ? 1 : 0;
+    if (linkish[side][index] === 0) {
+      linkish[side][index] = findsLink(index, atEnd) ? 1 : 2;
+    }
+    return linkish[side][index] === 1;
+  };
   // Whether the last (or first) character of the piece at `index` can go out
   // as a reference.
   const canReference = (index: number, atEnd: boolean): boolean =>
     index >= 0 &&
     index < count &&
     kinds[index] === TEXT &&
-    isWordCharacter(atEnd ? endChar(index) : startChar(index)) &&
+    isReferenceable(atEnd ? endChar(index) : startChar(index)) &&
     !isLinkish(index, atEnd);
   // Writing a one-character piece as a reference makes its other edge
   // punctuation too. That can stop the delimiter run touching that edge from

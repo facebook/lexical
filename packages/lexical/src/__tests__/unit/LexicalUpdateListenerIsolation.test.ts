@@ -197,21 +197,34 @@ describe('update listener error isolation', () => {
     expect(editor._updating).toBe(false);
   });
 
-  test('cleans up a listener that unregisters itself', () => {
-    const {editor} = setup();
-    let cleanups = 0;
-    let remove = () => {};
-    remove = editor.registerUpdateListener(() => {
-      remove();
-      return () => {
-        cleanups++;
-      };
-    });
+  test.each([1, 2])(
+    'cleans up a listener that unregisters itself on call %s',
+    unregisterOn => {
+      const {editor} = setup();
+      let cleanups = 0;
+      let calls = 0;
+      let remove = () => {};
+      remove = editor.registerUpdateListener(() => {
+        calls++;
+        if (calls === unregisterOn) {
+          remove();
+        }
+        return () => {
+          cleanups++;
+        };
+      });
 
-    commit(editor, 'one');
-    commit(editor, 'two');
-    expect(cleanups).toBe(1);
-  });
+      commit(editor, 'one');
+      expect(calls).toBe(1);
+      expect(cleanups).toBe(unregisterOn === 1 ? 1 : 0);
+      commit(editor, 'two');
+      expect(calls).toBe(unregisterOn);
+      expect(cleanups).toBe(unregisterOn);
+      commit(editor, 'three');
+      expect(calls).toBe(unregisterOn);
+      expect(cleanups).toBe(unregisterOn);
+    },
+  );
 
   test.each([true, false])(
     'queued updates run after a listener error, onError rethrows: %s',

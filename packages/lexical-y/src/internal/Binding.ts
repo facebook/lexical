@@ -23,6 +23,7 @@ import {
   type Doc,
   encodeStateAsUpdate,
   findIndexSS,
+  getItemCleanStart,
   Item,
   iterateStructsByIdSet,
   Node as YNode,
@@ -514,6 +515,36 @@ function recordSchema(
 }
 
 /**
+ * The live copy of `item` that undos and redos made (each redo of a deleted
+ * item makes a new one and points `redone` at it), found as Yjs's undo
+ * manager finds the item it deletes for an inserted item of a step: the end
+ * of the `redone` chain, cut to start at the clock `item` starts at.
+ */
+function followRedone(tr: Transaction, item: Item): Item | null {
+  const store = tr.doc.store;
+  let id = item.id;
+  let diff = 0;
+  let found: unknown = null;
+  for (;;) {
+    if (diff > 0) {
+      id = createID(id.client, id.clock + diff);
+    }
+    found = store.getItem(id);
+    if (!(found instanceof Item)) {
+      return null;
+    }
+    diff = id.clock - found.id.clock;
+    if (found.redone === null) {
+      break;
+    }
+    id = found.redone;
+  }
+  return diff > 0
+    ? getItemCleanStart(tr, createID(found.id.client, found.id.clock + diff))
+    : found;
+}
+
+/**
  * Whether format items `first` and `last` of one key are the run ends one
  * insert wrote around content of its own inserted into existing content
  * (see restateRunEnds): written by one client, with content between them
@@ -565,22 +596,72 @@ export function boundsOwnInsert(first: Item, last: Item): boolean {
   if (!equalFormatValue(before, value)) {
     return false;
   }
-  // Content of the insert between them, all of it deleted since: the run
-  // ends of an insert that is gone (deleted by hand, or undone).
-  let own = false;
+  // Content of the insert between them, live or deleted since (deleted by
+  // hand, or undone).
   for (let it = first.right; it !== null && it !== last; it = it.right) {
     if (
       it.countable &&
       !(it.content instanceof ContentFormat) &&
       ofInsert(it)
     ) {
-      if (!it.deleted) {
-        return false;
-      }
-      own = true;
+      return true;
     }
   }
-  return own;
+  return false;
+}
+
+/**
+ * Whether items of `key` give inline content a value that text typed next
+ * to it takes: not a node's type or segment, which belong to the node the
+ * segment key delimits.
+ */
+function isRunKey(key: string): boolean {
+  return key !== TYPE_KEY && key !== SEGMENT_KEY;
+}
+
+/**
+ * Those of format items `items` that sit inside a segment once the undo is
+ * done: the segment key in effect before one (from the items of that key
+ * that `remains`) is a segment, and is still in effect at the next content
+ * after it that remains. One walk per container.
+ */
+function insideSegments(
+  items: ReadonlySet<Item>,
+  remains: (it: Item) => boolean,
+): Item[] {
+  const inside: Item[] = [];
+  const parents = new Set<YNode>();
+  for (const it of items) {
+    parents.add(it.parent as YNode);
+  }
+  for (const parent of parents) {
+    let segment: unknown = null;
+    let open: [item: Item, segment: unknown][] = [];
+    for (let it = parent._start; it !== null; it = it.right) {
+      if (items.has(it)) {
+        open.push([it, segment]);
+      } else if (it.content instanceof ContentFormat) {
+        if (it.content.key === SEGMENT_KEY && remains(it)) {
+          const value = it.content.value;
+          for (const [item, at] of open) {
+            if (at !== null && equalFormatValue(value, at)) {
+              inside.push(item);
+            }
+          }
+          open = [];
+          segment = value;
+        }
+      } else if (it.countable && remains(it)) {
+        for (const [item, at] of open) {
+          if (at !== null) {
+            inside.push(item);
+          }
+        }
+        open = [];
+      }
+    }
+  }
+  return inside;
 }
 
 /**
@@ -602,8 +683,7 @@ export function boundsOwnInsert(first: Item, last: Item): boolean {
  * hand keeps them too (see Cursor#collapseGap): an undo now leaves the same
  * run ends there, collapsed the same way (see collapseUndone). A step's
  * items next to content it did not write (a format change's) are deleted as
- * before. A node's type and segment keys are left out: no writer puts
- * content inside another node's run, so nothing relies on them.
+ * before. A node's own keys are left out (see isRunKey).
  *
  * Per container and key, in each stretch between two items of the key the
  * undo leaves (that content's value before the step is the first's,
@@ -623,8 +703,7 @@ function neutralRunEnds(
     if (
       !it.deleted &&
       it.content instanceof ContentFormat &&
-      it.content.key !== TYPE_KEY &&
-      it.content.key !== SEGMENT_KEY
+      isRunKey(it.content.key)
     ) {
       pending.add(it);
     }
@@ -667,6 +746,11 @@ function neutralRunEnds(
         const next = store.getItem(id);
         if (!(next instanceof Item)) {
           continue;
+        }
+        // The copy of an item of the step that it deletes (see followRedone).
+        if (undoing.has(next)) {
+          found = true;
+          break;
         }
         const memo = reaches.get(next);
         if (memo === true) {
@@ -791,6 +875,7 @@ function neutralRunEnds(
       }
     }
     let shown = false;
+    const keep = new Set<Item>();
     for (let i = stretch.length - 1; i >= 0; i--) {
       const it = stretch[i];
       if (it === 'content') {
@@ -799,8 +884,28 @@ function neutralRunEnds(
         bounds(it) &&
         (!shown || equalFormatValue((it.content as ContentFormat).value, base))
       ) {
-        kept.add(it);
+        keep.add(it);
         shown = false;
+      }
+    }
+    // Not those that give the value the content there has without them
+    // (from `base` and the items kept before them): they change nothing
+    // now, and nothing relies on them, but where a concurrent change
+    // removes that value (a collaborator's undo of the run), they would
+    // give it back past the run's end, which that change removed too (the
+    // undo of a block moved into a collaborator's underlined lines kept an
+    // opener of the moved copy's underline, and the underline went on over
+    // the lines after them). Leaving one out changes no value: the content
+    // after it had its value from the left already.
+    let current = base;
+    for (const it of stretch) {
+      if (it === 'content' || !keep.has(it)) {
+        continue;
+      }
+      const {value} = it.content as ContentFormat;
+      if (!equalFormatValue(value, current)) {
+        kept.add(it);
+        current = value;
       }
     }
   }
@@ -844,6 +949,16 @@ function neutralRunEnds(
         break;
       }
     }
+  }
+  // Not those that would sit inside one non-mergeable text node (a token,
+  // segmented or code highlight node, whose segment key goes on across
+  // them): content there is that node's, which no one else's text joins,
+  // and the node's own segment key ends are not kept. Keeping one there
+  // split the node, and its state or mode then covered only part of it
+  // (an agent's format of one half took characters of an untouched word; a
+  // node's suggestion state was lost from part of a code word).
+  for (const it of insideSegments(kept, remains)) {
+    kept.delete(it);
   }
   return kept;
 }
@@ -1151,6 +1266,9 @@ export class YBinding {
   private undoing: Set<Item> | null = null;
   /** The run ends the running undo/redo keeps (see neutralRunEnds). */
   private keptRunEnds: Set<Item> | null = null;
+  /** The stack the running undo/redo pops from, and the step scanned. */
+  private scanSteps: UndoManager['undoStack'] | null = null;
+  private scannedStep: UndoManager['undoStack'][number] | null = null;
   /**
    * While an undo or redo runs, with what follows it (see applyUndo): the
    * step it took from its stack and the step it pushed to the other one, as
@@ -5263,6 +5381,7 @@ export class YBinding {
    * leave a malformed container).
    */
   private isKeptByUndo(item: Item): boolean {
+    this.followStep(item);
     if (this.keptRunEnds !== null && this.keptRunEnds.has(item)) {
       return true;
     }
@@ -5278,7 +5397,12 @@ export class YBinding {
           continue;
         }
         if (this.undoing.has(it)) {
-          if (it.deleted) {
+          // A run end of the step's own text it keeps (see neutralRunEnds)
+          // counts as one it deletes: that text is gone all the same.
+          if (
+            it.deleted ||
+            (this.keptRunEnds !== null && this.keptRunEnds.has(it))
+          ) {
             return true;
           }
         } else if (!it.deleted) {
@@ -5324,7 +5448,9 @@ export class YBinding {
 
   /**
    * Undo this client's last change in the document (collaborative undo).
-   * Returns whether there was one; false while the binding is not active.
+   * Returns whether there was one; false while the binding is not active,
+   * and when called during another undo or redo (from a listener of the
+   * undo manager or of the document while it runs), which does nothing.
    */
   undo(): boolean {
     return this.undoOrRedo(true);
@@ -5429,6 +5555,8 @@ export class YBinding {
       this.removing = null;
       this.undoing = null;
       this.keptRunEnds = null;
+      this.scanSteps = null;
+      this.scannedStep = null;
       this.stepCursor = null;
     }
   }
@@ -5482,9 +5610,12 @@ export class YBinding {
    * the content after it: an item of this client's own right after it ends
    * that, recorded on `step` (see unrestate). Invariant: content an undo or
    * redo does not touch keeps the value of the content before it, also past
-   * another write's run ends. Why: a word typed into a bold word, deleted
-   * (or its typing undone), then the bold undone, left the rest of the word
-   * bold for everyone.
+   * another write's run ends, whether that write's text is still there or
+   * gone. Why: a word typed into a bold word (and kept, deleted, or its
+   * typing undone), then the bold undone, left the rest of the word bold for
+   * everyone. A write this client has not seen when it undoes is not
+   * covered: the run ends an undo of that write keeps can give text a value
+   * this undo removed (see the Limits in y.md).
    */
   private restateRunEnds(step: UndoManager['undoStack'][number]): void {
     const doc = this._doc;
@@ -5683,68 +5814,65 @@ export class YBinding {
    */
   private collapseUndone(step: UndoManager['undoStack'][number]): void {
     const doc = this._doc;
-    // The deleted content of the step, by run of items without live content.
-    const runs = new Map<Item, [first: Item, last: Item]>();
+    // The deleted content of the step, by container.
+    const deleted = new Map<YNode, Set<Item>>();
     doc.transact(tr => {
       iterateStructsByIdSet(tr, step.deletes, s => {
         if (
-          !(s instanceof Item) ||
-          !s.deleted ||
-          !s.countable ||
-          s.content instanceof ContentFormat
+          s instanceof Item &&
+          s.deleted &&
+          s.countable &&
+          !(s.content instanceof ContentFormat)
         ) {
-          return;
-        }
-        let start: Item = s;
-        while (start.left !== null && !isLiveContent(start.left)) {
-          start = start.left;
-        }
-        const run = runs.get(start);
-        if (run === undefined) {
-          runs.set(start, [s, s]);
-        } else {
-          let first = run[0];
-          let last = run[1];
-          for (let it: Item | null = start; it !== null; it = it.right) {
-            if (it === s) {
-              if (first !== run[0] || it === first) {
-                break;
-              }
-              first = s;
-              break;
-            }
-            if (it === run[0]) {
-              break;
-            }
+          const parent = s.parent as YNode;
+          const set = deleted.get(parent);
+          if (set === undefined) {
+            deleted.set(parent, new Set([s]));
+          } else {
+            set.add(s);
           }
-          for (let it: Item | null = run[1]; it !== null; it = it.right) {
-            if (it === s) {
-              last = s;
-              break;
-            }
-            if (isLiveContent(it)) {
-              break;
-            }
-          }
-          runs.set(start, [first, last]);
         }
       });
     }, this.scanOrigin);
-    if (runs.size === 0) {
+    if (deleted.size === 0) {
       return;
     }
+    // Each container is walked once, left to right: the runs of items
+    // without live content that hold content of the step (the first and
+    // last such content of each, after the live content `left`, or from the
+    // container's start), then each run collapsed with the formats the
+    // walk has at its start. A walk per deleted item cost the length of
+    // its run each time: quadratic in a long run (the undo of a paste).
+    const runs = new Map<
+      YNode,
+      [left: Item | null, first: Item, last: Item][]
+    >();
+    for (const [parent, items] of deleted) {
+      const list: [Item | null, Item, Item][] = [];
+      let left: Item | null = null;
+      let open: [Item | null, Item, Item] | null = null;
+      for (let it = parent._start; it !== null; it = it.right) {
+        if (isLiveContent(it)) {
+          left = it;
+          open = null;
+        } else if (items.has(it)) {
+          if (open === null) {
+            open = [left, it, it];
+            list.push(open);
+          } else {
+            open[2] = it;
+          }
+        }
+      }
+      runs.set(parent, list);
+    }
     doc.transact(tr => {
-      for (const [start, [first, last]] of runs) {
-        const left = start.left;
-        const parent = start.parent as YNode;
+      for (const [parent, list] of runs) {
+        let next = 0;
         const formats: Formats = new Map();
-        for (
-          let it = parent._start;
-          it !== null && it !== start;
-          it = it.right
-        ) {
-          // What the cursor walks: the formats the editor shows (a format
-          // a composition holds back gives nothing a value there).
+        // What the cursor walks: the formats the editor shows (a format a
+        // composition holds back gives nothing a value there).
+        const walk = (it: Item) => {
           if (
             isShown(it, this.state.hidden) &&
             it.content instanceof ContentFormat
@@ -5756,18 +5884,36 @@ export class YBinding {
               formats.set(key, value);
             }
           }
+        };
+        const collapse = (left: Item | null, first: Item, last: Item) => {
+          const cursor = new Cursor(tr, parent, left, new Map(formats));
+          cursor.hidden = this.state.hidden;
+          // Only this client's own items: others' run ends there may be all
+          // a collaborator's text relies on once that collaborator's own
+          // items go (an undo of a link whose end made another link's end
+          // look redundant), and they are not what an undo here leaves
+          // behind.
+          cursor.collapsible = it => it.id.client === doc.clientID;
+          while (cursor.right !== null && cursor.left !== last) {
+            cursor.forward();
+          }
+          cursor.collapseDeleted(first, last);
+        };
+        if (next < list.length && list[next][0] === null) {
+          const [, first, last] = list[next++];
+          collapse(null, first, last);
         }
-        const cursor = new Cursor(tr, parent, left, formats);
-        cursor.hidden = this.state.hidden;
-        // Only this client's own items: others' run ends there may be all a
-        // collaborator's text relies on once that collaborator's own items go
-        // (an undo of a link whose end made another link's end look
-        // redundant), and they are not what an undo here leaves behind.
-        cursor.collapsible = it => it.id.client === doc.clientID;
-        while (cursor.right !== null && cursor.left !== last) {
-          cursor.forward();
+        for (
+          let it = parent._start;
+          it !== null && next < list.length;
+          it = it.right
+        ) {
+          walk(it);
+          if (list[next][0] === it) {
+            const [, first, last] = list[next++];
+            collapse(it, first, last);
+          }
         }
-        cursor.collapseDeleted(first, last);
       }
     }, this.runEndOrigin);
   }
@@ -5898,14 +6044,20 @@ export class YBinding {
    * (items), for the undo delete filter.
    */
   private scanStackItem(stack: UndoManager['undoStack']): void {
-    const top = stack[stack.length - 1];
     this.restoring = null;
     this.removing = null;
     this.undoing = null;
     this.keptRunEnds = null;
-    if (top === undefined) {
-      return;
+    this.scanSteps = stack.slice();
+    this.scannedStep = null;
+    const top = stack[stack.length - 1];
+    if (top !== undefined) {
+      this.useStep(top);
     }
+  }
+
+  /** Scan `step` (see scanStackItem) and make it the one the filter uses. */
+  private useStep(step: UndoManager['undoStack'][number]): void {
     const names = new Set<string>();
     const removing = new Set<Item>();
     const undoing = new Set<Item>();
@@ -5918,7 +6070,7 @@ export class YBinding {
       return name !== MARKER && name !== RUN_END;
     };
     this._doc.transact(tr => {
-      iterateStructsByIdSet(tr, top.deletes, s => {
+      iterateStructsByIdSet(tr, step.deletes, s => {
         if (s instanceof Item) {
           restored.add(s);
         }
@@ -5926,24 +6078,59 @@ export class YBinding {
           names.add(nameOf(s));
         }
       });
-      iterateStructsByIdSet(tr, top.inserts, s => {
+      iterateStructsByIdSet(tr, step.inserts, s => {
         if (s instanceof Item) {
           undoing.add(s);
+          // What the undo manager deletes for it: the copy an undo or redo
+          // since made of it (text typed, deleted, and the delete undone),
+          // as it finds it (followRedone in Yjs).
+          if (s.redone !== null) {
+            const copy = followRedone(tr, s);
+            if (copy !== null) {
+              undoing.add(copy);
+            }
+          }
         }
         if (isStored(s)) {
           removing.add(s);
         }
       });
     }, this.scanOrigin);
+    this.scannedStep = step;
     this.restoring = names;
     this.removing = removing;
     this.undoing = undoing;
     this.keptRunEnds = neutralRunEnds(
       undoing,
       restored,
-      top.inserts,
+      step.inserts,
       this._doc.store,
     );
+  }
+
+  /**
+   * Make the step the undo manager deletes `item` for the one the filter
+   * uses: Yjs skips a step that changes nothing (a collaborator deleted its
+   * text) and undoes the next one in the same call, so the step scanned
+   * first (the stack's top) is not always the one being undone.
+   */
+  private followStep(item: Item): void {
+    const steps = this.scanSteps;
+    if (
+      steps === null ||
+      this.undoing === null ||
+      this.undoing.has(item) ||
+      this.scannedStep === null
+    ) {
+      return;
+    }
+    const from = steps.indexOf(this.scannedStep);
+    for (let i = from - 1; i >= 0; i--) {
+      if (steps[i].inserts.hasId(item.id)) {
+        this.useStep(steps[i]);
+        return;
+      }
+    }
   }
 
   // -------------------------------------------------------------------------

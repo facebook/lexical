@@ -17,6 +17,7 @@
 // way). A delete of " mid" by hand kept them, as the undo now does.
 
 import {$addMarkID, $getNodeMarkIDs, $removeMarkID} from '@lexical/mark';
+import {$patchStyleText} from '@lexical/selection';
 import * as Y from '@y/y';
 import {
   $createParagraphNode,
@@ -693,9 +694,9 @@ describe('undo run ends, more orders of events', () => {
     const [opener, closer] = items(a.doc.clientID);
     expect(boundsOwnInsert(opener, closer)).toBe(false);
     // B's plain " x" in it: B's null and restore around B's own text, the
-    // run ends of an insert once that text is gone (not while it is there).
+    // run ends of an insert, while that text is there and once it is gone.
     const [bNull, bRestore] = items(b.doc.clientID);
-    expect(boundsOwnInsert(bNull, bRestore)).toBe(false);
+    expect(boundsOwnInsert(bNull, bRestore)).toBe(true);
     b.update(() => void $find(' x').remove());
     await t.sync();
     expect(boundsOwnInsert(bNull, bRestore)).toBe(true);
@@ -1101,4 +1102,450 @@ describe('undo run ends, more orders of events', () => {
       expect(t.a.read($show)).toBe('one two');
     },
   );
+});
+
+/** The text of the nodes with a format or a comment, in order. */
+const $annotated = () =>
+  $getRoot()
+    .getAllTextNodes()
+    .filter(n => n.getFormat() !== 0 || $getNodeMarkIDs(n).length !== 0)
+    .map(n => n.getTextContent())
+    .join('');
+
+const VALUES = ['bold', 'italic', 'underline', 'comment'] as const;
+
+/** A gives "one two" `value` (a format, or comment c1). */
+function $give(value: (typeof VALUES)[number]) {
+  const selection = $first().select(0, 7);
+  selection.format = 0;
+  if (value === 'comment') {
+    $addMarkID('c1', selection);
+  } else {
+    selection.formatText(value);
+  }
+}
+
+describe('run ends an undo kept, after changes made since', () => {
+  // A gives "one two" a value; F types plain " mid" after "one"; then,
+  // concurrently, F undoes its typing (keeping its null and the restore
+  // after " mid") while A undoes the value: the restore gave " two" the
+  // value for everyone, unless A's undo sees F's (see restateRunEnds; the
+  // concurrent case is a documented limit, below).
+  describe.each(VALUES)('%s', value => {
+    test.each(ORDERS)(
+      'F undoes " mid" while A undoes the value: none of it keeps the value, and a redo gives it back (ids %i %i %i)',
+      async (...ids) => {
+        const t = await setup(
+          () =>
+            $getRoot().append(
+              $createParagraphNode().append($createTextNode('one two')),
+            ),
+          {ids, prepare: prepareMarkState},
+        );
+        const [a, , f] = t.peers;
+        a.update(() => $give(value));
+        await t.sync();
+        f.update(() => {
+          const [one] = $first().splitText(3);
+          one.insertAfter($createTextNode(' mid'));
+        });
+        await t.sync();
+        t.offline();
+        f.undo();
+        a.undo();
+        await t.sync();
+        await expectConverged(t.peers);
+        expect(t.a.read(() => $getRoot().getTextContent())).toBe('one two');
+        expect(t.a.read($annotated)).toBe('');
+        a.binding.redo();
+        await t.sync();
+        await expectConverged(t.peers);
+        expect(t.a.read($annotated)).toBe('one two');
+      },
+    );
+  });
+
+  test.each(ORDERS)(
+    'with text a collaborator typed after the null: it stays plain, and a redo gives " two" its bold back (ids %i %i %i)',
+    async (...ids) => {
+      // E's " plain" relies on F's null: F ends the restore's bold with an
+      // item of its own instead, and deletes it again on A's redo.
+      const t = await setup(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('one two')),
+          ),
+        {ids},
+      );
+      const [a, e, f] = t.peers;
+      a.update(() => $give('bold'));
+      await t.sync();
+      f.update(() => {
+        const [one] = $first().splitText(3);
+        one.insertAfter($createTextNode(' mid'));
+      });
+      await t.sync();
+      e.update(() => void $find('one').insertAfter($createTextNode(' plain')));
+      await t.sync();
+      t.offline();
+      f.undo();
+      a.undo();
+      await t.sync();
+      await expectConverged(t.peers);
+      expect(t.a.read($show).replace(/\|/g, '')).toBe('one plain two');
+      a.binding.redo();
+      await t.sync();
+      await expectConverged(t.peers);
+      expect(t.a.read($show)).toBe('one*| plain| two*');
+    },
+  );
+
+  test.each(ORDERS)(
+    'type, delete, undo, undo: text typed after the null stays plain (ids %i %i %i)',
+    async (...ids) => {
+      // The second undo deletes the copy the first one made of " mid" (the
+      // undo manager follows `redone`): the run ends next to that copy are
+      // the step's own.
+      const t = await start(ids, 'bold');
+      const [, e, f] = t.peers;
+      f.update(() => {
+        const [one] = $first().splitText(3);
+        one.insertAfter($createTextNode(' mid'));
+      });
+      await t.sync();
+      f.update(() => $find(' mid').remove());
+      await t.sync();
+      f.undo();
+      await t.sync();
+      expect(t.a.read($show)).toBe('one*| mid| two*');
+      t.offline();
+      e.update(() => void $find('one').insertAfter($createTextNode(' plain')));
+      f.undo();
+      await t.sync();
+      await expectConverged(t.peers);
+      expect(t.a.read($show)).toBe('one*| plain| two*');
+    },
+  );
+
+  test.each(ORDERS)(
+    "the undo of a block moved into a collaborator's underline, while it undoes the underline (ids %i %i %i)",
+    async (...ids) => {
+      // D's move writes the block anew inside B's underline, with an opener
+      // of the block's own underline that gives the value B's run gives.
+      // D's undo kept that opener (it changed nothing then), and with B's
+      // concurrent undo it underlined "two" for everyone.
+      const t = await setup(
+        () => {
+          const xx = $createTextNode('xx');
+          xx.toggleFormat('underline');
+          $getRoot().append(
+            $createParagraphNode().append(xx, $createTextNode(' yy')),
+            $createParagraphNode().append($createTextNode('one')),
+            $createParagraphNode().append($createTextNode('two')),
+            $createParagraphNode().append($createTextNode('three')),
+          );
+        },
+        {ids},
+      );
+      const [, b, d] = t.peers;
+      b.update(() => {
+        const one = $line(1).getFirstChildOrThrow() as TextNode;
+        const two = $line(2).getFirstChildOrThrow() as TextNode;
+        const selection = one.select(0, 0);
+        selection.focus.set(two.getKey(), 3, 'text');
+        selection.formatText('underline');
+      });
+      await t.sync();
+      d.update(() => void $line(1).insertAfter($line(0)));
+      await t.sync();
+      t.offline();
+      b.undo();
+      d.undo();
+      await t.sync();
+      await expectConverged(t.peers);
+      const $underlined = () =>
+        $getRoot()
+          .getChildren()
+          .map(line =>
+            (line as ElementNode)
+              .getAllTextNodes()
+              .map(
+                n => n.getTextContent() + (n.hasFormat('underline') ? '_' : ''),
+              )
+              .join('|'),
+          )
+          .join(' / ');
+      expect(t.a.read($underlined)).toBe('xx_| yy / one / two / three');
+    },
+  );
+
+  test.each(ORDERS)(
+    'an undo ends its value past the restore of text it has seen, still there (ids %i %i %i)',
+    async (...ids) => {
+      // A bolds "one two"; F types plain " mid" inside, which A sees; A
+      // undoes the bold: F's restore gave " two" the bold back.
+      const t = await setup(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('one two')),
+          ),
+        {ids},
+      );
+      const [a, , f] = t.peers;
+      a.update(() => $give('bold'));
+      await t.sync();
+      f.update(() => {
+        const selection = $first().select(3, 3);
+        selection.format = 0;
+        selection.insertText(' mid');
+      });
+      await t.sync();
+      a.undo();
+      await t.sync();
+      await expectConverged(t.peers);
+      expect(t.a.read($show).replace(/\|/g, '')).toBe('one mid two');
+      a.binding.redo();
+      await t.sync();
+      await expectConverged(t.peers);
+      expect(t.a.read($show)).toBe('one*| mid| two*');
+    },
+  );
+
+  test('control: text typed inside the range as the undo runs, which the undo has not seen, keeps the restore (documented)', async () => {
+    // The concurrent case of the test above, a documented limit (y.md
+    // Limits, Undo): A's undo cannot end a restore it has not seen.
+    const t = await setup(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('one two')),
+        ),
+      {ids: [1, 2, 3]},
+    );
+    const [a, , f] = t.peers;
+    a.update(() => $give('bold'));
+    await t.sync();
+    t.offline();
+    f.update(() => {
+      const selection = $first().select(3, 3);
+      selection.format = 0;
+      selection.insertText(' mid');
+    });
+    a.undo();
+    await t.sync();
+    await expectConverged(t.peers);
+    expect(t.a.read($show)).toBe('one mid| two*');
+  });
+
+  test.each(ORDERS)(
+    'after the concurrent undos, a redo of the value and then of the typing gives " mid" back plain (ids %i %i %i)',
+    async (...ids) => {
+      // A bolds "one two"; F types plain " mid"; F undoes while A undoes the
+      // bold; then A redoes the bold, and F redoes " mid": " mid" comes back
+      // with the null and restore F's write gave it, plain inside the bold.
+      const t = await setup(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('one two')),
+          ),
+        {ids},
+      );
+      const [a, , f] = t.peers;
+      a.update(() => $give('bold'));
+      await t.sync();
+      f.update(() => {
+        const [one] = $first().splitText(3);
+        one.insertAfter($createTextNode(' mid'));
+      });
+      await t.sync();
+      t.offline();
+      f.undo();
+      a.undo();
+      await t.sync();
+      a.binding.redo();
+      await t.sync();
+      f.binding.redo();
+      await t.sync();
+      await expectConverged(t.peers);
+      expect(t.a.read($show)).toBe('one*| mid| two*');
+    },
+  );
+
+  test.fails.each([
+    [1, 2, 3],
+    [3, 2, 1],
+  ])(
+    'documented limit (#9593): F undoes " mid" while A concurrently undoes the bold, and " two" stays bold (ids %i %i %i)',
+    async (...ids) => {
+      // F's undo keeps its null and the restore after " mid" (text typed
+      // next to " mid" would rely on them); A's undo, which has not seen
+      // F's, removes the bold's opener and end, so the restore gives " two"
+      // bold for everyone. Settling it needs a write after both are seen,
+      // which no client may make while it applies an update.
+      const t = await setup(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('one two')),
+          ),
+        {ids},
+      );
+      const [a, , f] = t.peers;
+      a.update(() => $give('bold'));
+      await t.sync();
+      t.offline();
+      f.update(() => {
+        const [one] = $first().splitText(3);
+        one.insertAfter($createTextNode(' mid'));
+      });
+      f.undo();
+      a.undo();
+      await t.sync();
+      await expectConverged(t.peers);
+      expect(t.a.read($show)).toBe('one two');
+    },
+  );
+
+  test.each([
+    ['segmented', false, 1, 2, 3],
+    ['segmented', false, 3, 2, 1],
+    ['token', false, 1, 2, 3],
+    ['token', false, 3, 2, 1],
+    ['segmented', true, 1, 2, 3],
+    ['token', true, 3, 2, 1],
+  ] as const)(
+    'an undo of text put inside a %s text node leaves the node whole (commented: %s, ids %i %i %i)',
+    async (mode, commented, ...ids: number[]) => {
+      // A node's own keys (its segment, its mode) are not run ends an undo
+      // keeps: keeping the mode's end without the segment's split the node
+      // in two.
+      const t = await setup(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append(
+              $createTextNode('aa '),
+              $createTextNode('one two').setMode(mode),
+              $createTextNode(' bb'),
+            ),
+          ),
+        {ids, prepare: prepareMarkState},
+      );
+      if (commented) {
+        t.a.update(() => void $addMarkID('c1', $find('one two').select(0, 7)));
+        await t.sync();
+        for (const peer of t.peers) {
+          peer.binding.undoManager?.clear();
+        }
+      }
+      const shown = () =>
+        t.a.describe() +
+        t.a.read(() =>
+          $getRoot()
+            .getAllTextNodes()
+            .map(n => $getNodeMarkIDs(n).join(','))
+            .join('|'),
+        );
+      const before = shown();
+      const [, , f] = t.peers;
+      f.update(() => {
+        const node = $find('one two');
+        const [left] = node.splitText(5);
+        left.insertAfter($createTextNode('X'));
+      });
+      await t.sync();
+      f.undo();
+      await t.sync();
+      await expectConverged(t.peers);
+      expect(shown()).toBe(before);
+    },
+  );
+
+  test.each(ORDERS)(
+    'style: text typed after its null stays unstyled (ids %i %i %i)',
+    async (...ids) => {
+      // A text node's style is a run like a format: the undo keeps its run
+      // ends (a node's mode is not, see the segmented and token case).
+      const t = await setup(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('one two')),
+          ),
+        {ids},
+      );
+      t.a.update(() => $patchStyleText($first().select(0, 7), {color: 'red'}));
+      await t.sync();
+      for (const peer of t.peers) {
+        peer.binding.undoManager?.clear();
+      }
+      const [, e, f] = t.peers;
+      f.update(() => {
+        const [one] = $first().splitText(3);
+        one.insertAfter($createTextNode(' mid'));
+      });
+      await t.sync();
+      t.offline();
+      e.update(() => void $find('one').insertAfter($createTextNode(' plain')));
+      f.undo();
+      await t.sync();
+      await expectConverged(t.peers);
+      expect(
+        t.a.read(() =>
+          $getRoot()
+            .getAllTextNodes()
+            .map(n => n.getTextContent() + (n.getStyle() ? '{red}' : ''))
+            .join('|'),
+        ),
+      ).toBe('one{red}| plain| two{red}');
+    },
+  );
+
+  test('the undo of a long formatted paste walks its runs once', async () => {
+    // Item links read by the undo, the paste's length doubling each time:
+    // linear in it (a walk per deleted item was quadratic).
+    const walks: number[] = [];
+    for (const n of [200, 400, 800]) {
+      const t = await setup(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('seed')),
+          ),
+        {ids: [7, 8]},
+      );
+      t.a.update(() => {
+        const paragraph = $createParagraphNode();
+        for (let i = 0; i < n; i++) {
+          paragraph.append(
+            $createTextNode('word ').setFormat(i % 2 === 0 ? 'bold' : 0),
+          );
+        }
+        $getRoot().append(paragraph);
+      });
+      await t.sync();
+      let count = 0;
+      for (const structs of t.a.doc.store.clients.values()) {
+        for (const item of structs) {
+          if (!(item instanceof Y.Item)) {
+            continue;
+          }
+          for (const name of ['left', 'right'] as const) {
+            let link = item[name];
+            Object.defineProperty(item, name, {
+              configurable: true,
+              enumerable: true,
+              get() {
+                count++;
+                return link;
+              },
+              set(next) {
+                link = next;
+              },
+            });
+          }
+        }
+      }
+      t.a.undo();
+      expect(t.a.read(() => $getRoot().getTextContent())).toBe('seed');
+      walks.push(count);
+    }
+    expect(walks[1] / walks[0]).toBeLessThan(2.5);
+    expect(walks[2] / walks[1]).toBeLessThan(2.5);
+  });
 });

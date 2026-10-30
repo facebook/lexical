@@ -178,15 +178,17 @@ export interface MdastExtensionOutput {
    */
   $convertToMdast(node?: ElementNode): Root;
   /**
-   * Serializes only the selected content (defaulting to the current
-   * selection) to a Markdown string: leaves outside the selection are
-   * skipped, partially selected text nodes are sliced to the selected
-   * range, and elements are kept when they or any descendant are selected.
-   * Returns `''` for a null or collapsed selection. Must be called inside
-   * an `editor.read()` or `editor.update()`. The export runs under
+   * Serializes only the selected content (defaulting to the current selection)
+   * to a Markdown string: leaves outside the selection are skipped, partially
+   * selected text nodes are sliced to the selected range, and elements are
+   * kept when they or any descendant are selected (export rules may write
+   * less: a GFM table writes a text or node selection within one of its cells
+   * as that cell's blocks, as copying in a cell does). Returns `''` for a null
+   * or collapsed selection. Must be called inside an `editor.read()` or
+   * `editor.update()`. The export runs under
    * {@link RenderContextMarkdownSelection} carrying the selection, so
-   * contributed export rules and to-markdown handlers can scope their
-   * output to a selection export.
+   * contributed export rules and to-markdown handlers can scope their output
+   * to a selection export.
    */
   $convertSelectionToMarkdownString(selection?: BaseSelection | null): string;
   /**

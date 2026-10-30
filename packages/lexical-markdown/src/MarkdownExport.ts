@@ -13,11 +13,13 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
+  $isRangeSelection,
   $isTextNode,
   type BaseSelection,
   type ElementNode,
   type LexicalNode,
   type LineBreakNode,
+  type NodeKey,
   type TextFormatType,
   type TextNode,
 } from 'lexical';
@@ -111,7 +113,17 @@ export function createSelectionMarkdownExport(
       );
     });
 
-  return selection => {
+  return exportedSelection => {
+    // Every node asks whether it is selected, which reads the selection's
+    // nodes. A read-only selection doesn't cache them, so this works on a
+    // copy that does, instead of recomputing them for every node.
+    // Its direction is cached too, since slicing a node asks for it.
+    const nodes = exportedSelection.getNodes();
+    const selection = exportedSelection.clone();
+    selection.setCachedNodes(nodes);
+    if ($isRangeSelection(selection)) {
+      selection._cachedIsBackward = exportedSelection.isBackward();
+    }
     const output = [];
     // The separator depends on the previously *emitted* block, not on the
     // previous root child: unselected children produce no output, so keying
@@ -212,14 +224,21 @@ function $processNodeForSelection(
   }
 }
 
+interface OpenTag {
+  format: TextFormatType;
+  tag: string;
+  /** `$continuesTag`'s answers so far, by node key. */
+  answers: Map<NodeKey, boolean>;
+}
+
 function $exportChildrenForSelection(
   node: ElementNode,
   selection: BaseSelection,
   textFormatTransformers: TextFormatTransformer[],
   textMatchTransformers: TextMatchTransformer[],
   shouldPreserveNewLines: boolean,
-  unclosedTags?: {format: TextFormatType; tag: string}[],
-  unclosableTags?: {format: TextFormatType; tag: string}[],
+  unclosedTags?: OpenTag[],
+  unclosableTags?: OpenTag[],
 ): {shouldInclude: boolean; markdown: string} {
   const output = [];
   const children = node.getChildren();
@@ -253,21 +272,16 @@ function $exportChildrenForSelection(
             unclosedTags,
             [...unclosableTags, ...unclosedTags],
           ).markdown,
-        (textNode, textContent) => {
-          const slicedNode = $sliceSelectedTextNodeContent(
-            selection,
+        textNode =>
+          $exportTextFormat(
             textNode,
-            'clone',
-          );
-          return exportTextFormat(
-            textNode,
-            slicedNode.getTextContent(),
+            $exportedText(textNode, selection),
             textFormatTransformers,
             unclosedTags,
             unclosableTags,
             shouldPreserveNewLines,
-          );
-        },
+            selection,
+          ),
       );
 
       if (result != null) {
@@ -295,15 +309,15 @@ function $exportChildrenForSelection(
       }
     } else if ($isTextNode(child)) {
       if (childIncluded) {
-        const target = $sliceSelectedTextNodeContent(selection, child, 'clone');
         output.push(
-          exportTextFormat(
+          $exportTextFormat(
             child,
-            target.getTextContent(),
+            $exportedText(child, selection),
             textFormatTransformers,
             unclosedTags,
             unclosableTags,
             shouldPreserveNewLines,
+            selection,
           ),
         );
         anyChildIncluded = true;
@@ -390,8 +404,8 @@ function $exportChildren(
   node: ElementNode,
   textTransformersIndex: TextFormatTransformer[],
   textMatchTransformers: TextMatchTransformer[],
-  unclosedTags?: {format: TextFormatType; tag: string}[],
-  unclosableTags?: {format: TextFormatType; tag: string}[],
+  unclosedTags?: OpenTag[],
+  unclosableTags?: OpenTag[],
   shouldPreserveNewLines: boolean = false,
 ): string {
   const output = [];
@@ -427,13 +441,14 @@ function $exportChildren(
             shouldPreserveNewLines,
           ),
         (textNode, textContent) =>
-          exportTextFormat(
+          $exportTextFormat(
             textNode,
             textContent,
             textTransformersIndex,
             unclosedTags,
             unclosableTags,
             shouldPreserveNewLines,
+            null,
           ),
       );
 
@@ -447,13 +462,14 @@ function $exportChildren(
       output.push($exportLineBreak(child));
     } else if ($isTextNode(child)) {
       output.push(
-        exportTextFormat(
+        $exportTextFormat(
           child,
           child.getTextContent(),
           textTransformersIndex,
           unclosedTags,
           unclosableTags,
           shouldPreserveNewLines,
+          null,
         ),
       );
     } else if ($isElementNode(child)) {
@@ -480,53 +496,39 @@ function $exportLineBreak(node: LineBreakNode): string {
   return $getState(node, hardLineBreakState) + '\n';
 }
 
-function exportTextFormat(
+function $exportTextFormat(
   node: TextNode,
   textContent: string,
   textTransformers: TextFormatTransformer[],
   // unclosed tags include the markdown tags that haven't been closed yet, and their associated formats
-  unclosedTags: {format: TextFormatType; tag: string}[],
-  unclosableTags?: {format: TextFormatType; tag: string}[],
-  shouldPreserveNewLines: boolean = false,
+  unclosedTags: OpenTag[],
+  unclosableTags: OpenTag[],
+  shouldPreserveNewLines: boolean,
+  // the selection being exported, which ends the text a tag can extend over
+  selection: BaseSelection | null,
 ): string {
   // This function handles the case of a string looking like this: "   foo   "
   // Where it would be invalid markdown to generate: "**   foo   **"
-  // If the node has no format, we use the original text.
-  // Otherwise, we escape leading and trailing whitespaces to their corresponding code points,
-  // ensuring the returned string maintains its original formatting, e.g., "**&#32;&#32;&#32;foo&#32;&#32;&#32;**".
+  // so the tags go inside the whitespace instead: "   **foo**   ".
 
   const isCode = node.hasFormat('code');
 
   let output = textContent;
   if (!isCode) {
     // Preserve literal backslashes when preserving source newlines.
+    // Default mode guards numeric references; named references keep legacy output.
+    // Numeric escapes avoid changing emphasis flanking beside formatting.
+    // Guard ambiguous '<' and '&' at node ends for constructs split across nodes.
     output = shouldPreserveNewLines
       ? output.replace(/([*_`~])/g, '\\$1')
-      : output.replace(/([*_`~\\])/g, '\\$1');
+      : output.replace(/([[\]*_`~\\]|<(?=\S|$)|&(?=#|$))/g, character =>
+          /[*_`~\\]/.test(character)
+            ? `\\${character}`
+            : `&#${character.charCodeAt(0)};`,
+        );
   }
 
-  let leadingSpace: string;
-  let trimmedOutput: string;
-  let trailingSpace: string;
-  let isWhitespaceOnly: boolean;
-
-  if (isCode) {
-    // Inline code is an atomic literal span with a content-derived fence, so
-    // its whitespace stays inside the fence and other formats wrap around it.
-    const {fence, padded} = getCodeSpanDelimiter(textContent);
-    leadingSpace = '';
-    trailingSpace = '';
-    trimmedOutput = fence + padded + fence;
-    isWhitespaceOnly = false;
-  } else {
-    // Extract leading and trailing whitespaces.
-    // CommonMark flanking rules require formatting tags to be adjacent to non-whitespace characters.
-    const match = output.match(/^(\s*)(.*?)(\s*)$/s) || ['', '', output, ''];
-    leadingSpace = match[1];
-    trimmedOutput = match[2];
-    trailingSpace = match[3];
-    isWhitespaceOnly = trimmedOutput === '';
-  }
+  const holdsTag = canHoldTag(textContent);
 
   // the opening tags to be added to the result
   let openingTags = '';
@@ -535,7 +537,6 @@ function exportTextFormat(
   let closingTagsAfter = '';
 
   const prevNode = getTextSibling(node, true);
-  const nextNode = getTextSibling(node, false);
 
   const applied = new Set();
 
@@ -543,32 +544,24 @@ function exportTextFormat(
     const format = transformer.format[0];
     const tag = transformer.tag;
 
-    // Inline code uses a content-derived fence handled above, not a static tag.
+    // Inline code uses a content-derived fence handled below, not a static tag.
     if (format === 'code') {
       continue;
     }
 
     // dedup applied formats
-    // `checkHasFormat` reads the node's whole text, but the text being
-    // exported may be a selection slice of it. When the slice is entirely
-    // whitespace the tags are dropped by the early return below, so
-    // registering them here would leave an unclosed tag for a later node to
-    // close. In the full-document path `checkHasFormat` already rejects
-    // whitespace-only nodes, so this guard only affects sliced content.
-    if (
-      !isWhitespaceOnly &&
-      checkHasFormat(node, format) &&
-      !applied.has(format)
-    ) {
+    if (holdsTag && node.hasFormat(format) && !applied.has(format)) {
       applied.add(format);
 
       // append the tag to openingTags, if it's not applied to the previous nodes,
-      // or the nodes before that (which would result in an unclosed tag)
+      // or the nodes before that (which would result in an unclosed tag).
+      // A whitespace-only previous node with the format keeps the tag open
+      // without emitting it, so it counts as applied here.
       if (
-        !checkHasFormat(prevNode, format) ||
+        !hasFormat(prevNode, format) ||
         !unclosedTags.find(element => element.tag === tag)
       ) {
-        unclosedTags.push({format, tag});
+        unclosedTags.push({answers: new Map(), format, tag});
         openingTags += tag;
       }
     }
@@ -577,10 +570,8 @@ function exportTextFormat(
   // close any tags in the same order they were applied, if necessary
   for (let i = 0; i < unclosedTags.length; i++) {
     const nodeHasFormat = hasFormat(node, unclosedTags[i].format);
-    const nextNodeHasFormat = hasFormat(nextNode, unclosedTags[i].format);
-
-    // prevent adding closing tag if next sibling will do it
-    if (nodeHasFormat && nextNodeHasFormat) {
+    // prevent adding closing tag if later text with the format will do it
+    if (nodeHasFormat && $continuesTag(node, unclosedTags[i], selection)) {
       continue;
     }
 
@@ -592,7 +583,6 @@ function exportTextFormat(
       // If tag is unclosable, don't close it and leave it in the original array,
       // So that it can be closed when it's no longer unclosable
       if (
-        unclosableTags &&
         unclosedTag &&
         unclosableTags.find(element => element.tag === unclosedTag.tag)
       ) {
@@ -604,7 +594,7 @@ function exportTextFormat(
           // Handles cases where the tag has not been closed before, e.g. if the previous node
           // was a text match transformer that did not account for closing tags of the next node (e.g. a link)
           closingTagsBefore += unclosedTag.tag;
-        } else if (!nextNodeHasFormat) {
+        } else {
           closingTagsAfter += unclosedTag.tag;
         }
       }
@@ -613,13 +603,25 @@ function exportTextFormat(
     }
     break;
   }
-  // If the node is entirely whitespace, we don't apply opening/closing tags around it.
-  // However, it must still output closing tags from previous nodes.
-  if (isWhitespaceOnly && !node.hasFormat('code')) {
-    return closingTagsBefore + output;
+  if (isCode && textContent !== '') {
+    // Inline code is an atomic literal span with a content-derived fence, so
+    // its whitespace stays inside the fence and other formats wrap around it.
+    const {fence, padded} = getCodeSpanDelimiter(textContent);
+    output = fence + padded + fence;
+  } else if (!holdsTag) {
+    // If the node is entirely whitespace, we don't apply opening/closing tags
+    // around it, but it must still output any closing tags.
+    return closingTagsBefore + closingTagsAfter + output;
   }
 
-  // Flanking Compliance: Notice how openingTags and closingTagsAfter are placed INSIDE the whitespace boundaries!
+  // Flanking Compliance: CommonMark flanking rules require formatting tags to be
+  // adjacent to non-whitespace characters, so openingTags and closingTagsAfter
+  // are placed INSIDE the whitespace boundaries!
+  // (Trimming rather than a regex keeps this linear in long whitespace runs.)
+  const trimmedStart = output.trimStart();
+  const trimmedOutput = trimmedStart.trimEnd();
+  const leadingSpace = output.slice(0, output.length - trimmedStart.length);
+  const trailingSpace = trimmedStart.slice(trimmedOutput.length);
   return (
     closingTagsBefore +
     leadingSpace +
@@ -640,6 +642,64 @@ function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
   return null;
 }
 
+/**
+ * Whether `tag` carries on past `node`, which has its format, to exported
+ * text that can hold it. Whitespace-only siblings cannot (the tag must close
+ * before the space), so they are looked past while they keep the format.
+ * Text outside the exported selection does not count. Every whitespace node
+ * the walk passes over shares its answer, so that is remembered on the tag
+ * and each run is walked once, whatever order its nodes are asked in.
+ */
+function $continuesTag(
+  node: TextNode,
+  tag: OpenTag,
+  selection: BaseSelection | null,
+): boolean {
+  const {answers} = tag;
+  const known = answers.get(node.getKey());
+  if (known !== undefined) {
+    return known;
+  }
+  const passed: TextNode[] = [];
+  let next = getTextSibling(node, false);
+  let result = false;
+  while (
+    next &&
+    next.hasFormat(tag.format) &&
+    (!selection || next.isSelected(selection))
+  ) {
+    const text = $exportedText(next, selection);
+    if (canHoldTag(text)) {
+      result = true;
+      break;
+    }
+    // Markdown import matches a tag within one line.
+    if (text.includes('\n')) {
+      break;
+    }
+    // A whitespace node already answered for shares the answer.
+    const passedAnswer = answers.get(next.getKey());
+    if (passedAnswer !== undefined) {
+      result = passedAnswer;
+      break;
+    }
+    passed.push(next);
+    next = getTextSibling(next, false);
+  }
+  answers.set(node.getKey(), result);
+  for (const passedNode of passed) {
+    answers.set(passedNode.getKey(), result);
+  }
+  return result;
+}
+
+/** The text of `node` that the export emits: its selected slice, if any. */
+function $exportedText(node: TextNode, selection: BaseSelection | null) {
+  return selection
+    ? $sliceSelectedTextNodeContent(selection, node, 'clone').getTextContent()
+    : node.getTextContent();
+}
+
 function hasFormat(
   node: LexicalNode | null | undefined,
   format: TextFormatType,
@@ -647,15 +707,10 @@ function hasFormat(
   return $isTextNode(node) && node.hasFormat(format);
 }
 
-function checkHasFormat(n: TextNode | null, f: TextFormatType): boolean {
-  if (!hasFormat(n, f)) {
-    return false;
-  }
-  if (f === 'code') {
-    return true;
-  }
-  if (n && /^\s*$/.test(n.getTextContent())) {
-    return false;
-  }
-  return true;
+/**
+ * Whether exported text can carry a format's tag: CommonMark flanking rules
+ * keep tags off whitespace.
+ */
+function canHoldTag(text: string): boolean {
+  return /\S/.test(text);
 }

@@ -880,6 +880,14 @@ not merge as a user might expect:
     nothing and recomputes no column widths: the update in which Lexical
     runs a newly registered transform over the document writes nothing, and
     the editor reads what it changed again.
+  - Code stored without highlighting (written by a headless seed or
+    `editYState` whose extensions lack `CodePrismExtension` or
+    `CodeShikiExtension`) shows unhighlighted on every client until a local
+    edit in that code block, which highlights the whole block and writes it.
+    The highlighter's pass over the document when it registers writes
+    nothing, like the table plugin's above, and the binding reads content
+    without running transforms: a transform never rewrites what a client
+    read. Seed and edit documents with the same extensions as the clients.
   - A list item that holds its nested list next to other content (text, a
     second list) stays so until a local edit changes that item (its
     children, or the item itself; typing in its text does not). Lexical's
@@ -1053,6 +1061,12 @@ reproduces it:
 - A line without a marker joins the start of a paragraph a collaborator
   appends at the same time:
   [#9524](https://github.com/meta/lexical/issues/9524).
+- Undoing a format while a collaborator moves a word into its range can
+  leave the format on text typed next to the range (see Undo above):
+  [#9560](https://github.com/meta/lexical/issues/9560).
+- A comment can spread onto later words when a client types uncommented
+  text inside it offline while a collaborator's deletes there drop the item
+  that ended it: [#9564](https://github.com/meta/lexical/issues/9564).
 
 For `MarkStateExtension` comments, see the
 [comments limitations](./comments.md#limitations).

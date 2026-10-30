@@ -17,17 +17,28 @@ import {$createCodeHighlightNode, CodeHighlightNode} from '@lexical/code-core';
 import {$getBlockById, $getBlockId, BlockIdExtension} from '@lexical/extension';
 import {$createHashtagNode, HashtagNode} from '@lexical/hashtag';
 import {
+  $createTableCellNode,
+  $createTableNode,
+  $createTableRowNode,
+  TableExtension,
+} from '@lexical/table';
+import {mergeUpdates} from '@y/y';
+import {
   $create,
   $createParagraphNode,
   $createTabNode,
   $createTextNode,
   $getRoot,
   $getSlot,
+  $getSlotHost,
   $getSlotNames,
+  $getSlotNameWithinHost,
   $isElementNode,
+  $isRootNode,
   $isTextNode,
   $setSlot,
   defineExtension,
+  ElementNode,
   type LexicalNode,
   type LexicalWarning,
   ParagraphNode,
@@ -72,9 +83,10 @@ function $setTextInPlace(text: TextNode, next: string): void {
 }
 
 // The text node of a block that this sketch edits in place, or null: the
-// block's only child, plain text, and no named slots. A tab, a hashtag or a
-// code token is a text node that does not take any text, and the text of a
-// named slot is part of the block's text but not of that child.
+// block's only child, plain text, and no named slots. A tab does not take
+// text, a hashtag or a code token would keep its type around the new text,
+// and the text of a named slot is part of the block's text but not of that
+// child.
 function $plainTextOf(block: LexicalNode | null): TextNode | null {
   if (
     !$isElementNode(block) ||
@@ -85,6 +97,32 @@ function $plainTextOf(block: LexicalNode | null): TextNode | null {
   }
   const text = block.getFirstChild();
   return $isTextNode(text) && text.isSimpleText() ? text : null;
+}
+
+// Where the block with this id is and what it holds, or null when no block
+// has the id: the path from it up to the root (through the hosts of named
+// slots), each node on it by its id or, for one without (a table cell, by
+// default), by its type, and each by its place: the slot it fills, or its
+// index in its parent; and its text. A collaborator's move of the block or
+// of a container it is in changes the path; a replace changes the text
+// (unless the new block has the same text).
+function $placeOf(id: string): string | null {
+  const block = $getBlockById(id);
+  if (block === null) {
+    return null;
+  }
+  const path: unknown[] = [];
+  for (
+    let node: LexicalNode | null = block;
+    node !== null && !$isRootNode(node);
+    node = node.getParent() ?? $getSlotHost(node)
+  ) {
+    path.push([
+      $getBlockId(node) ?? node.getType(),
+      $getSlotNameWithinHost(node) ?? node.getIndexWithinParent(),
+    ]);
+  }
+  return JSON.stringify([path, block.getTextContent()]);
 }
 
 /** An app's own text node, such as a mention. */
@@ -104,6 +142,16 @@ class TitledParagraphNode extends ParagraphNode {
   }
 }
 
+/** A block with two named slots, side by side. */
+class TwoSlotNode extends ElementNode {
+  $config() {
+    return this.config('server-docs-two-slots', {
+      extends: ElementNode,
+      slots: ['left', 'right'],
+    });
+  }
+}
+
 const AppNodes = defineExtension({
   name: 'server-docs-nodes',
   nodes: () => [
@@ -112,6 +160,7 @@ const AppNodes = defineExtension({
     MentionNode,
     SlotBodyNode,
     TitledParagraphNode,
+    TwoSlotNode,
   ],
 });
 
@@ -210,7 +259,7 @@ describe('server page: agent edits', () => {
     const between = (path: string) => {
       const source = fs.readFileSync(new URL(path, import.meta.url), 'utf8');
       const start = source.indexOf("// Changes a text node's text to `next`");
-      const last = source.indexOf('function $plainTextOf', start);
+      const last = source.indexOf('function $placeOf', start);
       return source.slice(start, source.indexOf('\n}\n', last) + 2);
     };
     const docs = between(
@@ -218,6 +267,7 @@ describe('server page: agent edits', () => {
     );
     expect(docs).toContain('function $setTextInPlace');
     expect(docs).toContain('function $plainTextOf');
+    expect(docs).toContain('function $placeOf');
     expect(between('./ServerDocsAgentEdits.test.ts')).toBe(docs);
     // The first sketch on the page guards its splice the same way.
     expect(
@@ -325,5 +375,331 @@ describe('server page: agent edits', () => {
     expect(
       warnings.filter(warning => warning.code !== NESTED_FALLBACK_WARNING),
     ).toEqual([]);
+  });
+
+  test('step 3 sends back a target that is gone, moved, replaced, typed in or new since the read, and applies the rest', () => {
+    const config = {extensions: [BlockIdExtension], schemaVersion: 1};
+    // "Keep me." is not next to anything the collaborator changes (a block
+    // next to an inserted, deleted or moved block goes back too).
+    const lines = [
+      'First line.',
+      'Move me.',
+      'Last line.',
+      'Spacer.',
+      'Keep me.',
+    ];
+    const seen = seedYState(config, () =>
+      $getRoot().append(
+        ...lines.map(line =>
+          $createParagraphNode().append($createTextNode(line)),
+        ),
+      ),
+    );
+    const ids = readYState(seen, config, () =>
+      $getRoot()
+        .getChildren()
+        .map(node => $getBlockId(node)!),
+    );
+    const $block = (i: number) => $getBlockById(ids[i])!;
+    const collaborator = createYWriter('server-docs-collaborator');
+    const agent = createYWriter('server-docs-agent');
+    // Each case: what the collaborator does, what the target then holds, and
+    // whether "Keep me." still gets the agent's edit (a delete before it in
+    // the same container changes its place, so it goes back too).
+    const cases: [string, () => void, string, boolean][] = [
+      ['untouched', () => {}, 'Move me now.', true],
+      // A move keeps the id: the target is now after "Last line.".
+      ['moved', () => void $block(2).insertAfter($block(1)), 'Move me.', true],
+      [
+        'replaced',
+        () =>
+          void $block(1).replace(
+            $createParagraphNode().append($createTextNode('A slow dog.')),
+          ),
+        'A slow dog.',
+        true,
+      ],
+      [
+        'typed in',
+        () =>
+          void (
+            ($block(1) as ElementNode).getFirstChild() as TextNode
+          ).spliceText(0, 0, 'Please '),
+        'Please Move me.',
+        true,
+      ],
+      ['deleted', () => void $block(1).remove(), '', false],
+    ];
+    for (const [name, $collaborate, expected, keepApplies] of cases) {
+      const latest = editYState(seen, config, $collaborate, {
+        writer: collaborator,
+      }).state;
+      const ops = [
+        {id: ids[1], text: 'Move me now.'},
+        {id: ids[4], text: 'Keep me now.'},
+      ];
+      // Step 3 as in the docs.
+      const wasAt = readYState(seen, config, () =>
+        ops.map(op => $placeOf(op.id)),
+      );
+      const isAt = readYState(latest, config, () =>
+        ops.map(op => $placeOf(op.id)),
+      );
+      const live = new Set(
+        ops
+          .filter((op, i) => wasAt[i] !== null && wasAt[i] === isAt[i])
+          .map(op => op.id),
+      );
+      const gone = ops.filter(op => !live.has(op.id));
+      const unsupported: typeof ops = [];
+      // Step 4 as in the docs.
+      const {update} = editYState(
+        seen,
+        config,
+        () => {
+          for (const op of ops) {
+            const block = live.has(op.id) ? $getBlockById(op.id) : null;
+            const text = $plainTextOf(block);
+            if (text !== null) {
+              $setTextInPlace(text, op.text);
+            } else if (block !== null) {
+              unsupported.push(op);
+            }
+          }
+        },
+        {writer: agent},
+      );
+      const merged =
+        update === null
+          ? latest
+          : mergeUpdates([latest, update] as Uint8Array<ArrayBuffer>[]);
+      const texts = readYState(merged, config, () =>
+        $getRoot()
+          .getChildren()
+          .map(node => node.getTextContent()),
+      );
+      expect(
+        gone.map(op => op.id),
+        name,
+      ).toEqual(
+        name === 'untouched' ? [] : keepApplies ? [ids[1]] : [ids[1], ids[4]],
+      );
+      expect(unsupported, name).toEqual([]);
+      // The target holds what the collaborator left (or the agent's text when
+      // it was untouched), and no text is glued to another line.
+      const target = readYState(
+        merged,
+        config,
+        () => $getBlockById(ids[1])?.getTextContent() ?? '',
+      );
+      expect(target, name).toBe(expected);
+      const keep = keepApplies ? 'Keep me now.' : 'Keep me.';
+      expect(texts, name).toContain(keep);
+      expect(
+        texts.filter(text => text !== expected),
+        name,
+      ).toEqual(
+        lines
+          .filter(line => line !== 'Move me.' && line !== 'Keep me.')
+          .concat(keep),
+      );
+    }
+    // A target that exists only on the latest state (added after the read)
+    // goes back too.
+    const added = editYState(
+      seen,
+      config,
+      () => void $block(4).insertAfter($createParagraphNode()),
+      {writer: collaborator},
+    ).state;
+    const newId = readYState(
+      added,
+      config,
+      () => $getBlockId($getRoot().getLastChild()!)!,
+    );
+    expect(readYState(seen, config, () => $placeOf(newId))).toBeNull();
+    expect(readYState(added, config, () => $placeOf(newId))).not.toBeNull();
+  });
+
+  test('replacing a line keeps what a collaborator typed at the same time, at the start of the new text (typed at the end, possibly at the end)', () => {
+    const config = {extensions: [BlockIdExtension], schemaVersion: 1};
+    const seen = seedYState(config, () =>
+      $getRoot().append(
+        $createParagraphNode().append($createTextNode('The quick brown fox.')),
+      ),
+    );
+    const id = readYState(
+      seen,
+      config,
+      () => $getBlockId($getRoot().getFirstChild()!)!,
+    );
+    const outcomes = new Map<string, Set<string>>();
+    // Fresh writers each round, so both client-id orders occur.
+    for (let round = 0; round < 12; round++) {
+      for (const [where, offset, typed] of [
+        ['start', 0, 'Big '],
+        ['middle', 4, 'very '],
+        ['end', 20, ' Jumps!'],
+      ] as const) {
+        const replace = editYState(
+          seen,
+          config,
+          () =>
+            void $getBlockById(id)!.replace(
+              $createParagraphNode().append(
+                $createTextNode('The quick red fox.'),
+              ),
+            ),
+          {writer: createYWriter(`server-docs-agent-${round}`)},
+        ).update!;
+        const type = editYState(
+          seen,
+          config,
+          () =>
+            void (
+              ($getBlockById(id) as ElementNode).getFirstChild() as TextNode
+            ).spliceText(offset, 0, typed),
+          {writer: createYWriter(`server-docs-collaborator-${round}`)},
+        ).update!;
+        const text = readYState(
+          mergeUpdates([seen, replace, type] as Uint8Array<ArrayBuffer>[]),
+          config,
+          () => $getRoot().getTextContent(),
+        );
+        if (!outcomes.has(where)) {
+          outcomes.set(where, new Set());
+        }
+        outcomes.get(where)!.add(text);
+      }
+    }
+    expect([...outcomes.get('start')!]).toEqual(['Big The quick red fox.']);
+    expect([...outcomes.get('middle')!]).toEqual(['very The quick red fox.']);
+    for (const text of outcomes.get('end')!) {
+      expect([
+        ' Jumps!The quick red fox.',
+        'The quick red fox. Jumps!',
+      ]).toContain(text);
+    }
+  });
+
+  test('step 3 sends back a target moved between table cells, or in a table a collaborator moved', () => {
+    const config = {
+      extensions: [TableExtension, BlockIdExtension],
+      schemaVersion: 1,
+    };
+    // A table whose cells hold "Target" and "Dest", after a paragraph.
+    const seen = seedYState(config, () =>
+      $getRoot().append(
+        $createParagraphNode().append($createTextNode('Intro')),
+        $createTableNode().append(
+          $createTableRowNode().append(
+            ...['Target', 'Dest'].map(text =>
+              $createTableCellNode().append(
+                $createParagraphNode().append($createTextNode(text)),
+              ),
+            ),
+          ),
+        ),
+        $createParagraphNode().append($createTextNode('Outro')),
+      ),
+    );
+    const $cells = () =>
+      (
+        (
+          $getRoot().getChildAtIndex(1) as ElementNode
+        ).getFirstChildOrThrow() as ElementNode
+      ).getChildren() as ElementNode[];
+    const id = readYState(
+      seen,
+      config,
+      () => $getBlockId($cells()[0].getFirstChildOrThrow())!,
+    );
+    const collaborator = createYWriter('server-docs-collaborator');
+    const cases: [string, () => void, boolean][] = [
+      ['untouched', () => {}, true],
+      [
+        'moved to the next cell',
+        () => {
+          const [from, to] = $cells();
+          to.clear().append(from.getFirstChildOrThrow());
+          from.append($createParagraphNode());
+        },
+        false,
+      ],
+      [
+        'in a table moved below the next paragraph',
+        () =>
+          void $getRoot()
+            .getLastChildOrThrow()
+            .insertAfter($getRoot().getChildAtIndex(1)!),
+        false,
+      ],
+    ];
+    for (const [name, $collaborate, applies] of cases) {
+      const latest = editYState(seen, config, $collaborate, {
+        writer: collaborator,
+      }).state;
+      const wasAt = readYState(seen, config, () => $placeOf(id));
+      const isAt = readYState(latest, config, () => $placeOf(id));
+      expect(wasAt !== null && wasAt === isAt, name).toBe(applies);
+    }
+  });
+
+  test('step 3 sends back a target moved from one named slot to another', () => {
+    const config = {
+      extensions: [AppNodes, BlockIdExtension],
+      onWarn: () => {},
+      schemaVersion: 1,
+    };
+    const seen = seedYState(config, () => {
+      const host = $create(TwoSlotNode);
+      $setSlot(
+        host,
+        'left',
+        $create(SlotBodyNode).append(
+          $createParagraphNode().append($createTextNode('Target')),
+        ),
+      );
+      $setSlot(
+        host,
+        'right',
+        $create(SlotBodyNode).append(
+          $createParagraphNode().append($createTextNode('Other')),
+        ),
+      );
+      $getRoot().append(
+        $createParagraphNode().append($createTextNode('Intro')),
+        host,
+      );
+    });
+    const $slot = (name: string) =>
+      $getSlot($getRoot().getLastChildOrThrow(), name) as ElementNode;
+    const id = readYState(
+      seen,
+      config,
+      () => $getBlockId($slot('left').getFirstChildOrThrow())!,
+    );
+    const collaborator = createYWriter('server-docs-collaborator');
+    const cases: [string, () => void, boolean][] = [
+      ['untouched', () => {}, true],
+      [
+        // First in the other slot, as it was first in its own.
+        'moved to the other slot',
+        () => {
+          const target = $slot('left').getFirstChildOrThrow();
+          $slot('right').getFirstChildOrThrow().insertBefore(target);
+          $slot('left').append($createParagraphNode());
+        },
+        false,
+      ],
+    ];
+    for (const [name, $collaborate, applies] of cases) {
+      const latest = editYState(seen, config, $collaborate, {
+        writer: collaborator,
+      }).state;
+      const wasAt = readYState(seen, config, () => $placeOf(id));
+      const isAt = readYState(latest, config, () => $placeOf(id));
+      expect(wasAt !== null && wasAt === isAt, name).toBe(applies);
+    }
   });
 });

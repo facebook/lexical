@@ -316,10 +316,11 @@ the edit arrives. Follow
 - **Edit text in place.** Change the characters of a text node
   (`spliceText`) rather than replacing its block: a replaced block is a
   delete and an insert. In a line such as a paragraph, what a collaborator
-  types at the same time survives but lands before the new text, with its
-  own formatting; formatting of the replaced characters does not carry over.
-  Replacing a block stored as a node of its own, such as a table, deletes
-  what was typed in it.
+  types at the same time survives, with its own formatting, at the start of
+  the new text (typed at the end of the line, it can also stay at the end);
+  formatting of the replaced characters does not carry over. Replacing a
+  block stored as a node of its own, such as a table, deletes what was typed
+  in it.
 - **Edit the state the plan was computed from, then merge.** Keep the state
   the agent read, run `editYState` on that state, and merge the returned
   `update` into the latest stored state (and send it to the clients). Yjs
@@ -344,8 +345,8 @@ const {update} = editYState(
   config,
   () => {
     const text = $getRoot().getFirstDescendant();
-    // Plain text only: a tab, a hashtag or a code token is a text node
-    // that does not take any text.
+    // Plain text only: a tab does not take text, and a hashtag or a code
+    // token would keep its type around the new text.
     if ($isTextNode(text) && text.isSimpleText()) {
       text.spliceText(0, 5, 'Hi');
     }
@@ -366,29 +367,43 @@ things differ from a single editor:
 
 - **Check the targets on the latest state.** The edit runs on `seen`, the
   state the agent read, where every block it read still exists, so
-  `$getBlockById` finds a block a collaborator has deleted since. The
-  agent's text then survives the merge without its block, as
+  `$getBlockById` finds a block a collaborator has deleted since. It also
+  finds the original of a block a collaborator has moved or replaced since:
+  a move or a `replace` keeps the block's id (see
+  [How ids follow edits](/docs/extensions/block-ids#how-ids-follow-edits)),
+  but `@lexical/y` stores either one as a delete and an insert. The agent's
+  text then survives the merge without its block, as
   [a line without a marker](./y.md#limits): a paragraph of its own, or text
-  glued to a neighboring line, depending on what is around it. Look the ids
-  up on the latest state first, and send the ones that are gone back to the
-  agent instead of applying them. The check is best effort: a
-  collaborator's delete that reaches the stored state after the check (one
-  already on its way, or made in between) still lands this way.
+  glued to a neighboring line, depending on what is around it. Compare each
+  target on the latest state with what the agent read (where it is: the
+  path from the root to it, each node on it by its id or, without one, by
+  its type and place in its parent; and its text), and send the ones that
+  are gone or differ back to the agent, to plan again from the latest
+  state, instead of applying them. The check is conservative (a block a
+  collaborator typed in, or one after an inserted or deleted block in any
+  of its containers, goes back too) and best effort: a change that reaches
+  the stored state after the check (one already on its way, or made in
+  between) still lands this way, and so does a block replaced by one with
+  the same text.
 - **Edit the text in place.** Replacing the block (`block.replace(node)`, as
   in the [single-editor example](/docs/extensions/block-ids#addressing-blocks))
   writes it anew. In a line such as a paragraph, what a collaborator types
-  at the same time survives but lands before the new text, with its own
-  formatting; formatting of the replaced characters does not carry over.
-  Replacing a block stored as a node of its own, such as a table, deletes
-  what was typed in it. Splice only the characters that changed.
+  at the same time survives, with its own formatting, at the start of the
+  new text (typed at the end of the line, it can also stay at the end);
+  formatting of the replaced characters does not carry over. Replacing a
+  block stored as a node of its own, such as a table, deletes what was typed
+  in it. Splice only the characters that changed.
 
 ```ts
 import {$getBlockById, $getBlockId} from '@lexical/extension';
 import {editYState, readYState} from '@lexical/y/headless';
 import {
   $getRoot,
+  $getSlotHost,
   $getSlotNames,
+  $getSlotNameWithinHost,
   $isElementNode,
+  $isRootNode,
   $isTextNode,
   type LexicalNode,
   type TextNode,
@@ -421,9 +436,10 @@ function $setTextInPlace(text: TextNode, next: string): void {
 }
 
 // The text node of a block that this sketch edits in place, or null: the
-// block's only child, plain text, and no named slots. A tab, a hashtag or a
-// code token is a text node that does not take any text, and the text of a
-// named slot is part of the block's text but not of that child.
+// block's only child, plain text, and no named slots. A tab does not take
+// text, a hashtag or a code token would keep its type around the new text,
+// and the text of a named slot is part of the block's text but not of that
+// child.
 function $plainTextOf(block: LexicalNode | null): TextNode | null {
   if (
     !$isElementNode(block) ||
@@ -436,6 +452,32 @@ function $plainTextOf(block: LexicalNode | null): TextNode | null {
   return $isTextNode(text) && text.isSimpleText() ? text : null;
 }
 
+// Where the block with this id is and what it holds, or null when no block
+// has the id: the path from it up to the root (through the hosts of named
+// slots), each node on it by its id or, for one without (a table cell, by
+// default), by its type, and each by its place: the slot it fills, or its
+// index in its parent; and its text. A collaborator's move of the block or
+// of a container it is in changes the path; a replace changes the text
+// (unless the new block has the same text).
+function $placeOf(id: string): string | null {
+  const block = $getBlockById(id);
+  if (block === null) {
+    return null;
+  }
+  const path: unknown[] = [];
+  for (
+    let node: LexicalNode | null = block;
+    node !== null && !$isRootNode(node);
+    node = node.getParent() ?? $getSlotHost(node)
+  ) {
+    path.push([
+      $getBlockId(node) ?? node.getType(),
+      $getSlotNameWithinHost(node) ?? node.getIndexWithinParent(),
+    ]);
+  }
+  return JSON.stringify([path, block.getTextContent()]);
+}
+
 // 1. What the agent reads, from `seen`.
 const blocks = readYState(seen, config, () =>
   $getRoot()
@@ -445,11 +487,14 @@ const blocks = readYState(seen, config, () =>
 
 // 2. What it answers, seconds later: [{id: 'b7', text: 'New text'}, ...].
 
-// 3. The targets that still exist in the latest stored state.
+// 3. The targets that are still where and what the agent read, in the
+// latest stored state.
+const wasAt = readYState(seen, config, () => ops.map(op => $placeOf(op.id)));
+const isAt = readYState(latest, config, () => ops.map(op => $placeOf(op.id)));
 const live = new Set(
-  readYState(latest, config, () =>
-    ops.filter(op => $getBlockById(op.id) !== null).map(op => op.id),
-  ),
+  ops
+    .filter((op, i) => wasAt[i] !== null && wasAt[i] === isAt[i])
+    .map(op => op.id),
 );
 const gone = ops.filter(op => !live.has(op.id)); // Tell the agent.
 const unsupported: typeof ops = []; // Tell the agent too.

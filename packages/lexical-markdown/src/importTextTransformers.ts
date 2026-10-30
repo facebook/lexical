@@ -54,34 +54,31 @@ export function importTextTransformers(
   );
 
   if (foundTextFormat && foundTextMatch) {
+    // Code spans bind tighter than text-match transformers (e.g. equations
+    // or links). A code span must never be partially consumed by a text
+    // match, so the match goes only when it fully wraps the span (in which
+    // case the span is part of the match's raw content).
+    // https://github.com/meta/lexical/issues/8687
     const {codeSpan} = foundTextFormat;
-    if (
-      codeSpan &&
-      !foundTextFormat.isCodeSpan &&
+    const wrapsCodeSpan =
+      codeSpan !== null &&
+      foundTextMatch.startIndex <= codeSpan.startIndex &&
+      foundTextMatch.endIndex >= codeSpan.endIndex;
+    if (foundTextFormat.isCodeSpan) {
+      if (wrapsCodeSpan) {
+        foundTextFormat = null;
+      } else {
+        foundTextMatch = null;
+      }
+    } else if (
+      codeSpan !== null &&
+      !wrapsCodeSpan &&
       foundTextMatch.startIndex < codeSpan.endIndex &&
-      foundTextMatch.endIndex > codeSpan.startIndex &&
-      (foundTextMatch.startIndex > codeSpan.startIndex ||
-        foundTextMatch.endIndex < codeSpan.endIndex)
+      foundTextMatch.endIndex > codeSpan.startIndex
     ) {
       // The emphasis before the code span goes first, and the text match,
       // which takes part of the span, is not applied.
       foundTextMatch = null;
-    } else if (foundTextFormat.isCodeSpan) {
-      // Code spans bind tighter than text-match transformers (e.g. equations
-      // or links). A code span must never be partially consumed by a text
-      // match, so prefer the code format unless the text match fully wraps it
-      // (in which case the code span is part of the match's raw content).
-      // https://github.com/meta/lexical/issues/8687
-      if (
-        foundTextMatch.startIndex <= foundTextFormat.startIndex &&
-        foundTextMatch.endIndex >= foundTextFormat.endIndex
-      ) {
-        // foundTextMatch wraps the code span - apply foundTextMatch
-        foundTextFormat = null;
-      } else {
-        // Apply the code span
-        foundTextMatch = null;
-      }
     } else if (
       // Find the outermost transformer
       (foundTextFormat.startIndex <= foundTextMatch.startIndex &&

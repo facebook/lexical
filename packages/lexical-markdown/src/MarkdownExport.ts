@@ -682,8 +682,10 @@ function $exportTextFormat(
  * breaks and the output of transformers, whose syntax a reference could
  * break. `OPENER` and `CLOSER` are format markers.
  */
+type PieceKind = typeof TEXT | typeof RAW | typeof OPENER | typeof CLOSER;
+
 interface MarkdownPieces {
-  kinds: number[];
+  kinds: PieceKind[];
   values: string[];
 }
 
@@ -698,7 +700,7 @@ function createPieces(): MarkdownPieces {
 
 // Adjacent text (and adjacent raw output) is merged, so that each run of
 // markers sits between the pieces whose characters a reader sees beside it.
-function pushPiece(pieces: MarkdownPieces, kind: number, value: string) {
+function pushPiece(pieces: MarkdownPieces, kind: PieceKind, value: string) {
   const {kinds, values} = pieces;
   const last = kinds.length - 1;
   if (value === '') {
@@ -711,7 +713,7 @@ function pushPiece(pieces: MarkdownPieces, kind: number, value: string) {
   }
 }
 
-function isMarker(kind: number | undefined): boolean {
+function isMarker(kind: PieceKind | undefined): boolean {
   return kind === OPENER || kind === CLOSER;
 }
 
@@ -803,12 +805,12 @@ function joinPieces({kinds, values}: MarkdownPieces): string {
  * markers, if any.
  */
 function scanDelimiterRun(
-  kinds: number[],
+  kinds: PieceKind[],
   values: string[],
   from: number,
   to: number,
   step: 1 | -1,
-  kind: number,
+  kind: PieceKind,
 ): [boolean, string | undefined] {
   const edge = values[from];
   const delimiter = edge[step === 1 ? 0 : edge.length - 1];
@@ -834,7 +836,7 @@ function scanDelimiterRun(
  * reference for the marker run beside it to open or close.
  */
 function decideReferences(
-  kinds: number[],
+  kinds: PieceKind[],
   values: string[],
 ): {encodeStart: Uint8Array; encodeEnd: Uint8Array} {
   const count = kinds.length;
@@ -999,9 +1001,7 @@ function decideReferences(
     return result;
   };
   const isFree = (index: number, leftward: boolean) =>
-    !isOneCharacter(index) ||
-    (leftward ? encodeStart[index] : encodeEnd[index]) ||
-    canSpread(index, leftward);
+    !isOneCharacter(index) || canSpread(index, leftward);
   // A reference helps only where the run would flank if the character
   // beside it were punctuation.
   const opensWithReference = ({opens, before, after, afterFirst}: MarkerRun) =>
@@ -1023,9 +1023,6 @@ function decideReferences(
       pending.push(index);
     }
   });
-  if (pending.length === 0) {
-    return {encodeEnd, encodeStart};
-  }
   // Writing a one-character piece as a reference changes what the run on its
   // other side sees, so that run is decided again. Each piece changes at most
   // twice, so this stays linear.

@@ -10,26 +10,53 @@
 
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {$createLinkNode, $isLinkNode} from '@lexical/link';
+import {$createListItemNode, $createListNode, $isListNode} from '@lexical/list';
 import {
   $convertFromMarkdownString,
   $convertSelectionToMarkdownString,
   $convertToMarkdownString,
+  CHECK_LIST,
   LINK,
   type TextMatchTransformer,
   TRANSFORMERS,
 } from '@lexical/markdown';
 import {
+  $create,
+  $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $getSelection,
   $isElementNode,
   $isTextNode,
+  defineExtension,
+  ElementNode,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 
 import {unescapeText} from '../../utils';
 import {MarkdownTestExtension} from '../utils';
+
+/** An inline element that exports only its children, like a comment mark. */
+class TestInlineNode extends ElementNode {
+  $config() {
+    return this.config('markdown-test-inline', {extends: ElementNode});
+  }
+  isInline(): true {
+    return true;
+  }
+  createDOM(): HTMLElement {
+    throw new Error('not rendered');
+  }
+  updateDOM(): false {
+    return false;
+  }
+}
+
+const TestInlineExtension = defineExtension({
+  name: '@lexical/markdown/test-inline',
+  nodes: [TestInlineNode],
+});
 
 const LITERALS = [
   ['<b>text</b>', '&#60;b>text&#60;/b>'],
@@ -729,7 +756,7 @@ describe('brackets that cannot become Markdown syntax', () => {
   it.each([
     'cleared review [1][2]',
     'Narrative claim [1].',
-    '[x] done and [ ] todo',
+    'done [x] and [ ] todo',
     'array[0] and map[key]',
     'see [1]: the note',
     'a [label] (not a link)',
@@ -826,6 +853,250 @@ describe('brackets that cannot become Markdown syntax', () => {
       expect(link.getURL()).toBe('uri');
       expect(link.getTextContent()).toBe(label);
     });
+  });
+
+  it.each([
+    ['[x] done', '[x&#93; done'],
+    ['[X] done', '[X&#93; done'],
+    ['[ ] todo', '[ &#93; todo'],
+    ['[] todo', '[&#93; todo'],
+    ['  [x] indented', '  [x&#93; indented'],
+  ])('escapes the task marker %j at the start of a line', (text, expected) => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    for (let split = 0; split <= text.length; split++) {
+      editor.update(
+        () => $exportParagraph(text.slice(0, split), text.slice(split)),
+        {discrete: true},
+      );
+      const written = editor.read(() => $convertToMarkdownString());
+      expect(written).toBe(expected);
+      editor.update(
+        () =>
+          $convertFromMarkdownString(written, [CHECK_LIST, ...TRANSFORMERS]),
+        {discrete: true},
+      );
+      editor.read(() => {
+        const block = $getRoot().getFirstChildOrThrow();
+        expect($isListNode(block)).toBe(false);
+        expect(block.getTextContent()).toBe(text);
+      });
+    }
+  });
+
+  it('escapes a task marker that starts a bullet item', () => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(
+      () =>
+        $getRoot()
+          .clear()
+          .append(
+            $createListNode('bullet').append(
+              $createListItemNode().append($createTextNode('[ ] todo')),
+            ),
+          ),
+      {discrete: true},
+    );
+    const written = editor.read(() =>
+      $convertToMarkdownString([CHECK_LIST, ...TRANSFORMERS]),
+    );
+    expect(written).toBe('- [ &#93; todo');
+    editor.update(
+      () => $convertFromMarkdownString(written, [CHECK_LIST, ...TRANSFORMERS]),
+      {discrete: true},
+    );
+    editor.read(() => {
+      const list = $getRoot().getFirstChildOrThrow();
+      assert($isListNode(list));
+      expect(list.getListType()).toBe('bullet');
+      expect(list.getTextContent()).toBe('[ ] todo');
+    });
+  });
+
+  it('keeps a real check list item as a check list', () => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(
+      () =>
+        $convertFromMarkdownString('- [ ] todo\n- [x] done', [
+          CHECK_LIST,
+          ...TRANSFORMERS,
+        ]),
+      {discrete: true},
+    );
+    expect(
+      editor.read(() =>
+        $convertToMarkdownString([CHECK_LIST, ...TRANSFORMERS]),
+      ),
+    ).toBe('- [ ] todo\n- [x] done');
+  });
+
+  it.each([
+    // [a\ + ]: /url in two nodes: the backslash is exported doubled.
+    [['[a\\', ']: /url'], '[a\\\\&#93;: /url'],
+    // The first ] is escaped, so the second still closes a label.
+    [['[a](x]: /url'], '[a&#93;(x&#93;: /url'],
+    [['[foo', '\n', 'bar]: /url'], '[foo\nbar&#93;: /url'],
+    [['intro', '\n', '[a]: b'], 'intro\n[a&#93;: b'],
+  ])('escapes the definition label in %j', (parts, expected) => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(
+      () =>
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              ...parts.map((part, index) =>
+                part === '\n'
+                  ? $createLineBreakNode()
+                  : $createTextNode(part).setStyle(
+                      `color: #${index}${index}${index}`,
+                    ),
+              ),
+            ),
+          ),
+      {discrete: true},
+    );
+    expect(editor.read(() => $convertToMarkdownString())).toBe(expected);
+  });
+
+  it('treats the start of an exported selection as a line start', () => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(
+      () => {
+        const intro = $createTextNode('intro ');
+        const definition = $createTextNode('[a]: /url').setStyle('color: red');
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append(intro, definition));
+        definition.select(0, definition.getTextContentSize());
+      },
+      {discrete: true},
+    );
+    expect(
+      editor.read(() =>
+        $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+      ),
+    ).toBe('[a&#93;: /url');
+  });
+
+  describe('across inline elements', () => {
+    it('escapes a bracket inside an inline element followed by (', () => {
+      using editor = buildEditorFromExtensions(
+        MarkdownTestExtension,
+        TestInlineExtension,
+      );
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $create(TestInlineNode).append($createTextNode('[a]')),
+                $createTextNode('(b)'),
+              ),
+            ),
+        {discrete: true},
+      );
+      const written = editor.read(() => $convertToMarkdownString());
+      expect(written).toBe('[a&#93;(b)');
+      editor.update(() => $convertFromMarkdownString(written), {
+        discrete: true,
+      });
+      expect(editor.read(() => $getRoot().getTextContent())).toBe('[a](b)');
+    });
+
+    it('escapes a pair inside link text that an inline element splits from (', () => {
+      using editor = buildEditorFromExtensions(
+        MarkdownTestExtension,
+        TestInlineExtension,
+      );
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $createLinkNode('url').append(
+                  $create(TestInlineNode).append($createTextNode('[x]')),
+                  $createTextNode('(y)'),
+                ),
+              ),
+            ),
+        {discrete: true},
+      );
+      const written = editor.read(() => $convertToMarkdownString());
+      expect(written).toBe('[&#91;x&#93;(y)](url)');
+      editor.update(() => $convertFromMarkdownString(written), {
+        discrete: true,
+      });
+      editor.read(() => {
+        const paragraph = $getRoot().getFirstChildOrThrow();
+        assert($isElementNode(paragraph));
+        const link = paragraph.getFirstChildOrThrow();
+        assert($isLinkNode(link));
+        expect(link.getURL()).toBe('url');
+        expect(link.getTextContent()).toBe('[x](y)');
+      });
+    });
+
+    it.each([
+      [['[a]', ': b'], 'inline first'],
+      [['[a', ']: /url'], 'inline second'],
+    ])(
+      'escapes a definition label split by an inline element: %j (%s)',
+      (parts, which) => {
+        using editor = buildEditorFromExtensions(
+          MarkdownTestExtension,
+          TestInlineExtension,
+        );
+        editor.update(
+          () => {
+            const [first, second] = parts;
+            $getRoot()
+              .clear()
+              .append(
+                $createParagraphNode().append(
+                  which === 'inline first'
+                    ? $create(TestInlineNode).append($createTextNode(first))
+                    : $createTextNode(first),
+                  which === 'inline first'
+                    ? $createTextNode(second)
+                    : $create(TestInlineNode).append($createTextNode(second)),
+                ),
+              );
+          },
+          {discrete: true},
+        );
+        const written = editor.read(() => $convertToMarkdownString());
+        expect(written).toContain('&#93;:');
+      },
+    );
+  });
+
+  it.each([
+    [
+      'many styled nodes',
+      () =>
+        Array.from({length: 8000}, (_, index) =>
+          $createTextNode('xa]:').setStyle(`color: #${index % 2}00`),
+        ),
+    ],
+    ['one long node', () => [$createTextNode('xa]:'.repeat(20000))]],
+    [
+      'many brackets in one node',
+      () => [$createTextNode('[a] '.repeat(20000))],
+    ],
+  ])('exports %s in linear time', (_name, $children) => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(
+      () =>
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append(...$children())),
+      {discrete: true},
+    );
+    const start = performance.now();
+    editor.read(() => $convertToMarkdownString());
+    expect(performance.now() - start).toBeLessThan(2000);
   });
 
   it('reads brackets written as references by earlier versions', () => {

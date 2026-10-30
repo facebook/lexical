@@ -44,6 +44,7 @@ import {
   seedYState,
 } from '../../headless';
 import {
+  $createEquation,
   expectConverged,
   flush,
   freshReader,
@@ -445,6 +446,98 @@ describe('a tab or line break alone at the edge of a change keeps its item', () 
       await t.sync();
       await expectEverywhere(t.peers, 't1zt9z');
     });
+  }
+});
+
+// Shapes in which a collaborator's delete came back on an earlier version
+// of this change, all of which main keeps: a tab, line break or space-only
+// node alone at an edge of the change, a text node whose text is the object
+// character (not an inline node), and the unchanged word next to an inline
+// node (leaving the inline node out of the comparison joined the words on
+// its two sides into one).
+describe("a collaborator's delete next to a remade word stays deleted", () => {
+  const cases: [
+    string,
+    () => LexicalNode[],
+    () => LexicalNode[],
+    () => void,
+    string,
+  ][] = [
+    [
+      'tab | "alpha", made again as tab | "beta" ‖ the tab deleted',
+      () => [$createTabNode(), $plain('alpha')],
+      () => [$createTabNode(), $plain('beta')],
+      () => $line().getFirstChildOrThrow().remove(),
+      'beta',
+    ],
+    [
+      '"alpha" | tab, made again as "beta" | tab ‖ the tab deleted',
+      () => [$plain('alpha'), $createTabNode()],
+      () => [$plain('beta'), $createTabNode()],
+      () => $line().getLastChildOrThrow().remove(),
+      'beta',
+    ],
+    [
+      'br | "alpha", made again as br | "beta" ‖ the br deleted',
+      () => [$createLineBreakNode(), $plain('alpha')],
+      () => [$createLineBreakNode(), $plain('beta')],
+      () => $line().getFirstChildOrThrow().remove(),
+      'beta',
+    ],
+    [
+      '**" "** | "alpha", made again as **" "** | "beta" ‖ the space deleted',
+      () => [$bold(' '), $plain('alpha')],
+      () => [$bold(' '), $plain('beta')],
+      () => $line().getFirstChildOrThrow().remove(),
+      'beta',
+    ],
+    [
+      '"alpha " | **U+FFFC** | " gamma", made again as it was ‖ the U+FFFC deleted',
+      () => [$plain('alpha '), $bold('\ufffc'), $plain(' gamma')],
+      () => [$plain('alpha '), $bold('\ufffc'), $plain(' gamma')],
+      () => $line().getChildAtIndex(1)!.remove(),
+      'alpha  gamma',
+    ],
+    [
+      '"alpha" | equation | "beta", made again with "gamma" ‖ the "p" of "alpha" deleted',
+      () => [$plain('alpha'), $createEquation('e1'), $plain('beta')],
+      () => [$plain('alpha'), $createEquation('e1'), $plain('gamma')],
+      () => $line().getAllTextNodes()[0].spliceText(2, 1, '', false),
+      'alhagamma',
+    ],
+  ];
+  for (const [name, seed, made, $peer, expected] of cases) {
+    for (const ids of IDS) {
+      for (const timing of ['concurrent', 'unread'] as const) {
+        test(`${name} (${timing}, ids ${ids})`, async () => {
+          const t = await setup($doc(seed), {ids});
+          const $rewrite = () => {
+            for (const child of $line().getChildren()) {
+              child.remove();
+            }
+            $line().append(...made());
+            $setSelection(null);
+          };
+          const $other = () => {
+            $peer();
+            $setSelection(null);
+          };
+          t.offline();
+          if (timing === 'unread') {
+            t.b.update($other);
+            t.a.editor.update($rewrite);
+            await t.sync();
+            await flush();
+            await t.sync();
+          } else {
+            t.a.update($rewrite);
+            t.b.update($other);
+            await t.sync();
+          }
+          await expectEverywhere(t.peers, expected);
+        });
+      }
+    }
   }
 });
 

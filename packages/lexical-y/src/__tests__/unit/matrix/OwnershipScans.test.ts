@@ -385,3 +385,143 @@ describe('ownership scans: one client writes a node kept apart, types, writes an
     }
   }
 });
+
+// A run with a neighbouring run of the same key right after it (a second
+// comment, another link, or an italic run next to a bold one), one write of
+// plain text inside the first run (at its start, middle or end), then the
+// writer undoes it while a collaborator who saw the write deletes past the
+// run's end (1, 2 or 3 characters, or its last character and then the next
+// word), so the deleted gap holds the neighbour's items. Nothing outside
+// the first run may gain or lose its value: the run keeps it, the neighbour
+// keeps its own, and every other character stays plain.
+type Neighbour = 'comment' | 'link' | 'bold next to italic';
+const NEIGHBOURS: Neighbour[] = ['comment', 'link', 'bold next to italic'];
+const DELETES: [string, [number, number][]][] = [
+  ['1 character', [[7, 8]]],
+  [
+    '2 characters',
+    [
+      [7, 8],
+      [7, 8],
+    ],
+  ],
+  [
+    '3 characters',
+    [
+      [7, 8],
+      [7, 8],
+      [7, 8],
+    ],
+  ],
+  [
+    'the last character, then the next word',
+    [
+      [7, 8],
+      [7, 10],
+    ],
+  ],
+];
+
+function $giveNeighbour(
+  kind: Neighbour,
+  run: boolean,
+  from: number,
+  to: number,
+) {
+  const selection = $selectIn([0], from, to);
+  if (kind === 'comment') {
+    $addMarkID(run ? 'c1' : 'c2', selection);
+  } else if (kind === 'link') {
+    $toggleLink(run ? 'https://one.example' : 'https://two.example');
+  } else {
+    selection.format = (selection.anchor.getNode() as TextNode).getFormat();
+    selection.formatText(run ? 'bold' : 'italic');
+  }
+  $setSelection(null);
+}
+
+/** What a character carries: the run's value (1), the neighbour's (2). */
+function $carried(kind: Neighbour, node: TextNode): string {
+  if (kind === 'comment') {
+    return $getNodeMarkIDs(node as LexicalNode)
+      .sort()
+      .join(',');
+  }
+  if (kind === 'link') {
+    const parent = node.getParent();
+    return $isLinkNode(parent)
+      ? parent.getURL() === 'https://one.example'
+        ? 'c1'
+        : 'c2'
+      : '';
+  }
+  return [
+    node.hasFormat('bold') ? 'c1' : '',
+    node.hasFormat('italic') ? 'c2' : '',
+  ]
+    .filter(Boolean)
+    .join(',');
+}
+
+describe('ownership scans: an undone write inside a run, a delete past its end into a neighbouring run', () => {
+  for (const kind of NEIGHBOURS) {
+    for (const at of [4, 5, 6]) {
+      for (const [deleteName, deletes] of DELETES) {
+        for (const withBlockIds of [false, true]) {
+          for (const ids of [
+            [1, 2],
+            [2, 1],
+          ]) {
+            test(`${kind}, write at ${at}, B deletes ${deleteName}${withBlockIds ? ', block ids' : ''} (ids ${ids})`, async () => {
+              const t = await setup(
+                () => $getRoot().append($p(LINE), $p('tail line')),
+                {ids, prepare: prepareMarkState, withBlockIds},
+              );
+              t.a.update(() => $giveNeighbour(kind, true, ...KILO));
+              t.b.update(() => $giveNeighbour(kind, false, 8, 10));
+              await t.sync();
+              t.a.update(() => $insertPlainAt(at, 'X'));
+              await t.sync();
+              t.offline();
+              t.a.undo();
+              for (const [from, to] of deletes) {
+                t.b.update(() => void $selectIn([0], from, to).removeText());
+              }
+              await t.sync();
+              await expectConverged(t.peers);
+              // The model: B deletes from the text with A's write, then
+              // A's undo takes the write out.
+              const tagged: [string, string][] = Array.from(LINE, (c, i) => [
+                c,
+                i >= KILO[0] && i < KILO[1]
+                  ? 'c1'
+                  : i >= 8 && i < 10
+                    ? 'c2'
+                    : '',
+              ]);
+              tagged.splice(at, 0, ['X', 'write']);
+              for (const [from, to] of deletes) {
+                tagged.splice(from, to - from);
+              }
+              const want = tagged.filter(([, tag]) => tag !== 'write');
+              const got = t.a.read(() =>
+                ($block([0]).getAllTextNodes() as TextNode[]).flatMap(node =>
+                  Array.from(
+                    node.getTextContent(),
+                    c => [c, $carried(kind, node)] as [string, string],
+                  ),
+                ),
+              );
+              const nextLine = t.a.read(() =>
+                ($block([1]).getAllTextNodes() as TextNode[]).map(node =>
+                  $carried(kind, node),
+                ),
+              );
+              expect({got, nextLine}).toEqual({got: want, nextLine: ['']});
+            });
+          }
+        }
+      }
+    }
+  }
+});

@@ -219,10 +219,11 @@ function $isListItemContent(node: LexicalNode): boolean {
 
 /**
  * Where NodeStructureExtension enforces declared structure: for the node in
- * the nearest block container that holds each selected node, whether it is
- * kept (see {@link $listTarget}). Decided for the whole command before
- * anything is converted, so that every selected block of one node is treated
- * alike, whichever is converted first.
+ * the nearest block container that holds each selected node, whether it
+ * stays and only the blocks holding the selected text inside it become lists
+ * (see {@link $listTarget}). Decided for the whole command before anything
+ * is converted, so that every selected block of one node is treated alike,
+ * whichever is converted first.
  */
 function $keptTops(nodes: LexicalNode[]): Map<NodeKey, boolean> {
   const kept = new Map<NodeKey, boolean>();
@@ -248,11 +249,15 @@ function $keptTops(nodes: LexicalNode[]): Map<NodeKey, boolean> {
 /**
  * The node `$insertList` turns into a list item for the selected `leaf`,
  * where `top` is its ancestor in the nearest block container, or null for
- * none. It is `top` unless NodeStructureExtension enforces declared
- * structure and `top` holds a block a list item cannot hold (a quote, a
- * box), as decided in `kept` (see {@link $keptTops}): the normalization would lift that block, and the selected text with
- * it, out of the new list item and remove the list as empty, so `top` stays
- * and the block that holds `leaf` is converted instead, in place.
+ * none.
+ *
+ * Usually `top` itself. But where NodeStructureExtension enforces declared
+ * structure and `top` also holds a block a list item cannot hold (a quote, a
+ * box), as decided in `kept` (see {@link $keptTops}), turning `top` into a
+ * list item would not work: the normalization lifts that block back out of
+ * the item, with the selected text, and drops the empty list. So `top` stays
+ * where it is, and the block holding the selected text (a paragraph, a
+ * heading, a quote) becomes the list instead, in place, inside `top`.
  */
 function $listTarget(
   top: ElementNode,

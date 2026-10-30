@@ -805,8 +805,10 @@ not merge as a user might expect:
   Lexical operations that move content behave the same way: turning a
   paragraph into a list inside a container that is neither a shadow root
   nor declared `children: 'block'` (Lexical replaces the container with the
-  list, unless the container holds a block a list item cannot hold, such as
-  a quote), indenting list items that hold blocks, and the first edit that
+  list; if the container also holds a block a list item cannot hold, such
+  as a quote, the block holding the selected text becomes a list in place,
+  inside the container, instead), indenting list items that hold blocks,
+  and the first edit that
   restructures a list stored in an older shape (a nested list kept as a
   node inside an item's line): its items move into the list's own sequence.
   In a shadow root or a container declared `children: 'block'`, the

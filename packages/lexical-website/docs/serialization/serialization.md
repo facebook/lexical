@@ -676,13 +676,18 @@ inserting a block such as a table or a horizontal rule
 on the blocks inside it and keeps the container, where otherwise the
 container itself would be replaced, split or left. Converting a block's type
 (`$setBlocksType`) and indenting already act on the block in place in any
-container, and leave an empty container in place. Unlike a shadow root (`isShadowRoot()`), a declared
-container is not a selection boundary: select-all, the arrow keys, and
-Backspace or Delete at its edges treat it like any other element, so
-Backspace at the start of its first paragraph still joins that paragraph to
-the block before the container.
+container, and leave an empty container in place. Unlike a shadow root
+(`isShadowRoot()`), a declared container is not a selection boundary:
+select-all, the arrow keys, and Backspace or Delete at its edges treat it
+like any other element, so Backspace at the start of its first paragraph
+still joins that paragraph to the block before the container.
 [`$isBlockContainer(node)`](/docs/api/modules/lexical#isblockcontainer)
-tells whether a node is one.
+tells whether a node is one. A container that declares nothing keeps the
+usual behavior, where `$insertList` replaces the whole container with the
+list; but if it also holds a block a list item cannot hold (a quote,
+another box), the paragraph (or heading, or quote) holding the selected
+text becomes a list in place, inside the container, instead of the list
+being dropped.
 
 ```ts
 class CalloutNode extends ElementNode {

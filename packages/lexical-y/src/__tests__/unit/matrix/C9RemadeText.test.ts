@@ -50,6 +50,7 @@ import {
 import {describe, expect, test} from 'vitest';
 
 import {createYDoc, YCollabExtension} from '../../..';
+import {CATALOG_NODES, NODE_SHAPES} from '../../catalog/nodes';
 import {
   $createEquation,
   expectConverged,
@@ -438,5 +439,44 @@ describe('C9: a line made again from its JSON with a word changed on each side k
         }
       }
     }
+  }
+});
+
+// Every inline shape of the catalog (`catalog/nodes.ts`), its nodes made
+// again from their JSON with the words around it changed: the shape comes
+// back as it was, the same on every client. Reading the old line's layout
+// asked a removed node whether it is inline in the new state, which a class
+// that reads its latest version there (the playground's EquationNode)
+// refused with a throw.
+describe('C9: a line made again from its JSON around each catalog inline shape keeps the shape', () => {
+  const $json = (n: LexicalNode): SerializedLexicalNode => $deepJSON(n);
+  const CHANGES: [string, string][] = [
+    ['t1z', 't8z'],
+    ['t4z', 't9z'],
+  ];
+  for (const shape of NODE_SHAPES.filter(s => s.$inline !== undefined)) {
+    test(shape.name, async () => {
+      const t = await setup(
+        () => {
+          $getRoot().append(
+            $createParagraphNode().append($t('Title')),
+            $createParagraphNode().append(
+              $t('t1z t2z '),
+              ...shape.$inline!(),
+              $t(' t3z t4z'),
+            ),
+          );
+        },
+        {nodes: [...CATALOG_NODES]},
+      );
+      const json = (p: Peer) => p.read(() => $line().getChildren().map($json));
+      const expected = json(t.a).map(j => changed(j, CHANGES));
+      t.a.update(() => $rewriteAll(CHANGES));
+      await t.sync();
+      expect(json(t.a)).toEqual(expected);
+      expect(json(t.b)).toEqual(expected);
+      await expectConverged(t.peers);
+      expect(t.peers.flatMap(p => p.warnings)).toEqual([]);
+    });
   }
 });

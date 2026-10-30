@@ -384,13 +384,18 @@ export class TextReplay {
   /** The moves found unsafe in this replay (see the move entry). */
   private restart: number[] | null = null;
 
+  /** The previous state's nodes, by key. */
+  private readonly prevMap: NodeMap;
+
   constructor(
     log: TextEditLog | null,
-    private readonly prevMap: NodeMap,
+    /** The state before this update. */
+    private readonly prevState: EditorState,
     /** The caret of the new state, where it is in a text node. */
     private readonly caret: {key: NodeKey; offset: number} | null,
     private readonly composing: boolean,
   ) {
+    this.prevMap = prevState._nodeMap;
     if (log !== null) {
       // Where a text set reaches text whose history a move split or joined,
       // or a removed node still holds such text at the end (set text aligns
@@ -856,7 +861,17 @@ export class TextReplay {
 
   /** A node's layout, from the previous state, else from the new one. */
   private kindNow(key: NodeKey): Kind | null {
-    return kindOf(this.prevMap.get(key) ?? $getNodeByKey(key));
+    const old = this.prevMap.get(key);
+    return old !== undefined ? this.oldKind(old) : kindOf($getNodeByKey(key));
+  }
+
+  /**
+   * The layout of a node of the previous state, read in that state: a class
+   * may compute `isInline()` from its latest version, which a node this
+   * update removed no longer has.
+   */
+  private oldKind(node: LexicalNode | undefined): Kind | null {
+    return node === undefined ? null : this.prevState.read(() => kindOf(node));
   }
 
   /** An old text node's runs: its whole old text. Null if not a text node. */
@@ -1018,7 +1033,7 @@ export class TextReplay {
 
   /** The one character of a line break or inline node `key`, as it is. */
   private atom(key: NodeKey, kind: Kind | null): Run {
-    const old = kindOf(this.prevMap.get(key));
+    const old = this.oldKind(this.prevMap.get(key));
     if (old !== null && old === kind) {
       return kind === 'break'
         ? {base: '\n', end: 1, kind: OLD, src: key, start: 0}
@@ -1185,7 +1200,7 @@ export class TextReplay {
         if (node === undefined) {
           return;
         }
-        const kind = kindOf(node);
+        const kind = this.oldKind(node);
         out.set(c, pos);
         if (kind === 'text') {
           pos += (node as LexicalNode & {__text: string}).__text.length;
@@ -1563,12 +1578,23 @@ export class TextReplay {
           runs: readonly [number, number, number][],
         ): Block[] => {
           const out: Block[] = [];
-          let r = 0;
           for (const b of blocks) {
-            while (r < runs.length && runs[r][0] + runs[r][2] <= b.o) {
-              r++;
+            // The first run that ends after the block starts.
+            let first = 0;
+            let last = runs.length;
+            while (first < last) {
+              const mid = (first + last) >> 1;
+              if (runs[mid][0] + runs[mid][2] <= b.o) {
+                first = mid + 1;
+              } else {
+                last = mid;
+              }
             }
-            for (let k = r; k < runs.length && runs[k][0] < b.o + b.n; k++) {
+            for (
+              let k = first;
+              k < runs.length && runs[k][0] < b.o + b.n;
+              k++
+            ) {
               const [o0, p0, n] = runs[k];
               const lo = Math.max(b.o, o0);
               const hi = Math.min(b.o + b.n, o0 + n);
@@ -1866,11 +1892,17 @@ export class TextReplay {
           }
         }
       }
-      for (let j = 0, t = 0; j < parts.length; j += 3) {
+      // `keep` is in order of where its ranges start: a cursor past the
+      // ranges that end before each part keeps this linear.
+      for (let j = 0, t = 0, kp = 0; j < parts.length; j += 3) {
         const p0 = parts[j];
         const n = parts[j + 1] - p0;
+        while (kp < keep.length && keep[kp][1] <= t) {
+          kp++;
+        }
         if (keeps(spans[parts[j + 2]])) {
-          for (const [x0, x1, dx] of keep) {
+          for (let q = kp; q < keep.length && keep[q][0] < t + n; q++) {
+            const [x0, x1, dx] = keep[q];
             const lo = Math.max(t, x0);
             const hi = Math.min(t + n, x1);
             if (hi > lo) {

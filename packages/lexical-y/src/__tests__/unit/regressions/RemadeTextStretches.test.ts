@@ -482,46 +482,155 @@ describe('#9621: nothing a collaborator deleted comes back, nothing shows twice'
   }
 });
 
-// The word-by-word diff of a remade line's changed middle stays linear in
-// the line's length: two changes at its ends (the whole line between them
-// diffed), and a change every fourth word (past the diff's bound of edits,
-// where only the common start and end are kept).
+// Past the bound on one shortest edit script (more than 64 words replaced,
+// each a delete and an insert), the words found once in both texts anchor
+// the diff: a collaborator's concurrent edit of an unchanged word is kept as
+// below the bound.
+describe('#9621: an edit between more changed words than one edit script covers', () => {
+  for (const changes of [64, 65, 200]) {
+    for (const ids of IDS) {
+      for (const edit of ['delete', 'delete, undo', 'type', 'bold'] as const) {
+        test(`${changes} words replaced ‖ the peer ${edit}s an unchanged word (ids ${ids})`, async () => {
+          const words = Array.from(
+            {length: 2 * changes + 1},
+            (_, i) => `w${i}z`,
+          );
+          const next = words
+            .map((w, i) => (i % 2 === 0 && i < 2 * changes ? `r${i}z` : w))
+            .join(' ');
+          const old = words.join(' ');
+          const victim = words[3];
+          const at = old.indexOf(victim);
+          const t = await setup(
+            () => {
+              $getRoot().append(
+                $createParagraphNode().append($createTextNode('Title')),
+                $createParagraphNode().append($createTextNode(old)),
+              );
+            },
+            {ids},
+          );
+          t.offline();
+          if (edit === 'bold') {
+            t.b.update(() => {
+              const leaf = $line().getFirstChildOrThrow() as TextNode;
+              const [, mid] = leaf.splitText(at, at + victim.length);
+              mid.toggleFormat('bold');
+              $setSelection(null);
+            });
+          } else if (edit === 'type') {
+            t.b.update($splice(at + 1, 0, 'Q'));
+          } else {
+            t.b.update($splice(at, victim.length));
+          }
+          t.a.update(() => {
+            for (const child of $line().getChildren()) {
+              child.remove();
+            }
+            $line().append($createTextNode(next));
+            $setSelection(null);
+          });
+          await t.sync();
+          if (edit === 'delete, undo') {
+            t.b.undo();
+            await t.sync();
+          }
+          const expected =
+            edit === 'delete'
+              ? next.replace(victim, '')
+              : edit === 'type'
+                ? next.replace(victim, 'wQ3z')
+                : next;
+          const fresh = await freshReader(t.a);
+          expect([...t.peers, fresh].map(lineText)).toEqual(
+            [...t.peers, fresh].map(() => expected),
+          );
+          if (edit === 'bold') {
+            expect(
+              t.a.read(() =>
+                $line()
+                  .getAllTextNodes()
+                  .filter(n => n.hasFormat('bold'))
+                  .map(n => n.getTextContent()),
+              ),
+            ).toEqual([victim]);
+          }
+          await expectConverged(t.peers);
+          expect(t.peers.flatMap(p => p.warnings)).toEqual([]);
+        });
+      }
+    }
+  }
+});
+
+// The diff of a remade line stays linear in the line's length: two changes
+// at its ends (the whole line between them diffed), a change every fourth
+// word (past one edit script's bound, where unique words anchor it), and
+// the white space between every two words changed in a line of one
+// alternately formatted node per word (a kept run per word, a node per run).
 describe('#9621: a long remade line stays linear', () => {
-  const timed = async (n: number, every: number) => {
+  const timed = async (
+    n: number,
+    oldNodes: (words: string[]) => TextNode[],
+    newNodes: (words: string[]) => TextNode[],
+    expected: (words: string[]) => string,
+  ) => {
     const words = Array.from({length: n}, (_, i) => `t${i}z`);
     const t = await setup(() => {
       $getRoot().append(
         $createParagraphNode().append($createTextNode('Title')),
-        $createParagraphNode().append($createTextNode(words.join(' '))),
+        $createParagraphNode().append(...oldNodes(words)),
       );
     });
-    const next = words.map((w, i) =>
-      i % every === 0 || i === n - 1 ? `n${i}z` : w,
-    );
     const start = performance.now();
     t.a.update(() => {
       for (const child of $line().getChildren()) {
         child.remove();
       }
-      $line().append($createTextNode(next.join(' ')));
+      $line().append(...newNodes(words));
       $setSelection(null);
     });
     const ms = performance.now() - start;
-    expect(lineText(t.a)).toBe(next.join(' '));
+    expect(lineText(t.a)).toBe(expected(words));
     await t.sync();
-    expect(lineText(t.b)).toBe(next.join(' '));
+    expect(lineText(t.b)).toBe(expected(words));
     return ms;
   };
-  for (const [name, every] of [
-    ['changes at both ends', Infinity],
-    ['a change every fourth word', 4],
+  const changed = (every: number) => (words: string[]) =>
+    words
+      .map((w, i) => (i % every === 0 || i === words.length - 1 ? `n${i}z` : w))
+      .join(' ');
+  const perWord = (sep: string) => (words: string[]) =>
+    words.map((w, i) => {
+      const node = $createTextNode(w + (i === words.length - 1 ? '' : sep));
+      return i % 2 === 1 ? node.toggleFormat('bold') : node;
+    });
+  for (const [name, oldNodes, newNodes, expected] of [
+    [
+      'changes at both ends',
+      (words: string[]) => [$createTextNode(words.join(' '))],
+      (words: string[]) => [$createTextNode(changed(Infinity)(words))],
+      changed(Infinity),
+    ],
+    [
+      'a change every fourth word',
+      (words: string[]) => [$createTextNode(words.join(' '))],
+      (words: string[]) => [$createTextNode(changed(4)(words))],
+      changed(4),
+    ],
+    [
+      'the white space between every two words, one node per word',
+      perWord(' '),
+      perWord('  '),
+      (words: string[]) => words.join('  '),
+    ],
   ] as const) {
     test(
       name,
       async () => {
-        await timed(500, every);
-        const small = await timed(2_000, every);
-        const big = await timed(8_000, every);
+        await timed(500, oldNodes, newNodes, expected);
+        const small = await timed(1_000, oldNodes, newNodes, expected);
+        const big = await timed(4_000, oldNodes, newNodes, expected);
         // Linear is 4x, quadratic 16x.
         expect(big / Math.max(small, 20)).toBeLessThan(10);
       },

@@ -817,9 +817,10 @@ person's:
   it was a node of its own (a tab, a line break, a node of spaces). A word
   joined to a changed word through an inline node, with no space between, is
   written again with it, and an inline node made between two changes is new
-  where it is put. Where a line has more than 128 changed words, only its
-  common start and end are kept, so the comparison stays linear in the
-  line's length. Prefer
+  where it is put. The comparison stays linear in the line's length: where
+  a line has more than 128 changed words, the unchanged words found once in
+  both texts anchor it, so a word that occurs more than once in the line
+  and sits between such a word and a change may be written again. Prefer
   these to `setTextContent`, which sets a node's text whole: such a change
   (and a change the browser makes to the DOM text, as an IME composition
   does) keeps the start and end its text shares with the node's old text,
@@ -1010,7 +1011,8 @@ not merge as a user might expect:
   new word, not in it (a letter typed at the end of the word ends up in
   front of the new word), and the collaborator's formatting of the changed
   word at the same time is not kept. In a line with more than 128 changed
-  words, everything between the first and the last change is written again.
+  words, an unchanged word that occurs more than once in the line may be
+  written again.
   The concurrent typed text is kept, and every client shows the same
   result. Edit the changed words in place instead
   (`TextNode#spliceText`, the selection's `insertText`): only the changed

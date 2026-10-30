@@ -791,9 +791,9 @@ export function keptEnds(
 }
 
 /**
- * The most edits the diff of a remade line's changed middle looks for (see
- * keptStretches): past it, only the common start and end are kept, so the
- * diff stays linear in the line's length.
+ * The most edits one shortest edit script of a remade line's changed words
+ * looks for (see commonWords): past it, the words unique to both texts
+ * anchor the rest, so the diff stays linear in the line's length.
  */
 const MAX_EDITS = 128;
 
@@ -889,6 +889,106 @@ function commonTokens(
 }
 
 /**
+ * The words equal in `a` and `b` that are kept, as pairs of indexes, in
+ * order: their common start and end, then a shortest edit script of the rest
+ * (commonTokens) where it takes at most MAX_EDITS edits; past that, the
+ * words that occur once in each text, in the longest run of them in the
+ * same order in both (patience diff), and the same between each two of
+ * those, once (between them, past MAX_EDITS edits, only their common start
+ * and end). O((n + m) * MAX_EDITS + n log n).
+ */
+function commonWords(
+  a: readonly number[],
+  b: readonly number[],
+  anchored = false,
+): [number, number][] {
+  const out: [number, number][] = [];
+  let a0 = 0;
+  let b0 = 0;
+  let a1 = a.length;
+  let b1 = b.length;
+  while (a0 < a1 && b0 < b1 && a[a0] === b[b0]) {
+    out.push([a0++, b0++]);
+  }
+  const tail: [number, number][] = [];
+  while (a1 > a0 && b1 > b0 && a[a1 - 1] === b[b1 - 1]) {
+    tail.push([--a1, --b1]);
+  }
+  if (a0 < a1 && b0 < b1) {
+    const pairs = commonTokens(a.slice(a0, a1), b.slice(b0, b1), MAX_EDITS);
+    if (pairs !== null) {
+      for (const [x, y] of pairs) {
+        out.push([x + a0, y + b0]);
+      }
+    } else if (!anchored) {
+      // Words that occur once in each text.
+      const count = new Map<number, number>();
+      const atA = new Map<number, number>();
+      for (let x = a0; x < a1; x++) {
+        count.set(a[x], (count.get(a[x]) ?? 0) + 1);
+        atA.set(a[x], x);
+      }
+      const inB = new Map<number, number>();
+      const atB = new Map<number, number>();
+      for (let y = b0; y < b1; y++) {
+        inB.set(b[y], (inB.get(b[y]) ?? 0) + 1);
+        atB.set(b[y], y);
+      }
+      const unique: [number, number][] = [];
+      for (let y = b0; y < b1; y++) {
+        if (count.get(b[y]) === 1 && inB.get(b[y]) === 1) {
+          unique.push([atA.get(b[y])!, atB.get(b[y])!]);
+        }
+      }
+      // The longest run of them in the same order in both (in order of
+      // `b`, increasing in `a`): patience sorting.
+      const tops: number[] = [];
+      const prev = new Int32Array(unique.length).fill(-1);
+      for (let i = 0; i < unique.length; i++) {
+        let lo = 0;
+        let hi = tops.length;
+        while (lo < hi) {
+          const mid = (lo + hi) >> 1;
+          if (unique[tops[mid]][0] < unique[i][0]) {
+            lo = mid + 1;
+          } else {
+            hi = mid;
+          }
+        }
+        prev[i] = lo > 0 ? tops[lo - 1] : -1;
+        tops[lo] = i;
+      }
+      const anchors: [number, number][] = [];
+      for (let i = tops.length > 0 ? tops[tops.length - 1] : -1; i >= 0; ) {
+        anchors.push(unique[i]);
+        i = prev[i];
+      }
+      anchors.reverse();
+      let x = a0;
+      let y = b0;
+      for (const [ax, by] of [...anchors, [a1, b1] as [number, number]]) {
+        for (const [px, py] of commonWords(
+          a.slice(x, ax),
+          b.slice(y, by),
+          true,
+        )) {
+          out.push([px + x, py + y]);
+        }
+        if (ax < a1) {
+          out.push([ax, by]);
+        }
+        x = ax + 1;
+        y = by + 1;
+      }
+    }
+  }
+  for (let i = tail.length - 1; i >= 0; i--) {
+    out.push(tail[i]);
+  }
+  return out;
+}
+
+/**
  * What text made in place of removed text (`b`, see TextReplay#stretch)
  * keeps of that text (`a`), as ranges `[x0, x1, dx]` of `b` whose character
  * `x` was character `x + dx` of `a`, in order: the common start and end
@@ -899,7 +999,6 @@ function commonTokens(
  * written: a character a collaborator deletes in an unchanged word between
  * two changed ones stays deleted, and a letter it types there stays in that
  * word. White space alone is never kept between two changes, as at the ends.
- * Past MAX_EDITS word edits, only the common start and end.
  */
 export function keptStretches(
   a: string,
@@ -930,14 +1029,10 @@ export function keptStretches(
     }
     return x;
   };
-  const pairs = commonTokens(
+  const pairs = commonWords(
     wa.map(w => id(a, w)),
     wb.map(w => id(b, w)),
-    MAX_EDITS,
   );
-  if (pairs === null) {
-    return ends;
-  }
   const out: [number, number, number][] = [ends[0]];
   let lastA = prefix;
   let lastB = prefix;

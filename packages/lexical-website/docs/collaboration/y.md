@@ -879,6 +879,21 @@ not merge as a user might expect:
   that outdents an item of such a list is a delete in the nested list's
   container and an insert in the list's: text a collaborator types in those
   items at the same time is lost (only lists stored in that older shape).
+- **Text nodes made again with other text.** Where an update replaces a
+  line's text nodes with new ones and the line's text changed (an AI rewrite
+  that makes a block's text nodes again with one word changed, or removes a
+  block's children and appends one new text node), a replaced node whose
+  text is not all there unchanged is written again whole: its characters are
+  deleted, and the new text is inserted. What a collaborator types into that
+  text at the same time, which the update's author has not seen, stays where
+  it was, so it lands outside the new text, before it (a letter typed at the
+  end of a word ends up in front of the rewritten text, out of its word),
+  and the collaborator's formatting of that text at the same time is not
+  kept. The concurrent typed text is kept, and every client shows the same
+  result. Edit the changed
+  words in place instead (`TextNode#spliceText`, the selection's
+  `insertText`; see [Edits made by code](#edits-made-by-code-agents-tools)):
+  only the changed characters are written.
 - **Delete wins.** Text typed into a container that a collaborator deletes at
   the same time is deleted with it, and so is a block moved into it.
 - **Last writer wins** for the fields of one link (URL and target change

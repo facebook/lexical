@@ -141,6 +141,19 @@ provider.once('sync', () => {
 });
 ```
 
+:::warning Initial content must be the same on every client
+
+`binding.initialize()` writes this client's initial content into a new
+document. When two clients open a new document at once, each writes its
+own, and the document keeps one copy only if the two are identical: a
+welcome line with the user's name, a template with random block ids, or a
+`$initialEditorState` that differs between app versions shows twice, with
+no warning. Create such documents in one place instead, on the server with
+[`seedYState`](./y-server.md), and have clients start empty (see "Initial
+content with random values" in [Limits](#limits)).
+
+:::
+
 - Create the document with **`createYDoc`** (`createYDoc(stored)` for a
   stored state) and hand it to the provider: it turns Yjs's format cleanup
   off before anything is applied to it. In a plain `new Y.Doc()` the
@@ -167,9 +180,14 @@ provider.once('sync', () => {
 - `binding.initialize()`, called after the provider's first sync, writes the
   editor's content into an empty document (an `editor.update()` still
   pending is part of it). Two clients that initialize the same content in a
-  new document at once write it once, when they would write the same items
+  document at once write it once, when they would write the same items
   (clients with different block id configurations, or different
-  `schemaVersion`s, write different ones, so the content shows twice). The editor then shows the content as stored, as
+  `schemaVersion`s, write different ones, so the content shows twice). That
+  holds for a root inside another shared type and for a root that held
+  content before, when both clients loaded the same state of the document
+  (the initial content of such a root is written on a copy of the whole
+  document, a cost that grows with the other content the document holds;
+  seed large documents in one place instead). The editor then shows the content as stored, as
   every reader does (a line break written inside a text node shows as a
   line break node), with its selection kept (a node selection keeps its
   nodes, found by the Yjs identity they are stored or shown by: a node's
@@ -300,6 +318,44 @@ right after that update commits, in an update of its own.
 `binding.getCursor()` and `binding.$resolveCursor()` convert the selection
 to and from Yjs relative positions for an awareness-based cursor UI; the
 binding does not render remote cursors itself.
+`getCursor()` returns plain JSON, so it can go in the awareness state the
+provider shares:
+
+```ts
+// Share this client's selection.
+editor.registerUpdateListener(() => {
+  provider.awareness.setLocalStateField('cursor', binding.getCursor());
+});
+
+// Find where each collaborator's selection is.
+provider.awareness.on('change', () => {
+  for (const [clientID, state] of provider.awareness.getStates()) {
+    if (clientID === provider.awareness.clientID || !state.cursor) {
+      continue;
+    }
+    editor.read(() => {
+      const points = binding.$resolveCursor(state.cursor);
+      if (points === null) {
+        // The text the cursor was in is gone: remove its caret.
+        return;
+      }
+      // Lexical points ({key, offset, type}): draw the caret from them here,
+      // for example at editor.getElementByKey(points.anchor.key).
+    });
+  }
+});
+```
+
+To tear a client down (a test, a closed tab in a single-page app), dispose
+of the editor, which disconnects the binding, and destroy the provider and
+the awareness it created: `provider.destroy()` leaves the awareness's
+timers running, which keeps a Node process from exiting.
+
+```ts
+editor.dispose();
+provider.destroy();
+provider.awareness.destroy();
+```
 
 ### Warnings
 
@@ -308,13 +364,14 @@ extension, see [Errors and warnings](/docs/extensions/defining-extensions#errors
 Each warning is a `LexicalWarning` with a stable `code` and typed `data`;
 `isYWarning(error)` narrows it to the `YWarning` union, where `code` decides
 the type of `data`, and `data.reason` says which case it is. The `message` is
-a short note for developers: render your own text from `code` and `data`.
+for developers (what happened and what to do): render your own text from
+`code` and `data`.
 
 | Constant | Reported when | `data` (`reason`: other fields) |
 | -- | -- | -- |
 | `UNSUPPORTED_SCHEMA_WARNING` | A client of a newer version of your app (a higher `schemaVersion`) wrote to the document, on open or mid-session; see [Versioning your schema](#versioning-your-schema). Read only. | `'newer'`: `found`; `'malformed'`: `key`, `found`. All: `supported` (your `schemaVersion`) |
 | `UNSUPPORTED_LAYOUT_WARNING` | The layout is one this version cannot read. Read only. | `'newer'`: `found`; `'malformed'`: `key`, `found`; `'missing'`, `'removed'`; `'legacy-roots'`: `roots`. All: `supported` |
-| `UNKNOWN_NODE_TYPES_WARNING` | The document has node types the editor cannot build: types it does not register, however they are stored (a link class it lacks too), or content its classes throw on. Read only. | `'unregistered'`, `'malformed-slot'`: `types`; `'unreadable'`: `types`, `error` |
+| `UNKNOWN_NODE_TYPES_WARNING` | The document has node types the editor cannot build: types it does not register, however they are stored (a link class it lacks too), or content its classes throw on; or the document could not be read at all (`'unreadable'` with empty `types`, the cause in `error`). Read only. | `'unregistered'`, `'malformed-slot'`: `types`; `'unreadable'`: `types`, `error` |
 | `STORAGE_MISMATCH_WARNING` | A node type is stored in a way its class cannot be (one warning per type). Read only. | `'declaration-changed'`: `type`, `stored`, `declared`; `'malformed'`: `type`, `key`, `found` |
 | `UNSUPPORTED_SLOTS_WARNING` | Named slots where the document cannot store them. Not written; read only. | `'stored-host'`, `'root'`: `types` |
 | `UNSUPPORTED_CONFIG_WARNING` | `BlockIdExtension` with `repairTransforms: true`, or a document with Yjs's format cleanup on (not from `createYDoc`), see [Set up an editor](#set-up-an-editor). Nothing is written; read only. | `'repair-transforms'`: `options`; `'cleanup-formatting'` |
@@ -414,7 +471,7 @@ release's clients with the version of the schema they were built with.
   older client then only loses the ability to edit documents a newer one
   wrote to, never what they hold. An app that never bumps keeps today's
   behavior between versions (see "Older app versions" in [Limits](#limits)).
-- **Rendering the warning.** The message is a short note for developers.
+- **Rendering the warning.** The message is for developers.
   Render your own banner from `code` and `data`, for example "This document
   was edited with a newer version of the app. Reload to get the latest
   version." (see the banner example in [Warnings](#warnings)). Where the
@@ -726,8 +783,24 @@ person's:
   their characters (the hashtag plugin, a keyword highlighter or another
   transform making a part of a node again, an entity grown over the word
   after it, two entities made plain text at once), also when the update
-  then edits them; text made where the line's text changed (a node with
-  other text, a line break, an inline node) is new where it is put. Prefer
+  then edits them. Where the line's text changed, the text of nodes made in
+  place of removed ones keeps the start and end it shares with the line's
+  text as it was, by character, whatever nodes held it (as y-prosemirror
+  keeps a text run's): a block's text nodes made again from its JSON with
+  one word changed write that word alone, so a letter a collaborator types
+  into another word of the line at the same time stays in that word, and a
+  character a collaborator deletes there stays deleted. A replacement
+  replaces whole words, as below, and so does an insertion between two
+  letters or digits of a word or a deletion inside one, so that an edit
+  computed before it that replaces the old word takes nothing out of the new
+  one; an insertion or deletion at a word's edge or next to punctuation
+  keeps the old characters, as typed text does, and a concurrent
+  replacement of that word takes them out of the new one. A separator alone
+  between the changed words and the kept text is written with them, unless
+  it was a node of its own (a tab, a line break, a node of spaces). A word
+  joined to a changed word through an inline node, with no space between, is
+  written again with it; text between two separate changes is written
+  again, and an inline node made there is new where it is put. Prefer
   these to `setTextContent`, which sets a node's text whole: such a change
   (and a change the browser makes to the DOM text, as an IME composition
   does) keeps the start and end its text shares with the node's old text,
@@ -899,6 +972,21 @@ not merge as a user might expect:
   that outdents an item of such a list is a delete in the nested list's
   container and an insert in the list's: text a collaborator types in those
   items at the same time is lost (only lists stored in that older shape).
+- **Text nodes made again with other text.** Where an update replaces a
+  line's text nodes with new ones and the line's text changed (an AI rewrite
+  that makes a block's text nodes again with one word changed, or removes a
+  block's children and appends one new text node), a replaced node whose
+  text is not all there unchanged is written again whole: its characters are
+  deleted, and the new text is inserted. What a collaborator types into that
+  text at the same time, which the update's author has not seen, stays where
+  it was, so it lands outside the new text, before it (a letter typed at the
+  end of a word ends up in front of the rewritten text, out of its word),
+  and the collaborator's formatting of that text at the same time is not
+  kept. The concurrent typed text is kept, and every client shows the same
+  result. Edit the changed
+  words in place instead (`TextNode#spliceText`, the selection's
+  `insertText`; see [Edits made by code](#edits-made-by-code-agents-tools)):
+  only the changed characters are written.
 - **Delete wins.** Text typed into a container that a collaborator deletes at
   the same time is deleted with it, and so is a block moved into it.
 - **Last writer wins** for the fields of one link (URL and target change
@@ -1019,9 +1107,9 @@ not merge as a user might expect:
   document at once write it once only when their content is identical. An
   extension that gives new blocks random ids makes it differ, so the content
   shows twice; so do different block id configurations (with and without
-  `BlockIdExtension`, or another `$isIdentifiedBlock`), initializing a root
-  that held content before, and initializing a root inside another shared
-  type. Seed new documents in one place (on the server with `seedYState`, for
+  `BlockIdExtension`, or another `$isIdentifiedBlock`), and initializing a
+  root that held content before, or a root inside another shared type, after
+  the clients loaded different states of the document. Seed new documents in one place (on the server with `seedYState`, for
   example), or give the initial blocks fixed ids.
 - **Client ids add up.** A document keeps every client id that ever wrote
   to it, in its state vector (which every sync sends) and in the

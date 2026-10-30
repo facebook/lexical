@@ -110,11 +110,7 @@ export function isFlankedBy(
   primary: string | undefined,
   secondary: string | undefined,
 ): boolean {
-  const primaryClass = classify(primary);
-  return (
-    primaryClass === OTHER_CLASS ||
-    isFlankedByClass(primaryClass, classify(secondary))
-  );
+  return isFlankedByClass(classify(primary), classify(secondary));
 }
 
 function isFlankedByClass(primary: number, secondary: number): boolean {
@@ -161,8 +157,8 @@ function isLowSurrogate(code: number): boolean {
 
 /** The character (code point) that starts at `index`, if any. */
 export function characterAt(text: string, index: number): string | undefined {
-  // Only a surrogate pair reads as a code point past U+FFFF.
-  return (text.codePointAt(index) ?? 0) > 0xffff
+  return isHighSurrogate(text.charCodeAt(index)) &&
+    isLowSurrogate(text.charCodeAt(index + 1))
     ? text.slice(index, index + 2)
     : text[index];
 }

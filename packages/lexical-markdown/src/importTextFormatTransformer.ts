@@ -46,15 +46,11 @@ export function findOutermostTextFormatTransformer(
 
   const codeSpans = codeTransformer ? scanCodeSpans(textContent) : [];
   const codeMatch = codeSpans.length > 0 ? {...codeSpans[0], tag: '`'} : null;
-  const excludeRanges = codeSpans.map(span => ({
-    end: span.endIndex,
-    start: span.startIndex,
-  }));
 
   const delimiters = scanDelimiters(
     textContent,
     textFormatTransformersIndex,
-    excludeRanges,
+    codeSpans,
   );
   const emphasisMatch =
     delimiters.length > 0
@@ -192,7 +188,7 @@ export function scanCodeSpans(text: string): {
 function scanDelimiters(
   text: string,
   transformersIndex: TextFormatTransformersIndex,
-  excludeRanges: {start: number; end: number}[] = [],
+  codeSpans: {startIndex: number; endIndex: number}[],
 ): Delimiter[] {
   const delimiters: Delimiter[] = [];
   const delimiterChars = new Set(
@@ -209,17 +205,20 @@ function scanDelimiters(
     return count % 2 === 1;
   };
 
-  const isInExcludedRange = (index: number): boolean => {
-    return excludeRanges.some(
-      range => index >= range.start && index < range.end,
-    );
+  // The spans are in order and the scan only moves forward.
+  let span = 0;
+  const isInCodeSpan = (index: number): boolean => {
+    while (span < codeSpans.length && codeSpans[span].endIndex <= index) {
+      span++;
+    }
+    return span < codeSpans.length && index >= codeSpans[span].startIndex;
   };
 
   let i = 0;
   while (i < text.length) {
     const char = text[i];
 
-    if (!delimiterChars.has(char) || isEscaped(i) || isInExcludedRange(i)) {
+    if (!delimiterChars.has(char) || isEscaped(i) || isInCodeSpan(i)) {
       i++;
       continue;
     }

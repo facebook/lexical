@@ -13,6 +13,12 @@ import {
   NodeStructureExtension,
 } from '@lexical/extension';
 import {$createLinkNode, LinkNode} from '@lexical/link';
+import {
+  $createListItemNode,
+  $createListNode,
+  ListItemNode,
+  ListNode,
+} from '@lexical/list';
 import {$createMarkNode, MarkNode} from '@lexical/mark';
 import {$createOverflowNode, OverflowNode} from '@lexical/overflow';
 import {$createQuoteNode, QuoteNode} from '@lexical/rich-text';
@@ -453,4 +459,193 @@ test('$wrapNodes looks up parents linearly in the inline nesting depth', () => {
   // walk per node from scratch quadruples them).
   expect(d128.calls / d64.calls).toBeLessThan(2.5);
   expect(d64.calls / d32.calls).toBeLessThan(2.5);
+});
+
+// A block container whose children mix inline content and blocks: each run
+// of inline content (see $inlineRun) and each block is wrapped on its own,
+// in document order, and every text node keeps its identity and place.
+// Input space: the container is a block shadow root at the root, a block
+// shadow root that is a paragraph's named slot value, or an inline shadow
+// root in a paragraph; its children are one of several mixes of direct text
+// and paragraphs (one with a mark), only text, or only paragraphs; the
+// selection runs over all of it, from its first text to the middle, or from
+// the middle to its last text, forward and backward; with and without
+// NodeStructureExtension.
+const MIXES: (string | string[])[][] = [
+  ['AA', ['BB'], 'CC'],
+  [['AA'], 'BB', ['CC']],
+  ['AA', 'BB', ['CC'], 'DD'],
+  [['AA'], ['BB'], 'CC'],
+  ['AA', 'BB', 'CC'],
+  [['AA'], ['BB'], ['CC']],
+];
+const CONTAINERS = [
+  'block shadow root at the root',
+  "block shadow root, a paragraph's slot value",
+  'inline shadow root in a paragraph',
+] as const;
+const SPANS = [
+  'all of it',
+  'first text to the middle',
+  'middle to the last text',
+] as const;
+
+/** The text nodes under `node`, in document order, as key:text. */
+function $texts(node: LexicalNode): string[] {
+  if ($isElementNode(node)) {
+    return node.getChildren().flatMap($texts);
+  }
+  return $isTextNode(node) ? [`${node.getKey()}:${node.getTextContent()}`] : [];
+}
+
+describe('$wrapNodes over a block container that mixes inline content and blocks', () => {
+  for (const structure of [false, true]) {
+    for (const container of CONTAINERS) {
+      for (const [m, mix] of MIXES.entries()) {
+        for (const span of SPANS) {
+          for (const backward of [false, true]) {
+            test(`${container}, mix ${m}, ${span}${backward ? ', backward' : ''}${structure ? ', NodeStructureExtension' : ''}`, () => {
+              using editor = buildEditorFromExtensions({
+                dependencies: structure ? [NodeStructureExtension] : [],
+                name: '@wrapNodes-mixed-container-test',
+                nodes: [
+                  InlineShadowNode,
+                  MarkNode,
+                  QuoteNode,
+                  TestShadowRootNode,
+                ],
+              });
+              let scopeKey = '';
+              let before: string[] = [];
+              editor.update(
+                () => {
+                  $getRoot().clear();
+                  const scope = container.startsWith('inline')
+                    ? $create(InlineShadowNode)
+                    : $createTestShadowRootNode();
+                  for (const [i, part] of mix.entries()) {
+                    if (typeof part === 'string') {
+                      scope.append($createTextNode(part).setMode('token'));
+                    } else {
+                      const text = $createTextNode(part[0]).setMode('token');
+                      scope.append(
+                        $createParagraphNode().append(
+                          i === 1 ? $createMarkNode(['c1']).append(text) : text,
+                        ),
+                      );
+                    }
+                  }
+                  const host = $createParagraphNode().append(
+                    $createTextNode('outside').setMode('token'),
+                  );
+                  if (container === 'block shadow root at the root') {
+                    $getRoot().append(host, scope);
+                  } else if (container.startsWith('inline')) {
+                    host.append(scope);
+                    $getRoot().append(host);
+                  } else {
+                    $setSlot(host, 'body', scope);
+                    $getRoot().append(host);
+                  }
+                  scopeKey = scope.getKey();
+                },
+                {discrete: true},
+              );
+              editor.update(
+                () => {
+                  const scope = $getNodeByKey(scopeKey) as ElementNode;
+                  before = $texts(scope);
+                  const texts = scope.getAllTextNodes();
+                  const middle = texts[Math.floor(texts.length / 2)];
+                  const [start, end] =
+                    span === 'all of it'
+                      ? [texts[0], texts[texts.length - 1]]
+                      : span === 'first text to the middle'
+                        ? [texts[0], middle]
+                        : [middle, texts[texts.length - 1]];
+                  const selection = $createRangeSelection();
+                  const [anchor, focus] = backward
+                    ? [end, start]
+                    : [start, end];
+                  selection.anchor.set(
+                    anchor.getKey(),
+                    backward ? anchor.getTextContentSize() : 0,
+                    'text',
+                  );
+                  selection.focus.set(
+                    focus.getKey(),
+                    backward ? 0 : focus.getTextContentSize(),
+                    'text',
+                  );
+                  $setSelection(selection);
+                  $wrapNodes(selection, () => $createQuoteNode());
+                },
+                {discrete: true},
+              );
+              editor.read(() => {
+                const scope = $getNodeByKey(scopeKey) as ElementNode;
+                expect(scope.isAttached()).toBe(true);
+                expect($texts(scope)).toEqual(before);
+              });
+            });
+          }
+        }
+      }
+    }
+  }
+});
+
+// A range with one end in a list item's text and the other an element point
+// on the list itself, in either direction and at every offset: $wrapNodes
+// does not throw, and every text stays, in order.
+describe('$wrapNodes over a range from a list item to an element point on its list', () => {
+  for (const structure of [false, true]) {
+    for (const item of [0, 1, 2]) {
+      for (const offset of [0, 1, 2, 3]) {
+        for (const backward of [false, true]) {
+          test(`item ${item}, list offset ${offset}${backward ? ', backward' : ''}${structure ? ', NodeStructureExtension' : ''}`, () => {
+            using editor = buildEditorFromExtensions({
+              dependencies: structure ? [NodeStructureExtension] : [],
+              name: '@wrapNodes-list-point-test',
+              nodes: [ListNode, ListItemNode, QuoteNode],
+            });
+            editor.update(
+              () => {
+                const list = $createListNode('bullet').append(
+                  ...['aa', 'bb', 'cc'].map(text =>
+                    $createListItemNode().append($createTextNode(text)),
+                  ),
+                );
+                $getRoot()
+                  .clear()
+                  .append(
+                    $createParagraphNode().append($createTextNode('before')),
+                    list,
+                  );
+                const text = (
+                  list.getChildAtIndex(item) as ElementNode
+                ).getFirstDescendant()!;
+                const selection = $createRangeSelection();
+                const [textPoint, listPoint] = backward
+                  ? [selection.focus, selection.anchor]
+                  : [selection.anchor, selection.focus];
+                textPoint.set(text.getKey(), 1, 'text');
+                listPoint.set(list.getKey(), offset, 'element');
+                $setSelection(selection);
+                $wrapNodes(selection, () => $createQuoteNode());
+              },
+              {discrete: true},
+            );
+            expect(
+              editor.read(() =>
+                $getRoot()
+                  .getAllTextNodes()
+                  .map(node => node.getTextContent()),
+              ),
+            ).toEqual(['before', 'aa', 'bb', 'cc']);
+          });
+        }
+      }
+    }
+  }
 });

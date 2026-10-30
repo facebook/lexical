@@ -12,6 +12,7 @@ import {
   $extendCaretToRange,
   $findMatchingParent,
   $getPreviousSelection,
+  $getSelection,
   $getSlotFrame,
   $getSlotHost,
   $hasAncestor,
@@ -276,6 +277,47 @@ function $wrappedBlock(
 }
 
 /**
+ * The child of block container `container` that holds `node`.
+ */
+function $childIn(container: ElementNode, node: LexicalNode): LexicalNode {
+  let child = node;
+  for (let parent = child.getParent(); parent !== null; ) {
+    if (parent.is(container)) {
+      break;
+    }
+    child = parent;
+    parent = child.getParent();
+  }
+  return child;
+}
+
+/**
+ * The run of inline content `child`, inline content that is a child of a
+ * block container, is in: it and its siblings on both sides up to the
+ * nearest ones that are not inline content. $wrapNodes wraps such a run,
+ * not the container's children.
+ */
+function $inlineRun(child: LexicalNode): LexicalNode[] {
+  let first = child;
+  for (
+    let prev = first.getPreviousSibling();
+    prev !== null && INTERNAL_isInlineContent(prev);
+    prev = prev.getPreviousSibling()
+  ) {
+    first = prev;
+  }
+  const run: LexicalNode[] = [];
+  for (
+    let it: LexicalNode | null = first;
+    it !== null && INTERNAL_isInlineContent(it);
+    it = it.getNextSibling()
+  ) {
+    run.push(it);
+  }
+  return run;
+}
+
+/**
  * @deprecated In favor of $setBlockTypes
  * Wraps all nodes in the selection into another node of the type returned by createElement.
  * @param selection - The selection of nodes to be wrapped.
@@ -417,11 +459,16 @@ export function $wrapNodesImpl(
   if (firstNodeBlock === null) {
     return;
   }
+  // For inline content directly in a block container, its run (see
+  // $inlineRun) stands for the block, and a block leaf there for itself.
   let target: LexicalNode = firstNodeBlock;
+  if ($isBlockContainer(firstNodeBlock)) {
+    const child = $childIn(firstNodeBlock, firstNode);
+    target = INTERNAL_isInlineContent(child) ? $inlineRun(child)[0] : child;
+  }
 
   let targetIsPrevSibling = false;
-  // Content directly in a block container goes in it, before its first child.
-  while (!$isBlockContainer(firstNodeBlock) && target !== null) {
+  while (target !== null) {
     const prevSibling: LexicalNode | null = target.getPreviousSibling();
 
     if (prevSibling !== null) {
@@ -454,15 +501,46 @@ export function $wrapNodesImpl(
 
   const movedNodes: Set<NodeKey> = new Set();
 
+  // No selection while content moves: the elements it moves to are not in
+  // the document yet, so a node removal that adjusts the selection (a list
+  // item's) would compare a point in one of them with a point in the
+  // document, which have no common ancestor. It is set again below.
+  const active = $getSelection();
+  $setSelection(null);
+
   // The block of each node, decided before anything moves: once a block's
   // content is in its new element, a node deep inside it would otherwise
-  // find the new element as its block.
-  const blocks: (ElementNode | null)[] = [];
+  // find the new element as its block. For inline content directly in a
+  // block container, the run it is in (see $inlineRun) stands for the
+  // block: the container's blocks are wrapped on their own.
+  type Unit = {block: ElementNode; key: NodeKey; run: LexicalNode[] | null};
+  const units: (Unit | null)[] = [];
+  const runOf = new Map<NodeKey, Unit>();
   for (let i = 0; i < nodesLength; i++) {
     const nodeParent = nodes[i].getParent();
-    blocks.push(
-      nodeParent === null ? null : $wrappedBlock(nodeParent, blockOf),
-    );
+    const block =
+      nodeParent === null ? null : $wrappedBlock(nodeParent, blockOf);
+    if (block === null || !$isBlockContainer(block)) {
+      units.push(block && {block, key: block.getKey(), run: null});
+      continue;
+    }
+    const child = $childIn(block, nodes[i]);
+    const inline = INTERNAL_isInlineContent(child);
+    if (!inline && !$isLeafNode(child)) {
+      // A block element in the container: its own content is wrapped.
+      units.push(null);
+      continue;
+    }
+    let unit = runOf.get(child.getKey());
+    if (unit === undefined) {
+      // A block leaf (a decorator) is wrapped on its own.
+      const run = inline ? $inlineRun(child) : [child];
+      unit = {block, key: run[0].getKey(), run};
+      for (const node of run) {
+        runOf.set(node.getKey(), unit);
+      }
+    }
+    units.push(unit);
   }
 
   // Move out all leaf nodes into our elements array.
@@ -470,24 +548,23 @@ export function $wrapNodesImpl(
   // an element for that.
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
-    const parent = blocks[i];
+    const unit = units[i];
 
-    if (
-      parent !== null &&
-      $isLeafNode(node) &&
-      !movedNodes.has(node.getKey())
-    ) {
-      const parentKey = parent.getKey();
+    if (unit !== null && $isLeafNode(node) && !movedNodes.has(node.getKey())) {
+      const parent = unit.block;
+      const parentKey = unit.key;
 
       if (elementMapping.get(parentKey) === undefined) {
         const targetElement = createElement();
-        targetElement.setFormat(parent.getFormatType());
-        targetElement.setIndent(parent.getIndent());
+        if (unit.run === null) {
+          targetElement.setFormat(parent.getFormatType());
+          targetElement.setIndent(parent.getIndent());
+        }
         elements.push(targetElement);
         elementMapping.set(parentKey, targetElement);
         // Move node and its siblings to the new
         // element.
-        const children = parent.getChildren();
+        const children = unit.run ?? parent.getChildren();
         targetElement.splice(targetElement.getChildrenSize(), 0, children);
         for (const child of children) {
           movedNodes.add(child.getKey());
@@ -587,6 +664,21 @@ export function $wrapNodesImpl(
     $setSelection(prevSelection.clone());
   } else if (lastElement !== null) {
     lastElement.selectEnd();
+  } else if (
+    $isRangeSelection(active) &&
+    isPointAttached(active.anchor) &&
+    isPointAttached(active.focus)
+  ) {
+    $setSelection(active);
+    active.dirty = true;
+  } else if (active !== null && !$isRangeSelection(active)) {
+    $setSelection(active);
+    active.dirty = true;
+  } else if (
+    elements.length > 0 &&
+    elements[elements.length - 1].isAttached()
+  ) {
+    elements[elements.length - 1].selectEnd();
   } else {
     selection.dirty = true;
   }

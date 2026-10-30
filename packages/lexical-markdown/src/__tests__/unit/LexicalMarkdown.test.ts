@@ -5305,6 +5305,13 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       ],
       '**&#97;***&#128512;*',
     ],
+    [
+      [
+        ['\u6ce8\u610f\uff1a', TEXT_TYPE_TO_FORMAT.bold],
+        ['\u8bf7\u5148\u767b\u5f55', 0],
+      ],
+      '**\u6ce8\u610f\uff1a**&#35831;\u5148\u767b\u5f55',
+    ],
   ])('exports %j so that both importers read it back', (runs, markdown) => {
     const $runs = () =>
       $getRoot()
@@ -5340,6 +5347,37 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       discrete: true,
     });
     expect(mdastEditor.read('latest', $runs)).toEqual(runs);
+  });
+
+  it('exports bold italic text followed by italic text so that it re-imports (#9443)', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createTextNode('a').toggleFormat('bold').toggleFormat('italic'),
+            $createTextNode(': b').toggleFormat('italic'),
+          ),
+        ),
+      {discrete: true},
+    );
+    const markdown = editor.read('latest', () =>
+      $convertToMarkdownString(TRANSFORMERS),
+    );
+    expect(markdown).toBe('***&#97;****: b*');
+    editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
+      discrete: true,
+    });
+    expect(
+      editor.read('latest', () =>
+        $getRoot()
+          .getAllTextNodes()
+          .map(node => [node.getTextContent(), node.getFormat()]),
+      ),
+    ).toEqual([
+      ['a', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.italic],
+      [': b', TEXT_TYPE_TO_FORMAT.italic],
+    ]);
   });
 
   it('writes references around an underscore italic between letters', () => {

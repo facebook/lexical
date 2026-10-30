@@ -78,6 +78,38 @@ export function importTextTransformers(
   before?: string,
   after?: string,
 ) {
+  // The text after each match is imported in this loop rather than by
+  // recursion, so that a long paragraph does not nest a call per match.
+  let rest: TextRest | null = [textNode, before, after];
+  while (rest !== null) {
+    rest = importOutermost(
+      rest[0],
+      textFormatTransformersIndex,
+      textMatchTransformers,
+      rest[1],
+      rest[2],
+    );
+  }
+}
+
+type TextRest = [
+  textNode: TextNode,
+  before: string | undefined,
+  after: string | undefined,
+];
+
+/**
+ * Applies the outermost transformer in `textNode`, imports the text before
+ * and inside its match, and returns the text after it, for the caller to
+ * import next.
+ */
+function importOutermost(
+  textNode: TextNode,
+  textFormatTransformersIndex: TextFormatTransformersIndex,
+  textMatchTransformers: TextMatchTransformer[],
+  before: string | undefined,
+  after: string | undefined,
+): TextRest | null {
   const text = textNode.getTextContent();
   let foundTextFormat = findOutermostTextFormatTransformer(
     textNode,
@@ -134,23 +166,15 @@ export function importTextTransformers(
     }
   }
 
-  // Imports the text left on either side of a match from `startIndex` to
-  // `endIndex`, each with what lies beyond the run cut at its edge.
+  // Imports the text before a match from `startIndex` to `endIndex`, and
+  // returns the text after it, each with what lies beyond the run cut at its
+  // edge.
   const importAround = (
     nodeBefore: LexicalNode | undefined,
     nodeAfter: LexicalNode | undefined,
     startIndex: number,
     endIndex: number,
-  ) => {
-    if (canContainTransformableMarkdown(nodeAfter)) {
-      importTextTransformers(
-        nodeAfter,
-        textFormatTransformersIndex,
-        textMatchTransformers,
-        characterBeyondRun(text, endIndex, -1, before),
-        after,
-      );
-    }
+  ): TextRest | null => {
     if (canContainTransformableMarkdown(nodeBefore)) {
       importTextTransformers(
         nodeBefore,
@@ -160,6 +184,9 @@ export function importTextTransformers(
         characterBeyondRun(text, startIndex, 1, after),
       );
     }
+    return canContainTransformableMarkdown(nodeAfter)
+      ? [nodeAfter, characterBeyondRun(text, endIndex, -1, before), after]
+      : null;
   };
 
   if (foundTextFormat) {
@@ -172,7 +199,12 @@ export function importTextTransformers(
     );
     const {startIndex, endIndex} = foundTextFormat;
     const tagLength = foundTextFormat.match[1].length;
-    importAround(result.nodeBefore, result.nodeAfter, startIndex, endIndex);
+    const rest = importAround(
+      result.nodeBefore,
+      result.nodeAfter,
+      startIndex,
+      endIndex,
+    );
     if (canContainTransformableMarkdown(result.transformedNode)) {
       // A code span's fence is not its tag's length, and its content is not
       // read for emphasis against what lies outside it.
@@ -189,6 +221,7 @@ export function importTextTransformers(
           : characterBeyondRun(text, endIndex - tagLength, 1, after),
       );
     }
+    return rest;
   } else if (foundTextMatch) {
     const result = importFoundTextMatchTransformer(
       textNode,
@@ -198,9 +231,9 @@ export function importTextTransformers(
       foundTextMatch.match,
     );
     if (!result) {
-      return;
+      return null;
     }
-    importAround(
+    const rest = importAround(
       result.nodeBefore,
       result.nodeAfter,
       foundTextMatch.startIndex,
@@ -224,12 +257,12 @@ export function importTextTransformers(
         unescapeText(result.matchedNode.getTextContent()),
       );
     }
+    return rest;
   }
 
-  // Handle escape characters. Only a node that no transformer matched is
-  // unescaped here: retained non-code results above have already had their
-  // escapes read, and code spans must keep their backslashes.
-  if (!foundTextFormat && !foundTextMatch) {
-    textNode.setTextContent(unescapeText(text));
-  }
+  // Handle escape characters. Only a node that no transformer matched gets
+  // here: retained non-code results above have already had their escapes
+  // read, and code spans must keep their backslashes.
+  textNode.setTextContent(unescapeText(text));
+  return null;
 }

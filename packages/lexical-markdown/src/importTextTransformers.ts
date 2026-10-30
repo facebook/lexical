@@ -64,21 +64,19 @@ export function importTextTransformers(
       codeSpan !== null &&
       foundTextMatch.startIndex <= codeSpan.startIndex &&
       foundTextMatch.endIndex >= codeSpan.endIndex;
-    if (foundTextFormat.isCodeSpan) {
-      if (wrapsCodeSpan) {
-        foundTextFormat = null;
-      } else {
-        foundTextMatch = null;
-      }
-    } else if (
+    if (
       codeSpan !== null &&
       !wrapsCodeSpan &&
-      foundTextMatch.startIndex < codeSpan.endIndex &&
-      foundTextMatch.endIndex > codeSpan.startIndex
+      (foundTextFormat.isCodeSpan ||
+        (foundTextMatch.startIndex < codeSpan.endIndex &&
+          foundTextMatch.endIndex > codeSpan.startIndex))
     ) {
-      // The emphasis before the code span goes first, and the text match,
-      // which takes part of the span, is not applied.
+      // Apply the code span, or the emphasis before it, and not the text
+      // match, which would take part of the span.
       foundTextMatch = null;
+    } else if (foundTextFormat.isCodeSpan) {
+      // foundTextMatch wraps the code span - apply foundTextMatch
+      foundTextFormat = null;
     } else if (
       // Find the outermost transformer
       (foundTextFormat.startIndex <= foundTextMatch.startIndex &&

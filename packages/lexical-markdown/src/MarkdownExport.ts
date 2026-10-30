@@ -1000,8 +1000,10 @@ function decideReferences(
   // would only trade one lost format for another, so it is not written.
   // Each piece's answer is remembered for each direction, so each piece is
   // walked at most twice. Raw output and unreferenceable characters stay
-  // what they are, and other references only make edges punctuation, so a
-  // remembered answer can only go stale toward writing fewer references.
+  // what they are. A remembered block could only lift if a piece on its
+  // chain were later written as a reference from the other side, which takes
+  // a run of one marker character that both closes and opens; then a
+  // reference that would have kept a format is not written.
   // 0 while unknown, then 1 when it spreads and 2 when it is blocked.
   const spreads = [new Uint8Array(count), new Uint8Array(count)];
   const canSpread = (index: number, leftward: boolean): boolean => {

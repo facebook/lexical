@@ -644,8 +644,11 @@ block-beta
 ```
 
 **Adjacent equal links merge** (same URL, target, rel and title), and so do
-adjacent lists of the same type. Inline content directly in the root or in a
-table cell (text, a link, a mark) is wrapped in a paragraph.
+adjacent lists of the same type. Nested lists of the same type in adjacent
+list items merge too, keeping the first list's start: turning a nested bullet
+list into a number list right after another item's nested number list makes
+it part of that list. Inline content directly in the root or in a table cell
+(text, a link, a mark) is wrapped in a paragraph.
 
 ```mermaid
 block-beta
@@ -874,18 +877,25 @@ not merge as a user might expect:
   and two collaborators moving the same block at once can duplicate it.
   Undoing the move restores the block as it was before the move: what
   collaborators typed in it since is lost or, in a moved line, stays where
-  the moved copy was. The moved block is the node Lexical recorded as moved:
+  the moved copy was. A block moved into a container the move made (wrapping
+  it in a box) stays there whole once a collaborator typed in it, next to
+  the restored block, so its text shows twice (see Undo). The moved block is the node Lexical recorded as moved:
   an existing node passed to `insertBefore`, `insertAfter`, `append` or
   `splice` in the update (as a block drag does), even one put back where it
   was. The blocks it passes that Lexical did not record keep what
   collaborators type in them. Between recorded blocks, and in a reorder that
   Lexical did not record (an editor state set whole), the binding rewrites
   as few blocks as it can, the smaller ones on a tie.
-  Lexical operations that move content (turning a
-  paragraph into a list inside a container, indenting list items that hold
-  blocks) behave the same way, and so does the first edit that restructures
-  a list stored in an older shape (a nested list kept as a node inside an
-  item's line): its items move into the list's own sequence. A Backspace
+  Lexical operations that move content behave the same way: turning a
+  paragraph that holds text into a list inside a container that is not a
+  shadow root (Lexical replaces the whole container with the list, so its
+  content moves into the list; in a table cell or another shadow root the
+  paragraph becomes a list item in place and keeps what collaborators type
+  in it),
+  indenting list items that hold blocks, merging table cells (the content
+  of the cells merged away moves into the first one), and the first edit that
+  restructures a list stored in an older shape (a nested list kept as a node
+  inside an item's line): its items move into the list's own sequence. A Backspace
   that outdents an item of such a list is a delete in the nested list's
   container and an insert in the list's: text a collaborator types in those
   items at the same time is lost (only lists stored in that older shape).
@@ -1026,18 +1036,40 @@ not merge as a user might expect:
   collaborator moved out of the removed range at the same time shows twice
   (the original next to the moved copy), and when two
   collaborators remove the same text and both undo, it shows twice.
+  Undoing the replacement of a block with a new one (`replace` without
+  `includeChildren`, written as a removal and a new block) after a
+  collaborator edited the new block brings the old block's text back and
+  keeps their edit next to it: text they typed there, or the text of a
+  block they put in its place, shows after the old text (twice, where they
+  put the same text back). `replace(node, true)`, which `$setBlocksType`
+  uses, keeps the block's children, and undoing it keeps their text once.
   Undoing a format change does not undo a collaborator's later change of
   part of its range, nor the value that change restored after itself: color
   `abc`, let a collaborator recolor `b`, then undo the color, and `c` keeps
-  the old color, up to the end of the range (the same holds for text a
-  collaborator types or pastes inside the range as you undo). Undoing a link
+  the old color, up to the end of the range. The same holds for text a
+  collaborator types or pastes inside the range without that format,
+  whether you saw it before you undo or it arrives as you undo: bold
+  `one two`, let a collaborator type plain ` mid` after `one`, then undo
+  the bold, and ` two` stays bold. Undoing a link
   while a collaborator formats text inside it keeps the link on its text:
   formatting text in a link also sets the link's text format, which writes
   the link there again. Where a collaborator overwrote a step of yours
   entirely, the undo manager skips that step as changing nothing, and the
   same undo also reverts your step before it. When you undo a format change
   while a collaborator removes that format and undoes the removal, the text
-  keeps the format: the collaborator's undo brings it back.
+  keeps the format: the collaborator's undo brings it back. A comment or
+  format can run on past its end when writes two collaborators made inside
+  it are undone while another client deletes text across its end: it
+  carries on over the following words, possibly into the next line. No
+  text is lost. A format a collaborator applies
+  starting right where a run of that format ends, or from inside the run
+  past its end, can be lost on their text after the run when a client
+  other than the one that formatted the run, at the same time, removes the
+  format from part of the run or types inside it without the format: with
+  `Kilo` bolded by one client, another unbolds `il` or types plain text
+  inside `Kilo` as the first or a third bolds ` bb` (or `lo bb`), and with
+  some client id orders ` bb` stays plain. No text is lost, and when that
+  client undoes its edit, ` bb` is bold again.
 - **Large lists.** A structural edit in a list costs time proportional to
   the list on every client.
 - **Older app versions.** Clients of different `schemaVersion`s never
@@ -1081,7 +1113,14 @@ not merge as a user might expect:
   same way, not in the order the author's editor exported them (a Yjs map
   does not keep one). Compare node JSON without relying on key order.
 - **Other races.** A split racing a change of the line's type gives the
-  first half the splitter's type. Bold ‖ bold on adjacent ranges of one line
+  first half the splitter's type. A join (Backspace at the start of a line,
+  or undoing a split) while a collaborator inserts or moves a block to the
+  place of the join joins the line before to that block instead: its text
+  becomes part of the block, which keeps its own type (a paragraph joined
+  into a code block that way becomes code), and the line after stays apart:
+  after a Backspace it takes the type of the line before (a paragraph after
+  a heading becomes a heading), after undoing a split it keeps its own.
+  Bold ‖ bold on adjacent ranges of one line
   can leave part unformatted. A format removed from a range while a
   collaborator types inside it without that format (unbolding a word as
   they type into it, resolving a comment as they paste into it) comes back
@@ -1089,9 +1128,11 @@ not merge as a user might expect:
   format they saw there, which the removal could not see. It stops at the
   end of the range. Text typed inside or at the edge of text a
   collaborator deletes at the same time keeps the formats it was typed
-  with; text typed at the start of a range a collaborator formats at the
-  same time can take that format, by the order Yjs gives the two inserts
-  (the same on Yjs 13), and keeps it when that range is then deleted. A
+  with. Text typed inside a range a collaborator formats at the same time
+  takes that format (also when the range comes from an older read, as an
+  agent's does), and text typed at the start or the end of the range can
+  take it, by the order Yjs gives the two inserts (at the start the same on
+  Yjs 13, and it keeps the format when that range is then deleted). A
   node whose `isInline()` changes is written again in its new form, so
   text typed inside it at the same time lands next to it, in an inline
   element of its old form. Where text was deleted, the format items it

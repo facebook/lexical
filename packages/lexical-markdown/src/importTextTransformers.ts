@@ -19,7 +19,7 @@ import {
   findOutermostTextMatchTransformer,
   importFoundTextMatchTransformer,
 } from './importTextMatchTransformer';
-import {characterAt, characterBefore, unescapeText} from './utils';
+import {characterAt, characterBefore, isEscaped, unescapeText} from './utils';
 
 /**
  * Returns true if the node can contain transformable markdown.
@@ -49,7 +49,12 @@ function runEdge(
     step === 1 ? edge < text.length : edge > 0;
   const delimiter = text[step === 1 ? index - 1 : index];
   let edge = index;
-  while (isInside(edge) && text[step === 1 ? edge : edge - 1] === delimiter) {
+  // An escaped delimiter before the run is not part of it.
+  while (
+    isInside(edge) &&
+    text[step === 1 ? edge : edge - 1] === delimiter &&
+    (step === 1 || !isEscaped(text, edge - 1))
+  ) {
     edge += step;
   }
   const length = Math.abs(edge - index);

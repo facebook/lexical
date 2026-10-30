@@ -5294,9 +5294,13 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     },
   );
 
-  it.each(['**b.***.**', '**b_***.**'])(
+  it.each([
+    ['**b.***.**', 'b.'],
+    ['**b_***.**', 'b_'],
+    ['**\\*ba\\****.**', '*ba*'],
+  ])(
     'measures the whole run cut by an earlier match for the rule of 3 in %j',
-    markdown => {
+    (markdown, bold) => {
       const editor = createTestEditor();
       editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
         discrete: true,
@@ -5312,7 +5316,7 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
             ]),
         ),
       ).toEqual([
-        [markdown.slice(2, 4), true, false],
+        [bold, true, false],
         ['.', false, true],
         ['*', false, false],
       ]);

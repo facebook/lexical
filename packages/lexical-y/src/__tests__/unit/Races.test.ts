@@ -266,6 +266,24 @@ const CASES: Case[] = [
     },
   },
   {
+    // Documented (Undo): `replace(node, true)`, which `$setBlocksType`
+    // uses, keeps the block's children, so undoing it after a collaborator
+    // typed in the block keeps their text once.
+    expected: 'paragraph("Revenue grew by 4% in Q3.")',
+    id: 'undo of $setBlocksType after a collaborator edits the block',
+    init: $initPara,
+    run: async t => {
+      t.a.update(() => {
+        $setBlocksType($selectIn([0], 0), () => $createHeadingNode('h1'));
+      });
+      await t.sync();
+      t.b.update(() => $selectIn([0], 13).insertText('by '));
+      await t.sync();
+      t.a.undo();
+      await t.sync();
+    },
+  },
+  {
     a: () => $block([0]).insertAfter($p('New.')),
     b: () => $selectIn([1], 0).deleteCharacter(true),
     expected: 'paragraph("Revenue grew 4%New.") / paragraph(" in Q3.")',
@@ -273,6 +291,38 @@ const CASES: Case[] = [
     // and the line after stays apart.
     id: 'block inserted at a join ‖ Backspace join',
     init: () => $getRoot().append($p('Revenue grew 4%'), $p(' in Q3.')),
+  },
+  {
+    a: () => $block([0]).insertAfter($p('New.')),
+    b: () => $selectIn([1], 0).deleteCharacter(true),
+    expected: 'paragraph("Revenue grew 4%New.") / heading[h1](" in Q3.")',
+    // Documented (Other races): after a Backspace, the line after takes the
+    // type of the line before.
+    id: 'block inserted at a join ‖ Backspace join of a heading and a paragraph',
+    init: () =>
+      $getRoot().append(
+        $createHeadingNode('h1').append($createTextNode('Revenue grew 4%')),
+        $p(' in Q3.'),
+      ),
+  },
+  {
+    expected: 'paragraph("Revenue grew 4%New.") / heading[h2](" in Q3.")',
+    // Documented (Other races): undoing a split keeps the type of the line
+    // after (here a heading a collaborator made it).
+    id: 'block inserted at a join ‖ undo of a split, the line after a heading',
+    init: $initPara,
+    run: async t => {
+      t.a.update(() => void $selectIn([0], 15).insertParagraph());
+      await t.sync();
+      t.b.update(() => {
+        $setBlocksType($selectIn([1], 0), () => $createHeadingNode('h2'));
+      });
+      await t.sync();
+      t.offline();
+      t.a.undo();
+      t.b.update(() => $block([0]).insertAfter($p('New.')));
+      await t.sync();
+    },
   },
   {
     a: () => $selectIn([0], 8, 15).formatText('bold'),
@@ -481,6 +531,21 @@ describe('@lexical/y undo of a format ‖ plain text typed inside its range', ()
       await t.sync();
       t.offline();
       typePlain(t);
+      t.a.undo();
+      await t.sync();
+      await expectConverged(t.peers);
+      expect(t.a.describe()).toBe(
+        'paragraph("one mid" " two"{1}) / paragraph("tail")',
+      );
+    });
+    test(`AUDIT-U1 seen before the undo: the text after the typing keeps the format (${ids})`, async () => {
+      // The documented result today (y.md Limits, Undo); the test.fails
+      // below flags the fix.
+      const t = await setup($init, {ids});
+      bold(t);
+      await t.sync();
+      typePlain(t);
+      await t.sync();
       t.a.undo();
       await t.sync();
       await expectConverged(t.peers);

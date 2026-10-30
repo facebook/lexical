@@ -954,11 +954,13 @@ not merge as a user might expect:
   collaborator moved out of the removed range at the same time shows twice
   (the original next to the moved copy), and when two
   collaborators remove the same text and both undo, it shows twice.
-  Undoing a block replacement (`replace`, written as a removal and a new
-  block) after a collaborator edited the new block brings the old block's
-  text back and keeps their edit next to it: text they typed there, or the
-  text of a block they put in its place, shows after the old text (twice,
-  where they put the same text back).
+  Undoing the replacement of a block with a new one (`replace` without
+  `includeChildren`, written as a removal and a new block) after a
+  collaborator edited the new block brings the old block's text back and
+  keeps their edit next to it: text they typed there, or the text of a
+  block they put in its place, shows after the old text (twice, where they
+  put the same text back). `replace(node, true)`, which `$setBlocksType`
+  uses, keeps the block's children, and undoing it keeps their text once.
   Undoing a format change does not undo a collaborator's later change of
   part of its range, nor the value that change restored after itself: color
   `abc`, let a collaborator recolor `b`, then undo the color, and `c` keeps
@@ -1021,8 +1023,10 @@ not merge as a user might expect:
   or undoing a split) while a collaborator inserts or moves a block to the
   place of the join joins the line before to that block instead: its text
   becomes part of the block, which keeps its own type (a paragraph joined
-  into a code block that way becomes code), and the line after stays as it
-  was. Bold ‖ bold on adjacent ranges of one line
+  into a code block that way becomes code), and the line after stays apart:
+  after a Backspace it takes the type of the line before (a paragraph after
+  a heading becomes a heading), after undoing a split it keeps its own.
+  Bold ‖ bold on adjacent ranges of one line
   can leave part unformatted. A format removed from a range while a
   collaborator types inside it without that format (unbolding a word as
   they type into it, resolving a comment as they paste into it) comes back

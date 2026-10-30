@@ -299,7 +299,7 @@ describe('ownership scans: one client writes a node kept apart, types, writes an
         ]) {
           // A's node written right before B's first one shares its opener
           // on main; B's undo of that write takes A's token or segmented
-          // node's mode with it (#9578).
+          // node's mode with it (fixed by #9578, and by #9561).
           const failsUntilFixed =
             (kind === 'token' || kind === 'segmented') &&
             edit === 'write one and text before it' &&

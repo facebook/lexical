@@ -20,6 +20,7 @@ import {
   ContentType,
   createID,
   createRelativePositionFromJSON,
+  type Doc,
   encodeStateAsUpdate,
   findIndexSS,
   Item,
@@ -83,12 +84,15 @@ import {
 } from './constants';
 import {
   changeEnd,
+  Cursor,
   equalFormatValue,
+  type Formats,
   isFormatCloser,
+  isLiveContent,
   markFormatCloser,
 } from './Cursor';
 import {$canonicalizeGroup, $switchesWrapper} from './Groups';
-import {shownLength} from './Hidden';
+import {isShown, shownLength} from './Hidden';
 import {$applyStoredAttrs, Reader} from './Read';
 import {
   $isGroupNode,
@@ -105,8 +109,10 @@ import {
   type Pin,
   PIN_PREFIX,
   RUN_END,
+  SEGMENT_KEY,
   type StorageKind,
   storageKindOf,
+  TYPE_KEY,
   withPins,
 } from './Schema';
 import {$checkWrite, $followUpDifference, checkContainer} from './SelfCheck';
@@ -122,7 +128,14 @@ import {
   typeOf,
   type Unit,
 } from './State';
-import {attrsBefore, emptyView, isGone, seenBy, type Unread} from './Unread';
+import {
+  attrsBefore,
+  deleteItem,
+  emptyView,
+  isGone,
+  seenBy,
+  type Unread,
+} from './Unread';
 import {
   NESTED_FALLBACK_WARNING,
   notesSince,
@@ -501,6 +514,341 @@ function recordSchema(
 }
 
 /**
+ * Whether format items `first` and `last` of one key are the run ends one
+ * insert wrote around content of its own inserted into existing content
+ * (see restateRunEnds): written by one client, with content between them
+ * (live or deleted) that the same client wrote between the two; `last`
+ * inserted before content that was there already (its right origin is
+ * older than `first`); and `last` giving back the value the key had where
+ * the insert went (that of the nearest item of the key before `first` that
+ * the insert did not write and that was not written next to it later,
+ * deleted since or not). A format change's opener
+ * and closer around other writes' content are not, and neither are the
+ * items of one write that formats its own content (a document written in
+ * one go, a pasted run of formatted text), whose second item opens a value
+ * of its own.
+ */
+export function boundsOwnInsert(first: Item, last: Item): boolean {
+  const {client, clock} = first.id;
+  if (last.id.client !== client || last.id.clock <= clock) {
+    return false;
+  }
+  const ro = last.rightOrigin;
+  if (ro === null || (ro.client === client && ro.clock >= clock)) {
+    return false;
+  }
+  const {key, value} = last.content as ContentFormat;
+  const ofInsert = (it: Item) =>
+    it.id.client === client &&
+    it.id.clock >= clock &&
+    it.id.clock <= last.id.clock;
+  // Written after the insert, next to it (its origins name an item of the
+  // insert: a redo's closer put right before it).
+  const isOfInsert = (id: {client: number; clock: number} | null) =>
+    id !== null &&
+    id.client === client &&
+    id.clock >= clock &&
+    id.clock <= last.id.clock;
+  let before: unknown = null;
+  for (let it = first.left; it !== null; it = it.left) {
+    if (
+      it.content instanceof ContentFormat &&
+      it.content.key === key &&
+      !ofInsert(it) &&
+      !isOfInsert(it.origin) &&
+      !isOfInsert(it.rightOrigin)
+    ) {
+      before = it.content.value;
+      break;
+    }
+  }
+  if (!equalFormatValue(before, value)) {
+    return false;
+  }
+  // Content of the insert between them, all of it deleted since: the run
+  // ends of an insert that is gone (deleted by hand, or undone).
+  let own = false;
+  for (let it = first.right; it !== null && it !== last; it = it.right) {
+    if (
+      it.countable &&
+      !(it.content instanceof ContentFormat) &&
+      ofInsert(it)
+    ) {
+      if (!it.deleted) {
+        return false;
+      }
+      own = true;
+    }
+  }
+  return own;
+}
+
+/**
+ * The format items among `undoing` (what an undo or redo deletes, the items
+ * its step inserted) that it keeps: the run ends of the content of its own
+ * it deletes (the items next to that content, past other format items and
+ * content written next to them since), where deleting them would not change
+ * the value of content it leaves that was there before the step, or of
+ * content it brings back (`restored`, the items its step deleted). These are
+ * the null before plain text typed into a bold run and the item after it
+ * that gives the rest of the run its value back, or the opener and the null
+ * around bold text typed into plain text. They show nothing once the step's
+ * content is gone, but a collaborator's text typed next to that content
+ * (found by its Yjs origin, an item of the step) relied on them and writes
+ * no item of its own where its value matches: deleting them gave that text
+ * the value around them (plain text typed after a word typed into a bold
+ * run turned bold for everyone when the word's insert was undone, whether or
+ * not the undoing client had seen that text). A delete of that content by
+ * hand keeps them too (see Cursor#collapseGap): an undo now leaves the same
+ * run ends there, collapsed the same way (see collapseUndone). A step's
+ * items next to content it did not write (a format change's) are deleted as
+ * before. A node's type and segment keys are left out: no writer puts
+ * content inside another node's run, so nothing relies on them.
+ *
+ * Per container and key, in each stretch between two items of the key the
+ * undo leaves (that content's value before the step is the first's,
+ * `base`), from the right: an item of the step is kept where the content
+ * between it and the next item kept or left that was there before the step,
+ * or is brought back, has `base` as its value, or there is none.
+ */
+function neutralRunEnds(
+  undoing: ReadonlySet<Item>,
+  restored: ReadonlySet<Item>,
+  inserts: UndoManager['undoStack'][number]['inserts'],
+  store: Doc['store'],
+): Set<Item> {
+  const kept = new Set<Item>();
+  const pending = new Set<Item>();
+  for (const it of undoing) {
+    if (
+      !it.deleted &&
+      it.content instanceof ContentFormat &&
+      it.content.key !== TYPE_KEY &&
+      it.content.key !== SEGMENT_KEY
+    ) {
+      pending.add(it);
+    }
+  }
+  const remains = (it: Item) =>
+    it.deleted ? restored.has(it) : !undoing.has(it);
+  // Whether live content was written after the step next to its own items,
+  // or next to content written so (its Yjs origins lead to an item of the
+  // step): such content relies on the values those items give it, and
+  // keeps them where they stay. Content there before the step cannot name
+  // an item of the step.
+  const reaches = new Map<Item, boolean>();
+  const reachesStep = (start: Item): boolean => {
+    const known = reaches.get(start);
+    if (known !== undefined) {
+      return known;
+    }
+    const path: Item[] = [];
+    const queue: Item[] = [start];
+    let found = false;
+    const seen = new Set<Item>();
+    while (queue.length > 0 && !found) {
+      const it = queue.pop()!;
+      if (seen.has(it)) {
+        continue;
+      }
+      seen.add(it);
+      path.push(it);
+      for (const id of [it.origin, it.rightOrigin]) {
+        if (id === null) {
+          continue;
+        }
+        if (inserts.hasId(id)) {
+          found = true;
+          break;
+        }
+        if (store.getClock(id.client) <= id.clock) {
+          continue;
+        }
+        const next = store.getItem(id);
+        if (!(next instanceof Item)) {
+          continue;
+        }
+        const memo = reaches.get(next);
+        if (memo === true) {
+          found = true;
+          break;
+        }
+        if (memo === undefined) {
+          queue.push(next);
+        }
+      }
+    }
+    if (found) {
+      reaches.set(start, true);
+    } else {
+      for (const it of path) {
+        reaches.set(it, false);
+      }
+    }
+    return found;
+  };
+  const after = (it: Item) =>
+    !it.deleted && !undoing.has(it) && reachesStep(it);
+  // Whether `item` is a run end one write put next to text it typed, deleted
+  // since: on a side, past format items of that write, the nearest content is
+  // that text, deleted, its clocks running on from or into the item's.
+  const endsGoneText = (item: Item) => {
+    const {client} = item.id;
+    for (const left of [true, false]) {
+      let expected = left ? item.id.clock : item.id.clock + item.length;
+      let it = left ? item.left : item.right;
+      let ok = true;
+      while (
+        it !== null &&
+        (it.content instanceof ContentFormat || !it.countable)
+      ) {
+        if (it.id.client !== client) {
+          ok = false;
+          break;
+        }
+        if (left) {
+          if (it.id.clock + it.length !== expected) {
+            ok = false;
+            break;
+          }
+          expected = it.id.clock;
+        } else {
+          if (it.id.clock !== expected) {
+            ok = false;
+            break;
+          }
+          expected = it.id.clock + it.length;
+        }
+        it = left ? it.left : it.right;
+      }
+      if (
+        ok &&
+        it !== null &&
+        it.deleted &&
+        it.id.client === client &&
+        (left ? it.id.clock + it.length === expected : it.id.clock === expected)
+      ) {
+        return true;
+      }
+    }
+    return false;
+  };
+  // The items of the key the content had its value from before the step:
+  // left by the undo, and not the run ends of text a collaborator typed
+  // next to the step's content since and deleted (those give nothing).
+  const before = (it: Item, key: string) =>
+    it.content instanceof ContentFormat &&
+    it.content.key === key &&
+    remains(it) &&
+    !(after(it) && endsGoneText(it));
+  // Whether the nearest content on either side of `item` (past format items
+  // and what is already deleted) is content of the step the undo deletes.
+  const bounds = (item: Item) => {
+    for (const left of [true, false]) {
+      let it = left ? item.left : item.right;
+      while (
+        it !== null &&
+        (it.content instanceof ContentFormat ||
+          !it.countable ||
+          (it.deleted && !restored.has(it)) ||
+          after(it))
+      ) {
+        it = left ? it.left : it.right;
+      }
+      if (it !== null && !it.deleted && undoing.has(it)) {
+        return true;
+      }
+    }
+    return false;
+  };
+  for (const first of pending) {
+    const {key} = first.content as ContentFormat;
+    // The item of the key before it that the undo leaves.
+    let from: Item | null = first.left;
+    while (from !== null && !before(from, key)) {
+      from = from.left;
+    }
+    const base = from === null ? null : (from.content as ContentFormat).value;
+    // The stretch up to the next one: the step's items and the content left.
+    const stretch: (Item | 'content')[] = [];
+    for (
+      let it = from === null ? (first.parent as YNode)._start : from.right;
+      it !== null;
+      it = it.right
+    ) {
+      if (it.content instanceof ContentFormat) {
+        if (it.content.key !== key) {
+          continue;
+        }
+        if (pending.has(it)) {
+          pending.delete(it);
+          stretch.push(it);
+        } else if (before(it, key)) {
+          break;
+        }
+      } else if (it.countable && remains(it) && !after(it)) {
+        stretch.push('content');
+      }
+    }
+    let shown = false;
+    for (let i = stretch.length - 1; i >= 0; i--) {
+      const it = stretch[i];
+      if (it === 'content') {
+        shown = true;
+      } else if (
+        bounds(it) &&
+        (!shown || equalFormatValue((it.content as ContentFormat).value, base))
+      ) {
+        kept.add(it);
+        shown = false;
+      }
+    }
+  }
+  // The null a kept restore's write put right after the end of the run it
+  // restored (see Cursor#format, rule 5), whatever is next to it: the
+  // restore relies on that end, which another write's delete can drop.
+  for (const it of undoing) {
+    if (
+      it.deleted ||
+      kept.has(it) ||
+      !(it.content instanceof ContentFormat) ||
+      it.content.value !== null ||
+      it.origin === null
+    ) {
+      continue;
+    }
+    const {key} = it.content;
+    const end =
+      store.getClock(it.origin.client) > it.origin.clock
+        ? store.getItem(it.origin)
+        : null;
+    if (
+      !(end instanceof Item) ||
+      undoing.has(end) ||
+      !(end.content instanceof ContentFormat) ||
+      end.content.key !== key ||
+      end.content.value !== null
+    ) {
+      continue;
+    }
+    // The step's nearest item of the key before it: a restore that stays.
+    for (let p = end.left; p !== null; p = p.left) {
+      if (
+        p.content instanceof ContentFormat &&
+        p.content.key === key &&
+        undoing.has(p)
+      ) {
+        if (kept.has(p) && p.content.value !== null) {
+          kept.add(it);
+        }
+        break;
+      }
+    }
+  }
+  return kept;
+}
+
+/**
  * Whether live format item `item` changes its key's value: the nearest live
  * item of its key before it gives another value (none gives null).
  */
@@ -801,6 +1149,17 @@ export class YBinding {
   private removing: Set<Item> | null = null;
   /** The items the running undo/redo deletes (see isKeptByUndo). */
   private undoing: Set<Item> | null = null;
+  /** The run ends the running undo/redo keeps (see neutralRunEnds). */
+  private keptRunEnds: Set<Item> | null = null;
+  /**
+   * While an undo or redo runs, with what follows it (see applyUndo): the
+   * step it took from its stack and the step it pushed to the other one, as
+   * the undo manager announced them.
+   */
+  private undoOp: {
+    popped: UndoManager['undoStack'][number] | null;
+    pushed: UndoManager['undoStack'][number] | null;
+  } | null = null;
   private wasEditable = true;
   private undoCache = new WeakMap<YNode, Set<number>>();
   private readonly afterTransaction: (tr: Transaction) => void;
@@ -1085,6 +1444,19 @@ export class YBinding {
           this,
           origin === um ? this.undoneCursor : this.writeCursor,
         );
+        if (origin === um && this.undoOp !== null) {
+          this.undoOp.pushed = stackItem;
+          // The step being undone or redone, also where a later listener
+          // throws before the undo manager announces it.
+          this.undoOp.popped ??= um.currStackItem;
+        }
+      });
+      // Registered before any listener of the app: what an undo or redo
+      // took and pushed is known whatever those listeners do.
+      um.on('stack-item-popped', ({stackItem}) => {
+        if (this.undoOp !== null) {
+          this.undoOp.popped = stackItem;
+        }
       });
       this.disposers.push(() => um.destroy());
     }
@@ -4891,6 +5263,9 @@ export class YBinding {
    * leave a malformed container).
    */
   private isKeptByUndo(item: Item): boolean {
+    if (this.keptRunEnds !== null && this.keptRunEnds.has(item)) {
+      return true;
+    }
     // A null a format change wrote after its range to end its value there:
     // kept where without it the content after it would take a value (that
     // of a collaborator's change that ended inside the range, closed with
@@ -4977,7 +5352,7 @@ export class YBinding {
     const um = this._undoManager;
     // Nothing is written while the binding is not active (see
     // YBindingStatus): an undo or redo would write.
-    if (um === null || this._status !== 'active') {
+    if (um === null || this._status !== 'active' || this.undoOp !== null) {
       return false;
     }
     const editor = this._editor;
@@ -5005,23 +5380,55 @@ export class YBinding {
   }
 
   private applyUndo(um: UndoManager, undo: boolean): boolean {
+    // Not from inside another undo or redo, or what follows it (a listener
+    // of the undo manager or the document): it has not recorded its step,
+    // or has not finished its follow-up writes, and they would interleave.
+    if (this.undoOp !== null || um.undoing || um.redoing) {
+      return false;
+    }
     const stack = undo ? um.undoStack : um.redoStack;
     this.undoCache = new WeakMap();
     this.scanStackItem(stack);
     const top = stack[stack.length - 1];
     this.stepCursor =
       top === undefined ? null : ((top.meta.get(this) as YCursor) ?? null);
+    const op: NonNullable<YBinding['undoOp']> = {popped: null, pushed: null};
+    this.undoOp = op;
     try {
-      const popped = undo ? um.undo() : um.redo();
+      // A listener of the undo manager that throws (after the document
+      // changed) does not keep the follow-up writes from running; its error
+      // is thrown once they have.
+      let failure: {error: unknown} | null = null;
+      try {
+        if (undo) {
+          um.undo();
+        } else {
+          um.redo();
+        }
+      } catch (error) {
+        failure = {error};
+      }
+      const {popped, pushed} = op;
       if (popped !== null) {
         this.carryCloserMarks(popped);
         this.closeRestoredRuns(popped);
+        this.unrestate(popped);
+        if (pushed !== null) {
+          // Its own inserts and deletes.
+          this.collapseUndone(pushed);
+          this.restateRunEnds(pushed);
+        }
+      }
+      if (failure !== null) {
+        throw failure.error;
       }
       return popped !== null;
     } finally {
+      this.undoOp = null;
       this.restoring = null;
       this.removing = null;
       this.undoing = null;
+      this.keptRunEnds = null;
       this.stepCursor = null;
     }
   }
@@ -5059,6 +5466,310 @@ export class YBinding {
       },
       options,
     ]);
+  }
+
+  /**
+   * After an undo or redo, whose own inserts and deletes `step` holds (the
+   * step it pushed to the other stack): give the content after each item of
+   * another write that restated a value the undo or redo changed the value
+   * the content before it now has. Such an item gives back, after content
+   * its write inserted, the value the content before that write's previous
+   * item of its key had (the null before plain text typed into a bold run,
+   * and the item after it that gives the bold back; see boundsOwnInsert: a
+   * format change's opener and closer around other content are not such a
+   * pair, their closer ends the change's own value). Where the undo or redo changed
+   * that value (the undo of the bold), the item would keep the old value on
+   * the content after it: an item of this client's own right after it ends
+   * that, recorded on `step` (see unrestate). Invariant: content an undo or
+   * redo does not touch keeps the value of the content before it, also past
+   * another write's run ends. Why: a word typed into a bold word, deleted
+   * (or its typing undone), then the bold undone, left the rest of the word
+   * bold for everyone.
+   */
+  private restateRunEnds(step: UndoManager['undoStack'][number]): void {
+    const doc = this._doc;
+    const fixes: [after: Item, key: string, value: unknown][] = [];
+    doc.transact(tr => {
+      const was = (it: Item) =>
+        it.deleted ? step.deletes.hasId(it.id) : !step.inserts.hasId(it.id);
+      const isKey = (it: Item, key: string) =>
+        it.content instanceof ContentFormat && it.content.key === key;
+      const starts: Item[] = [];
+      const add = (s: unknown) => {
+        if (
+          s instanceof Item &&
+          s.content instanceof ContentFormat &&
+          s.content.key !== TYPE_KEY &&
+          s.content.key !== SEGMENT_KEY
+        ) {
+          starts.push(s);
+        }
+      };
+      iterateStructsByIdSet(tr, step.inserts, add);
+      iterateStructsByIdSet(tr, step.deletes, add);
+      const walked = new Set<Item>();
+      for (const startItem of starts) {
+        if (walked.has(startItem)) {
+          continue;
+        }
+        const {key} = startItem.content as ContentFormat;
+        // The values before the undo or redo and now, just left of it.
+        let before: unknown = null;
+        let now: unknown = null;
+        let seenBefore = false;
+        let seenNow = false;
+        for (let it = startItem.left; it !== null; it = it.left) {
+          if (!isKey(it, key)) {
+            continue;
+          }
+          if (!seenBefore && was(it)) {
+            before = (it.content as ContentFormat).value;
+            seenBefore = true;
+          }
+          if (!seenNow && !it.deleted) {
+            now = (it.content as ContentFormat).value;
+            seenNow = true;
+          }
+          if (seenBefore && seenNow) {
+            break;
+          }
+        }
+        // The previous live item of the key that changed its value: the
+        // values left of it, before and now, and its own.
+        let prev: {before: unknown; now: unknown; value: unknown} | null = null;
+        // The last live item of the key before the one walked.
+        let last: Item | null = null;
+        for (let it: Item | null = startItem; it !== null; it = it.right) {
+          if (!isKey(it, key)) {
+            continue;
+          }
+          walked.add(it);
+          const value = (it.content as ContentFormat).value;
+          if (!it.deleted) {
+            if (
+              prev !== null &&
+              was(it) &&
+              !step.inserts.hasId(it.id) &&
+              last !== null &&
+              boundsOwnInsert(last, it) &&
+              !equalFormatValue(prev.value, value) &&
+              equalFormatValue(value, prev.before) &&
+              !equalFormatValue(value, prev.now) &&
+              !this.givesNext(it, key, prev.now)
+            ) {
+              fixes.push([it, key, prev.now]);
+            }
+            // The first of the items in a row that give one value (a null
+            // another write put right before a restated run's null).
+            if (prev === null || !equalFormatValue(prev.value, value)) {
+              prev = {before, now, value};
+            }
+            last = it;
+          }
+          const synced = was(it) && !it.deleted;
+          if (was(it)) {
+            before = value;
+          }
+          if (!it.deleted) {
+            now = value;
+          }
+          // Back in step, and not an item after which a restated value
+          // would change: what follows has the value it had.
+          if (
+            synced &&
+            it !== startItem &&
+            equalFormatValue(before, now) &&
+            prev !== null &&
+            equalFormatValue(prev.before, prev.now)
+          ) {
+            break;
+          }
+        }
+      }
+    }, this.scanOrigin);
+    if (fixes.length === 0) {
+      return;
+    }
+    // Recorded before it is written, so that it is undone with the step
+    // whatever a listener of this transaction does.
+    const written: Item[] = [];
+    step.meta.set(this.runEndOrigin, written);
+    doc.transact(tr => {
+      const client = doc.clientID;
+      for (const [restore, key, value] of fixes) {
+        // After what was written next to the restore since (its Yjs origin
+        // is the restore, or such content): that content relies on the
+        // restore's value and keeps it. The correction goes before the
+        // content the restore's insert found there.
+        const chain = [restore];
+        const follows = (it: Item) =>
+          it.origin !== null &&
+          chain.some(
+            c =>
+              c.id.client === it.origin!.client &&
+              c.id.clock <= it.origin!.clock &&
+              it.origin!.clock < c.id.clock + c.length,
+          );
+        let left = restore;
+        while (left.right !== null && follows(left.right)) {
+          left = left.right;
+          chain.push(left);
+        }
+        const right = left.right;
+        const item = new Item(
+          createID(client, doc.store.getClock(client)),
+          left,
+          left.lastId,
+          right,
+          right && right.id,
+          left.parent,
+          null,
+          new ContentFormat(key, value as object),
+        );
+        item.integrate(tr, 0);
+        written.push(item);
+      }
+    }, this.runEndOrigin);
+  }
+
+  /**
+   * Whether the next live item of `key` after `item`, with no live content
+   * between, gives `value` (an item restateRunEnds wrote there already).
+   */
+  private givesNext(item: Item, key: string, value: unknown): boolean {
+    for (let it = item.right; it !== null; it = it.right) {
+      if (it.deleted) {
+        continue;
+      }
+      if (it.content instanceof ContentFormat) {
+        if (it.content.key === key) {
+          return equalFormatValue(it.content.value, value);
+        }
+      } else if (it.countable) {
+        return false;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Delete the items restateRunEnds wrote after the undo or redo that
+   * pushed `popped` (now undone or redone in turn): the value they ended is
+   * back, or about to be restated again.
+   */
+  private unrestate(popped: UndoManager['undoStack'][number]): void {
+    const written = popped.meta.get(this.runEndOrigin) as Item[] | undefined;
+    if (written === undefined || written.every(it => it.deleted)) {
+      return;
+    }
+    this._doc.transact(tr => {
+      for (const it of written) {
+        if (!it.deleted) {
+          deleteItem(it, tr);
+        }
+      }
+    }, this.runEndOrigin);
+  }
+
+  /**
+   * After an undo or redo whose own inserts and deletes `step` holds: in
+   * each run of items without live content around content it deleted,
+   * collapse the format items as a delete of that content does (see
+   * Cursor#collapseGap): the run ends it keeps there (see neutralRunEnds)
+   * are those a delete keeps, and what earlier undos and deletes left there
+   * is bounded the same way. Why: an undo that keeps the run ends of the
+   * text it removes would otherwise leave two more items each time text of
+   * another value was typed and undone at one place.
+   */
+  private collapseUndone(step: UndoManager['undoStack'][number]): void {
+    const doc = this._doc;
+    // The deleted content of the step, by run of items without live content.
+    const runs = new Map<Item, [first: Item, last: Item]>();
+    doc.transact(tr => {
+      iterateStructsByIdSet(tr, step.deletes, s => {
+        if (
+          !(s instanceof Item) ||
+          !s.deleted ||
+          !s.countable ||
+          s.content instanceof ContentFormat
+        ) {
+          return;
+        }
+        let start: Item = s;
+        while (start.left !== null && !isLiveContent(start.left)) {
+          start = start.left;
+        }
+        const run = runs.get(start);
+        if (run === undefined) {
+          runs.set(start, [s, s]);
+        } else {
+          let first = run[0];
+          let last = run[1];
+          for (let it: Item | null = start; it !== null; it = it.right) {
+            if (it === s) {
+              if (first !== run[0] || it === first) {
+                break;
+              }
+              first = s;
+              break;
+            }
+            if (it === run[0]) {
+              break;
+            }
+          }
+          for (let it: Item | null = run[1]; it !== null; it = it.right) {
+            if (it === s) {
+              last = s;
+              break;
+            }
+            if (isLiveContent(it)) {
+              break;
+            }
+          }
+          runs.set(start, [first, last]);
+        }
+      });
+    }, this.scanOrigin);
+    if (runs.size === 0) {
+      return;
+    }
+    doc.transact(tr => {
+      for (const [start, [first, last]] of runs) {
+        const left = start.left;
+        const parent = start.parent as YNode;
+        const formats: Formats = new Map();
+        for (
+          let it = parent._start;
+          it !== null && it !== start;
+          it = it.right
+        ) {
+          // What the cursor walks: the formats the editor shows (a format
+          // a composition holds back gives nothing a value there).
+          if (
+            isShown(it, this.state.hidden) &&
+            it.content instanceof ContentFormat
+          ) {
+            const {key, value} = it.content;
+            if (value === null) {
+              formats.delete(key);
+            } else {
+              formats.set(key, value);
+            }
+          }
+        }
+        const cursor = new Cursor(tr, parent, left, formats);
+        cursor.hidden = this.state.hidden;
+        // Only this client's own items: others' run ends there may be all a
+        // collaborator's text relies on once that collaborator's own items go
+        // (an undo of a link whose end made another link's end look
+        // redundant), and they are not what an undo here leaves behind.
+        cursor.collapsible = it => it.id.client === doc.clientID;
+        while (cursor.right !== null && cursor.left !== last) {
+          cursor.forward();
+        }
+        cursor.collapseDeleted(first, last);
+      }
+    }, this.runEndOrigin);
   }
 
   /**
@@ -5191,12 +5902,14 @@ export class YBinding {
     this.restoring = null;
     this.removing = null;
     this.undoing = null;
+    this.keptRunEnds = null;
     if (top === undefined) {
       return;
     }
     const names = new Set<string>();
     const removing = new Set<Item>();
     const undoing = new Set<Item>();
+    const restored = new Set<Item>();
     const isStored = (s: unknown): s is Item => {
       if (!(s instanceof Item) || !(s.content instanceof ContentType)) {
         return false;
@@ -5206,6 +5919,9 @@ export class YBinding {
     };
     this._doc.transact(tr => {
       iterateStructsByIdSet(tr, top.deletes, s => {
+        if (s instanceof Item) {
+          restored.add(s);
+        }
         if (isStored(s)) {
           names.add(nameOf(s));
         }
@@ -5222,6 +5938,12 @@ export class YBinding {
     this.restoring = names;
     this.removing = removing;
     this.undoing = undoing;
+    this.keptRunEnds = neutralRunEnds(
+      undoing,
+      restored,
+      top.inserts,
+      this._doc.store,
+    );
   }
 
   // -------------------------------------------------------------------------

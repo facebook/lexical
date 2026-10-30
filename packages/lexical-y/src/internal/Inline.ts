@@ -36,7 +36,7 @@ import {
   TYPE_KEY,
   WRAPPER_PREFIX,
 } from './Schema';
-import {isGone} from './Unread';
+import {isGone, unheldLength} from './Seen';
 
 // Inline content as atoms, the form both the editor's side ($pushInline)
 // and the shared side (readAtoms) are compared in: one atom per content unit
@@ -372,7 +372,7 @@ export function countLive(
   let n = 0;
   for (let it = start; it !== null && it !== stop; it = it.right) {
     if (isLiveContent(it)) {
-      n += hidden === null ? it.length : hidden.shownLength(it);
+      n += unheldLength(it, hidden);
     }
   }
   return n;

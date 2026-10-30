@@ -1356,6 +1356,8 @@ declare export function $cloneWithPropertiesEphemeral<T extends LexicalNode>(nod
 declare export function $copyNode<T extends LexicalNode>(node: T, skipReset?: boolean): T;
 declare export function $getDocument(): Document;
 declare export function $getEditor(): LexicalEditor;
+/** @internal */
+declare export function INTERNAL_getActiveEditorState(): EditorState | null;
 declare export function $getEditorDOMRenderConfig(
   editor?: LexicalEditor,
 ): EditorDOMRenderConfig;

@@ -146,16 +146,29 @@ type Item = {
 
 /**
  * Text that left a stretch: at old position `at` (see resolve), `from` the
- * place of the removed node that held it (null: a text set replaced it).
+ * place of the removed node that held it (null: a text set replaced it);
+ * `ord`, where it was in the line's items.
  */
-type Left = {readonly run: Run; readonly from: Entry | null; at: number};
+type Left = {
+  readonly run: Run;
+  readonly from: Entry | null;
+  at: number;
+  readonly ord: number;
+};
 
 /**
  * A stretch of a line between two pins (see resolve): its runs in the new
- * line (`live`, with text that arrived and was deleted), and the text that
- * left it, in order.
+ * line (`live`, with text that arrived and was deleted), the text that left
+ * it, in order, and the text that arrived there and left again in this
+ * commit (`passed`, after the old position `at`), which is neither state's
+ * but was there between the old characters around it (see align's `sure`).
  */
-type Stretch = {live: Item[]; left: Left[]; unknown?: true};
+type Stretch = {
+  live: Item[];
+  left: Left[];
+  passed: {readonly text: string; readonly at: number; readonly ord: number}[];
+  unknown?: true;
+};
 
 /**
  * Characters `a` to `a + n` of the text that arrived in a stretch (in line
@@ -1188,7 +1201,7 @@ export class TextReplay {
     });
     const stretches: Stretch[] = [];
     for (let s = 0; s <= anchors.length; s++) {
-      stretches.push({left: [], live: []});
+      stretches.push({left: [], live: [], passed: []});
     }
     // The stretch an old position is in.
     const byOld = (at: number): number => {
@@ -1216,6 +1229,12 @@ export class TextReplay {
         stretches[s].unknown = true;
       } else if (x.node !== null || x.run.dead === true) {
         stretches[s].live.push(x);
+      } else if (x.run.gone === true && x.run.kind === LOOSE) {
+        stretches[s].passed.push({
+          at: lastOld + 0.5,
+          ord: k,
+          text: textOf(x.run),
+        });
       } else if (x.run.gone === true && x.run.kind !== LOOSE) {
         // (Text that arrived and left again in this commit is neither
         // state's: what it stood for left too.)
@@ -1228,6 +1247,7 @@ export class TextReplay {
           stretches[t].left.push({
             at: at < 0 ? lastOld : at,
             from: x.from ?? null,
+            ord: k,
             run,
           });
         }
@@ -1440,12 +1460,42 @@ export class TextReplay {
         if (blocked >= 0 && back >= blocked) {
           drop.fill(1, pk, blocked);
         }
+        // The text that left as it was, also with the text that arrived and
+        // left again in place (`passed`, see Stretch): read without it, the
+        // characters on its two sides are next to each other, and the diff
+        // that takes the common end first can align the end of the old text
+        // with an equal character at the end of what arrived (a paste over
+        // part of a highlighted line, whose nodes the highlighter made again
+        // with the pasted text: `t55z` before the paste, `t87z` at its end).
+        const passed = st.passed;
+        let was = '';
+        const wasAt: number[] = [];
+        for (let k = 0, g = 0; k <= left.length; k++) {
+          while (
+            g < passed.length &&
+            (k === left.length ||
+              passed[g].at < left[k].at ||
+              // (Text with no old position, typed in this commit, is at the
+              // old position before it: the line's order says which came
+              // first.)
+              (passed[g].at - 0.5 === left[k].at &&
+                passed[g].ord < left[k].ord))
+          ) {
+            was += passed[g++].text;
+          }
+          if (k < left.length) {
+            wasAt.push(was.length);
+            was += textOf(left[k].run);
+          }
+        }
         let w = '';
         const at: [number, number, number][] = [];
+        const sureAt: [number, number, number][] = [];
         for (let k = 0, pos = 0; k < left.length; k++) {
           const n = length(left[k].run);
           if (drop[k] === 0) {
             at.push([w.length, pos, n]);
+            sureAt.push([w.length, wasAt[k], n]);
             w += textOf(left[k].run);
           }
           pos += n;
@@ -1464,7 +1514,10 @@ export class TextReplay {
           ),
           cursor,
           undefined,
-          {at, text: d},
+          [
+            {at, text: d},
+            {at: sureAt, text: was},
+          ],
         );
         const kept: Block[] = [];
         let r = 0;
@@ -1528,10 +1581,12 @@ export class TextReplay {
    * them (of `d`), as one text, by the diff (see stretch): anchored at the
    * caret (`cursor`, in `s`) where it is in that text. With `sure`, only what
    * the diff that takes the common end first keeps too: where the text could
-   * be either of two equal runs, neither. That diff reads `d`, and also the
-   * text that left as it was (`sure.text`, of which `d` holds the runs
-   * `sure.at` says, see stretch), with the text deleted whole still in
-   * place; what either reading keeps as the diff does is kept. Why: read
+   * be either of two equal runs, neither. That diff reads `d`, and also each
+   * reading of the text that left as it was in `sure` (its `text`, of which
+   * `d` holds the runs its `at` says, see stretch): with the text deleted
+   * whole still in place, and with the text that arrived and left again in
+   * this commit in place too; what any reading keeps as the diff does is
+   * kept. Why: read
    * without that text, the characters on its two sides are next to each
    * other, which makes the diff's alignment one of two where the line had
    * one (a line made again as one node with one word changed, where that
@@ -1546,14 +1601,18 @@ export class TextReplay {
     blocks: readonly Block[],
     cursor: number,
     keeps: (x: Span) => boolean = () => true,
-    sure: {
+    sure: readonly {
       readonly at: readonly (readonly [number, number, number])[];
       readonly text: string;
-    } | null = null,
+    }[] = [],
   ): Block[] {
+    type Reading = (typeof sure)[number];
     // The run of `d` (see `sure`) that character `at` of it is in.
-    const runOf = (at: number): readonly [number, number, number] => {
-      const runs = sure!.at;
+    const runOf = (
+      r: Reading,
+      at: number,
+    ): readonly [number, number, number] => {
+      const runs = r.at;
       let lo = 0;
       let hi = runs.length - 1;
       while (lo < hi) {
@@ -1566,9 +1625,9 @@ export class TextReplay {
       }
       return runs[lo];
     };
-    // Where character `at` of `d` was in the text that left.
-    const old = (at: number): number => {
-      const run = runOf(at);
+    // Where character `at` of `d` was in the text that left, in reading `r`.
+    const old = (r: Reading, at: number): number => {
+      const run = runOf(r, at);
       return run[1] + at - run[0];
     };
     const out: Block[] = [];
@@ -1620,7 +1679,7 @@ export class TextReplay {
         [0, prefix, 0],
         [tl - suffix, tl, shift],
       ];
-      if (sure !== null) {
+      if (sure.length > 0) {
         // Only what the diff that takes the common end first keeps too (see
         // `sure`): in `w`, and where text that left was deleted whole in
         // this part, also in the text that left as it was, from right after
@@ -1656,10 +1715,13 @@ export class TextReplay {
             }
           }
         }
-        const from = o0 === 0 ? 0 : old(o0 - 1) + 1;
-        const to = o1 === d.length ? sure.text.length : old(o1);
-        const was = sure.text.slice(from, to);
-        if (was !== w) {
+        for (const r of sure) {
+          const from = o0 === 0 ? 0 : old(r, o0 - 1) + 1;
+          const to = o1 === d.length ? r.text.length : old(r, o1);
+          const was = r.text.slice(from, to);
+          if (was === w) {
+            continue;
+          }
           // Character `i` of `text` is character `i + c` of the text that
           // left; in the diff's reading, the run of `w` it is in says.
           const [op, oq] = endFirst(was);
@@ -1669,7 +1731,7 @@ export class TextReplay {
           ];
           for (const [x0, x1, dx] of keep) {
             for (let x = x0; x < x1; ) {
-              const run = runOf(o0 + x + dx);
+              const run = runOf(r, o0 + x + dx);
               const end = Math.min(x1, run[0] + run[2] - o0 - dx);
               const c = o0 + dx + run[1] - run[0];
               for (const [y0, y1, cy] of olds) {

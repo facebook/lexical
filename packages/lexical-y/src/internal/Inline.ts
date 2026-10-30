@@ -566,9 +566,19 @@ const isWordChar = (s: string, i: number): boolean => {
   return !SPACE.test(c) && !UNSPACED.test(c);
 };
 
-/** Whether a word of `s` runs across position `i` (between `i - 1` and `i`). */
-export const cutsWord = (s: string, i: number): boolean =>
-  isWordChar(s, i - 1) && isWordChar(s, i);
+const ALNUM = /[\p{L}\p{N}\p{M}]/u;
+
+/**
+ * Whether the character the code unit at `i` is part of is a letter, a digit
+ * or a combining mark, of a script written with spaces.
+ */
+const isAlnum = (s: string, i: number): boolean => {
+  if (i < 0 || i >= s.length) {
+    return false;
+  }
+  const c = String.fromCodePoint(s.codePointAt(charStart(s, i))!);
+  return ALNUM.test(c) && !UNSPACED.test(c);
+};
 
 /**
  * Snap a replacement's common prefix and suffix back to word boundaries, so
@@ -647,16 +657,16 @@ const NOT_SPACE = /\S|\n/;
  * see TextReplay#stretch) keeps of that text (`a`), as the characters they
  * were: the diff anchored at the caret (diffStrings).
  *
- * An insertion or a deletion keeps every other character where it changes
- * no word of `a`: between two words, or a whole word with its separator
- * (`t9z ` inserted in `t1z t2z`). Where it could be at several places
- * (`t1z t|9z t2z` or `t1z |t9z t2z`), it goes at the caret's if that changes
- * no word, else at the last that does not. Inside a word or glued onto one
- * (`t9z` made again as `t90z`), it changed that word, which is then
- * replaced whole, as by a replacement: a kept piece of the old word would be
- * a piece of the new one, and an edit computed before this one that
- * replaces the old word deletes exactly the old word's characters, so it
- * took that piece out of the new word.
+ * An insertion or a deletion keeps every other character, except inside a
+ * word: an insertion between two letters or digits of one (`t9z` made again
+ * as `t90z`), or a deletion with both ends inside words, changed those
+ * words, which are then replaced whole, as by a replacement: a kept piece of
+ * the old word would be a piece of the new one, and an edit computed before
+ * this one that replaces the old word deletes exactly the old word's
+ * characters, so it took that piece out of the new word. At a word's edge
+ * (`foo` made again as `food`, `fooX.bar`) every character is kept. Where it
+ * could be at several places (`t1z t|9z t2z` or `t1z |t9z t2z`), it goes
+ * where the caret placed it, else at the last place inside no word.
  *
  * A replacement keeps whole words (snapToWords). A kept start or end that
  * is only spaces is written with it: a separator alone carries no word, and
@@ -685,17 +695,18 @@ export function keptEnds(
       i < s.length &&
       isHighSurrogate(s.charCodeAt(i - 1)) &&
       isLowSurrogate(s.charCodeAt(i));
+    // Inside a word: between two letters or digits of one (`t9|z`), not
+    // next to punctuation, an emoji or white space, and not in a script
+    // written without spaces, where each character is a word.
+    const inside = (i: number): boolean => isAlnum(a, i - 1) && isAlnum(a, i);
     const changesNoWord = (k: number): boolean => {
       if (splits(a, k) || splits(longer, k) || splits(longer, k + m)) {
         return false;
       }
-      if (longer === b) {
-        return (
-          !(isWordChar(a, k - 1) && isWordChar(b, k)) &&
-          !(isWordChar(b, k + m - 1) && isWordChar(a, k))
-        );
-      }
-      return !cutsWord(a, k) && !cutsWord(a, k + m);
+      // An insertion inside a word, or a deletion with both ends inside
+      // words, changed those words; at a word's edge (`foo` made again as
+      // `food`, `fooX.bar`) it is a word's text typed or deleted there.
+      return longer === b ? !inside(k) : !(inside(k) && inside(k + m));
     };
     // The places it could be: from the furthest the common end reaches to
     // the furthest the common start reaches (diffStrings takes the common
@@ -725,35 +736,33 @@ export function keptEnds(
     ) {
       end++;
     }
+    // Where the caret placed it (it stopped the common start), there.
+    const caretPlaced = diff.prefix < hi;
     if (changesNoWord(diff.prefix)) {
       return diff;
     }
-    for (let k = hi; k >= n - end; k--) {
-      if (changesNoWord(k)) {
-        return {prefix: k, suffix: n - k};
+    if (!caretPlaced) {
+      for (let k = hi; k >= n - end; k--) {
+        if (changesNoWord(k)) {
+          return {prefix: k, suffix: n - k};
+        }
       }
     }
-    // It changed the word or words at its ends: those are replaced whole.
+    // It changed the word or words it is inside of: those are replaced
+    // whole.
     const k = diff.prefix;
     if (longer.slice(k, k + m).includes('\ufffc')) {
       return diff;
     }
     let prefix = k;
     let suffix = n - k;
-    const glued =
-      longer === b
-        ? [
-            isWordChar(a, k - 1) && isWordChar(b, k),
-            isWordChar(b, k + m - 1) && isWordChar(a, k),
-          ]
-        : [cutsWord(a, k), cutsWord(a, k + m)];
-    if (glued[0]) {
-      while (isWordChar(a, prefix - 1)) {
+    if (inside(k)) {
+      while (isAlnum(a, prefix - 1)) {
         prefix = charStart(a, prefix - 1);
       }
     }
-    if (glued[1]) {
-      while (suffix > 0 && isWordChar(a, a.length - suffix)) {
+    if (inside(a.length - suffix)) {
+      while (suffix > 0 && isAlnum(a, a.length - suffix)) {
         const at = a.length - suffix;
         suffix -=
           at + 1 < a.length &&

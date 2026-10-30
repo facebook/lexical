@@ -46,6 +46,7 @@ import {
 } from '../../headless';
 import {
   $createEquation,
+  $selectIn,
   expectConverged,
   flush,
   freshReader,
@@ -622,6 +623,80 @@ describe('a stale replacement of an old word takes nothing out of the new word',
         expect(words).toContain('t94z');
       }
       await expectConverged(t.peers);
+    });
+  }
+});
+
+// An insertion or deletion at a word's edge keeps every character: next to
+// punctuation or an emoji it is not inside a word (round 2 review). Where
+// the caret placed an insertion or deletion among equal text, it stays
+// there.
+describe('an insertion or deletion in a remade line keeps the words around it', () => {
+  for (const ids of IDS) {
+    test(`"foo.bar" made again as "fooX.bar" ‖ the peer deletes "bar" (ids ${ids})`, async () => {
+      const t = await setup(
+        $doc(() => [$plain('foo.bar')]),
+        {ids},
+      );
+      t.offline();
+      t.a.update($remake('fooX.bar'));
+      t.b.update(() => {
+        ($line().getFirstChildOrThrow() as TextNode).spliceText(
+          4,
+          3,
+          '',
+          false,
+        );
+        $setSelection(null);
+      });
+      await t.sync();
+      await expectEverywhere(t.peers, 'fooX.');
+    });
+
+    test(`"😀😁 tail" made again as "😀X😁 tail" ‖ the peer deletes 😀 (ids ${ids})`, async () => {
+      const t = await setup(
+        $doc(() => [$plain('😀😁 tail')]),
+        {ids},
+      );
+      t.offline();
+      t.a.update($remake('😀X😁 tail'));
+      t.b.update(() => {
+        ($line().getFirstChildOrThrow() as TextNode).spliceText(
+          0,
+          2,
+          '',
+          false,
+        );
+        $setSelection(null);
+      });
+      await t.sync();
+      await expectEverywhere(t.peers, 'X😁 tail');
+    });
+
+    test(`"aa a aa" made again as "aa aa" with the caret after the first a ‖ the peer types Q after the single a (ids ${ids})`, async () => {
+      const t = await setup(
+        $doc(() => [$plain('aa a aa')]),
+        {ids},
+      );
+      t.offline();
+      t.a.update(() => {
+        for (const child of $line().getChildren()) {
+          child.remove();
+        }
+        $line().append($plain('aa aa'));
+        $selectIn([1], 1);
+      });
+      t.b.update(() => {
+        ($line().getFirstChildOrThrow() as TextNode).spliceText(
+          4,
+          0,
+          'Q',
+          false,
+        );
+        $setSelection(null);
+      });
+      await t.sync();
+      await expectEverywhere(t.peers, 'aaQ aa');
     });
   }
 });

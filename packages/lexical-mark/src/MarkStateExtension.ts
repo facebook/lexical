@@ -1504,9 +1504,27 @@ function $getReplacedRange(
 const COMPOSITION_PLACEHOLDERS = ['', '\u200b', '\u00a0'];
 
 /**
- * The offset of `point` in the text of `block` (as `getTextContent` gives
- * it), or -1 when `block` holds a nested block before it or does not hold
- * the point.
+ * The text of `block`'s children as {@link $offsetInBlock} counts it: an
+ * inline element's text is its children's. `getTextContent` would also put
+ * the text of the block's named slots in front, and an inline element can add
+ * text of its own to its `getTextContent`, neither of which a point in the
+ * children counts.
+ */
+function $childrenText(block: ElementNode): string {
+  let text = '';
+  for (const child of block.getChildren()) {
+    text +=
+      $isElementNode(child) && child.isInline()
+        ? $childrenText(child)
+        : child.getTextContent();
+  }
+  return text;
+}
+
+/**
+ * The offset of `point` in the text of `block`'s children (see
+ * {@link $childrenText}), or -1 when `block` holds a nested block before it
+ * or does not hold the point.
  */
 function $offsetInBlock(block: ElementNode, point: PointLike): number {
   let offset = 0;
@@ -1597,7 +1615,7 @@ function $getCompositionReplacedRange(
             end,
             range,
             start,
-            text: block.getTextContent(),
+            text: $childrenText(block),
           };
     },
     {editor},
@@ -1618,7 +1636,7 @@ function $getCompositionReplacedRange(
       }
       const anchor = $offsetInBlock(block, toPointLike(selection.anchor));
       const focus = $offsetInBlock(block, toPointLike(selection.focus));
-      const text = block.getTextContent();
+      const text = $childrenText(block);
       const head = before.text.slice(0, before.start);
       const tail = before.text.slice(before.end);
       for (const placeholder of COMPOSITION_PLACEHOLDERS) {

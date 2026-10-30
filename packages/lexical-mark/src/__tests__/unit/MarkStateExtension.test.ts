@@ -72,12 +72,13 @@ import {
   defineExtension,
   DELETE_CHARACTER_COMMAND,
   DROP_COMMAND,
-  type ElementNode,
+  ElementNode,
   HISTORIC_TAG,
   INSERT_PARAGRAPH_COMMAND,
   type LexicalEditor,
   type LexicalNode,
   LineBreakNode,
+  ParagraphNode,
   PASTE_COMMAND,
   type RangeSelection,
   REDO_COMMAND,
@@ -128,6 +129,35 @@ class FigureNode extends DecoratorNode<null> {
   }
   decorate(): null {
     return null;
+  }
+}
+
+/** A paragraph with a named slot (a title shown with it) */
+class TitledParagraphNode extends ParagraphNode {
+  $config() {
+    return this.config('test-titled-paragraph', {
+      extends: ParagraphNode,
+      slots: ['title'],
+    });
+  }
+}
+
+/** An inline element that shows its text in brackets */
+class BracketedInlineNode extends ElementNode {
+  $config() {
+    return this.config('test-bracketed-inline', {extends: ElementNode});
+  }
+  isInline(): true {
+    return true;
+  }
+  createDOM(): HTMLElement {
+    return document.createElement('span');
+  }
+  updateDOM(): false {
+    return false;
+  }
+  getTextContent(): string {
+    return '[' + super.getTextContent() + ']';
   }
 }
 
@@ -270,7 +300,13 @@ function createTestEditor(
         }),
       ],
       name: '[root]',
-      nodes: () => [ChipNode, FigureNode, TestDecoratorTextNode],
+      nodes: () => [
+        ChipNode,
+        FigureNode,
+        BracketedInlineNode,
+        TestDecoratorTextNode,
+        TitledParagraphNode,
+      ],
       theme: {mark: 'mark', markOverlap: 'mark-overlap'},
     }),
   );
@@ -2338,6 +2374,94 @@ describe('MarkStateExtension', () => {
         expect(tree(editor)).toBe(result);
       },
     );
+
+    describe('in a block with a named slot', () => {
+      /** "abcd xy" with c1 on "abcd", in the block (`where`) the test names. */
+      function setupSlotted(where: 'children' | 'slot'): LexicalEditor {
+        const editor = createTestEditor();
+        update(editor, () => {
+          const title = $createParagraphNode().append(
+            $createTextNode(where === 'slot' ? 'abcd xy' : 'Title'),
+          );
+          const block = $create(TitledParagraphNode).append(
+            $createTextNode(where === 'slot' ? 'Body' : 'abcd xy'),
+          );
+          $setSlot(block, 'title', title);
+          $getRoot().clear().append(block);
+        });
+        // The text node holding "abcd xy" (a host's getAllTextNodes lists
+        // its slots' text first, so it is picked directly)
+        const $target = () => {
+          const block = $paragraph();
+          const parent =
+            where === 'slot'
+              ? ($getSlot(block, 'title') as ElementNode)
+              : block;
+          return parent.getFirstChildOrThrow() as TextNode;
+        };
+        update(editor, () => {
+          $addMarkID('c1', $target().select(0, 4));
+        });
+        update(editor, () => {
+          $target().select(2, 4);
+        });
+        return editor;
+      }
+
+      test.each(['children', 'slot'] as const)(
+        'replacing the end of a run in its %s gives the text the ids all of the replaced text had',
+        where => {
+          const editor = setupSlotted(where);
+          startComposition(editor);
+          compose(editor, 'cde');
+          update(editor, () => $setCompositionKey(null));
+          const marked = editor.read(() => {
+            const block = $paragraph();
+            const target =
+              where === 'slot'
+                ? ($getSlot(block, 'title') as ElementNode)
+                : block;
+            return target
+              .getChildren()
+              .filter(node => $getNodeMarkIDs(node).includes('c1'))
+              .map(node => node.getTextContent())
+              .join('');
+          });
+          expect(marked).toBe('abcde');
+        },
+      );
+    });
+
+    test('replacing the end of a run inside an inline element that adds text of its own gives the text the ids all of the replaced text had', () => {
+      const editor = createTestEditor();
+      update(editor, () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $create(BracketedInlineNode).append($createTextNode('abcd xy')),
+            ),
+          );
+      });
+      const $text = () => $getRoot().getAllTextNodes()[0];
+      update(editor, () => {
+        $addMarkID('c1', $text().select(0, 4));
+      });
+      update(editor, () => {
+        $text().select(2, 4);
+      });
+      startComposition(editor);
+      compose(editor, 'cde');
+      update(editor, () => $setCompositionKey(null));
+      const marked = editor.read(() =>
+        $getRoot()
+          .getAllTextNodes()
+          .filter(node => $getNodeMarkIDs(node).includes('c1'))
+          .map(node => node.getTextContent())
+          .join(''),
+      );
+      expect(marked).toBe('abcde');
+    });
 
     test('a selection that a handler collapsed before the composition started was not replaced', () => {
       const editor = setupMarked('abcd', [[0, 4, 'c1']], [2, 4]);

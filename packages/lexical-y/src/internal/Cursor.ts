@@ -27,7 +27,6 @@ import {
   MARKER,
   SEGMENT_KEY,
   TYPE_KEY,
-  WRAPPER_PREFIX,
 } from './Schema';
 import {deleteItem, isGone} from './Unread';
 
@@ -547,19 +546,19 @@ export class Cursor {
 
   /**
    * The keys content with `formats` writes items of its own for even where
-   * the cursor already has their values: where the cursor is inside another
-   * segment's run (a node Lexical keeps apart from an equal neighbour, see
-   * SEGMENT_KEY) and the content starts a segment of its own, the keys whose
-   * value at the cursor that segment's own write opened (its type, and the
-   * formats and fields it was written with), never a wrapper. Why: that run
-   * is its author's, opened and closed by the items of one write; content
-   * inside it that writes only its segment key reads its type and formats
-   * from that write, and the author's undo deletes it (a tab written right
-   * after another client's tab, which that client undid, read as a "\t" in
-   * the text before it). A value the cursor has from elsewhere (a link or a
-   * format of the text around) is not owned: a restore of it after the
-   * content would bring it back where a peer removed it at the same time.
-   * Null when there are none.
+   * the cursor already has their values: a tab's type, where the cursor is
+   * inside another segment's run (a node Lexical keeps apart from an equal
+   * neighbour, see SEGMENT_KEY) whose own write opened that type, and the
+   * content starts a segment of its own. Why: that run is its author's,
+   * opened and closed by the items of one write; a tab inside it that writes
+   * only its segment key reads its type from that write, and the author's
+   * undo deletes it (a tab written right after another client's tab, which
+   * that client undid, read as a "\t" in the text before it). Nothing else
+   * is owned: a format or link of the text around would come back where a
+   * peer removed it at the same time, and other types and modes follow the
+   * runs they are written in, where a concurrent change of the line (a code
+   * line made a paragraph, which makes its highlighter's tokens plain text)
+   * must reach them. Null when there are none.
    */
   private ownSegmentKeys(formats: Record<string, unknown>): Set<string> | null {
     const segment = formats[SEGMENT_KEY] ?? null;
@@ -575,22 +574,16 @@ export class Cursor {
     if (opener === null) {
       return null;
     }
-    let own: Set<string> | null = null;
-    for (const key in formats) {
-      if (
-        key === SEGMENT_KEY ||
-        key.startsWith(WRAPPER_PREFIX) ||
-        formats[key] === null ||
-        !equalFormatValue(this.formats.get(key) ?? null, formats[key])
-      ) {
-        continue;
-      }
-      const source = this.valueSource(key);
-      if (source !== null && this.oneWrite(opener, source)) {
-        (own || (own = new Set())).add(key);
-      }
+    if (
+      decodeFormatValue(formats[TYPE_KEY] ?? null) !== 'tab' ||
+      !equalFormatValue(this.formats.get(TYPE_KEY) ?? null, formats[TYPE_KEY])
+    ) {
+      return null;
     }
-    return own;
+    const source = this.valueSource(TYPE_KEY);
+    return source !== null && this.oneWrite(opener, source)
+      ? new Set([TYPE_KEY])
+      : null;
   }
 
   /**

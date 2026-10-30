@@ -434,6 +434,15 @@ export interface BlockIdConfig {
    * independent writers cannot see each other, so a replacement must stay
    * unique across writers (random ids of 120 bits or more, or a per-writer
    * prefix).
+   *
+   * Short handles ({@link $getBlockHandle}) depend on ids whose first
+   * characters are random: ids that share a prefix get handles at least as
+   * long as that prefix. An id that starts with a timestamp or a version
+   * (a UUIDv7 in its standard layout: a millisecond time, then a version
+   * digit) gives ids made close together long shared prefixes, and handles
+   * much longer than the usual 4 characters. Put the random part first, or
+   * keep the default.
+   *
    * Tests can inject a deterministic counter. Default:
    * {@link generateBlockId}.
    */

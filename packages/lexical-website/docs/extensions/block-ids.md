@@ -304,6 +304,14 @@ block, so a handle read while another id shared more of its prefix keeps
 working after that block is deleted. A prefix shorter than 4 characters is
 `invalid` (`'too-short'`) unless it is a whole id.
 
+Short handles depend on ids whose first characters are random. Ids that
+share a prefix get handles at least as long as that prefix, so an id that
+starts with a timestamp or a version is a poor `generateId` for handles: a
+UUIDv7 in its standard layout starts with a millisecond time and a version
+digit, and ids made close together share their first characters, so their
+handles are much longer than the usual 4 characters. Keep the default
+(`generateBlockId`), or put the random part first.
+
 Random ids leave almost every short prefix unused, so a mistyped handle
 almost never names another block: over 30 documents of 1,000 blocks, 2.6 in
 100,000 one-character typos of a handle (a character changed, dropped or
@@ -599,7 +607,9 @@ in `data-block-handle` instead of ids, for HTML shown to a model (see
   coordination. A value that is invalid
   or already used in the editor is discarded and `generateId` is called
   again; 32 such values in a row throw. Tests can use a counter:
-  ``generateId: () => `b${++n}` ``.
+  ``generateId: () => `b${++n}` ``. Short handles need ids whose first
+  characters are random, so a UUIDv7 (a timestamp first) is a poor choice
+  (see [Showing blocks to a model](#showing-blocks-to-a-model)).
 - `disabled`: stops assigning, repairing and indexing ids (also an output
   signal). Ids already in the document are kept, and `$getBlockById` scans
   the document. Enabling it again assigns and repairs ids in one update.

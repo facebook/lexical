@@ -18,9 +18,8 @@ tested with. Its type declarations do not type-check on their own (an
 upstream issue): projects that run `tsc` need `skipLibCheck: true`.
 
 Until a Lexical release includes `@lexical/y`, npm's `latest` for it is a
-placeholder (`0.0.0-bootstrap.0`): install every Lexical package from the
-same nightly, in one command, as above; once a release includes it, install
-that release instead.
+placeholder: install every Lexical package from the same nightly, in one
+command, as above; once a release includes it, install that release instead.
 Name the version of the `@y/*` packages you add too: the `latest` tags of
 `@y/websocket` and `@y/protocols` are builds for the earlier `yjs@14.0.0-*`
 prereleases, so npm installs a second copy of Yjs next to `@y/y`. Use the

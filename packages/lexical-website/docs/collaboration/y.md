@@ -779,8 +779,10 @@ the `yjs@14.0.0-*` prereleases, not `@y/y`, and keeps each room in a plain
 `Doc`, with the format cleanup on. The Lexical playground's development
 relay,
 [`collab-y-server.mjs`](https://github.com/meta/lexical/blob/main/packages/lexical-playground/scripts/collab-y-server.mjs),
-is a complete in-memory example (no persistence or authentication) that
-`@y/websocket` clients connect to at `ws://host:port/<room>`. It keeps one
+is a complete in-memory example (no persistence, authentication or room
+eviction) that `@y/websocket` clients connect to at `ws://host:port/<room>`;
+drop its test-only `/health` and `/delay` endpoints before you build a relay
+on it. It keeps one
 document per room, applies what each connection sends to it, and sends the
 updates the document emits to the room's connections, in the order it
 applied them. It uses `@y/y`, `@y/protocols` (the sync and awareness

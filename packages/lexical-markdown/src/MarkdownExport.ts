@@ -715,14 +715,15 @@ function isMarker(kind: number | undefined): boolean {
   return kind === OPENER || kind === CLOSER;
 }
 
-// Characters a URL, email or mention can hold, and the backslash that
-// escapes one of them.
-const LINK_CHARACTER = /[\w!#$%&'()*+,./:;=?@~\\-]/;
+// Characters a URL, email or mention can hold: GFM ends an autolink at
+// whitespace or `<`. This takes in the backslash that escapes a marker too.
+const LINK_CHARACTER = /[!-;=-~]/;
 // How far the export looks for one, which keeps the look linear.
 const LINK_LOOKAHEAD = 2048;
 // A URL, `www.` host, email or mention at the end of the text before it, or
 // at the start of the text after it.
-const LINK_AT_END = /:\/\/|(?:^|[^\w.-])www\.|@[\w.-]*\w$/i;
+const LINK_AT_END =
+  /:\/\/|(?:^|[^\w.-])www\.|(?:^|[^\w.+-])(?:mailto|xmpp):|@[\w.-]*\w$/i;
 const LINK_AT_START =
   /^(?:[a-z][\w+.-]*:\/\/|www\.|mailto:|xmpp:)|^[\w.+-]*@\w/i;
 
@@ -1016,13 +1017,18 @@ function decideReferences(
     closes &&
     !isFlankedBy(beforeLast || endChar(before), startChar(after)) &&
     isFlankedBy(beforeLast || endChar(before), '&');
-  if (!runs.some(run => opensWithReference(run) || closesWithReference(run))) {
+  const pending: number[] = [];
+  runs.forEach((run, index) => {
+    if (opensWithReference(run) || closesWithReference(run)) {
+      pending.push(index);
+    }
+  });
+  if (pending.length === 0) {
     return {encodeEnd, encodeStart};
   }
   // Writing a one-character piece as a reference changes what the run on its
   // other side sees, so that run is decided again. Each piece changes at most
   // twice, so this stays linear.
-  const pending = runs.map((_run, index) => index);
   while (pending.length > 0) {
     const run = runs[pending.pop()!];
     const {before, after} = run;

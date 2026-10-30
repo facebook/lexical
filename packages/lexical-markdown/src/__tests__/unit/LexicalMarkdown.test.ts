@@ -5121,6 +5121,8 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     ['https://example.com/a', 'https://example.com/a'],
     ['https://example.com/a_b', 'https://example.com/a\\_b'],
     ['@john_doe', '@john\\_doe'],
+    ['xmpp:a@b.co/res', 'xmpp:a@b.co/res'],
+    ['https://example.com/a|b', 'https://example.com/a|b'],
   ])(
     'writes no reference inside %j, which readers may autolink',
     (link, markdown) => {
@@ -5137,9 +5139,12 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
           ),
         {discrete: true},
       );
+      const prefix = `see ${markdown}**`;
       expect(
-        editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
-      ).toMatch(new RegExp(`^see ${markdown.replace(/[.\\]/g, '\\$&')}\\*\\*`));
+        editor
+          .read('latest', () => $convertToMarkdownString(TRANSFORMERS))
+          .slice(0, prefix.length),
+      ).toBe(prefix);
     },
   );
 

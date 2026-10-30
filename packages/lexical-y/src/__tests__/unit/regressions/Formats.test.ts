@@ -1866,7 +1866,9 @@ describe('a format or comment removed ‖ an edit inside its range', () => {
 // (see Cursor#format, rule 5). C pasted over J's word, and the delete
 // collapsed the format items after it keeping only J's null of the first
 // comment; J's concurrent undo of its typing deleted that null, and the
-// comment covered the rest of the document.
+// comment covered the rest of the document. J's undo now keeps the run
+// ends of its own text (see neutralRunEnds), so C's text, typed over J's
+// plain text, stays plain too.
 describe('L1B-1: undo of plain text typed after a word two comments cover ‖ a paste over that text', () => {
   for (const ids of [
     [1, 2, 3, 4],
@@ -1912,7 +1914,7 @@ describe('L1B-1: undo of plain text typed after a word two comments cover ‖ a 
           sel.insertText('t1013z');
           $setSelection(null);
         });
-        expect(await merged(t)).toBe('"t1zt1013z"[c12+c4] " t2" / "t3z"');
+        expect(await merged(t)).toBe('"t1z"[c12+c4] "t1013z t2" / "t3z"');
       });
     }
   }

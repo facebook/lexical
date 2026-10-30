@@ -246,9 +246,12 @@ Without the extension API, `new YBinding(editor, doc, options)` does the
 same (`options.schemaVersion` is required there too): call `binding.start()` to connect it once the editor has its initial
 state (an update made after it, on a document that has content, is an
 edit), `binding.initialize()` after the first sync, and `binding.undo()` /
-`binding.redo()` for undo. An undo puts back the selection from before the
-step it undoes (as `HistoryExtension` does), and a redo the one from when it
-was undone. Called while the editor
+`binding.redo()` for undo. Each returns whether there was a step to undo or
+redo; it returns `false` and does nothing while the binding is not active,
+and when called during another undo or redo (from a listener of the undo
+manager or of the document while it runs). An undo puts back the selection
+from before the step it undoes (as `HistoryExtension` does), and a redo the
+one from when it was undone. Called while the editor
 is updating (from a command handler, an update or its `$onUpdate`), it runs
 right after that update commits, in an update of its own.
 `binding.getCursor()` and `binding.$resolveCursor()` convert the selection
@@ -951,7 +954,12 @@ not merge as a user might expect:
   part of its range, nor the value that change restored after itself: color
   `abc`, let a collaborator recolor `b`, then undo the color, and `c` keeps
   the old color, up to the end of the range (the same holds for text a
-  collaborator types or pastes inside the range as you undo). Undoing a link
+  collaborator types or pastes inside the range as you undo, which your
+  undo has not seen; text typed inside it that you have seen loses the
+  color with the rest of the range). A word a collaborator typed inside the
+  range with its color, right after text someone typed inside it and
+  removed again, loses the color too when you undo the color, as text
+  typed anywhere else inside the range does. Undoing a link
   while a collaborator formats text inside it keeps the link on its text:
   formatting text in a link also sets the link's text format, which writes
   the link there again. Where a collaborator overwrote a step of yours

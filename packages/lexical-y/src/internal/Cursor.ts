@@ -278,6 +278,12 @@ export class Cursor {
    */
   hidden: Hidden | null = null;
   /**
+   * Which format items a collapse may delete (see collapseGap); all where
+   * null. An undo's collapse deletes only its own client's (see
+   * collapseDeleted).
+   */
+  collapsible: ((item: Item) => boolean) | null = null;
+  /**
    * Where the run of items without live content that the cursor is in
    * starts (see collapseGap): after this item, or at the parent's start for
    * null. The live content before it, or the item the cursor was made after
@@ -779,6 +785,16 @@ export class Cursor {
   }
 
   /**
+   * Collapse the run of items without live content around content from
+   * `first` to `last` that is deleted already (an undo deleted it), as a
+   * delete of that content does (see collapseGap). Call with the cursor
+   * right after `last`, made at the live content before that run.
+   */
+  collapseDeleted(first: Item, last: Item): void {
+    this.collapseGap(first, last);
+  }
+
+  /**
    * Collapse the format items of the run of items without live content (deleted
    * content and format items) that a delete of the content from `first` to
    * `last` leaves the cursor in. Per family (see formatFamily), keep the units
@@ -1016,7 +1032,10 @@ export class Cursor {
       const changed = new Set<string>();
       for (const unit of units) {
         for (const it of unit) {
-          if (!keep.has(it)) {
+          if (
+            !keep.has(it) &&
+            (this.collapsible === null || this.collapsible(it))
+          ) {
             deleteItem(it, this.tr);
             if (passed.has(it)) {
               changed.add(keyOf(it));

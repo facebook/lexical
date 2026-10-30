@@ -1166,7 +1166,10 @@ not merge as a user might expect:
   an older version of it deletes the fields a newer one added. Declare fields
   in `$config` to keep them.
 - **The caret when a collaborator rewrites its line.** A caret stays after
-  the text it was after. When a collaborator replaces the line holding it,
+  the text it was after; a caret in an empty line stays at that line's
+  start when a collaborator types there (and so does the end of a range
+  that ends there; a range that starts there does not take in what they
+  type). When a collaborator replaces the line holding it,
   deleting all the line showed and putting new content at its place in one
   change (an agent's block-level write, a paste over the line), the caret
   keeps its offset in the new line, clamped to its end (in the first line,

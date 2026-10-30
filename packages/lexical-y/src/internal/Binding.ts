@@ -5793,12 +5793,23 @@ export class YBinding {
         // a container or wrapper whose last child is the target.
         const last = node.getLastChild();
         if (last === null) {
+          // An empty line: at its marker, which is also where a point at the
+          // end of a line with text can be stored, so a caret or a range's
+          // end edge (preferLeft) is recorded as one in an empty line (see
+          // emptyLinePositions). A range's start edge is not: moved before
+          // what a collaborator types into the line, it would grow the range
+          // over their text.
           const unit = state.unitByKey.get(node.getKey());
-          return unit !== undefined && unit.end !== null
-            ? relativePositionToJSON(
-                new RelativePosition(null, null, unit.end.id, 0),
-              )
-            : null;
+          if (unit === undefined || unit.end === null) {
+            return null;
+          }
+          const json = relativePositionToJSON(
+            new RelativePosition(null, null, unit.end.id, 0),
+          );
+          if (preferLeft) {
+            emptyLinePositions.add(json);
+          }
+          return json;
         }
         target = last;
         offset = $atomSize(last);
@@ -6040,7 +6051,21 @@ export class YBinding {
       found = copy;
     }
     let item: Item | null = found;
-    if (rel.assoc < 0) {
+    const hidden = this.state.hidden;
+    const marked = isShownEnd(found, hidden)
+      ? this.state.unitByEnd.get(found)
+      : undefined;
+    if (
+      marked !== undefined &&
+      marked.kind === 'line' &&
+      emptyLinePositions.has(json as object)
+    ) {
+      // Captured in an empty line (see emptyLinePositions): the start of
+      // that line, before what was typed into it since.
+      const left = prevLiveEnd(found, hidden);
+      item = left === null ? (found.parent as YNode)._start : left.right;
+      diff = 0;
+    } else if (rel.assoc < 0) {
       // After a character: before the next live one.
       if (!found.deleted && found.countable && diff + 1 < found.length) {
         diff += 1;
@@ -6057,7 +6082,6 @@ export class YBinding {
         diff = 0;
       }
     }
-    const hidden = this.state.hidden;
     while (item !== null && shownLength(item, hidden) === 0) {
       item = item.right;
       diff = 0;
@@ -6143,6 +6167,19 @@ export class YBinding {
     return $pointAtAtom(owner, offset, this.isShownRun);
   }
 }
+
+/**
+ * The carets and range end edges this binding captured in an empty line
+ * (see $relativePosition): at the line's marker, with the right association.
+ * Such a position resolves to the start of that line, not to the marker,
+ * so a caret that was after no text in its line stays after none when a
+ * collaborator types there (as a caret after text stays after that text).
+ * Why recorded, not encoded: a point at the end of a line with text (an
+ * element point, or the start of a range) is stored at the marker too and
+ * must stay at the line's end; the stored form of both is the same, and
+ * cursor JSON from elsewhere keeps its meaning.
+ */
+const emptyLinePositions = new WeakSet<object>();
 
 /**
  * The line without a marker that ends at the node unit `unit` (undefined: at

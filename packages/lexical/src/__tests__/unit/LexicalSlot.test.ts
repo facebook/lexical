@@ -1956,7 +1956,7 @@ describe('named-slots: core foundation', () => {
     });
   });
 
-  // Regression for facebook/lexical#8936: $wrapNodeInElement is
+  // Regression for meta/lexical#8936: $wrapNodeInElement is
   // `node.replace(wrapper); wrapper.append(node)`. Because replace leaves the
   // slot map on the node, the wrapped host keeps its slots when it is
   // reattached in the same update.
@@ -3886,7 +3886,7 @@ describe('named-slots: block slot values (virtual shadow root)', () => {
 });
 
 describe('named-slots: hydrate-time normalize (#8712)', () => {
-  // Regression for facebook/lexical#8712: parsed inputs (URL doc payloads,
+  // Regression for meta/lexical#8712: parsed inputs (URL doc payloads,
   // imported JSON, paste round-trips) can carry slot frames whose
   // children violate `getTopLevelElement`'s invariant
   // (`Children of root nodes must be elements or decorators`). Any
@@ -3973,7 +3973,7 @@ describe('named-slots: hydrate-time normalize (#8712)', () => {
 });
 
 describe('named-slots: typing-path paragraph wrap (#8712)', () => {
-  // Regression for facebook/lexical#8712: the in-the-middle branch of
+  // Regression for meta/lexical#8712: the in-the-middle branch of
   // $transferStartingElementPointToTextPoint used to wrap the new text in
   // a paragraph only when the parent was a RootNode. A block-cursor caret
   // before a non-paragraph child of a shadow-root slot frame dropped a
@@ -4023,7 +4023,7 @@ describe('named-slots: typing-path paragraph wrap (#8712)', () => {
 });
 
 describe('named-slots: insertNodes redirect termination (#8712)', () => {
-  // Regression for facebook/lexical#8712: when the slot value's first child
+  // Regression for meta/lexical#8712: when the slot value's first child
   // is a non-element (typically a block decorator like HorizontalRuleNode),
   // `firstChild.selectStart()` resolves back to the slot value's own
   // element-mode caret (no sibling, parent = the slot value root), which

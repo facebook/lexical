@@ -48,7 +48,7 @@ import {
   $garbageCollectDetachedDecorators,
   $garbageCollectDetachedNodes,
 } from './LexicalGC';
-import {initMutationObserver} from './LexicalMutations';
+import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {$normalizeTextNode} from './LexicalNormalization';
 import {$reconcileRoot} from './LexicalReconciler';
 import {
@@ -610,6 +610,13 @@ export function $commitPendingUpdates(
   editor: LexicalEditor,
   recoveryEditorState?: EditorState,
 ): void {
+  // Not in the recovery from a failed update, which commits inside it, where
+  // the flush would run against the failed editor state.
+  if (editor._pendingEditorState !== null && activeEditor !== editor) {
+    // The commit disconnects the observer, which drops the DOM changes it has
+    // recorded but not reported yet, so they are reverted first.
+    flushRootMutations(editor, false, true);
+  }
   // Save and restore rather than set and clear because the reconciler error
   // recovery path re-enters $commitPendingUpdates, and the enqueued update
   // pump at the tail of a commit can commit discrete updates synchronously.
@@ -1088,7 +1095,7 @@ export function triggerCommandListeners<TCommand extends AnyLexicalCommand>(
   }
   if (updatingParentEditor) {
     // Preserve the fairly broken legacy semantics of command delegation to fix
-    // https://github.com/facebook/lexical/issues/8306
+    // https://github.com/meta/lexical/issues/8306
     updatingParentEditor.update(() => {
       // This will be async so we can't know the result
       triggerCommandListeners(updatingParentEditor, type, payload, fromEditor);
@@ -1248,6 +1255,37 @@ export function $flushSyncAfterUpdate() {
   editorState._flushSync = true;
 }
 
+/**
+ * Discard a failed update: the editor goes back to its committed state, which
+ * is committed again to restore the DOM (by the caller). A commit made during
+ * the failed update (setEditorState, a read that commits) stays: its
+ * listeners have run. The updates the failed one queued (nested updates not
+ * run yet) are dropped with it; those queued before it stay.
+ */
+function $discardPendingUpdate(
+  editor: LexicalEditor,
+  queuedBefore: null | Set<LexicalEditor['_updates'][number]>,
+): void {
+  const committedEditorState = editor._editorState;
+  editor._pendingEditorState = committedEditorState;
+  // A notification in the rejected update must not suppress a later retry
+  // or manufacture a selection change while recovering the committed state.
+  const selection = committedEditorState._selection;
+  editor._lastNotifiedSelection = selection === null ? null : selection.clone();
+  editor._dirtyType = FULL_RECONCILE;
+  editor._cloneNotNeeded.clear();
+  editor._dirtyLeaves = new Set();
+  editor._dirtyElements.clear();
+  const updates = editor._updates;
+  let kept = 0;
+  for (const update of updates) {
+    if (queuedBefore !== null && queuedBefore.has(update)) {
+      updates[kept++] = update;
+    }
+  }
+  updates.length = kept;
+}
+
 function $beginUpdate(
   editor: LexicalEditor,
   updateFn: () => void,
@@ -1282,6 +1320,9 @@ function $beginUpdate(
     editorStateWasCloned = true;
   }
   pendingEditorState._flushSync = discrete;
+  // The updates queued before this one (see $discardPendingUpdate).
+  const queuedBefore =
+    editor._updates.length === 0 ? null : new Set(editor._updates);
 
   const previousActiveEditorState = activeEditorState;
   const previousReadOnlyMode = isReadOnlyMode;
@@ -1367,27 +1408,49 @@ function $beginUpdate(
       }
     }
   } catch (error) {
-    // Report errors
-    if (error instanceof Error) {
-      editor._onError(error);
+    // An update nested in the running update whose pending state it shares
+    // leaves the error to that update, which owns the state: it is reported
+    // once, and the update is discarded as a whole.
+    if (
+      !editorStateWasCloned &&
+      previousActiveEditorState === pendingEditorState
+    ) {
+      throw error;
     }
-
-    // Restore existing editor state to the DOM
-    editor._pendingEditorState = currentEditorState;
-    // A notification in the rejected update must not suppress a later retry
-    // or manufacture a selection change while recovering the committed state.
-    const selection = currentEditorState._selection;
-    editor._lastNotifiedSelection =
-      selection === null ? null : selection.clone();
-    editor._dirtyType = FULL_RECONCILE;
-
-    editor._cloneNotNeeded.clear();
-
-    editor._dirtyLeaves = new Set();
-
-    editor._dirtyElements.clear();
-
-    $commitPendingUpdates(editor);
+    $discardPendingUpdate(editor, queuedBefore);
+    // The failed update is discarded before onError runs, and whether or not
+    // it rethrows: a pending state left behind would be committed with the
+    // next update (or by a read in onError), mixing the two updates' changes
+    // and tags.
+    let rethrown: null | {error: unknown} = null;
+    try {
+      if (error instanceof Error) {
+        editor._onError(error);
+      }
+    } catch (reportedError) {
+      rethrown = {error: reportedError};
+    }
+    try {
+      $commitPendingUpdates(editor);
+    } catch (commitError) {
+      // A listener threw before the commit ran the updates queued meanwhile
+      // (by onError, for one): they run once the editor is idle.
+      scheduleMicroTask(() => $triggerEnqueuedUpdates(editor));
+      if (rethrown === null) {
+        throw commitError;
+      }
+      // The caller gets the error onError rethrew; this one is reported too.
+      if (commitError instanceof Error) {
+        try {
+          editor._onError(commitError);
+        } catch (_e) {
+          // Already reported.
+        }
+      }
+    }
+    if (rethrown !== null) {
+      throw rethrown.error;
+    }
     return;
   } finally {
     activeEditorState = previousActiveEditorState;

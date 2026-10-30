@@ -7390,7 +7390,7 @@ test.describe('Tables', () => {
           page,
           'table > tr:nth-of-type(4) > *:nth-child(4)',
         ),
-        {mouseDown: true, mouseUp: false, slow: true},
+        {mouseDown: true, mouseUp: false},
       );
 
       await assertHTML(
@@ -7597,7 +7597,7 @@ test.describe('Tables', () => {
           page,
           'table > tr:nth-of-type(3) > *:nth-child(5)',
         ),
-        {mouseDown: false, mouseUp: true, slow: true},
+        {mouseDown: false, mouseUp: true},
       );
       await assertHTML(
         page,
@@ -8872,7 +8872,7 @@ test.describe('Tables', () => {
     };
 
     const dragAndAssertSelection = async (fromBox, toBox, expected) => {
-      await dragMouse(page, fromBox, toBox, {slow: true});
+      await dragMouse(page, fromBox, toBox);
       if (await waitForTableSelectionCoordinates(expected)) {
         return;
       }
@@ -9097,11 +9097,12 @@ test.describe('Tables', () => {
         page,
         anchorBox,
         {height: 0, width: 0, x: wrapperBox.x + wrapperBox.width - 5, y: holdY},
-        {mouseDown: true, mouseUp: false, slow: true},
+        {mouseDown: true, mouseUp: false},
       );
 
       // While the pointer is held near the edge, the requestAnimationFrame loop
-      // scrolls the wrapper all the way to the end...
+      // scrolls the wrapper all the way to the end, at a speed that does not
+      // depend on how often the browser renders a frame...
       await expect
         .poll(async () => (await getScroll()).left, {timeout: 5000})
         .toBeGreaterThanOrEqual(max - 1);

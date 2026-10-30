@@ -8,6 +8,22 @@
 import type {TextMatchTransformer} from './MarkdownTransformers';
 import type {TextNode} from 'lexical';
 
+import {LINK} from './MarkdownTransformers';
+import {isEscaped} from './utils';
+
+function matchLink(text: string, regExp: RegExp): RegExpExecArray | null {
+  const search = new RegExp(
+    regExp.source,
+    regExp.flags.replace(/[gy]/g, '') + 'g',
+  );
+  let match;
+  while ((match = search.exec(text)) !== null) {
+    if (!isEscaped(text, match.index)) return match;
+    search.lastIndex = match.index + 1;
+  }
+  return null;
+}
+
 export function findOutermostTextMatchTransformer(
   textNode_: TextNode,
   textMatchTransformers: TextMatchTransformer[],
@@ -28,7 +44,13 @@ export function findOutermostTextMatchTransformer(
     if (!transformer.replace || !transformer.importRegExp) {
       continue;
     }
-    const match = textNode.getTextContent().match(transformer.importRegExp);
+    const text = textNode.getTextContent();
+    // Transformers sharing the built-in link syntax need the same candidate rules.
+    const match =
+      LINK.importRegExp !== undefined &&
+      transformer.importRegExp.source === LINK.importRegExp.source
+        ? matchLink(text, transformer.importRegExp)
+        : text.match(transformer.importRegExp);
 
     if (!match) {
       continue;
@@ -81,6 +103,7 @@ export function importFoundTextMatchTransformer(
   transformer: TextMatchTransformer,
   match: RegExpMatchArray,
 ): {
+  matchedNode: TextNode;
   transformedNode?: TextNode;
   nodeBefore: TextNode | undefined; // If split
   nodeAfter: TextNode | undefined; // If split
@@ -102,6 +125,7 @@ export function importFoundTextMatchTransformer(
   const potentialTransformedNode = transformer.replace(transformedNode, match);
 
   return {
+    matchedNode: transformedNode,
     nodeAfter,
     nodeBefore,
     transformedNode: potentialTransformedNode || undefined,

@@ -198,6 +198,17 @@ describe('a tap on a decorator on iOS', () => {
     expect(rootElement.hasAttribute('inputmode')).toBe(false);
   });
 
+  test('removes inputmode when the editor loses focus while read-only', () => {
+    const {decoratorElement, editor, rootElement} = setUp();
+    using _editor = editor;
+
+    mouseDown(decoratorElement);
+    editor.setEditable(false);
+    expect(rootElement.getAttribute('inputmode')).toBe('none');
+    rootElement.blur();
+    expect(rootElement.hasAttribute('inputmode')).toBe(false);
+  });
+
   test('removes inputmode when the root element is replaced', () => {
     const {decoratorElement, editor, rootElement} = setUp();
     using _editor = editor;

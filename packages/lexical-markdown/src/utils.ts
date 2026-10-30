@@ -76,10 +76,40 @@ export function isEmptyParagraph(node: LexicalNode): boolean {
   );
 }
 
+// Numeric references have one to seven decimal or one to six hexadecimal digits.
+// A reference that names
+// U+0000, a surrogate or a number past U+10FFFF reads as U+FFFD instead of
+// making `String.fromCodePoint` throw.
+// https://spec.commonmark.org/0.31.2/#decimal-numeric-character
+function decodeCharacterReference(
+  digits: string | undefined,
+  hex: string | undefined,
+): string {
+  const codePoint = digits !== undefined ? Number(digits) : parseInt(hex!, 16);
+  return codePoint === 0 ||
+    (codePoint >= 0xd800 && codePoint <= 0xdfff) ||
+    codePoint > 0x10ffff
+    ? '\uFFFD'
+    : String.fromCodePoint(codePoint);
+}
+
 export function unescapeText(value: string): string {
-  return value
-    .replace(/\\([!-/:-@[-`{-~])/g, '$1')
-    .replace(/&#(\d+);/g, (_, codePoint) =>
-      String.fromCodePoint(Number(codePoint)),
-    );
+  // Do not decode an escaped ampersand or revisit a decoded reference.
+  return value.replace(
+    /\\([!-/:-@[-`{-~])|&#(?:(\d{1,7})|[xX]([\da-fA-F]{1,6}));/g,
+    (
+      _match,
+      escaped: string | undefined,
+      digits: string | undefined,
+      hex: string | undefined,
+    ) => escaped ?? decodeCharacterReference(digits, hex),
+  );
+}
+
+export function isEscaped(text: string, index: number): boolean {
+  let backslashes = 0;
+  for (let i = index - 1; i >= 0 && text[i] === '\\'; i--) {
+    backslashes++;
+  }
+  return backslashes % 2 === 1;
 }

@@ -6,10 +6,12 @@
  *
  */
 import {
+  moveLeft,
+  moveRight,
   moveToEditorBeginning,
   moveToEditorEnd,
+  moveToLineBeginning,
   moveToLineEnd,
-  moveToPrevWord,
   selectAll,
 } from '../../../keyboardShortcuts/index.mjs';
 import {
@@ -268,11 +270,7 @@ test.describe('CopyAndPaste', () => {
     });
   });
 
-  test(`Copy and paste between sections`, async ({
-    isRichText,
-    page,
-    browserName,
-  }) => {
+  test(`Copy and paste between sections`, async ({isRichText, page}) => {
     await focusEditor(page);
     await page.keyboard.type('Hello world #foobar test #foobar2 when #not');
 
@@ -516,14 +514,16 @@ test.describe('CopyAndPaste', () => {
         });
       }
 
-      await moveToPrevWord(page);
+      // Select backwards from "#|foo" in the second section to " |test " in
+      // the first. Shift+ArrowUp keeps the caret's x position, so where it
+      // lands on the line above depends on glyph widths, and how many word
+      // moves reach " test " from there depends on the platform. Extending to
+      // the start of that line and counting characters works with any font.
+      await moveLeft(page, 'foo'.length);
       await page.keyboard.down('Shift');
       await page.keyboard.press('ArrowUp');
-      await moveToPrevWord(page);
-      // Once more for linux on Chromium
-      if (IS_LINUX && browserName === 'chromium') {
-        await moveToPrevWord(page);
-      }
+      await moveToLineBeginning(page);
+      await moveRight(page, 'Hello world #foobar '.length);
       await page.keyboard.up('Shift');
 
       if (isRichText) {

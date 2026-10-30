@@ -119,7 +119,7 @@ export const CACHED_TEXT_SIZE_KEY = Symbol.for('@lexical/CachedTextSize');
 // The whole walk runs inside `activePrevEditorState.read(...)` so that every
 // node method resolves against the PREVIOUS node map: a moved element recomputes
 // its size via `getTextContentSize()` (its shared keyed-DOM cache may already
-// hold the NEW size, cf. https://github.com/facebook/lexical/pull/8564), and the
+// hold the NEW size, cf. https://github.com/meta/lexical/pull/8564), and the
 // inter-sibling `isInline()` returns the node's previous-render value (a moved
 // or re-typed node could answer differently in the next state, and a node
 // removed this cycle would throw). The per-child size logic is inlined here
@@ -943,14 +943,7 @@ function $isLastChildLineBreakOrDecorator(
   return null;
 }
 
-function $isBlockDecoratorChild(
-  key: null | NodeKey,
-  nodeMap: NodeMap,
-): boolean {
-  if (!key) {
-    return false;
-  }
-  const node = nodeMap.get(key);
+function $isBlockDecoratorChild(node: LexicalNode | null): boolean {
   return $isDecoratorNode(node) && !node.isInline();
 }
 
@@ -962,19 +955,20 @@ function $isBlockDecoratorChild(
  * out-of-flow anchor parked outside each such boundary child so the browser has
  * an editable inline box to resolve the boundary position against. Interior
  * decorators are unaffected, so only the first / last child is considered.
+ * Outside a reconcile (ElementNode.reconcileObservedMutation), pass the slot.
  */
-function $reconcileDecoratorBoundaryAnchors(
+export function $reconcileDecoratorBoundaryAnchors(
   nextElement: ElementNode,
   dom: HTMLElement & LexicalPrivateDOM,
+  slot: ElementDOMSlot = $getDOMSlot(nextElement, dom, activeEditor),
 ): void {
-  const slot = $getDOMSlot(nextElement, dom, activeEditor);
   slot.setDecoratorBoundaryAnchor(
     'leading',
-    $isBlockDecoratorChild(nextElement.__first, activeNextNodeMap),
+    $isBlockDecoratorChild(nextElement.getFirstChild()),
   );
   slot.setDecoratorBoundaryAnchor(
     'trailing',
-    $isBlockDecoratorChild(nextElement.__last, activeNextNodeMap),
+    $isBlockDecoratorChild(nextElement.getLastChild()),
   );
 }
 

@@ -1995,13 +1995,14 @@ export function $wrapperAttrs(
     putValue(own, f, json[f], `${node.getType()}.${f}`);
   }
   $stateAttrs(node.getLatest(), own);
-  // Only while the wrapper holds no text, directly or through inline
-  // elements inside it (a mark in a link): with text, they follow that text
-  // (a format of it sets them), and a write of them alone would write the
-  // whole value again over the wrapper's text, which a collaborator's
-  // concurrent removal of the wrapper does not delete (the removed link
-  // came back).
-  if (!$holdsText(node.getLatest())) {
+  // Only when Lexical serializes them (`shouldSerializeTextStyles`: the
+  // wrapper holds no text anywhere inside it, and a mark in a link holds
+  // text), so that the author and a fresh reader have the same JSON. With
+  // text, they follow that text (a format of it sets them), and a write of
+  // them alone would write the whole value again over the wrapper's text,
+  // which a collaborator's concurrent removal of the wrapper does not delete
+  // (the removed link came back).
+  if (node.getLatest().shouldSerializeTextStyles()) {
     $putTextFields(node.getLatest(), own);
   }
   for (const k in own) {
@@ -2145,20 +2146,6 @@ export function $lineAttrs(
   }
   $stateAttrs(latest, attrs);
   return attrs;
-}
-
-/** Whether `node` holds a text node, directly or inside its descendants. */
-function $holdsText(node: ElementNode): boolean {
-  for (let child = node.getFirstChild(); child !== null; ) {
-    if ($isTextNode(child)) {
-      return true;
-    }
-    if ($isElementNode(child) && $holdsText(child)) {
-      return true;
-    }
-    child = child.getNextSibling();
-  }
-  return false;
 }
 
 /**

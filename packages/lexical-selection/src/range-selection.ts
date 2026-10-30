@@ -15,6 +15,7 @@ import {
   $getSlotFrame,
   $getSlotHost,
   $hasAncestor,
+  $isBlockContainer,
   $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
@@ -205,7 +206,7 @@ function isPointAttached(point: Point): boolean {
 function $removeParentEmptyElements(startingNode: ElementNode): void {
   let node: ElementNode | null = startingNode;
 
-  while (node !== null && !$isRootOrShadowRoot(node)) {
+  while (node !== null && !$isBlockContainer(node)) {
     const latest = node.getLatest();
     const parentNode: ElementNode | null = node.getParent();
 
@@ -282,7 +283,7 @@ export function $wrapNodes(
     // user selected multiple Root-like nodes that have to be treated separately as if they are
     // their own branch. I.e. you don't want to wrap a whole table, but rather the contents of each
     // of each of the cell nodes.
-    if ($isRootOrShadowRoot(node)) {
+    if ($isBlockContainer(node)) {
       $wrapNodesImpl(
         selection,
         descendants,
@@ -363,7 +364,7 @@ export function $wrapNodesImpl(
 
     target = target.getParentOrThrow();
 
-    if ($isRootOrShadowRoot(target)) {
+    if ($isBlockContainer(target)) {
       break;
     }
   }
@@ -443,7 +444,7 @@ export function $wrapNodesImpl(
 
   // If our target is Root-like, let's see if we can re-adjust
   // so that the target is the first child instead.
-  if ($isRootOrShadowRoot(target)) {
+  if ($isBlockContainer(target)) {
     if (targetIsPrevSibling) {
       if (wrappingElement !== null) {
         target.insertAfter(wrappingElement);

@@ -13,17 +13,22 @@ import {$getNearestNodeOfType} from '@lexical/utils';
 import {
   $copyNode,
   $createParagraphNode,
+  $findMatchingParent,
   $getChildCaretAtIndex,
+  $getEditor,
   $getSelection,
   $getSlotHost,
+  $isBlockContainer,
   $isElementNode,
   $isLeafNode,
+  $isParagraphNode,
   $isRangeSelection,
-  $isRootOrShadowRoot,
   $isTextNode,
   $normalizeCaret,
   $setPointFromCaret,
   ElementNode,
+  INTERNAL_$isBlock,
+  INTERNAL_isNodeStructureEnforced,
   type LexicalNode,
   type NodeKey,
   type ParagraphNode,
@@ -75,11 +80,12 @@ function $newListFrom(list: ElementNode, listType: ListType): ListNode {
 
 /**
  * Inserts a new ListNode. If the selection's anchor node is an empty ListItemNode and is a child of
- * the root/shadow root, it will replace the ListItemNode with a ListNode and the old ListItemNode.
+ * a block container (the root, a shadow root, or a declared container, see {@link lexical!$isBlockContainer}),
+ * it will replace the ListItemNode with a ListNode and the old ListItemNode.
  * Otherwise it will replace its parent with a new ListNode and re-insert the ListItemNode and any previous children.
  * If the selection's anchor node is not an empty ListItemNode, it will add a new ListNode or merge an existing ListNode,
  * unless the node is a leaf node, in which case it will attempt to find a ListNode up the branch and replace it with
- * a new ListNode, or create a new ListNode at the nearest root/shadow root.
+ * a new ListNode, or create a new ListNode at the nearest block container.
  * @param listType - The type of list, "number" | "bullet" | "check".
  */
 export function $insertList(listType: ListType): void {
@@ -92,7 +98,7 @@ export function $insertList(listType: ListType): void {
       const anchorNode = anchor.getNode();
       const anchorNodeParent = anchorNode.getParent();
 
-      if ($isRootOrShadowRoot(anchorNode)) {
+      if ($isBlockContainer(anchorNode)) {
         const firstChild = anchorNode.getFirstChild();
         if (firstChild) {
           nodes = firstChild.selectStart().getNodes();
@@ -102,7 +108,7 @@ export function $insertList(listType: ListType): void {
           nodes = paragraph.select().getNodes();
         }
       } else if ($isSelectingEmptyListItem(anchorNode, nodes)) {
-        if ($isRootOrShadowRoot(anchorNodeParent)) {
+        if ($isBlockContainer(anchorNodeParent)) {
           const list = $createListNode(listType);
           anchorNode.replace(list);
           const listItem = $createListItemNode();
@@ -170,9 +176,12 @@ export function $insertList(listType: ListType): void {
         } else {
           const nextParent = parent.getParent();
 
-          if ($isRootOrShadowRoot(nextParent) && !handled.has(parentKey)) {
-            handled.add(parentKey);
-            $createListOrMerge(parent, listType);
+          if ($isBlockContainer(nextParent)) {
+            const target = $listTarget(parent, node);
+            if (!handled.has(target.getKey())) {
+              handled.add(target.getKey());
+              $createListOrMerge(target, listType);
+            }
             break;
           }
 
@@ -181,6 +190,33 @@ export function $insertList(listType: ListType): void {
       }
     }
   }
+}
+
+/**
+ * The node `$insertList` turns into a list item for the selected `leaf`,
+ * where `top` is its ancestor in the nearest block container: `top`, unless
+ * NodeStructureExtension enforces declared structure and the block that holds
+ * `leaf` is neither `top` nor a plain paragraph directly in it. A list item
+ * holds inline content and lists (a plain paragraph becomes a line of it), so
+ * the normalization would lift such a block, and the selected text with it,
+ * out of the new list item and remove the list as empty: that block is
+ * converted instead, in place.
+ */
+function $listTarget(top: ElementNode, leaf: LexicalNode): ElementNode {
+  if (!INTERNAL_isNodeStructureEnforced($getEditor())) {
+    return top;
+  }
+  const block = $findMatchingParent(leaf, INTERNAL_$isBlock);
+  if (
+    !$isElementNode(block) ||
+    block.is(top) ||
+    ($isParagraphNode(block) &&
+      !block.isShadowRoot() &&
+      top.is(block.getParent()))
+  ) {
+    return top;
+  }
+  return block;
 }
 
 function append(node: ElementNode, nodesToAppend: LexicalNode[]) {
@@ -696,7 +732,7 @@ export function $handleListInsertParagraph(
 
   let replacementNode: ParagraphNode | ListItemNode;
 
-  if ($isRootOrShadowRoot(grandparent)) {
+  if ($isBlockContainer(grandparent)) {
     replacementNode = $createParagraphNode();
     topListNode.insertAfter(replacementNode);
   } else if ($isListItemNode(grandparent)) {

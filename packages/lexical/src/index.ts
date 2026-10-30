@@ -364,6 +364,7 @@ export {
 } from './LexicalSlot';
 export type {DeclaredNodeStructure} from './LexicalStructure';
 export {
+  $isBlockContainer,
   getDeclaredNodeStructure,
   INTERNAL_$normalizeNodeStructure,
   INTERNAL_isNodeStructureEnforced,

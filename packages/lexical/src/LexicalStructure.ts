@@ -1816,6 +1816,42 @@ export function INTERNAL_isNodeStructureEnforced(
 }
 
 /**
+ * Lets `$isBlockContainer` narrow without excluding: an element that is not a
+ * block container is still an element.
+ */
+declare const BlockContainerBrand: unique symbol;
+
+/**
+ * @experimental node-structure
+ *
+ * Whether structural commands treat `node` as a container of blocks: the
+ * root, a shadow root, or, in an editor where `NodeStructureExtension`
+ * enforces declared structure, an element whose class declares
+ * `children: 'block'` (a callout, a box).
+ *
+ * The commands that convert, wrap, split or insert blocks (`$insertList`,
+ * Enter in an empty list item, `$wrapNodes`, `insertNodes`,
+ * `$insertNodeToNearestRoot`, the markdown shortcuts) stop at a container:
+ * they act on the blocks inside it and never replace or split the container
+ * itself. Unlike a shadow root, a declared container is not a selection
+ * boundary: select-all, the arrow keys, and Backspace or Delete at its edges
+ * treat it like any other element.
+ */
+export function $isBlockContainer(
+  node: LexicalNode | null | undefined,
+): node is ElementNode & {readonly [BlockContainerBrand]: never} {
+  if (!$isElementNode(node)) {
+    return false;
+  }
+  return (
+    $isRootOrShadowRoot(node) ||
+    (cachedNodeStructure(node.constructor as Klass<LexicalNode>).children ===
+      'block' &&
+      INTERNAL_isNodeStructureEnforced($getEditor()))
+  );
+}
+
+/**
  * @internal
  *
  * Development check of a class's structural declarations, run when an

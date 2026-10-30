@@ -728,16 +728,32 @@ const WHERE: Where[] = [
   'the whole paragraph',
 ];
 
-/** The inline content's own text node, between "abc " and " end". */
-function $innerText(): TextNode | undefined {
-  return $blockOfAbc()!
-    .getAllTextNodes()
-    .find(
-      n =>
-        !n.getTextContent().includes('abc') &&
-        !n.getTextContent().includes(' end') &&
-        n.getTextContentSize() > 0,
-    );
+/**
+ * Puts the caret one character into the inline content: at offset 5 of the
+ * paragraph's text, "abc " being 4 characters. Located by offset in the
+ * leaves as they are after normalization, since the shape's text can merge
+ * with the text around it. False where that character is not in a text
+ * node (an inline decorator's text).
+ */
+function $caretInside(): boolean {
+  let offset = 'abc '.length + 1;
+  const walk = (n: LexicalNode): boolean => {
+    if ($isElementNode(n)) {
+      return n.getChildren().some(walk);
+    }
+    const size = n.getTextContentSize();
+    if (offset < size || (offset === size && $isTextNode(n))) {
+      if (!$isTextNode(n)) {
+        return false;
+      }
+      n.select(offset, offset);
+      offset = -1;
+      return true;
+    }
+    offset -= size;
+    return false;
+  };
+  return walk($blockOfAbc()!) && offset === -1;
 }
 
 /** Selects as `where` says; false where the shape has no such place. */
@@ -747,16 +763,13 @@ function $select(where: Where): boolean {
     return true;
   }
   if (where === 'caret inside it') {
-    const inner = $innerText();
-    if (inner === undefined) {
-      return false;
-    }
-    const at = Math.min(1, inner.getTextContentSize());
-    inner.select(at, at);
-    return true;
+    return $caretInside();
   }
-  const last = $text(' end')!;
-  const selection = $text('abc')!.select(0, 0);
+  const block = $blockOfAbc()!;
+  const texts = block.getAllTextNodes();
+  const first = texts[0];
+  const last = texts[texts.length - 1];
+  const selection = first.select(0, 0);
   selection.focus.set(last.getKey(), last.getTextContentSize(), 'text');
   return true;
 }
@@ -853,8 +866,11 @@ describe("structural commands keep the selected paragraph's inline content toget
               ((shape.name === 'overflow/text' &&
                 where === 'caret inside it') ||
                 (shape.name === 'link/in-mark' && where !== 'caret before it'));
-            (failsUntilFixed ? test.fails : test)(
-              `${cmd.name}, ${where}, on a paragraph with ${shape.name} in ${ctxName(ctx)} [${mode}]`,
+            // An inline decorator has no text node to put the caret in.
+            const skip =
+              where === 'caret inside it' && shape.kind === 'inline-decorator';
+            (skip ? test.skip : failsUntilFixed ? test.fails : test)(
+              `${cmd.name}, ${where}, on a paragraph with ${shape.name} in ${ctxName(ctx)} [${mode}]${skip ? ' (skipped: no text node inside the decorator)' : ''}`,
               async () => {
                 const $inner = () => [
                   $createParagraphNode().append(
@@ -880,10 +896,7 @@ describe("structural commands keep the selected paragraph's inline content toget
                     },
                     {discrete: true},
                   );
-                  if (!placed) {
-                    // The shape has no text of its own to put the caret in.
-                    return;
-                  }
+                  expect(placed).toBe(true);
                   for (const ch of cmd.type ?? '') {
                     editor.update(
                       () => {

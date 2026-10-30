@@ -244,33 +244,13 @@ const SINGLE_DOCS: NodeShape[][] = NODE_SHAPES.map(s => [s]);
 
 const MIXED_DOCS = shapeDocs(FULL ? 40 : 12, 6, 0xc1);
 
-/**
- * Cells that fail because of a known bug, until its fix merges (then this
- * returns false for them and they must pass): a freshly bound editor numbers
- * every list item 1, and drops a custom `start`, when the document holds a
- * block with named slots, until the binding's refresh runs a microtask
- * later; read synchronously that shows in these bind modes. Fixed by #9573.
- */
-function failsUntilFixed(cell: Cell): boolean {
-  const slots = cell.shapes.some(s => s.tags.includes('slots'));
-  const lists = cell.shapes.some(s => s.tags.includes('derived'));
-  const {blockIds, dom} = cell.config;
-  return (
-    slots &&
-    lists &&
-    (cell.mode === 'extension-then-sync' ||
-      (cell.mode === 'extension' && dom === 'headless') ||
-      (cell.mode === 'binding' && blockIds === 'absent'))
-  );
-}
-
 describe('C1: a bound editor shows what a fresh reader of its doc shows', () => {
   for (const cell of [
     ...cellsFor('list next to slot', LIST_SLOT_DOCS, CONFIGS),
     ...cellsFor('one shape', SINGLE_DOCS, CONFIGS),
     ...cellsFor('mixed', MIXED_DOCS, CONFIGS),
   ]) {
-    (failsUntilFixed(cell) ? test.fails : test)(cell.name, async () => {
+    test(cell.name, async () => {
       const problems = await runCell(cell);
       if (process.env.MATRIX_OUT) {
         fs.appendFileSync(

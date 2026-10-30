@@ -142,10 +142,8 @@ function freshJSON(doc: Y.Doc): string {
 
 describe('catalog soak', () => {
   for (let seed = FIRST; seed < FIRST + SEEDS; seed++) {
-    // Every document holds a list next to a named-slot host, so the first
-    // read numbers every item 1 until the binding's refresh runs (see
-    // C1ReadEqualsFresh); fixed by #9573, then these must pass.
-    test.fails(`seed ${seed}`, async () => {
+    // Every document holds a list next to a named-slot host.
+    test(`seed ${seed}`, async () => {
       const rand = prng(seed * 7919 + 1);
       const pick = <T>(xs: readonly T[]): T =>
         xs[Math.floor(rand() * xs.length)];

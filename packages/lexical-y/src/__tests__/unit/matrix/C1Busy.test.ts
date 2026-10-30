@@ -64,12 +64,7 @@ describe('C1 with follow-up updates: the editor shows what a fresh reader shows'
         for (const dom of ['headless', 'jsdom'] as const) {
           const config = {...DEFAULT_CONFIG, dom};
           const name = `${shapes.map(s => s.name).join(' + ')} [${k} follow-ups, ${mode}, ${configLabel(config)}]`;
-          // One follow-up update, rendered: the first read shows every item
-          // numbered 1 until the binding's refresh runs (see
-          // C1ReadEqualsFresh); fixed by #9573.
-          const failsUntilFixed =
-            k === 1 && dom === 'jsdom' && mode !== 'extension';
-          (failsUntilFixed ? test.fails : test)(
+          test(
             name,
             async () => {
               const seed = seedShapes(shapes, config);

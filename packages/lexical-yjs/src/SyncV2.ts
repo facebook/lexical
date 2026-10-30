@@ -1137,6 +1137,8 @@ export const $updateYFragment = (
     if (leftY instanceof XmlText && leftL instanceof Array) {
       if (!equalYTextLText(leftY, leftL, binding)) {
         $updateYText(leftY, leftL, binding);
+      } else {
+        $mapEqualSubtree(leftY, leftL, binding);
       }
       left += 1;
     } else {

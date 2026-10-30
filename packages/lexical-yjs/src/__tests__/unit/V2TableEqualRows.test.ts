@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+// @vitest-environment node
 
 // #9581. When the v2 binding writes a local change, a Lexical node equal to
 // a Y type it was not mapped to (an equal table row) is mapped to that type;
@@ -66,6 +67,7 @@ import {
   $setSelection,
   $setSlot,
   DecoratorNode,
+  type ElementNode,
   type LexicalEditor,
   type LexicalNode,
   ParagraphNode,
@@ -643,4 +645,47 @@ describe('v2 peers: an equal block swapped with another', () => {
       }
     }
   }
+});
+
+test('v2 peers: a text run made again with the same text, between two changed links, keeps its mapping', () => {
+  const a = new Peer('A', 1, null, []);
+  const b = new Peer('B', 2, null, []);
+  const fresh = new Peer('F', 99, null, []);
+  onTestFinished(() => [a, b, fresh].forEach(p => p.dispose()));
+  const sync = (to: Peer, from: Peer) =>
+    to.apply(encodeStateAsUpdate(from.doc));
+  a.update(() => {
+    $getRoot()
+      .clear()
+      .append(
+        $createParagraphNode().append(
+          $createLinkNode('https://a.test').append($createTextNode('a')),
+          $createTextNode('middle'),
+          $createLinkNode('https://c.test').append($createTextNode('c')),
+        ),
+      );
+  });
+  sync(b, a);
+  // In one update, A changes both links and makes "middle" again (the same
+  // text in a new node), so the matching reaches it in the middle.
+  a.update(() => {
+    const [first, middle, last] = (
+      $getRoot().getFirstChild() as ElementNode
+    ).getChildren();
+    (first as LinkNode).setURL('https://a2.test');
+    (last as LinkNode).setURL('https://c2.test');
+    middle.replace($createTextNode('middle'));
+  });
+  sync(b, a);
+  // B types into "middle".
+  b.update(() => {
+    const middle = $getRoot()
+      .getAllTextNodes()
+      .find(t => t.getTextContent() === 'middle')!;
+    middle.setTextContent('middleX');
+  });
+  sync(a, b);
+  sync(fresh, a);
+  expect(a.json()).toEqual(b.json());
+  expect(a.json()).toEqual(fresh.json());
 });

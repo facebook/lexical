@@ -2002,8 +2002,12 @@ export function $wrapperAttrs(
   // them alone would write the whole value again over the wrapper's text,
   // which a collaborator's concurrent removal of the wrapper does not delete
   // (the removed link came back).
-  if (node.getLatest().shouldSerializeTextStyles()) {
-    $putTextFields(node.getLatest(), own);
+  const latest = node.getLatest();
+  if (
+    (latest.getTextFormat() !== 0 || latest.getTextStyle() !== '') &&
+    latest.shouldSerializeTextStyles()
+  ) {
+    $putTextFields(latest, own);
   }
   for (const k in own) {
     const v = own[k];

@@ -19,7 +19,7 @@ import {
   type LexicalNode,
   type SerializedLexicalNode,
 } from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {describe, expect, test, vi} from 'vitest';
 
 // An element's textFormat and textStyle are persisted only when it has no
 // text a reconcile would derive them from (#7968). A reconcile derives them
@@ -174,5 +174,50 @@ describe('textFormat and textStyle of a block', () => {
       $getRoot().append(paragraph);
       expect(serialized(paragraph)).toEqual(OMITTED);
     });
+  });
+});
+
+describe('serializing inline elements nested inside each other', () => {
+  test('stays linear in the depth when each carries text fields', () => {
+    const calls: number[] = [];
+    for (const depth of [64, 128, 256]) {
+      using editor = buildEditorFromExtensions(
+        defineExtension({
+          $initialEditorState: null,
+          name: '[inline-element-text-fields-depth]',
+          nodes: [InlineWrapperNode],
+        }),
+      );
+      editor.update(
+        () => {
+          let node: LexicalNode = $createTextNode('leaf');
+          for (let i = 0; i < depth; i++) {
+            node = $wrapper(node);
+          }
+          $getRoot().append($createParagraphNode().append(node));
+        },
+        {discrete: true},
+      );
+      const getFirstChild = ElementNode.prototype.getFirstChild;
+      let count = 0;
+      const spy = vi
+        .spyOn(ElementNode.prototype, 'getFirstChild')
+        .mockImplementation(function (this: ElementNode) {
+          count++;
+          return getFirstChild.call(this);
+        });
+      try {
+        expect(JSON.stringify(editor.getEditorState().toJSON())).toContain(
+          'leaf',
+        );
+      } finally {
+        spy.mockRestore();
+      }
+      calls.push(count);
+    }
+    // Doubling the depth doubles the walk (about 2x), where a walk of each
+    // element's whole subtree would quadruple it.
+    expect(calls[1] / calls[0]).toBeLessThan(3);
+    expect(calls[2] / calls[1]).toBeLessThan(3);
   });
 });

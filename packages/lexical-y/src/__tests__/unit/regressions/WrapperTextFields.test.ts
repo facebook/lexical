@@ -45,7 +45,9 @@ import {
   $getRoot,
   $isElementNode,
   $setSelection,
+  $setState,
   configExtension,
+  createState,
   defineExtension,
   type ElementNode,
   type LexicalEditor,
@@ -437,4 +439,59 @@ describe('a wrapper one client removes stays removed while another formats over 
       },
     );
   }
+});
+
+const note = createState('wrapper-text-fields-note', {
+  parse: (v: unknown) => (typeof v === 'string' ? v : ''),
+});
+
+/** The first wrapper `kind` makes, at any depth. */
+function $find(kind: Kind): ElementNode {
+  let found: ElementNode | null = null;
+  const visit = (node: ElementNode) => {
+    for (const child of node.getChildren()) {
+      if (found === null && $isElementNode(child)) {
+        if ($is(kind, child)) {
+          found = child;
+        } else {
+          visit(child);
+        }
+      }
+    }
+  };
+  visit($getRoot());
+  if (found === null) {
+    throw new Error(`no ${kind}`);
+  }
+  return found;
+}
+
+// A change to the link itself (here NodeState) writes its value again, and
+// that write brings back a link a collaborator removed at the same time
+// (#9629): not a text format or style, so not covered by #9597's fix.
+describe('a link one client removes while another sets NodeState on it', () => {
+  test.fails.each(
+    ([['link'], ['link', 'mark'], ['mark', 'link']] as Kind[][]).flatMap(
+      chain =>
+        (
+          [
+            [1, 2],
+            [2, 1],
+          ] as [number, number][]
+        ).map(ids => ({chain, ids, label: chain.join('>')})),
+    ),
+  )('$label: ids $ids.0,$ids.1 (#9629)', async ({chain, ids}) => {
+    const seed = seedYState(config, () => $build(chain, 'text', 'none'));
+    const a = client(seed, ids[0]);
+    const b = client(seed, ids[1]);
+    await Promise.resolve();
+    a.editor.update(() => $unwrap('link'), {discrete: true});
+    b.editor.update(() => void $setState($find('link'), note, 'checked'), {
+      discrete: true,
+    });
+    sync(a, b);
+    await Promise.resolve();
+    expect(count(a.editor, 'link'), 'a').toBe(0);
+    expect(count(b.editor, 'link'), 'b').toBe(0);
+  });
 });

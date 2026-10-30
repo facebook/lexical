@@ -6,6 +6,7 @@
  *
  */
 
+import type {EditorState} from '../LexicalEditorState';
 import type {
   KlassConstructor,
   LexicalEditor,
@@ -70,7 +71,11 @@ import {
   $getSlotsTextContentSize,
 } from '../LexicalSlot';
 import {INTERNAL_isNodeStructureEnforced} from '../LexicalStructure';
-import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
+import {
+  errorOnReadOnly,
+  getActiveEditor,
+  internalGetActiveEditorState,
+} from '../LexicalUpdates';
 import {
   $getDOMSlot,
   $getNodeByKey,
@@ -1080,6 +1085,14 @@ export function $isElementNode(
 }
 
 /**
+ * For each element of a frozen EditorState, whether it holds a TextNode at
+ * any depth. An inline element asks that of its whole subtree, so without
+ * it serializing inline elements nested inside each other, each with a
+ * textFormat or textStyle, would walk the same subtree once per level.
+ */
+const textInsideCache = new WeakMap<EditorState, Map<NodeKey, boolean>>();
+
+/**
  * Whether `element` has a TextNode child or, when `deep`, a TextNode at any
  * depth inside it. Walked rather than materialized with getChildren(), and it
  * exits at the first TextNode. Both callers of shouldSerializeTextStyles test
@@ -1088,19 +1101,53 @@ export function $isElementNode(
  * this at all.
  */
 function $hasTextChild(element: ElementNode, deep: boolean): boolean {
-  for (
-    let child = element.getFirstChild();
-    child !== null;
-    child = child.getNextSibling()
-  ) {
-    if (
-      $isTextNode(child) ||
-      (deep && $isElementNode(child) && $hasTextChild(child, true))
+  if (!deep) {
+    for (
+      let child = element.getFirstChild();
+      child !== null;
+      child = child.getNextSibling()
     ) {
-      return true;
+      if ($isTextNode(child)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  const editorState = internalGetActiveEditorState();
+  let cache: Map<NodeKey, boolean> | null = null;
+  if (editorState !== null && editorState._readOnly) {
+    cache = textInsideCache.get(editorState) || null;
+    if (cache === null) {
+      cache = new Map();
+      textInsideCache.set(editorState, cache);
     }
   }
-  return false;
+  return $hasTextInside(element, cache);
+}
+
+function $hasTextInside(
+  element: ElementNode,
+  cache: Map<NodeKey, boolean> | null,
+): boolean {
+  const key = element.getKey();
+  const cached = cache !== null ? cache.get(key) : undefined;
+  if (cached !== undefined) {
+    return cached;
+  }
+  let found = false;
+  for (
+    let child = element.getFirstChild();
+    child !== null && !found;
+    child = child.getNextSibling()
+  ) {
+    found =
+      $isTextNode(child) ||
+      ($isElementNode(child) && $hasTextInside(child, cache));
+  }
+  if (cache !== null) {
+    cache.set(key, found);
+  }
+  return found;
 }
 
 function isPointRemoved(

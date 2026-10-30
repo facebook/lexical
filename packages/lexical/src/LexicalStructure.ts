@@ -1854,7 +1854,8 @@ declare const BlockContainerBrand: unique symbol;
  * `$insertNodeToNearestRoot`, `$insertNodeToNearestRootAtCaret` unless
  * given `rootMode: 'root'`, the markdown shortcuts) stop at a container:
  * they act on the blocks inside it and do not replace or split the container
- * itself; in an empty one, `$setBlocksType` puts the new block in it. Unlike
+ * itself; in an empty declared container, `$setBlocksType` puts the new
+ * block in it. Unlike
  * a shadow root, a declared container is not a selection boundary:
  * select-all, the arrow keys, and Backspace or Delete at its edges treat it
  * like any other element. With no active editor (a bare

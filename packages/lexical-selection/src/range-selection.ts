@@ -12,7 +12,6 @@ import {
   $extendCaretToRange,
   $findMatchingParent,
   $getPreviousSelection,
-  $getSelection,
   $getSlotFrame,
   $getSlotHost,
   $hasAncestor,
@@ -276,19 +275,43 @@ function $wrappedBlock(
   return found;
 }
 
+/** An empty element that is not inline content. */
+function $isEmptyBlock(node: LexicalNode): node is ElementNode {
+  return (
+    $isElementNode(node) &&
+    node.getChildrenSize() === 0 &&
+    !INTERNAL_isInlineContent(node)
+  );
+}
+
 /**
- * The child of block container `container` that holds `node`.
+ * The child of block container `container` that holds `node`. `cache`
+ * holds the child found for each node already walked through, so the nodes
+ * of one selection walk each ancestor once.
  */
-function $childIn(container: ElementNode, node: LexicalNode): LexicalNode {
+function $childIn(
+  container: ElementNode,
+  node: LexicalNode,
+  cache: Map<NodeKey, LexicalNode> = new Map(),
+): LexicalNode {
+  const walked: NodeKey[] = [];
   let child = node;
-  for (let parent = child.getParent(); parent !== null; ) {
-    if (parent.is(container)) {
+  let found = cache.get(child.getKey());
+  while (found === undefined) {
+    const parent: ElementNode | null = child.getParent();
+    if (parent === null || parent.is(container)) {
+      found = child;
       break;
     }
+    walked.push(child.getKey());
     child = parent;
-    parent = child.getParent();
+    found = cache.get(child.getKey());
   }
-  return child;
+  for (const key of walked) {
+    cache.set(key, found);
+  }
+  cache.set(node.getKey(), found);
+  return found;
 }
 
 /**
@@ -447,7 +470,16 @@ export function $wrapNodesImpl(
     return;
   }
 
-  const firstNode = nodes[0];
+  // The first node that is moved, or that an empty block stands for: the
+  // nodes before it give nothing to the new elements (a block that the
+  // range starts at the end of), so the elements go where it is.
+  const firstNode =
+    nodes.find(
+      (node, i) =>
+        i < nodesLength &&
+        (($isLeafNode(node) && node.getParent() !== null) ||
+          $isEmptyBlock(node)),
+    ) ?? nodes[0];
   const elementMapping: Map<NodeKey, ElementNode> = new Map();
   const elements = [];
   // The below logic is to find the right target for us to
@@ -455,6 +487,7 @@ export function $wrapNodesImpl(
   // elements to. This is made more complicated due to nested
   // structures.
   const blockOf = new Map<NodeKey, ElementNode | null>();
+  const childOf = new Map<NodeKey, LexicalNode>();
   const firstNodeBlock = $wrappedBlock(firstNode, blockOf);
   if (firstNodeBlock === null) {
     return;
@@ -463,7 +496,7 @@ export function $wrapNodesImpl(
   // $inlineRun) stands for the block, and a block leaf there for itself.
   let target: LexicalNode = firstNodeBlock;
   if ($isBlockContainer(firstNodeBlock)) {
-    const child = $childIn(firstNodeBlock, firstNode);
+    const child = $childIn(firstNodeBlock, firstNode, childOf);
     target = INTERNAL_isInlineContent(child) ? $inlineRun(child)[0] : child;
   }
 
@@ -490,23 +523,18 @@ export function $wrapNodesImpl(
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
 
-    if (
-      $isElementNode(node) &&
-      node.getChildrenSize() === 0 &&
-      !INTERNAL_isInlineContent(node)
-    ) {
+    if ($isEmptyBlock(node)) {
       emptyElements.add(node.getKey());
     }
   }
 
   const movedNodes: Set<NodeKey> = new Set();
 
-  // No selection while content moves: the elements it moves to are not in
-  // the document yet, so a node removal that adjusts the selection (a list
-  // item's) would compare a point in one of them with a point in the
-  // document, which have no common ancestor. It is set again below.
-  const active = $getSelection();
-  $setSelection(null);
+  // The nodes the moves empty are removed once the new elements are in the
+  // document: a removal that adjusts the selection (a list item's) compared
+  // a point in a new element with one in the document, which then had no
+  // common ancestor.
+  const removals: (() => void)[] = [];
 
   // The block of each node, decided before anything moves: once a block's
   // content is in its new element, a node deep inside it would otherwise
@@ -524,7 +552,7 @@ export function $wrapNodesImpl(
       units.push(block && {block, key: block.getKey(), run: null});
       continue;
     }
-    const child = $childIn(block, nodes[i]);
+    const child = $childIn(block, nodes[i], childOf);
     const inline = INTERNAL_isInlineContent(child);
     if (!inline && !$isLeafNode(child)) {
       // A block element in the container: its own content is wrapped.
@@ -575,7 +603,7 @@ export function $wrapNodesImpl(
             }
           }
         }
-        $removeParentEmptyElements(parent);
+        removals.push(() => $removeParentEmptyElements(parent));
       }
     } else if (emptyElements.has(node.getKey())) {
       invariant(
@@ -586,7 +614,7 @@ export function $wrapNodesImpl(
       targetElement.setFormat(node.getFormatType());
       targetElement.setIndent(node.getIndent());
       elements.push(targetElement);
-      node.remove(true);
+      removals.push(() => node.remove(true));
     }
   }
 
@@ -654,6 +682,10 @@ export function $wrapNodesImpl(
     }
   }
 
+  for (const removal of removals) {
+    removal();
+  }
+
   const prevSelection = $getPreviousSelection();
 
   if (
@@ -664,21 +696,6 @@ export function $wrapNodesImpl(
     $setSelection(prevSelection.clone());
   } else if (lastElement !== null) {
     lastElement.selectEnd();
-  } else if (
-    $isRangeSelection(active) &&
-    isPointAttached(active.anchor) &&
-    isPointAttached(active.focus)
-  ) {
-    $setSelection(active);
-    active.dirty = true;
-  } else if (active !== null && !$isRangeSelection(active)) {
-    $setSelection(active);
-    active.dirty = true;
-  } else if (
-    elements.length > 0 &&
-    elements[elements.length - 1].isAttached()
-  ) {
-    elements[elements.length - 1].selectEnd();
   } else {
     selection.dirty = true;
   }

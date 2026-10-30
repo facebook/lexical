@@ -30,8 +30,10 @@ import {
   $createTextNode,
   $getNodeByKey,
   $getRoot,
+  $getSelection,
   $getSlot,
   $isElementNode,
+  $isRangeSelection,
   $isTextNode,
   $setSelection,
   $setSlot,
@@ -398,10 +400,16 @@ class DeepInlineNode extends ElementNode {
   }
 }
 
-function parentLookups(depth: number): {calls: number; nodes: number} {
+type Place = 'in a paragraph' | "directly in a paragraph's slot shadow root";
+
+function parentLookups(
+  depth: number,
+  place: Place,
+): {calls: number; nodes: number} {
   using editor = buildEditorFromExtensions({
+    dependencies: [NodeStructureExtension],
     name: '@wrapNodes-depth-cost-test',
-    nodes: [DeepInlineNode, QuoteNode],
+    nodes: [DeepInlineNode, QuoteNode, TestShadowRootNode],
   });
   let calls = 0;
   let nodes = 0;
@@ -412,26 +420,34 @@ function parentLookups(depth: number): {calls: number; nodes: number} {
       for (let i = 0; i < depth; i++) {
         inner = $create(DeepInlineNode).append(inner);
       }
-      $getRoot().append(
-        $createParagraphNode().append(
-          $createTextNode('prefix'),
-          inner,
-          $createTextNode('suffix'),
-        ),
-      );
+      const content = [
+        $createTextNode('prefix').setMode('token'),
+        inner,
+        $createTextNode('suffix').setMode('token'),
+      ];
+      if (place === 'in a paragraph') {
+        $getRoot().append($createParagraphNode().append(...content));
+      } else {
+        const host = $createParagraphNode().append($createTextNode('host'));
+        $setSlot(host, 'body', $createTestShadowRootNode().append(...content));
+        $getRoot().append(host);
+      }
     },
     {discrete: true},
   );
   editor.update(
     () => {
-      const paragraph = $getRoot().getFirstChildOrThrow() as ElementNode;
+      const host = $getRoot().getFirstChildOrThrow() as ElementNode;
+      const paragraph =
+        place === 'in a paragraph'
+          ? host
+          : ($getSlot(host, 'body') as ElementNode);
+      // From the start of the first text to the end of the last.
+      const texts = paragraph.getAllTextNodes();
+      const last = texts[texts.length - 1];
       const selection = $createRangeSelection();
-      selection.anchor.set(paragraph.getKey(), 0, 'element');
-      selection.focus.set(
-        paragraph.getKey(),
-        paragraph.getChildrenSize(),
-        'element',
-      );
+      selection.anchor.set(texts[0].getKey(), 0, 'text');
+      selection.focus.set(last.getKey(), last.getTextContentSize(), 'text');
       $setSelection(selection);
       nodes = selection.getNodes().length;
       const getParent = LexicalNodeClass.prototype.getParent;
@@ -452,14 +468,21 @@ function parentLookups(depth: number): {calls: number; nodes: number} {
   return {calls, nodes};
 }
 
-test('$wrapNodes looks up parents linearly in the inline nesting depth', () => {
-  const [d32, d64, d128] = [32, 64, 128].map(parentLookups);
-  expect(d128.nodes).toBeGreaterThan(d64.nodes);
-  // Doubling the depth at most a little more than doubles the lookups (a
-  // walk per node from scratch quadruples them).
-  expect(d128.calls / d64.calls).toBeLessThan(2.5);
-  expect(d64.calls / d32.calls).toBeLessThan(2.5);
-});
+for (const place of [
+  'in a paragraph',
+  "directly in a paragraph's slot shadow root",
+] as const) {
+  test(`$wrapNodes looks up parents linearly in the inline nesting depth (${place})`, () => {
+    const [d32, d64, d128] = [32, 64, 128].map(depth =>
+      parentLookups(depth, place),
+    );
+    expect(d128.nodes).toBeGreaterThan(d64.nodes);
+    // Doubling the depth at most a little more than doubles the lookups (a
+    // walk per node from scratch quadruples them).
+    expect(d128.calls / d64.calls).toBeLessThan(2.5);
+    expect(d64.calls / d32.calls).toBeLessThan(2.5);
+  });
+}
 
 // A block container whose children mix inline content and blocks: each run
 // of inline content (see $inlineRun) and each block is wrapped on its own,
@@ -646,6 +669,214 @@ describe('$wrapNodes over a range from a list item to an element point on its li
           });
         }
       }
+    }
+  }
+});
+
+// A range that starts at the end of a block (an element point after its
+// last child) selects nothing of that block: the block stays as it is and
+// where it is, and the blocks after it keep their order. Input space: the
+// first block is a list or a paragraph; the range ends in a later
+// paragraph's text, in an empty paragraph, in an empty paragraph inside a
+// shadow root, or in text inside a shadow root; forward and backward; with
+// and without NodeStructureExtension.
+const ENDS = [
+  'text in a paragraph',
+  'an empty paragraph',
+  'an empty paragraph in a shadow root',
+  'text in a shadow root',
+] as const;
+
+describe('$wrapNodes over a range that starts at the end of a block', () => {
+  for (const structure of [false, true]) {
+    for (const first of ['list', 'paragraph'] as const) {
+      for (const end of ENDS) {
+        for (const backward of [false, true]) {
+          test(`${first}, to ${end}${backward ? ', backward' : ''}${structure ? ', NodeStructureExtension' : ''}`, () => {
+            using editor = buildEditorFromExtensions({
+              dependencies: structure ? [NodeStructureExtension] : [],
+              name: '@wrapNodes-start-at-block-end-test',
+              nodes: [ListNode, ListItemNode, QuoteNode, TestShadowRootNode],
+            });
+            let firstKey = '';
+            let before: string[] = [];
+            editor.update(
+              () => {
+                const block =
+                  first === 'list'
+                    ? $createListNode('bullet').append(
+                        $createListItemNode().append($createTextNode('aa')),
+                        $createListItemNode().append($createTextNode('bb')),
+                      )
+                    : $createParagraphNode().append($createTextNode('aa bb'));
+                const empty = $createParagraphNode();
+                const ee = $createTextNode('ee');
+                const tail = end.endsWith('shadow root')
+                  ? [
+                      $createTestShadowRootNode().append(
+                        empty,
+                        $createParagraphNode().append(ee),
+                      ),
+                    ]
+                  : [empty, $createParagraphNode().append(ee)];
+                $getRoot()
+                  .clear()
+                  .append(
+                    block,
+                    $createParagraphNode().append($createTextNode('cc')),
+                    $createParagraphNode().append($createTextNode('dd')),
+                    ...tail,
+                    $createParagraphNode().append($createTextNode('ff')),
+                  );
+                firstKey = block.getKey();
+                before = $texts($getRoot());
+                const selection = $createRangeSelection();
+                const [atEnd, other] = backward
+                  ? [selection.focus, selection.anchor]
+                  : [selection.anchor, selection.focus];
+                atEnd.set(block.getKey(), block.getChildrenSize(), 'element');
+                if (end.startsWith('text')) {
+                  other.set(ee.getKey(), 1, 'text');
+                } else {
+                  other.set(empty.getKey(), 0, 'element');
+                }
+                $setSelection(selection);
+                $wrapNodes(selection, () => $createQuoteNode());
+              },
+              {discrete: true},
+            );
+            editor.read(() => {
+              expect($texts($getRoot())).toEqual(before);
+              const block = $getRoot().getFirstChildOrThrow();
+              expect(block.getKey()).toBe(firstKey);
+              expect(block.getType()).toBe(first);
+            });
+          });
+        }
+      }
+    }
+  }
+});
+
+// The selection after the content moved is valid: no point is past the end
+// of its node (the root, whose three paragraphs went into one quote), and
+// where main succeeds it is collapsed as on main, so typing next keeps the
+// wrapped text.
+describe('$wrapNodes leaves the selection inside the new tree', () => {
+  for (const structure of [false, true]) {
+    for (const backward of [false, true]) {
+      test(`three root paragraphs, from the first text to the root's end${backward ? ', backward' : ''}${structure ? ', NodeStructureExtension' : ''}`, () => {
+        using editor = buildEditorFromExtensions({
+          dependencies: structure ? [NodeStructureExtension] : [],
+          name: '@wrapNodes-selection-restore-test',
+          nodes: [QuoteNode],
+        });
+        editor.update(
+          () => {
+            const paragraphs = ['aa', 'bb', 'cc'].map(text =>
+              $createParagraphNode().append($createTextNode(text)),
+            );
+            $getRoot()
+              .clear()
+              .append(...paragraphs);
+            const selection = $createRangeSelection();
+            const [textPoint, rootPoint] = backward
+              ? [selection.focus, selection.anchor]
+              : [selection.anchor, selection.focus];
+            textPoint.set(
+              paragraphs[0].getFirstChildOrThrow().getKey(),
+              0,
+              'text',
+            );
+            rootPoint.set($getRoot().getKey(), 3, 'element');
+            $setSelection(selection);
+            $wrapNodes(selection, () => $createQuoteNode());
+            const after = $getSelection();
+            expect($isRangeSelection(after)).toBe(true);
+            if ($isRangeSelection(after)) {
+              for (const point of [after.anchor, after.focus]) {
+                const node = point.getNode();
+                expect(node.isAttached()).toBe(true);
+                const size = $isElementNode(node)
+                  ? node.getChildrenSize()
+                  : node.getTextContentSize();
+                expect(point.offset).toBeLessThanOrEqual(size);
+              }
+            }
+          },
+          {discrete: true},
+        );
+        expect(
+          editor.read(() =>
+            $getRoot()
+              .getAllTextNodes()
+              .map(node => node.getTextContent()),
+          ),
+        ).toEqual(['aa', 'bb', 'cc']);
+      });
+    }
+  }
+});
+
+describe('$wrapNodes over the whole root, with a wrapping element', () => {
+  for (const structure of [false, true]) {
+    for (const backward of [false, true]) {
+      test(`root element points 0 to 3${backward ? ', backward' : ''}${structure ? ', NodeStructureExtension' : ''}`, () => {
+        using editor = buildEditorFromExtensions({
+          dependencies: structure ? [NodeStructureExtension] : [],
+          name: '@wrapNodes-root-points-test',
+          nodes: [QuoteNode, TestShadowRootNode],
+        });
+        let selected = '';
+        editor.update(
+          () => {
+            $getRoot()
+              .clear()
+              .append(
+                ...['aa', 'bb', 'cc'].map(text =>
+                  $createParagraphNode().append($createTextNode(text)),
+                ),
+              );
+            const root = $getRoot().getKey();
+            const selection = $createRangeSelection();
+            selection.anchor.set(root, backward ? 3 : 0, 'element');
+            selection.focus.set(root, backward ? 0 : 3, 'element');
+            $setSelection(selection);
+            $wrapNodes(
+              selection,
+              () => $createQuoteNode(),
+              $createTestShadowRootNode(),
+            );
+            const after = $getSelection();
+            if ($isRangeSelection(after)) {
+              const {anchor, focus} = after;
+              const inRange = [anchor, focus].every(point => {
+                const node = point.getNode();
+                return (
+                  node.isAttached() &&
+                  point.offset <=
+                    ($isElementNode(node)
+                      ? node.getChildrenSize()
+                      : node.getTextContentSize())
+                );
+              });
+              selected = `${after.isCollapsed() ? 'collapsed' : 'range'} ${inRange ? 'in range' : 'out of range'}`;
+              after.insertText('Z');
+            }
+          },
+          {discrete: true},
+        );
+        // As on main: a collapsed selection, so typing keeps the wrapped text.
+        expect(selected).toBe('collapsed in range');
+        // The typed text goes next to the wrapped text, not over it.
+        const texts = editor.read(() =>
+          $getRoot()
+            .getAllTextNodes()
+            .map(node => node.getTextContent()),
+        );
+        expect(texts.filter(text => text !== 'Z')).toEqual(['aa', 'bb', 'cc']);
+        expect(texts).toContain('Z');
+      });
     }
   }
 });

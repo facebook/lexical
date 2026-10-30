@@ -151,6 +151,7 @@ import {
 } from './Warnings';
 import {$holdsLines, type WritePlan, Writer} from './Write';
 import {createYDoc, type YDoc} from './YDoc';
+import {assertOwnYjsDoc, assertSupportedYjs} from './YjsContract';
 
 // YBinding: one editor bound to one shared root. It owns the lifecycle (the
 // layout gate, pins, initialization, dispose), the local pipeline (onUpdate:
@@ -502,7 +503,7 @@ function recordSchema(
     return;
   }
   let wrote = false;
-  tr.changed.forEach((_subs, type) => {
+  tr.changed.forEach((_subs: Set<string | null>, type: YNode) => {
     wrote = wrote || under(type);
   });
   if (wrote) {
@@ -816,7 +817,9 @@ export class YBinding {
   private readonly afterTransaction: (tr: Transaction) => void;
   private readonly beforeTransaction: (tr: Transaction) => void;
   private readonly beforeObserverCalls = (tr: Transaction): void => {
-    tr.changed.forEach((subs, type) => {
+    // Typed: @y/y declares `changed` with a YNode it does not import, so
+    // the parameters would be `any` (and the contract test blind to them).
+    tr.changed.forEach((subs: Set<string | null>, type: YNode) => {
       if (this.state.containers.has(type) || this.isUnderRoot(type)) {
         type._hasFormatting = false;
       }
@@ -932,6 +935,10 @@ export class YBinding {
   }
 
   constructor(editor: LexicalEditor, doc: YDoc, options: YBindingOptions) {
+    // Before anything else: the @y/y the app loaded is the one this package
+    // supports (once per module), and the document and root come from it.
+    assertSupportedYjs();
+    assertOwnYjsDoc(doc);
     invariant(
       options != null && isSchemaVersion(options.schemaVersion),
       "@lexical/y: YBinding needs options.schemaVersion (got %s): start at 1 and increase it whenever a node's stored fields or node types change",
@@ -941,6 +948,7 @@ export class YBinding {
     this._doc = doc;
     this.options = options;
     this._root = options.root || doc.get(DEFAULT_ROOT_NAME);
+    assertOwnYjsDoc(doc, this._root);
     this.state = new State(editor, doc, this._root);
     this.afterTransaction = tr =>
       this.guard(() => withPins(this._pins, () => this.onAfterTransaction(tr)));
@@ -1913,6 +1921,7 @@ export class YBinding {
     this.guardedRead({
       $read: () => {
         const cursor = this.$cursorBeforeRead();
+        const caret = $showsCaret();
         const reader = new Reader(this.state);
         reader.$reading(() => {
           for (const cs of list) {
@@ -1922,7 +1931,7 @@ export class YBinding {
             }
           }
         });
-        this.$selectionAfterRead(cursor);
+        this.$selectionAfterRead(cursor, caret);
         this.$quietSelection();
       },
       recover: (error, shown) => this.recoverRead(error, shown),
@@ -2484,7 +2493,7 @@ export class YBinding {
     const attrKeys = new Map<YNode, Set<string>>();
     // Whether the change brought a schema record (see gateSchema).
     let schemaChanged = false;
-    tr.changed.forEach((subs, type) => {
+    tr.changed.forEach((subs: Set<string | null>, type: YNode) => {
       const keys = new Set<string>();
       subs.forEach(k => {
         if (k !== null) {
@@ -2624,6 +2633,9 @@ export class YBinding {
     setRebuilt: (rebuilt: ReadonlySet<CS>) => void,
     tr: Transaction,
   ): void {
+    // Whether the editor shows a caret, before the read changes the nodes
+    // the selection is in (see $restoreSelection).
+    const caret = keepCaret && $showsCaret();
     const reader = new Reader(state);
     setRebuilt(reader.rebuilt);
     // What a composition held back whose hold has ended (see $holds) shows
@@ -2672,7 +2684,7 @@ export class YBinding {
       // line that replaced it (see $replacedLineCaret); any other selection
       // is mapped by identity.
       if (!keepCaret || !this.$putCaretInReplacedLine(cursor, tr)) {
-        this.$restoreSelection(cursor, keepCaret);
+        this.$restoreSelection(cursor, caret);
       }
     }
     $clampSelection();
@@ -2977,12 +2989,13 @@ export class YBinding {
         if (state.hidden === null || this.$holds(state.hidden)) {
           return;
         }
+        const caret = $showsCaret();
         const reader = new Reader(state);
         rebuilt = reader.rebuilt;
         reader.composedAt = this.$composedCharacter(cursor);
         this.$release(state, reader);
         if (cursor !== null) {
-          this.$restoreSelection(cursor, true);
+          this.$restoreSelection(cursor, caret);
         }
         this.$caretOnText();
         this.$quietSelection();
@@ -4814,6 +4827,7 @@ export class YBinding {
       $addUpdateTag(BLOCK_ID_REPAIR_TAG);
     }
     const cursor = this.$cursorBeforeRead();
+    const caret = $showsCaret();
     const reader = new Reader(this.state);
     reader.$reading(() => {
       for (const cs of list) {
@@ -4824,7 +4838,7 @@ export class YBinding {
       }
     });
     reader.$settle(settle);
-    this.$selectionAfterRead(cursor);
+    this.$selectionAfterRead(cursor, caret);
     this.$quietSelection();
     if (last) {
       // A transform that changes the same content each time it runs (a
@@ -5479,9 +5493,9 @@ export class YBinding {
    * $cursorBeforeRead), a caret staying a caret, and drop what still names
    * a removed node.
    */
-  private $selectionAfterRead(cursor: YCursor | null): void {
+  private $selectionAfterRead(cursor: YCursor | null, caret: boolean): void {
     if (cursor !== null) {
-      this.$restoreSelection(cursor, true);
+      this.$restoreSelection(cursor, caret);
     }
     $clampSelection();
     this.$caretOnText();
@@ -5546,27 +5560,35 @@ export class YBinding {
   /**
    * Map the local selection through a remote change: resolve the cursor
    * captured before the transaction; points that cannot be resolved are
-   * clamped to their node. Invariant: with `keepCaret`, a caret is never
-   * widened into a range: when the editor shows a caret but the cursor was a
-   * range (captured before a local update collapsed it), the caret stays
-   * where it is, clamped. Why: a Backspace would delete a range the user no
-   * longer selects.
+   * clamped to their node. Invariant: with `caret` (the editor showed a
+   * caret when the read began, see $showsCaret), a caret is never widened
+   * into a range: when the editor shows a caret but the cursor was a range
+   * (captured before a local update collapsed it), the caret stays where it
+   * is, clamped. Why: a Backspace would delete a range the user no longer
+   * selects.
+   *
+   * Invariant: whether the selection is a caret is decided on what the
+   * editor showed before the read, never after it. Why: the read changes
+   * the nodes a range is in (it shortens a text node, splits it where a
+   * format or a link starts, replaces it), and Lexical moves points that
+   * fall outside a changed node to its end: both points of a range can end
+   * on one offset, and a range read as a caret there is collapsed for good.
    *
    * Invariant: putting the selection back never fails the read it ends: a
    * cursor that cannot be put back leaves the selection the read left,
    * clamped to its nodes. Why: the read's content is right, and a read that
    * throws makes the binding rebuild the editor (see recoverRead).
    */
-  private $restoreSelection(cursor: YCursor, keepCaret = false): void {
+  private $restoreSelection(cursor: YCursor, caret = false): void {
     try {
-      this.$putBackSelection(cursor, keepCaret);
+      this.$putBackSelection(cursor, caret);
     } catch (_e) {
       $clampSelection();
     }
   }
 
   /** See $restoreSelection. */
-  private $putBackSelection(cursor: YCursor, keepCaret: boolean): void {
+  private $putBackSelection(cursor: YCursor, caret: boolean): void {
     const current = $getSelection();
     if (current !== null && !$isRangeSelection(current)) {
       return;
@@ -5575,9 +5597,8 @@ export class YBinding {
     const anchor = this.$resolvePosition(cursor.anchor);
     const focus = this.$resolvePosition(cursor.focus);
     const widens =
-      keepCaret &&
+      caret &&
       selection !== null &&
-      selection.isCollapsed() &&
       anchor !== null &&
       focus !== null &&
       (anchor.key !== focus.key ||
@@ -6249,6 +6270,16 @@ function $shapeOf(node: ElementNode): string {
   };
   walk(node);
   return out;
+}
+
+/**
+ * Whether the editor shows a caret (a collapsed range selection). Called
+ * before a read changes the nodes the selection is in (see
+ * $restoreSelection).
+ */
+function $showsCaret(): boolean {
+  const selection = $getSelection();
+  return $isRangeSelection(selection) && selection.isCollapsed();
 }
 
 /**

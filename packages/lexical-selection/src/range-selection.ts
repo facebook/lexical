@@ -15,13 +15,13 @@ import {
   $getSlotFrame,
   $getSlotHost,
   $hasAncestor,
+  $isBlockContainer,
   $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
   $isExtendableTextPointCaret,
   $isLeafNode,
   $isRangeSelection,
-  $isRootOrShadowRoot,
   $isTabNode,
   $isTextNode,
   $isTextPointCaret,
@@ -148,12 +148,10 @@ export function $setBlocksType<T extends ElementNode>(
   let skipFocus = false;
   let focusBlock: ElementNode | DecoratorNode<unknown> | null = null;
   const blockMap = new Map<NodeKey, ElementNode>();
+  let anchorBlock: ElementNode | DecoratorNode<unknown> | null = null;
   if (anchorAndFocus) {
     const [anchor, focus] = anchorAndFocus;
-    const anchorBlock = $findMatchingParent(
-      anchor.getNode(),
-      INTERNAL_$isBlock,
-    );
+    anchorBlock = $findMatchingParent(anchor.getNode(), INTERNAL_$isBlock);
     focusBlock = $findMatchingParent(focus.getNode(), INTERNAL_$isBlock);
     // The focus is the moving edge of the selection, travelling in `direction`
     // (towards the end of the document for a forward selection). When a
@@ -192,6 +190,26 @@ export function $setBlocksType<T extends ElementNode>(
     if ($getSlotHost(prevNode) !== null) {
       continue;
     }
+    if ($isBlockContainer(prevNode)) {
+      // An empty declared container (roots and shadow roots are never in
+      // the map) is not a block to convert: with the selection in it, the
+      // new block goes in it, as with $insertList and $wrapNodes. The
+      // container stays, so its indent and format are not copied, and the
+      // selection points in it move into the new block (a range keeps its
+      // other end).
+      if (prevNode.is(anchorBlock) && prevNode.isEmpty()) {
+        const element = $createElement();
+        prevNode.append(element);
+        if ($isRangeSelection(selection)) {
+          for (const point of [selection.anchor, selection.focus]) {
+            if (point.key === prevNode.getKey()) {
+              point.set(element.getKey(), 0, 'element');
+            }
+          }
+        }
+      }
+      continue;
+    }
     const element = $createElement();
     $afterCreateElement(prevNode, element);
     prevNode.replace(element, true);
@@ -205,7 +223,7 @@ function isPointAttached(point: Point): boolean {
 function $removeParentEmptyElements(startingNode: ElementNode): void {
   let node: ElementNode | null = startingNode;
 
-  while (node !== null && !$isRootOrShadowRoot(node)) {
+  while (node !== null && !$isBlockContainer(node)) {
     const latest = node.getLatest();
     const parentNode: ElementNode | null = node.getParent();
 
@@ -238,12 +256,12 @@ export function $wrapNodes(
   // wrap: the slot value is the only block in its virtual scope and its slot
   // assignment is managed by the node or extension that owns the slot, so
   // this is a no-op (same rule as $setBlocksType). A shadow-root slot value
-  // is root-like and wraps its own subtree below, as usual. (A selection
-  // never crosses a slot boundary, so checking the anchor covers the whole
-  // selection.)
+  // or block container value is root-like and wraps its own subtree below,
+  // as usual. (A selection never crosses a slot boundary, so checking the
+  // anchor covers the whole selection.)
   if (anchor !== null) {
     const slotFrame = $getSlotFrame(anchor.getNode());
-    if (slotFrame !== null && !$isRootOrShadowRoot(slotFrame)) {
+    if (slotFrame !== null && !$isBlockContainer(slotFrame)) {
       return;
     }
   }
@@ -261,15 +279,25 @@ export function $wrapNodes(
         : anchor.getNode();
     const children = target.getChildren();
     let element = createElement();
-    element.setFormat(target.getFormatType());
-    element.setIndent(target.getIndent());
+    // An empty container stays and the new block goes in it, so the new
+    // block does not take the container's indent and format.
+    const intoContainer = $isBlockContainer(target);
+    if (!intoContainer) {
+      element.setFormat(target.getFormatType());
+      element.setIndent(target.getIndent());
+    }
     children.forEach(child => element.append(child));
 
     if (wrappingElement) {
       element = wrappingElement.append(element);
     }
 
-    target.replace(element);
+    if (intoContainer) {
+      target.append(element);
+      element.selectStart();
+    } else {
+      target.replace(element);
+    }
 
     return;
   }
@@ -282,7 +310,7 @@ export function $wrapNodes(
     // user selected multiple Root-like nodes that have to be treated separately as if they are
     // their own branch. I.e. you don't want to wrap a whole table, but rather the contents of each
     // of each of the cell nodes.
-    if ($isRootOrShadowRoot(node)) {
+    if ($isBlockContainer(node)) {
       $wrapNodesImpl(
         selection,
         descendants,
@@ -363,7 +391,7 @@ export function $wrapNodesImpl(
 
     target = target.getParentOrThrow();
 
-    if ($isRootOrShadowRoot(target)) {
+    if ($isBlockContainer(target)) {
       break;
     }
   }
@@ -443,7 +471,7 @@ export function $wrapNodesImpl(
 
   // If our target is Root-like, let's see if we can re-adjust
   // so that the target is the first child instead.
-  if ($isRootOrShadowRoot(target)) {
+  if ($isBlockContainer(target)) {
     if (targetIsPrevSibling) {
       if (wrappingElement !== null) {
         target.insertAfter(wrappingElement);

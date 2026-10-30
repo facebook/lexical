@@ -2409,6 +2409,10 @@ declare export function getDeclaredNodeStructure(
   klass: Class<LexicalNode>,
 ): DeclaredNodeStructure;
 
+declare export function $isBlockContainer(
+  node: ?LexicalNode,
+): implies node is ElementNode;
+
 /**
  * This is the type of LexicalNode.$config() that can be
  * overridden by subclasses.

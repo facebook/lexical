@@ -63,7 +63,13 @@ test('internal writes of node attributes go through Seen', () => {
   const dir = path.resolve(__dirname, '../../internal');
   const found: string[] = [];
   for (const name of fs.readdirSync(dir).sort()) {
-    if (!name.endsWith('.ts') || name === 'Seen.ts') {
+    // YjsContract.ts probes @y/y on scratch documents of its own, never a
+    // document a binding reads, so its writes have no Seen record to keep.
+    if (
+      !name.endsWith('.ts') ||
+      name === 'Seen.ts' ||
+      name === 'YjsContract.ts'
+    ) {
       continue;
     }
     const file = ts.createSourceFile(
@@ -169,15 +175,18 @@ test('public entries', () => {
     'RECOVERED_WRITE_WARNING',
     'SELF_CHECK_WARNING',
     'STORAGE_MISMATCH_WARNING',
+    'SUPPORTED_YJS_VERSION',
     'UNKNOWN_NODE_TYPES_WARNING',
     'UNSUPPORTED_CONFIG_WARNING',
     'UNSUPPORTED_EDIT_WARNING',
     'UNSUPPORTED_LAYOUT_WARNING',
     'UNSUPPORTED_SCHEMA_WARNING',
     'UNSUPPORTED_SLOTS_WARNING',
+    'UNSUPPORTED_YJS_ERROR',
     'UNSYNCED_VALUE_WARNING',
     'YBinding',
     'YCollabExtension',
+    'YUnsupportedYjsError',
     'createYDoc',
     'describeStorage',
     'isYWarning',
@@ -187,6 +196,7 @@ test('public entries', () => {
     'FOLLOW_UPS_EXHAUSTED_WARNING',
     'WRITER_NEW_CLIENT_ID_WARNING',
     'YHeadlessError',
+    'YUnsupportedYjsError',
     'createYDoc',
     'createYWriter',
     'editYState',

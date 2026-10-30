@@ -603,11 +603,35 @@ export class Cursor {
       this.forward();
     }
     for (const end of ends) {
+      if (this.endedInThisWrite(end)) {
+        continue;
+      }
       this.insertAfter(
         end,
         new ContentFormat(keyOf(end), null as unknown as object),
       );
     }
+  }
+
+  /**
+   * Whether this write already put a null of its own right after `end` (rule
+   * 5 of format): one is enough, as an undo removes them together, and a
+   * second one only pushes the end out of what a collaborator's collapse keeps
+   * (see collapseGap: it keeps a key's last items).
+   */
+  private endedInThisWrite(end: Item): boolean {
+    const key = keyOf(end);
+    for (let it = end.right; it !== null && isFormat(it); it = it.right) {
+      if (
+        keyOf(it) === key &&
+        valueOf(it) === null &&
+        !it.deleted &&
+        this.tr.insertSet.hasId(it.id)
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -643,9 +667,6 @@ export class Cursor {
       return null;
     }
     const opener = runOpener(doc, source);
-    if (opener.id.client === doc.clientID) {
-      return null;
-    }
     for (let it = this.right; it !== null; it = it.right) {
       if (
         it.deleted ||

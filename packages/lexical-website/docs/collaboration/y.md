@@ -654,8 +654,12 @@ person's:
 
 - **Edit text in place** (insert and delete characters in a text node)
   rather than replacing blocks or whole documents. A replaced block is a
-  delete and an insert, so what collaborators type into it at the same time
-  is lost (see [Limits](#limits)). Lexical records the text edits of an
+  delete and an insert: in a line such as a paragraph, what collaborators
+  type into it at the same time survives, with its own formatting, at the
+  start of the new text (typed at the end of the line, it can also stay at
+  the end), and the formatting of the replaced characters does not carry
+  over; replacing a block stored as a node of its own, such as a table,
+  deletes what was typed in it (see [Limits](#limits)). Lexical records the text edits of an
   update while the binding is attached: `TextNode#spliceText`, the
   selection's `insertText` and `removeText` (and the commands built on
   them), splits and merges of text nodes, text typed into a node Lexical

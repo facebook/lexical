@@ -790,5 +790,203 @@ export function keptEnds(
   };
 }
 
+/**
+ * The most edits the diff of a remade line's changed middle looks for (see
+ * keptStretches): past it, only the common start and end are kept, so the
+ * diff stays linear in the line's length.
+ */
+const MAX_EDITS = 128;
+
+/** White space other than a line feed (a line break is a node of its own). */
+const isSeparator = (s: string, i: number): boolean =>
+  s[i] !== '\n' && SPACE.test(s[i]);
+
+/**
+ * The words of `s` from `from` to `to`, as `[start, end)` pairs: runs of
+ * word characters (see isWordChar), and single other characters that are not
+ * white space (an object character, a line feed, a character of a script
+ * written without spaces), each a whole character. White space between them
+ * is no word: it is compared only between two kept words.
+ */
+function words(s: string, from: number, to: number): [number, number][] {
+  const out: [number, number][] = [];
+  let i = from;
+  while (i < to) {
+    let j = i + 1;
+    if (isWordChar(s, i)) {
+      while (j < to && isWordChar(s, j)) {
+        j++;
+      }
+    } else if (j < to && isLowSurrogate(s.charCodeAt(j))) {
+      j++;
+    }
+    if (!isSeparator(s, i)) {
+      out.push([i, j]);
+    }
+    i = j;
+  }
+  return out;
+}
+
+/**
+ * The tokens equal in `a` and `b` that a shortest edit script keeps, as
+ * pairs of indexes, in order: Myers' diff, in O((n + m) * max) time, or
+ * null past `max` edits.
+ */
+function commonTokens(
+  a: readonly number[],
+  b: readonly number[],
+  max: number,
+): [number, number][] | null {
+  const n = a.length;
+  const m = b.length;
+  const off = max + 1;
+  const v = new Int32Array(2 * off + 1);
+  const trace: Int32Array[] = [];
+  for (let d = 0; d <= max; d++) {
+    trace.push(v.slice());
+    for (let k = -d; k <= d; k += 2) {
+      let x =
+        k === -d || (k !== d && v[off + k - 1] < v[off + k + 1])
+          ? v[off + k + 1]
+          : v[off + k - 1] + 1;
+      let y = x - k;
+      while (x < n && y < m && a[x] === b[y]) {
+        x++;
+        y++;
+      }
+      v[off + k] = x;
+      if (x >= n && y >= m) {
+        // Walk back through the trace, collecting the diagonals.
+        const pairs: [number, number][] = [];
+        let cx = n;
+        let cy = m;
+        for (let e = d; e > 0; e--) {
+          const pv = trace[e];
+          const ck = cx - cy;
+          const pk =
+            ck === -e || (ck !== e && pv[off + ck - 1] < pv[off + ck + 1])
+              ? ck + 1
+              : ck - 1;
+          const px = pv[off + pk];
+          const py = px - pk;
+          const sx = pk === ck + 1 ? px : px + 1;
+          const sy = sx - ck;
+          while (cx > sx && cy > sy) {
+            pairs.push([--cx, --cy]);
+          }
+          cx = px;
+          cy = py;
+        }
+        while (cx > 0 && cy > 0) {
+          pairs.push([--cx, --cy]);
+        }
+        return pairs.reverse();
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * What text made in place of removed text (`b`, see TextReplay#stretch)
+ * keeps of that text (`a`), as ranges `[x0, x1, dx]` of `b` whose character
+ * `x` was character `x + dx` of `a`, in order: the common start and end
+ * (keptEnds), and between them, where `b` replaced text, every run of whole
+ * words that a shortest word-by-word edit script of the rest keeps, with the
+ * white space around it that both texts share (`t1z t2z t3z t4z` made again
+ * as `t1z n9z t3z n8z` keeps ` t3z `), so that only the changed words are
+ * written: a character a collaborator deletes in an unchanged word between
+ * two changed ones stays deleted, and a letter it types there stays in that
+ * word. White space alone is never kept between two changes, as at the ends.
+ * Past MAX_EDITS word edits, only the common start and end.
+ */
+export function keptStretches(
+  a: string,
+  b: string,
+  cursor: number,
+  composing: boolean,
+): [number, number, number][] {
+  const {prefix, suffix} = keptEnds(a, b, cursor, composing);
+  const shift = a.length - b.length;
+  const ends: [number, number, number][] = [
+    [0, prefix, 0],
+    [b.length - suffix, b.length, shift],
+  ];
+  const a1 = a.length - suffix;
+  const b1 = b.length - suffix;
+  if (composing || a1 <= prefix || b1 <= prefix) {
+    return ends;
+  }
+  const wa = words(a, prefix, a1);
+  const wb = words(b, prefix, b1);
+  const ids = new Map<string, number>();
+  const id = (text: string, [x0, x1]: [number, number]): number => {
+    const t = text.slice(x0, x1);
+    let x = ids.get(t);
+    if (x === undefined) {
+      x = ids.size;
+      ids.set(t, x);
+    }
+    return x;
+  };
+  const pairs = commonTokens(
+    wa.map(w => id(a, w)),
+    wb.map(w => id(b, w)),
+    MAX_EDITS,
+  );
+  if (pairs === null) {
+    return ends;
+  }
+  const out: [number, number, number][] = [ends[0]];
+  let lastA = prefix;
+  let lastB = prefix;
+  for (let i = 0; i < pairs.length; ) {
+    // Words kept one after the other with the same white space between
+    // them in both texts are one stretch.
+    let j = i + 1;
+    while (
+      j < pairs.length &&
+      pairs[j][0] === pairs[j - 1][0] + 1 &&
+      pairs[j][1] === pairs[j - 1][1] + 1 &&
+      a.slice(wa[pairs[j - 1][0]][1], wa[pairs[j][0]][0]) ===
+        b.slice(wb[pairs[j - 1][1]][1], wb[pairs[j][1]][0])
+    ) {
+      j++;
+    }
+    let ax = wa[pairs[i][0]][0];
+    let bx = wb[pairs[i][1]][0];
+    let bEnd = wb[pairs[j - 1][1]][1];
+    let aEnd = ax + bEnd - bx;
+    // With the white space around it that is the same in both texts (up to
+    // the stretch before it), as the start and end keep theirs: only the
+    // changed words are written.
+    while (
+      ax > lastA &&
+      bx > lastB &&
+      a.charCodeAt(ax - 1) === b.charCodeAt(bx - 1) &&
+      isSeparator(a, ax - 1)
+    ) {
+      ax--;
+      bx--;
+    }
+    while (
+      aEnd < a1 &&
+      bEnd < b1 &&
+      a.charCodeAt(aEnd) === b.charCodeAt(bEnd) &&
+      isSeparator(a, aEnd)
+    ) {
+      aEnd++;
+      bEnd++;
+    }
+    out.push([bx, bEnd, ax - bx]);
+    lastA = aEnd;
+    lastB = bEnd;
+    i = j;
+  }
+  out.push(ends[1]);
+  return out;
+}
+
 const isHighSurrogate = (c: number): boolean => c >= 0xd800 && c <= 0xdbff;
 const isLowSurrogate = (c: number): boolean => c >= 0xdc00 && c <= 0xdfff;

@@ -19,7 +19,7 @@ import {
   type NodeMap,
 } from 'lexical';
 
-import {diffStrings, keptEnds, snapToWords} from './Inline';
+import {diffStrings, keptStretches, snapToWords} from './Inline';
 import {$isWrapper} from './Schema';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
@@ -1771,27 +1771,26 @@ export class TextReplay {
         continue;
       }
       const w = d.slice(o0, o1);
-      let prefix: number;
-      let suffix: number;
+      // What it keeps, as ranges of `text` and how far on in `w` each is.
+      const tl = text.length;
+      const shift = w.length - tl;
+      let keep: [number, number, number][];
       if (made) {
-        ({prefix, suffix} = keptEnds(w, text, caret, this.composing));
+        keep = keptStretches(w, text, caret, this.composing);
       } else {
         const diff = diffStrings(w, text, caret);
-        ({prefix, suffix} = snapToWords(
+        const {prefix, suffix} = snapToWords(
           w,
           text,
           diff.prefix,
           diff.suffix,
           this.composing,
-        ));
+        );
+        keep = [
+          [0, prefix, 0],
+          [tl - suffix, tl, shift],
+        ];
       }
-      // What it keeps, as ranges of `text` and how far on in `w` each is.
-      const tl = text.length;
-      const shift = w.length - tl;
-      let keep: [number, number, number][] = [
-        [0, prefix, 0],
-        [tl - suffix, tl, shift],
-      ];
       if (sure.length > 0) {
         // Only what the diff that takes the common end first keeps too (see
         // `sure`): in `w`, and where text that left was deleted whole in

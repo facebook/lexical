@@ -1,0 +1,531 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+// @vitest-environment node
+
+// #9621: a line's text nodes made again with two or more words changed (an
+// agent rewriting a block from its JSON) kept only the common start and end
+// of the line's text (#9598) and wrote everything between the first and the
+// last changed word again. A word a collaborator deleted there at the same
+// time came back, and when the collaborator undid its delete the word showed
+// twice. Every unchanged stretch of whole words between the changes now
+// keeps its characters, so only the changed words are written.
+
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $isTextNode,
+  $parseSerializedNode,
+  $setSelection,
+  type ElementNode,
+  type SerializedTextNode,
+  type TextNode,
+} from 'lexical';
+import {describe, expect, test} from 'vitest';
+
+import {
+  expectConverged,
+  flush,
+  freshReader,
+  type Peer,
+  setup,
+} from '../../utils/harness';
+
+const $line = () => $getRoot().getChildAtIndex(1) as ElementNode;
+const lineText = (p: Peer) => p.read(() => $line().getTextContent());
+
+/** The line's text nodes made again from their JSON, with `changes`. */
+const $remake = (changes: [string, string][]) => () => {
+  const olds = $line().getChildren().filter($isTextNode) as TextNode[];
+  const made = olds.map(o => {
+    const json = o.exportJSON() as SerializedTextNode;
+    let text = json.text;
+    for (const [from, to] of changes) {
+      text = text.replace(from, to);
+    }
+    return $parseSerializedNode({...json, text});
+  });
+  for (const o of olds) {
+    o.remove();
+  }
+  $line().append(...made);
+  $setSelection(null);
+};
+
+/**
+ * `n` characters of the line from character `at` spliced with `insert`,
+ * whatever text nodes hold them.
+ */
+const $splice =
+  (at: number, n: number, insert = '') =>
+  () => {
+    let acc = 0;
+    const spans: [TextNode, number, number][] = [];
+    for (const leaf of $line().getAllTextNodes()) {
+      const size = leaf.getTextContentSize();
+      const s0 = Math.max(at, acc);
+      const s1 = Math.min(at + n, acc + size);
+      if (s1 > s0 || (n === 0 && at >= acc && at <= acc + size)) {
+        spans.push([leaf, s0 - acc, Math.max(0, s1 - s0)]);
+        if (n === 0) {
+          break;
+        }
+      }
+      acc += size;
+    }
+    spans.reverse().forEach(([leaf, offset, count], i) => {
+      leaf.spliceText(
+        offset,
+        count,
+        i === spans.length - 1 ? insert : '',
+        false,
+      );
+    });
+    $setSelection(null);
+  };
+
+const IDS = [
+  [1, 2],
+  [2, 1],
+];
+
+const LINE = 't1z t2z t3z t4z t5z t6z t7z';
+
+describe('#9621: a delete between two words a remade line changes stays deleted', () => {
+  for (const ids of IDS) {
+    for (const [name, changes, expected] of [
+      [
+        'two changes around it',
+        [
+          ['t2z', 'n9z'],
+          ['t7z', 'n8z'],
+        ],
+        't1z n9z t3z t4z  t6z n8z',
+      ],
+      [
+        'three changes, one on each side and one next to it',
+        [
+          ['t1z', 'n7z'],
+          ['t4z', 'n9z'],
+          ['t7z', 'n8z'],
+        ],
+        'n7z t2z t3z n9z  t6z n8z',
+      ],
+    ] as [string, [string, string][], string][]) {
+      for (const timing of ['concurrent', 'unread'] as const) {
+        test(`${name}: B deletes "t5z", ${timing} (ids ${ids})`, async () => {
+          const t = await setup(
+            () => {
+              $getRoot().append(
+                $createParagraphNode().append($createTextNode('Title')),
+                $createParagraphNode().append($createTextNode(LINE)),
+              );
+            },
+            {ids},
+          );
+          t.offline();
+          if (timing === 'unread') {
+            t.b.update($splice(16, 3));
+            t.a.editor.update($remake(changes));
+            await t.sync();
+            await flush();
+            await t.sync();
+          } else {
+            t.b.update($splice(16, 3));
+            t.a.update($remake(changes));
+            await t.sync();
+          }
+          const fresh = await freshReader(t.a);
+          expect([...t.peers, fresh].map(lineText)).toEqual(
+            [...t.peers, fresh].map(() => expected),
+          );
+          await expectConverged(t.peers);
+          expect(t.peers.flatMap(p => p.warnings)).toEqual([]);
+        });
+      }
+
+      for (const live of [false, true]) {
+        test(`${name}: B deletes "t5z" and undoes ${live ? 'after reading the remake' : 'concurrently'} (ids ${ids})`, async () => {
+          const t = await setup(
+            () => {
+              $getRoot().append(
+                $createParagraphNode().append($createTextNode('Title')),
+                $createParagraphNode().append($createTextNode(LINE)),
+              );
+            },
+            {ids},
+          );
+          t.offline();
+          t.b.update($splice(16, 3));
+          t.a.update($remake(changes));
+          if (live) {
+            await t.sync();
+          }
+          t.b.undo();
+          await t.sync();
+          const want = expected.replace('  ', ' t5z ');
+          const fresh = await freshReader(t.a);
+          expect([...t.peers, fresh].map(lineText)).toEqual(
+            [...t.peers, fresh].map(() => want),
+          );
+          await expectConverged(t.peers);
+          expect(t.peers.flatMap(p => p.warnings)).toEqual([]);
+        });
+      }
+    }
+  }
+});
+
+// Words of other shapes between the two changes: each character of a script
+// written without spaces is a word of its own, an emoji is part of a word,
+// and two runs of unchanged words with other white space between them stay
+// two runs.
+describe('#9621: unchanged words of other shapes between two changes keep a delete', () => {
+  for (const ids of IDS) {
+    for (const [name, line, changes, del, expected] of [
+      [
+        'a script written without spaces',
+        '今日は晴れです明日は雨です',
+        [
+          ['今', '昨'],
+          ['雨です', '雪でした'],
+        ],
+        '晴れ',
+        '昨日はです明日は雪でした',
+      ],
+      [
+        'emoji',
+        '😀a t1z 😁 t2z 😂b',
+        [
+          ['😀a', '🙂a'],
+          ['😂b', '🙃b'],
+        ],
+        't1z',
+        '🙂a  😁 t2z 🙃b',
+      ],
+      [
+        'runs with other white space between them',
+        't1z t2z  t3z\tt4z t5z',
+        [
+          ['t1z', 'n1z'],
+          ['t5z', 'n5z'],
+          ['  ', ' '],
+        ],
+        't3z',
+        'n1z t2z \tt4z n5z',
+      ],
+    ] as [string, string, [string, string][], string, string][]) {
+      test(`${name}: B deletes "${del}" (ids ${ids})`, async () => {
+        const t = await setup(
+          () => {
+            $getRoot().append(
+              $createParagraphNode().append($createTextNode('Title')),
+              $createParagraphNode().append($createTextNode(line)),
+            );
+          },
+          {ids},
+        );
+        const before = lineText(t.a);
+        t.offline();
+        t.b.update($splice(before.indexOf(del), del.length));
+        t.a.update($remake(changes));
+        await t.sync();
+        const fresh = await freshReader(t.a);
+        expect([...t.peers, fresh].map(lineText)).toEqual(
+          [...t.peers, fresh].map(() => expected),
+        );
+        await expectConverged(t.peers);
+        expect(t.peers.flatMap(p => p.warnings)).toEqual([]);
+      });
+    }
+  }
+});
+
+/** A seeded random integer below `n`. */
+function random(seed: number): (n: number) => number {
+  let s = seed >>> 0;
+  return n => {
+    s = (s + 0x6d2b79f5) >>> 0;
+    let x = Math.imul(s ^ (s >>> 15), s | 1);
+    x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
+    return Math.floor((((x ^ (x >>> 14)) >>> 0) / 4294967296) * n);
+  };
+}
+
+/** `text` cut into 1 to `most` pieces at random places. */
+function cuts(rnd: (n: number) => number, text: string, most: number) {
+  const at = new Set<number>();
+  const count = rnd(most);
+  for (let i = 0; i < count && text.length > 1; i++) {
+    at.add(1 + rnd(text.length - 1));
+  }
+  const out: string[] = [];
+  let prev = 0;
+  for (const c of [...[...at].sort((x, y) => x - y), text.length]) {
+    out.push(text.slice(prev, c));
+    prev = c;
+  }
+  return out;
+}
+
+const SEEDS = Number(process.env.LEXICAL_Y_SEEDS || 120);
+
+type Edit = 'delete' | 'type' | 'delete, undo' | 'type, undo' | 'bold';
+const EDITS: readonly Edit[] = [
+  'delete',
+  'type',
+  'delete, undo',
+  'type, undo',
+  'bold',
+];
+
+// The property: a line of unique words (one or two spaces or ", " between
+// them) in 1 to 4 text nodes, some bold or italic, is made again as 1 to 3
+// plain nodes with 2 to 4 word edits (words replaced, inserted or deleted
+// anywhere), while a collaborator edits a word no edit changes: deletes some
+// of its characters, types a letter into it, either of them and then undoes
+// it, or bolds it; as a concurrent edit or one the writer has not read yet,
+// in both client id orders. Every client and a fresh reader agree, every
+// word shows at most once, every word the rewrite made is whole, the
+// collaborator's edit is where it was made (a delete stays deleted, an undone
+// edit leaves the word as it was), and nothing warns.
+describe('#9621: nothing a collaborator deleted comes back, nothing shows twice', () => {
+  for (const timing of ['unread', 'concurrent'] as const) {
+    for (const edit of EDITS) {
+      test(`${timing}: random lines made again with 2 to 4 word edits ‖ the peer ${edit}s an unchanged word`, async () => {
+        const failures: string[] = [];
+        for (let seed = 1; seed <= SEEDS; seed++) {
+          const rnd = random(
+            seed * 7919 +
+              EDITS.indexOf(edit) * 131 +
+              (timing === 'unread' ? 17 : 0),
+          );
+          const count = 4 + rnd(8);
+          const numbers = new Set<number>();
+          while (numbers.size < count + 4) {
+            numbers.add(100 + rnd(900));
+          }
+          // Three digits each, so a delete of digits never makes another
+          // word; some words end in punctuation, each keeps the separator
+          // before it.
+          const pool = [...numbers].map(
+            n => `t${n}z${['', '', '', ',', '.'][rnd(5)]}`,
+          );
+          const words = pool.slice(0, count);
+          const fresh = pool.slice(count);
+          const sep = new Map(pool.map(w => [w, [' ', ' ', '  '][rnd(3)]]));
+          const join = (ws: string[]) =>
+            ws.map((w, i) => (i === 0 ? w : sep.get(w) + w)).join('');
+          const old = join(words);
+          let next = [...words];
+          const edits = 2 + rnd(3);
+          for (let e = 0; e < edits; e++) {
+            const kind = rnd(3);
+            const at = rnd(next.length);
+            if (kind === 0 || next.length < 3) {
+              next[at] = fresh[e];
+            } else if (kind === 1) {
+              next.splice(at, 0, fresh[e]);
+            } else {
+              next.splice(at, 1);
+            }
+          }
+          next = next.filter(Boolean);
+          const unchanged = words.filter(w => next.includes(w));
+          if (unchanged.length === 0) {
+            continue;
+          }
+          const made = join(next);
+          const victim = unchanged[rnd(unchanged.length)];
+          const vAt = old.indexOf(victim);
+          const from = 1 + rnd(3);
+          const len = 1 + rnd(4 - from);
+          const oldPieces = cuts(rnd, old, 4);
+          const formats = oldPieces.map(() => rnd(3));
+          const ids = rnd(2) === 0 ? [1, 2] : [2, 1];
+          const t = await setup(
+            () => {
+              $getRoot().append(
+                $createParagraphNode().append($createTextNode('Title')),
+                $createParagraphNode().append(
+                  ...oldPieces.map((text, i) => {
+                    const n = $createTextNode(text);
+                    return formats[i] === 1
+                      ? n.toggleFormat('bold')
+                      : formats[i] === 2
+                        ? n.toggleFormat('italic')
+                        : n;
+                  }),
+                ),
+              );
+            },
+            {ids},
+          );
+          const $remakeAll = () => {
+            const olds = $line().getChildren();
+            for (const o of olds) {
+              o.remove();
+            }
+            $line().append(
+              ...cuts(rnd, made, 3).map(text => $createTextNode(text)),
+            );
+            $setSelection(null);
+          };
+          const $peer = edit.startsWith('delete')
+            ? $splice(vAt + from, len)
+            : $splice(vAt + from, 0, 'Q');
+          const $bold = () => {
+            // Bold the victim: split its text out and toggle the format.
+            let acc = 0;
+            for (const leaf of $line().getAllTextNodes()) {
+              const size = leaf.getTextContentSize();
+              const s0 = Math.max(vAt, acc);
+              const s1 = Math.min(vAt + victim.length, acc + size);
+              if (s1 > s0) {
+                const parts = leaf.splitText(s0 - acc, s1 - acc);
+                const mid = s0 - acc === 0 ? parts[0] : parts[1];
+                if (!mid.hasFormat('bold')) {
+                  mid.toggleFormat('bold');
+                }
+              }
+              acc += size;
+            }
+            $setSelection(null);
+          };
+          const $edit = edit === 'bold' ? $bold : $peer;
+          t.offline();
+          if (timing === 'unread') {
+            t.b.update($edit);
+            t.a.editor.update($remakeAll);
+            await t.sync();
+            await flush();
+            await t.sync();
+          } else {
+            t.a.update($remakeAll);
+            t.b.update($edit);
+            await t.sync();
+          }
+          if (edit.endsWith('undo')) {
+            t.b.undo();
+            await t.sync();
+          }
+          const reader = await freshReader(t.a);
+          const texts = [...t.peers, reader].map(lineText);
+          const got = texts[0].split(/ +/).filter(Boolean);
+          const problems: string[] = [];
+          if (new Set(texts).size > 1) {
+            problems.push(`diverged ${JSON.stringify(texts)}`);
+          }
+          const dups = got.filter((w, i) => got.indexOf(w) !== i);
+          if (dups.length > 0) {
+            problems.push(`twice: ${dups.join(' ')}`);
+          }
+          const edited =
+            edit === 'delete'
+              ? victim.slice(0, from) + victim.slice(from + len)
+              : edit === 'type'
+                ? victim.slice(0, from) + 'Q' + victim.slice(from)
+                : victim;
+          if (!got.includes(edited)) {
+            problems.push(`"${edited}" missing`);
+          }
+          if (edited !== victim && got.includes(victim)) {
+            problems.push(`"${victim}" came back`);
+          }
+          for (const w of next) {
+            if (w !== victim && !got.includes(w)) {
+              problems.push(`"${w}" not whole`);
+            }
+          }
+          // The rewrite makes plain text: a bold it keeps is the peer's,
+          // on a word that was plain (the rewrite did not change its
+          // format).
+          let acc = 0;
+          const wasPlain = oldPieces.every((piece, i) => {
+            const s0 = acc;
+            acc += piece.length;
+            return formats[i] === 0 || acc <= vAt || s0 >= vAt + victim.length;
+          });
+          if (edit === 'bold' && wasPlain) {
+            const bold = t.a.read(() =>
+              $line()
+                .getAllTextNodes()
+                .filter(n => n.hasFormat('bold'))
+                .map(n => n.getTextContent())
+                .join(''),
+            );
+            if (!bold.includes(victim)) {
+              problems.push(
+                `"${victim}" not bold (bold: ${JSON.stringify(bold)})`,
+              );
+            }
+          }
+          const warnings = [...t.peers, reader].flatMap(p => p.warnings);
+          if (warnings.length > 0) {
+            problems.push(`warnings ${warnings.join('; ')}`);
+          }
+          if (problems.length > 0) {
+            failures.push(
+              `seed ${seed} ids ${ids} ${JSON.stringify(oldPieces)} -> ${JSON.stringify(made)}; ${edit} "${victim}" at ${from}+${len}: ${JSON.stringify(texts[0])}: ${problems.join(', ')}`,
+            );
+          }
+        }
+        expect(failures).toEqual([]);
+      }, 240_000);
+    }
+  }
+});
+
+// The word-by-word diff of a remade line's changed middle stays linear in
+// the line's length: two changes at its ends (the whole line between them
+// diffed), and a change every fourth word (past the diff's bound of edits,
+// where only the common start and end are kept).
+describe('#9621: a long remade line stays linear', () => {
+  const timed = async (n: number, every: number) => {
+    const words = Array.from({length: n}, (_, i) => `t${i}z`);
+    const t = await setup(() => {
+      $getRoot().append(
+        $createParagraphNode().append($createTextNode('Title')),
+        $createParagraphNode().append($createTextNode(words.join(' '))),
+      );
+    });
+    const next = words.map((w, i) =>
+      i % every === 0 || i === n - 1 ? `n${i}z` : w,
+    );
+    const start = performance.now();
+    t.a.update(() => {
+      for (const child of $line().getChildren()) {
+        child.remove();
+      }
+      $line().append($createTextNode(next.join(' ')));
+      $setSelection(null);
+    });
+    const ms = performance.now() - start;
+    expect(lineText(t.a)).toBe(next.join(' '));
+    await t.sync();
+    expect(lineText(t.b)).toBe(next.join(' '));
+    return ms;
+  };
+  for (const [name, every] of [
+    ['changes at both ends', Infinity],
+    ['a change every fourth word', 4],
+  ] as const) {
+    test(
+      name,
+      async () => {
+        await timed(500, every);
+        const small = await timed(2_000, every);
+        const big = await timed(8_000, every);
+        // Linear is 4x, quadratic 16x.
+        expect(big / Math.max(small, 20)).toBeLessThan(10);
+      },
+      120_000,
+    );
+  }
+});

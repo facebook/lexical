@@ -332,3 +332,111 @@ describe('C9: a highlighted code line made again with one token changed', () => 
     }
   }
 });
+
+/** Every text in a JSON tree, with `changes` made in it. */
+function changed(
+  json: SerializedLexicalNode,
+  changes: readonly [string, string][],
+): SerializedLexicalNode {
+  const node = {...json} as SerializedLexicalNode & {
+    children?: SerializedLexicalNode[];
+    text?: string;
+  };
+  if (typeof node.text === 'string') {
+    for (const [from, to] of changes) {
+      node.text = node.text.replace(from, to);
+    }
+  }
+  if (node.children) {
+    node.children = node.children.map(c => changed(c, changes));
+  }
+  return node;
+}
+
+/** Makes the line's nodes again from their JSON, with `changes`. */
+function $rewriteAll(changes: readonly [string, string][]) {
+  const line = $line();
+  const json = line.getChildren().map(c => changed($deepJSON(c), changes));
+  for (const child of line.getChildren()) {
+    child.remove();
+  }
+  line.append(...json.map(j => $parseSerializedNode(j)));
+  $setSelection(null);
+}
+
+// #9621: with a word changed on each side (in the first and the last text
+// node), the words between the changes keep their characters too: the
+// peer's edit of `t2z` or `t3z` stays where it was made, and a delete it
+// undoes leaves the word once.
+describe('C9: a line made again from its JSON with a word changed on each side keeps a collaborator edit between them', () => {
+  const CHANGES: [string, string][] = [
+    ['t1z', 't8z'],
+    ['t4z', 't9z'],
+  ];
+  for (const [name, $shape] of SHAPES) {
+    for (const [editName, edit, kind] of [
+      ...EDITS,
+      [
+        'deletes and undoes the digit of',
+        (leaf: TextNode, at: number) =>
+          void leaf.spliceText(at + 1, 1, '', false),
+        'undo',
+      ] as const,
+    ]) {
+      for (const word of ['t2z', 't3z']) {
+        for (const timing of ['concurrent', 'unread'] as const) {
+          for (const ids of [
+            [1, 2],
+            [2, 1],
+          ]) {
+            test(`${name}: the peer ${editName} "${word}", ${timing} (ids ${ids})`, async () => {
+              const t = await setup(
+                () => {
+                  $getRoot().append(
+                    $createParagraphNode().append($t('Title')),
+                    $createParagraphNode().append(
+                      $t('t1z t2z '),
+                      ...$shape(),
+                      $t(' t3z t4z'),
+                    ),
+                  );
+                },
+                {ids, nodes: [...NODES, HashtagNode]},
+              );
+              const before = lineText(t.a);
+              t.offline();
+              if (timing === 'unread') {
+                t.b.update($edit(word, edit));
+                t.a.editor.update(() => $rewriteAll(CHANGES));
+                await t.sync();
+                await flush();
+                await t.sync();
+              } else {
+                t.a.update(() => $rewriteAll(CHANGES));
+                t.b.update($edit(word, edit));
+                await t.sync();
+              }
+              if (kind === 'undo') {
+                t.b.undo();
+                await t.sync();
+              }
+              let expected =
+                kind === 'undo'
+                  ? before
+                  : before.replace(word, edited(word, kind));
+              for (const [from, to] of CHANGES) {
+                expected = expected.replace(from, to);
+              }
+              const fresh = await freshReader(t.a, [...NODES, HashtagNode]);
+              expect([...t.peers, fresh].map(lineText)).toEqual(
+                [...t.peers, fresh].map(() => expected),
+              );
+              await expectConverged(t.peers);
+              expect(t.peers.flatMap(p => p.warnings)).toEqual([]);
+            });
+          }
+        }
+      }
+    }
+  }
+});

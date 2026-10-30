@@ -19,7 +19,7 @@ import {
   type NodeMap,
 } from 'lexical';
 
-import {cutsWord, diffStrings, keptEnds, snapToWords} from './Inline';
+import {diffStrings, keptEnds, snapToWords} from './Inline';
 import {$isWrapper} from './Schema';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
@@ -269,15 +269,9 @@ function push(out: Segment[], s: Segment): void {
 
 /**
  * Blocks `keep` (in order, see Block), with the parts of blocks `more` (in
- * order) that lie between two of them, or one and an end, in both texts,
- * and hold no piece of a word of `d` (the text that left) without the rest
- * of it.
+ * order) that lie between two of them, or one and an end, in both texts.
  */
-function within(
-  keep: readonly Block[],
-  more: readonly Block[],
-  d: string,
-): Block[] {
+function within(keep: readonly Block[], more: readonly Block[]): Block[] {
   const out: Block[] = [];
   let m = 0;
   for (let i = 0; i <= keep.length; i++) {
@@ -297,20 +291,8 @@ function within(
       const b = more[j];
       // Character `x` of what arrived is character `x + shift` of `d`.
       const shift = b.o - b.a;
-      let lo = Math.max(b.a, a0, o0 - shift);
-      let hi = Math.min(b.a + b.n, a1, o1 - shift);
-      // A word cut at either end is left out: the words the update changed
-      // are written whole (see keptEnds).
-      if (lo < hi && cutsWord(d, lo + shift)) {
-        while (lo < hi && cutsWord(d, lo + shift)) {
-          lo++;
-        }
-      }
-      if (lo < hi && cutsWord(d, hi + shift)) {
-        while (lo < hi && cutsWord(d, hi + shift)) {
-          hi--;
-        }
-      }
+      const lo = Math.max(b.a, a0, o0 - shift);
+      const hi = Math.min(b.a + b.n, a1, o1 - shift);
       if (hi > lo) {
         out.push({a: lo, n: hi - lo, o: lo + shift});
       }
@@ -1603,7 +1585,6 @@ export class TextReplay {
               }),
               at,
             ),
-            d,
           );
         }
         if (__DEV__) {

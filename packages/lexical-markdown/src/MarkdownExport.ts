@@ -39,11 +39,9 @@ import {
   isEmptyParagraph,
   isEscaped,
   isFlankedBy,
-  NOT_WHITESPACE,
   PUNCTUATION_OR_SPACE,
   toCharacterReference,
   transformersByType,
-  WHITESPACE,
 } from './utils';
 
 /**
@@ -659,16 +657,13 @@ function $exportTextFormat(
   // Flanking Compliance: CommonMark flanking rules require formatting tags to be
   // adjacent to non-whitespace characters, so openingTags and closingTagsAfter
   // are placed INSIDE the whitespace boundaries!
-  // (Scanning rather than a trailing regex keeps this linear in long
-  // whitespace runs.)
-  const contentStart = output.search(NOT_WHITESPACE);
-  let contentEnd = output.length;
-  while (contentEnd > contentStart && WHITESPACE.test(output[contentEnd - 1])) {
-    contentEnd--;
-  }
-  const leadingSpace = output.slice(0, contentStart);
-  const trimmedOutput = output.slice(contentStart, contentEnd);
-  const trailingSpace = output.slice(contentEnd);
+  // Tags stay inside JavaScript whitespace, which holds CommonMark's and the
+  // other characters some readers count as whitespace.
+  // (Trimming rather than a regex keeps this linear in long whitespace runs.)
+  const trimmedStart = output.trimStart();
+  const trimmedOutput = trimmedStart.trimEnd();
+  const leadingSpace = output.slice(0, output.length - trimmedStart.length);
+  const trailingSpace = trimmedStart.slice(trimmedOutput.length);
   return [
     ...closingTagsBefore,
     textPiece(leadingSpace),
@@ -748,9 +743,6 @@ interface MarkerRun {
  * reference instead, whose `&` or `;` is punctuation: `&#97;**\***`.
  */
 function joinPieces(pieces: MarkdownPiece[]): string {
-  if (!pieces.some(isMarker)) {
-    return pieces.map(piece => piece.value).join('');
-  }
   // Drop empty pieces and merge adjacent text, so that each run of markers
   // sits between the pieces whose characters a reader sees beside it.
   const merged: MarkdownPiece[] = [];
@@ -767,6 +759,50 @@ function joinPieces(pieces: MarkdownPiece[]): string {
       merged.push(piece);
     }
   }
+  const encodeStart: boolean[] = [];
+  const encodeEnd: boolean[] = [];
+  if (merged.some(isMarker)) {
+    decideReferences(merged, encodeStart, encodeEnd);
+  }
+  let markdown = '';
+  for (let index = 0; index < merged.length; index++) {
+    const {kind} = merged[index];
+    let {value} = merged[index];
+    let start = '';
+    let end = '';
+    if (encodeStart[index]) {
+      const first = characterAt(value, 0)!;
+      start = toCharacterReference(first);
+      value = value.slice(first.length);
+    }
+    if (encodeEnd[index] && value !== '') {
+      const last = characterBefore(value, value.length)!;
+      end = toCharacterReference(last);
+      value = value.slice(0, -last.length);
+    }
+    // A backslash left unescaped (when preserving newlines) would escape what
+    // follows it: a reference's `&`, a marker or raw output.
+    if (
+      kind === 'text' &&
+      (end !== '' || index + 1 < merged.length) &&
+      isEscaped(value, value.length)
+    ) {
+      value = value.slice(0, -1) + toCharacterReference('\\');
+    }
+    markdown += start + value + end;
+  }
+  return markdown;
+}
+
+/**
+ * Marks the text pieces whose first or last character has to go out as a
+ * reference for the marker run beside it to open or close.
+ */
+function decideReferences(
+  merged: MarkdownPiece[],
+  encodeStart: boolean[],
+  encodeEnd: boolean[],
+) {
   const runs: MarkerRun[] = [];
   // The run that follows and the run that precedes each piece, or -1.
   const runAfter: number[] = new Array(merged.length).fill(-1);
@@ -810,8 +846,6 @@ function joinPieces(pieces: MarkdownPiece[]): string {
     });
     start = end;
   }
-  const encodeStart: boolean[] = new Array(merged.length).fill(false);
-  const encodeEnd: boolean[] = new Array(merged.length).fill(false);
   const isOneCharacter = merged.map(
     ({value}) => characterAt(value, 0)!.length === value.length,
   );
@@ -869,37 +903,6 @@ function joinPieces(pieces: MarkdownPiece[]): string {
       }
     }
   }
-  let markdown = '';
-  for (let index = 0; index < merged.length; index++) {
-    let {value} = merged[index];
-    if (encodeStart[index]) {
-      const first = characterAt(value, 0)!;
-      markdown += toCharacterReference(first);
-      value = value.slice(first.length);
-    }
-    if (
-      merged[index].kind === 'text' &&
-      isMarker(merged[index + 1]) &&
-      !encodeEnd[index] &&
-      isEscaped(value, value.length)
-    ) {
-      // A backslash left unescaped (when preserving newlines) would escape
-      // the marker after it, so it goes out as a reference.
-      value = value.slice(0, -1) + toCharacterReference('\\');
-    }
-    if (encodeEnd[index] && value !== '') {
-      const last = characterBefore(value, value.length)!;
-      value = value.slice(0, -last.length);
-      // A backslash left unescaped (when preserving newlines) would escape
-      // the reference's `&`, so it goes out as a reference too.
-      if (isEscaped(value, value.length)) {
-        value = value.slice(0, -1) + toCharacterReference('\\');
-      }
-      value += toCharacterReference(last);
-    }
-    markdown += value;
-  }
-  return markdown;
 }
 
 function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
@@ -982,5 +985,5 @@ function hasFormat(
  * keep tags off whitespace.
  */
 function canHoldTag(text: string): boolean {
-  return NOT_WHITESPACE.test(text);
+  return /\S/.test(text);
 }

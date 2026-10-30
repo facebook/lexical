@@ -4903,8 +4903,6 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       ],
       '&#120;**&#97;*“b”***',
     ],
-    // Tags go inside CommonMark whitespace only, so U+FEFF keeps its bold.
-    [[['\uFEFFx', ['bold']]], '**\uFEFFx**'],
     // A word character beside a word character needs no reference.
     [
       [
@@ -4989,37 +4987,44 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     ]);
   });
 
-  it('keeps a raw backslash from escaping a marker when preserving newlines', () => {
-    const editor = createTestEditor();
-    editor.update(
-      () =>
-        $getRoot().append(
-          $createParagraphNode().append(
-            $createTextNode('a\\'),
-            $createTextNode('b').toggleFormat('bold'),
+  it.each([
+    ['bold', 'a&#92;**b**'],
+    ['code', 'a&#92;`b`'],
+  ] as [TextFormatType, string][])(
+    'keeps a raw backslash from escaping %s markup when preserving newlines',
+    (format, exported) => {
+      const editor = createTestEditor();
+      editor.update(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append(
+              $createTextNode('a\\'),
+              $createTextNode('b').toggleFormat(format),
+            ),
           ),
+        {discrete: true},
+      );
+      const markdown = editor.read('latest', () =>
+        $convertToMarkdownString(TRANSFORMERS, undefined, true),
+      );
+      expect(markdown).toBe(exported);
+      editor.update(
+        () =>
+          $convertFromMarkdownString(markdown, TRANSFORMERS, undefined, true),
+        {discrete: true},
+      );
+      expect(
+        editor.read('latest', () =>
+          $getRoot()
+            .getAllTextNodes()
+            .map(node => [node.getTextContent(), node.hasFormat(format)]),
         ),
-      {discrete: true},
-    );
-    const markdown = editor.read('latest', () =>
-      $convertToMarkdownString(TRANSFORMERS, undefined, true),
-    );
-    expect(markdown).toBe('a&#92;**b**');
-    editor.update(
-      () => $convertFromMarkdownString(markdown, TRANSFORMERS, undefined, true),
-      {discrete: true},
-    );
-    expect(
-      editor.read('latest', () =>
-        $getRoot()
-          .getAllTextNodes()
-          .map(node => [node.getTextContent(), node.hasFormat('bold')]),
-      ),
-    ).toEqual([
-      ['a\\', false],
-      ['b', true],
-    ]);
-  });
+      ).toEqual([
+        ['a\\', false],
+        ['b', true],
+      ]);
+    },
+  );
 
   it('guards word characters in a selection export', () => {
     const editor = createTestEditor();

@@ -58,14 +58,14 @@ export function transformersByType(transformers: Transformer[]): Readonly<{
 
 // CommonMark counts every character in the Unicode P (punctuation) and S
 // (symbol) general categories as punctuation, which includes all of the ASCII
-// punctuation characters. Delimiter flanking depends on it.
+// punctuation characters. Its Unicode whitespace is Zs plus tab, line feed,
+// form feed and carriage return; JavaScript's `\s` adds others, such as
+// U+FEFF. Delimiter flanking depends on both.
 // https://spec.commonmark.org/0.31.2/#unicode-punctuation-character
-// CommonMark's Unicode whitespace is Zs plus tab, line feed, form feed and
-// carriage return; JavaScript's `\s` adds others, such as U+FEFF.
 // https://spec.commonmark.org/0.31.2/#unicode-whitespace-character
-export const PUNCTUATION_OR_SPACE = /[\p{P}\p{S}\p{Zs}\t\n\f\r]/u;
+export const PUNCTUATION = /[\p{P}\p{S}]/u;
 export const WHITESPACE = /[\p{Zs}\t\n\f\r]/u;
-export const NOT_WHITESPACE = /[^\p{Zs}\t\n\f\r]/u;
+export const PUNCTUATION_OR_SPACE = /[\p{P}\p{S}\p{Zs}\t\n\f\r]/u;
 
 /**
  * Whether a delimiter run with `primary` on the side it faces (after it for
@@ -87,7 +87,6 @@ export function isFlankedBy(
     PUNCTUATION.test(secondary)
   );
 }
-export const PUNCTUATION = /[\p{P}\p{S}]/u;
 
 /** The character (code point) that starts at `index`, if any. */
 export function characterAt(text: string, index: number): string | undefined {

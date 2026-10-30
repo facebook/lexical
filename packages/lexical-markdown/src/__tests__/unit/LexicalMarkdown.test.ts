@@ -63,14 +63,15 @@ import {
   $setState,
   COMPOSITION_END_TAG,
   type CreateEditorArgs,
+  type ElementNode,
   KEY_ENTER_COMMAND,
   type LexicalEditor,
   type LexicalNode,
   TEXT_TYPE_TO_FORMAT,
   type TextFormatType,
-  type TextNode,
+  TextNode,
 } from 'lexical';
-import {assert, describe, expect, it} from 'vitest';
+import {assert, describe, expect, it, onTestFinished, vi} from 'vitest';
 
 import {
   hardLineBreakState,
@@ -1686,6 +1687,182 @@ describe('Markdown', () => {
         ['ld', ITALIC],
         ['!', 0],
       ]);
+    });
+  });
+
+  describe('formatted whitespace-only text (#9403)', () => {
+    type Char = [char: string, format: number, url: string | null];
+
+    function importMarkdown(markdown: string): LexicalEditor {
+      const editor = createTestEditor();
+      editor.update(
+        () => {
+          $convertFromMarkdownString(markdown, TRANSFORMERS);
+        },
+        {discrete: true},
+      );
+      return editor;
+    }
+
+    /**
+     * The format and link URL of every non-whitespace character. Whitespace
+     * is left out because an exported tag cannot wrap it (CommonMark flanking
+     * rules), so a formatted space legitimately comes back unformatted.
+     */
+    function $chars(): Char[] {
+      const chars: Char[] = [];
+      for (const node of $getRoot().getAllTextNodes()) {
+        const parent = node.getParent();
+        const url = $isLinkNode(parent) ? parent.getURL() : null;
+        for (const char of node.getTextContent()) {
+          if (char.trim() !== '') {
+            chars.push([char, node.getFormat(), url]);
+          }
+        }
+      }
+      return chars;
+    }
+
+    const $text = () => $getRoot().getTextContent();
+    const $exportMarkdown = () => $convertToMarkdownString(TRANSFORMERS);
+
+    it.each([
+      '**_a_ [b](u)**',
+      '**_a_ [b](u) c**',
+      '*a **b** [c](u)*',
+      '**a [b](u)**',
+    ])('round-trips "%s" with a stable export', original => {
+      const first = importMarkdown(original);
+      const chars = first.read($chars);
+      // Guard against a vacuous comparison: every delimiter was consumed and
+      // the link was parsed.
+      expect(chars.some(([char]) => char === '*' || char === '_')).toBe(false);
+      expect(chars.some(([, , url]) => url !== null)).toBe(true);
+
+      const exported = first.read($exportMarkdown);
+      const second = importMarkdown(exported);
+      expect(second.read($chars)).toEqual(chars);
+      expect(second.read($text)).toBe(first.read($text));
+      expect(second.read($exportMarkdown)).toBe(exported);
+    });
+
+    // A whitespace-only text node needs a format the nodes around it lack to
+    // stay separate, which markdown import alone cannot produce.
+    const BOLD = TEXT_TYPE_TO_FORMAT.bold;
+    const ITALIC = TEXT_TYPE_TO_FORMAT.italic;
+    const STRIKE = TEXT_TYPE_TO_FORMAT.strikethrough;
+    const $formatted = (text: string, format: number) =>
+      $createTextNode(text).setFormat(format);
+
+    // The code span's padding is not what the inline code cases test, so
+    // their expected export leaves it open.
+    it.each<
+      [name: string, $nodes: () => LexicalNode[], expected: string | RegExp]
+    >([
+      [
+        'closes before unformatted text',
+        () => [
+          $formatted('a', BOLD | ITALIC),
+          $formatted(' ', BOLD),
+          $formatted('b', 0),
+        ],
+        '***a*** b',
+      ],
+      [
+        'closes at the end of a link',
+        () => [
+          $createLinkNode('u').append(
+            $formatted('a', BOLD | ITALIC),
+            $formatted(' ', BOLD),
+          ),
+          $formatted('c', 0),
+        ],
+        '[***a*** ](u)c',
+      ],
+      [
+        'closes before consecutive formatted spaces',
+        () => [
+          $formatted('a', BOLD),
+          $formatted(' ', BOLD | ITALIC),
+          $formatted(' ', BOLD | STRIKE),
+          $formatted('c', 0),
+        ],
+        '**a**  c',
+      ],
+      [
+        'closes before the trailing space of the text it formats',
+        () => [
+          $formatted('a ', BOLD),
+          $formatted(' ', BOLD | ITALIC),
+          $formatted('c', 0),
+        ],
+        '**a**  c',
+      ],
+      [
+        'does not reopen a tag it kept open',
+        () => [
+          $formatted('a', BOLD),
+          $formatted(' ', BOLD | ITALIC),
+          $formatted('c', BOLD),
+        ],
+        '**a c**',
+      ],
+      [
+        'keeps a tag open across consecutive formatted spaces',
+        () => [
+          $formatted('a', BOLD),
+          $formatted(' ', BOLD | ITALIC),
+          $formatted(' ', BOLD | STRIKE),
+          $formatted('c', BOLD),
+        ],
+        '**a  c**',
+      ],
+      [
+        'closes before a formatted line break',
+        () => [
+          $formatted('a', BOLD),
+          $formatted('\n', BOLD | ITALIC),
+          $formatted('c', BOLD),
+        ],
+        '**a**\n**c**',
+      ],
+      [
+        'leaves the formats of inline code that holds only a space off',
+        () => [
+          $formatted('a', 0),
+          $formatted(' ', BOLD | TEXT_TYPE_TO_FORMAT.code),
+          $formatted('b', 0),
+        ],
+        /^a` +`b$/,
+      ],
+      [
+        'keeps a tag open across inline code that holds only a space',
+        () => [
+          $formatted('a', BOLD),
+          $formatted(' ', BOLD | TEXT_TYPE_TO_FORMAT.code),
+          $formatted('b', BOLD),
+        ],
+        /^\*\*a` +`b\*\*$/,
+      ],
+    ])('%s', (_name, $nodes, expected) => {
+      const editor = createTestEditor();
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append(...$nodes()));
+        },
+        {discrete: true},
+      );
+      const exported = editor.read($exportMarkdown);
+      if (typeof expected === 'string') {
+        expect(exported).toBe(expected);
+      } else {
+        expect(exported).toMatch(expected);
+      }
+      expect(importMarkdown(exported).read($chars)).toEqual(
+        editor.read($chars),
+      );
     });
   });
 
@@ -3868,6 +4045,90 @@ describe('$generateNodesFromMarkdownString', () => {
   });
 });
 
+describe('Markdown export of long runs of formatted spaces', () => {
+  // Each space differs in format from its neighbours, so none of them merge.
+  // Visiting each sibling a bounded number of times keeps export linear; a
+  // look-ahead from every space to the end of the run, or working out the
+  // selection's range again for every node, is quadratic.
+  const SPACES = 200;
+  const HALF = SPACES / 2;
+  const $convertSelection = () =>
+    $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection());
+
+  it.each<
+    [
+      name: string,
+      $select: (paragraph: ElementNode) => void,
+      $export: () => string,
+      expected: string,
+    ]
+  >([
+    [
+      'the document',
+      () => {},
+      () => $convertToMarkdownString(TRANSFORMERS),
+      `**a${' '.repeat(SPACES)}c**`,
+    ],
+    [
+      'a selection between text points',
+      paragraph => {
+        const first = paragraph.getFirstChild();
+        const middle = paragraph.getChildAtIndex(HALF);
+        assert($isTextNode(first) && $isTextNode(middle));
+        $setSelectionFromCaretRange(
+          $getCaretRange(
+            $getTextPointCaret(first, 'next', 0),
+            $getTextPointCaret(middle, 'next', 1),
+          ),
+        );
+      },
+      $convertSelection,
+      `**a**${' '.repeat(HALF)}`,
+    ],
+    [
+      'a selection between element points',
+      paragraph => paragraph.select(HALF + 1, paragraph.getChildrenSize()),
+      $convertSelection,
+      `${' '.repeat(SPACES - HALF)}**c**`,
+    ],
+  ])(
+    'visits each sibling a bounded number of times exporting %s',
+    (_name, $select, $export, expected) => {
+      const editor = createTestEditor();
+      editor.update(
+        () => {
+          const {bold, italic, strikethrough} = TEXT_TYPE_TO_FORMAT;
+          const paragraph = $createParagraphNode().append(
+            $createTextNode('a').setFormat(bold),
+          );
+          for (let i = 0; i < SPACES; i++) {
+            paragraph.append(
+              $createTextNode(' ').setFormat(
+                bold | (i % 2 ? italic : strikethrough),
+              ),
+            );
+          }
+          paragraph.append($createTextNode('c').setFormat(bold));
+          $getRoot().append(paragraph);
+          $select(paragraph);
+        },
+        {discrete: true},
+      );
+      const siblingReads = [
+        vi.spyOn(TextNode.prototype, 'getNextSibling'),
+        vi.spyOn(TextNode.prototype, 'getPreviousSibling'),
+      ];
+      onTestFinished(() => siblingReads.forEach(spy => spy.mockRestore()));
+      expect(editor.read($export)).toBe(expected);
+      const visits = siblingReads.reduce(
+        (sum, spy) => sum + spy.mock.calls.length,
+        0,
+      );
+      expect(visits).toBeLessThan(10 * SPACES);
+    },
+  );
+});
+
 describe('$convertSelectionToMarkdownString whitespace slices', () => {
   it('does not emit a dangling closing tag when the selection slices a format down to whitespace', () => {
     const editor = createTestEditor({nodes: [LinkNode]});
@@ -3893,6 +4154,132 @@ describe('$convertSelectionToMarkdownString whitespace slices', () => {
       $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
     );
     expect(result).toBe('  **b**');
+  });
+
+  it('closes a tag before a formatted space at the end of a selected link', () => {
+    const editor = createTestEditor({nodes: [LinkNode]});
+    editor.update(
+      () => {
+        const bold = TEXT_TYPE_TO_FORMAT.bold;
+        const paragraph = $createParagraphNode().append(
+          $createLinkNode('u').append(
+            $createTextNode('a').setFormat(bold | TEXT_TYPE_TO_FORMAT.italic),
+            $createTextNode(' ').setFormat(bold),
+          ),
+          $createTextNode('c'),
+        );
+        $getRoot().append(paragraph);
+        paragraph.select(0, paragraph.getChildrenSize());
+      },
+      {discrete: true},
+    );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
+    expect(result).toBe('[***a*** ](u)c');
+  });
+
+  it.each<
+    [
+      name: string,
+      formats: [text: string, format: number][],
+      selection: [
+        startNode: number,
+        startOffset: number,
+        endNode: number,
+        endOffset: number,
+      ],
+      expected: string,
+    ]
+  >([
+    [
+      'closes the tags of the previous node before a slice cut down to whitespace',
+      [
+        ['a', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.italic],
+        [' b', TEXT_TYPE_TO_FORMAT.bold],
+      ],
+      [0, 0, 1, 1],
+      '***a*** ',
+    ],
+    [
+      'keeps a tag open across consecutive formatted spaces',
+      [
+        ['a', TEXT_TYPE_TO_FORMAT.bold],
+        [' ', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.italic],
+        [' ', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.strikethrough],
+        ['cd', TEXT_TYPE_TO_FORMAT.bold],
+      ],
+      [0, 0, 3, 1],
+      '**a  c**',
+    ],
+    [
+      'closes before a slice cut down to a formatted space',
+      [
+        ['a ', TEXT_TYPE_TO_FORMAT.bold],
+        [' b', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.italic],
+      ],
+      [0, 0, 1, 1],
+      '**a**  ',
+    ],
+    [
+      'closes when the format continues only after the selection',
+      [
+        ['a', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.italic],
+        [' x', TEXT_TYPE_TO_FORMAT.bold],
+        ['c', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.italic],
+      ],
+      [0, 0, 1, 1],
+      '***a*** ',
+    ],
+    [
+      'closes every tag at the end of a sliced node',
+      [
+        ['a', TEXT_TYPE_TO_FORMAT.bold],
+        ['bc', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.italic],
+        ['d', TEXT_TYPE_TO_FORMAT.bold],
+      ],
+      [0, 0, 1, 1],
+      '**a*b***',
+    ],
+    [
+      'leaves out inline code the selection only touches',
+      [
+        ['a', TEXT_TYPE_TO_FORMAT.bold],
+        ['xy', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.code],
+      ],
+      [0, 0, 1, 0],
+      '**a**',
+    ],
+    [
+      'leaves out inline code the selection starts at the end of',
+      [
+        ['xy', TEXT_TYPE_TO_FORMAT.bold | TEXT_TYPE_TO_FORMAT.code],
+        ['a', TEXT_TYPE_TO_FORMAT.bold],
+      ],
+      [0, 2, 1, 1],
+      '**a**',
+    ],
+  ])('%s', (_name, formats, [startNode, start, endNode, end], expected) => {
+    const editor = createTestEditor({nodes: [LinkNode]});
+    editor.update(
+      () => {
+        const nodes = formats.map(([text, format]) =>
+          $createTextNode(text).setFormat(format),
+        );
+        $getRoot().append($createParagraphNode().append(...nodes));
+        $setSelectionFromCaretRange(
+          $getCaretRange(
+            $getTextPointCaret(nodes[startNode], 'next', start),
+            $getTextPointCaret(nodes[endNode], 'next', end),
+          ),
+        );
+      },
+      {discrete: true},
+    );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
+    expect(result).toBe(expected);
   });
 });
 

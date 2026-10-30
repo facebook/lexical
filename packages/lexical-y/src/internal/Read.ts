@@ -2403,8 +2403,7 @@ export class Reader {
         if (
           !usedTexts.has(t) &&
           t.getType() === type &&
-          !state.segments.has(t.getKey()) &&
-          !(composedPlaced && t.getKey() === composedKey)
+          !state.segments.has(t.getKey())
         ) {
           usedTexts.add(t);
           return t;
@@ -2494,6 +2493,11 @@ export class Reader {
         pieces.splice(k, 1, ...parts);
         composedPlaced = true;
         break;
+      }
+      // Kept for its piece: no other piece reuses it, by position or by its
+      // segment (a code token split by NodeState shares one segment).
+      if (composedPlaced) {
+        usedTexts.add(composed);
       }
     }
     // Reading nested inline nodes reads their own content: keep this

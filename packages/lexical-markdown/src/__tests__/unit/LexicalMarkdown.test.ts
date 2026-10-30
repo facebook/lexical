@@ -4928,6 +4928,23 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       ],
       'a**b**c',
     ],
+    // Emphasis that ends before a code span is read before the span.
+    [
+      [
+        ['a.', ['bold']],
+        ['x', []],
+        ['c', ['bold', 'code']],
+      ],
+      '**a.**&#120;**`c`**',
+    ],
+    [
+      [
+        [LEFT_DOUBLE_QUOTE, ['bold']],
+        ['.b ', ['italic']],
+        ['c', ['italic', 'code']],
+      ],
+      '**“***.b `c`*',
+    ],
   ] as [[string, TextFormatType[]][], string][])(
     'exports and reimports %j as %j',
     (runs, exported) => {

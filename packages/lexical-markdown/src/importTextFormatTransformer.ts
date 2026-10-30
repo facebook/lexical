@@ -82,10 +82,10 @@ export function findOutermostTextFormatTransformer(
   let resultTransformer = null;
 
   if (codeMatch && emphasisMatch) {
-    if (
-      emphasisMatch.startIndex <= codeMatch.startIndex &&
-      emphasisMatch.endIndex >= codeMatch.endIndex
-    ) {
+    // Delimiters inside the code span were excluded, so an emphasis match
+    // that starts first either holds the whole span or ends before it, and
+    // either way it is applied first.
+    if (emphasisMatch.startIndex <= codeMatch.startIndex) {
       resultMatch = emphasisMatch;
       resultTransformer =
         textFormatTransformersIndex.transformersByTag[emphasisMatch.tag];

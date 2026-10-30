@@ -63,8 +63,9 @@ export function catalogAppExtension(
   const dependencies: AnyLexicalExtensionArgument[] = [
     ListExtension,
     // Table transforms (row padding, merge normalization), as apps with
-    // tables register them.
-    TableExtension,
+    // tables register them; without a horizontal scroll wrapper, which
+    // needs a theme class the catalog does not define.
+    configExtension(TableExtension, {hasHorizontalScroll: false}),
     // Page nodes read its config when they render; disabled, it does not
     // paginate the document.
     configExtension(PagesExtension, {disabled: true}),

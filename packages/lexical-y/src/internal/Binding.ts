@@ -1275,7 +1275,7 @@ export class YBinding {
       if (legacy.length > 0) {
         this.warn(
           UNSUPPORTED_LAYOUT_WARNING,
-          `older layout roots have content: ${legacy.join(', ')}`,
+          `older layout roots have content: ${legacy.join(', ')}. They are the Yjs 13 binding's roots, so this editor is read only: keep the document on that binding, reseed its content into a new room with seedYState, or pass convert: true to initialize next to them`,
           {reason: 'legacy-roots', roots: legacy, supported: LAYOUT_VERSION},
         );
         this.setStatus('readonly');
@@ -1529,8 +1529,8 @@ export class YBinding {
         this.warn(
           STORAGE_MISMATCH_WARNING,
           m.reason === 'malformed'
-            ? `the storage record of ${m.type} is malformed`
-            : `${m.type} is stored as ${m.stored.kind}, its class as ${m.declared.kind}`,
+            ? `the storage record of ${m.type} is malformed, so this editor is read only: something other than this binding wrote the root's records; reseed the content into a new room with seedYState`
+            : `${m.type} is stored as ${m.stored.kind}, its class as ${m.declared.kind}. A document keeps the kind its first write of a type recorded, so this editor is read only: restore the class's previous node structure declaration, or reseed the content into a new room with seedYState to adopt the new one`,
           m,
         );
       }
@@ -1612,8 +1612,8 @@ export class YBinding {
         this.warn(
           UNSUPPORTED_LAYOUT_WARNING,
           reason === 'missing'
-            ? 'the root has content and no layout record'
-            : 'the layout record was removed',
+            ? 'the root has content and no layout record, so this editor is read only: the record was deleted, or something other than this binding wrote the root. Bind a root only this binding writes (the root option), and reseed the content into a new room with seedYState'
+            : 'the layout record was removed, so this editor is read only: something other than this binding wrote the root; reseed the content into a new room with seedYState',
           {reason, supported: LAYOUT_VERSION},
         );
         this.setStatus('readonly');
@@ -1625,14 +1625,14 @@ export class YBinding {
     if (malformed !== null) {
       this.warn(
         UNSUPPORTED_LAYOUT_WARNING,
-        `the layout record ${malformed.key} is malformed`,
+        `the layout record ${malformed.key} is malformed, so this editor is read only: something other than this binding wrote the root's records; reseed the content into a new room with seedYState`,
         {...malformed, reason: 'malformed', supported: LAYOUT_VERSION},
       );
       this.setStatus('readonly');
     } else if (version > LAYOUT_VERSION) {
       this.warn(
         UNSUPPORTED_LAYOUT_WARNING,
-        `layout ${version} is newer than ${LAYOUT_VERSION}`,
+        `layout ${version} is newer than ${LAYOUT_VERSION}. A newer version of the binding wrote this document, so this editor is read only: upgrade the binding on every client of the document`,
         {found: version, reason: 'newer', supported: LAYOUT_VERSION},
       );
       this.setStatus('readonly');
@@ -1683,8 +1683,8 @@ export class YBinding {
       this.warn(
         UNSUPPORTED_SCHEMA_WARNING,
         data.reason === 'newer'
-          ? `schema ${data.found} is newer than ${supported}`
-          : `the schema record ${data.key} is malformed`,
+          ? `schema ${data.found} is newer than ${supported}. A newer version of your app (a higher schemaVersion) wrote this document, so this editor is read only: load the newer app version to edit it`
+          : `the schema record ${data.key} is malformed, so this editor is read only: something other than this binding wrote the root's records; reseed the content into a new room with seedYState`,
         data,
       );
     }
@@ -1902,15 +1902,16 @@ export class YBinding {
     if (hosts.length > 0) {
       this.warn(
         UNSUPPORTED_SLOTS_WARNING,
-        `slots on nodes stored as a line, a format or a group: ${hosts.join(', ')}`,
+        `slots on nodes stored as a line, a format or a group: ${hosts.join(', ')}. They cannot be stored, so this editor is read only: declare slots in the class's $config, which stores it as a node of its own`,
         {reason: 'stored-host', types: hosts},
       );
     }
     if (hosts.length < types.length) {
-      this.warn(UNSUPPORTED_SLOTS_WARNING, 'slots on the root', {
-        reason: 'root',
-        types: ['root'],
-      });
+      this.warn(
+        UNSUPPORTED_SLOTS_WARNING,
+        'slots on the root cannot be stored, so this editor is read only: set them on a node of its own',
+        {reason: 'root', types: ['root']},
+      );
     }
     this.keepsUnstored = true;
     this.setStatus('readonly');
@@ -1933,7 +1934,7 @@ export class YBinding {
       const types = [...unreadable.keys()].sort();
       this.warn(
         UNKNOWN_NODE_TYPES_WARNING,
-        `stored content the editor's classes cannot read: ${types.join(', ')}`,
+        `stored content the editor's classes cannot read: ${types.join(', ')}. Their classes threw on the stored values (data.error), so this editor is read only: make them accept what another version of your app wrote, and bump schemaVersion when a class changes what it stores`,
         {
           error: unreadable.get(types[0]),
           reason: 'unreadable',
@@ -1950,7 +1951,7 @@ export class YBinding {
       if (types.length > 0) {
         this.warn(
           UNKNOWN_NODE_TYPES_WARNING,
-          `unregistered node types: ${types.join(', ')}`,
+          `unregistered node types: ${types.join(', ')}. This editor is read only: register the same node classes (or extensions) as the clients that wrote them`,
           {reason: 'unregistered', types},
         );
       }
@@ -1958,7 +1959,7 @@ export class YBinding {
         const malformed = [...slots].sort();
         this.warn(
           UNKNOWN_NODE_TYPES_WARNING,
-          `malformed slots: ${malformed.join(', ')}`,
+          `malformed slots: ${malformed.join(', ')}, so this editor is read only: something other than this binding wrote them; reseed the content into a new room with seedYState`,
           {reason: 'malformed-slot', types: malformed},
         );
       }
@@ -1996,8 +1997,8 @@ export class YBinding {
           this.warn(
             UNSUPPORTED_CONFIG_WARNING,
             data.reason === 'repair-transforms'
-              ? `unsupported options: ${data.options.join(', ')}`
-              : 'the document cleans up formats: create it with createYDoc',
+              ? `unsupported options: ${data.options.join(', ')}. Nothing is written: configure BlockIdExtension with repairTransforms: false, as YCollabExtension does`
+              : 'the document cleans up formats: create it with createYDoc() instead of new Y.Doc(). Nothing is written until then',
             data,
           );
         }
@@ -2768,7 +2769,7 @@ export class YBinding {
     this.unreadable = true;
     this.warn(
       UNKNOWN_NODE_TYPES_WARNING,
-      `the document cannot be read: ${errorText(error)}`,
+      `the document cannot be read: ${errorText(error)}. This editor is read only until it is built again: data.error holds what the read threw; fix that, then reload the editor`,
       {error, reason: 'unreadable', types: []},
     );
     // Shown again first: an update an app makes when the editor stops being
@@ -3309,7 +3310,7 @@ export class YBinding {
             this.warnedEdit = true;
             this.warn(
               UNSUPPORTED_EDIT_WARNING,
-              'a local change is not written while read only',
+              "a local change is not written while read only: an earlier warning says why the binding is read only. Edit only while binding.status is 'active'",
               {reason: 'read-only'},
             );
           }

@@ -161,14 +161,24 @@ export class YHeadlessError extends Error {
 }
 
 /**
- * A `'read-only'` {@link YHeadlessError}: a short message, and the binding's
- * warnings (the reasons) as data.
+ * A `'read-only'` {@link YHeadlessError}: a short message followed by the
+ * binding's warnings' messages (the reasons, which say what to do), and the
+ * warnings themselves as data.
  */
 export function readOnlyError(
   message: string,
   warnings: readonly LexicalWarning[],
 ): YHeadlessError {
-  return new YHeadlessError('read-only', message, warnings.filter(isYWarning));
+  const reasons = warnings.filter(isYWarning);
+  // The message names the reasons too, so that an uncaught error says why
+  // and what to do; programs read `warnings` (code and data) instead.
+  return new YHeadlessError(
+    'read-only',
+    reasons.length > 0
+      ? `@lexical/y: ${message}: ${reasons.map(w => w.message).join('; ')}`
+      : `@lexical/y: ${message}`,
+    reasons,
+  );
 }
 
 /**

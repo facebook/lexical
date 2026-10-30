@@ -54,7 +54,19 @@ export function importTextTransformers(
   );
 
   if (foundTextFormat && foundTextMatch) {
-    if (foundTextFormat.isCodeSpan) {
+    const {codeSpan} = foundTextFormat;
+    if (
+      codeSpan &&
+      !foundTextFormat.isCodeSpan &&
+      foundTextMatch.startIndex < codeSpan.endIndex &&
+      foundTextMatch.endIndex > codeSpan.startIndex &&
+      (foundTextMatch.startIndex > codeSpan.startIndex ||
+        foundTextMatch.endIndex < codeSpan.endIndex)
+    ) {
+      // The emphasis before the code span goes first, and the text match,
+      // which takes part of the span, is not applied.
+      foundTextMatch = null;
+    } else if (foundTextFormat.isCodeSpan) {
       // Code spans bind tighter than text-match transformers (e.g. equations
       // or links). A code span must never be partially consumed by a text
       // match, so prefer the code format unless the text match fully wraps it

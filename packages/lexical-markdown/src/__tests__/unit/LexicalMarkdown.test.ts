@@ -567,6 +567,18 @@ describe('Markdown', () => {
       md: '`$a` `$b`',
     },
     {
+      // Emphasis before a code span is applied first, and a link that takes
+      // part of the span still loses to it.
+      html: '<p><span style="white-space: pre-wrap;">[x </span><i><em style="white-space: pre-wrap;">a</em></i><span style="white-space: pre-wrap;"> </span><code spellcheck="false" style="white-space: pre-wrap;"><span>y](z)</span></code></p>',
+      md: '[x *a* `y](z)`',
+      skipExport: true,
+    },
+    {
+      html: '<p><i><em style="white-space: pre-wrap;">a [b</em></i><span style="white-space: pre-wrap;"> </span><code spellcheck="false" style="white-space: pre-wrap;"><span>c](d)</span></code></p>',
+      md: '*a [b* `c](d)`',
+      skipExport: true,
+    },
+    {
       // Inline code containing a backtick must use a longer fence (CommonMark
       // code spans) and pad with spaces so it round-trips losslessly.
       html: '<p><span style="white-space: pre-wrap;">Here: </span><code spellcheck="false" style="white-space: pre-wrap;"><span>a`b</span></code></p>',

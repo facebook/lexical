@@ -696,10 +696,18 @@ function createPieces(): MarkdownPieces {
   return {kinds: [], values: []};
 }
 
+// Adjacent text (and adjacent raw output) is merged, so that each run of
+// markers sits between the pieces whose characters a reader sees beside it.
 function pushPiece(pieces: MarkdownPieces, kind: number, value: string) {
-  if (value !== '') {
-    pieces.kinds.push(kind);
-    pieces.values.push(value);
+  const {kinds, values} = pieces;
+  const last = kinds.length - 1;
+  if (value === '') {
+    return;
+  } else if (last >= 0 && kinds[last] === kind && !isMarker(kind)) {
+    values[last] += value;
+  } else {
+    kinds.push(kind);
+    values.push(value);
   }
 }
 
@@ -753,23 +761,9 @@ interface MarkerRun {
  * `a**\***`. The word character beside such a run goes out as a numeric
  * reference instead, whose `&` or `;` is punctuation: `&#97;**\***`.
  */
-function joinPieces(pieces: MarkdownPieces): string {
-  if (!pieces.kinds.some(isMarker)) {
-    return pieces.values.join('');
-  }
-  // Merge adjacent text (and adjacent raw output), so that each run of
-  // markers sits between the pieces whose characters a reader sees beside it.
-  const kinds: number[] = [];
-  const values: string[] = [];
-  for (let i = 0; i < pieces.kinds.length; i++) {
-    const kind = pieces.kinds[i];
-    const last = kinds.length - 1;
-    if (last >= 0 && !isMarker(kind) && kinds[last] === kind) {
-      values[last] += pieces.values[i];
-    } else {
-      kinds.push(kind);
-      values.push(pieces.values[i]);
-    }
+function joinPieces({kinds, values}: MarkdownPieces): string {
+  if (!kinds.some(isMarker)) {
+    return values.join('');
   }
   const {encodeStart, encodeEnd} = decideReferences(kinds, values);
   let markdown = '';
@@ -935,7 +929,9 @@ function decideReferences(
       value.slice(start, end).replace(/\\/g, ''),
     );
   };
-  // `findsLink` for each piece edge, worked out once.
+  // `findsLink` for each piece edge, worked out once: by side, 0 while
+  // unknown, then 1 when it finds one and 2 when it does not.
+  const linkish = [new Uint8Array(count), new Uint8Array(count)];
   const isLinkish = (index: number, atEnd: boolean): boolean => {
     const side = atEnd ? 1 : 0;
     if (linkish[side][index] === 0) {
@@ -961,6 +957,8 @@ function decideReferences(
   // walked at most twice. Raw output and unreferenceable characters stay
   // what they are, and other references only make edges punctuation, so a
   // remembered answer can only go stale toward writing fewer references.
+  // 0 while unknown, then 1 when it spreads and 2 when it is blocked.
+  const spreads = [new Uint8Array(count), new Uint8Array(count)];
   const canSpread = (index: number, leftward: boolean): boolean => {
     const side = leftward ? 0 : 1;
     const visited: number[] = [];
@@ -1021,10 +1019,6 @@ function decideReferences(
   if (!runs.some(run => opensWithReference(run) || closesWithReference(run))) {
     return {encodeEnd, encodeStart};
   }
-  // By side, 0 while unknown, then 1 when the edge is a link (or spreads) and
-  // 2 when it is not (or is blocked).
-  const linkish = [new Uint8Array(count), new Uint8Array(count)];
-  const spreads = [new Uint8Array(count), new Uint8Array(count)];
   // Writing a one-character piece as a reference changes what the run on its
   // other side sees, so that run is decided again. Each piece changes at most
   // twice, so this stays linear.

@@ -63,6 +63,18 @@ export function registerLexicalTextEntity<T extends TextNode>(
     return node.getLatest().__mode;
   };
 
+  // The first match in `text` when it follows `prefix`, with offsets in
+  // `text`; null if there is none, or if it starts in `prefix`.
+  const matchAfter = (prefix: string, text: string): null | EntityMatch => {
+    if (prefix === '') {
+      return getMatch(text);
+    }
+    const found = getMatch(prefix + text);
+    return found === null || found.start < prefix.length
+      ? null
+      : {end: found.end - prefix.length, start: found.start - prefix.length};
+  };
+
   const $textNodeTransform = (node: TextNode) => {
     if (!node.isSimpleText()) {
       return;
@@ -72,6 +84,13 @@ export function registerLexicalTextEntity<T extends TextNode>(
     let text = node.getTextContent();
     let currentNode = node;
     let match;
+    // The text of a plain previous sibling, which the first match in this
+    // node is found with: a match at the start of this node's own text may
+    // not be one after that text ("x" + "dog": no "dog"), and the previous
+    // sibling's own transform checks it that way (see the next sibling check
+    // below), so finding it here without that text would make an entity the
+    // sibling's transform undoes, again and again.
+    let prefix = '';
 
     if ($isTextNode(prevSibling)) {
       const previousText = prevSibling.getTextContent();
@@ -109,6 +128,8 @@ export function registerLexicalTextEntity<T extends TextNode>(
         }
       } else if (prevMatch === null || prevMatch.start < previousText.length) {
         return;
+      } else {
+        prefix = previousText;
       }
     }
 
@@ -116,7 +137,10 @@ export function registerLexicalTextEntity<T extends TextNode>(
 
     while (true) {
       const remainingText = text;
-      match = getMatch(remainingText);
+      // Only the first match follows the previous sibling's text.
+      const before = prefix;
+      prefix = '';
+      match = matchAfter(before, remainingText);
       const nextText = match === null ? '' : remainingText.slice(match.end);
       text = nextText;
 
@@ -131,7 +155,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
           // already replaced (or skipped) are excluded from `remainingText`, so
           // the comparison is against `match.start` rather than 0.
           const combinedText = remainingText + nextSibling.getTextContent();
-          const nextMatch = getMatch(combinedText);
+          const nextMatch = matchAfter(before, combinedText);
 
           if (nextMatch === null) {
             if (isTargetNode(nextSibling)) {

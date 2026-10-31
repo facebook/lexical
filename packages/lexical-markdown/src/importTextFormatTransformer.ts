@@ -77,9 +77,13 @@ export function findOutermostTextFormatTransformer(
   let resultTransformer = null;
 
   if (codeMatch && emphasisMatch) {
+    // Emphasis that wraps the code span, or that ends before it, goes first.
+    // Importing the code span first would split a later pair of delimiters
+    // around it into separate nodes, like the second `**` in `**a** **`x`**`.
     if (
-      emphasisMatch.startIndex <= codeMatch.startIndex &&
-      emphasisMatch.endIndex >= codeMatch.endIndex
+      (emphasisMatch.startIndex <= codeMatch.startIndex &&
+        emphasisMatch.endIndex >= codeMatch.endIndex) ||
+      emphasisMatch.endIndex <= codeMatch.startIndex
     ) {
       resultMatch = emphasisMatch;
       resultTransformer =

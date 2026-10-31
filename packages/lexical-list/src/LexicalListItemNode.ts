@@ -55,7 +55,12 @@ import {
 } from 'lexical';
 
 import {$createListNode, $isListNode, type ListType} from './';
-import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
+import {
+  $handleIndent,
+  $handleOutdent,
+  mergeLists,
+  updateChildrenListItemValue,
+} from './formatList';
 import {GENERATED_LISTITEM} from './LexicalListGeneratedJSON';
 import {ListNode} from './LexicalListNode';
 import {$getNewListStart, $isNestedListNode} from './utils';
@@ -191,6 +196,25 @@ export class ListItemNode extends ElementNode {
         if ($isListNode(parent)) {
           if (parent.getListType() !== 'check' && node.getChecked() != null) {
             node.setChecked(undefined);
+          }
+          // An item that only wraps a nested list does not count in the
+          // numbering (see updateChildrenListItemValue). It can start or stop
+          // wrapping one without its list being written (its nested list's
+          // last item removed, a list appended to it while empty), and the
+          // list's own transform, which renumbers, does not run then: where
+          // the item has started or stopped wrapping a nested list since the
+          // last update, the list renumbers its items. Why: the items after
+          // it kept stale values, and a split there started the next list
+          // from them (#9661).
+          const prevMap = $getEditor().getEditorState()._nodeMap;
+          const prev = prevMap.get(node.getKey());
+          if (
+            $isListItemNode(prev) &&
+            $isListNode(
+              prev.__first === null ? null : prevMap.get(prev.__first),
+            ) !== $isListNode(node.getFirstChild())
+          ) {
+            updateChildrenListItemValue(parent);
           }
         } else if (parent) {
           const newParent = node.createParentElementNode();

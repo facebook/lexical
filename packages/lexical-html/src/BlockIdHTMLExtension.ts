@@ -68,7 +68,9 @@ export const BLOCK_HANDLE_ATTRIBUTE = 'data-block-handle';
  * only wraps a nested list is exported as that nested list, inside the
  * previous item's element. The id goes on the first element the block's
  * element held (the nested list), and import puts it back on the block that
- * ends up holding only what that element produced (the wrapper item).
+ * ends up holding only what that element produced (the wrapper item), where
+ * the import of that element, its parent or its grandparent makes it (the
+ * list importer does, in the outer list); otherwise that block gets a new id.
  *
  * @experimental
  */
@@ -167,8 +169,14 @@ const BlockIdImportRule = defineImportRule({
 const PendingWrapperIds = createImportState<{
   /** The waiting ids, by the key of the node they wait for. */
   readonly pending: Map<NodeKey, string>;
-  /** Each produced node looked at, with its number of children then. */
-  readonly seen: Map<NodeKey, number>;
+  /**
+   * The ids still looked for, in the order they were found: the node's key
+   * and the element that carried the id. An id is looked for by the
+   * elements around that element up to its grandparent (the list around
+   * the item around the nested list: where the importer makes the item that
+   * wraps it), and dropped after.
+   */
+  readonly active: {key: NodeKey; el: Element}[];
 } | null>('blockWrapperIds', () => null);
 
 const BlockWrapperIdImportRule = defineImportRule({
@@ -184,6 +192,7 @@ const BlockWrapperIdImportRule = defineImportRule({
       for (const node of nodes) {
         if ($isBlockForId(node)) {
           waiting.pending.set(node.getKey(), id);
+          waiting.active.push({el, key: node.getKey()});
           break;
         }
       }
@@ -195,51 +204,51 @@ const BlockWrapperIdImportRule = defineImportRule({
 });
 
 /**
- * After each element's import, while wrapper ids wait: a block among the
- * children of the nodes the element produced that holds a waiting node and
- * nothing else (the item the list importer wraps a nested list in, when it
- * makes the outer list) takes its id, through the same rules as an imported
- * id. A produced node's children are looked at again only once their
- * number changed (an unknown element that hoists the same list again does
- * not make it look again).
+ * Around each element's import: of the wrapper ids found in its children or
+ * grandchildren, each one's node, if its parent now holds it alone and is a
+ * block without an id (the item the list importer wraps a nested list in,
+ * when it makes the outer list), gives that parent the id, through the same
+ * rules as an imported id. An id is looked at by three elements at most
+ * (its own, its parent and its grandparent), so the cost is linear in the
+ * ids.
  */
 const BlockWrapperIdResolveRule = defineImportRule({
   $import: (ctx, el, $next) => {
-    const nodes = $next();
     const waiting = ctx.session.get(PendingWrapperIds);
-    if (waiting === null || waiting.pending.size === 0) {
+    const from = waiting === null ? 0 : waiting.active.length;
+    const nodes = $next();
+    if (waiting === null || waiting.active.length === from) {
       return nodes;
     }
-    const {pending, seen} = waiting;
+    const {pending, active} = waiting;
     const {init} = $getExtensionDependency(BlockIdHTMLExtension);
-    for (const produced of nodes) {
-      if (!$isElementNode(produced)) {
+    let kept = from;
+    for (let k = from; k < active.length; k++) {
+      const entry = active[k];
+      const id = pending.get(entry.key);
+      if (id === undefined) {
         continue;
       }
-      const size = produced.getChildrenSize();
-      if (seen.get(produced.getKey()) === size) {
-        continue;
-      }
-      seen.set(produced.getKey(), size);
-      for (const holder of produced.getChildren()) {
-        if (
-          !$isElementNode(holder) ||
-          holder.getChildrenSize() !== 1 ||
-          $isRootOrShadowRoot(holder) ||
-          !$isBlockForId(holder) ||
-          $getBlockId(holder) !== null
-        ) {
-          continue;
-        }
-        const key = holder.getFirstChildOrThrow().getKey();
-        const id = pending.get(key);
-        if (id !== undefined) {
-          $setState(holder, blockIdState, id);
-          (init as Set<NodeKey>).add(holder.getKey());
-          pending.delete(key);
-        }
+      const node = $getNodeByKey(entry.key);
+      const holder = node === null ? null : node.getParent();
+      if (
+        holder !== null &&
+        holder.getChildrenSize() === 1 &&
+        !$isRootOrShadowRoot(holder) &&
+        $isBlockForId(holder) &&
+        $getBlockId(holder) === null
+      ) {
+        $setState(holder, blockIdState, id);
+        (init as Set<NodeKey>).add(holder.getKey());
+        pending.delete(entry.key);
+      } else if (entry.el === el || entry.el.parentElement === el) {
+        // Its parent, or its grandparent, looks again.
+        active[kept++] = entry;
+      } else {
+        pending.delete(entry.key);
       }
     }
+    active.length = kept;
     return nodes;
   },
   match: sel.any(),
@@ -266,7 +275,7 @@ const $installBlockIdImportOverlay: DOMPreprocessFn = (dom, ctx, $next) => {
     'querySelector' in dom &&
     dom.querySelector(`[${BLOCK_WRAPPER_ID_ATTRIBUTE}]`) !== null;
   if (wrapped) {
-    ctx.session.set(PendingWrapperIds, {pending: new Map(), seen: new Map()});
+    ctx.session.set(PendingWrapperIds, {active: [], pending: new Map()});
   }
   ctx.session.update(ImportOverlays, prev =>
     wrapped

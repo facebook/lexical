@@ -232,3 +232,52 @@ test('an unknown element that hoists the same list again does not make import lo
   expect(counts[1]).toBeLessThan(counts[0] * 3);
   expect(counts[2]).toBeLessThan(counts[1] * 3);
 });
+
+test('wrapper ids inside many unknown elements are looked at a bounded number of times each', () => {
+  const counts: number[] = [];
+  for (const n of [32, 64, 128]) {
+    using editor = buildEditorFromExtensions({
+      $initialEditorState: null,
+      dependencies: [
+        RichTextExtension,
+        ListExtension,
+        BlockIdExtension,
+        BlockIdHTMLExtension,
+      ],
+      name: 'block-wrapper-id-deep',
+      onError: e => {
+        throw e;
+      },
+    });
+    const dom = new DOMParser().parseFromString(
+      '<x-transparent>'.repeat(n) +
+        Array.from(
+          {length: n},
+          (_, i) => `<ul data-block-wrapper-id="w${i}"><li>x</li></ul>`,
+        ).join('') +
+        '</x-transparent>'.repeat(n),
+      'text/html',
+    );
+    let count = 0;
+    editor.update(
+      () => {
+        const original = ElementNode.prototype.getParent;
+        const spy = vi
+          .spyOn(ElementNode.prototype, 'getParent')
+          .mockImplementation(function (this: LexicalNode) {
+            count++;
+            return original.call(this);
+          });
+        try {
+          $getExtensionOutput(DOMImportExtension).$generateNodesFromDOM(dom);
+        } finally {
+          spy.mockRestore();
+        }
+      },
+      {discrete: true},
+    );
+    counts.push(count);
+  }
+  expect(counts[1]).toBeLessThan(counts[0] * 3);
+  expect(counts[2]).toBeLessThan(counts[1] * 3);
+});

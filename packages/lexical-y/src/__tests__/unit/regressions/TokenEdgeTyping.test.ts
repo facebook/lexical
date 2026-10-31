@@ -17,7 +17,7 @@
 // client undoes and redoes making the token (a redo writes the run's format
 // items again, next to the typed text). Not covered: a node that was
 // already a node of its own (an unmergeable or custom text node) made token
-// or segmented text, typed after for one client id order (expected
+// or segmented text, typed after for one client id order (#9653, expected
 // failures).
 
 import {$addMarkID, $getNodeMarkIDs} from '@lexical/mark';
@@ -235,11 +235,11 @@ for (const kind of ['custom', 'unmergeable'] as const) {
         [1, 2],
         [2, 1],
       ]) {
-        // Not covered (see the top): text typed after a node that was
-        // already one of its own lands inside its mode for this order.
+        // #9653: text typed after a node that was already one of its own
+        // lands inside its mode for this order.
         const known = side === 'after' && ids[0] === 2;
         (known ? test.fails : test)(
-          `A makes an existing ${kind} node ${mode} text || B types ${side} it, ids ${ids}`,
+          `A makes an existing ${kind} node ${mode} text || B types ${side} it, ids ${ids}${known ? ' (#9653)' : ''}`,
           async () => {
             const t = await setup(
               () => {

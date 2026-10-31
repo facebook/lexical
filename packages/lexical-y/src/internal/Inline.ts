@@ -1099,6 +1099,38 @@ export function keptStretches(
   composing: boolean,
 ): [number, number, number][] {
   const {prefix, suffix} = keptEnds(a, b, cursor, composing);
+  return withKeptWords(a, b, prefix, suffix, composing);
+}
+
+/**
+ * What text set whole (`setTextContent`, see setTextEnds) keeps of the text
+ * it replaces, as keptStretches gives it for text made again: its common
+ * start and end (setTextEnds, so a caret still places an insertion or a
+ * deletion), and between them every run of whole words a shortest
+ * word-by-word edit script keeps, so that a word a collaborator deletes
+ * between two changed words at the same time stays deleted.
+ */
+export function setTextStretches(
+  a: string,
+  b: string,
+  cursor: number,
+  composing: boolean,
+): [number, number, number][] {
+  const {prefix, suffix} = setTextEnds(a, b, cursor, composing);
+  return withKeptWords(a, b, prefix, suffix, composing);
+}
+
+/**
+ * The common start and end `prefix` and `suffix` of `a` and `b` as ranges
+ * (see keptStretches), with every run of whole words kept between them.
+ */
+function withKeptWords(
+  a: string,
+  b: string,
+  prefix: number,
+  suffix: number,
+  composing: boolean,
+): [number, number, number][] {
   const shift = a.length - b.length;
   const ends: [number, number, number][] = [
     [0, prefix, 0],

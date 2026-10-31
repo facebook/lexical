@@ -1,0 +1,261 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+// @vitest-environment node
+
+// #9666: text set whole with `setTextContent` kept only its common start and
+// end with the old text, so with two or more words changed everything
+// between the first and the last change was written again: a word a
+// collaborator deleted there at the same time came back, and showed twice
+// after the collaborator's undo (#9621's shape, which #9625 fixed for text
+// made again). Set text now keeps every run of unchanged words between its
+// changes too (D29's word diff), recorded or diffed by the writer, and a
+// caret still places a single insertion or deletion (#9641, #9657).
+
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $setSelection,
+  type ElementNode,
+  type TextNode,
+} from 'lexical';
+import {describe, expect, test} from 'vitest';
+
+import {
+  expectConverged,
+  flush,
+  freshReader,
+  type Peer,
+  setup,
+} from '../../utils/harness';
+
+const $line = () => $getRoot().getChildAtIndex(1) as ElementNode;
+const $node = () => $line().getFirstChildOrThrow() as TextNode;
+const lineText = (p: Peer) => p.read(() => $line().getTextContent());
+
+const $splice =
+  (at: number, n: number, insert = '') =>
+  () => {
+    $node().spliceText(at, n, insert, false);
+    $setSelection(null);
+  };
+
+const IDS = [
+  [1, 2],
+  [2, 1],
+];
+const RECORD = [true, false];
+
+const LINE = 't1z t2z t3z t4z t5z t6z t7z';
+
+describe('#9666: a delete between two words setTextContent changes stays deleted', () => {
+  for (const ids of IDS) {
+    for (const record of RECORD) {
+      const how = record ? 'recorded' : 'diffed by the writer';
+      for (const [name, next, sync, undo] of [
+        [
+          'two words changed',
+          't1z n9z t3z t4z t5z t6z n8z',
+          't1z n9z t3z t4z t6z n8z',
+          't1z n9z t3z t4z t5z t6z n8z',
+        ],
+        [
+          'control: one word changed',
+          't1z t2z t3z t4z t5z t6z n8z',
+          't1z t2z t3z t4z t6z n8z',
+          't1z t2z t3z t4z t5z t6z n8z',
+        ],
+        [
+          'three words changed, one removed',
+          'n1z t2z t4z t5z n6z t7z',
+          'n1z t2z t4z n6z t7z',
+          'n1z t2z t4z t5z n6z t7z',
+        ],
+      ] as const) {
+        test(`${name}, ${how} (ids ${ids})`, async () => {
+          const t = await setup(
+            () => {
+              $getRoot().append(
+                $createParagraphNode().append($createTextNode('Title')),
+                $createParagraphNode().append($createTextNode(LINE)),
+              );
+            },
+            {ids},
+          );
+          const recording = t.a.editor._recordTextEdits;
+          try {
+            t.a.editor._recordTextEdits = record;
+            t.offline();
+            t.b.update($splice(LINE.indexOf('t5z') - 1, 4));
+            t.a.update(() => {
+              $node().setTextContent(next);
+              $setSelection(null);
+            });
+            await t.sync();
+            expect(t.peers.map(lineText)).toEqual([sync, sync]);
+            t.b.undo();
+            await t.sync();
+            const fresh = await freshReader(t.a);
+            expect([...t.peers, fresh].map(lineText)).toEqual([
+              undo,
+              undo,
+              undo,
+            ]);
+            await expectConverged(t.peers);
+          } finally {
+            t.a.editor._recordTextEdits = recording;
+          }
+        });
+      }
+    }
+  }
+});
+
+/** A seeded random integer below `n`. */
+function random(seed: number) {
+  let state = seed >>> 0 || 1;
+  return (n: number) => {
+    state ^= state << 13;
+    state ^= state >>> 17;
+    state ^= state << 5;
+    return (state >>> 0) % n;
+  };
+}
+
+const SEEDS = Number(process.env.LEXICAL_Y_SEEDS || 60);
+const EDITS = ['delete', 'type', 'delete then undo'] as const;
+
+// A line set with 2 to 4 word edits (replaced, inserted, removed) while a
+// collaborator edits a word the set keeps: their edit stays, nothing comes
+// back, nothing shows twice, every word the set wrote is whole, and every
+// client and a fresh reader agree.
+describe('#9666: nothing a collaborator deleted comes back, nothing shows twice', () => {
+  for (const record of RECORD) {
+    for (const timing of ['unread', 'concurrent'] as const) {
+      for (const edit of EDITS) {
+        const how = record ? 'recorded' : 'diffed by the writer';
+        test(`${timing}, ${how}: lines set with 2 to 4 word edits ‖ the peer ${edit}s an unchanged word`, async () => {
+          const failures: string[] = [];
+          for (let seed = 1; seed <= SEEDS; seed++) {
+            const rnd = random(
+              seed * 7919 +
+                EDITS.indexOf(edit) * 131 +
+                (timing === 'unread' ? 17 : 0) +
+                (record ? 0 : 29),
+            );
+            const count = 4 + rnd(8);
+            const numbers = new Set<number>();
+            while (numbers.size < count + 4) {
+              numbers.add(100 + rnd(900));
+            }
+            const pool = [...numbers].map(
+              n => `t${n}z${['', '', '', ',', '.'][rnd(5)]}`,
+            );
+            const words = pool.slice(0, count);
+            const fresh = pool.slice(count);
+            const old = words.join(' ');
+            let next = [...words];
+            const edits = 2 + rnd(3);
+            for (let e = 0; e < edits; e++) {
+              const kind = rnd(3);
+              const at = rnd(next.length);
+              if (kind === 0 || next.length < 3) {
+                next[at] = fresh[e];
+              } else if (kind === 1) {
+                next.splice(at, 0, fresh[e]);
+              } else {
+                next.splice(at, 1);
+              }
+            }
+            next = next.filter(Boolean);
+            const unchanged = words.filter(w => next.includes(w));
+            if (unchanged.length === 0) {
+              continue;
+            }
+            const set = next.join(' ');
+            const victim = unchanged[rnd(unchanged.length)];
+            const vAt = old.indexOf(victim);
+            const from = 1 + rnd(3);
+            const len = 1 + rnd(4 - from);
+            const ids = rnd(2) === 0 ? [1, 2] : [2, 1];
+            const t = await setup(
+              () => {
+                $getRoot().append(
+                  $createParagraphNode().append($createTextNode('Title')),
+                  $createParagraphNode().append($createTextNode(old)),
+                );
+              },
+              {ids},
+            );
+            const recording = t.a.editor._recordTextEdits;
+            t.a.editor._recordTextEdits = record;
+            const $set = () => {
+              $node().setTextContent(set);
+              $setSelection(null);
+            };
+            const $peer = edit.startsWith('delete')
+              ? $splice(vAt + from, len)
+              : $splice(vAt + from, 0, 'Q');
+            t.offline();
+            if (timing === 'unread') {
+              t.b.update($peer);
+              t.a.editor.update($set);
+              await t.sync();
+              await flush();
+              await t.sync();
+            } else {
+              t.a.update($set);
+              t.b.update($peer);
+              await t.sync();
+            }
+            if (edit.endsWith('undo')) {
+              t.b.undo();
+              await t.sync();
+            }
+            t.a.editor._recordTextEdits = recording;
+            const reader = await freshReader(t.a);
+            const texts = [...t.peers, reader].map(lineText);
+            const got = texts[0].split(/ +/).filter(Boolean);
+            const problems: string[] = [];
+            if (new Set(texts).size > 1) {
+              problems.push(`diverged ${JSON.stringify(texts)}`);
+            }
+            const dups = got.filter((w, i) => got.indexOf(w) !== i);
+            if (dups.length > 0) {
+              problems.push(`twice: ${dups.join(' ')}`);
+            }
+            const edited =
+              edit === 'delete'
+                ? victim.slice(0, from) + victim.slice(from + len)
+                : edit === 'type'
+                  ? victim.slice(0, from) + 'Q' + victim.slice(from)
+                  : victim;
+            if (!got.includes(edited)) {
+              problems.push(`"${edited}" missing`);
+            }
+            if (edited !== victim && got.includes(victim)) {
+              problems.push(`"${victim}" came back`);
+            }
+            for (const w of next) {
+              if (w !== victim && !got.includes(w)) {
+                problems.push(`"${w}" not whole`);
+              }
+            }
+            if (problems.length > 0) {
+              failures.push(
+                `seed ${seed} ids ${ids} ${JSON.stringify(old)} -> ${JSON.stringify(set)}; ${edit} "${victim}" at ${from}+${len}: ${JSON.stringify(texts[0])}: ${problems.join(', ')}`,
+              );
+            }
+          }
+          expect(failures).toEqual([]);
+        }, 240_000);
+      }
+    }
+  }
+});

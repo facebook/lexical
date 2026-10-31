@@ -45,7 +45,7 @@ import {
   PENDING_LINE_BREAK,
   readAtoms,
   type Run,
-  setTextEnds,
+  setTextStretches,
   snapToWords,
 } from './Inline';
 import {
@@ -3142,19 +3142,29 @@ export class Writer {
           }
         }
       }
-      const {prefix, suffix} = setTextEnds(
+      // What it keeps of the old text (its common start and end, and every
+      // run of unchanged words between them), and the hunksToWrite between.
+      const kept = setTextStretches(
         oldText,
         newText,
         cursor,
         this.state.editor._compositionKey !== null,
       );
-      const del = oldText.length - prefix - suffix;
-      const to = newText.length - suffix;
-      if (del > 0 || to > prefix) {
+      const hunksToWrite: [number, number, string][] = [];
+      let lastA = 0;
+      let lastB = 0;
+      for (const [x0, x1, dx] of kept) {
+        if (x0 + dx > lastA || x0 > lastB) {
+          hunksToWrite.push([lastA, x0 + dx - lastA, newText.slice(lastB, x0)]);
+        }
+        lastA = x1 + dx;
+        lastB = x1;
+      }
+      if (hunksToWrite.length > 0) {
         this.$writeEdits(
           u,
           offset,
-          [[prefix, del, newText.slice(prefix, to)]],
+          hunksToWrite,
           oldText,
           newText,
           $textAttrs(changed, segment),

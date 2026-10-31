@@ -279,6 +279,36 @@ async function run(
   }
 }
 
+// Seeds (of the default range) where main's collapse lets a comment spread
+// over the document's own text when typing and deleting at the same time.
+const MAIN_SPREADS = new Set([53]);
+
+/** The document's own text: the typist's capitals stand for themselves. */
+const own = (v: string[]) =>
+  v.map(c => (/[A-Z]/.test(c.charAt(0)) ? c.charAt(0) : c));
+
+/**
+ * A session typing and deleting at the same time, with and without the
+ * collapse, and the checks that hold whatever the collapse keeps: no
+ * errors, no more writes, the same characters, every peer and a fresh
+ * reader agreeing.
+ */
+async function concurrent(
+  seed: number,
+  ids: number[],
+): Promise<[Session, Session]> {
+  const kept = await run(seed, ids, false, true);
+  const none = await run(seed, ids, false, false);
+  expect(kept.errors).toEqual([]);
+  expect({clocks: kept.clocks, seed}).toEqual({clocks: none.clocks, seed});
+  const chars = (views: string[][]) =>
+    views.map(v => v.map(c => c.charAt(0)).join(''));
+  expect(chars(kept.views)).toEqual(chars(none.views));
+  expect(kept.views[1]).toEqual(kept.views[0]);
+  expect(kept.views[2]).toEqual(kept.views[0]);
+  return [kept, none];
+}
+
 describe('@lexical/y a delete collapsing a run never changes what anyone shows', () => {
   for (const ids of [
     [1, 2],
@@ -298,34 +328,36 @@ describe('@lexical/y a delete collapsing a run never changes what anyone shows',
       }
     }, 600_000);
 
-    test.fails(
-      `typing ‖ deletes: the document's own text shows as with no collapse (ids ${ids})`,
-      async () => {
-        for (let seed = START; seed < START + SEEDS; seed++) {
-          const kept = await run(seed, ids, false, true);
-          const none = await run(seed, ids, false, false);
-          expect(kept.errors).toEqual([]);
-          expect({clocks: kept.clocks, seed}).toEqual({
-            clocks: none.clocks,
-            seed,
-          });
-          // The same characters (the collapse deletes format items only).
-          const chars = (views: string[][]) =>
-            views.map(v => v.map(c => c.charAt(0)).join(''));
-          expect(chars(kept.views)).toEqual(chars(none.views));
-          // Each peer and the fresh reader agree.
-          expect(kept.views[1]).toEqual(kept.views[0]);
-          expect(kept.views[2]).toEqual(kept.views[0]);
-          // The document's own text (lower case, spaces) as with no collapse.
-          const own = (v: string[]) =>
-            v.map(c => (/[A-Z]/.test(c.charAt(0)) ? c.charAt(0) : c));
+    test(`typing ‖ deletes: the document's own text shows as with no collapse (ids ${ids})`, async () => {
+      for (let seed = START; seed < START + SEEDS; seed++) {
+        const [kept, none] = await concurrent(seed, ids);
+        if (!MAIN_SPREADS.has(seed)) {
           expect({seed, view: own(kept.views[0])}).toEqual({
             seed,
             view: own(none.views[0]),
           });
         }
-      },
-      600_000,
-    );
+      }
+    }, 600_000);
+
+    // The sessions where main's collapse deletes the end a typist's restore
+    // relies on, so a comment spreads over the document's own text (#9609):
+    // everything else holds there, and the own text fails until a fix.
+    for (const seed of MAIN_SPREADS) {
+      if (seed < START || seed >= START + SEEDS) {
+        continue;
+      }
+      test.fails(
+        `typing ‖ deletes, seed ${seed}: the document's own text shows as with no collapse (ids ${ids}, #9609)`,
+        async () => {
+          const [kept, none] = await concurrent(seed, ids);
+          expect({seed, view: own(kept.views[0])}).toEqual({
+            seed,
+            view: own(none.views[0]),
+          });
+        },
+        600_000,
+      );
+    }
   }
 });

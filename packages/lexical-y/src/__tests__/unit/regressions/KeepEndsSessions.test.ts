@@ -337,10 +337,12 @@ test.fails(
 );
 
 // Main's collapse dropped c9 from "wxq4xq56abcd" (3645), where a document
-// read without any collapse keeps it. (With every undo press changing what
-// the document shows, the session's last undo now also removes c9.)
+// read without any collapse keeps it. The drop shows only after the
+// session's last undo, so this also flips without a collapse change where
+// that undo takes more steps: with every undo press changing what the
+// document shows (#9630), the undo also removes c9 without a collapse.
 test.fails(
-  'a comment is where a document without any collapse has it (3645)',
+  'a comment is where a document without any collapse has it (3645; also flips with #9630)',
   async () => {
     const t = await replay(session(3645));
     const kept = chars(t.a, 0);

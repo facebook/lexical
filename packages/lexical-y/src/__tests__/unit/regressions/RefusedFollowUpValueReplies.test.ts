@@ -111,7 +111,13 @@ for (const mode of ['nested', 'microtask', 'timer'] as const)
           ),
         );
         await t.sync();
-        await new Promise(r => setTimeout(r, 100));
+        // Until no reply is scheduled for a few turns in a row, however long
+        // each takes (a fixed delay can sample the chain before its fuse).
+        let quiet = 0;
+        for (let turn = 0; turn < 10_000 && quiet < 3; turn++) {
+          await new Promise(resolve => setTimeout(resolve, 0));
+          quiet = jobs === 0 ? quiet + 1 : 0;
+        }
         expect(
           t.a.doc.store.getClock(t.a.doc.clientID),
           'no remote writes',

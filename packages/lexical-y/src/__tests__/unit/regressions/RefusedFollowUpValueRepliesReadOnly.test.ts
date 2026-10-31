@@ -26,6 +26,34 @@ import {expect, test, vi} from 'vitest';
 import {createYDoc} from '../../..';
 import {createBoundEditor, NODES} from '../../utils/harness';
 
+// Replies scheduled (in a microtask or a timer) and not run yet.
+let pending = 0;
+function later(mode: 'microtask' | 'timer', reply: () => void): void {
+  pending++;
+  const task = () => {
+    pending--;
+    reply();
+  };
+  if (mode === 'microtask') {
+    queueMicrotask(task);
+  } else {
+    setTimeout(task, 0);
+  }
+}
+/**
+ * Waits until no reply is scheduled for a few turns of the event loop in a
+ * row, however long each reply takes (a fixed delay can sample a chain of
+ * replies before it reaches its fuse).
+ */
+async function drain(): Promise<void> {
+  let quiet = 0;
+  for (let turn = 0; turn < 10_000 && quiet < 3; turn++) {
+    await new Promise(resolve => setTimeout(resolve, 0));
+    quiet = pending === 0 ? quiet + 1 : 0;
+  }
+  expect(pending, 'every scheduled reply ran').toBe(0);
+}
+
 for (const gc of [false, true])
   for (const mode of ['nested', 'microtask', 'timer'] as const)
     test(`readonly value-sensitive ${mode} gc=${gc}`, async () => {
@@ -97,10 +125,8 @@ for (const gc of [false, true])
         };
         if (mode === 'nested') {
           update();
-        } else if (mode === 'microtask') {
-          queueMicrotask(update);
         } else {
-          setTimeout(update, 0);
+          later(mode, update);
         }
       });
       try {
@@ -117,7 +143,7 @@ for (const gc of [false, true])
           adoc,
           Y.encodeStateAsUpdate(bdoc, Y.encodeStateVector(adoc)),
         );
-        await new Promise(r => setTimeout(r, 100));
+        await drain();
         expect(errors).toEqual([]);
         expect(adoc.store.getClock(adoc.clientID)).toBe(before);
         expect(adoc.store.pendingStructs).toBe(null);

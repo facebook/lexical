@@ -1048,6 +1048,10 @@ function $isInsideLink(node: LexicalNode): boolean {
   return false;
 }
 
+function $isInlineElement(node: LexicalNode | null): boolean {
+  return $isElementNode(node) && node.isInline();
+}
+
 /** Whether `node` is an inline element whose exported text is its children's. */
 function $isTransparentInline(node: LexicalNode | null): node is ElementNode {
   return (
@@ -1080,7 +1084,7 @@ function $nextExportedChar(
       if (!$isTransparentInline(parent)) {
         // Leaving an inline element written in its own syntax leads into
         // text this pass cannot see.
-        return $isElementNode(parent) && parent.isInline() ? UNKNOWN : '';
+        return $isInlineElement(parent) ? UNKNOWN : '';
       }
       current = parent;
       next = current.getNextSibling();
@@ -1123,7 +1127,7 @@ function $nextLeaf(
     const parent = current.getParent();
     if (!$isTransparentInline(parent)) {
       // An inline element written in its own syntax stands for that syntax.
-      return $isElementNode(parent) && parent.isInline() ? parent : null;
+      return $isInlineElement(parent) ? parent : null;
     }
     current = parent;
     next = current.getNextSibling();
@@ -1149,7 +1153,7 @@ function $previousLeaf(
     const parent = current.getParent();
     if (!$isTransparentInline(parent)) {
       // An inline element written in its own syntax stands for that syntax.
-      return $isElementNode(parent) && parent.isInline() ? parent : null;
+      return $isInlineElement(parent) ? parent : null;
     }
     current = parent;
     previous = current.getPreviousSibling();

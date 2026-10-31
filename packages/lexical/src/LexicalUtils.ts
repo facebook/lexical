@@ -254,6 +254,22 @@ export function $isSelectionCapturedInDecoratorInput(
         getEditorPropertyFromDOMNode(activeElement) == null))
   );
 }
+/**
+ * Returns true if an event comes from an input embedded in a node's DOM, read
+ * from its composed target: an `<input>`, a `<textarea>` or a foreign
+ * contentEditable (see {@link $isSelectionCapturedInDecoratorInput}). That is
+ * a decorator's own input, or one in unmanaged DOM that any node renders
+ * beside its children or text, through `createDOM`, a DOM slot or a render
+ * override. The editor's selection is then still the one it had before the
+ * input took the focus, so a copy, cut or paste there belongs to the input: a
+ * `COPY_COMMAND`, `CUT_COMMAND` or `PASTE_COMMAND` handler that acts on the
+ * editor's selection should return false for it.
+ */
+export function $isEventFromEmbeddedInput(event: Event | null): boolean {
+  const target = event === null ? null : getComposedEventTarget(event);
+  return isDOMNode(target) && $isSelectionCapturedInDecoratorInput(target);
+}
+
 /** @deprecated renamed to {@link $isSelectionCapturedInDecoratorInput} by @lexical/eslint-plugin rules-of-lexical */
 export const isSelectionCapturedInDecoratorInput =
   $isSelectionCapturedInDecoratorInput;
@@ -606,6 +622,7 @@ export function $setCompositionKey(compositionKey: null | NodeKey): void {
   const previousCompositionKey = editor._compositionKey;
   if (compositionKey !== previousCompositionKey) {
     editor._compositionKey = compositionKey;
+    editor._compositionMergeHeld = null;
     if (previousCompositionKey !== null) {
       const node = $getNodeByKey(previousCompositionKey);
       if (node !== null) {
@@ -644,20 +661,6 @@ export function $isEmptyCompositionTarget(node: TextNode): boolean {
  * Returns the node with the given key from the active EditorState
  * (or the given EditorState), or null if it does not exist.
  */
-export function $getNodeByKey(
-  key: NodeKey,
-  _editorState?: EditorState,
-): LexicalNode | null;
-/**
- * @deprecated The type parameter is an unchecked and unsafe cast,
- * equivalent to `$getNodeByKey(key) as T | null`, and will be removed
- * in a future release. Call this function without a type argument and
- * narrow the result with a type guard instead.
- */
-export function $getNodeByKey<T extends LexicalNode>(
-  key: NodeKey,
-  _editorState?: EditorState,
-): T | null;
 export function $getNodeByKey(
   key: NodeKey,
   _editorState?: EditorState,
@@ -2157,14 +2160,6 @@ export function errorOnInsertTextNodeOnRoot(
  * Returns the node with the given key from the active EditorState,
  * or throws if it does not exist.
  */
-export function $getNodeByKeyOrThrow(key: NodeKey): LexicalNode;
-/**
- * @deprecated The type parameter is an unchecked and unsafe cast,
- * equivalent to `$getNodeByKeyOrThrow(key) as N`, and will be removed
- * in a future release. Call this function without a type argument and
- * narrow the result with a type guard instead.
- */
-export function $getNodeByKeyOrThrow<N extends LexicalNode>(key: NodeKey): N;
 export function $getNodeByKeyOrThrow(key: NodeKey): LexicalNode {
   const node = $getNodeByKey(key);
   if (node === null) {
@@ -3102,6 +3097,120 @@ export function $getDOMTextNode(
 ): Text | null {
   const slot = $getDOMSlot(node, dom, editor);
   return getDOMTextNode(slot.element);
+}
+
+const cachedSelectedKeys = new WeakMap<LexicalNode[], Set<NodeKey> | null>();
+/**
+ * @internal
+ * Whether the node with `key` is among the nodes of `selection`. When the
+ * selection caches its nodes and is asked more than once, a Set of their keys
+ * is cached with them, so asking this for every node of a large selection
+ * stays linear.
+ */
+export function $isKeyInSelectionNodes(
+  selection: BaseSelection,
+  key: NodeKey,
+): boolean {
+  const nodes = selection.getNodes();
+  if (nodes === selection.getCachedNodes()) {
+    let keys = cachedSelectedKeys.get(nodes);
+    if (keys === null) {
+      keys = new Set(nodes.map(node => node.__key));
+      cachedSelectedKeys.set(nodes, keys);
+    } else if (keys === undefined) {
+      // The first lookup scans, so a node list replaced after a single
+      // lookup (as an update that writes in between does) builds no Set.
+      cachedSelectedKeys.set(nodes, null);
+    }
+    if (keys) {
+      return keys.has(key);
+    }
+  }
+  return nodes.some(node => node.__key === key);
+}
+
+/**
+ * For each element of a committed (frozen) EditorState, whether it holds a
+ * TextNode at any depth, as ElementNode#shouldSerializeTextStyles asks for an
+ * inline element. Without it, serializing inline elements nested inside each
+ * other, each with a textFormat or textStyle, walks the same subtree once per
+ * level. A frozen state never changes, so its entries never go stale.
+ */
+const textInsideCache = new WeakMap<EditorState, Map<NodeKey, boolean>>();
+
+/**
+ * @internal
+ * The cache of $getTextInsideCache's frozen state for the active state, or
+ * null where none is known to hold: a pending state uses the cache of the
+ * committed state it was made from only while no node in it has been marked
+ * dirty (written, created or removed), when it holds exactly that state's
+ * nodes. A copy serializes in such an update.
+ */
+export function $getTextInsideCache(): Map<NodeKey, boolean> | null {
+  let editorState = getActiveEditorState();
+  if (!editorState._readOnly) {
+    const editor = internalGetActiveEditor();
+    if (
+      editor === null ||
+      editor._pendingEditorState !== editorState ||
+      editor._dirtyType !== NO_DIRTY_NODES ||
+      !editor._editorState._readOnly
+    ) {
+      return exportMemo !== null && exportMemo.editorState === editorState
+        ? exportMemo.holds
+        : null;
+    }
+    editorState = editor._editorState;
+  }
+  let cache = textInsideCache.get(editorState);
+  if (cache === undefined) {
+    cache = new Map();
+    textInsideCache.set(editorState, cache);
+  }
+  return cache;
+}
+
+/**
+ * The memo of one export walk in a pending state that has changed (see
+ * INTERNAL_$withExportMemo), or null.
+ */
+let exportMemo: null | {
+  editorState: EditorState;
+  holds: Map<NodeKey, boolean>;
+} = null;
+/** Whether an export walk is running (with or without its memo). */
+let exportWalk = false;
+
+/**
+ * @internal
+ * Run an export walk (EditorState#toJSON, the clipboard's selection export)
+ * with a memo of what $getTextInsideCache would hold, for an update whose
+ * pending state has changed and so has no cache of its own. The memo lives
+ * for the walk alone, which changes no node: a node made writable during the
+ * walk (see internalStopExportMemo) drops it for the rest of the walk, so it
+ * cannot answer for content that has changed.
+ */
+export function INTERNAL_$withExportMemo<T>(f: () => T): T {
+  if (exportWalk) {
+    return f();
+  }
+  const editorState = internalGetActiveEditorState();
+  exportWalk = true;
+  exportMemo =
+    editorState !== null && !editorState._readOnly
+      ? {editorState, holds: new Map()}
+      : null;
+  try {
+    return f();
+  } finally {
+    exportWalk = false;
+    exportMemo = null;
+  }
+}
+
+/** @internal Drop the export walk's memo (see INTERNAL_$withExportMemo). */
+export function internalStopExportMemo(): void {
+  exportMemo = null;
 }
 
 /** @internal */
@@ -5089,11 +5198,61 @@ function buildNodeClassRecord(klass: Klass<LexicalNode>): NodeClassRecord {
     // stores them on every subclass instance, so its clone has to carry them
     // too.
     injectSynthesizedAfterCloneFrom(klass);
+    injectDeclaredIsInline(klass, ownNodeConfig);
   } catch (error) {
     NODE_CLASS_CACHE.delete(klass);
     throw error;
   }
   return record;
+}
+
+function synthesizedIsInlineTrue(): boolean {
+  return true;
+}
+function synthesizedIsInlineFalse(): boolean {
+  return false;
+}
+
+/**
+ * Whether `isInline` (an `isInline` method found on a prototype) was
+ * synthesized from a `$config({inline})` declaration.
+ *
+ * @internal
+ */
+export function isSynthesizedIsInline(isInline: unknown): boolean {
+  return (
+    isInline === synthesizedIsInlineTrue ||
+    isInline === synthesizedIsInlineFalse
+  );
+}
+
+/**
+ * A class that declares `$config({inline})` and does not write its own
+ * `isInline()` gets one returning the declaration, so classes that declare
+ * nothing run exactly the code they ran before (ElementNode.isInline is
+ * unchanged).
+ */
+function injectDeclaredIsInline(
+  klass: Klass<LexicalNode>,
+  ownNodeConfig:
+    | undefined
+    | StaticNodeConfigValue<LexicalNode, string | symbol>,
+): void {
+  if (
+    !ownNodeConfig ||
+    ownNodeConfig.inline === undefined ||
+    !hasOwnKey(klass.prototype as unknown as object, PROTOTYPE_CONFIG_METHOD) ||
+    Object.prototype.hasOwnProperty.call(klass.prototype, 'isInline')
+  ) {
+    return;
+  }
+  Object.defineProperty(klass.prototype, 'isInline', {
+    configurable: true,
+    value: ownNodeConfig.inline
+      ? synthesizedIsInlineTrue
+      : synthesizedIsInlineFalse,
+    writable: true,
+  });
 }
 
 /**

@@ -117,6 +117,114 @@ describe('#9666: a delete between two words setTextContent changes stays deleted
   }
 });
 
+// A line of several text nodes, each set with its first and last words
+// changed, while a collaborator deletes a word of the first: the writer's
+// diff of each changed node keeps its unchanged words (as the record does).
+describe('#9666: several text nodes of a line set at once', () => {
+  for (const n of [2, 4, 16]) {
+    for (const ids of IDS) {
+      for (const record of RECORD) {
+        const how = record ? 'recorded' : 'diffed by the writer';
+        test(`${n} nodes, ${how} (ids ${ids})`, async () => {
+          const old = Array.from(
+            {length: n},
+            (_, i) => `old${i} keep${i} end${i}` + (i < n - 1 ? ' ' : ''),
+          );
+          const next = Array.from(
+            {length: n},
+            (_, i) => `new${i} keep${i} tail${i}` + (i < n - 1 ? ' ' : ''),
+          );
+          const t = await setup(
+            () => {
+              $getRoot().append(
+                $createParagraphNode().append($createTextNode('Title')),
+                $createParagraphNode().append(
+                  ...old.map((text, i) =>
+                    $createTextNode(text).setFormat(i % 2),
+                  ),
+                ),
+              );
+            },
+            {ids},
+          );
+          const recording = t.a.editor._recordTextEdits;
+          try {
+            t.a.editor._recordTextEdits = record;
+            t.offline();
+            t.b.update(() => {
+              const leaf = $line().getFirstChildOrThrow() as TextNode;
+              leaf.spliceText(5, 6, '', false);
+              $setSelection(null);
+            });
+            t.a.update(() => {
+              ($line().getChildren() as TextNode[]).forEach((leaf, i) =>
+                leaf.setTextContent(next[i]),
+              );
+              $setSelection(null);
+            });
+            await t.sync();
+            const want = next.join('').replace('keep0 ', '');
+            const fresh = await freshReader(t.a);
+            expect([...t.peers, fresh].map(lineText)).toEqual([
+              want,
+              want,
+              want,
+            ]);
+            await expectConverged(t.peers);
+          } finally {
+            t.a.editor._recordTextEdits = recording;
+          }
+        });
+      }
+    }
+  }
+});
+
+// A set that also changes the node's format: recorded, it keeps the
+// unchanged words; diffed by the writer, the node is written whole (its
+// attributes and text in one write, which does not diff the text), so the
+// word a collaborator deleted comes back (#9666, open).
+describe("#9666: a set that also changes the node's format", () => {
+  for (const ids of IDS) {
+    for (const record of RECORD) {
+      const how = record ? 'recorded' : 'diffed by the writer';
+      const run = async () => {
+        const t = await setup(
+          () => {
+            $getRoot().append(
+              $createParagraphNode().append($createTextNode('Title')),
+              $createParagraphNode().append($createTextNode(LINE)),
+            );
+          },
+          {ids},
+        );
+        const recording = t.a.editor._recordTextEdits;
+        try {
+          t.a.editor._recordTextEdits = record;
+          t.offline();
+          t.b.update($splice(LINE.indexOf('t5z') - 1, 4));
+          t.a.update(() => {
+            $node().setTextContent('t1z n9z t3z t4z t5z t6z n8z');
+            $node().toggleFormat('bold');
+            $setSelection(null);
+          });
+          await t.sync();
+          const want = 't1z n9z t3z t4z t6z n8z';
+          expect(t.peers.map(lineText)).toEqual([want, want]);
+          await expectConverged(t.peers);
+        } finally {
+          t.a.editor._recordTextEdits = recording;
+        }
+      };
+      if (record) {
+        test(`${how} (ids ${ids})`, run);
+      } else {
+        test.fails(`${how} (ids ${ids}): #9666`, run);
+      }
+    }
+  }
+});
+
 /** A seeded random integer below `n`. */
 function random(seed: number) {
   let state = seed >>> 0 || 1;

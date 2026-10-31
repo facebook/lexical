@@ -3045,8 +3045,9 @@ export class Writer {
     if (before === undefined || !$isElementNode(before)) {
       return false;
     }
-    let changed: TextNode | null = null;
-    let changedBefore: TextNode | null = null;
+    // The changed text nodes, each with its old version and the atom its
+    // old text starts at.
+    const changes: [TextNode, TextNode, number][] = [];
     let offset = 0;
     let a: NodeKey | null = before.__first;
     let b: LexicalNode | null = line.getFirstChild();
@@ -3061,7 +3062,6 @@ export class Writer {
       }
       if (prev !== now) {
         if (
-          changed !== null ||
           !$isTextNode(prev) ||
           !$isTextNode(now) ||
           prev.__type !== now.__type ||
@@ -3074,99 +3074,51 @@ export class Writer {
         ) {
           return false;
         }
-        changed = now;
-        changedBefore = prev;
+        changes.push([now, prev, offset]);
+        offset += prev.__text.length;
       } else {
         // An element child (a link) is the same object when only its
         // children changed: its subtree must be unchanged too.
         if ($isElementNode(now) && !sameSubtree(now, prevMap)) {
           return false;
         }
-        if (changed === null) {
-          offset += $atomSize(now);
-        }
+        offset += $atomSize(now);
       }
       a = prev.__next;
       b = b.getNextSibling();
     }
     if (
-      changed === null ||
-      changedBefore === null ||
-      $runsWithNeighbour(changed)
+      changes.length === 0 ||
+      changes.some(([changed]) => $runsWithNeighbour(changed))
     ) {
       return false;
     }
-    const oldText = changedBefore.__text;
-    const newText = changed.__text;
-    // The node's segment key as stored: one read without a key (a code
-    // highlight a client stored without one) keeps none, or the text
-    // inserted here would be stored, and read, as a node of its own.
-    const segment = isMergeableText(changed)
-      ? null
-      : (this.state.segments.get(changed.getKey()) ?? null);
-    // The edits Lexical recorded, exactly where they were made (see
-    // TextReplay), and as made: a replacement is not widened to whole
-    // words (see snapToWords), which a diff's guess at shared letters
-    // needs, and a record does not. A diff where the record does not
-    // explain the line; the line written whole where the node holds
-    // characters of another.
-    const edits = this.exactEdits(changed, oldText.length);
-    if (edits === false) {
-      return false;
+    // Every node's edits first (nothing is written where one cannot be),
+    // then written from the last node to the first, so that each is written
+    // at its old offset.
+    const writes: [TextNode, number, [number, number, string][]][] = [];
+    for (const [changed, changedBefore, at] of changes) {
+      const edits = this.$textEdits(changed, changedBefore);
+      if (edits === false) {
+        return false;
+      }
+      writes.push([changed, at, edits]);
     }
-    if (edits !== null) {
+    for (let k = writes.length - 1; k >= 0; k--) {
+      const [changed, at, edits] = writes[k];
       if (edits.length > 0) {
+        // The node's segment key as stored: one read without a key (a code
+        // highlight a client stored without one) keeps none, or the text
+        // inserted here would be stored, and read, as a node of its own.
+        const segment = isMergeableText(changed)
+          ? null
+          : (this.state.segments.get(changed.getKey()) ?? null);
         this.$writeEdits(
           u,
-          offset,
+          at,
           edits,
-          oldText,
-          newText,
-          $textAttrs(changed, segment),
-        );
-      }
-    } else {
-      const selection = $getSelection();
-      let cursor = -1;
-      if ($isRangeSelection(selection) && selection.isCollapsed()) {
-        if (selection.anchor.key === changed.getKey()) {
-          cursor = selection.anchor.offset;
-        } else {
-          // A caret right before or after the changed node (in a link
-          // ending there) anchors the diff at that edge.
-          const at = selection.anchor.getNode();
-          if (at.isBefore(changed)) {
-            cursor = 0;
-          } else if (changed.isBefore(at)) {
-            cursor = newText.length;
-          }
-        }
-      }
-      // What it keeps of the old text (its common start and end, and every
-      // run of unchanged words between them), and the hunksToWrite between.
-      const kept = setTextStretches(
-        oldText,
-        newText,
-        cursor,
-        this.state.editor._compositionKey !== null,
-      );
-      const hunksToWrite: [number, number, string][] = [];
-      let lastA = 0;
-      let lastB = 0;
-      for (const [x0, x1, dx] of kept) {
-        if (x0 + dx > lastA || x0 > lastB) {
-          hunksToWrite.push([lastA, x0 + dx - lastA, newText.slice(lastB, x0)]);
-        }
-        lastA = x1 + dx;
-        lastB = x1;
-      }
-      if (hunksToWrite.length > 0) {
-        this.$writeEdits(
-          u,
-          offset,
-          hunksToWrite,
-          oldText,
-          newText,
+          changes[k][1].__text,
+          changed.__text,
           $textAttrs(changed, segment),
         );
       }
@@ -3175,6 +3127,62 @@ export class Writer {
     u.sig = d.sig;
     this.touched.push({d, unit: u});
     return true;
+  }
+
+  /**
+   * The edits that make text node `changed` of its old version
+   * `changedBefore`: as Lexical recorded them, exactly where they were made
+   * (see TextReplay), and as made: a replacement is not widened to whole
+   * words (see snapToWords), which a diff's guess at shared letters needs,
+   * and a record does not. Else a diff (see setTextStretches): its common
+   * start and end, anchored at the caret, and every run of unchanged words
+   * between its changes. False where the node holds characters of another
+   * (the line is written whole).
+   */
+  private $textEdits(
+    changed: TextNode,
+    changedBefore: TextNode,
+  ): [number, number, string][] | false {
+    const oldText = changedBefore.__text;
+    const newText = changed.__text;
+    const edits = this.exactEdits(changed, oldText.length);
+    if (edits !== null) {
+      return edits;
+    }
+    const selection = $getSelection();
+    let cursor = -1;
+    if ($isRangeSelection(selection) && selection.isCollapsed()) {
+      if (selection.anchor.key === changed.getKey()) {
+        cursor = selection.anchor.offset;
+      } else {
+        // A caret right before or after the changed node (in a link
+        // ending there) anchors the diff at that edge.
+        const at = selection.anchor.getNode();
+        if (at.isBefore(changed)) {
+          cursor = 0;
+        } else if (changed.isBefore(at)) {
+          cursor = newText.length;
+        }
+      }
+    }
+    // What it keeps of the old text, and the edits between.
+    const kept = setTextStretches(
+      oldText,
+      newText,
+      cursor,
+      this.state.editor._compositionKey !== null,
+    );
+    const diff: [number, number, string][] = [];
+    let lastA = 0;
+    let lastB = 0;
+    for (const [x0, x1, dx] of kept) {
+      if (x0 + dx > lastA || x0 > lastB) {
+        diff.push([lastA, x0 + dx - lastA, newText.slice(lastB, x0)]);
+      }
+      lastA = x1 + dx;
+      lastB = x1;
+    }
+    return diff;
   }
 
   /**

@@ -55,12 +55,7 @@ import {
 } from 'lexical';
 
 import {$createListNode, $isListNode, type ListType} from './';
-import {
-  $handleIndent,
-  $handleOutdent,
-  mergeLists,
-  updateChildrenListItemValue,
-} from './formatList';
+import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
 import {GENERATED_LISTITEM} from './LexicalListGeneratedJSON';
 import {ListNode} from './LexicalListNode';
 import {$getNewListStart, $isNestedListNode} from './utils';
@@ -201,20 +196,23 @@ export class ListItemNode extends ElementNode {
           // numbering (see updateChildrenListItemValue). It can start or stop
           // wrapping one without its list being written (its nested list's
           // last item removed, a list appended to it while empty), and the
-          // list's own transform, which renumbers, does not run then: where
+          // list's own transform, which renumbers, does not run then. Where
           // the item has started or stopped wrapping a nested list since the
-          // last update, the list renumbers its items. Why: the items after
-          // it kept stale values, and a split there started the next list
-          // from them (#9661).
+          // last update and the item after it has another value than this
+          // item gives it, the list's items are renumbered once (see
+          // $renumberAfterWrapChange). Why: the items after it kept stale
+          // values, and a split there started the next list from them
+          // (#9661).
           const prevMap = $getEditor().getEditorState()._nodeMap;
-          const prev = prevMap.get(node.getKey());
-          if (
-            $isListItemNode(prev) &&
-            $isListNode(
-              prev.__first === null ? null : prevMap.get(prev.__first),
-            ) !== $isListNode(node.getFirstChild())
-          ) {
-            updateChildrenListItemValue(parent);
+          const wraps = $isListNode(node.getFirstChild());
+          if ($wrapChanged(node, prevMap)) {
+            const next = node.getNextSibling();
+            if (
+              $isListItemNode(next) &&
+              next.getValue() !== node.getValue() + (wraps ? 0 : 1)
+            ) {
+              $renumberAfterWrapChange(parent, prevMap);
+            }
           }
         } else if (parent) {
           const newParent = node.createParentElementNode();
@@ -883,6 +881,58 @@ export function $createListItemNode(checked?: boolean): ListItemNode {
  * @param node - The node to be checked.
  * @returns true if the node is a ListItemNode, false otherwise.
  */
+/** Whether `item` started or stopped wrapping a nested list since `prevMap`. */
+function $wrapChanged(
+  item: ListItemNode,
+  prevMap: Map<NodeKey, LexicalNode>,
+): boolean {
+  const prev = prevMap.get(item.getKey());
+  return (
+    $isListItemNode(prev) &&
+    $isListNode(prev.__first === null ? null : prevMap.get(prev.__first)) !==
+      $isListNode(item.getFirstChild())
+  );
+}
+
+/**
+ * Renumbers the items of `list` after the first of them that started or
+ * stopped wrapping a nested list (see ListItemNode's transform), counting on
+ * from that item's value as updateChildrenListItemValue counts. The items
+ * before it and that item keep their values, and so does an item whose value
+ * changed in this update (an app set it), the items after it counting on from
+ * it. Why: an app that keeps a value (a transform that sets it) never
+ * conflicts with this. One pass leaves the list consistent, so the other
+ * changed items of the update find nothing to do: the cost is linear in the
+ * list, however many items changed.
+ */
+function $renumberAfterWrapChange(
+  list: ListNode,
+  prevMap: Map<NodeKey, LexicalNode>,
+): void {
+  let started = false;
+  let value = list.getStart();
+  for (const child of list.getChildren()) {
+    if (!$isListItemNode(child)) {
+      continue;
+    }
+    const current = child.getValue();
+    if (!started) {
+      started = $wrapChanged(child, prevMap);
+      value = current;
+    } else {
+      const prev = prevMap.get(child.getKey());
+      if ($isListItemNode(prev) && prev.__value !== current) {
+        value = current;
+      } else if (current !== value) {
+        child.setValue(value);
+      }
+    }
+    if (!$isListNode(child.getFirstChild())) {
+      value++;
+    }
+  }
+}
+
 export function $isListItemNode(
   node: LexicalNode | null | undefined,
 ): node is ListItemNode {

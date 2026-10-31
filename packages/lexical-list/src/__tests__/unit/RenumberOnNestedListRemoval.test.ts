@@ -234,4 +234,88 @@ describe('registerList renumbers when an item stops or starts wrapping a nested 
       expect(lists(editor)).toEqual([{start: 1, values: [1, 2]}]);
     });
   }
+
+  test('a value an app sets in the same update as the removal stays', () => {
+    const editor = build();
+    indentedFirst(editor, 'number', ['a', 'b']);
+    run(editor, () => {
+      $removeOnlyNestedItem();
+      ($list().getFirstChildOrThrow() as ListItemNode).setValue(7);
+    });
+    // The empty item keeps 7, and "b" counts on from it.
+    expect(lists(editor)).toEqual([{start: 1, values: [7, 8]}]);
+  });
+
+  test('an app transform that keeps a value does not conflict with the renumbering', () => {
+    const editor = build();
+    indentedFirst(editor, 'number', ['a', 'b']);
+    const errors: string[] = [];
+    editor._onError = e => {
+      errors.push(e.message);
+    };
+    const key = editor
+      .getEditorState()
+      .read(() => $list().getFirstChildOrThrow().getKey());
+    const unregister = editor.registerNodeTransform(ListItemNode, node => {
+      if (node.getKey() === key && node.getValue() !== 7) {
+        node.setValue(7);
+      }
+    });
+    run(editor, () => {});
+    run(editor, $removeOnlyNestedItem);
+    unregister();
+    expect(errors).toEqual([]);
+    expect(lists(editor)).toEqual([{start: 1, values: [7, 8]}]);
+  });
+
+  // Many wrappers emptied in one update: one renumbering, whatever order the
+  // items' transforms run in.
+  for (const order of ['first to last', 'last to first'] as const) {
+    test(`removals in many wrappers at once cost linear work (${order})`, () => {
+      const counts: number[] = [];
+      for (const n of [64, 128, 256]) {
+        const editor = build();
+        run(editor, () => {
+          $getRoot().append(
+            $createListNode('number').append(
+              ...Array.from({length: n}, (_, i) =>
+                $createListItemNode().append(
+                  $createListNode('number').append(
+                    $createListItemNode().append($createTextNode(`x${i}`)),
+                  ),
+                ),
+              ),
+            ),
+          );
+        });
+        let reads = 0;
+        const original = ListItemNode.prototype.getValue;
+        ListItemNode.prototype.getValue = function (this: ListItemNode) {
+          reads++;
+          return original.call(this);
+        };
+        try {
+          run(editor, () => {
+            const wrappers = $list().getChildren() as ElementNode[];
+            if (order === 'last to first') {
+              wrappers.reverse();
+            }
+            for (const wrapper of wrappers) {
+              (wrapper.getFirstChildOrThrow() as ElementNode)
+                .getFirstChildOrThrow()
+                .remove();
+            }
+          });
+        } finally {
+          ListItemNode.prototype.getValue = original;
+        }
+        expect(lists(editor)[0].values).toEqual(
+          Array.from({length: n}, (_, i) => i + 1),
+        );
+        counts.push(reads);
+      }
+      expect(counts[0]).toBeGreaterThan(0);
+      expect(counts[2]).toBeLessThan(counts[0] * 4 * 1.5);
+    });
+  }
 });

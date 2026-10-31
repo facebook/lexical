@@ -19,6 +19,7 @@ import {
   $getNodeByKey,
   $isDecoratorNode,
   $isElementNode,
+  $isRootOrShadowRoot,
   $setState,
   configExtension,
   defineExtension,
@@ -59,6 +60,18 @@ export const BLOCK_ID_ATTRIBUTE = 'data-block-id';
  * @experimental
  */
 export const BLOCK_HANDLE_ATTRIBUTE = 'data-block-handle';
+
+/**
+ * The attribute that carries the block id of a block whose own element its
+ * export removes, handing its children to another element: a list item that
+ * only wraps a nested list is exported as that nested list, inside the
+ * previous item's element. The id goes on the first element the block's
+ * element held (the nested list), and import puts it back on the block that
+ * ends up holding only what that element produced (the wrapper item).
+ *
+ * @experimental
+ */
+export const BLOCK_WRAPPER_ID_ATTRIBUTE = 'data-block-wrapper-id';
 
 /** @experimental */
 export interface BlockIdHTMLConfig {
@@ -144,7 +157,75 @@ const BlockIdImportRule = defineImportRule({
   name: '@lexical/html/block-id',
 });
 
-const BlockIdImportOverlay = defineOverlayRules([BlockIdImportRule]);
+/**
+ * The nodes that elements carrying {@link BLOCK_WRAPPER_ID_ATTRIBUTE}
+ * produced in the running import, with that id: the block that ends up
+ * holding one of them alone gets the id (see BlockWrapperIdResolveRule).
+ */
+const pendingWrapperIds = new Map<NodeKey, string>();
+
+const BlockWrapperIdImportRule = defineImportRule({
+  $import: (ctx, el, $next) => {
+    const nodes = $next();
+    const {output} = $getExtensionDependency(BlockIdHTMLExtension);
+    if (!output.import.peek()) {
+      return nodes;
+    }
+    const id = blockIdState.parse(el.getAttribute(BLOCK_WRAPPER_ID_ATTRIBUTE));
+    if (id !== undefined) {
+      for (const node of nodes) {
+        if ($isBlockForId(node)) {
+          pendingWrapperIds.set(node.getKey(), id);
+          break;
+        }
+      }
+    }
+    return nodes;
+  },
+  match: sel.any().attr(BLOCK_WRAPPER_ID_ATTRIBUTE, true),
+  name: '@lexical/html/block-wrapper-id',
+});
+
+/**
+ * After each element's import, while wrapper ids wait: the block that now
+ * holds a waiting node and nothing else (the item the list importer wraps a
+ * nested list in) takes its id, through the same rules as an imported id.
+ */
+const BlockWrapperIdResolveRule = defineImportRule({
+  $import: (ctx, el, $next) => {
+    const nodes = $next();
+    if (pendingWrapperIds.size === 0) {
+      return nodes;
+    }
+    const {init} = $getExtensionDependency(BlockIdHTMLExtension);
+    for (const [key, id] of pendingWrapperIds) {
+      const node = $getNodeByKey(key);
+      const parent = node === null ? null : node.getParent();
+      if (
+        parent !== null &&
+        !$isRootOrShadowRoot(parent) &&
+        $isBlockForId(parent) &&
+        parent.getChildrenSize() === 1 &&
+        $getBlockId(parent) === null
+      ) {
+        $setState(parent, blockIdState, id);
+        (init as Set<NodeKey>).add(parent.getKey());
+        pendingWrapperIds.delete(key);
+      }
+    }
+    return nodes;
+  },
+  match: sel.any(),
+  name: '@lexical/html/block-wrapper-id-resolve',
+});
+
+const BlockIdImportOverlay = defineOverlayRules([
+  BlockIdImportRule,
+  BlockWrapperIdImportRule,
+]);
+const BlockWrapperIdResolveOverlay = defineOverlayRules([
+  BlockWrapperIdResolveRule,
+]);
 
 /**
  * Installs the import rule as a walk-wide overlay, so it wraps whichever rule
@@ -152,8 +233,19 @@ const BlockIdImportOverlay = defineOverlayRules([BlockIdImportRule]);
  * import rules.
  */
 const $installBlockIdImportOverlay: DOMPreprocessFn = (dom, ctx, $next) => {
-  ctx.session.update(ImportOverlays, prev => [...prev, BlockIdImportOverlay]);
+  pendingWrapperIds.clear();
+  // The resolver runs for every element, so only where the HTML carries a
+  // wrapper id.
+  const wrapped =
+    'querySelector' in dom &&
+    dom.querySelector(`[${BLOCK_WRAPPER_ID_ATTRIBUTE}]`) !== null;
+  ctx.session.update(ImportOverlays, prev =>
+    wrapped
+      ? [...prev, BlockIdImportOverlay, BlockWrapperIdResolveOverlay]
+      : [...prev, BlockIdImportOverlay],
+  );
   $next();
+  pendingWrapperIds.clear();
 };
 
 /**
@@ -207,6 +299,33 @@ export const BlockIdHTMLExtension = defineExtension({
                   const id = $getBlockId(node);
                   if (id !== null) {
                     output.element.setAttribute(BLOCK_ID_ATTRIBUTE, id);
+                    const {after} = output;
+                    if (after !== undefined) {
+                      // Where the export removes the block's element and
+                      // hands its children to another element (a list item
+                      // that only wraps a nested list), the id goes on the
+                      // first element it held (BLOCK_WRAPPER_ID_ATTRIBUTE).
+                      return {
+                        ...output,
+                        after(generated) {
+                          const first = isHTMLElement(generated)
+                            ? generated.firstElementChild
+                            : null;
+                          const result = after(generated);
+                          if (
+                            isHTMLElement(generated) &&
+                            generated.parentNode === null &&
+                            result === generated &&
+                            isHTMLElement(first) &&
+                            first.parentNode !== generated &&
+                            first.parentNode !== null
+                          ) {
+                            first.setAttribute(BLOCK_WRAPPER_ID_ATTRIBUTE, id);
+                          }
+                          return result;
+                        },
+                      };
+                    }
                   }
                 }
               }

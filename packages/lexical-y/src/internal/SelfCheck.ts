@@ -108,6 +108,15 @@ function $shownText(writer: Writer, atoms: Atoms): string {
   return out;
 }
 
+/** A block (not inline) whose parent is a shadow root. */
+function $isShadowRootBlock(node: LexicalNode): boolean {
+  if (!($isElementNode(node) || $isDecoratorNode(node)) || node.isInline()) {
+    return false;
+  }
+  const parent = node.getParent();
+  return parent !== null && parent.isShadowRoot();
+}
+
 function hasLiveContent(y: YNode): boolean {
   for (let it = y._start; it !== null; it = it.right) {
     if (!it.deleted && it.countable) {
@@ -204,8 +213,22 @@ export function $checkWrite(writer: Writer): string[] {
       const b = rb < have.runs.length ? have.runs[rb].attrs : {};
       const isBreak = !want.specials.has(i) && want.text.charCodeAt(i) === 10;
       const wrappersOnly = want.specials.has(i) || isBreak;
+      const special = want.specials.get(i);
+      // A wrapper over a block in a shadow root (another writer's run left
+      // open over its blocks): the reader shows the block without it (see
+      // $inShadowRoot), so the editor holds none.
+      const shownBare =
+        special !== undefined &&
+        special.kind === 'inline' &&
+        $isShadowRootBlock(special.node);
       const key =
-        ra + '/' + rb + '/' + (wrappersOnly ? 1 : 0) + (isBreak ? i : '');
+        ra +
+        '/' +
+        rb +
+        '/' +
+        (wrappersOnly ? 1 : 0) +
+        (shownBare ? 'b' : '') +
+        (isBreak ? i : '');
       if (key === lastKey) {
         continue;
       }
@@ -219,18 +242,7 @@ export function $checkWrite(writer: Writer): string[] {
         if (k === SEGMENT_KEY && a[k] === undefined && !wrappersOnly) {
           continue;
         }
-        // A wrapper (a link run another writer left open) over a block in
-        // a shadow root: the reader shows the block without it (see
-        // $inShadowRoot), so the editor holds none.
-        const special = want.specials.get(i);
-        if (
-          k.startsWith(WRAPPER_PREFIX) &&
-          special !== undefined &&
-          special.kind === 'inline' &&
-          ($isElementNode(special.node) || $isDecoratorNode(special.node)) &&
-          !special.node.isInline() &&
-          a[k] === undefined
-        ) {
+        if (shownBare && k.startsWith(WRAPPER_PREFIX) && a[k] === undefined) {
           continue;
         }
         // A wrapper's textFormat/textStyle at a character: Lexical's

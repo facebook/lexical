@@ -16,6 +16,7 @@ import {
   type Node as YNode,
 } from '@y/y';
 import {
+  $copyNode,
   $create,
   $createLineBreakNode,
   $createParagraphNode,
@@ -2658,6 +2659,8 @@ export class Reader {
     const top: LexicalNode[] = [];
     // The item each of `top` was read from first (see $inShadowRoot).
     const topItems: Item[] = [];
+    // The wrappers this read makes from format items (see $inShadowRoot).
+    const formatWrappers = new Set<NodeKey>();
     type Frame = {
       value: WrapperValue;
       node: ElementNode;
@@ -2702,6 +2705,7 @@ export class Reader {
         );
       for (const {w} of missing) {
         const node = this.$wrapperNode(w, wrappersPool);
+        formatWrappers.add(node.getKey());
         if (stack.length > 0) {
           stack[stack.length - 1].children.push(node);
         } else {
@@ -2834,7 +2838,7 @@ export class Reader {
       state.refresh.add(holder.getKey());
     }
     if (el !== null && el.isShadowRoot()) {
-      return $inShadowRoot(top, topItems, shown, this.settler);
+      return $inShadowRoot(top, topItems, shown, this.settler, formatWrappers);
     }
     for (const p of shown) {
       // No longer a paragraph around inline content in a shadow root.
@@ -3501,6 +3505,7 @@ function $inShadowRoot(
   items: Item[],
   shown: ElementNode[],
   settler: BlockIdSettler,
+  formatWrappers: ReadonlySet<NodeKey>,
 ): LexicalNode[] {
   const out: LexicalNode[] = [];
   let run: LexicalNode[] = [];
@@ -3546,17 +3551,13 @@ function $inShadowRoot(
       run = [];
     }
   };
-  const isBlock = (c: LexicalNode) =>
-    ($isElementNode(c) || $isDecoratorNode(c)) && !c.isInline();
   children.forEach((c, i) => {
-    // An inline element around blocks only (a link run another writer left
-    // open over the shadow root's blocks): its blocks, without it.
-    const held =
-      $isElementNode(c) && c.isInline() && c.getChildrenSize() > 0
-        ? c.getChildren()
-        : null;
-    for (const node of held !== null && held.every(isBlock) ? held : [c]) {
-      if (isBlock(node)) {
+    // Inline elements around blocks (a link run another writer left open
+    // over the shadow root's blocks): the blocks, out of them.
+    for (const node of $holdsBlock(c, formatWrappers)
+      ? $splitAroundBlocks(c, formatWrappers)
+      : [c]) {
+      if ($isShownBlock(node)) {
         flush();
         out.push(node);
       } else {
@@ -3570,6 +3571,71 @@ function $inShadowRoot(
   flush();
   for (; k < shown.length; k++) {
     settler.noteInlineRun(shown[k], null);
+  }
+  return out;
+}
+
+function $isShownBlock(node: LexicalNode): boolean {
+  return ($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline();
+}
+
+/**
+ * Whether `node` is a wrapper this read made from format items (a link run,
+ * see Reader#$wrapperNode; never an inline element stored as a node of its
+ * own) that holds a block, at any depth of such wrappers.
+ */
+function $holdsBlock(
+  node: LexicalNode,
+  formatWrappers: ReadonlySet<NodeKey>,
+): node is ElementNode {
+  return (
+    $isElementNode(node) &&
+    formatWrappers.has(node.getKey()) &&
+    node
+      .getChildren()
+      .some(k => $isShownBlock(k) || $holdsBlock(k, formatWrappers))
+  );
+}
+
+/**
+ * A format wrapper that holds blocks (see $holdsBlock), taken apart: the
+ * blocks, in order, and between them the element around the inline content
+ * it holds there (itself around the first such run, a copy around each later
+ * one), at any depth. Why: a shadow root holds blocks only, and a block
+ * inside an inline element is a shape the editor cannot keep (it was read
+ * as `link(paragraph)` in a paragraph of its own, and a delete next to it
+ * rewrote the paragraph: #9571).
+ */
+function $splitAroundBlocks(
+  el: ElementNode,
+  formatWrappers: ReadonlySet<NodeKey>,
+): LexicalNode[] {
+  const out: LexicalNode[] = [];
+  const runs: [ElementNode, LexicalNode[]][] = [];
+  let run: LexicalNode[] | null = null;
+  for (const k of el.getChildren()) {
+    for (const part of $holdsBlock(k, formatWrappers)
+      ? $splitAroundBlocks(k, formatWrappers)
+      : [k]) {
+      if ($isShownBlock(part)) {
+        run = null;
+        out.push(part);
+      } else {
+        if (run === null) {
+          const wrapper = runs.length === 0 ? el : $copyNode(el);
+          run = [];
+          runs.push([wrapper, run]);
+          out.push(wrapper);
+        }
+        run.push(part);
+      }
+    }
+  }
+  if (runs.length === 0 || runs[0][0] !== el) {
+    el.clear();
+  }
+  for (const [wrapper, kids] of runs) {
+    wrapper.splice(0, wrapper.getChildrenSize(), kids);
   }
   return out;
 }

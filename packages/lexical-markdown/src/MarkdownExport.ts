@@ -732,12 +732,14 @@ function isLinkCharacter(character: string): boolean {
 }
 // A URL or `www.` host in a run of link characters: GFM links `http://`,
 // `https://` (and cmark-gfm `ftp://`) after anything but a letter, and starts
-// `www.` after `_` too.
+// `www.` after `_` too, each only with a host after it, and `mailto:` or
+// `xmpp:` only with an address.
 const LINK_URL =
-  /(?:^|[^a-z])(?:https?|ftp):\/\/|(?:^|[^a-z\d.-])www\.|(?:^|[^a-z\d.+-])(?:mailto|xmpp):/i;
+  /(?:^|[^a-z])(?:https?|ftp):\/\/(?=[\p{L}\p{N}_-])|(?:^|[^a-z\d.-])www\.(?=[\p{L}\p{N}_-])|(?:^|[^a-z\d.+-])(?:mailto|xmpp):(?=[\w.+-]+@)/iu;
 // A URL scheme anywhere: a reference for the letter before it would put the
-// `;` there, after which a URL starts (`www.` and `mailto:` need more).
-const URL_START = /(?:https?|ftp):\/\//gi;
+// `;` there, after which a URL starts (`www.` needs whitespace or `*_~(`).
+const URL_START =
+  /(?:https?|ftp):\/\/(?=[\p{L}\p{N}_-])|(?:mailto|xmpp):(?=[\w.+-]+@)/giu;
 // Characters an email can hold (word characters, `.+@-`, and the backslash
 // that escapes one), and what makes one: GFM needs a dot in its domain.
 const ADDRESS_CHARACTER = /[\w.+@\\-]/;

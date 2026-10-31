@@ -85,31 +85,19 @@ export function importTextTransformers(
   // with what was found in the whole text, which still holds for the rest of
   // it as long as no match there reached into what came before.
   const deferred: Deferred[] = [];
-  let rest: TextRest | null = [textNode, before, after, null];
+  let rest: TextRest | null = {after, before, node: textNode, scan: null};
   while (rest !== null) {
     rest = importOutermost(
-      rest[0],
+      rest,
       textFormatTransformersIndex,
       textMatchTransformers,
-      rest[1],
-      rest[2],
-      rest[3],
       deferred,
     );
   }
   for (let i = deferred.length - 1; i >= 0; i--) {
     const {outside, inside, matched} = deferred[i];
-    for (const part of [outside, inside]) {
-      if (canContainTransformableMarkdown(part.node)) {
-        importTextTransformers(
-          part.node,
-          textFormatTransformersIndex,
-          textMatchTransformers,
-          part.before,
-          part.after,
-        );
-      }
-    }
+    importTextPart(outside, textFormatTransformersIndex, textMatchTransformers);
+    importTextPart(inside, textFormatTransformersIndex, textMatchTransformers);
     if (
       !canContainTransformableMarkdown(inside.node) &&
       canContainTransformableMarkdown(matched) &&
@@ -129,6 +117,22 @@ interface TextPart {
   node: LexicalNode | undefined;
   before: string | undefined;
   after: string | undefined;
+}
+
+function importTextPart(
+  {node, before, after}: TextPart,
+  textFormatTransformersIndex: TextFormatTransformersIndex,
+  textMatchTransformers: TextMatchTransformer[],
+) {
+  if (canContainTransformableMarkdown(node)) {
+    importTextTransformers(
+      node,
+      textFormatTransformersIndex,
+      textMatchTransformers,
+      before,
+      after,
+    );
+  }
 }
 
 /**
@@ -152,12 +156,13 @@ interface TextScan {
   rest: string;
 }
 
-type TextRest = [
-  textNode: TextNode,
-  before: string | undefined,
-  after: string | undefined,
-  scan: TextScan | null,
-];
+/** The text after a match, and the scan of the text it was cut from. */
+interface TextRest {
+  node: TextNode;
+  before: string | undefined;
+  after: string | undefined;
+  scan: TextScan | null;
+}
 
 /**
  * Applies the outermost transformer in `textNode`, adds the import of the
@@ -165,12 +170,9 @@ type TextRest = [
  * it, for the caller to import next.
  */
 function importOutermost(
-  textNode: TextNode,
+  {node: textNode, before, after, scan: previousScan}: TextRest,
   textFormatTransformersIndex: TextFormatTransformersIndex,
   textMatchTransformers: TextMatchTransformer[],
-  before: string | undefined,
-  after: string | undefined,
-  previousScan: TextScan | null,
   deferred: Deferred[],
 ): TextRest | null {
   const text = textNode.getTextContent();
@@ -241,23 +243,24 @@ function importOutermost(
 
   // Defers the import of the text before a match from `startIndex` to
   // `endIndex` and of the text `inside` it (or the escapes of `matched`),
-  // and returns the text after it, `textAfter`, each with what lies beyond
-  // the run cut at its edge.
+  // and returns the text after it, each with what lies beyond the run cut at
+  // its edge. A text match's transformer has run, and when it changed the
+  // text after it, that text is imported on its own, as before it was cut
+  // from the line; `textAfter` is what that text was before, and `null` for
+  // a format match.
   const importAround = (
     {
       nodeBefore,
       nodeAfter,
-      textAfter,
     }: {
       nodeBefore: LexicalNode | undefined;
       nodeAfter: LexicalNode | undefined;
-      textAfter: string | undefined;
     },
+    textAfter: string | null | undefined,
     startIndex: number,
     endIndex: number,
     inside: TextPart,
     matched: LexicalNode | undefined,
-    isFormat: boolean,
   ): TextRest | null => {
     deferred.push({
       inside,
@@ -268,24 +271,25 @@ function importOutermost(
         node: nodeBefore,
       },
     });
-    if (
-      !canContainTransformableMarkdown(nodeAfter) ||
-      textAfter === undefined
-    ) {
+    if (!canContainTransformableMarkdown(nodeAfter)) {
       return null;
+    }
+    const rest = nodeAfter.getTextContent();
+    if (textAfter !== null && textAfter !== rest) {
+      return {after: undefined, before: undefined, node: nodeAfter, scan: null};
     }
     const isReusable = advanceFormatScan(
       formats,
       formats.offset + endIndex,
-      isFormat,
+      textAfter === null,
     );
-    scan.rest = textAfter;
-    return [
-      nodeAfter,
-      characterBeyondRun(text, endIndex, -1, before),
+    scan.rest = rest;
+    return {
       after,
-      isReusable ? scan : null,
-    ];
+      before: characterBeyondRun(text, endIndex, -1, before),
+      node: nodeAfter,
+      scan: isReusable ? scan : null,
+    };
   };
 
   if (foundTextFormat) {
@@ -301,10 +305,8 @@ function importOutermost(
     // A code span's fence is not its tag's length, and its content is not
     // read for emphasis against what lies outside it.
     return importAround(
-      {
-        ...result,
-        textAfter: result.nodeAfter && result.nodeAfter.getTextContent(),
-      },
+      result,
+      null,
       startIndex,
       endIndex,
       {
@@ -317,7 +319,6 @@ function importOutermost(
         node: result.transformedNode,
       },
       undefined,
-      true,
     );
   } else if (foundTextMatch) {
     const result = importFoundTextMatchTransformer(
@@ -332,11 +333,11 @@ function importOutermost(
     }
     return importAround(
       result,
+      result.textAfter,
       foundTextMatch.startIndex,
       foundTextMatch.endIndex,
       {after: undefined, before: undefined, node: result.transformedNode},
       result.transformedNode === undefined ? result.matchedNode : undefined,
-      false,
     );
   }
 

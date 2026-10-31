@@ -12,6 +12,26 @@ import {getLinkLabelOpener, LINK} from './MarkdownTransformers';
 import {isEscaped} from './utils';
 
 /**
+ * A copy of `match` for `text`, which is what is left of the text it was
+ * found in after `distance` characters. The link syntax has no named groups.
+ */
+function moveMatch(
+  match: RegExpExecArray,
+  text: string,
+  distance: number,
+): RegExpExecArray {
+  const moved = [...match] as RegExpExecArray;
+  moved.index = match.index - distance;
+  moved.input = text;
+  if (match.indices) {
+    moved.indices = match.indices.map(
+      range => range && [range[0] - distance, range[1] - distance],
+    ) as RegExpIndicesArray;
+  }
+  return moved;
+}
+
+/**
  * The first link match in `text`, and where the search found it, which is
  * before the match when its label holds the real opener.
  */
@@ -31,19 +51,13 @@ function matchLink(
     const opener = getLinkLabelOpener(match[1]);
     if (opener !== null && opener >= 0) {
       const cut = opener + 1;
-      const inner = [...match] as RegExpExecArray;
+      const inner = moveMatch(match, text, 0);
       inner[0] = match[0].slice(cut);
       inner[1] = match[1].slice(cut);
-      inner.index = match.index + cut;
-      inner.input = text;
-      const {indices} = match;
-      const whole = indices && indices[0];
-      const label = indices && indices[1];
-      if (indices && whole && label) {
-        const moved = [...indices] as RegExpIndicesArray;
-        moved[0] = [inner.index, whole[1]];
-        moved[1] = [label[0] + cut, label[1]];
-        inner.indices = moved;
+      inner.index += cut;
+      if (inner.indices && inner.indices[0] && inner.indices[1]) {
+        inner.indices[0][0] += cut;
+        inner.indices[1][0] += cut;
       }
       return [inner, match.index];
     }
@@ -66,33 +80,6 @@ export type LinkMatches = Map<
   TextMatchTransformer,
   {found: number; match: RegExpExecArray; offset: number} | null
 >;
-
-/** `match`, for the text `distance` characters further on. */
-function moveMatch(
-  match: RegExpExecArray,
-  text: string,
-  distance: number,
-): RegExpExecArray {
-  const moved = [...match] as RegExpExecArray;
-  moved.index = match.index - distance;
-  moved.input = text;
-  moved.groups = match.groups;
-  const {indices} = match;
-  if (indices) {
-    const move = (range: [number, number] | undefined) =>
-      range && ([range[0] - distance, range[1] - distance] as [number, number]);
-    const movedIndices = indices.map(move) as RegExpIndicesArray;
-    if (indices.groups) {
-      const groups: Record<string, [number, number] | undefined> = {};
-      for (const name in indices.groups) {
-        groups[name] = move(indices.groups[name]);
-      }
-      movedIndices.groups = groups as RegExpIndicesArray['groups'];
-    }
-    moved.indices = movedIndices;
-  }
-  return moved;
-}
 
 export function findOutermostTextMatchTransformer(
   textNode_: TextNode,

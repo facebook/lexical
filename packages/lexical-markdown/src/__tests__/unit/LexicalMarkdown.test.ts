@@ -5372,6 +5372,21 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       ],
       '**\u6ce8\u610f\uff1a**&#35831;\u5148\u767b\u5f55',
     ],
+    // A scheme or `mailto:` with no host or address after it starts no URL.
+    [
+      [
+        ['\u4f60.w mailto:', TEXT_TYPE_TO_FORMAT.italic],
+        ['1', TEXT_TYPE_TO_FORMAT.bold],
+      ],
+      '*\u4f60.w mailto:***&#49;**',
+    ],
+    [
+      [
+        [':http://', TEXT_TYPE_TO_FORMAT.bold],
+        ['\u4f60', TEXT_TYPE_TO_FORMAT.italic],
+      ],
+      '**:http://***&#20320;*',
+    ],
   ])('exports %j so that both importers read it back', (runs, markdown) => {
     const $runs = () =>
       $getRoot()
@@ -5582,6 +5597,14 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       ],
       '**.**ahttp://x.co',
     ],
+    [
+      'the letter before `mailto:`, which cmark-gfm would then link',
+      [
+        ['.', TEXT_TYPE_TO_FORMAT.bold],
+        ['bmailto:a@b.co', 0],
+      ],
+      '**.**bmailto:a@b.co',
+    ],
   ])('writes no reference inside %s', (_name, runs, markdown) => {
     const editor = createTestEditor();
     editor.update(
@@ -5669,9 +5692,9 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     },
   );
 
-  // A `;` before them starts no URL: `www.` needs whitespace or `*_~(` before
-  // it, and readers ignore what comes before `mailto:`.
-  it.each(['bwww.x.co', 'bmailto:a@b.co'])(
+  // A `;` before it starts no URL: `www.` needs whitespace or `*_~(` before
+  // it.
+  it.each(['bwww.x.co'])(
     'writes a reference before %j, which readers do not autolink',
     text => {
       const editor = createTestEditor();
@@ -5709,6 +5732,40 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     editor.update(
       () =>
         $convertFromMarkdownString('@bob *a* *b*', [MENTION, ...TRANSFORMERS]),
+      {discrete: true},
+    );
+    expect(
+      editor.read('latest', () =>
+        $getRoot()
+          .getAllTextNodes()
+          .map(node => [node.getTextContent(), node.getFormat()]),
+      ),
+    ).toEqual([
+      ['@bob', TEXT_TYPE_TO_FORMAT.code],
+      ['a', TEXT_TYPE_TO_FORMAT.italic],
+      [' ', 0],
+      ['b', TEXT_TYPE_TO_FORMAT.italic],
+    ]);
+  });
+
+  it('reads the text after a match on its own when its transformer changes it', () => {
+    const MENTION: TextMatchTransformer = {
+      dependencies: [],
+      importRegExp: /@(\w+)/,
+      regExp: /@(\w+)$/,
+      replace: textNode => {
+        const next = textNode.getNextSibling();
+        if ($isTextNode(next)) {
+          next.setTextContent(next.getTextContent().trimStart());
+        }
+        textNode.toggleFormat('code');
+      },
+      type: 'text-match',
+    };
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $convertFromMarkdownString('@bob _a_ _b_', [MENTION, ...TRANSFORMERS]),
       {discrete: true},
     );
     expect(

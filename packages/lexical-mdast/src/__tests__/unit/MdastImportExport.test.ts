@@ -653,6 +653,56 @@ describe('@lexical/mdast import/export', () => {
     expect(parses).toBe(editedExportParses);
   });
 
+  it('reuses literal validation across subtree and selection exports', () => {
+    let parses = 0;
+    using editor = buildEditorFromExtensions(
+      MdastCommonMarkExtension,
+      MdastAutolinkLiteralExtension,
+      configExtension(MdastExtension, {
+        mdastExtensions: [
+          {
+            transforms: [
+              () => {
+                parses++;
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    const markdown = 'https://one.example\n\nhttps://two.example';
+    editor.update(() => $convertFromMarkdownString(markdown), {
+      discrete: true,
+    });
+    parses = 0;
+    editor.read(() => {
+      const first = $assertNodeType(
+        $getRoot().getFirstChildOrThrow(),
+        $isElementNode,
+      );
+      const last = $assertNodeType(
+        $getRoot().getLastChildOrThrow(),
+        $isElementNode,
+      );
+      expect($convertToMarkdownString(first)).toBe('https://one.example');
+      expect($convertToMarkdownString(last)).toBe('https://two.example');
+      const warmedParses = parses;
+      expect($convertToMarkdownString(first)).toBe('https://one.example');
+      expect($convertToMarkdownString(last)).toBe('https://two.example');
+      expect($convertToMarkdownString()).toBe(markdown);
+      expect(parses).toBe(warmedParses);
+    });
+    editor.update(() => $getRoot().getAllTextNodes()[0].select(0), {
+      discrete: true,
+    });
+    const warmedParses = parses;
+    expect(editor.read(() => $convertSelectionToMarkdownString())).toBe(
+      'https://one.example',
+    );
+    expect(editor.read(() => $convertToMarkdownString())).toBe(markdown);
+    expect(parses).toBe(warmedParses);
+  });
+
   it('keeps edits to imported autolink literals', () => {
     using editor = buildEditorFromExtensions(
       MdastCommonMarkExtension,

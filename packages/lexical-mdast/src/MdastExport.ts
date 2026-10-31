@@ -206,6 +206,7 @@ const syntaxToMarkdown = (
       ) {
         // Preserve the bare form only while it still parses as the same link.
         // Edits to its destination, label or formatting need resource syntax.
+        // Neighbouring text can still change how the bare form re-parses.
         const text = node.children[0].value;
         if (getLiteralUrl(text) === node.url) {
           return text;
@@ -656,7 +657,7 @@ export function createMdastExport(compiled: CompiledMdast): {
   // The unfiltered exporter has no per-call state and is shared by every
   // whole-document export; selection exports build a fresh one per call.
   const documentExporter = createNodeExporter(compiled);
-  let literalUrls = new Map<string, string | null>();
+  const literalUrls = new Map<string, string | null>();
 
   const $toMdast = (
     root: ElementNode,
@@ -669,13 +670,8 @@ export function createMdastExport(compiled: CompiledMdast): {
   });
 
   const $serialize = (tree: Root, root: ElementNode): string => {
-    const previousLiteralUrls = literalUrls;
-    const nextLiteralUrls = new Map<string, string | null>();
     const getLiteralUrl = (text: string): string | null => {
-      let url = nextLiteralUrls.get(text);
-      if (url === undefined) {
-        url = previousLiteralUrls.get(text);
-      }
+      let url = literalUrls.get(text);
       if (url === undefined) {
         const parsed = fromMarkdown(text, {
           extensions: compiled.micromarkExtensions,
@@ -694,8 +690,11 @@ export function createMdastExport(compiled: CompiledMdast): {
           mdastToString(literal) === text
             ? literal.url
             : null;
+        literalUrls.set(text, url);
+        if (literalUrls.size > 1000) {
+          literalUrls.delete(literalUrls.keys().next().value!);
+        }
       }
-      nextLiteralUrls.set(text, url);
       return url;
     };
     // Emphasis/strong delimiters are document-level: `_` when one was
@@ -719,7 +718,6 @@ export function createMdastExport(compiled: CompiledMdast): {
         syntaxToMarkdown(getLiteralUrl, collectHardBreaks(tree)),
       ],
     });
-    literalUrls = nextLiteralUrls;
     // toMarkdown always appends a trailing newline; drop it so callers get the
     // same shape as `@lexical/markdown`'s `$convertToMarkdownString`.
     return out.replace(/\n$/, '');

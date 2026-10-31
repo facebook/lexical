@@ -834,8 +834,10 @@ person's:
   (and a change the browser makes to the DOM text, as an IME composition
   does) keeps the start and end its text shares with the node's old text,
   anchored at the caret, which cannot tell where an edit next to equal text
-  was made without one. Without a caret, an insertion or a deletion found
-  that way stays where the diff puts it if both its ends are at word edges;
+  was made without one. Without a caret that places it (none, or one at
+  the end of the node, past the edit or in a later node), an insertion or
+  a deletion found that way stays where the diff puts it if both its ends
+  are at word edges;
   where that is inside a word, it goes to the first place where both are,
   so it changes no word it does not add or remove (`t1z t2z t3z` set to
   `t1z t3z` deletes ` t2z`, not `2z t`, and a collaborator's concurrent

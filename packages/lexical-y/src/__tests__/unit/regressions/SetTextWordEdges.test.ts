@@ -223,12 +223,25 @@ describe('#9636: a caret past the edit', () => {
       suffix: 4,
     });
   });
+  // A caret in the run, the furthest place included, still places it.
+  for (const [a, b, cursor, want] of [
+    ['t1z t2z t3z', 't1z t3z', 5, {prefix: 5, suffix: 2}],
+    ['ab ab', 'ab abz ab', 9, {prefix: 5, suffix: 0}],
+  ] as const) {
+    test(`a caret in the run places it: ${JSON.stringify(a)} set to ${JSON.stringify(b)} with the caret at ${cursor}`, () => {
+      expect(setTextEnds(a, b, cursor, false)).toEqual(want);
+    });
+  }
   for (const ids of IDS) {
     for (const record of [true, false]) {
       const how = record ? 'recorded' : 'diffed by the writer';
-      for (const [peer, want] of [
-        ['deletes t2z', 't1z t3z'],
-        ['types " q9z" after t2z', 't1z q9z t3z'],
+      // Typed right before `t2z`, the peer's word is glued to the word
+      // before it, as y.md documents for a set without a caret (it was
+      // `t1z q9z t3z` while a caret at the end pinned the diff).
+      for (const [peer, splice, want] of [
+        ['deletes t2z', [4, 3, ''], 't1z t3z'],
+        ['types " q9z" after t2z', [7, 0, ' q9z'], 't1z q9z t3z'],
+        ['types "q9z " before t2z', [4, 0, 'q9z '], 't1zq9z  t3z'],
       ] as const) {
         for (const caret of ['at the end', 'in the next node'] as const) {
           test(`set with the caret ${caret} ‖ the peer ${peer}, ${how} (ids ${ids})`, async () => {
@@ -256,11 +269,7 @@ describe('#9636: a caret past the edit', () => {
                   ($node().getNextSibling() as TextNode).select(1, 1);
                 }
               });
-              t.b.update(
-                peer === 'deletes t2z'
-                  ? $splice(4, 3, '')
-                  : $splice(7, 0, ' q9z'),
-              );
+              t.b.update($splice(splice[0], splice[1], splice[2]));
               await t.sync();
               const end = caret === 'in the next node' ? '!' : '';
               const fresh = await freshReader(t.a);

@@ -771,9 +771,9 @@ function placeAtWordEdge(
  * Whether the caret at `cursor` of `b` placed the insertion or deletion that
  * makes `b` of `a`: it anchors the diff (caretAnchors) and its bound is in
  * the run of equal text the edit could be in, the furthest place included.
- * A caret at the end of the node or past the edit (and the end of the node,
- * which the writer passes for a caret in a later node) anchors every place
- * of the run and places nothing.
+ * A caret past the furthest place (at the end of the node or past the edit,
+ * and the end of the node, which the writer passes for a caret in a later
+ * node) anchors every place of the run and places nothing.
  */
 function caretPlaces(a: string, b: string, cursor: number): boolean {
   return (

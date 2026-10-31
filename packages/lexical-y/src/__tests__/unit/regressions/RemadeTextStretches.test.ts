@@ -248,6 +248,44 @@ describe('#9621: unchanged words of other shapes between two changes keep a dele
   }
 });
 
+// A word changed in part is written whole (an insertion between two of its
+// letters, #9598), so a collaborator's delete of its unchanged part, undone,
+// comes back next to the new word: #9635, as two clients removing the same
+// text and both undoing (D50). Separate words keep theirs.
+describe('#9635: an undone delete of part of a word changed in part', () => {
+  for (const ids of IDS) {
+    for (const [name, line, made, glued] of [
+      ['glued word', 'aa bbcc dd', 'aa bb xxcc dd', true],
+      ['separate words', 'aa bb cc dd', 'aa bb xx cc dd', false],
+    ] as [string, string, string, boolean][]) {
+      (glued ? test.fails : test)(
+        `${name}: "${line}" made again as "${made}" ‖ the peer deletes "aa bb" and undoes (ids ${ids})${glued ? ': bb shows twice (#9635)' : ''}`,
+        async () => {
+          const t = await setup(
+            () => {
+              $getRoot().append(
+                $createParagraphNode().append($createTextNode('Title')),
+                $createParagraphNode().append($createTextNode(line)),
+              );
+            },
+            {ids},
+          );
+          t.offline();
+          t.a.update($remake([[line.slice(3), made.slice(3)]]));
+          t.b.update($splice(0, 5));
+          t.b.undo();
+          await t.sync();
+          const fresh = await freshReader(t.a);
+          expect([...t.peers, fresh].map(lineText)).toEqual(
+            [...t.peers, fresh].map(() => made),
+          );
+          await expectConverged(t.peers);
+        },
+      );
+    }
+  }
+});
+
 /** A seeded random integer below `n`. */
 function random(seed: number): (n: number) => number {
   let s = seed >>> 0;
@@ -483,14 +521,15 @@ describe('#9621: nothing a collaborator deleted comes back, nothing shows twice'
   }
 });
 
-// Past the bound on one shortest edit script (more than 64 words replaced,
-// each a delete and an insert), the words found once in both texts anchor
-// the diff, and between them, or where there are none, every word in both
-// texts, paired by occurrence: a collaborator's concurrent edit of an
-// unchanged word is kept as below the bound, also when that word repeats
-// all along the line.
-describe('#9621: an edit between more changed words than one edit script covers', () => {
-  const LINES: [string, (n: number) => [string[], string[], number]][] = [
+// Many changed words (64 to 200 replaced, each a delete and an insert), in
+// lines of distinct words and of repeated ones, an earlier occurrence of a
+// repeated word removed included: the exact diff keeps every unchanged word,
+// so a collaborator's concurrent edit of one is kept.
+describe('#9621: an edit between many changed words', () => {
+  const LINES: [
+    string,
+    (n: number) => [string[], string[], number, number?],
+  ][] = [
     [
       'distinct words',
       n => {
@@ -519,6 +558,21 @@ describe('#9621: an edit between more changed words than one edit script covers'
       ],
     ],
     [
+      'repeated words, an earlier occurrence of one removed',
+      n => {
+        const oldWords = [
+          's1z',
+          ...Array.from({length: n}, () => ['o1z', 'aa', 'bb']).flat(),
+          'e1z',
+        ];
+        const newWords = oldWords.map(w =>
+          w === 'o1z' ? 'n1z' : w === 's1z' ? 's2z' : w === 'e1z' ? 'e2z' : w,
+        );
+        newWords.splice(2, 1);
+        return [oldWords, newWords, 3, 2];
+      },
+    ],
+    [
       'a word repeated between them and one unique word',
       n => {
         const gapA = Array.from({length: n}, () => ['o1z', 'echo']).flat();
@@ -541,12 +595,12 @@ describe('#9621: an edit between more changed words than one edit script covers'
           'bold',
         ] as const) {
           test(`${shape}, ${changes} replaced ‖ the peer ${edit}s an unchanged word (ids ${ids})`, async () => {
-            const [oldWords, newWords, v] = make(changes);
+            const [oldWords, newWords, v, newV = v] = make(changes);
             const old = oldWords.join(' ');
             const next = newWords.join(' ');
             const victim = oldWords[v];
             const at = oldWords.slice(0, v).join(' ').length + 1;
-            const nextAt = newWords.slice(0, v).join(' ').length + 1;
+            const nextAt = newWords.slice(0, newV).join(' ').length + 1;
             const t = await setup(
               () => {
                 $getRoot().append(
@@ -612,8 +666,8 @@ describe('#9621: an edit between more changed words than one edit script covers'
 
 // The diff of a remade line stays linear in the line's length: two changes
 // at its ends (the whole line between them diffed), a change every fourth
-// word (past one edit script's bound, where unique words anchor it), a
-// word repeated between every two changed words (paired by occurrence), and
+// word, a word repeated between every two changed words, every word moved
+// (past the exact diff's bound, where only the start and end are kept), and
 // the white space between every two words changed in a line of one
 // alternately formatted node per word (a kept run per word, a node per run).
 describe('#9621: a long remade line stays linear', () => {
@@ -682,6 +736,12 @@ describe('#9621: a long remade line stays linear', () => {
         words.map((_, i) => (i % 2 ? 'echo' : 'n1z')).join(' '),
     ],
     [
+      'every word moved (made again in reverse, past the exact bound)',
+      (words: string[]) => [$createTextNode(words.join(' '))],
+      (words: string[]) => [$createTextNode([...words].reverse().join(' '))],
+      (words: string[]) => [...words].reverse().join(' '),
+    ],
+    [
       'the white space between every two words, one node per word',
       perWord(' '),
       perWord('  '),
@@ -703,8 +763,10 @@ describe('#9621: a long remade line stays linear', () => {
 });
 
 // What a remade line keeps, checked against an independent longest common
-// subsequence: below the bound, as many words as the longest common run of
-// words; above it, still runs of equal text in order in both texts.
+// subsequence: as many words as the longest common run of words, for lines
+// of any length up to the exact diff's bound of 2,048 edits among the words
+// both texts have; past it (a line made again in reverse), only its common
+// start and end, still runs of equal text in order in both texts.
 describe('#9621: the kept words of a remade line', () => {
   const lcs = (a: string[], b: string[]) => {
     let row = Array<number>(b.length + 1).fill(0);
@@ -734,27 +796,32 @@ describe('#9621: the kept words of a remade line', () => {
     }
     return n;
   };
-  test('below the bound: a longest common run of words', () => {
+  test('a longest common run of words, with repeated words, short and long lines', () => {
     const rnd = random(9621);
-    for (let k = 0; k < 2000; k++) {
-      const words = (n: number) =>
-        Array.from({length: 1 + rnd(n)}, () => `w${rnd(6)}z`);
-      const a = words(40);
-      const b = words(40);
+    for (let k = 0; k < 1100; k++) {
+      const vocab = 2 + rnd(k < 1000 ? 6 : 40);
+      const a = Array.from(
+        {length: 1 + rnd(k < 1000 ? 40 : 400)},
+        () => `w${rnd(vocab)}z`,
+      );
+      const b = a
+        .map(w => (rnd(3) === 0 ? `w${rnd(2 * vocab)}z` : w))
+        .filter(() => rnd(8) > 0);
       expect(kept(a, b)).toBe(lcs(a, b));
     }
-  });
-  test('above it: equal runs in order, and every repeated word kept where its occurrences pair up', () => {
+  }, 60_000);
+  test('past the exact bound: equal runs in order', () => {
+    const a = Array.from({length: 3000}, (_, i) => `w${i}z`);
+    expect(kept(a, [...a].reverse())).toBeGreaterThanOrEqual(0);
     const rnd = random(9622);
-    for (let k = 0; k < 200; k++) {
-      const n = 200 + rnd(400);
-      const a = Array.from({length: n}, () => `w${rnd(12)}z`);
-      const b = a.map(w => (rnd(2) === 0 ? `w${12 + rnd(1000)}z` : w));
+    for (let k = 0; k < 20; k++) {
+      const b = [...a];
+      for (let i = 0; i < 2000; i++) {
+        const x = rnd(b.length);
+        const y = rnd(b.length);
+        [b[x], b[y]] = [b[y], b[x]];
+      }
       expect(kept(a, b)).toBeGreaterThanOrEqual(0);
     }
-    const n = 300;
-    const a = Array.from({length: n}, (_, i) => (i % 2 ? 'w1z' : `w${2 + i}z`));
-    const b = a.map((w, i) => (i % 2 ? w : `w${2000 + i}z`));
-    expect(kept(a, b)).toBe(n / 2);
   });
 });

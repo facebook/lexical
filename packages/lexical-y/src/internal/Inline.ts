@@ -790,13 +790,6 @@ export function keptEnds(
   };
 }
 
-/**
- * The most edits one shortest edit script of a remade line's changed words
- * looks for (see commonWords): past it, words the two texts share anchor the
- * rest, so the diff stays linear in the line's length.
- */
-const MAX_EDITS = 128;
-
 /** White space other than a line feed (a line break is a node of its own). */
 const isSeparator = (s: string, i: number): boolean =>
   s[i] !== '\n' && SPACE.test(s[i]);
@@ -829,59 +822,74 @@ function words(s: string, from: number, to: number): [number, number][] {
 }
 
 /**
- * The tokens equal in `a` and `b` that a shortest edit script keeps, as
- * pairs of indexes, in order: Myers' diff, in O((n + m) * max) time, or
- * null past `max` edits.
+ * The most edits the exact diff of a remade line's words looks for, among
+ * the words both texts have (see commonWords). It finds the longest common
+ * run of words in O((n + m) * EXACT_EDITS) time at most (about 30 ms for a
+ * 5,000-word line); past it, only the common start and end are kept.
  */
-function commonTokens(
+const EXACT_EDITS = 2048;
+
+/**
+ * Myers' middle snake of `a[aLo, aHi)` and `b[bLo, bHi)` (both non-empty,
+ * different first and last words): `[x, y, u, v]`, relative to `aLo` and
+ * `bLo`, a run of equal words from (x, y) to (u, v) on a shortest edit
+ * script, or null past `max` edits.
+ */
+function middleSnake(
   a: readonly number[],
+  aLo: number,
+  aHi: number,
   b: readonly number[],
+  bLo: number,
+  bHi: number,
   max: number,
-): [number, number][] | null {
-  const n = a.length;
-  const m = b.length;
-  const off = max + 1;
-  const v = new Int32Array(2 * off + 1);
-  const trace: Int32Array[] = [];
-  for (let d = 0; d <= max; d++) {
-    trace.push(v.slice());
+): [number, number, number, number] | null {
+  const n = aHi - aLo;
+  const m = bHi - bLo;
+  const delta = n - m;
+  const odd = (delta & 1) !== 0;
+  const half = Math.ceil((n + m) / 2);
+  const off = half + 1;
+  const vf = new Int32Array(2 * half + 3);
+  const vb = new Int32Array(2 * half + 3);
+  for (let d = 0; d <= half; d++) {
+    if (2 * d - 1 > max) {
+      return null;
+    }
     for (let k = -d; k <= d; k += 2) {
       let x =
-        k === -d || (k !== d && v[off + k - 1] < v[off + k + 1])
-          ? v[off + k + 1]
-          : v[off + k - 1] + 1;
+        k === -d || (k !== d && vf[off + k - 1] < vf[off + k + 1])
+          ? vf[off + k + 1]
+          : vf[off + k - 1] + 1;
       let y = x - k;
-      while (x < n && y < m && a[x] === b[y]) {
+      const x0 = x;
+      const y0 = y;
+      while (x < n && y < m && a[aLo + x] === b[bLo + y]) {
         x++;
         y++;
       }
-      v[off + k] = x;
-      if (x >= n && y >= m) {
-        // Walk back through the trace, collecting the diagonals.
-        const pairs: [number, number][] = [];
-        let cx = n;
-        let cy = m;
-        for (let e = d; e > 0; e--) {
-          const pv = trace[e];
-          const ck = cx - cy;
-          const pk =
-            ck === -e || (ck !== e && pv[off + ck - 1] < pv[off + ck + 1])
-              ? ck + 1
-              : ck - 1;
-          const px = pv[off + pk];
-          const py = px - pk;
-          const sx = pk === ck + 1 ? px : px + 1;
-          const sy = sx - ck;
-          while (cx > sx && cy > sy) {
-            pairs.push([--cx, --cy]);
-          }
-          cx = px;
-          cy = py;
-        }
-        while (cx > 0 && cy > 0) {
-          pairs.push([--cx, --cy]);
-        }
-        return pairs.reverse();
+      vf[off + k] = x;
+      const c = delta - k;
+      if (odd && c >= -(d - 1) && c <= d - 1 && x + vb[off + c] >= n) {
+        return [x0, y0, x, y];
+      }
+    }
+    for (let c = -d; c <= d; c += 2) {
+      let x =
+        c === -d || (c !== d && vb[off + c - 1] < vb[off + c + 1])
+          ? vb[off + c + 1]
+          : vb[off + c - 1] + 1;
+      let y = x - c;
+      const x0 = x;
+      const y0 = y;
+      while (x < n && y < m && a[aHi - 1 - x] === b[bHi - 1 - y]) {
+        x++;
+        y++;
+      }
+      vb[off + c] = x;
+      const k = delta - c;
+      if (!odd && k >= -d && k <= d && x + vf[off + k] >= n) {
+        return [n - x, m - y, n - x0, m - y0];
       }
     }
   }
@@ -889,141 +897,79 @@ function commonTokens(
 }
 
 /**
- * The longest run of `pairs` (in order of their second index) whose first
- * indexes increase too: patience sorting, O(k log k).
+ * The pairs of a longest common subsequence of `a[aLo, aHi)` and
+ * `b[bLo, bHi)`, in order, into `out` (Myers' linear space diff); false
+ * past `max` edits.
  */
-function increasing(pairs: readonly [number, number][]): [number, number][] {
-  const tops: number[] = [];
-  const prev = new Int32Array(pairs.length).fill(-1);
-  for (let i = 0; i < pairs.length; i++) {
-    let lo = 0;
-    let hi = tops.length;
-    while (lo < hi) {
-      const mid = (lo + hi) >> 1;
-      if (pairs[tops[mid]][0] < pairs[i][0]) {
-        lo = mid + 1;
-      } else {
-        hi = mid;
-      }
-    }
-    prev[i] = lo > 0 ? tops[lo - 1] : -1;
-    tops[lo] = i;
-  }
-  const out: [number, number][] = [];
-  for (let i = tops.length > 0 ? tops[tops.length - 1] : -1; i >= 0; ) {
-    out.push(pairs[i]);
-    i = prev[i];
-  }
-  return out.reverse();
-}
-
-/**
- * Pairs of the same word in `a` and `b` from `a0` to `a1` and `b0` to `b1`,
- * in order of `b`: with `unique`, the words that occur once in each; else
- * every word that occurs in both, its k-th occurrence in `a` with its k-th
- * in `b`.
- */
-function wordPairs(
+function exactWords(
   a: readonly number[],
+  aLo: number,
+  aHi: number,
   b: readonly number[],
-  [a0, a1, b0, b1]: [number, number, number, number],
-  unique: boolean,
-): [number, number][] {
-  const inA = new Map<number, number[]>();
-  for (let x = a0; x < a1; x++) {
-    const at = inA.get(a[x]);
-    if (at === undefined) {
-      inA.set(a[x], [x]);
-    } else {
-      at.push(x);
-    }
+  bLo: number,
+  bHi: number,
+  max: number,
+  out: [number, number][],
+): boolean {
+  while (aLo < aHi && bLo < bHi && a[aLo] === b[bLo]) {
+    out.push([aLo++, bLo++]);
   }
-  const seen = new Map<number, number>();
-  for (let y = b0; y < b1; y++) {
-    seen.set(b[y], (seen.get(b[y]) ?? 0) + 1);
+  let a1 = aHi;
+  let b1 = bHi;
+  while (a1 > aLo && b1 > bLo && a[a1 - 1] === b[b1 - 1]) {
+    a1--;
+    b1--;
   }
-  const out: [number, number][] = [];
-  const nth = new Map<number, number>();
-  for (let y = b0; y < b1; y++) {
-    const at = inA.get(b[y]);
-    if (
-      at === undefined ||
-      (unique && (at.length > 1 || seen.get(b[y])! > 1))
-    ) {
-      continue;
+  if (aLo < a1 && bLo < b1) {
+    const snake = middleSnake(a, aLo, a1, b, bLo, b1, max);
+    if (snake === null) {
+      return false;
     }
-    const k = nth.get(b[y]) ?? 0;
-    nth.set(b[y], k + 1);
-    if (k < at.length) {
-      out.push([at[k], y]);
+    const [x, y, u, v] = snake;
+    exactWords(a, aLo, aLo + x, b, bLo, bLo + y, max, out);
+    for (let i = 0; i < u - x; i++) {
+      out.push([aLo + x + i, bLo + y + i]);
     }
+    exactWords(a, aLo + u, a1, b, bLo + v, b1, max, out);
   }
-  return out;
+  for (let i = 0; a1 + i < aHi; i++) {
+    out.push([a1 + i, b1 + i]);
+  }
+  return true;
 }
 
 /**
- * The words equal in `a` and `b` that are kept, as pairs of indexes, in
- * increasing order of both: their common start and end, then a shortest edit
- * script of the rest (commonTokens) where it takes at most MAX_EDITS edits.
- * Past that, the words that occur once in each text anchor the rest, in the
- * longest run of them in the same order in both (patience diff), and
- * between two anchors, past MAX_EDITS edits again, so does every word that
- * occurs in both, its k-th occurrence in one text paired with its k-th in
- * the other (a run of repeated words with other words changed between them,
- * `old echo old echo` made again as `new echo new echo`, keeps every
- * `echo`). What is kept is a common subsequence of the two texts, so a kept
- * word keeps its characters; a word is written again only where it is not
- * paired. O((n + m) * MAX_EDITS + (n + m) log(n + m)).
+ * The words equal in `a` and `b` that a remade line keeps, as pairs of
+ * indexes in increasing order of both: a longest common subsequence of the
+ * two (exactWords), found among the words both texts have (a word only one
+ * has is never kept, and leaving it out keeps the diff short). Past
+ * EXACT_EDITS edits among those, none.
  */
 function commonWords(
   a: readonly number[],
   b: readonly number[],
-  level = 0,
 ): [number, number][] {
-  const out: [number, number][] = [];
-  let a0 = 0;
-  let b0 = 0;
-  let a1 = a.length;
-  let b1 = b.length;
-  while (a0 < a1 && b0 < b1 && a[a0] === b[b0]) {
-    out.push([a0++, b0++]);
-  }
-  const tail: [number, number][] = [];
-  while (a1 > a0 && b1 > b0 && a[a1 - 1] === b[b1 - 1]) {
-    tail.push([--a1, --b1]);
-  }
-  if (a0 < a1 && b0 < b1) {
-    const pairs = commonTokens(a.slice(a0, a1), b.slice(b0, b1), MAX_EDITS);
-    if (pairs !== null) {
-      for (const [x, y] of pairs) {
-        out.push([x + a0, y + b0]);
-      }
-    } else if (level < 2) {
-      const anchors = increasing(
-        wordPairs(a, b, [a0, a1, b0, b1], level === 0),
-      );
-      let x = a0;
-      let y = b0;
-      for (const [ax, by] of [...anchors, [a1, b1] as [number, number]]) {
-        for (const [px, py] of commonWords(
-          a.slice(x, ax),
-          b.slice(y, by),
-          level + 1,
-        )) {
-          out.push([px + x, py + y]);
-        }
-        if (ax < a1) {
-          out.push([ax, by]);
-        }
-        x = ax + 1;
-        y = by + 1;
-      }
+  const inA = new Set(a);
+  const inB = new Set(b);
+  const fa: number[] = [];
+  const fb: number[] = [];
+  for (let x = 0; x < a.length; x++) {
+    if (inB.has(a[x])) {
+      fa.push(x);
     }
   }
-  for (let i = tail.length - 1; i >= 0; i--) {
-    out.push(tail[i]);
+  for (let y = 0; y < b.length; y++) {
+    if (inA.has(b[y])) {
+      fb.push(y);
+    }
   }
-  return out;
+  const sa = fa.map(x => a[x]);
+  const sb = fb.map(y => b[y]);
+  const pairs: [number, number][] = [];
+  if (!exactWords(sa, 0, sa.length, sb, 0, sb.length, EXACT_EDITS, pairs)) {
+    return [];
+  }
+  return pairs.map(([x, y]) => [fa[x], fb[y]]);
 }
 
 /**

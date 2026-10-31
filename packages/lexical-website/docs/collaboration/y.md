@@ -818,15 +818,14 @@ person's:
   joined to a changed word through an inline node, with no space between, is
   written again with it, and an inline node made between two changes is new
   where it is put. The words kept are the longest run of words the two
-  texts share in the same order, wherever the word diff needs at most 128
-  edits (about 64 replaced words, each a delete and an insert). Beyond
-  that, so that the comparison stays linear in the line's length, the
-  words found once in both texts anchor it, and between two of them every
-  word found in both is paired with itself by occurrence (its first with
-  its first, and so on). A word that is not kept is written again: one the
-  update moved past kept words, and beyond 128 edits, a repeated word whose
-  occurrences that pairing does not line up (the update added or removed
-  some of them). Prefer
+  texts share in the same order (where a word repeats, which of its
+  occurrences is kept can differ from what the update meant), wherever
+  that takes at most 2,048 word edits among the words both texts have, so
+  that the comparison stays within about 30 ms for a 5,000-word line.
+  Beyond that (a line made again with most of its words moved), only its
+  common start and end are kept. A word that is not kept is written again:
+  one the update moved past kept words, and beyond 2,048 edits, every word
+  between the first and the last change. Prefer
   these to `setTextContent`, which sets a node's text whole: such a change
   (and a change the browser makes to the DOM text, as an IME composition
   does) keeps the start and end its text shares with the node's old text,
@@ -1017,10 +1016,14 @@ not merge as a user might expect:
   new word, not in it (a letter typed at the end of the word ends up in
   front of the new word), and the collaborator's formatting of the changed
   word at the same time is not kept. So is a word the update moved past
-  the words it kept, and, where the line's word diff needs more than 128
-  edits (about 64 replaced words), a repeated word whose occurrences the
-  update added to or removed from between two words found once in both
-  texts.
+  the words it kept, and, where the words both texts have need more than
+  2,048 edits, everything between the first and the last change. A changed
+  word is written again even where only part of it changed: an insertion
+  between two letters of a word (`bbcc` made again as `bb xxcc`) writes
+  `bb` again, so a collaborator who deletes the old `bb` at the same time
+  and undoes the delete brings it back next to the new one, and `bb` shows
+  twice ([#9635](https://github.com/meta/lexical/issues/9635)), as when two
+  clients remove the same text and both undo (see Undo below).
   The concurrent typed text is kept, and every client shows the same
   result. Edit the changed words in place instead
   (`TextNode#spliceText`, the selection's `insertText`): only the changed

@@ -271,10 +271,14 @@ const PENDING_ORDER: readonly PendingWork[] = [
 ];
 
 /**
- * Re-reads in a row (see $rereadRefused) before a last one, which refreshes
- * nothing. Invariant: a follow-up that keeps changing what it may not write
- * is read again at most this many times in a row (until a user's edit).
- * Why: a transform that rewrites the same content on every run would loop.
+ * Re-reads in a row of what the binding's own refresh changed (see
+ * $rereadRefused) before a last one, which refreshes nothing. Invariant: a
+ * refresh that keeps changing what it may not write is read again at most
+ * this many times in a row. Why: a group's own transform that rewrites the
+ * same content on every run would loop, refresh after re-read. A user's
+ * edit, or a re-read of any other update's change (a follow-up's), starts the
+ * count again: that is not the loop, and the refresh after it derives what a
+ * fresh reader derives (list numbering).
  */
 const MAX_REREADS = 3;
 
@@ -730,8 +734,13 @@ export class YBinding {
    * replies go back after them (see handBackReplies).
    */
   private queuedBeforeReplies = new Set<LexicalEditor['_updates'][number]>();
-  /** Re-reads in a row (see MAX_REREADS). */
+  /** Re-reads in a row of a refresh's changes (see MAX_REREADS). */
   private rereads = 0;
+  /**
+   * Whether a container in `refused` holds a change of the binding's own
+   * refresh (see MAX_REREADS).
+   */
+  private refusedRefresh = false;
   /**
    * Whether a container in `refused` holds a change of BlockIdExtension's
    * naming update (see rereadRefused).
@@ -2656,6 +2665,7 @@ export class YBinding {
     const refused = [...this.refused];
     this.refused.clear();
     this.refusedNaming = false;
+    this.refusedRefresh = false;
     for (const id of this.toSettle) {
       state.ids.touchedIds.add(id);
     }
@@ -3330,6 +3340,7 @@ export class YBinding {
             : this.state.csByKey.get(container.getKey());
         if (cs !== undefined) {
           this.refused.add(cs);
+          this.refusedRefresh = true;
           this.pending.add('reread');
         }
       }
@@ -3418,6 +3429,9 @@ export class YBinding {
       if (refused) {
         if (commit.naming) {
           this.refusedNaming = true;
+        }
+        if (commit.refresh) {
+          this.refusedRefresh = true;
         }
         if (commit.userEdit) {
           this.rereads = 0;
@@ -3891,6 +3905,9 @@ export class YBinding {
         if (commit.naming) {
           this.refusedNaming = true;
         }
+        if (commit.refresh) {
+          this.refusedRefresh = true;
+        }
       }
     }
   }
@@ -4041,7 +4058,7 @@ export class YBinding {
             rewriter.rewriteAll = true;
             rewriter.followUp = commit.followUp;
             rewriter.$run();
-            this.noteRefused(rewriter, commit.naming);
+            this.noteRefused(rewriter, commit);
           } finally {
             if (origin === this) {
               recordSchema(this._root, this.options.schemaVersion, tr, t =>
@@ -4073,7 +4090,7 @@ export class YBinding {
     transformed: ReadonlySet<NodeKey>,
     localKeys: Set<NodeKey>,
   ): void {
-    this.noteRefused(writer, commit.naming);
+    this.noteRefused(writer, commit);
     if (writer.refused.size > 0) {
       for (const key of dirtyElements.keys()) {
         const cs = state.csByKey.get(key);
@@ -4313,14 +4330,17 @@ export class YBinding {
   }
 
   /** Containers a write did not write a follow-up's change to (see refused). */
-  private noteRefused(writer: Writer, naming: boolean): void {
+  private noteRefused(writer: Writer, commit: Commit): void {
     for (const cs of writer.refused) {
       this.refused.add(cs);
     }
     if (writer.refused.size > 0) {
       this.pending.add('reread');
-      if (naming) {
+      if (commit.naming) {
         this.refusedNaming = true;
+      }
+      if (commit.refresh) {
+        this.refusedRefresh = true;
       }
     }
   }
@@ -4808,15 +4828,18 @@ export class YBinding {
       cs => this.state.containers.get(cs.y) === cs,
     );
     const naming = this.refusedNaming;
+    const refresh = this.refusedRefresh;
     const settle = [...this.toSettle];
     this.refused.clear();
     this.toSettle.clear();
     this.refusedNaming = false;
+    this.refusedRefresh = false;
     this.pending.delete('reread');
     if (list.length === 0 && settle.length === 0) {
       return null;
     }
-    const last = ++this.rereads > MAX_REREADS;
+    this.rereads = refresh ? this.rereads + 1 : 0;
+    const last = this.rereads > MAX_REREADS;
     for (const tag of REMOTE_TAGS) {
       $addUpdateTag(tag);
     }

@@ -751,9 +751,16 @@ describe('#9621: a long remade line stays linear', () => {
     test(
       name,
       async () => {
+        // The faster of two runs of each length, so that a first run of a
+        // path (compiled while it runs) or a collection does not count.
+        const best = async (n: number) =>
+          Math.min(
+            await timed(n, oldNodes, newNodes, expected),
+            await timed(n, oldNodes, newNodes, expected),
+          );
         await timed(500, oldNodes, newNodes, expected);
-        const small = await timed(1_000, oldNodes, newNodes, expected);
-        const big = await timed(4_000, oldNodes, newNodes, expected);
+        const small = await best(1_000);
+        const big = await best(4_000);
         // Linear is 4x, quadratic 16x.
         expect(big / Math.max(small, 20)).toBeLessThan(10);
       },

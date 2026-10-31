@@ -2,6 +2,6 @@
 '@lexical/selection': patch
 ---
 
-[fix] Keep nested content in order when wrapping blocks that also hold text directly
+[fix] `$wrapNodes` keeps nested content in order when a block holds text directly next to its blocks
 
 Verify: Wrap a selection across text and nested blocks in a custom element without a declared structure. The update should finish, keep the content in its original order, and leave the selection attached.

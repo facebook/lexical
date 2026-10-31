@@ -1280,7 +1280,12 @@ not merge as a user might expect:
   takes that format (also when the range comes from an older read, as an
   agent's does), and text typed at the start or the end of the range can
   take it, by the order Yjs gives the two inserts (at the start the same on
-  Yjs 13, and it keeps the format when that range is then deleted). A
+  Yjs 13, and it keeps the format when that range is then deleted). Text
+  typed right before or after a word a collaborator splits out of its
+  text as token or segmented text at the same time (a mention) is never
+  part of it, in either order (a node that was a node of its own already
+  can still take it for one order,
+  [#9653](https://github.com/meta/lexical/issues/9653)). A
   node whose `isInline()` changes is written again in its new form, so
   text typed inside it at the same time lands next to it, in an inline
   element of its old form. Where text was deleted, the format items it

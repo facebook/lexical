@@ -5669,6 +5669,62 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     },
   );
 
+  // A `;` before them starts no URL: `www.` needs whitespace or `*_~(` before
+  // it, and readers ignore what comes before `mailto:`.
+  it.each(['bwww.x.co', 'bmailto:a@b.co'])(
+    'writes a reference before %j, which readers do not autolink',
+    text => {
+      const editor = createTestEditor();
+      editor.update(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append(
+              $createTextNode('.').toggleFormat('bold'),
+              $createTextNode(text),
+            ),
+          ),
+        {discrete: true},
+      );
+      expect(
+        editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
+      ).toBe(`**.**&#98;${text.slice(1)}`);
+    },
+  );
+
+  it('scans the text after a match again when its transformer changes it', () => {
+    const MENTION: TextMatchTransformer = {
+      dependencies: [],
+      importRegExp: /@(\w+)/,
+      regExp: /@(\w+)$/,
+      replace: textNode => {
+        const next = textNode.getNextSibling();
+        if ($isTextNode(next)) {
+          next.setTextContent(next.getTextContent().trimStart());
+        }
+        textNode.toggleFormat('code');
+      },
+      type: 'text-match',
+    };
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $convertFromMarkdownString('@bob *a* *b*', [MENTION, ...TRANSFORMERS]),
+      {discrete: true},
+    );
+    expect(
+      editor.read('latest', () =>
+        $getRoot()
+          .getAllTextNodes()
+          .map(node => [node.getTextContent(), node.getFormat()]),
+      ),
+    ).toEqual([
+      ['@bob', TEXT_TYPE_TO_FORMAT.code],
+      ['a', TEXT_TYPE_TO_FORMAT.italic],
+      [' ', 0],
+      ['b', TEXT_TYPE_TO_FORMAT.italic],
+    ]);
+  });
+
   it('imports the text after a match before the text inside it', () => {
     const seen: string[] = [];
     const TAG: TextMatchTransformer = {

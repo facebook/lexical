@@ -735,9 +735,9 @@ function isLinkCharacter(character: string): boolean {
 // `www.` after `_` too.
 const LINK_URL =
   /(?:^|[^a-z])(?:https?|ftp):\/\/|(?:^|[^a-z\d.-])www\.|(?:^|[^a-z\d.+-])(?:mailto|xmpp):/i;
-// The start of a scheme or `www.` anywhere: a reference for the letter before
-// it would put the `;` there, after which a URL starts.
-const URL_START = /(?:https?|ftp):\/\/|www\.|(?:mailto|xmpp):/gi;
+// A URL scheme anywhere: a reference for the letter before it would put the
+// `;` there, after which a URL starts (`www.` and `mailto:` need more).
+const URL_START = /(?:https?|ftp):\/\//gi;
 // Characters an email can hold (word characters, `.+@-`, and the backslash
 // that escapes one), and what makes one: GFM needs a dot in its domain.
 const ADDRESS_CHARACTER = /[\w.+@\\-]/;

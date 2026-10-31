@@ -42,6 +42,8 @@ interface FormatMatch {
  */
 export interface FormatScan {
   text: string;
+  /** The characters that start an emphasis tag. */
+  delimiters: Set<string>;
   codeSpans: FormatMatch[];
   emphasis: FormatMatch[];
   offset: number;
@@ -61,15 +63,21 @@ export function scanTextFormats(
   const codeSpans = textFormatTransformersIndex.transformersByTag['`']
     ? scanCodeSpans(text).map(span => ({...span, tag: '`'}))
     : [];
+  const delimiterChars = new Set(
+    Object.keys(textFormatTransformersIndex.transformersByTag)
+      .filter(tag => tag[0] !== '`')
+      .map(tag => tag[0]),
+  );
   const delimiters = scanDelimiters(
     text,
-    textFormatTransformersIndex,
+    delimiterChars,
     codeSpans,
     before,
     after,
   );
   return {
     codeSpans,
+    delimiters: delimiterChars,
     emphasis:
       delimiters.length > 0
         ? processEmphasis(text, delimiters, textFormatTransformersIndex)
@@ -82,14 +90,19 @@ export function scanTextFormats(
 }
 
 /**
- * Moves `scan` on to the text after `offset`. What it found there holds for
- * that text on its own as long as no code span or emphasis runs on from
- * before `offset` (a pair cannot reach past the end of the outermost one),
- * and no backslash before it escapes it; returns false otherwise. A run that
- * the end of an emphasis match cuts was measured by what is left of it, as a
- * scan of the rest would, but one that a text match cuts was not.
+ * Moves `scan` on to the text after `offset`, where a match ends. What it
+ * found there holds for that text on its own as long as no code span or
+ * emphasis runs on from before `offset` (a pair cannot reach past the end of
+ * the outermost one), no backslash before it escapes it, and no run of a
+ * delimiter or backtick goes on across it; returns false otherwise. A
+ * closing run that the end of a format match cuts is the exception: the scan
+ * measured it by what was left of it, as a scan of the rest does.
  */
-export function advanceFormatScan(scan: FormatScan, offset: number): boolean {
+export function advanceFormatScan(
+  scan: FormatScan,
+  offset: number,
+  isFormatEnd: boolean,
+): boolean {
   const {codeSpans, emphasis, text} = scan;
   scan.offset = offset;
   while (
@@ -108,7 +121,13 @@ export function advanceFormatScan(scan: FormatScan, offset: number): boolean {
       return false;
     }
   }
-  return text[offset - 1] !== '\\';
+  const cut = text[offset - 1];
+  return (
+    cut !== '\\' &&
+    (isFormatEnd ||
+      cut !== text[offset] ||
+      (cut !== '`' && !scan.delimiters.has(cut)))
+  );
 }
 
 /**
@@ -296,7 +315,7 @@ export function scanCodeSpans(text: string): {
 
 function scanDelimiters(
   text: string,
-  transformersIndex: TextFormatTransformersIndex,
+  delimiterChars: Set<string>,
   codeSpans: {startIndex: number; endIndex: number}[],
   // What a run at the start (or end) of the text sees beyond it; the edge of
   // the line when undefined.
@@ -304,11 +323,6 @@ function scanDelimiters(
   after: string | undefined,
 ): Delimiter[] {
   const delimiters: Delimiter[] = [];
-  const delimiterChars = new Set(
-    Object.keys(transformersIndex.transformersByTag)
-      .filter(tag => tag[0] !== '`')
-      .map(tag => tag[0]),
-  );
 
   // The spans are in order and the scan only moves forward.
   let span = 0;

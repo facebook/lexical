@@ -98,33 +98,20 @@ export function importTextTransformers(
     );
   }
   for (let i = deferred.length - 1; i >= 0; i--) {
-    const [
-      nodeBefore,
-      beforeBefore,
-      beforeAfter,
-      inside,
-      insideBefore,
-      insideAfter,
-      matched,
-    ] = deferred[i];
-    if (canContainTransformableMarkdown(nodeBefore)) {
-      importTextTransformers(
-        nodeBefore,
-        textFormatTransformersIndex,
-        textMatchTransformers,
-        beforeBefore,
-        beforeAfter,
-      );
+    const {outside, inside, matched} = deferred[i];
+    for (const part of [outside, inside]) {
+      if (canContainTransformableMarkdown(part.node)) {
+        importTextTransformers(
+          part.node,
+          textFormatTransformersIndex,
+          textMatchTransformers,
+          part.before,
+          part.after,
+        );
+      }
     }
-    if (canContainTransformableMarkdown(inside)) {
-      importTextTransformers(
-        inside,
-        textFormatTransformersIndex,
-        textMatchTransformers,
-        insideBefore,
-        insideAfter,
-      );
-    } else if (
+    if (
+      !canContainTransformableMarkdown(inside.node) &&
       canContainTransformableMarkdown(matched) &&
       matched.getParent() !== null
     ) {
@@ -137,20 +124,23 @@ export function importTextTransformers(
   }
 }
 
+/** Text to import, with the characters around it in the text it was cut from. */
+interface TextPart {
+  node: LexicalNode | undefined;
+  before: string | undefined;
+  after: string | undefined;
+}
+
 /**
  * What a match leaves to import once the text after it is done: the text
- * before it, then the text inside it, each with the characters around it,
- * or the matched node of a text match that returned none.
+ * before it, then the text inside it, or the escapes of the matched node of
+ * a text match that returned no node.
  */
-type Deferred = [
-  nodeBefore: LexicalNode | undefined,
-  beforeBefore: string | undefined,
-  beforeAfter: string | undefined,
-  inside: LexicalNode | undefined,
-  insideBefore: string | undefined,
-  insideAfter: string | undefined,
-  matched: LexicalNode | undefined,
-];
+interface Deferred {
+  outside: TextPart;
+  inside: TextPart;
+  matched: LexicalNode | undefined;
+}
 
 /**
  * The formats and links found in a text, for what is left of it, which is
@@ -250,45 +240,46 @@ function importOutermost(
   }
 
   // Defers the import of the text before a match from `startIndex` to
-  // `endIndex` and of `inside` (or the escapes of `matched`), and returns
-  // the text after it, each with what lies beyond the run cut at its edge.
-  // A text match that ends inside a run of a delimiter cuts it, which the
-  // scan measured whole, so the rest is scanned again then.
+  // `endIndex` and of the text `inside` it (or the escapes of `matched`),
+  // and returns the text after it, `textAfter`, each with what lies beyond
+  // the run cut at its edge.
   const importAround = (
-    nodeBefore: LexicalNode | undefined,
-    nodeAfter: LexicalNode | undefined,
+    {
+      nodeBefore,
+      nodeAfter,
+      textAfter,
+    }: {
+      nodeBefore: LexicalNode | undefined;
+      nodeAfter: LexicalNode | undefined;
+      textAfter: string | undefined;
+    },
     startIndex: number,
     endIndex: number,
-    inside: LexicalNode | undefined,
-    insideBefore: string | undefined,
-    insideAfter: string | undefined,
+    inside: TextPart,
     matched: LexicalNode | undefined,
-    isTextMatch: boolean,
+    isFormat: boolean,
   ): TextRest | null => {
-    deferred.push([
-      nodeBefore,
-      before,
-      characterBeyondRun(text, startIndex, 1, after),
+    deferred.push({
       inside,
-      insideBefore,
-      insideAfter,
       matched,
-    ]);
-    if (!canContainTransformableMarkdown(nodeAfter)) {
+      outside: {
+        after: characterBeyondRun(text, startIndex, 1, after),
+        before,
+        node: nodeBefore,
+      },
+    });
+    if (
+      !canContainTransformableMarkdown(nodeAfter) ||
+      textAfter === undefined
+    ) {
       return null;
     }
-    const cut = text[endIndex - 1];
-    const isReusable =
-      advanceFormatScan(formats, formats.offset + endIndex) &&
-      !(
-        isTextMatch &&
-        cut === text[endIndex] &&
-        (cut === '`' ||
-          Object.keys(textFormatTransformersIndex.transformersByTag).some(
-            tag => tag[0] === cut,
-          ))
-      );
-    scan.rest = nodeAfter.getTextContent();
+    const isReusable = advanceFormatScan(
+      formats,
+      formats.offset + endIndex,
+      isFormat,
+    );
+    scan.rest = textAfter;
     return [
       nodeAfter,
       characterBeyondRun(text, endIndex, -1, before),
@@ -310,19 +301,23 @@ function importOutermost(
     // A code span's fence is not its tag's length, and its content is not
     // read for emphasis against what lies outside it.
     return importAround(
-      result.nodeBefore,
-      result.nodeAfter,
+      {
+        ...result,
+        textAfter: result.nodeAfter && result.nodeAfter.getTextContent(),
+      },
       startIndex,
       endIndex,
-      result.transformedNode,
-      isCodeSpan
-        ? undefined
-        : characterBeyondRun(text, startIndex + tagLength, -1, before),
-      isCodeSpan
-        ? undefined
-        : characterBeyondRun(text, endIndex - tagLength, 1, after),
+      {
+        after: isCodeSpan
+          ? undefined
+          : characterBeyondRun(text, endIndex - tagLength, 1, after),
+        before: isCodeSpan
+          ? undefined
+          : characterBeyondRun(text, startIndex + tagLength, -1, before),
+        node: result.transformedNode,
+      },
       undefined,
-      false,
+      true,
     );
   } else if (foundTextMatch) {
     const result = importFoundTextMatchTransformer(
@@ -336,15 +331,12 @@ function importOutermost(
       return null;
     }
     return importAround(
-      result.nodeBefore,
-      result.nodeAfter,
+      result,
       foundTextMatch.startIndex,
       foundTextMatch.endIndex,
-      result.transformedNode,
-      undefined,
-      undefined,
+      {after: undefined, before: undefined, node: result.transformedNode},
       result.transformedNode === undefined ? result.matchedNode : undefined,
-      true,
+      false,
     );
   }
 

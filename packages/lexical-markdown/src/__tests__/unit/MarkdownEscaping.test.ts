@@ -1587,15 +1587,18 @@ describe('brackets that cannot become Markdown syntax', () => {
     });
   });
 
-  it.each(['\u00A0[x] done', '\u3000[ ] todo'])(
+  it.each([
+    ['\u00A0[x] done', '\u00A0[x&#93; done'],
+    ['\u3000[ ] todo', '\u3000[ &#93; todo'],
+  ])(
     'escapes a task marker indented with Unicode whitespace: %j',
-    text => {
+    (text, expected) => {
       using editor = buildEditorFromExtensions([MarkdownTestExtension]);
       editor.update(() => $exportParagraph(text), {discrete: true});
       const written = editor.read(() =>
         $convertToMarkdownString([CHECK_LIST, ...TRANSFORMERS]),
       );
-      expect(written).toBe(text.replace(']', '&#93;'));
+      expect(written).toBe(expected);
       editor.update(
         () =>
           $convertFromMarkdownString(written, [CHECK_LIST, ...TRANSFORMERS]),

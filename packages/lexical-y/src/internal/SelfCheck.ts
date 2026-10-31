@@ -15,6 +15,7 @@ import {
   $getRoot,
   $getSlot,
   $getSlotNames,
+  $isDecoratorNode,
   $isElementNode,
   $parseSerializedNode,
   createEditor,
@@ -105,6 +106,15 @@ function $shownText(writer: Writer, atoms: Atoms): string {
     out += atoms.text[i];
   }
   return out;
+}
+
+/** A block (not inline) whose parent is a shadow root. */
+function $isShadowRootBlock(node: LexicalNode): boolean {
+  if (!($isElementNode(node) || $isDecoratorNode(node)) || node.isInline()) {
+    return false;
+  }
+  const parent = node.getParent();
+  return parent !== null && parent.isShadowRoot();
 }
 
 function hasLiveContent(y: YNode): boolean {
@@ -203,8 +213,22 @@ export function $checkWrite(writer: Writer): string[] {
       const b = rb < have.runs.length ? have.runs[rb].attrs : {};
       const isBreak = !want.specials.has(i) && want.text.charCodeAt(i) === 10;
       const wrappersOnly = want.specials.has(i) || isBreak;
+      const special = want.specials.get(i);
+      // A wrapper over a block in a shadow root (another writer's run left
+      // open over its blocks): the reader shows the block without it (see
+      // $inShadowRoot), so the editor holds none.
+      const shownBare =
+        special !== undefined &&
+        special.kind === 'inline' &&
+        $isShadowRootBlock(special.node);
       const key =
-        ra + '/' + rb + '/' + (wrappersOnly ? 1 : 0) + (isBreak ? i : '');
+        ra +
+        '/' +
+        rb +
+        '/' +
+        (wrappersOnly ? 1 : 0) +
+        (shownBare ? 'b' : '') +
+        (isBreak ? i : '');
       if (key === lastKey) {
         continue;
       }
@@ -216,6 +240,9 @@ export function $checkWrite(writer: Writer): string[] {
         // a reader keeps such a node apart only by its type, mode or detail,
         // so it shows the key nowhere (see Reader#$readInline).
         if (k === SEGMENT_KEY && a[k] === undefined && !wrappersOnly) {
+          continue;
+        }
+        if (shownBare && k.startsWith(WRAPPER_PREFIX) && a[k] === undefined) {
           continue;
         }
         // A wrapper's textFormat/textStyle at a character: Lexical's

@@ -749,8 +749,8 @@ const BLOCK_START: LineState = {
 
 function nextLinePhase(phase: LinePhase, character: string): LinePhase {
   if (character === UNKNOWN) {
-    // Unknown text may be empty, so it leaves the line where it was.
-    return phase;
+    // Unknown text may end with a line break, so what follows may start a line.
+    return 'start';
   }
   const isSpace = character === ' ' || character === '\t';
   switch (phase) {
@@ -840,6 +840,7 @@ function $literalBracketsToEscape(
   $labelClosesAfter: (budget: number) => boolean,
 ): Set<number> {
   const escaped = new Set<number>();
+  const lineStartOpeners: number[] = [];
   const state = {...before};
   for (let index = 0; index < text.length; index++) {
     const character = asLiteral(text[index]);
@@ -865,16 +866,17 @@ function $literalBracketsToEscape(
       ) {
         escaped.add(index);
       }
-    } else if (
-      character === '[' &&
-      state.phase === 'start' &&
-      $labelClosesInCode(text, index, $labelClosesAfter)
-    ) {
+    } else if (character === '[' && state.phase === 'start') {
+      lineStartOpeners.push(index);
+    }
+    advanceLineState(state, character);
+  }
+  for (const index of lineStartOpeners) {
+    if ($labelClosesInCode(text, index, escaped, $labelClosesAfter)) {
       // The `]` that would close this label is in inline code, where it
       // cannot be escaped, so the `[` is.
       escaped.add(index);
     }
-    advanceLineState(state, character);
   }
   return escaped;
 }
@@ -882,17 +884,19 @@ function $literalBracketsToEscape(
 /**
  * Whether the label opened by the `[` at `index` in `text` would close at a
  * `]` inside inline code followed by `:`, making a link reference definition.
- * A label ends at the first `]` and cannot hold another `[`
- * (https://spec.commonmark.org/0.31.2/#link-label), and definitions are read
- * before code spans. `$rest` reads past the end of `text`.
+ * A label ends at the first `]` that is not escaped and cannot hold another
+ * `[` (https://spec.commonmark.org/0.31.2/#link-label), and definitions are
+ * read before code spans. `escaped` holds the `]` this pass escapes, which
+ * stay inside the label. `$rest` reads past the end of `text`.
  */
 function $labelClosesInCode(
   text: string,
   index: number,
+  escaped: Set<number>,
   $rest: (budget: number) => boolean,
 ): boolean {
   for (let next = index + 1; next < text.length; next++) {
-    if (text[next] === '[' || text[next] === ']') {
+    if (text[next] === '[' || (text[next] === ']' && !escaped.has(next))) {
       return false;
     }
   }
@@ -902,8 +906,9 @@ function $labelClosesInCode(
 
 /**
  * Continues `$labelClosesInCode` past `node`: reads the leaves after it in its
- * block until a bracket, a link, the end of the block or `budget` characters.
- * Unknown text may hold the `]`, so it answers yes.
+ * block until inline code holding a bracket, a `[`, a link, the end of the
+ * block or `budget` characters. Unknown text may hold the `]`, so it answers
+ * yes.
  */
 function $labelClosesInCodeAfter(
   node: LexicalNode,
@@ -923,13 +928,15 @@ function $labelClosesInCodeAfter(
       return true;
     } else if ($isTextNode(leaf)) {
       const text = asLiteral($exportedText(leaf, selection));
-      const bracket = text.search(/[[\]]/);
-      if (bracket !== -1) {
-        return (
-          leaf.hasFormat('code') &&
-          text[bracket] === ']' &&
-          text[bracket + 1] === ':'
-        );
+      if (leaf.hasFormat('code')) {
+        const bracket = text.search(/[[\]]/);
+        if (bracket !== -1) {
+          return text[bracket] === ']' && text[bracket + 1] === ':';
+        }
+      } else if (text.includes('[')) {
+        // A `]` in plain text may be one this pass escapes, which leaves the
+        // label open, so only a `[` ends the search here.
+        return false;
       }
       remaining -= text.length;
     } else if ($isLineBreakNode(leaf)) {
@@ -989,31 +996,40 @@ function $exportKind(node: LexicalNode): ExportKind {
   if (cached) {
     return cached;
   }
-  const isWritten = context
-    ? context.textMatchTransformers.some(transformer => {
-        try {
-          return (
-            transformer.export !== undefined &&
-            transformer.export(
-              node,
-              () => '',
-              () => '',
-            ) != null
-          );
-        } catch {
-          return true;
-        }
-      })
-    : $isLinkNode(node) && !$isAutoLinkNode(node);
-  const kind: ExportKind = $isTextNode(node)
-    ? isWritten
-      ? 'unknown'
-      : 'text'
-    : isWritten
-      ? $isLinkNode(node)
+  // What a transformer writes for the node, with its children left out, or
+  // null when none writes it.
+  let written: string | null = null;
+  if (context) {
+    for (const transformer of context.textMatchTransformers) {
+      if (transformer.export === undefined) {
+        continue;
+      }
+      try {
+        written = transformer.export(
+          node,
+          () => '',
+          () => '',
+        );
+      } catch {
+        written = UNKNOWN;
+      }
+      if (written != null) {
+        break;
+      }
+    }
+  } else if ($isLinkNode(node) && !$isAutoLinkNode(node)) {
+    written = '[]()';
+  }
+  // An element written as `[children](...)` reads like a link, whatever its
+  // class; anything else a transformer writes is unknown.
+  const kind: ExportKind =
+    written == null
+      ? $isTextNode(node)
+        ? 'text'
+        : 'transparent'
+      : $isElementNode(node) && written.startsWith('[')
         ? 'link'
-        : 'unknown'
-      : 'transparent';
+        : 'unknown';
   if (context) {
     context.exportKinds.set(node.getKey(), kind);
   }

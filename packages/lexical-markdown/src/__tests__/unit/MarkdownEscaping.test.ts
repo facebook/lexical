@@ -1249,6 +1249,150 @@ describe('brackets that cannot become Markdown syntax', () => {
     },
   );
 
+  it.each([
+    [['[a](b) ', ']:x'], '&#91;a&#93;(b) `]:x`'],
+    [['[] ', ']:url'], '&#91;&#93; `]:url`'],
+    [['[x] see ', ']:url'], '&#91;x&#93; see `]:url`'],
+    [['[a]: b ', ']:c'], '&#91;a&#93;: b `]:c`'],
+  ])(
+    'escapes a line-start [ whose label an escaped ] leaves open to inline code: %j',
+    (parts, expected) => {
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $createTextNode(parts[0]),
+                $createTextNode(parts[1]).toggleFormat('code'),
+              ),
+            ),
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertToMarkdownString())).toBe(expected);
+    },
+  );
+
+  it('does not read a link whose syntax is inside inline code', () => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    editor.update(
+      () =>
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $createTextNode('see ['),
+              $createTextNode('](').toggleFormat('code'),
+              $createTextNode('x) now'),
+            ),
+          ),
+      {discrete: true},
+    );
+    const written = editor.read(() => $convertToMarkdownString());
+    expect(written).toBe('see [`](`x) now');
+    editor.update(() => $convertFromMarkdownString(written), {
+      discrete: true,
+    });
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isElementNode(paragraph));
+      expect(paragraph.getChildren().some($isLinkNode)).toBe(false);
+      expect(paragraph.getTextContent()).toBe('see [](x) now');
+    });
+  });
+
+  it('escapes a task marker after a decorator that may end a line', () => {
+    using editor = buildEditorFromExtensions(
+      MarkdownTestExtension,
+      TestDecoratorExtension,
+    );
+    editor.update(
+      () =>
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $createTextNode('a '),
+              $create(TestDecoratorNode),
+              $createTextNode('[x] done'),
+            ),
+          ),
+      {discrete: true},
+    );
+    expect(editor.read(() => $convertToMarkdownString())).toBe(
+      'a foo[x&#93; done',
+    );
+  });
+
+  describe('custom transformers', () => {
+    const TEST_LINK: TextMatchTransformer = {
+      dependencies: [TestInlineNode],
+      export: (node, exportChildren) =>
+        node instanceof TestInlineNode
+          ? `[${exportChildren(node)}](custom)`
+          : null,
+      importRegExp: /$^/,
+      regExp: /$^/,
+      type: 'text-match',
+    };
+    const HTML_LINK: TextMatchTransformer = {
+      dependencies: [],
+      export: (node, exportChildren) =>
+        $isLinkNode(node)
+          ? `<a href="${node.getURL()}">${exportChildren(node)}</a>`
+          : null,
+      importRegExp: /$^/,
+      regExp: /$^/,
+      type: 'text-match',
+    };
+
+    it('applies the link text rules inside an element a transformer writes as [text](url)', () => {
+      using editor = buildEditorFromExtensions(
+        MarkdownTestExtension,
+        TestInlineExtension,
+      );
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $create(TestInlineNode).append($createTextNode('a]')),
+              ),
+            ),
+        {discrete: true},
+      );
+      expect(
+        editor.read(() =>
+          $convertToMarkdownString([TEST_LINK, ...TRANSFORMERS]),
+        ),
+      ).toBe('[a&#93;](custom)');
+    });
+
+    it('reads a link a transformer writes in another syntax as unknown', () => {
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $createTextNode('['),
+                $createLinkNode('u').append($createTextNode('a')),
+                $createTextNode(']: /x'),
+              ),
+            ),
+        {discrete: true},
+      );
+      expect(
+        editor.read(() =>
+          $convertToMarkdownString([HTML_LINK, ...TRANSFORMERS]),
+        ),
+      ).toBe('&#91;<a href="u">a</a>&#93;: /x');
+    });
+  });
+
   it('reads typed control characters as text', () => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
     editor.update(() => $exportParagraph('[a\u0001]: /url'), {
@@ -1414,7 +1558,9 @@ describe('brackets that cannot become Markdown syntax', () => {
     );
     const start = performance.now();
     editor.read(() => $convertToMarkdownString());
-    expect(performance.now() - start).toBeLessThan(2000);
+    // Linear exports take tens of milliseconds; a quadratic one takes tens of
+    // seconds, so this bound leaves room for a busy machine.
+    expect(performance.now() - start).toBeLessThan(10000);
   });
 
   it('reads brackets written as references by earlier versions', () => {

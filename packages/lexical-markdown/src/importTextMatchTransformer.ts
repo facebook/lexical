@@ -8,11 +8,13 @@
 import type {TextMatchTransformer} from './MarkdownTransformers';
 import type {TextNode} from 'lexical';
 
+import {scanCodeSpans} from './importTextFormatTransformer';
 import {getLinkLabelOpener, LINK} from './MarkdownTransformers';
 import {isEscaped} from './utils';
 
 /**
- * The first link in `text`, starting at the `[` that really opens its text.
+ * The first link in `text`, starting at the `[` that really opens its text,
+ * with none of its syntax inside a code span.
  * The import pattern's lazy label runs from the first `[` to the first `](`,
  * so a literal `[` before the link (`[1] *see* [here](url)`) would otherwise
  * start the match and leave the text between them unparsed. Matching again
@@ -23,9 +25,24 @@ function matchLink(text: string, regExp: RegExp): RegExpExecArray | null {
     regExp.source,
     regExp.flags.replace(/[gy]/g, '') + 'g',
   );
+  // Code spans bind tighter than link brackets
+  // (https://spec.commonmark.org/0.31.2/#code-spans), so a link whose syntax
+  // falls inside one is not a link.
+  const codeSpans = text.includes('`') ? scanCodeSpans(text) : [];
+  const isInCode = (index: number) =>
+    codeSpans.some(
+      ({startIndex, endIndex}) => startIndex <= index && index < endIndex,
+    );
   let match;
   while ((match = search.exec(text)) !== null) {
-    if (isEscaped(text, match.index)) {
+    const labelEnd =
+      match.index + 1 + (match[1] !== undefined ? match[1].length : 0);
+    if (
+      isEscaped(text, match.index) ||
+      isInCode(match.index) ||
+      isInCode(labelEnd) ||
+      isInCode(match.index + match[0].length - 1)
+    ) {
       search.lastIndex = match.index + 1;
       continue;
     }

@@ -9,12 +9,11 @@
 
 // A follow-up whose change the binding does not write is read again, and the
 // re-read refreshes the derived fields of the groups it rebuilds (list
-// numbering), as every read does. Only a refresh that keeps changing what it
-// may not write is cut off (a group's own transform that rewrites the same
-// content on every run): after a few re-reads in a row of a refresh's
-// change, the last re-read runs no refresh (#9632: separate follow-ups in a
-// row were counted as that loop, and the last one left a list item's value
-// stale on the author).
+// numbering), as every read does. After a few re-reads in a row (a group's
+// own transform that rewrites the same content on every run, or follow-ups
+// that keep coming), the last one refreshes in its own update and nothing
+// follows it (#9632: it ran no refresh at all, which left a list item's
+// value stale on the author).
 
 import {
   $createListItemNode,
@@ -163,9 +162,10 @@ test('a refresh that keeps changing what it may not write is cut off, and the ed
     await t.sync();
     await new Promise(resolve => setTimeout(resolve, 20));
     looping = null;
-    // The first refresh and the one after each of the re-reads before the
-    // last (MAX_REREADS = 3).
-    expect(runs).toBe(4);
+    // The first refresh, the one after each of the re-reads before the last
+    // (MAX_REREADS = 3), and the last re-read's own, whose change is read
+    // again in the same update.
+    expect(runs).toBe(5);
     expect(
       warn.mock.calls.filter(([m]) =>
         String(m).includes('follow-ups keep changing content'),

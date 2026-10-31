@@ -73,6 +73,7 @@ import {
   INLINE_PREFIX,
   isMergeableText,
   isTextFieldKey,
+  isTextHoldingWrapperValue,
   KIND_KEY,
   klassOf,
   LEVEL_KEY,
@@ -3735,7 +3736,16 @@ export class Writer {
     ) {
       return value;
     }
-    const owns = (m: string) => ownsMember(m, fields);
+    // A wrapper that holds text writes no text fields (Lexical does not
+    // serialize them), and does not remove ones stored there either: when a
+    // wrapper with no text that stores them gets text (a line break in a
+    // link, then text appended), its value is not written again over the
+    // content it kept, over a collaborator's concurrent removal or change
+    // of it (see $wrapperAttrs).
+    const keepsText = isTextHoldingWrapperValue(value);
+    const owns = (m: string) =>
+      ownsMember(m, fields) &&
+      !(keepsText && (m === 'textFormat' || m === 'textStyle'));
     if (same) {
       const a = value as Attrs;
       const b = stored as Attrs;

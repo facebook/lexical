@@ -1983,6 +1983,21 @@ const INSTANCE_KEY = '#';
  * format items: concurrent changes to two fields of one wrapper do not merge
  * (the last one wins).
  */
+/**
+ * Wrapper values (see $wrapperAttrs) of wrappers that hold text: their text
+ * fields are not written (Lexical does not serialize them), so a value
+ * without them does not remove text fields stored there (see
+ * Writer#formatAsStored).
+ */
+const textHoldingValues = new WeakSet<object>();
+
+/** Whether `value` is a wrapper value of a wrapper that holds text. */
+export function isTextHoldingWrapperValue(value: unknown): boolean {
+  return (
+    value !== null && typeof value === 'object' && textHoldingValues.has(value)
+  );
+}
+
 export function $wrapperAttrs(
   node: ElementNode,
   out: Attrs,
@@ -2024,6 +2039,9 @@ export function $wrapperAttrs(
   }
   if (instance !== null) {
     own[INSTANCE_KEY] = instance;
+  }
+  if (!latest.shouldSerializeTextStyles()) {
+    textHoldingValues.add(own);
   }
   // The innermost wrapper of a type wins.
   out[WRAPPER_PREFIX + node.getType()] = own;

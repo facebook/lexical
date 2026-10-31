@@ -2893,9 +2893,16 @@ export class Reader {
       const own: Attrs = {};
       $wrapperAttrs(reused, own);
       const current = wrappersFromAttrs(own, this.wrapperFields)[0];
+      // Without the text fields: they are stored only while the wrapper
+      // holds no text, which its children, set after this, decide, and are
+      // shown from the stored value then (see $readInline's `finish`).
+      const sansText = (json: Attrs) => {
+        const {textFormat: _f, textStyle: _s, ...rest} = json;
+        return stableStringify(rest);
+      };
       if (
         current === undefined ||
-        stableStringify(current.json) !== stableStringify(w.json)
+        sansText(current.json) !== sansText(w.json)
       ) {
         const spec = getWrapperSpec(klassOf(reused))!;
         const json = $schemaJSON(reused);
@@ -3741,7 +3748,6 @@ export function $unstoredWrapperTextFields(
         anchor._item !== null &&
         !seen.has(w.getKey()) &&
         $isWrapper(w) &&
-        (w.getTextFormat() !== 0 || w.getTextStyle() !== '') &&
         w.shouldSerializeTextStyles()
       ) {
         seen.add(w.getKey());

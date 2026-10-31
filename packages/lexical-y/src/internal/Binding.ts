@@ -810,6 +810,8 @@ export class YBinding {
   private restoring: Set<string> | null = null;
   /** Stored nodes the running undo/redo deletes (it inserted them). */
   private removing: Set<Item> | null = null;
+  /** Nulls the running undo/redo keeps (see lastRunEnds). */
+  private keptNulls: Set<Item> | null = null;
   /** The items the running undo/redo deletes (see isKeptByUndo). */
   private undoing: Set<Item> | null = null;
   private wasEditable = true;
@@ -5039,6 +5041,9 @@ export class YBinding {
    * leave a malformed container).
    */
   private isKeptByUndo(item: Item): boolean {
+    if (this.keptNulls !== null && this.keptNulls.has(item)) {
+      return true;
+    }
     // A null a format change wrote after its range to end its value there:
     // kept where without it the content after it would take a value (that
     // of a collaborator's change that ended inside the range, closed with
@@ -5093,6 +5098,89 @@ export class YBinding {
       }
     }
     return false;
+  }
+
+  /**
+   * The nulls the running undo would delete that are the last end of a run
+   * still open before them, and so are kept (see isKeptByUndo): the nearest
+   * live item of the null's key before it (leaving out what this undo
+   * deletes) gives a value, and content shows after the null before the next
+   * live item of its key, which gives another value (one giving the run's own
+   * value again joins the run), or before the end of the container. Why: a null by which a change made text inside a run plain
+   * (typed plain text) relied on the run's own end after it, and once a
+   * collaborator's delete took that end and the change's own restore, the
+   * null was the run's only end; the undo of that change deleted it and the
+   * value ran on over everything after it (#9624). One pass over each
+   * container holding such a null.
+   */
+  private lastRunEnds(undoing: Set<Item>): Set<Item> | null {
+    const parents = new Set<YNode>();
+    for (const it of undoing) {
+      if (
+        !it.deleted &&
+        it.content instanceof ContentFormat &&
+        it.content.value === null
+      ) {
+        parents.add(it.parent as YNode);
+      }
+    }
+    if (parents.size === 0) {
+      return null;
+    }
+    const kept = new Set<Item>();
+    for (const parent of parents) {
+      // Of each key, the value of the last live item not undone, and the
+      // nulls this undo deletes after it, with the content count at each.
+      const last = new Map<string, unknown>();
+      const pending = new Map<string, [Item, number, unknown][]>();
+      let content = 0;
+      // `next` is the value of the next live item of the key (undefined at
+      // the end of the container): a null before it is the run's last end
+      // where content shows between them and the run would take a value
+      // there it did not have (a restate of the run's own value joins it).
+      const resolve = (key: string, next: unknown) => {
+        for (const [item, at, open] of pending.get(key) ?? []) {
+          if (
+            content > at &&
+            (next === undefined ||
+              (next !== null && !equalFormatValue(next, open)))
+          ) {
+            kept.add(item);
+          }
+        }
+        pending.delete(key);
+      };
+      for (
+        let it = (parent as unknown as {_start: Item | null})._start;
+        it !== null;
+        it = it.right
+      ) {
+        if (it.deleted) {
+          continue;
+        }
+        const undone = undoing.has(it);
+        if (it.content instanceof ContentFormat) {
+          const {key, value} = it.content;
+          if (!undone) {
+            resolve(key, value);
+            last.set(key, value);
+          } else if (value === null) {
+            const before = last.get(key);
+            if (before !== undefined && before !== null) {
+              const list = pending.get(key) ?? [];
+              list.push([it, content, before]);
+              pending.set(key, list);
+            }
+          }
+        } else if (!undone && it.countable) {
+          content++;
+        }
+      }
+      for (const key of [...pending.keys()]) {
+        resolve(key, undefined);
+      }
+    }
+    return kept;
   }
 
   /**
@@ -5170,6 +5258,7 @@ export class YBinding {
       this.restoring = null;
       this.removing = null;
       this.undoing = null;
+      this.keptNulls = null;
       this.stepCursor = null;
     }
   }
@@ -5339,6 +5428,7 @@ export class YBinding {
     this.restoring = null;
     this.removing = null;
     this.undoing = null;
+    this.keptNulls = null;
     if (top === undefined) {
       return;
     }
@@ -5370,6 +5460,7 @@ export class YBinding {
     this.restoring = names;
     this.removing = removing;
     this.undoing = undoing;
+    this.keptNulls = this.lastRunEnds(undoing);
   }
 
   // -------------------------------------------------------------------------

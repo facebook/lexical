@@ -1008,7 +1008,7 @@ export class Writer {
       this.replay = editor._recordTextEdits
         ? new TextReplay(
             this.plan.textEdits ?? null,
-            this.prevState._nodeMap,
+            this.prevState,
             $isRangeSelection(selection) &&
               selection.isCollapsed() &&
               selection.anchor.type === 'text'

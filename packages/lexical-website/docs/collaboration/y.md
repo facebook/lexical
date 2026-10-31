@@ -800,10 +800,13 @@ person's:
   then edits them. Where the line's text changed, the text of nodes made in
   place of removed ones keeps the start and end it shares with the line's
   text as it was, by character, whatever nodes held it (as y-prosemirror
-  keeps a text run's): a block's text nodes made again from its JSON with
-  one word changed write that word alone, so a letter a collaborator types
-  into another word of the line at the same time stays in that word, and a
-  character a collaborator deletes there stays deleted. A replacement
+  keeps a text run's), and between two changes every run of unchanged
+  words, with the white space around it that the two texts share: a block's
+  text nodes made again from its JSON with some words changed write those
+  words alone, so a letter a collaborator types into another word of the
+  line at the same time stays in that word, and a character a collaborator
+  deletes there stays deleted (and is not shown twice when the collaborator
+  undoes the delete). A replacement
   replaces whole words, as below, and so does an insertion between two
   letters or digits of a word or a deletion inside one, so that an edit
   computed before it that replaces the old word takes nothing out of the new
@@ -813,8 +816,16 @@ person's:
   between the changed words and the kept text is written with them, unless
   it was a node of its own (a tab, a line break, a node of spaces). A word
   joined to a changed word through an inline node, with no space between, is
-  written again with it; text between two separate changes is written
-  again, and an inline node made there is new where it is put. Prefer
+  written again with it, and an inline node made between two changes is new
+  where it is put. The words kept are the longest run of words the two
+  texts share in the same order (where a word repeats, which of its
+  occurrences is kept can differ from what the update meant), wherever
+  that takes at most 2,048 word edits among the words both texts have, so
+  that the comparison stays within about 30 ms for a 5,000-word line.
+  Beyond that (a line made again with most of its words moved), only its
+  common start and end are kept. A word that is not kept is written again:
+  one the update moved past kept words, and beyond 2,048 edits, every word
+  between the first and the last change. Prefer
   these to `setTextContent`, which sets a node's text whole: such a change
   (and a change the browser makes to the DOM text, as an IME composition
   does) keeps the start and end its text shares with the node's old text,
@@ -992,19 +1003,31 @@ not merge as a user might expect:
   collaborator types in those items at the same time is lost.
 - **Text nodes made again with other text.** Where an update replaces a
   line's text nodes with new ones and the line's text changed (an AI rewrite
-  that makes a block's text nodes again with one word changed, or removes a
-  block's children and appends one new text node), a replaced node whose
-  text is not all there unchanged is written again whole: its characters are
-  deleted, and the new text is inserted. What a collaborator types into that
-  text at the same time, which the update's author has not seen, stays where
-  it was, so it lands outside the new text, before it (a letter typed at the
-  end of a word ends up in front of the rewritten text, out of its word),
-  and the collaborator's formatting of that text at the same time is not
-  kept. The concurrent typed text is kept, and every client shows the same
-  result. Edit the changed
-  words in place instead (`TextNode#spliceText`, the selection's
-  `insertText`; see [Edits made by code](#edits-made-by-code-agents-tools)):
-  only the changed characters are written.
+  that makes a block's text nodes again from their JSON with some words
+  changed, or removes a block's children and appends one new text node), the
+  unchanged text keeps its characters (see
+  [Edits made by code](#edits-made-by-code-agents-tools)), and each changed
+  word is written again whole: its characters are deleted, and the new word
+  is inserted. A word counts as changed when any character of it changed,
+  punctuation joined to it included (`t5z,` made again as `t5z`), and so
+  does a word joined to a changed word through an inline node. What a
+  collaborator types into a changed word at the same time, which the
+  update's author has not seen, stays where it was, so it lands next to the
+  new word, not in it (a letter typed at the end of the word ends up in
+  front of the new word), and the collaborator's formatting of the changed
+  word at the same time is not kept. So is a word the update moved past
+  the words it kept, and, where the words both texts have need more than
+  2,048 edits, everything between the first and the last change. A changed
+  word is written again even where only part of it changed: an insertion
+  between two letters of a word (`bbcc` made again as `bb xxcc`) writes
+  `bb` again, so a collaborator who deletes the old `bb` at the same time
+  and undoes the delete brings it back next to the new one, and `bb` shows
+  twice ([#9635](https://github.com/meta/lexical/issues/9635)), as when two
+  clients remove the same text and both undo (see Undo below).
+  The concurrent typed text is kept, and every client shows the same
+  result. Edit the changed words in place instead
+  (`TextNode#spliceText`, the selection's `insertText`): only the changed
+  characters are written.
 - **Delete wins.** Text typed into a container that a collaborator deletes at
   the same time is deleted with it, and so is a block moved into it.
 - **Last writer wins** for the fields of one link (URL and target change
@@ -1299,6 +1322,11 @@ reproduces it:
 - A comment can spread onto later words when a client types uncommented
   text inside it offline while a collaborator's deletes there drop the item
   that ended it: [#9564](https://github.com/meta/lexical/issues/9564).
+- A link a collaborator removes comes back when another collaborator
+  formats a range covering it at the same time; an update that makes a
+  line's text nodes again without the link while a stale edit formats a
+  range reaching past the link's text shows the same:
+  [#9597](https://github.com/meta/lexical/issues/9597).
 - Turning a paragraph inside a container that is itself inside a
   container (both not shadow roots) into a list removes the outer
   container and makes no list, in every `@lexical/y` editor (it runs

@@ -3130,29 +3130,44 @@ export function $isKeyInSelectionNodes(
 }
 
 /**
- * For each element of an EditorState, whether it holds a TextNode at any
- * depth, as ElementNode#shouldSerializeTextStyles asks for an inline element.
- * Without it, serializing inline elements nested inside each other, each with
- * a textFormat or textStyle, walks the same subtree once per level. A pending
- * state's entry is dropped by getWritable, since a change to any node can
- * change what its ancestors hold.
+ * For each element of a committed (frozen) EditorState, whether it holds a
+ * TextNode at any depth, as ElementNode#shouldSerializeTextStyles asks for an
+ * inline element. Without it, serializing inline elements nested inside each
+ * other, each with a textFormat or textStyle, walks the same subtree once per
+ * level. A frozen state never changes, so its entries never go stale.
  */
 const textInsideCache = new WeakMap<EditorState, Map<NodeKey, boolean>>();
 
-/** @internal */
-export function $getTextInsideCache(): Map<NodeKey, boolean> {
-  const editorState = getActiveEditorState();
+/**
+ * @internal
+ * The cache of $getTextInsideCache's frozen state for the active state, or
+ * null where none is known to hold: a pending state uses the cache of the
+ * committed state it was made from only while no node in it has been marked
+ * dirty (written, created or removed), when it holds exactly that state's
+ * nodes. A copy serializes in such an update.
+ */
+export function $getTextInsideCache(): Map<NodeKey, boolean> | null {
+  let editorState = getActiveEditorState();
+  if (!editorState._readOnly) {
+    const editor = internalGetActiveEditor();
+    if (
+      editor === null ||
+      editor._pendingEditorState !== editorState ||
+      editor._dirtyType !== NO_DIRTY_NODES
+    ) {
+      return null;
+    }
+    editorState = editor._editorState;
+    if (!editorState._readOnly) {
+      return null;
+    }
+  }
   let cache = textInsideCache.get(editorState);
   if (cache === undefined) {
     cache = new Map();
     textInsideCache.set(editorState, cache);
   }
   return cache;
-}
-
-/** @internal */
-export function internalResetTextInsideCache(editorState: EditorState): void {
-  textInsideCache.delete(editorState);
 }
 
 /** @internal */

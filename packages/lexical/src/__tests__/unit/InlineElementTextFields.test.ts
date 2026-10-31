@@ -37,6 +37,17 @@ class InlineWrapperNode extends ElementNode {
   }
 }
 
+/** An inline element whose clone reads the JSON of the node it is made from. */
+class CloneReadsJSONNode extends InlineWrapperNode {
+  $config() {
+    return this.config('test-clone-reads-json', {extends: InlineWrapperNode});
+  }
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    prevNode.exportJSON();
+  }
+}
+
 function $wrapper(...children: LexicalNode[]): InlineWrapperNode {
   return $create(InlineWrapperNode)
     .setTextFormat(1)
@@ -49,7 +60,7 @@ function withEditor(fn: () => void): void {
     defineExtension({
       $initialEditorState: null,
       name: '[inline-element-text-fields]',
-      nodes: [InlineWrapperNode],
+      nodes: [InlineWrapperNode, CloneReadsJSONNode],
     }),
   );
   editor.update(fn, {discrete: true});
@@ -263,5 +274,43 @@ describe('serializing inline elements nested inside each other', () => {
       inner.append($createTextNode('again'));
       expect(fields(outer)).toEqual(OMITTED);
     });
+  });
+
+  test('a clone that reads JSON before the change it is made for does not keep what the change replaces', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[inline-element-text-fields-clone]',
+        nodes: [InlineWrapperNode, CloneReadsJSONNode],
+      }),
+    );
+    editor.update(
+      () => {
+        $getRoot().append(
+          $createParagraphNode().append(
+            $create(CloneReadsJSONNode)
+              .setTextFormat(1)
+              .append($createTextNode('leaf')),
+          ),
+        );
+      },
+      {discrete: true},
+    );
+    let inside: Fields = {};
+    editor.update(
+      () => {
+        const wrapper = (
+          $getRoot().getFirstChildOrThrow() as ElementNode
+        ).getFirstChildOrThrow() as CloneReadsJSONNode;
+        wrapper.getFirstChildOrThrow().remove();
+        inside = fields(wrapper);
+      },
+      {discrete: true},
+    );
+    expect(inside.textFormat).toBe(1);
+    const committed = editor.getEditorState().toJSON() as unknown as {
+      root: {children: {children: Fields[]}[]};
+    };
+    expect(committed.root.children[0].children[0].textFormat).toBe(1);
   });
 });

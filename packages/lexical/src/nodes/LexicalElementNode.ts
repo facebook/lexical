@@ -1104,13 +1104,16 @@ function $hasTextChild(element: ElementNode, deep: boolean): boolean {
   return false;
 }
 
-/** $hasTextChild's deep walk; every element it visits is cached. */
+/**
+ * $hasTextChild's deep walk; with a cache (see $getTextInsideCache), every
+ * element it visits is cached.
+ */
 function $hasTextInside(
   element: ElementNode,
-  cache: Map<NodeKey, boolean>,
+  cache: Map<NodeKey, boolean> | null,
 ): boolean {
   const key = element.getKey();
-  const cached = cache.get(key);
+  const cached = cache !== null ? cache.get(key) : undefined;
   if (cached !== undefined) {
     return cached;
   }
@@ -1124,7 +1127,9 @@ function $hasTextInside(
       $isTextNode(child) ||
       ($isElementNode(child) && $hasTextInside(child, cache));
   }
-  cache.set(key, found);
+  if (cache !== null) {
+    cache.set(key, found);
+  }
   return found;
 }
 

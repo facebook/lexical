@@ -53,6 +53,8 @@ const KEYWORD = /(^|[^a-z#])(cat|dog)(?=[^a-z]|$)/;
 const LOOKBEHIND_DOG = /(?<=@)dog/;
 // eslint-disable-next-line compat/compat
 const LOOKBEHIND_DOG_OR_CAT = /(?<=@)dog|\bcat\b/;
+// eslint-disable-next-line compat/compat
+const DOG_OR_LOOKBEHIND_UPPER = /dog|(?<=@)DOG/;
 
 // The match of `regex`, or for KEYWORD of its second group.
 function matcher(regex: RegExp) {
@@ -67,7 +69,11 @@ function matcher(regex: RegExp) {
   };
 }
 
-function editorWith(texts: string[], regex: RegExp) {
+function editorWith(
+  texts: string[],
+  regex: RegExp,
+  normalize: (text: string) => string = text => text,
+) {
   const editor = createEditor({
     nodes: [KeywordNode],
     onError: e => {
@@ -75,15 +81,20 @@ function editorWith(texts: string[], regex: RegExp) {
     },
   });
   registerLexicalTextEntity(editor, matcher(regex), KeywordNode, node =>
-    $create(KeywordNode).setTextContent(node.getTextContent()),
+    $create(KeywordNode).setTextContent(normalize(node.getTextContent())),
   );
   editor.update(
     () => {
       $getRoot().append(
         $createParagraphNode().append(
+          // "*" makes a node bold, "_" italic.
           ...texts.map(t => {
-            const node = $createTextNode(t.replace(/^\*/, ''));
-            return t.startsWith('*') ? node.toggleFormat('bold') : node;
+            const node = $createTextNode(t.replace(/^[*_]/, ''));
+            return t.startsWith('*')
+              ? node.toggleFormat('bold')
+              : t.startsWith('_')
+                ? node.toggleFormat('italic')
+                : node;
           }),
         ),
       );
@@ -100,8 +111,9 @@ function typeInto(
   offset: number,
   typed: string,
   regex: RegExp = KEYWORD,
+  normalize?: (text: string) => string,
 ): {text: string; entities: string[]} {
-  const editor = editorWith(texts, regex);
+  const editor = editorWith(texts, regex, normalize);
   editor.update(
     () => {
       const node = (
@@ -168,6 +180,15 @@ describe('registerLexicalTextEntity after a plain text node of another format', 
     expect(
       typeInto(['*@', 'dog ca', '*!'], 1, 6, 't', LOOKBEHIND_DOG_OR_CAT),
     ).toEqual({entities: ['cat'], text: '@dog cat!'});
+  });
+  // createNode may change the text (to lower case): the entity is checked on
+  // the text it gets.
+  test('a lookbehind match that createNode makes a match of its own: an entity', () => {
+    expect(
+      typeInto(['*x', '@DO', '*!'], 1, 3, 'G', DOG_OR_LOOKBEHIND_UPPER, text =>
+        text.toLowerCase(),
+      ),
+    ).toEqual({entities: ['dog'], text: 'x@dog!'});
   });
   test('a word boundary match after a bold letter: no entity', () => {
     expect(typeInto(['*x', 'do', '*!'], 1, 2, 'g', /\bdog\b/)).toEqual({

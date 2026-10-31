@@ -75,15 +75,30 @@ export function registerLexicalTextEntity<T extends TextNode>(
       : {end: found.end - prefix.length, start: found.start - prefix.length};
   };
 
-  // Whether `match` in `text` is a match of its own text too: an entity node
-  // is checked on its own text (see $reverseNodeTransform).
-  const matchesAlone = (text: string, match: EntityMatch): boolean => {
-    const alone = getMatch(text.slice(match.start, match.end));
-    return (
-      alone !== null &&
-      alone.start === 0 &&
-      alone.end === match.end - match.start
-    );
+  // Whether `match` in `node`'s text `text` stays an entity: an entity node
+  // is checked on its own text (see $reverseNodeTransform), which is the
+  // text createNode gives it (it may change it, say to lower case).
+  const $staysEntity = (
+    node: TextNode,
+    text: string,
+    match: EntityMatch,
+  ): boolean => {
+    const isWhole = (whole: string) => {
+      const alone = getMatch(whole);
+      return alone !== null && alone.start === 0 && alone.end === whole.length;
+    };
+    const source = text.slice(match.start, match.end);
+    if (isWhole(source)) {
+      return true;
+    }
+    // A detached node, which the update's garbage collection removes.
+    const made = createNode(
+      $createTextNode(source)
+        .setFormat(node.getFormat())
+        .setStyle(node.getStyle())
+        .setDetail(node.getDetail()),
+    ).getTextContent();
+    return made !== source && isWhole(made);
   };
 
   const $textNodeTransform = (node: TextNode) => {
@@ -155,7 +170,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
       if (
         before !== '' &&
         match !== null &&
-        !matchesAlone(remainingText, match)
+        !$staysEntity(currentNode, remainingText, match)
       ) {
         // A match that needs the text before it (a lookbehind) would be
         // made an entity and undone again: it is left as text, and the

@@ -636,7 +636,9 @@ export function $wrapNodesImpl(
     }
   }
 
-  const firstUnit = units[nodes.indexOf(firstNode)];
+  const firstUnit = emptyElements.has(firstNode.getKey())
+    ? null
+    : units[nodes.indexOf(firstNode)];
   const firstNodeBlock =
     firstUnit == null ? $wrappedBlock(firstNode, blockOf) : firstUnit.block;
   if (firstNodeBlock === null) {

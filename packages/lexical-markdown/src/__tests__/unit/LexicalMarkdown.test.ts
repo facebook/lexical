@@ -5523,6 +5523,25 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     );
   });
 
+  it("writes no reference for an email's `@` after a raw backslash", () => {
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createTextNode('x\\@b.co'),
+            $createTextNode('\u201cy\u201d').toggleFormat('bold'),
+          ),
+        ),
+      {discrete: true},
+    );
+    expect(
+      editor.read('latest', () =>
+        $convertToMarkdownString(TRANSFORMERS, undefined, true),
+      ),
+    ).toBe('x\\@b.c&#111;**\u201cy\u201d**');
+  });
+
   it('keeps an email that holds a reference whole for @lexical/mdast', () => {
     const editor = createTestEditor();
     editor.update(

@@ -1336,6 +1336,8 @@ export const LINK: TextMatchTransformer = {
     const linkTitle =
       rawLinkTitle != null ? unescapeText(rawLinkTitle) : undefined;
     const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
+    // Import passes the label from its real opener, so this finds none, but
+    // a custom caller may pass a match that starts at an earlier `[`.
     const openBracketIndex = getLinkLabelOpener(linkText);
     if (openBracketIndex === null) return;
     let parsedLinkText = linkText;

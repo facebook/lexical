@@ -930,7 +930,13 @@ function findSpoiledLinks(
         ADDRESS.test(text.slice(start, end).replace(/\\/g, ''))
       ) {
         for (let i = start; i < end; i++) {
-          if (text[i] === '@' && !isReference[i] && !has(formats, i, i + 1)) {
+          // A raw backslash before an `@` would escape the reference's `&`.
+          if (
+            text[i] === '@' &&
+            !isReference[i] &&
+            !has(formats, i, i + 1) &&
+            !isEscaped(text, i)
+          ) {
             spoiled.push(i);
           }
         }

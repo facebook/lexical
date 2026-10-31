@@ -42,6 +42,22 @@ export function canContainTransformableMarkdown(
   return $isTextNode(node) && !node.hasFormat('code');
 }
 
+const delimitersByIndex = new WeakMap<TextFormatTransformersIndex, string>();
+
+/** The characters that start a code span or a format's tag. */
+function getDelimiters(index: TextFormatTransformersIndex): string {
+  let delimiters = delimitersByIndex.get(index);
+  if (delimiters === undefined) {
+    delimiters =
+      '`' +
+      Object.keys(index.transformersByTag)
+        .map(tag => tag[0])
+        .join('');
+    delimitersByIndex.set(index, delimiters);
+  }
+  return delimiters;
+}
+
 /**
  * What a delimiter run cut at `index` of `text` sees beyond its far end once
  * the text is split there: before the run that starts at `index` when `step`
@@ -53,8 +69,15 @@ function characterBeyondRun(
   index: number,
   step: 1 | -1,
   outside: string | undefined,
+  delimiters: string,
 ): string | undefined {
-  const edge = getDelimiterRunEdge(text, index, step);
+  // Only a delimiter's run is walked: beside anything else, what lies beyond
+  // is never read, and a long run of it would be walked at every cut.
+  const beside = text[step === 1 ? index - 1 : index];
+  const edge =
+    beside !== undefined && delimiters.includes(beside)
+      ? getDelimiterRunEdge(text, index, step)
+      : index;
   return step === 1
     ? edge < text.length
       ? characterAt(text, edge)
@@ -190,6 +213,7 @@ function importOutermost(
           rest: text,
         };
   const {formats} = scan;
+  const delimiters = getDelimiters(textFormatTransformersIndex);
   let foundTextFormat = findOutermostTextFormatTransformer(
     text,
     textFormatTransformersIndex,
@@ -266,7 +290,7 @@ function importOutermost(
       inside,
       matched,
       outside: {
-        after: characterBeyondRun(text, startIndex, 1, after),
+        after: characterBeyondRun(text, startIndex, 1, after, delimiters),
         before,
         node: nodeBefore,
       },
@@ -286,7 +310,7 @@ function importOutermost(
     scan.rest = rest;
     return {
       after,
-      before: characterBeyondRun(text, endIndex, -1, before),
+      before: characterBeyondRun(text, endIndex, -1, before, delimiters),
       node: nodeAfter,
       scan: isReusable ? scan : null,
     };
@@ -312,10 +336,22 @@ function importOutermost(
       {
         after: isCodeSpan
           ? undefined
-          : characterBeyondRun(text, endIndex - tagLength, 1, after),
+          : characterBeyondRun(
+              text,
+              endIndex - tagLength,
+              1,
+              after,
+              delimiters,
+            ),
         before: isCodeSpan
           ? undefined
-          : characterBeyondRun(text, startIndex + tagLength, -1, before),
+          : characterBeyondRun(
+              text,
+              startIndex + tagLength,
+              -1,
+              before,
+              delimiters,
+            ),
         node: result.transformedNode,
       },
       undefined,

@@ -285,6 +285,24 @@ function $wrappedBlock(
   return found;
 }
 
+/**
+ * A leaf that is a block of its own (a block decorator, such as a horizontal
+ * rule) in an element that is not a block container: it is wrapped on its
+ * own, as it is in a block container. Why: taking its parent for its block
+ * moved all the parent's children into one new element, those before the
+ * range included, and the new elements then went next to one of them, inside
+ * that new element: the update never returned (#9638).
+ */
+function $isBlockLeafInElement(node: LexicalNode): boolean {
+  const parent = node.getParent();
+  return (
+    parent !== null &&
+    $isLeafNode(node) &&
+    !INTERNAL_isInlineContent(node) &&
+    !$isBlockContainer(parent)
+  );
+}
+
 /** An empty element that is not inline content. */
 function $isEmptyBlock(node: LexicalNode): node is ElementNode {
   return (
@@ -508,6 +526,8 @@ export function $wrapNodesImpl(
   if ($isBlockContainer(firstNodeBlock)) {
     const child = $childIn(firstNodeBlock, firstNode, childOf);
     target = INTERNAL_isInlineContent(child) ? $inlineRun(child)[0] : child;
+  } else if ($isBlockLeafInElement(firstNode)) {
+    target = firstNode;
   }
 
   let targetIsPrevSibling = false;
@@ -556,6 +576,10 @@ export function $wrapNodesImpl(
   const runOf = new Map<NodeKey, Unit>();
   for (let i = 0; i < nodesLength; i++) {
     const nodeParent = nodes[i].getParent();
+    if (nodeParent !== null && $isBlockLeafInElement(nodes[i])) {
+      units.push({block: nodeParent, key: nodes[i].getKey(), run: [nodes[i]]});
+      continue;
+    }
     const block =
       nodeParent === null ? null : $wrappedBlock(nodeParent, blockOf);
     if (block === null || !$isBlockContainer(block)) {

@@ -42,10 +42,10 @@ import {
   countLive,
   type DesiredContext,
   diffAtoms,
-  diffStrings,
   PENDING_LINE_BREAK,
   readAtoms,
   type Run,
+  setTextEnds,
   snapToWords,
 } from './Inline';
 import {
@@ -3141,12 +3141,10 @@ export class Writer {
           }
         }
       }
-      const diff = diffStrings(oldText, newText, cursor);
-      const {prefix, suffix} = snapToWords(
+      const {prefix, suffix} = setTextEnds(
         oldText,
         newText,
-        diff.prefix,
-        diff.suffix,
+        cursor,
         this.state.editor._compositionKey !== null,
       );
       const del = oldText.length - prefix - suffix;

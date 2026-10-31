@@ -42,6 +42,7 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $hasUpdateTag,
   $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
@@ -90,11 +91,18 @@ import {
   markFormatCloser,
 } from './Cursor';
 import {$canonicalizeGroup, $switchesWrapper} from './Groups';
-import {$applyStoredAttrs, Reader} from './Read';
+import {
+  $applyStoredAttrs,
+  $unstoredWrapperTextFields,
+  Reader,
+  type StoredFormatsMemo,
+} from './Read';
 import {
   $isGroupNode,
   $isWrapper,
   $nodeAttrs,
+  $setTextFields,
+  type Attrs,
   canStoreAs,
   deriveStorageKind,
   getGroupSpec,
@@ -109,6 +117,8 @@ import {
   type StorageKind,
   storageKindOf,
   withPins,
+  wrapperFieldsOf,
+  wrappersFromAttrs,
 } from './Schema';
 import {
   attrsBefore,
@@ -866,6 +876,12 @@ export class YBinding {
   private unread: Unread | null = null;
   /** While a change is read: the document as it is (see readChange). */
   private reading = false;
+  /** The stored formats one update's transforms looked up (see settleTextFields). */
+  private storedFormats: {
+    state: EditorState | null;
+    sequences: StoredFormatsMemo;
+    lines: Map<NodeKey, StoredLine>;
+  } = {lines: new Map(), sequences: new Map(), state: null};
   /** This binding's view, for its work (see guard). */
   private readonly seer = () => (this.reading ? null : this.unread);
   /**
@@ -1164,10 +1180,116 @@ export class YBinding {
         $flushSyncAfterUpdate();
       }
     };
+    // A local change that leaves a wrapper holding no text (a delete of the
+    // text in a link, or in a mark inside a link) makes Lexical serialize the
+    // text fields this client set while the wrapper held text, which are
+    // stored nowhere: in the same update, the wrapper shows the stored ones,
+    // as every other client and a fresh reader do, and nothing follows the
+    // update for an app to answer. Otherwise the write would write the
+    // wrapper's whole value again over the content it keeps (a line break,
+    // an inline decorator), over a collaborator's concurrent removal or
+    // change of it. Runs on the element the change marks dirty: a stored
+    // element inside wrappers (see $unstoredWrapperTextFields), or the
+    // wrapper itself (its value is the one stored at its first atom).
+    const settleTextFields = (node: LexicalNode) =>
+      withPins(this._pins, () => {
+        const state = this.state;
+        const stored = state.yByKey.has(node.getKey());
+        if (
+          this._status !== 'active' ||
+          this.unread !== null ||
+          state.hidden !== null ||
+          !(
+            stored ||
+            ($isElementNode(node) && node.isInline() && $isWrapper(node))
+          ) ||
+          $hasUpdateTag(COLLABORATION_TAG)
+        ) {
+          return;
+        }
+        const editor = this._editor;
+        // The stored formats are looked up once per update (the document
+        // does not change during its transforms).
+        const memo = this.storedFormats;
+        if (memo.state !== editor._pendingEditorState) {
+          memo.state = editor._pendingEditorState;
+          memo.sequences = new Map();
+          memo.lines = new Map();
+        }
+        const fieldsOf = (type: string) => wrapperFieldsOf(editor, type);
+        // The wrappers around the stored element (see
+        // $unstoredWrapperTextFields), or the wrapper itself when its own
+        // text changed (a delete of the text directly in a link); its value
+        // is the one stored at its first atom before the update.
+        const found: (readonly [ElementNode, Attrs | null, number, string])[] =
+          stored
+            ? $unstoredWrapperTextFields(
+                state,
+                [node.getKey()],
+                fieldsOf,
+                memo.sequences,
+              ).map(
+                ([wrapper, json]) =>
+                  [
+                    wrapper,
+                    json,
+                    wrapper.getTextFormat(),
+                    wrapper.getTextStyle(),
+                  ] as const,
+              )
+            : (node as ElementNode).shouldSerializeTextStyles() &&
+                ((node as ElementNode).getTextFormat() !== 0 ||
+                  (node as ElementNode).getTextStyle() !== '')
+              ? [
+                  [
+                    node as ElementNode,
+                    null,
+                    (node as ElementNode).getTextFormat(),
+                    (node as ElementNode).getTextStyle(),
+                  ] as const,
+                ]
+              : [];
+        if (found.length === 0) {
+          return;
+        }
+        // Only a wrapper this update left without text, with the text fields
+        // it had before the update: ones this update set (on a wrapper
+        // without text, or in a transform) are stored by the write.
+        const stale = editor.read('latest', () =>
+          found.flatMap(([wrapper, json, format, style]) => {
+            const was = $getNodeByKey(wrapper.getKey());
+            if (
+              !$isElementNode(was) ||
+              was.shouldSerializeTextStyles() ||
+              was.getTextFormat() !== format ||
+              was.getTextStyle() !== style
+            ) {
+              return [];
+            }
+            if (json !== null) {
+              return [[wrapper, json] as const];
+            }
+            const value = this.$storedWrapperValue(was, memo.lines);
+            return value === null ? [] : [[wrapper, value] as const];
+          }),
+        );
+        for (const [wrapper, json] of stale) {
+          const {textFormat, textStyle} = json;
+          if (
+            wrapper.getTextFormat() !==
+              (typeof textFormat === 'number' ? textFormat : 0) ||
+            wrapper.getTextStyle() !==
+              (typeof textStyle === 'string' ? textStyle : '')
+          ) {
+            $setTextFields(wrapper, json);
+          }
+        }
+      });
     for (const {klass} of this._editor._nodes.values()) {
       if (klass.prototype instanceof ElementNode) {
         this.disposers.push(
           this._editor.registerNodeTransform(klass, noteTransformed),
+          this._editor.registerNodeTransform(klass, settleTextFields),
           // The node structure normalization never reaches a named slot.
           this._editor.registerNodeTransform(klass, $wrapSlotShadowRootInline),
         );
@@ -4312,6 +4434,110 @@ export class YBinding {
     return found;
   }
 
+  /**
+   * The value stored for `wrapper` (in the state being read, which the
+   * document stores) at its first atom: its JSON as wrappersFromAttrs reads
+   * it, or null. Each line's atoms, and the offsets of the wrappers in it,
+   * are found once (`lines`, kept for one update).
+   */
+  private $storedWrapperValue(
+    wrapper: ElementNode,
+    lines: Map<NodeKey, StoredLine>,
+  ): Attrs | null {
+    const owner = $ownerOf(wrapper);
+    if (owner === null) {
+      return null;
+    }
+    let line = lines.get(owner.getKey());
+    if (line === undefined) {
+      line = {atoms: this.storedAtoms(owner), offsets: $wrapperOffsets(owner)};
+      lines.set(owner.getKey(), line);
+    }
+    const offset = line.offsets.get(wrapper.getKey());
+    if (offset === undefined) {
+      return null;
+    }
+    // The atom range holding `offset` (ranges are in order).
+    const {atoms} = line;
+    let lo = 0;
+    let hi = atoms.length - 1;
+    let at: [number, number, Attrs] | undefined;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      const [from, to] = atoms[mid];
+      if (offset < from) {
+        hi = mid - 1;
+      } else if (offset >= to) {
+        lo = mid + 1;
+      } else {
+        at = atoms[mid];
+        break;
+      }
+    }
+    if (at === undefined) {
+      return null;
+    }
+    const editor = this._editor;
+    const value = wrappersFromAttrs(at[2], type =>
+      wrapperFieldsOf(editor, type),
+    ).find(v => v.type === wrapper.getType());
+    return value === undefined ? null : value.json;
+  }
+
+  /**
+   * The content of the line (or inline container) `owner` as stored: each
+   * content item's atom range and the formats in effect at it.
+   */
+  private storedAtoms(owner: ElementNode): [number, number, Attrs][] {
+    const state = this.state;
+    const unit = state.unitByKey.get(owner.getKey());
+    let start: Item | null;
+    let formats: Map<string, unknown>;
+    if (unit !== undefined && unit.end !== null) {
+      const left = prevLiveEnd(unit.end, state.hidden);
+      start = left === null ? unit.cs.y._start : left.right;
+      formats = new Map(unit.start || []);
+    } else if (unit !== undefined && unit.kind === 'implicit') {
+      const units = unit.cs.units;
+      const idx = units.indexOf(unit);
+      let left = idx > 0 ? units[idx - 1].end : null;
+      while (left !== null && !isShownEnd(left, state.hidden)) {
+        left = prevLiveEnd(left, state.hidden);
+      }
+      start = left === null ? unit.cs.y._start : left.right;
+      formats = new Map(unit.start || []);
+    } else {
+      const cs = state.csByKey.get(owner.getKey());
+      if (cs === undefined || cs.kind !== 'i') {
+        return [];
+      }
+      start = cs.y._start;
+      formats = new Map();
+    }
+    const out: [number, number, Attrs][] = [];
+    let offset = 0;
+    for (let it = start; it !== null; it = it.right) {
+      if (!it.deleted && it.content instanceof ContentFormat) {
+        if (it.content.value === null) {
+          formats.delete(it.content.key);
+        } else {
+          formats.set(it.content.key, it.content.value);
+        }
+        continue;
+      }
+      const len = shownLength(it, state.hidden);
+      if (len === 0) {
+        if (isShownEnd(it, state.hidden)) {
+          break;
+        }
+        continue;
+      }
+      out.push([offset, offset + len, Object.fromEntries(formats) as Attrs]);
+      offset += len;
+    }
+    return out;
+  }
+
   /** Containers a write did not write a follow-up's change to (see refused). */
   private noteRefused(writer: Writer, naming: boolean): void {
     for (const cs of writer.refused) {
@@ -6341,6 +6567,30 @@ function $ownerOf(node: LexicalNode): ElementNode | null {
     parent = parent.getParent();
   }
   return parent;
+}
+
+/** A line's stored atoms and the offsets of its wrappers (see YBinding). */
+type StoredLine = {
+  atoms: [number, number, Attrs][];
+  offsets: Map<NodeKey, number>;
+};
+
+/** The atom offset of every wrapper in the content of `owner`, in one pass. */
+function $wrapperOffsets(owner: ElementNode): Map<NodeKey, number> {
+  const out = new Map<NodeKey, number>();
+  let n = 0;
+  const visit = (el: ElementNode) => {
+    for (const c of el.getChildren()) {
+      if ($isWrapper(c)) {
+        out.set(c.getKey(), n);
+        visit(c as ElementNode);
+      } else {
+        n += $atomSize(c);
+      }
+    }
+  };
+  visit(owner);
+  return out;
 }
 
 function $atomsBefore(owner: ElementNode, target: LexicalNode): number {

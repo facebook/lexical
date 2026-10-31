@@ -45,8 +45,7 @@ function moveMatch(
 }
 
 /**
- * The first link match in `text`, and where the search found it, which is
- * before the match when its label holds the real opener.
+ * The first link match in `text`, and up to where a search would find it.
  */
 function matchLink(
   text: string,
@@ -56,19 +55,43 @@ function matchLink(
     regExp.source,
     regExp.flags.replace(/[gy]/g, '') + 'g',
   );
+  // No link starts after the last `](`, and searching from each `[` there
+  // would walk on to the end of the text.
+  const lastCloser = text.lastIndexOf('](');
   let match;
-  while ((match = search.exec(text)) !== null) {
+  while (
+    search.lastIndex < lastCloser &&
+    (match = search.exec(text)) !== null
+  ) {
     // A `[` that the label holds outside a code span is the link's real
     // opener, and what comes before it is ordinary text, so the match starts
     // there; its label may then be empty, as in `x[[](u)`.
     const opener = getLinkLabelOpener(match[1]);
     if (opener !== null && opener >= 0) {
-      return [moveMatch(match, text, 0, opener + 1), match.index];
+      // A search from any `[` up to the real opener finds the same link, or
+      // up to the one before it when the label is empty, since the search
+      // needs a label.
+      const inner = moveMatch(match, text, 0, opener + 1);
+      return [
+        inner,
+        inner[1] === '' ? text.lastIndexOf('[', inner.index - 1) : inner.index,
+      ];
     }
     if (!isEscaped(text, match.index)) {
       return [match, match.index];
     }
-    search.lastIndex = match.index + 1;
+    // The label of an escaped `[` holds no opener, so each escaped `[` up to
+    // the next one written as is finds what the last of them finds: that
+    // opener, even with an empty label, or nothing.
+    let next = match.index;
+    do {
+      next = text.indexOf('[', next + 1);
+    } while (next !== -1 && isEscaped(text, next));
+    if (next === -1) {
+      break;
+    }
+    const last = text.lastIndexOf('[', next - 1);
+    search.lastIndex = last > match.index ? last : next;
   }
   return null;
 }

@@ -31,6 +31,7 @@ import {
   LINK,
   type MultilineElementTransformer,
   registerMarkdownShortcuts,
+  type TextFormatTransformer,
   type TextMatchTransformer,
   type Transformer,
   TRANSFORMERS,
@@ -5499,6 +5500,29 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     },
   );
 
+  it("writes no reference for the `.` of `www.` that is a format's marker", () => {
+    const DOT: TextFormatTransformer = {
+      format: ['italic'],
+      tag: '.',
+      type: 'text-format',
+    };
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createTextNode('www'),
+            $createTextNode('x.co').toggleFormat('italic'),
+            $createTextNode(' or www.y.co'),
+          ),
+        ),
+      {discrete: true},
+    );
+    expect(editor.read('latest', () => $convertToMarkdownString([DOT]))).toBe(
+      'www.x.co. or www.y.co',
+    );
+  });
+
   it('keeps an email that holds a reference whole for @lexical/mdast', () => {
     const editor = createTestEditor();
     editor.update(
@@ -5967,6 +5991,35 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       editor.read('latest', () => $getRoot().getAllTextNodes().length),
     ).toBe(80);
     expect(searched).toBeLessThan(2 * markdown.length);
+  });
+
+  it.each([
+    ['escaped openers', '\\['.repeat(100) + 'a](u)'],
+    ['code spans before a link', '[`a`'.repeat(100) + '](u)'],
+  ])('searches the line for a link a few times with %s', (_name, markdown) => {
+    let searches = 0;
+    const exec = RegExp.prototype.exec;
+    const spy = vi.spyOn(RegExp.prototype, 'exec').mockImplementation(function (
+      this: RegExp,
+      text: string,
+    ) {
+      if (this.source === LINK.importRegExp!.source) {
+        searches++;
+      }
+      return exec.call(this, text);
+    });
+    onTestFinished(() => spy.mockRestore());
+    const editor = createTestEditor();
+    editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
+      discrete: true,
+    });
+    spy.mockRestore();
+    expect(editor.read('latest', () => $getRoot().getTextContent())).toBe(
+      markdown.startsWith('\\')
+        ? markdown.replace(/\\/g, '')
+        : '[a'.repeat(99) + 'a',
+    );
+    expect(searches).toBeLessThan(5);
   });
 
   it('scans the text after a match again when its transformer changes it', () => {

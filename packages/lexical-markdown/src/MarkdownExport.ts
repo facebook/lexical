@@ -744,6 +744,7 @@ function startsLink(prefix: string, before: string): boolean {
 // references decoded, but micromark only where its `@` is written as is.
 const ADDRESS_CHARACTER = /[\w.+@\\-]/;
 const ADDRESS = /[\w.+-]@[\w-]+\.[\w-]/;
+const LINKISH = /www\.|:\/\/|@/i;
 // Characters that GFM readers leave out at the end of a URL.
 const LINK_TRAIL = '?!.,:*_~';
 
@@ -813,16 +814,15 @@ function joinPieces({kinds, values}: MarkdownPieces): string {
         isEscaped(value, bodyEnd),
     );
   }
-  const {starts, spoiled} = findSpoiledLinks(kinds, values, (index, mark) => {
+  const spoiled = findSpoiledLinks(kinds, values, (index, mark) => {
     mark(0, startLengths[index]);
     const end = values[index].length - endLengths[index];
     mark(end - escapesEnd[index], values[index].length);
   });
   let markdown = '';
   let next = 0;
-  for (let index = 0; index < count; index++) {
+  for (let index = 0, base = 0; index < count; index++) {
     const value = values[index];
-    const base = starts[index];
     const end = value.length - endLengths[index] - escapesEnd[index];
     let from = startLengths[index];
     markdown += toReferences(value.slice(0, from));
@@ -839,6 +839,7 @@ function joinPieces({kinds, values}: MarkdownPieces): string {
       value.slice(from, end) +
       toReferences(value.slice(end, end + escapesEnd[index])) +
       toReferences(value.slice(end + escapesEnd[index]));
+    base += value.length;
   }
   return markdown;
 }
@@ -872,8 +873,8 @@ function maskRaw(value: string): string {
  * text and formats come through. So is a URL that a reference before it
  * would start. `markReferences` is given each text piece and a function that
  * marks the code units of it, from one offset to another, that go out as
- * references. Returns where each piece starts in the joined text and, in
- * order, the code units of it to write as references.
+ * references. Returns, in order, the code units of the joined text to write
+ * as references, each in a text piece.
  */
 function findSpoiledLinks(
   kinds: PieceKind[],
@@ -882,7 +883,11 @@ function findSpoiledLinks(
     index: number,
     mark: (from: number, to: number) => void,
   ) => void,
-): {starts: Uint32Array; spoiled: number[]} {
+): number[] {
+  // Every URL and email starts with one of these.
+  if (!values.some((value, i) => kinds[i] === TEXT && LINKISH.test(value))) {
+    return [];
+  }
   let text = '';
   const starts = new Uint32Array(values.length + 1);
   for (let i = 0; i < values.length; i++) {
@@ -925,7 +930,7 @@ function findSpoiledLinks(
         ADDRESS.test(text.slice(start, end).replace(/\\/g, ''))
       ) {
         for (let i = start; i < end; i++) {
-          if (text[i] === '@' && !isReference[i]) {
+          if (text[i] === '@' && !isReference[i] && !has(formats, i, i + 1)) {
             spoiled.push(i);
           }
         }
@@ -980,16 +985,22 @@ function findSpoiledLinks(
         rest = end;
         break;
       }
-      rest = at + prefix[0].length;
-      // A reference in the prefix spoils it already.
-      if (!has(references, at, rest)) {
-        spoiled.push(at + prefix[0].search(/[.:]/));
+      // A reference in the prefix spoils it already. A URL whose `.` or `:`
+      // is a custom format's marker is left as it is.
+      const spoil = at + prefix[0].search(/[.:]/);
+      if (!has(references, at, at + prefix[0].length)) {
+        if (has(formats, spoil, spoil + 1)) {
+          rest = end;
+          break;
+        }
+        spoiled.push(spoil);
       }
+      rest = at + prefix[0].length;
     }
     spoilEmails(rest, end);
     start = end;
   }
-  return {spoiled, starts};
+  return spoiled;
 }
 
 /**

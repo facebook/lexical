@@ -75,6 +75,17 @@ export function registerLexicalTextEntity<T extends TextNode>(
       : {end: found.end - prefix.length, start: found.start - prefix.length};
   };
 
+  // Whether `match` in `text` is a match of its own text too: an entity node
+  // is checked on its own text (see $reverseNodeTransform).
+  const matchesAlone = (text: string, match: EntityMatch): boolean => {
+    const alone = getMatch(text.slice(match.start, match.end));
+    return (
+      alone !== null &&
+      alone.start === 0 &&
+      alone.end === match.end - match.start
+    );
+  };
+
   const $textNodeTransform = (node: TextNode) => {
     if (!node.isSimpleText()) {
       return;
@@ -141,6 +152,18 @@ export function registerLexicalTextEntity<T extends TextNode>(
       const before = prefix;
       prefix = '';
       match = matchAfter(before, remainingText);
+      if (
+        before !== '' &&
+        match !== null &&
+        !matchesAlone(remainingText, match)
+      ) {
+        // A match that needs the text before it (a lookbehind) would be
+        // made an entity and undone again: it is left as text, and the
+        // rest of this node is matched as it was.
+        prevMatchLengthToSkip += match.end;
+        text = remainingText.slice(match.end);
+        continue;
+      }
       const nextText = match === null ? '' : remainingText.slice(match.end);
       text = nextText;
 
@@ -185,7 +208,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
       }
 
       let nodeToReplace;
-      if (match.start === 0) {
+      if (match.start + prevMatchLengthToSkip === 0) {
         [nodeToReplace, currentNode] = currentNode.splitText(match.end);
       } else {
         [, nodeToReplace, currentNode] = currentNode.splitText(

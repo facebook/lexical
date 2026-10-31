@@ -47,26 +47,35 @@ class KeywordNode extends TextNode {
 // "cat" or "dog" with no letter next to it.
 const KEYWORD = /(^|[^a-z#])(cat|dog)(?=[^a-z]|$)/;
 
-function editorWith(texts: string[]) {
+// Lookbehinds, which the browsers Lexical supports may lack (the tests run
+// in Node).
+// eslint-disable-next-line compat/compat
+const LOOKBEHIND_DOG = /(?<=@)dog/;
+// eslint-disable-next-line compat/compat
+const LOOKBEHIND_DOG_OR_CAT = /(?<=@)dog|\bcat\b/;
+
+// The match of `regex`, or for KEYWORD of its second group.
+function matcher(regex: RegExp) {
+  return (text: string) => {
+    const m = regex.exec(text);
+    if (m === null) {
+      return null;
+    }
+    const lead = regex === KEYWORD ? m[1].length : 0;
+    const word = regex === KEYWORD ? m[2] : m[0];
+    return {end: m.index + lead + word.length, start: m.index + lead};
+  };
+}
+
+function editorWith(texts: string[], regex: RegExp) {
   const editor = createEditor({
     nodes: [KeywordNode],
     onError: e => {
       throw e;
     },
   });
-  registerLexicalTextEntity(
-    editor,
-    text => {
-      const m = KEYWORD.exec(text);
-      return m === null
-        ? null
-        : {
-            end: m.index + m[1].length + m[2].length,
-            start: m.index + m[1].length,
-          };
-    },
-    KeywordNode,
-    node => $create(KeywordNode).setTextContent(node.getTextContent()),
+  registerLexicalTextEntity(editor, matcher(regex), KeywordNode, node =>
+    $create(KeywordNode).setTextContent(node.getTextContent()),
   );
   editor.update(
     () => {
@@ -90,8 +99,9 @@ function typeInto(
   index: number,
   offset: number,
   typed: string,
+  regex: RegExp = KEYWORD,
 ): {text: string; entities: string[]} {
-  const editor = editorWith(texts);
+  const editor = editorWith(texts, regex);
   editor.update(
     () => {
       const node = (
@@ -143,6 +153,32 @@ describe('registerLexicalTextEntity after a plain text node of another format', 
     expect(typeInto(['dogcat', '*y'], 0, 3, ' ')).toEqual({
       entities: ['dog'],
       text: 'dog caty',
+    });
+  });
+
+  // A match that needs the text before it (a lookbehind) is not made an
+  // entity: an entity is checked on its own text, which would undo it.
+  test('a lookbehind match after a bold "@": no entity, the update goes through', () => {
+    expect(typeInto(['*@', 'do', '*!'], 1, 2, 'g', LOOKBEHIND_DOG)).toEqual({
+      entities: [],
+      text: '@dog!',
+    });
+  });
+  test('a lookbehind or a word: the word after a bold space is an entity', () => {
+    expect(
+      typeInto(['*@', 'dog ca', '*!'], 1, 6, 't', LOOKBEHIND_DOG_OR_CAT),
+    ).toEqual({entities: ['cat'], text: '@dog cat!'});
+  });
+  test('a word boundary match after a bold letter: no entity', () => {
+    expect(typeInto(['*x', 'do', '*!'], 1, 2, 'g', /\bdog\b/)).toEqual({
+      entities: [],
+      text: 'xdog!',
+    });
+  });
+  test('a word boundary match after a bold space: an entity', () => {
+    expect(typeInto(['* ', 'do', '*!'], 1, 2, 'g', /\bdog\b/)).toEqual({
+      entities: ['dog'],
+      text: ' dog!',
     });
   });
 

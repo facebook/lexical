@@ -272,9 +272,13 @@ const PENDING_ORDER: readonly PendingWork[] = [
 
 /**
  * Re-reads in a row (see $rereadRefused) before a last one, which refreshes
- * nothing. Invariant: a follow-up that keeps changing what it may not write
- * is read again at most this many times in a row (until a user's edit).
- * Why: a transform that rewrites the same content on every run would loop.
+ * in its own update (see $refreshInLastRead) with no refresh after it.
+ * Invariant: a follow-up that keeps changing what it may not write is read
+ * again at most this many times in a row (until a user's edit), and every
+ * re-read leaves the derived fields a fresh reader shows. Why: a transform
+ * that rewrites the same content on every run, or an app's listener that
+ * answers every refresh with such a follow-up, would loop; and a refresh
+ * skipped altogether left a list item's value stale (#9632).
  */
 const MAX_REREADS = 3;
 
@@ -4838,28 +4842,65 @@ export class YBinding {
       }
     });
     reader.$settle(settle);
+    if (last) {
+      this.$refreshInLastRead();
+    }
     this.$selectionAfterRead(cursor, caret);
     this.$quietSelection();
     if (last) {
-      // A transform that changes the same content each time it runs (a
-      // list's own transforms in every refresh, say): a last read, with no
-      // refresh after it, so that the editor still shows the document.
       if (process.env.NODE_ENV !== 'production') {
         console.warn(
-          '@lexical/y: follow-ups keep changing content the binding does not write; the editor reads it again without refreshing it.',
+          '@lexical/y: follow-ups keep changing content the binding does not write; the editor reads it again, refreshes it in the same update and stops there.',
         );
       }
-      // Nor the refresh that would make the change again.
-      this.state.refresh.clear();
-      this.localRefresh.clear();
-      this.remoteRefresh.clear();
-      this.pending.delete('refresh');
       return () => this.checkUnknownTypes();
     }
     return () => {
       this.checkUnknownTypes();
       this.flushRefresh(true);
     };
+  }
+
+  /**
+   * The refresh of a last re-read (see MAX_REREADS), in the re-read's own
+   * update rather than in one after it: the editor shows the derived fields
+   * a fresh reader shows (list numbering), and no commit of the refresh's own
+   * follows, so nothing that answers a refresh (an app's update listener, a
+   * group's own transform that rewrites the same content every time) runs
+   * again. A group whose transforms change more than its derived fields is
+   * read again at once, in the same update, and not refreshed: the editor
+   * shows the document.
+   */
+  private $refreshInLastRead(): void {
+    const keys = new Set([
+      ...this.state.refresh,
+      ...this.localRefresh,
+      ...this.remoteRefresh,
+    ]);
+    this.state.refresh.clear();
+    this.localRefresh.clear();
+    this.remoteRefresh.clear();
+    this.pending.delete('refresh');
+    this.$refreshGroups([...keys]);
+    if (this.refused.size === 0) {
+      return;
+    }
+    const again = [...this.refused].filter(
+      cs => this.state.containers.get(cs.y) === cs,
+    );
+    this.refused.clear();
+    this.refusedNaming = false;
+    this.pending.delete('reread');
+    const reader = new Reader(this.state);
+    reader.$reading(() => {
+      for (const cs of again) {
+        const el = cs.y === this._root ? $getRoot() : $getNodeByKey(cs.key);
+        if ($isElementNode(el) && el.isAttached()) {
+          reader.$readFull(cs, el);
+        }
+      }
+    });
+    this.state.refresh.clear();
   }
 
   /**

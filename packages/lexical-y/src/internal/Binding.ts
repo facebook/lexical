@@ -91,7 +91,12 @@ import {
   markFormatCloser,
 } from './Cursor';
 import {$canonicalizeGroup, $switchesWrapper} from './Groups';
-import {$applyStoredAttrs, $unstoredWrapperTextFields, Reader} from './Read';
+import {
+  $applyStoredAttrs,
+  $unstoredWrapperTextFields,
+  Reader,
+  type StoredFormatsMemo,
+} from './Read';
 import {
   $isGroupNode,
   $isWrapper,
@@ -869,6 +874,11 @@ export class YBinding {
   private unread: Unread | null = null;
   /** While a change is read: the document as it is (see readChange). */
   private reading = false;
+  /** The stored formats one update's transforms looked up (see settleTextFields). */
+  private storedFormats: {
+    state: EditorState | null;
+    sequences: StoredFormatsMemo;
+  } = {sequences: new Map(), state: null};
   /** This binding's view, for its work (see guard). */
   private readonly seer = () => (this.reading ? null : this.unread);
   /**
@@ -1187,24 +1197,41 @@ export class YBinding {
           return;
         }
         const editor = this._editor;
-        const found = $unstoredWrapperTextFields(state, [node.getKey()], type =>
-          wrapperFieldsOf(editor, type),
+        // The stored formats are looked up once per update (the document
+        // does not change during its transforms).
+        const memo = this.storedFormats;
+        if (memo.state !== editor._pendingEditorState) {
+          memo.state = editor._pendingEditorState;
+          memo.sequences = new Map();
+        }
+        const found = $unstoredWrapperTextFields(
+          state,
+          [node.getKey()],
+          type => wrapperFieldsOf(editor, type),
+          memo.sequences,
+        ).map(
+          ([wrapper, json]) =>
+            [
+              wrapper,
+              json,
+              wrapper.getTextFormat(),
+              wrapper.getTextStyle(),
+            ] as const,
         );
         if (found.length === 0) {
           return;
         }
         // Only a wrapper this update left without text, with the text fields
-        // it had: ones this update set on a wrapper without text are stored
-        // by the write.
-        const prev = editor.getEditorState();
-        const stale = prev.read(() =>
-          found.filter(([wrapper]) => {
+        // it had before the update: ones this update set (on a wrapper
+        // without text, or in a transform) are stored by the write.
+        const stale = editor.getEditorState().read(() =>
+          found.filter(([wrapper, , format, style]) => {
             const was = $getNodeByKey(wrapper.getKey());
             return (
               $isElementNode(was) &&
               !was.shouldSerializeTextStyles() &&
-              was.getTextFormat() === wrapper.getTextFormat() &&
-              was.getTextStyle() === wrapper.getTextStyle()
+              was.getTextFormat() === format &&
+              was.getTextStyle() === style
             );
           }),
         );

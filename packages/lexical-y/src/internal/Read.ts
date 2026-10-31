@@ -3708,6 +3708,7 @@ export function $unstoredWrapperTextFields(
   state: State,
   keys: Iterable<NodeKey>,
   wrapperFields: (type: string) => OwnedFields | null,
+  memo?: StoredFormatsMemo,
 ): [ElementNode, Attrs][] {
   const candidates: [ElementNode, Item][] = [];
   const seen = new Set<NodeKey>();
@@ -3751,7 +3752,10 @@ export function $unstoredWrapperTextFields(
   if (candidates.length === 0) {
     return [];
   }
-  const attrs = attrsAtItems(candidates.map(([, item]) => item));
+  const attrs = attrsAtItems(
+    candidates.map(([, item]) => item),
+    memo,
+  );
   const out: [ElementNode, Attrs][] = [];
   for (const [w, item] of candidates) {
     const value = wrappersFromAttrs(attrs.get(item)!, wrapperFields).find(
@@ -3772,10 +3776,21 @@ export function $unstoredWrapperTextFields(
 }
 
 /**
- * The formats stored in effect at each of `items`: one pass along each
- * sequence that holds some of them, up to the last one.
+ * The formats stored in effect at the stored nodes (Y.Node items) of the
+ * sequences read so far, by sequence: for lookups from several calls while
+ * the document does not change (the transforms of one update).
  */
-function attrsAtItems(items: Item[]): Map<Item, Attrs> {
+export type StoredFormatsMemo = Map<unknown, Map<Item, Attrs>>;
+
+/**
+ * The formats stored in effect at each of `items`: one pass along each
+ * sequence that holds some of them (up to the last one, or, with `memo`,
+ * along all of it once, noting them at every stored node).
+ */
+function attrsAtItems(
+  items: Item[],
+  memo?: StoredFormatsMemo,
+): Map<Item, Attrs> {
   const bySequence = new Map<unknown, Set<Item>>();
   for (const item of items) {
     let set = bySequence.get(item.parent);
@@ -3787,6 +3802,41 @@ function attrsAtItems(items: Item[]): Map<Item, Attrs> {
   }
   const out = new Map<Item, Attrs>();
   for (const [parent, wanted] of bySequence) {
+    let known = memo === undefined ? undefined : memo.get(parent);
+    if (memo !== undefined && known === undefined) {
+      known = new Map();
+      memo.set(parent, known);
+      const formats = new Map<string, unknown>();
+      for (
+        let it = (parent as {_start: Item | null})._start;
+        it !== null;
+        it = it.right
+      ) {
+        if (it.content instanceof ContentType) {
+          known.set(it, Object.fromEntries(formats) as Attrs);
+        } else if (!isGone(it) && it.content instanceof ContentFormat) {
+          if (it.content.value === null) {
+            formats.delete(it.content.key);
+          } else {
+            formats.set(it.content.key, it.content.value);
+          }
+        }
+      }
+    }
+    if (known !== undefined) {
+      let all = true;
+      for (const item of wanted) {
+        const attrs = known.get(item);
+        if (attrs === undefined) {
+          all = false;
+        } else {
+          out.set(item, attrs);
+        }
+      }
+      if (all) {
+        continue;
+      }
+    }
     const formats = new Map<string, unknown>();
     let left = wanted.size;
     for (

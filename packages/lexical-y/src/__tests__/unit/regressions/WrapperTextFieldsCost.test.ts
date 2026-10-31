@@ -7,12 +7,13 @@
  */
 // @vitest-environment node
 
-// A remote change that leaves n formatted wrappers holding no text (a
-// collaborator deletes the text in a mark inside each of n links, keeping a
-// line break) shows each wrapper's stored text fields: the formats stored at
-// the marks are found in one pass along the document, not one per wrapper
-// from its start (see $unstoredWrapperTextFields). Counted as the items the
-// read checks (isGone), which grow linearly with n.
+// A change that leaves n formatted wrappers holding no text (the text in a
+// mark inside each of n links is deleted, keeping a line break) shows each
+// wrapper's stored text fields: the formats stored at the marks are found in
+// one pass along the document, not one per wrapper from its start (see
+// $unstoredWrapperTextFields), whether a collaborator's delete is read or
+// the client deletes in one update of its own. Counted as the items checked
+// (isGone), which grow linearly with n.
 
 import {$createLinkNode} from '@lexical/link';
 import {$createMarkNode} from '@lexical/mark';
@@ -42,6 +43,41 @@ vi.mock('../../../internal/Seen', async importOriginal => {
     },
   };
 });
+
+const $build = (n: number) => () => {
+  for (let i = 0; i < n; i++) {
+    $getRoot().append(
+      $createParagraphNode().append(
+        $createTextNode('before '),
+        $createLinkNode(`https://link${i}.test`).append(
+          $createMarkNode([`c${i}`]).append(
+            $createTextNode(`word${i}`),
+            $createLineBreakNode(),
+          ),
+        ),
+        $createTextNode(' after'),
+      ),
+    );
+  }
+};
+
+const $boldAll = () => {
+  const texts = $getRoot().getAllTextNodes();
+  const last = texts[texts.length - 1];
+  const selection = texts[0].select(0, 0);
+  selection.focus.set(last.getKey(), last.getTextContentSize(), 'text');
+  selection.formatText('bold');
+  $setSelection(null);
+};
+
+const $deleteWords = () => {
+  for (const text of $getRoot().getAllTextNodes()) {
+    if (text.getTextContent().startsWith('word')) {
+      text.remove();
+    }
+  }
+  $setSelection(null);
+};
 
 test('wrappers a remote delete leaves without text are settled in linear time', async () => {
   const visits: number[] = [];
@@ -96,6 +132,38 @@ test('wrappers a remote delete leaves without text are settled in linear time', 
   }
   // Doubling n doubles the work (about 2x); one pass per wrapper from the
   // start of the document would quadruple it.
+  expect(visits[1] / visits[0]).toBeLessThan(3);
+  expect(visits[2] / visits[1]).toBeLessThan(3);
+}, 60_000);
+
+test('wrappers a local delete leaves without text are settled in linear time', async () => {
+  const visits: number[] = [];
+  for (const n of [32, 64, 128]) {
+    const t = await setup($build(n));
+    try {
+      t.b.update($boldAll);
+      await t.sync();
+      counter.visits = 0;
+      counter.on = true;
+      t.b.update($deleteWords);
+      counter.on = false;
+      visits.push(counter.visits);
+      expect(
+        t.b.read(() =>
+          $getRoot()
+            .getAllTextNodes()
+            .some(text => text.getTextContent().startsWith('word')),
+        ),
+      ).toBe(false);
+      await t.sync();
+      await expectConverged(t.peers);
+    } finally {
+      counter.on = false;
+      for (const p of t.peers) {
+        p.stop();
+      }
+    }
+  }
   expect(visits[1] / visits[0]).toBeLessThan(3);
   expect(visits[2] / visits[1]).toBeLessThan(3);
 }, 60_000);

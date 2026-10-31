@@ -3507,6 +3507,8 @@ function $inShadowRoot(
   settler: BlockIdSettler,
   formatWrappers: ReadonlySet<NodeKey>,
 ): LexicalNode[] {
+  // Whether each format wrapper holds a block (see $holdsBlock), once each.
+  const holds = new Map<NodeKey, boolean>();
   const out: LexicalNode[] = [];
   let run: LexicalNode[] = [];
   let first: Item | null = null;
@@ -3554,8 +3556,8 @@ function $inShadowRoot(
   children.forEach((c, i) => {
     // Inline elements around blocks (a link run another writer left open
     // over the shadow root's blocks): the blocks, out of them.
-    for (const node of $holdsBlock(c, formatWrappers)
-      ? $splitAroundBlocks(c, formatWrappers)
+    for (const node of $holdsBlock(c, formatWrappers, holds)
+      ? $splitAroundBlocks(c, formatWrappers, holds)
       : [c]) {
       if ($isShownBlock(node)) {
         flush();
@@ -3587,14 +3589,19 @@ function $isShownBlock(node: LexicalNode): boolean {
 function $holdsBlock(
   node: LexicalNode,
   formatWrappers: ReadonlySet<NodeKey>,
+  holds: Map<NodeKey, boolean>,
 ): node is ElementNode {
-  return (
-    $isElementNode(node) &&
-    formatWrappers.has(node.getKey()) &&
-    node
+  if (!$isElementNode(node) || !formatWrappers.has(node.getKey())) {
+    return false;
+  }
+  let known = holds.get(node.getKey());
+  if (known === undefined) {
+    known = node
       .getChildren()
-      .some(k => $isShownBlock(k) || $holdsBlock(k, formatWrappers))
-  );
+      .some(k => $isShownBlock(k) || $holdsBlock(k, formatWrappers, holds));
+    holds.set(node.getKey(), known);
+  }
+  return known;
 }
 
 /**
@@ -3609,13 +3616,14 @@ function $holdsBlock(
 function $splitAroundBlocks(
   el: ElementNode,
   formatWrappers: ReadonlySet<NodeKey>,
+  holds: Map<NodeKey, boolean>,
 ): LexicalNode[] {
   const out: LexicalNode[] = [];
   const runs: [ElementNode, LexicalNode[]][] = [];
   let run: LexicalNode[] | null = null;
   for (const k of el.getChildren()) {
-    for (const part of $holdsBlock(k, formatWrappers)
-      ? $splitAroundBlocks(k, formatWrappers)
+    for (const part of $holdsBlock(k, formatWrappers, holds)
+      ? $splitAroundBlocks(k, formatWrappers, holds)
       : [k]) {
       if ($isShownBlock(part)) {
         run = null;

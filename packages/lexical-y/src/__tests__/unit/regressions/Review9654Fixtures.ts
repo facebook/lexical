@@ -50,18 +50,17 @@ export function equalFresh(q: Peer) {
   expect(q.doc.store.pendingDs).toBeNull();
   const want = readYState(
     Y.encodeStateAsUpdate(q.doc),
-    {
-      nodes: q.nodes,
-      schemaVersion: 1,
-    },
+    {nodes: q.nodes, schemaVersion: 1},
     () => $deep($getRoot()),
   );
   expect(q.read(() => $deep($getRoot()))).toEqual(want);
 }
 export function noLinkOn(q: Peer, text = 'q2 two') {
+  let found = 0;
   q.read(() => {
     for (const n of $getRoot().getAllTextNodes())
       if (n.getTextContent().includes(text)) {
+        found++;
         for (
           let ancestor = n.getParent();
           ancestor;
@@ -73,6 +72,17 @@ export function noLinkOn(q: Peer, text = 'q2 two') {
           ).toBe(false);
       }
   });
+  expect(found, `missing sentinel ${text}`).toBeGreaterThan(0);
+}
+export function noLinks(q: Peer) {
+  q.read(() => {
+    const walk = (n: LexicalNode) => {
+      expect(n instanceof LinkNode, q.describe()).toBe(false);
+      if ($isElementNode(n)) n.getChildren().forEach(walk);
+      for (const name of $getSlotNames(n)) walk($getSlot(n, name)!);
+    };
+    walk($getRoot());
+  });
 }
 export async function fixture(
   opts: {
@@ -81,7 +91,7 @@ export async function fixture(
     gc?: boolean;
     withBlockIds?: boolean;
     container?: () => ElementNode;
-    nodes?: typeof NODES;
+    nodes?: Readonly<typeof NODES>;
     variant?: string;
   } = {},
 ) {

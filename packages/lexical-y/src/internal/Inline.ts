@@ -790,5 +790,282 @@ export function keptEnds(
   };
 }
 
+/** White space other than a line feed (a line break is a node of its own). */
+const isSeparator = (s: string, i: number): boolean =>
+  s[i] !== '\n' && SPACE.test(s[i]);
+
+/**
+ * The words of `s` from `from` to `to`, as `[start, end)` pairs: runs of
+ * word characters (see isWordChar), and single other characters that are not
+ * white space (an object character, a line feed, a character of a script
+ * written without spaces), each a whole character. White space between them
+ * is no word: it is compared only between two kept words.
+ */
+function words(s: string, from: number, to: number): [number, number][] {
+  const out: [number, number][] = [];
+  let i = from;
+  while (i < to) {
+    let j = i + 1;
+    if (isWordChar(s, i)) {
+      while (j < to && isWordChar(s, j)) {
+        j++;
+      }
+    } else if (j < to && isLowSurrogate(s.charCodeAt(j))) {
+      j++;
+    }
+    if (!isSeparator(s, i)) {
+      out.push([i, j]);
+    }
+    i = j;
+  }
+  return out;
+}
+
+/**
+ * The most edits the exact diff of a remade line's words looks for, among
+ * the words both texts have (see commonWords). It finds the longest common
+ * run of words in O((n + m) * EXACT_EDITS) time at most (about 30 ms for a
+ * 5,000-word line); past it, only the common start and end are kept.
+ */
+const EXACT_EDITS = 2048;
+
+/**
+ * Myers' middle snake of `a[aLo, aHi)` and `b[bLo, bHi)` (both non-empty,
+ * different first and last words): `[x, y, u, v]`, relative to `aLo` and
+ * `bLo`, a run of equal words from (x, y) to (u, v) on a shortest edit
+ * script, or null past `max` edits.
+ */
+function middleSnake(
+  a: readonly number[],
+  aLo: number,
+  aHi: number,
+  b: readonly number[],
+  bLo: number,
+  bHi: number,
+  max: number,
+): [number, number, number, number] | null {
+  const n = aHi - aLo;
+  const m = bHi - bLo;
+  const delta = n - m;
+  const odd = (delta & 1) !== 0;
+  const half = Math.ceil((n + m) / 2);
+  const off = half + 1;
+  const vf = new Int32Array(2 * half + 3);
+  const vb = new Int32Array(2 * half + 3);
+  for (let d = 0; d <= half; d++) {
+    if (2 * d - 1 > max) {
+      return null;
+    }
+    for (let k = -d; k <= d; k += 2) {
+      let x =
+        k === -d || (k !== d && vf[off + k - 1] < vf[off + k + 1])
+          ? vf[off + k + 1]
+          : vf[off + k - 1] + 1;
+      let y = x - k;
+      const x0 = x;
+      const y0 = y;
+      while (x < n && y < m && a[aLo + x] === b[bLo + y]) {
+        x++;
+        y++;
+      }
+      vf[off + k] = x;
+      const c = delta - k;
+      if (odd && c >= -(d - 1) && c <= d - 1 && x + vb[off + c] >= n) {
+        return [x0, y0, x, y];
+      }
+    }
+    for (let c = -d; c <= d; c += 2) {
+      let x =
+        c === -d || (c !== d && vb[off + c - 1] < vb[off + c + 1])
+          ? vb[off + c + 1]
+          : vb[off + c - 1] + 1;
+      let y = x - c;
+      const x0 = x;
+      const y0 = y;
+      while (x < n && y < m && a[aHi - 1 - x] === b[bHi - 1 - y]) {
+        x++;
+        y++;
+      }
+      vb[off + c] = x;
+      const k = delta - c;
+      if (!odd && k >= -d && k <= d && x + vf[off + k] >= n) {
+        return [n - x, m - y, n - x0, m - y0];
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * The pairs of a longest common subsequence of `a[aLo, aHi)` and
+ * `b[bLo, bHi)`, in order, into `out` (Myers' linear space diff); false
+ * past `max` edits.
+ */
+function exactWords(
+  a: readonly number[],
+  aLo: number,
+  aHi: number,
+  b: readonly number[],
+  bLo: number,
+  bHi: number,
+  max: number,
+  out: [number, number][],
+): boolean {
+  while (aLo < aHi && bLo < bHi && a[aLo] === b[bLo]) {
+    out.push([aLo++, bLo++]);
+  }
+  let a1 = aHi;
+  let b1 = bHi;
+  while (a1 > aLo && b1 > bLo && a[a1 - 1] === b[b1 - 1]) {
+    a1--;
+    b1--;
+  }
+  if (aLo < a1 && bLo < b1) {
+    const snake = middleSnake(a, aLo, a1, b, bLo, b1, max);
+    if (snake === null) {
+      return false;
+    }
+    const [x, y, u, v] = snake;
+    exactWords(a, aLo, aLo + x, b, bLo, bLo + y, max, out);
+    for (let i = 0; i < u - x; i++) {
+      out.push([aLo + x + i, bLo + y + i]);
+    }
+    exactWords(a, aLo + u, a1, b, bLo + v, b1, max, out);
+  }
+  for (let i = 0; a1 + i < aHi; i++) {
+    out.push([a1 + i, b1 + i]);
+  }
+  return true;
+}
+
+/**
+ * The words equal in `a` and `b` that a remade line keeps, as pairs of
+ * indexes in increasing order of both: a longest common subsequence of the
+ * two (exactWords), found among the words both texts have (a word only one
+ * has is never kept, and leaving it out keeps the diff short). Past
+ * EXACT_EDITS edits among those, none.
+ */
+function commonWords(
+  a: readonly number[],
+  b: readonly number[],
+): [number, number][] {
+  const inA = new Set(a);
+  const inB = new Set(b);
+  const fa: number[] = [];
+  const fb: number[] = [];
+  for (let x = 0; x < a.length; x++) {
+    if (inB.has(a[x])) {
+      fa.push(x);
+    }
+  }
+  for (let y = 0; y < b.length; y++) {
+    if (inA.has(b[y])) {
+      fb.push(y);
+    }
+  }
+  const sa = fa.map(x => a[x]);
+  const sb = fb.map(y => b[y]);
+  const pairs: [number, number][] = [];
+  if (!exactWords(sa, 0, sa.length, sb, 0, sb.length, EXACT_EDITS, pairs)) {
+    return [];
+  }
+  return pairs.map(([x, y]) => [fa[x], fb[y]]);
+}
+
+/**
+ * What text made in place of removed text (`b`, see TextReplay#stretch)
+ * keeps of that text (`a`), as ranges `[x0, x1, dx]` of `b` whose character
+ * `x` was character `x + dx` of `a`, in order: the common start and end
+ * (keptEnds), and between them, where `b` replaced text, every run of whole
+ * words that a shortest word-by-word edit script of the rest keeps, with the
+ * white space around it that both texts share (`t1z t2z t3z t4z` made again
+ * as `t1z n9z t3z n8z` keeps ` t3z `), so that only the changed words are
+ * written: a character a collaborator deletes in an unchanged word between
+ * two changed ones stays deleted, and a letter it types there stays in that
+ * word. White space alone is never kept between two changes, as at the ends.
+ */
+export function keptStretches(
+  a: string,
+  b: string,
+  cursor: number,
+  composing: boolean,
+): [number, number, number][] {
+  const {prefix, suffix} = keptEnds(a, b, cursor, composing);
+  const shift = a.length - b.length;
+  const ends: [number, number, number][] = [
+    [0, prefix, 0],
+    [b.length - suffix, b.length, shift],
+  ];
+  const a1 = a.length - suffix;
+  const b1 = b.length - suffix;
+  if (composing || a1 <= prefix || b1 <= prefix) {
+    return ends;
+  }
+  const wa = words(a, prefix, a1);
+  const wb = words(b, prefix, b1);
+  const ids = new Map<string, number>();
+  const id = (text: string, [x0, x1]: [number, number]): number => {
+    const t = text.slice(x0, x1);
+    let x = ids.get(t);
+    if (x === undefined) {
+      x = ids.size;
+      ids.set(t, x);
+    }
+    return x;
+  };
+  const pairs = commonWords(
+    wa.map(w => id(a, w)),
+    wb.map(w => id(b, w)),
+  );
+  const out: [number, number, number][] = [ends[0]];
+  let lastA = prefix;
+  let lastB = prefix;
+  for (let i = 0; i < pairs.length; ) {
+    // Words kept one after the other with the same white space between
+    // them in both texts are one stretch.
+    let j = i + 1;
+    while (
+      j < pairs.length &&
+      pairs[j][0] === pairs[j - 1][0] + 1 &&
+      pairs[j][1] === pairs[j - 1][1] + 1 &&
+      a.slice(wa[pairs[j - 1][0]][1], wa[pairs[j][0]][0]) ===
+        b.slice(wb[pairs[j - 1][1]][1], wb[pairs[j][1]][0])
+    ) {
+      j++;
+    }
+    let ax = wa[pairs[i][0]][0];
+    let bx = wb[pairs[i][1]][0];
+    let bEnd = wb[pairs[j - 1][1]][1];
+    let aEnd = ax + bEnd - bx;
+    // With the white space around it that is the same in both texts (up to
+    // the stretch before it), as the start and end keep theirs: only the
+    // changed words are written.
+    while (
+      ax > lastA &&
+      bx > lastB &&
+      a.charCodeAt(ax - 1) === b.charCodeAt(bx - 1) &&
+      isSeparator(a, ax - 1)
+    ) {
+      ax--;
+      bx--;
+    }
+    while (
+      aEnd < a1 &&
+      bEnd < b1 &&
+      a.charCodeAt(aEnd) === b.charCodeAt(bEnd) &&
+      isSeparator(a, aEnd)
+    ) {
+      aEnd++;
+      bEnd++;
+    }
+    out.push([bx, bEnd, ax - bx]);
+    lastA = aEnd;
+    lastB = bEnd;
+    i = j;
+  }
+  out.push(ends[1]);
+  return out;
+}
+
 const isHighSurrogate = (c: number): boolean => c >= 0xd800 && c <= 0xdbff;
 const isLowSurrogate = (c: number): boolean => c >= 0xdc00 && c <= 0xdfff;

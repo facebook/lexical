@@ -60,7 +60,7 @@ issues and docs that carry it.
 | D26 | **Undo favours people taking turns over concurrent races.** Where a fix makes undo correct for sequential edits at the cost of rare races between an undo and a simultaneous edit of the same text, the sequential case wins. | Taking turns is the common case; a race with a simultaneous edit of the same text is rare. Picked on 10-28, confirmed on 10-30. | `DECIDED` | 10-30 | [#9400] |
 | D27 | **Moves are a delete and a re-insert** at launch; the binding rewrites the cheaper side. Real moves within a container ([#9449], records after Yjs's unmerged `ContentMove` design) are paused and land last, backward compatible: a new layout version that older clients open read only. Move records leave tombstones, as every Yjs binding does. Moves across containers stay copies. | Every Yjs binding turns moves into delete plus insert; Yjs dropped its own move for complexity. Reliability of the rest came first. | `DECIDED` | 10-25 | [#9449], [#9455], [y.md: Limits][limits] |
 | D28 | **Text identity is fixed at the source.** While a binding is attached, core records text edits (`spliceText`, insert and remove, split and merge), and text entity plugins record a grow as a move and a remake as a retype. Text only `setTextContent` or the DOM changed is diffed. The binding adds no per-case heuristics. | No binding can recover intent an API dropped; special-case rules were fragile and regressed neighbouring cases. | `DECIDED` | 10-27 | [#9483], [y.md: Edits made by code][y-code] |
-| D29 | **Remade text keeps its common start and end by character**, whatever the node boundaries (y-prosemirror's `updateYText` rule), and never brings back a collaborator's delete. It replaces the word matching of [#9565]. | It is the industry-standard behaviour, and word matching glued words together and merged numbers oddly. | `DECIDED` | 10-30 | [#9565] |
+| D29 | **Remade text keeps its common start and end by character**, whatever the node boundaries (y-prosemirror's `updateYText` rule), **and between two changes every run of unchanged whole words** (the longest common run of words, by a linear-space shortest edit script over the words both texts have, up to 2,048 edits, about 30 ms for a 5,000-word line; past it, only the start and end; a word the update moved is written again; a word changed only in part is written whole, so a collaborator's undone delete of its unchanged part shows twice, [#9635]), and never brings back a collaborator's delete. It replaces the word matching of [#9565]. | It is the industry-standard behaviour, and word matching glued words together and merged numbers oddly. Keeping only the start and end wrote everything between two changed words again, so a collaborator's delete there came back, and showed twice after the collaborator's undo ([#9621]). | `DECIDED` | 10-30 | [#9565], [#9598], [#9621] |
 | D30 | **Diffed rewrites snap to whole words**; keystrokes and IME composition keep the exact diff. Scripts without spaces treat each character as a boundary. | Concurrent rewrites otherwise split words. Real word segmentation is a follow-up ([#9467]). | `DECIDED` | 10-26 | [#9400], [#9467] |
 | D31 | **A list item's nested list gets an item of its own.** `NodeStructureExtension`'s list rule prevents an item holding a nested list next to other content when it is written; the binding does not repair it afterwards. | That shape lost text in outdents, Backspaces and offline merges. Preventing it at write time follows D20. | `DECIDED` | 10-26 | [#9452], [y.md: Limits][limits] |
 | D32 | **List merging ignores `start`.** | Existing Lexical behaviour, intended. | `DECIDED` | 10-23 | [#9452] |
@@ -191,6 +191,7 @@ issues and docs that carry it.
 [#9561]: https://github.com/meta/lexical/pull/9561
 [#9582]: https://github.com/meta/lexical/issues/9582
 [#9593]: https://github.com/meta/lexical/issues/9593
+[#9598]: https://github.com/meta/lexical/pull/9598
 [#9599]: https://github.com/meta/lexical/issues/9599
 [#9603]: https://github.com/meta/lexical/issues/9603
 [#9605]: https://github.com/meta/lexical/pull/9605
@@ -198,3 +199,5 @@ issues and docs that carry it.
 [#9608]: https://github.com/meta/lexical/issues/9608
 [#9609]: https://github.com/meta/lexical/issues/9609
 [#9610]: https://github.com/meta/lexical/issues/9610
+[#9621]: https://github.com/meta/lexical/issues/9621
+[#9635]: https://github.com/meta/lexical/issues/9635

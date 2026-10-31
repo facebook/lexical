@@ -120,36 +120,25 @@ function isFlankedByClass(primary: number, secondary: number): boolean {
   );
 }
 
-// micromark, which `@lexical/mdast` imports with, also lets a delimiter run
-// open before, and close after, another emphasis or strikethrough marker, so
-// that `**a***~~b~~*` and `**a***_b_*` nest as written.
-const ATTENTION_MARKER = /^[*_~]$/;
-
 /**
  * Whether a delimiter run of `marker` between `before` and `after` can open
  * and close emphasis; `_` opens or closes inside a word only beside
- * punctuation. With `isBesideMarkerFlanking`, a run beside another marker
- * flanks on that side, as micromark reads it.
+ * punctuation.
  * https://spec.commonmark.org/0.31.2/#can-open-emphasis
  */
 export function getEmphasisSides(
   marker: string,
   before: string | undefined,
   after: string | undefined,
-  isBesideMarkerFlanking = false,
 ): {canOpen: boolean; canClose: boolean} {
   const beforeClass = classify(before);
   const afterClass = classify(after);
-  const isLeft =
-    isFlankedByClass(afterClass, beforeClass) ||
-    (isBesideMarkerFlanking && ATTENTION_MARKER.test(after || ''));
-  const isRight =
-    isFlankedByClass(beforeClass, afterClass) ||
-    (isBesideMarkerFlanking && ATTENTION_MARKER.test(before || ''));
+  const isLeft = isFlankedByClass(afterClass, beforeClass);
+  const isRight = isFlankedByClass(beforeClass, afterClass);
   return marker === '_'
     ? {
-        canClose: isRight && (!isLeft || afterClass !== OTHER_CLASS),
-        canOpen: isLeft && (!isRight || beforeClass !== OTHER_CLASS),
+        canClose: isRight && (!isLeft || afterClass === PUNCTUATION_CLASS),
+        canOpen: isLeft && (!isRight || beforeClass === PUNCTUATION_CLASS),
       }
     : {canClose: isRight, canOpen: isLeft};
 }
@@ -293,4 +282,27 @@ export function isEscaped(text: string, index: number): boolean {
     backslashes++;
   }
   return backslashes % 2 === 1;
+}
+
+/**
+ * Where the delimiter run that `text` is cut in at `index` ends: walking from
+ * `index` by `step` over the delimiter beside the cut, the first edge with
+ * something else beyond it. Walking back, an escaped delimiter is not part of
+ * the run.
+ */
+export function getDelimiterRunEdge(
+  text: string,
+  index: number,
+  step: 1 | -1,
+): number {
+  const delimiter = text[step === 1 ? index - 1 : index];
+  let edge = index;
+  while (
+    step === 1
+      ? edge < text.length && text[edge] === delimiter
+      : edge > 0 && text[edge - 1] === delimiter && !isEscaped(text, edge - 1)
+  ) {
+    edge += step;
+  }
+  return edge;
 }

@@ -5111,6 +5111,38 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     },
   );
 
+  it('keeps raw backslashes from escaping an escape when preserving newlines', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createTextNode('a\\\\_b_'),
+            $createTextNode('c').toggleFormat('bold'),
+          ),
+        ),
+      {discrete: true},
+    );
+    const markdown = editor.read('latest', () =>
+      $convertToMarkdownString(TRANSFORMERS, undefined, true),
+    );
+    expect(markdown).toBe('a\\\\\\\\\\_b\\_**c**');
+    editor.update(
+      () => $convertFromMarkdownString(markdown, TRANSFORMERS, undefined, true),
+      {discrete: true},
+    );
+    expect(
+      editor.read('latest', () =>
+        $getRoot()
+          .getAllTextNodes()
+          .map(node => [node.getTextContent(), node.hasFormat('bold')]),
+      ),
+    ).toEqual([
+      ['a\\\\_b_', false],
+      ['c', true],
+    ]);
+  });
+
   it('writes no reference that would break a run beside raw output', () => {
     // Writing `a` as a reference for the italic would leave the bold's `**`
     // between the raw `x` and the reference's `&`, unable to open.
@@ -5160,7 +5192,6 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     ['me@example.com', 'me@example.com'],
     ['https://example.com/a', 'https://example.com/a'],
     ['https://example.com/a_b', 'https://example.com/a\\_b'],
-    ['@john_doe', '@john\\_doe'],
     ['xmpp:a@b.co/res', 'xmpp:a@b.co/res'],
     ['https://example.com/a|b', 'https://example.com/a|b'],
     ['x_www.example.co', 'x\\_www.example.co'],
@@ -5190,6 +5221,35 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
           .read('latest', () => $convertToMarkdownString(TRANSFORMERS))
           .slice(0, prefix.length),
       ).toBe(prefix);
+    },
+  );
+
+  // GFM links none of these: a mention is not Markdown, an email needs a dot
+  // in its domain, and a URL needs `http`, `https` or `ftp` for its scheme.
+  it.each([
+    ['@john', '@joh&#110;'],
+    ['foo@bar', 'foo@ba&#114;'],
+    ['a://b', 'a://&#98;'],
+    ['xhttp://b', 'xhttp://&#98;'],
+  ])(
+    'writes a reference after %j, which readers do not autolink',
+    (text, markdown) => {
+      const editor = createTestEditor();
+      editor.update(
+        () =>
+          $getRoot().append(
+            $createParagraphNode().append(
+              $createTextNode(`see ${text}`),
+              $createTextNode(
+                `${LEFT_DOUBLE_QUOTE}x${RIGHT_DOUBLE_QUOTE}`,
+              ).toggleFormat('bold'),
+            ),
+          ),
+        {discrete: true},
+      );
+      expect(
+        editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
+      ).toBe(`see ${markdown}**${LEFT_DOUBLE_QUOTE}x${RIGHT_DOUBLE_QUOTE}**`);
     },
   );
 
@@ -5453,26 +5513,31 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     ).toBe(markdown);
   });
 
+  // Not as micromark reads them: it also lets a run open before, and close
+  // after, another `*`, `_` or `~` marker.
   it.each<[string, [string, number][]]>([
     [
       '**bold***~~gone~~*',
       [
         ['bold', TEXT_TYPE_TO_FORMAT.bold],
-        [
-          'gone',
-          TEXT_TYPE_TO_FORMAT.italic | TEXT_TYPE_TO_FORMAT.strikethrough,
-        ],
+        ['*', 0],
+        ['gone', TEXT_TYPE_TO_FORMAT.strikethrough],
+        ['*', 0],
       ],
     ],
     [
       '**a***_b_*',
       [
         ['a', TEXT_TYPE_TO_FORMAT.bold],
+        ['*', 0],
         ['b', TEXT_TYPE_TO_FORMAT.italic],
+        ['*', 0],
       ],
     ],
+    ['**~~**a', [['**~~**a', 0]]],
+    ['~~a*~~b', [['~~a*~~b', 0]]],
   ])(
-    'reads a run beside another marker as micromark does in %j',
+    'reads a run beside another marker as CommonMark does in %j',
     (markdown, runs) => {
       const editor = createTestEditor();
       editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {

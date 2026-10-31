@@ -13,6 +13,7 @@ import type {TextNode} from 'lexical';
 import {
   characterAt,
   characterBefore,
+  getDelimiterRunEdge,
   getEmphasisSides,
   isEscaped,
 } from './utils';
@@ -26,11 +27,122 @@ interface Delimiter {
   active: boolean;
 }
 
-export function findOutermostTextFormatTransformer(
-  textNode: TextNode,
+interface FormatMatch {
+  startIndex: number;
+  endIndex: number;
+  tag: string;
+  content: string;
+}
+
+/**
+ * The code spans and outermost emphasis of a text, found once and read again
+ * for what is left of the text after each match, at `offset`. A match there
+ * starts with the code span at `nextCodeSpan` or the emphasis at
+ * `nextEmphasis`.
+ */
+export interface FormatScan {
+  text: string;
+  codeSpans: FormatMatch[];
+  emphasis: FormatMatch[];
+  offset: number;
+  nextCodeSpan: number;
+  nextEmphasis: number;
+}
+
+export function scanTextFormats(
+  text: string,
   textFormatTransformersIndex: TextFormatTransformersIndex,
-  before?: string,
-  after?: string,
+  before: string | undefined,
+  after: string | undefined,
+): FormatScan {
+  // Find code spans first. Emphasis delimiters inside inline elements (e.g., code spans)
+  // should not be processed. Currently only code spans are handled; other inline elements
+  // (e.g., links, raw HTML) may need similar treatment in the future.
+  const codeSpans = textFormatTransformersIndex.transformersByTag['`']
+    ? scanCodeSpans(text).map(span => ({...span, tag: '`'}))
+    : [];
+  const delimiters = scanDelimiters(
+    text,
+    textFormatTransformersIndex,
+    codeSpans,
+    before,
+    after,
+  );
+  return {
+    codeSpans,
+    emphasis:
+      delimiters.length > 0
+        ? processEmphasis(text, delimiters, textFormatTransformersIndex)
+        : [],
+    nextCodeSpan: 0,
+    nextEmphasis: 0,
+    offset: 0,
+    text,
+  };
+}
+
+/**
+ * Moves `scan` on to the text after `offset`. What it found there holds for
+ * that text on its own as long as no code span or emphasis runs on from
+ * before `offset` (a pair cannot reach past the end of the outermost one), and
+ * no backslash before it escapes it; returns false otherwise.
+ */
+export function advanceFormatScan(scan: FormatScan, offset: number): boolean {
+  const {codeSpans, emphasis, text} = scan;
+  scan.offset = offset;
+  while (
+    scan.nextCodeSpan < codeSpans.length &&
+    codeSpans[scan.nextCodeSpan].startIndex < offset
+  ) {
+    if (codeSpans[scan.nextCodeSpan++].endIndex > offset) {
+      return false;
+    }
+  }
+  while (
+    scan.nextEmphasis < emphasis.length &&
+    emphasis[scan.nextEmphasis].startIndex < offset
+  ) {
+    if (emphasis[scan.nextEmphasis++].endIndex > offset) {
+      return false;
+    }
+  }
+  return text[offset - 1] !== '\\';
+}
+
+/**
+ * Whether the text from `startIndex` to `endIndex` after `scan`'s offset
+ * holds part of a code span but not all of it.
+ */
+export function partlyHoldsCodeSpan(
+  scan: FormatScan,
+  startIndex: number,
+  endIndex: number,
+): boolean {
+  const {codeSpans, offset} = scan;
+  for (let i = scan.nextCodeSpan; i < codeSpans.length; i++) {
+    const spanStart = codeSpans[i].startIndex - offset;
+    const spanEnd = codeSpans[i].endIndex - offset;
+    if (spanStart >= endIndex) {
+      break;
+    }
+    if (
+      spanEnd > startIndex &&
+      (spanStart < startIndex || spanEnd > endIndex)
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * The outermost format match in `text`, what is left after `scan`'s offset of
+ * the text it scanned.
+ */
+export function findOutermostTextFormatTransformer(
+  text: string,
+  textFormatTransformersIndex: TextFormatTransformersIndex,
+  scan: FormatScan,
 ): {
   startIndex: number;
   endIndex: number;
@@ -40,77 +152,45 @@ export function findOutermostTextFormatTransformer(
   // content is never reprocessed and they bind tighter than text-match
   // transformers, so this is tagged here rather than re-derived by callers.
   isCodeSpan: boolean;
-  // The code spans, which a text-match transformer must not take part of
-  // even when an emphasis match around or before them is applied first.
-  codeSpans: {startIndex: number; endIndex: number}[];
 } | null {
-  const textContent = textNode.getTextContent();
-
-  // Find code spans first. Emphasis delimiters inside inline elements (e.g., code spans)
-  // should not be processed. Currently only code spans are handled; other inline elements
-  // (e.g., links, raw HTML) may need similar treatment in the future.
-  const codeTransformer = textFormatTransformersIndex.transformersByTag['`'];
-
-  const codeSpans = codeTransformer ? scanCodeSpans(textContent) : [];
-  const codeMatch = codeSpans.length > 0 ? {...codeSpans[0], tag: '`'} : null;
-
-  const delimiters = scanDelimiters(
-    textContent,
-    textFormatTransformersIndex,
-    codeSpans,
-    before,
-    after,
-  );
-  const emphasisMatch =
-    delimiters.length > 0
-      ? processEmphasis(textContent, delimiters, textFormatTransformersIndex)
-      : null;
-
-  let resultMatch = null;
-  let resultTransformer = null;
-
-  if (codeMatch && emphasisMatch) {
-    // Delimiters inside the code span were excluded, so an emphasis match
-    // that starts first either holds the whole span or ends before it, and
-    // either way it is applied first.
-    if (emphasisMatch.startIndex <= codeMatch.startIndex) {
-      resultMatch = emphasisMatch;
-      resultTransformer =
-        textFormatTransformersIndex.transformersByTag[emphasisMatch.tag];
-    } else {
-      resultMatch = codeMatch;
-      resultTransformer = codeTransformer;
-    }
-  } else if (codeMatch) {
-    resultMatch = codeMatch;
-    resultTransformer = codeTransformer;
-  } else if (emphasisMatch) {
-    resultMatch = emphasisMatch;
-    resultTransformer =
-      textFormatTransformersIndex.transformersByTag[emphasisMatch.tag];
-  }
-
-  if (!resultMatch || !resultTransformer) {
+  const codeMatch: FormatMatch | undefined = scan.codeSpans[scan.nextCodeSpan];
+  const emphasisMatch: FormatMatch | undefined =
+    scan.emphasis[scan.nextEmphasis];
+  // Delimiters inside a code span were excluded, so an emphasis match that
+  // starts first either holds the whole span or ends before it, and either
+  // way it is applied first.
+  const resultMatch =
+    emphasisMatch !== undefined &&
+    (codeMatch === undefined ||
+      emphasisMatch.startIndex <= codeMatch.startIndex)
+      ? emphasisMatch
+      : codeMatch;
+  if (resultMatch === undefined) {
     return null;
   }
-
+  const isCodeSpan = resultMatch === codeMatch;
+  const transformer =
+    textFormatTransformersIndex.transformersByTag[resultMatch.tag];
+  if (!transformer) {
+    return null;
+  }
+  const {offset} = scan;
+  const startIndex = resultMatch.startIndex - offset;
+  const endIndex = resultMatch.endIndex - offset;
   const regexMatch: RegExpMatchArray = [
-    textContent.slice(resultMatch.startIndex, resultMatch.endIndex),
+    text.slice(startIndex, endIndex),
     resultMatch.tag,
     resultMatch.content,
   ];
-  regexMatch.index = resultMatch.startIndex;
-  regexMatch.input = textContent;
+  regexMatch.index = startIndex;
+  regexMatch.input = text;
 
   return {
-    codeSpans,
-    endIndex: resultMatch.endIndex,
-    // resultTransformer is the registered code transformer (by identity)
-    // exactly when the chosen match is the code span.
-    isCodeSpan: resultTransformer === codeTransformer,
+    endIndex,
+    isCodeSpan,
     match: regexMatch,
-    startIndex: resultMatch.startIndex,
-    transformer: resultTransformer,
+    startIndex,
+    transformer,
   };
 }
 
@@ -220,16 +300,12 @@ function scanDelimiters(
       continue;
     }
 
-    let len = 1;
-    while (i + len < text.length && text[i + len] === char) {
-      len++;
-    }
+    const len = getDelimiterRunEdge(text, i + 1, 1) - i;
 
     const {canOpen, canClose} = getEmphasisSides(
       char,
       i === 0 ? before : characterBefore(text, i),
       i + len === text.length ? after : characterAt(text, i + len),
-      true,
     );
 
     if (canOpen || canClose) {
@@ -249,19 +325,15 @@ function scanDelimiters(
   return delimiters;
 }
 
+/** The outermost emphasis matches, in order. */
 function processEmphasis(
   text: string,
   delimiters: Delimiter[],
   transformersIndex: TextFormatTransformersIndex,
-): {
-  startIndex: number;
-  endIndex: number;
-  tag: string;
-  content: string;
-} | null {
+): FormatMatch[] {
   const openersBottom: Record<string, number> = {};
   let currentPos = 0;
-  let result = null;
+  const matches: FormatMatch[] = [];
 
   while (currentPos < delimiters.length) {
     const closer = delimiters[currentPos];
@@ -329,14 +401,7 @@ function processEmphasis(
         tag: matchedTag,
       };
 
-      if (
-        !result ||
-        match.startIndex < result.startIndex ||
-        (match.startIndex === result.startIndex &&
-          match.endIndex > result.endIndex)
-      ) {
-        result = match;
-      }
+      matches.push(match);
 
       for (let j = openIdx + 1; j < currentPos; j++) {
         delimiters[j].active = false;
@@ -365,7 +430,20 @@ function processEmphasis(
     }
   }
 
-  return result;
+  // Pairs nest, so the outermost ones are those that no earlier one holds.
+  matches.sort(
+    (a, b) => a.startIndex - b.startIndex || b.endIndex - a.endIndex,
+  );
+  const outermost: FormatMatch[] = [];
+  for (const match of matches) {
+    if (
+      outermost.length === 0 ||
+      match.startIndex >= outermost[outermost.length - 1].endIndex
+    ) {
+      outermost.push(match);
+    }
+  }
+  return outermost;
 }
 
 export function importTextFormatTransformer(

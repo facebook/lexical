@@ -554,12 +554,16 @@ function $exportTextFormat(
 
   let output = textContent;
   if (!isCode) {
-    // Preserve literal backslashes when preserving source newlines.
+    // Preserve literal backslashes when preserving source newlines, except
+    // right before a character escaped here, where they would escape the
+    // escape instead.
     // Default mode guards numeric references; named references keep legacy output.
     // Numeric escapes avoid changing emphasis flanking beside formatting.
     // Guard ambiguous '<' and '&' at node ends for constructs split across nodes.
     output = shouldPreserveNewLines
-      ? output.replace(/([*_`~])/g, '\\$1')
+      ? output.replace(/\\+(?=[*_`~])|[*_`~]/g, escaped =>
+          escaped[0] === '\\' ? escaped + escaped : `\\${escaped}`,
+        )
       : output.replace(/([[\]*_`~\\]|<(?=\S|$)|&(?=#|$))/g, character =>
           /[*_`~\\]/.test(character)
             ? `\\${character}`
@@ -719,24 +723,25 @@ function isMarker(kind: PieceKind | undefined): boolean {
   return kind === OPENER || kind === CLOSER;
 }
 
-// Characters a URL, email or mention can hold: GFM ends an autolink at
+// Characters a URL or email can hold: GFM ends an autolink at
 // whitespace or `<`, and a URL's host and path may hold any other character.
 // This takes in the backslash that escapes a marker too.
 const LINK_END = /[\s\p{Cc}<]/u;
 function isLinkCharacter(character: string): boolean {
   return !LINK_END.test(character);
 }
-// A URL or `www.` host in a run of link characters.
-// GFM starts one after `_` too.
+// A URL or `www.` host in a run of link characters: GFM links `http://`,
+// `https://` (and cmark-gfm `ftp://`) after anything but a letter, and starts
+// `www.` after `_` too.
 const LINK_URL =
-  /:\/\/|(?:^|[^a-z\d.-])www\.|(?:^|[^a-z\d.+-])(?:mailto|xmpp):/i;
-// Characters an email or mention can hold (word characters, `.+@-`, and the
-// backslash that escapes one), and what makes one.
+  /(?:^|[^a-z])(?:https?|ftp):\/\/|(?:^|[^a-z\d.-])www\.|(?:^|[^a-z\d.+-])(?:mailto|xmpp):/i;
+// Characters an email can hold (word characters, `.+@-`, and the backslash
+// that escapes one), and what makes one: GFM needs a dot in its domain.
 const ADDRESS_CHARACTER = /[\w.+@\\-]/;
 function isAddressCharacter(character: string): boolean {
   return ADDRESS_CHARACTER.test(character);
 }
-const ADDRESS = /@\w/;
+const ADDRESS = /[\w.+-]@[\w-]+\.[\w-]/;
 
 // Characters that a reference does not stand in for everywhere: CommonMark
 // readers and HTML decode references to control characters, unpaired
@@ -810,17 +815,6 @@ function joinPieces({kinds, values}: MarkdownPieces): string {
 }
 
 /**
- * For each piece, 1 when its first character is part of a bare URL, `www.`
- * host, email or mention, plus 2 when its last one is. A reference inside one
- * would change what an autolinking reader links to, so the format is lost
- * there instead, as before. The pieces are read as one text, since a URL can
- * run on through markers and other formats, and each character is looked at
- * a bounded number of times. Raw output, such as an inline link's destination,
- * is not bare text, so it ends a run.
- */
-const SCHEME_CHARACTER = /[a-z\d+.-]/i;
-
-/**
  * Raw output as the bare-URL scan sees it: spaces, except that the content
  * of a code span is letters (and its whitespace stays whitespace).
  */
@@ -836,6 +830,15 @@ function maskRaw(value: string): string {
   return masked + ' '.repeat(value.length - previous);
 }
 
+/**
+ * For each piece, 1 when its first character is part of a bare URL, `www.`
+ * host or email, plus 2 when its last one is. A reference inside one
+ * would change what an autolinking reader links to, so the format is lost
+ * there instead, as before. The pieces are read as one text, since a URL can
+ * run on through markers and other formats, and each character is looked at
+ * a bounded number of times. Raw output, such as an inline link's destination,
+ * is not bare text, so it ends a run.
+ */
 function findLinkEdges(kinds: PieceKind[], values: string[]): Uint8Array {
   // Raw output ends a run, so it is joined as spaces, except a code span:
   // GFM autolinks run on through backticks, as in `https://a.com/`v`s`, so
@@ -869,14 +872,7 @@ function findLinkEdges(kinds: PieceKind[], values: string[]): Uint8Array {
     if (url !== null) {
       // The URL starts at its scheme, `www.` or `mailto:`, and what comes
       // before it in the run is ordinary text.
-      let urlStart = start + url.index;
-      if (url[0] === '://') {
-        while (urlStart > start && SCHEME_CHARACTER.test(text[urlStart - 1])) {
-          urlStart--;
-        }
-      } else if (!/^[wmx]/i.test(url[0])) {
-        urlStart++;
-      }
+      const urlStart = start + url.index + (/^[a-z]/i.test(url[0]) ? 0 : 1);
       inLink.fill(1, urlStart, end);
     } else {
       for (let from = start; from < end; ) {
@@ -1016,7 +1012,7 @@ function decideReferences(
         ? ';'
         : lastChar(index);
   // Whether the last (or first) character of the piece at `index` is part of
-  // a bare URL, `www.` host, email or mention, worked out for every piece the
+  // a bare URL, `www.` host, or email, worked out for every piece the
   // first time it is asked.
   let linkEdges: Uint8Array | undefined;
   const isLinkish = (index: number, atEnd: boolean): boolean => {

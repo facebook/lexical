@@ -11,14 +11,23 @@ import type {TextMatchTransformer} from './MarkdownTransformers';
 import {$isTextNode, type LexicalNode, type TextNode} from 'lexical';
 
 import {
+  advanceFormatScan,
   findOutermostTextFormatTransformer,
+  type FormatScan,
   importTextFormatTransformer,
+  partlyHoldsCodeSpan,
+  scanTextFormats,
 } from './importTextFormatTransformer';
 import {
   findOutermostTextMatchTransformer,
   importFoundTextMatchTransformer,
 } from './importTextMatchTransformer';
-import {characterAt, characterBefore, isEscaped, unescapeText} from './utils';
+import {
+  characterAt,
+  characterBefore,
+  getDelimiterRunEdge,
+  unescapeText,
+} from './utils';
 
 /**
  * Returns true if the node can contain transformable markdown.
@@ -44,23 +53,14 @@ function characterBeyondRun(
   step: 1 | -1,
   outside: string | undefined,
 ): string | undefined {
-  const isInside = (edge: number) =>
-    step === 1 ? edge < text.length : edge > 0;
-  const delimiter = text[step === 1 ? index - 1 : index];
-  let edge = index;
-  // An escaped delimiter before the run is not part of it.
-  while (
-    isInside(edge) &&
-    text[step === 1 ? edge : edge - 1] === delimiter &&
-    (step === 1 || !isEscaped(text, edge - 1))
-  ) {
-    edge += step;
-  }
-  return !isInside(edge)
-    ? outside
-    : step === 1
+  const edge = getDelimiterRunEdge(text, index, step);
+  return step === 1
+    ? edge < text.length
       ? characterAt(text, edge)
-      : characterBefore(text, edge);
+      : outside
+    : edge > 0
+      ? characterBefore(text, edge)
+      : outside;
 }
 
 /**
@@ -79,8 +79,10 @@ export function importTextTransformers(
   after?: string,
 ) {
   // The text after each match is imported in this loop rather than by
-  // recursion, so that a long paragraph does not nest a call per match.
-  let rest: TextRest | null = [textNode, before, after];
+  // recursion, so that a long paragraph does not nest a call per match, and
+  // with the formats found in the whole text, which still hold for the rest
+  // of it as long as no match there reached into what came before.
+  let rest: TextRest | null = [textNode, before, after, null];
   while (rest !== null) {
     rest = importOutermost(
       rest[0],
@@ -88,6 +90,7 @@ export function importTextTransformers(
       textMatchTransformers,
       rest[1],
       rest[2],
+      rest[3],
     );
   }
 }
@@ -96,6 +99,7 @@ type TextRest = [
   textNode: TextNode,
   before: string | undefined,
   after: string | undefined,
+  scan: FormatScan | null,
 ];
 
 /**
@@ -109,13 +113,18 @@ function importOutermost(
   textMatchTransformers: TextMatchTransformer[],
   before: string | undefined,
   after: string | undefined,
+  previousScan: FormatScan | null,
 ): TextRest | null {
   const text = textNode.getTextContent();
+  const scan =
+    previousScan !== null &&
+    previousScan.text.length - previousScan.offset === text.length
+      ? previousScan
+      : scanTextFormats(text, textFormatTransformersIndex, before, after);
   let foundTextFormat = findOutermostTextFormatTransformer(
-    textNode,
+    text,
     textFormatTransformersIndex,
-    before,
-    after,
+    scan,
   );
 
   let foundTextMatch = findOutermostTextMatchTransformer(
@@ -130,23 +139,18 @@ function importOutermost(
     // case the span is part of the match's raw content).
     // https://github.com/meta/lexical/issues/8687
     const {startIndex, endIndex} = foundTextMatch;
-    const wraps = (span: {startIndex: number; endIndex: number}) =>
-      startIndex <= span.startIndex && endIndex >= span.endIndex;
-    if (
-      foundTextFormat.codeSpans.some(
-        span =>
-          startIndex < span.endIndex &&
-          endIndex > span.startIndex &&
-          !wraps(span),
-      )
-    ) {
+    if (partlyHoldsCodeSpan(scan, startIndex, endIndex)) {
       // Apply the code span, or the emphasis before it, and not the text
       // match, which would take part of the span.
       foundTextMatch = null;
     } else if (foundTextFormat.isCodeSpan) {
       // The text match goes first when it wraps the code span or ends before
       // it; one after it waits for the span.
-      if (wraps(foundTextFormat) || endIndex <= foundTextFormat.startIndex) {
+      if (
+        (startIndex <= foundTextFormat.startIndex &&
+          endIndex >= foundTextFormat.endIndex) ||
+        endIndex <= foundTextFormat.startIndex
+      ) {
         foundTextFormat = null;
       } else {
         foundTextMatch = null;
@@ -185,7 +189,12 @@ function importOutermost(
       );
     }
     return canContainTransformableMarkdown(nodeAfter)
-      ? [nodeAfter, characterBeyondRun(text, endIndex, -1, before), after]
+      ? [
+          nodeAfter,
+          characterBeyondRun(text, endIndex, -1, before),
+          after,
+          advanceFormatScan(scan, scan.offset + endIndex) ? scan : null,
+        ]
       : null;
   };
 

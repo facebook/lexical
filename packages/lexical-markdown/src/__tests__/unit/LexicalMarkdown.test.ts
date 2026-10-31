@@ -3317,6 +3317,50 @@ describe('$convertSelectionToMarkdownString', () => {
     expect(result).toBe('- Item 2\n- It');
   });
 
+  it('code block partial selection only includes selected text', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const first = $createTextNode('before const value = "*";');
+        const last = $createTextNode('\treturn value; after');
+        $getRoot().append(
+          $createCodeNode('js').append(
+            $createTextNode('unselected line'),
+            $createLineBreakNode(),
+            first,
+            $createLineBreakNode(),
+            last,
+            $createLineBreakNode(),
+            $createTextNode('another unselected line'),
+          ),
+        );
+        $setSelectionFromCaretRange(
+          $getCaretRange(
+            $getTextPointCaret(first, 'next', 7),
+            $getTextPointCaret(last, 'next', 14),
+          ),
+        );
+      },
+      {discrete: true},
+    );
+    const before = editor.getEditorState().toJSON();
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
+    expect(result).toBe('```js\nconst value = "*";\n\treturn value;\n```');
+    expect(editor.getEditorState().toJSON()).toEqual(before);
+
+    editor.update(() => $convertFromMarkdownString(result, TRANSFORMERS), {
+      discrete: true,
+    });
+    expect(editor.read('latest', () => $getRoot().getTextContent())).toBe(
+      'const value = "*";\n\treturn value;',
+    );
+    expect(
+      editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
+    ).toBe(result);
+  });
+
   it('quote partial selection only includes selected text', () => {
     const editor = createTestEditor();
     editor.update(

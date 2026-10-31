@@ -211,6 +211,97 @@ describe('#9636: a caret keeps placing the edit', () => {
   }
 });
 
+// A caret at the end of the node, or anywhere past the edit, anchors every
+// place of the run of equal text, so it places nothing: `setTextContent`
+// followed by `selectEnd()` (what code that sets a node's text usually does)
+// is placed as without a caret, and so is a set with the caret in a later
+// node, for which the writer anchors the diff at the end of the node.
+describe('#9636: a caret past the edit', () => {
+  test('places nothing: `t1z t2z t3z` set to `t1z t3z` with the caret at the end', () => {
+    expect(setTextEnds('t1z t2z t3z', 't1z t3z', 7, false)).toEqual({
+      prefix: 3,
+      suffix: 4,
+    });
+  });
+  for (const ids of IDS) {
+    for (const record of [true, false]) {
+      const how = record ? 'recorded' : 'diffed by the writer';
+      for (const [peer, want] of [
+        ['deletes t2z', 't1z t3z'],
+        ['types " q9z" after t2z', 't1z q9z t3z'],
+      ] as const) {
+        for (const caret of ['at the end', 'in the next node'] as const) {
+          test(`set with the caret ${caret} ‖ the peer ${peer}, ${how} (ids ${ids})`, async () => {
+            const t = await setup(
+              () => {
+                const line = $createParagraphNode().append(
+                  $createTextNode('t1z t2z t3z'),
+                );
+                if (caret === 'in the next node') {
+                  line.append($createTextNode('!').toggleFormat('bold'));
+                }
+                $getRoot().append(line);
+              },
+              {ids},
+            );
+            const recording = t.a.editor._recordTextEdits;
+            try {
+              t.a.editor._recordTextEdits = record;
+              t.offline();
+              t.a.update(() => {
+                $node().setTextContent('t1z t3z');
+                if (caret === 'at the end') {
+                  $node().selectEnd();
+                } else {
+                  ($node().getNextSibling() as TextNode).select(1, 1);
+                }
+              });
+              t.b.update(
+                peer === 'deletes t2z'
+                  ? $splice(4, 3, '')
+                  : $splice(7, 0, ' q9z'),
+              );
+              await t.sync();
+              const end = caret === 'in the next node' ? '!' : '';
+              const fresh = await freshReader(t.a);
+              expect(
+                [...t.peers, fresh].map(p =>
+                  p.read(() => $getRoot().getTextContent()),
+                ),
+              ).toEqual([want + end, want + end, want + end]);
+              await expectConverged(t.peers);
+            } finally {
+              t.a.editor._recordTextEdits = recording;
+            }
+          });
+        }
+      }
+    }
+    test(`\`1..\` set to \`1.\` with the caret at 2 ‖ the peer types between the dots (ids ${ids})`, async () => {
+      const t = await setup(
+        () => {
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('1..')),
+          );
+        },
+        {ids},
+      );
+      t.a.editor.update(() => $node().select(3, 3), {discrete: true});
+      t.offline();
+      t.a.update(() => {
+        $node().setTextContent('1.');
+        $node().select(2, 2);
+      });
+      t.b.update($splice(2, 0, 'x'));
+      await t.sync();
+      expect(
+        t.peers.map(p => p.read(() => $getRoot().getTextContent())),
+      ).toEqual(['1.x', '1.x']);
+      await expectConverged(t.peers);
+    });
+  }
+});
+
 // A word set away next to a word that ends or starts like it: the edit is
 // not moved onto a piece of a word that stays (`a ba c` set to `a c`
 // deletes ` ba`, not `a b`, which would keep the `a` of `ba` as the first
@@ -350,19 +441,15 @@ describe('#9636: set text and a collaborator edit keep every word whole', () => 
           if (new Set(texts).size > 1) {
             problems.push(`diverged ${JSON.stringify(texts)}`);
           }
-          // A word typed against the deleted word, glued to its neighbour.
-          const gone = insertSet ? null : words[target];
+          // A word typed against the deleted word, glued to its neighbour
+          // on the side y.md documents: typed before it, to the word before
+          // it; typed after a line's first word, to the word after it.
+          const gone = insertSet || victim !== words[target] ? -1 : target;
           const glued = (w: string) =>
-            gone !== null &&
-            (victim === gone ||
-              words[words.indexOf(gone) - 1] === victim ||
-              words[words.indexOf(gone) + 1] === victim) &&
-            (w.startsWith(typed) || w.endsWith(typed)) &&
-            next.includes(
-              w.startsWith(typed)
-                ? w.slice(typed.length)
-                : w.slice(0, -typed.length),
-            );
+            gone >= 0 &&
+            (edit === 'type before'
+              ? gone > 0 && w === words[gone - 1] + typed
+              : edit === 'type after' && gone === 0 && w === typed + words[1]);
           for (const w of got.filter(glued)) {
             got.splice(
               got.indexOf(w),

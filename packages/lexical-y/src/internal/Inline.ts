@@ -768,11 +768,26 @@ function placeAtWordEdge(
 }
 
 /**
+ * Whether the caret at `cursor` of `b` placed the insertion or deletion that
+ * makes `b` of `a`: it anchors the diff (caretAnchors) and its bound is in
+ * the run of equal text the edit could be in, the furthest place included.
+ * A caret at the end of the node or past the edit (and the end of the node,
+ * which the writer passes for a caret in a later node) anchors every place
+ * of the run and places nothing.
+ */
+function caretPlaces(a: string, b: string, cursor: number): boolean {
+  return (
+    caretAnchors(a, b, cursor) &&
+    cursor - Math.max(0, b.length - a.length) <= diffStrings(a, b, -1).prefix
+  );
+}
+
+/**
  * The common start and end that text set whole (`setTextContent`, a node's
  * text made again, the DOM's text) keeps of the text it replaces, anchored
  * at `cursor` (see diffStrings): a replacement keeps whole words
  * (snapToWords); an insertion or a deletion keeps every other character,
- * where the caret placed it (diffStrings), or where the diff put it if both
+ * where the caret placed it (caretPlaces), or where the diff put it if both
  * its ends are at word edges, else at the first place in the run of equal
  * text it could be in where they are (placeAtWordEdge), else where the diff
  * put it. The first:
@@ -791,7 +806,7 @@ export function setTextEnds(
     diff.prefix + diff.suffix === Math.min(a.length, b.length) &&
     a.length !== b.length
   ) {
-    return composing || caretAnchors(a, b, cursor)
+    return composing || caretPlaces(a, b, cursor)
       ? diff
       : (placeAtWordEdge(a, b, diff, true) ?? diff);
   }

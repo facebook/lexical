@@ -15,7 +15,11 @@ import {
 } from '@lexical/extension';
 import {$isLinkNode} from '@lexical/link';
 import {$isListItemNode, $isListNode} from '@lexical/list';
-import {$isHeadingNode, $isQuoteNode} from '@lexical/rich-text';
+import {
+  $isHeadingNode,
+  $isQuoteNode,
+  RichTextExtension,
+} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -26,6 +30,7 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
+  type AnyLexicalExtensionArgument,
   defineExtension,
   KEY_ENTER_COMMAND,
   type LexicalEditor,
@@ -35,19 +40,25 @@ import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {describe, expect, it} from 'vitest';
 
 import {
+  $convertFromMarkdownString,
+  $convertToMarkdownString,
   MdastCommonMarkExtension,
   MdastGfmExtension,
+  MdastShadowRootQuoteExtension,
   MdastShortcutsExtension,
 } from '../../index';
 import {codeFenceState, codeMetaState} from '../../state';
 
-function createEditor(): LexicalEditorWithDispose {
+function createEditor(
+  ...extensions: AnyLexicalExtensionArgument[]
+): LexicalEditorWithDispose {
   const editor = buildEditorFromExtensions(
     defineExtension({
       dependencies: [
         MdastCommonMarkExtension,
         MdastGfmExtension,
         MdastShortcutsExtension,
+        ...extensions,
       ],
       name: '[root]',
     }),
@@ -238,6 +249,156 @@ describe('@lexical/mdast streaming shortcuts', () => {
         const heading = $assertNodeType(quote.getFirstChild(), $isHeadingNode);
         expect(heading.getTag()).toBe('h1');
         expect(heading.getTextContent()).toBe('A ## ');
+      });
+    });
+  });
+
+  describe('> makes the same quote as import', () => {
+    /** The root's children as JSON, to compare a typed tree with an imported one. */
+    function rootJSON(editor: LexicalEditor): unknown {
+      // read() first commits the update a shortcut queued.
+      return editor.read(() => editor.getEditorState().toJSON().root.children);
+    }
+
+    function importMarkdown(
+      markdown: string,
+      ...extensions: AnyLexicalExtensionArgument[]
+    ): LexicalEditorWithDispose {
+      const editor = createEditor(...extensions);
+      editor.update(
+        () => {
+          $convertFromMarkdownString(markdown);
+          $getRoot().selectEnd();
+        },
+        {discrete: true},
+      );
+      return editor;
+    }
+
+    function pressEnter(editor: LexicalEditor): void {
+      editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+    }
+
+    it('without MdastShadowRootQuoteExtension, a quote that holds text', () => {
+      using editor = createEditor();
+      type(editor, ['>', ' ', 'a']);
+      using imported = importMarkdown('> a');
+      expect(rootJSON(editor)).toEqual(rootJSON(imported));
+      editor.read(() => {
+        const quote = $assertNodeType($getRoot().getFirstChild(), $isQuoteNode);
+        expect(quote.isShadowRoot()).toBe(false);
+        $assertNodeType(quote.getFirstChild(), $isTextNode);
+      });
+    });
+
+    describe('with MdastShadowRootQuoteExtension', () => {
+      it('a quote that holds paragraphs', () => {
+        using editor = createEditor(MdastShadowRootQuoteExtension);
+        type(editor, ['>', ' ', 'a']);
+        using imported = importMarkdown('> a', MdastShadowRootQuoteExtension);
+        expect(rootJSON(editor)).toEqual(rootJSON(imported));
+        editor.read(() => {
+          const quote = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isQuoteNode,
+          );
+          expect(quote.isShadowRoot()).toBe(true);
+          const line = $assertNodeType(quote.getFirstChild(), $isParagraphNode);
+          expect(line.getTextContent()).toBe('a');
+          const selection = $getSelection();
+          expect(
+            $isRangeSelection(selection) &&
+              selection.anchor.getNode().getParent()?.is(line),
+          ).toBe(true);
+          expect($convertToMarkdownString()).toBe('> a');
+        });
+      });
+
+      it('keeps the text after the marker', () => {
+        using editor = createEditor(MdastShadowRootQuoteExtension);
+        editor.update(
+          () => {
+            const marker = $createTextNode('>');
+            $getRoot()
+              .clear()
+              .append(
+                $createParagraphNode().append(
+                  marker,
+                  $createTextNode('a').toggleFormat('bold'),
+                ),
+              );
+            marker.selectEnd();
+          },
+          {discrete: true},
+        );
+        type(editor, [' ']);
+        using imported = importMarkdown(
+          '> **a**',
+          MdastShadowRootQuoteExtension,
+        );
+        expect(rootJSON(editor)).toEqual(rootJSON(imported));
+      });
+
+      it('> + Enter puts the caret on the empty line of the quote', () => {
+        using editor = createEditor(MdastShadowRootQuoteExtension);
+        type(editor, ['>']);
+        pressEnter(editor);
+        editor.read(() => {
+          const quote = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isQuoteNode,
+          );
+          expect(quote.isShadowRoot()).toBe(true);
+          const line = $assertNodeType(quote.getFirstChild(), $isParagraphNode);
+          expect(line.isEmpty()).toBe(true);
+          const selection = $getSelection();
+          expect(
+            $isRangeSelection(selection) && selection.anchor.getNode().is(line),
+          ).toBe(true);
+        });
+      });
+
+      it('## at the start of the quote makes a heading in it', () => {
+        using editor = createEditor(MdastShadowRootQuoteExtension);
+        type(editor, ['>', ' ', '#', '#', ' ', 'H2']);
+        using imported = importMarkdown(
+          '> ## H2',
+          MdastShadowRootQuoteExtension,
+        );
+        expect(rootJSON(editor)).toEqual(rootJSON(imported));
+      });
+
+      it('> at the start of the quote makes a nested quote', () => {
+        using editor = createEditor(MdastShadowRootQuoteExtension);
+        type(editor, ['>', ' ', '>', ' ', 'a']);
+        using imported = importMarkdown('> > a', MdastShadowRootQuoteExtension);
+        expect(rootJSON(editor)).toEqual(rootJSON(imported));
+      });
+
+      it('Enter behaves the same in a typed and a loaded quote', () => {
+        using typed = createEditor(
+          MdastShadowRootQuoteExtension,
+          RichTextExtension,
+        );
+        type(typed, ['>', ' ', 'a']);
+        using loaded = importMarkdown(
+          '> a',
+          MdastShadowRootQuoteExtension,
+          RichTextExtension,
+        );
+        for (const editor of [typed, loaded]) {
+          // Enter on a line with text adds a line to the quote. Enter on the
+          // empty line after it leaves the quote.
+          pressEnter(editor);
+          type(editor, ['b']);
+          pressEnter(editor);
+          pressEnter(editor);
+          type(editor, ['c']);
+          expect(editor.read(() => $convertToMarkdownString())).toBe(
+            '> a\n>\n> b\n\nc',
+          );
+        }
+        expect(rootJSON(typed)).toEqual(rootJSON(loaded));
       });
     });
   });

@@ -261,6 +261,16 @@ for (const count of [1, 16, 64, 128, 256])
           [mask(TEXT, 5, 9), 'untouched tail'],
           'cardinality',
         );
+        // Every comment id comes back, not only c0.
+        const restored = t.a.read(() =>
+          $block([0])
+            .getAllTextNodes()
+            .filter(n => n.getTextContent().includes('Kilo'))
+            .map(n => [...$getNodeMarkIDs(n)].sort()),
+        );
+        expect(restored, 'every comment id').toEqual([
+          Array.from({length: count}, (_, i) => `c${i}`).sort(),
+        ]);
         for (const p of t.peers) expect(p.doc.store.pendingStructs).toBe(null);
       } finally {
         for (const p of t.peers) p.stop();

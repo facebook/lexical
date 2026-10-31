@@ -475,6 +475,20 @@ export function diffAtoms(
   return {prefix, suffix};
 }
 
+/**
+ * Whether the caret at `cursor` of `b` places an edit that makes `b` of `a`
+ * (see diffStrings): the text after it is unchanged.
+ */
+function caretAnchors(a: string, b: string, cursor: number): boolean {
+  const delta = b.length - a.length;
+  return (
+    cursor >= 0 &&
+    cursor <= b.length &&
+    cursor - delta >= 0 &&
+    b.substring(cursor) === a.substring(cursor - delta)
+  );
+}
+
 /** Common prefix and suffix of two strings, the prefix limited by a cursor. */
 export function diffStrings(
   a: string,
@@ -501,13 +515,9 @@ export function diffStrings(
   // the change before the caret, where the user made it.
   // That holds only while the text after the caret is unchanged.
   const delta = b.length - a.length;
-  const limit =
-    cursor >= 0 &&
-    cursor <= b.length &&
-    cursor - delta >= 0 &&
-    b.substring(cursor) === a.substring(cursor - delta)
-      ? Math.max(0, Math.min(cursor - Math.max(0, delta), max))
-      : max;
+  const limit = caretAnchors(a, b, cursor)
+    ? Math.max(0, Math.min(cursor - Math.max(0, delta), max))
+    : max;
   let prefix = forward(0, limit);
   let suffix = 0;
   const count = max - prefix;
@@ -655,10 +665,10 @@ const NOT_SPACE = /\S|\n/;
 /**
  * Where an insertion or a deletion that diffStrings found (`diff` covers the
  * whole shorter text) changes no word, sliding it within the run of equal
- * text it could be in: where the caret placed it (it stopped the common
- * start) if that changes no word; else at the first such place with
- * `first`, or there if diffStrings put it at such a place, else at the last
- * one; null where every place is inside a word (between two letters or
+ * text it could be in. There if diffStrings put it at such a place (with
+ * `first`, both its ends at word edges); else, unless the caret placed it
+ * (it stopped the common start), at the first such place with `first`, at
+ * the last one without; null where every place is inside a word (between two letters or
  * digits of one, for an insertion; with both ends inside words, for a
  * deletion), or would split a surrogate pair. Without a caret, a diff takes
  * the common start first, so `t1z t2z t3z` made `t1z t3z` deletes `2z t`
@@ -694,6 +704,14 @@ function placeAtWordEdge(
     // `food`, `fooX.bar`) it is a word's text typed or deleted there.
     return longer === b ? !inside(k) : !(inside(k) && inside(k + m));
   };
+  // Moved from where the diff put it, the edit must start and end at word
+  // edges of the longer text, so that it neither takes nor gives a piece of
+  // a word that stays: `a ba c` made `a c` deletes ` ba`, not `a b` (which
+  // would keep the `a` of `ba` as the first word).
+  const edge = (i: number): boolean =>
+    !(isAlnum(longer, i - 1) && isAlnum(longer, i));
+  const moves = (k: number): boolean =>
+    changesNoWord(k) && edge(k) && edge(k + m);
   // The places it could be: from the furthest the common end reaches to
   // the furthest the common start reaches (diffStrings takes the common
   // start first unless the caret stops it, at `diff.prefix`).
@@ -722,13 +740,18 @@ function placeAtWordEdge(
   ) {
     end++;
   }
-  // Where the caret placed it (it stopped the common start), there.
-  const caretPlaced = diff.prefix < hi;
-  if (caretPlaced || !first) {
+  if (first) {
+    // Kept where the diff put it unless that takes or gives a piece of a
+    // word (see `moves`).
+    if (moves(diff.prefix)) {
+      return diff;
+    }
+  } else {
     if (changesNoWord(diff.prefix)) {
       return diff;
     }
-    if (caretPlaced) {
+    // Where the caret placed it (it stopped the common start), there.
+    if (diff.prefix < hi) {
       return null;
     }
   }
@@ -737,7 +760,7 @@ function placeAtWordEdge(
     first ? k <= hi : k >= n - end;
     k += first ? 1 : -1
   ) {
-    if (changesNoWord(k)) {
+    if (first ? moves(k) : changesNoWord(k)) {
       return {prefix: k, suffix: n - k};
     }
   }
@@ -748,9 +771,11 @@ function placeAtWordEdge(
  * The common start and end that text set whole (`setTextContent`, a node's
  * text made again, the DOM's text) keeps of the text it replaces, anchored
  * at `cursor` (see diffStrings): a replacement keeps whole words
- * (snapToWords); an insertion or a deletion keeps every other character, at
- * the first word edge in the run of equal text it could be in, unless the
- * caret placed it (placeAtWordEdge), else where the diff put it. The first:
+ * (snapToWords); an insertion or a deletion keeps every other character,
+ * where the caret placed it (diffStrings), or where the diff put it if both
+ * its ends are at word edges, else at the first place in the run of equal
+ * text it could be in where they are (placeAtWordEdge), else where the diff
+ * put it. The first:
  * a word deleted with the space before it (` t2z` of `t1z t2z t3z`), so
  * text a collaborator types after it at the same time, as typing goes (a
  * space, then a word), keeps the space after it and stays a word of its own.
@@ -766,7 +791,9 @@ export function setTextEnds(
     diff.prefix + diff.suffix === Math.min(a.length, b.length) &&
     a.length !== b.length
   ) {
-    return composing ? diff : (placeAtWordEdge(a, b, diff, true) ?? diff);
+    return composing || caretAnchors(a, b, cursor)
+      ? diff
+      : (placeAtWordEdge(a, b, diff, true) ?? diff);
   }
   return snapToWords(a, b, diff.prefix, diff.suffix, composing);
 }

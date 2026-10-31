@@ -27,6 +27,7 @@ import {
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
+import {diffStrings, setTextEnds, snapToWords} from '../../../internal/Inline';
 import {expectConverged, flush, freshReader, setup} from '../../utils/harness';
 
 const $node = () =>
@@ -118,6 +119,137 @@ describe('#9636: a word set away with setTextContent ‖ a collaborator edits ne
           await expectConverged(t.peers);
         });
       }
+    }
+  }
+});
+
+// A caret that places the edit keeps placing it (the text after it is
+// unchanged), wherever it is in the run of equal text, the rightmost place
+// included: typing a space after two spaces keeps the old two together.
+describe('#9636: a caret keeps placing the edit', () => {
+  for (const [a, b, cursor] of [
+    ['a  b', 'a   b', 4],
+    ['aaa', 'aaaa', 4],
+    ['😀😀', '😀😀😀', 6],
+    ['哈哈', '哈哈哈', 3],
+    ['a...b', 'a....b', 5],
+    ['t1z t2z t3z', 't1z t3z', 4],
+  ] as [string, string, number][]) {
+    test(`${JSON.stringify(a)} set to ${JSON.stringify(b)} with the caret at ${cursor}`, () => {
+      const diff = diffStrings(a, b, cursor);
+      expect(setTextEnds(a, b, cursor, false)).toEqual(
+        snapToWords(a, b, diff.prefix, diff.suffix, false),
+      );
+    });
+  }
+  for (const ids of IDS) {
+    for (const record of [true, false]) {
+      test(`a space typed after two spaces ‖ the peer types between them, ${record ? 'recorded' : 'diffed by the writer'} (ids ${ids})`, async () => {
+        const t = await setup(
+          () => {
+            $getRoot().append(
+              $createParagraphNode().append($createTextNode('a  b')),
+            );
+          },
+          {ids},
+        );
+        const recording = t.a.editor._recordTextEdits;
+        try {
+          t.a.editor._recordTextEdits = record;
+          t.a.editor.update(() => $node().select(3, 3), {discrete: true});
+          t.offline();
+          t.a.update(() => {
+            $node().setTextContent('a   b');
+            $node().select(4, 4);
+          });
+          t.b.update(() => {
+            $node().spliceText(2, 0, 'Q', false);
+            $setSelection(null);
+          });
+          await t.sync();
+          const fresh = await freshReader(t.a);
+          expect(
+            [...t.peers, fresh].map(p =>
+              p.read(() => $getRoot().getTextContent()),
+            ),
+          ).toEqual(['a Q  b', 'a Q  b', 'a Q  b']);
+          await expectConverged(t.peers);
+        } finally {
+          t.a.editor._recordTextEdits = recording;
+        }
+      });
+    }
+    // An edit and a set in one update are composed without a caret: a
+    // space added to two spaces stays where the diff puts it, at word
+    // edges already.
+    test(`a letter typed, then the text set with a space added to two spaces ‖ the peer types between them (ids ${ids})`, async () => {
+      const t = await setup(
+        () => {
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('a  b')),
+          );
+        },
+        {ids},
+      );
+      t.offline();
+      t.a.update(() => {
+        $node().spliceText(0, 0, 'X', false);
+        $node().setTextContent('Xa   b');
+        $setSelection(null);
+      });
+      t.b.update(() => {
+        $node().spliceText(2, 0, 'Q', false);
+        $setSelection(null);
+      });
+      await t.sync();
+      const fresh = await freshReader(t.a);
+      expect(
+        [...t.peers, fresh].map(p => p.read(() => $getRoot().getTextContent())),
+      ).toEqual(['Xa Q  b', 'Xa Q  b', 'Xa Q  b']);
+      await expectConverged(t.peers);
+    });
+  }
+});
+
+// A word set away next to a word that ends or starts like it: the edit is
+// not moved onto a piece of a word that stays (`a ba c` set to `a c`
+// deletes ` ba`, not `a b`, which would keep the `a` of `ba` as the first
+// word, so a collaborator's concurrent delete of `ba` took the first `a`).
+describe('#9636: a word set away next to a word with the same ending', () => {
+  for (const ids of IDS) {
+    for (const [base, set, del, want] of [
+      ['a ba c', 'a c', 'ba', ['a', 'c']],
+      ['one someone end', 'one end', 'someone', ['one', 'end']],
+      ['x ax ab', 'x ab', 'ax', ['x', 'ab']],
+      ['a c', 'a ba c', 'a', ['ba', 'c']],
+      ['one end', 'one someone end', 'one', ['someone', 'end']],
+    ] as [string, string, string, string[]][]) {
+      test(`"${base}" set to "${set}" ‖ the peer deletes "${del}" (ids ${ids})`, async () => {
+        const t = await setup(
+          () => {
+            $getRoot().append(
+              $createParagraphNode().append($createTextNode(base)),
+            );
+          },
+          {ids},
+        );
+        t.offline();
+        t.a.update(() => {
+          $node().setTextContent(set);
+          $setSelection(null);
+        });
+        const at = (' ' + base + ' ').indexOf(' ' + del + ' ');
+        t.b.update($splice(at, del.length, ''));
+        await t.sync();
+        const fresh = await freshReader(t.a);
+        const texts = [...t.peers, fresh].map(p =>
+          p.read(() => $getRoot().getTextContent()),
+        );
+        const words = texts[0].split(/ +/).filter(Boolean);
+        expect(new Set(texts).size).toBe(1);
+        expect(words).toEqual(want);
+        await expectConverged(t.peers);
+      });
     }
   }
 });

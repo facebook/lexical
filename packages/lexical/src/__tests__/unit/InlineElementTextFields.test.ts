@@ -6,6 +6,7 @@
  *
  */
 
+import {$generateJSONFromSelectedNodes} from '@lexical/clipboard';
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $create,
@@ -13,7 +14,9 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getSelection,
   $parseSerializedNode,
+  $selectAll,
   defineExtension,
   ElementNode,
   type LexicalNode,
@@ -216,7 +219,11 @@ function $exportEach(node: LexicalNode): unknown {
 }
 
 describe('serializing inline elements nested inside each other', () => {
-  for (const where of ['a committed state', 'an update'] as const) {
+  for (const where of [
+    'a committed state',
+    'an update',
+    'a copy after a change in the same update',
+  ] as const) {
     test(`stays linear in the depth when each carries text fields, in ${where}`, () => {
       const calls: number[] = [];
       for (const depth of [64, 128, 256]) {
@@ -242,10 +249,21 @@ describe('serializing inline elements nested inside each other', () => {
           countGetFirstChild(() => {
             if (where === 'a committed state') {
               json = JSON.stringify(editor.getEditorState().toJSON());
-            } else {
+            } else if (where === 'an update') {
               editor.update(
                 () => {
                   json = JSON.stringify($exportEach($getRoot()));
+                },
+                {discrete: true},
+              );
+            } else {
+              editor.update(
+                () => {
+                  $getRoot().getAllTextNodes()[0].toggleFormat('italic');
+                  $selectAll();
+                  json = JSON.stringify(
+                    $generateJSONFromSelectedNodes(editor, $getSelection()),
+                  );
                 },
                 {discrete: true},
               );

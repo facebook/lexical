@@ -3153,14 +3153,14 @@ export function $getTextInsideCache(): Map<NodeKey, boolean> | null {
     if (
       editor === null ||
       editor._pendingEditorState !== editorState ||
-      editor._dirtyType !== NO_DIRTY_NODES
+      editor._dirtyType !== NO_DIRTY_NODES ||
+      !editor._editorState._readOnly
     ) {
-      return null;
+      return exportMemo !== null && exportMemo.editorState === editorState
+        ? exportMemo.holds
+        : null;
     }
     editorState = editor._editorState;
-    if (!editorState._readOnly) {
-      return null;
-    }
   }
   let cache = textInsideCache.get(editorState);
   if (cache === undefined) {
@@ -3168,6 +3168,49 @@ export function $getTextInsideCache(): Map<NodeKey, boolean> | null {
     textInsideCache.set(editorState, cache);
   }
   return cache;
+}
+
+/**
+ * The memo of one export walk in a pending state that has changed (see
+ * INTERNAL_$withExportMemo), or null.
+ */
+let exportMemo: null | {
+  editorState: EditorState;
+  holds: Map<NodeKey, boolean>;
+} = null;
+/** Whether an export walk is running (with or without its memo). */
+let exportWalk = false;
+
+/**
+ * @internal
+ * Run an export walk (EditorState#toJSON, the clipboard's selection export)
+ * with a memo of what $getTextInsideCache would hold, for an update whose
+ * pending state has changed and so has no cache of its own. The memo lives
+ * for the walk alone, which changes no node: a node made writable during the
+ * walk (see internalStopExportMemo) drops it for the rest of the walk, so it
+ * cannot answer for content that has changed.
+ */
+export function INTERNAL_$withExportMemo<T>(f: () => T): T {
+  if (exportWalk) {
+    return f();
+  }
+  const editorState = internalGetActiveEditorState();
+  exportWalk = true;
+  exportMemo =
+    editorState !== null && !editorState._readOnly
+      ? {editorState, holds: new Map()}
+      : null;
+  try {
+    return f();
+  } finally {
+    exportWalk = false;
+    exportMemo = null;
+  }
+}
+
+/** @internal Drop the export walk's memo (see INTERNAL_$withExportMemo). */
+export function internalStopExportMemo(): void {
+  exportMemo = null;
 }
 
 /** @internal */

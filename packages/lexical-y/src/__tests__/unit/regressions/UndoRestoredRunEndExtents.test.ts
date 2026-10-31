@@ -307,6 +307,25 @@ for (const count of [1, 16, 64, 128, 256])
                 restored,
               );
             }
+            // Every id on exactly the word's characters (or none), and on no
+            // other character of any line.
+            t.a.read(() => {
+              const onWord = restored[0];
+              $getRoot()
+                .getChildren()
+                .forEach((block, line) => {
+                  let offset = 0;
+                  for (const n of (block as ElementNode).getAllTextNodes()) {
+                    const ids = [...$getNodeMarkIDs(n)].sort();
+                    for (let k = 0; k < n.getTextContentSize(); k++) {
+                      expect(ids, `ids on line ${line} at ${offset}`).toEqual(
+                        line === 0 && offset >= 5 && offset < 9 ? onWord : [],
+                      );
+                      offset++;
+                    }
+                  }
+                });
+            });
             for (const p of t.peers)
               expect(p.doc.store.pendingStructs).toBe(null);
           } finally {

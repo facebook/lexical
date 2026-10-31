@@ -3605,45 +3605,73 @@ function $holdsBlock(
 }
 
 /**
- * A format wrapper that holds blocks (see $holdsBlock), taken apart: the
- * blocks, in order, and between them the element around the inline content
- * it holds there (itself around the first such run, a copy around each later
- * one), at any depth. Why: a shadow root holds blocks only, and a block
- * inside an inline element is a shape the editor cannot keep (it was read
- * as `link(paragraph)` in a paragraph of its own, and a delete next to it
+ * A format wrapper that holds blocks (see $holdsBlock), taken apart in one
+ * walk: the blocks, in order, and between them the wrappers around the
+ * inline content they hold there (each wrapper itself around its first such
+ * run, a copy around each later one), at any depth. Each node is looked at
+ * once. Why: a shadow root holds blocks only, and a block inside an inline
+ * element is a shape the editor cannot keep (it was read as
+ * `link(paragraph)` in a paragraph of its own, and a delete next to it
  * rewrote the paragraph: #9571).
  */
 function $splitAroundBlocks(
-  el: ElementNode,
+  top: ElementNode,
   formatWrappers: ReadonlySet<NodeKey>,
   holds: Map<NodeKey, boolean>,
 ): LexicalNode[] {
   const out: LexicalNode[] = [];
-  const runs: [ElementNode, LexicalNode[]][] = [];
-  let run: LexicalNode[] | null = null;
-  for (const k of el.getChildren()) {
-    for (const part of $holdsBlock(k, formatWrappers, holds)
-      ? $splitAroundBlocks(k, formatWrappers, holds)
-      : [k]) {
-      if ($isShownBlock(part)) {
-        run = null;
-        out.push(part);
-      } else {
-        if (run === null) {
-          const wrapper = runs.length === 0 ? el : $copyNode(el);
-          run = [];
-          runs.push([wrapper, run]);
-          out.push(wrapper);
-        }
-        run.push(part);
+  // The wrappers walked into, outermost first.
+  const chain: ElementNode[] = [];
+  // The wrappers open for inline content now (a prefix of `chain`, as
+  // written), and the children each gets.
+  const open: {src: ElementNode; node: ElementNode; kids: LexicalNode[]}[] = [];
+  const made: [ElementNode, LexicalNode[]][] = [];
+  const walked: ElementNode[] = [];
+  const used = new Set<NodeKey>();
+  const target = (): LexicalNode[] => {
+    const depth = chain.length;
+    if (open.length < depth || open[depth - 1].src !== chain[depth - 1]) {
+      let d = 0;
+      while (d < open.length && d < depth && open[d].src === chain[d]) {
+        d++;
+      }
+      open.length = d;
+      for (; d < depth; d++) {
+        const src = chain[d];
+        const node = used.has(src.getKey()) ? $copyNode(src) : src;
+        used.add(src.getKey());
+        const kids: LexicalNode[] = [];
+        made.push([node, kids]);
+        (d === 0 ? out : open[d - 1].kids).push(node);
+        open.push({kids, node, src});
       }
     }
+    open.length = depth;
+    return open[depth - 1].kids;
+  };
+  const walk = (el: ElementNode) => {
+    chain.push(el);
+    walked.push(el);
+    for (const k of el.getChildren()) {
+      if ($isShownBlock(k)) {
+        open.length = 0;
+        out.push(k);
+      } else if ($holdsBlock(k, formatWrappers, holds)) {
+        walk(k);
+      } else {
+        target().push(k);
+      }
+    }
+    chain.pop();
+  };
+  walk(top);
+  for (const el of walked) {
+    if (!used.has(el.getKey())) {
+      el.clear();
+    }
   }
-  if (runs.length === 0 || runs[0][0] !== el) {
-    el.clear();
-  }
-  for (const [wrapper, kids] of runs) {
-    wrapper.splice(0, wrapper.getChildrenSize(), kids);
+  for (const [node, kids] of made) {
+    node.splice(0, node.getChildrenSize(), kids);
   }
   return out;
 }

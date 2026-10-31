@@ -834,7 +834,12 @@ person's:
   (and a change the browser makes to the DOM text, as an IME composition
   does) keeps the start and end its text shares with the node's old text,
   anchored at the caret, which cannot tell where an edit next to equal text
-  was made without one. Without a caret that places it (none, or one at
+  was made without one, and between two changes the words the two texts
+  share, as text made again keeps them (a word a collaborator deletes there
+  at the same time stays deleted; not in an IME composition, and not where
+  the editor does not record text edits and the same update also changes
+  the node's format or style, which writes the node again:
+  [#9666](https://github.com/meta/lexical/issues/9666)). Without a caret that places it (none, or one at
   the end of the node, past the edit or in a later node), an insertion or
   a deletion found that way stays where the diff puts it if both its ends
   are at word edges;

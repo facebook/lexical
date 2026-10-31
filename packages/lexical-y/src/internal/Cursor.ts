@@ -197,7 +197,7 @@ function lastOwnItemBefore(doc: Doc, item: Item, key: string): Item | null {
  * same write (see changeEnd): the item of its key its client made last
  * before it opens a run that ends at `item`.
  */
-function isChangeEnd(doc: Doc, item: Item): boolean {
+export function isChangeEnd(doc: Doc, item: Item): boolean {
   const opener = lastOwnItemBefore(doc, item, keyOf(item));
   return (
     opener !== null &&

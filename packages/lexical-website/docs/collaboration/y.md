@@ -1332,6 +1332,10 @@ reproduces it:
   container and makes no list, in every `@lexical/y` editor (it runs
   `NodeStructureExtension`):
   [#9570](https://github.com/meta/lexical/issues/9570).
+- A format a collaborator gives the word right after a formatted run is
+  lost, by client id, when another client types plain text inside that run
+  or removes the format from part of it at the same time:
+  [#9650](https://github.com/meta/lexical/issues/9650).
 
 For `MarkStateExtension` comments, see the
 [comments limitations](./comments.md#limitations).

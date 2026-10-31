@@ -133,6 +133,18 @@ function unitFrom(item: Item): Item[] {
  */
 const formatClosers = new WeakSet<Item>();
 
+/**
+ * Of each restore a write made of a value whose run another client's change
+ * opened, the end of this client's own it wrote after that change's end (see
+ * Cursor#format, rule 5). That end bounds the restore only: once a write
+ * removes the restore, it removes that end too, which would otherwise stay
+ * right after the change's end, where it ends a value a collaborator gives
+ * the content after it at the same time (a bold on the word after a bold
+ * run, while the run's line was made again as plain text, was lost by
+ * client id).
+ */
+const restoreEnds = new WeakMap<Item, Item>();
+
 /** Whether `item` is one of the items in `formatClosers`. */
 export const isFormatCloser = (item: Item): boolean => formatClosers.has(item);
 
@@ -720,22 +732,25 @@ export class Cursor {
       }
       this.forward();
     }
-    const ends: Item[] = [];
+    const ends: [Item, Item][] = [];
     for (const [key, val] of negated) {
       const end = val === null ? null : this.restatedEnd(key, val);
-      if (end !== null) {
-        ends.push(end);
-      }
       this.right = this.newItem(new ContentFormat(key, val as object));
+      if (end !== null) {
+        ends.push([this.right, end]);
+      }
       if (closers && val === null) {
         formatClosers.add(this.right);
       }
       this.forward();
     }
-    for (const end of ends) {
-      this.insertAfter(
-        end,
-        new ContentFormat(keyOf(end), null as unknown as object),
+    for (const [restore, end] of ends) {
+      restoreEnds.set(
+        restore,
+        this.insertAfter(
+          end,
+          new ContentFormat(keyOf(end), null as unknown as object),
+        ),
       );
     }
   }
@@ -1126,7 +1141,7 @@ export class Cursor {
       for (const unit of units) {
         for (const it of unit) {
           if (!keep.has(it)) {
-            deleteItem(it, this.tr);
+            this.deleteFormat(it);
             if (passed.has(it)) {
               changed.add(keyOf(it));
             }
@@ -1257,6 +1272,18 @@ export class Cursor {
    *    after it (a link a collaborator undid while another linked the text
    *    up to its end ran on to the end of the document).
    */
+  /**
+   * Delete format item `item`, and the end of this client's own that bounds
+   * it where it is a restore (see restoreEnds).
+   */
+  private deleteFormat(item: Item): void {
+    deleteItem(item, this.tr);
+    const end = restoreEnds.get(item);
+    if (end !== undefined && !end.deleted) {
+      deleteItem(end, this.tr);
+    }
+  }
+
   format(n: number, formats: Record<string, unknown>): void {
     const passed = new Set<string>();
     this.passed = n > 0 ? passed : null;
@@ -1322,7 +1349,7 @@ export class Cursor {
               // and the range's value opened after it, before that content.
               const earlier = atStart.get(key);
               if (earlier !== undefined) {
-                deleteItem(earlier, this.tr);
+                this.deleteFormat(earlier);
               }
               atStart.set(key, r);
               if (equalFormatValue(attr, value)) {
@@ -1366,7 +1393,7 @@ export class Cursor {
               }
               negated.set(key, value);
             }
-            deleteItem(r, this.tr);
+            this.deleteFormat(r);
           } else {
             if (inRange && n > 0) {
               // Rule 4. A boundary of another key of a family this write

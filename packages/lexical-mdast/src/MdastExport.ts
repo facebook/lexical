@@ -149,7 +149,7 @@ function collectHardBreaks(tree: Root): Set<Nodes> {
  * options (and contributed `toMarkdownExtensions`) still apply to them.
  */
 const syntaxToMarkdown = (
-  compiled: CompiledMdast,
+  getLiteralUrl: (text: string) => string | null,
   hardBreaks: ReadonlySet<Nodes>,
 ): ToMarkdownExtension => ({
   handlers: {
@@ -207,23 +207,7 @@ const syntaxToMarkdown = (
         // Preserve the bare form only while it still parses as the same link.
         // Edits to its destination, label or formatting need resource syntax.
         const text = node.children[0].value;
-        const tree = fromMarkdown(text, {
-          extensions: compiled.micromarkExtensions,
-          mdastExtensions: compiled.mdastExtensions,
-        });
-        const paragraph = tree.children[0];
-        const literal =
-          tree.children.length === 1 &&
-          paragraph.type === 'paragraph' &&
-          paragraph.children.length === 1
-            ? paragraph.children[0]
-            : null;
-        if (
-          literal !== null &&
-          literal.type === 'link' &&
-          literal.url === node.url &&
-          mdastToString(literal) === text
-        ) {
+        if (getLiteralUrl(text) === node.url) {
           return text;
         }
       }
@@ -672,6 +656,7 @@ export function createMdastExport(compiled: CompiledMdast): {
   // The unfiltered exporter has no per-call state and is shared by every
   // whole-document export; selection exports build a fresh one per call.
   const documentExporter = createNodeExporter(compiled);
+  let literalUrls = new Map<string, string | null>();
 
   const $toMdast = (
     root: ElementNode,
@@ -684,6 +669,35 @@ export function createMdastExport(compiled: CompiledMdast): {
   });
 
   const $serialize = (tree: Root, root: ElementNode): string => {
+    const previousLiteralUrls = literalUrls;
+    const nextLiteralUrls = new Map<string, string | null>();
+    const getLiteralUrl = (text: string): string | null => {
+      let url = nextLiteralUrls.get(text);
+      if (url === undefined) {
+        url = previousLiteralUrls.get(text);
+      }
+      if (url === undefined) {
+        const parsed = fromMarkdown(text, {
+          extensions: compiled.micromarkExtensions,
+          mdastExtensions: compiled.mdastExtensions,
+        });
+        const paragraph = parsed.children[0];
+        const literal =
+          parsed.children.length === 1 &&
+          paragraph.type === 'paragraph' &&
+          paragraph.children.length === 1
+            ? paragraph.children[0]
+            : null;
+        url =
+          literal !== null &&
+          literal.type === 'link' &&
+          mdastToString(literal) === text
+            ? literal.url
+            : null;
+      }
+      nextLiteralUrls.set(text, url);
+      return url;
+    };
     // Emphasis/strong delimiters are document-level: `_` when one was
     // recorded on import, unless contributed toMarkdownExtensions set them.
     // Defaults (with the '-' bullet baseline) ride as the FIRST extension so
@@ -702,9 +716,10 @@ export function createMdastExport(compiled: CompiledMdast): {
       extensions: [
         defaults,
         ...compiled.toMarkdownExtensions,
-        syntaxToMarkdown(compiled, collectHardBreaks(tree)),
+        syntaxToMarkdown(getLiteralUrl, collectHardBreaks(tree)),
       ],
     });
+    literalUrls = nextLiteralUrls;
     // toMarkdown always appends a trailing newline; drop it so callers get the
     // same shape as `@lexical/markdown`'s `$convertToMarkdownString`.
     return out.replace(/\n$/, '');

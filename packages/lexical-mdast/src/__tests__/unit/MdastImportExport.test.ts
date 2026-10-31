@@ -614,6 +614,45 @@ describe('@lexical/mdast import/export', () => {
     }
   });
 
+  it('reuses literal validation during lookahead and repeated exports', () => {
+    let parses = 0;
+    using editor = buildEditorFromExtensions(
+      MdastCommonMarkExtension,
+      MdastAutolinkLiteralExtension,
+      configExtension(MdastExtension, {
+        mdastExtensions: [
+          {
+            transforms: [
+              () => {
+                parses++;
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    const markdown = 'https://lexical.dev www.example.com';
+    editor.update(() => $convertFromMarkdownString(markdown), {
+      discrete: true,
+    });
+    parses = 0;
+    expect(editor.read(() => $convertToMarkdownString())).toBe(markdown);
+    expect(parses).toBeLessThanOrEqual(2);
+    const firstExportParses = parses;
+    expect(editor.read(() => $convertToMarkdownString())).toBe(markdown);
+    expect(parses).toBe(firstExportParses);
+    editor.update(
+      () => $getRoot().getAllTextNodes()[0].setTextContent('caption'),
+      {discrete: true},
+    );
+    const edited = '[caption](https://lexical.dev) www.example.com';
+    expect(editor.read(() => $convertToMarkdownString())).toBe(edited);
+    expect(parses).toBeLessThanOrEqual(firstExportParses + 1);
+    const editedExportParses = parses;
+    expect(editor.read(() => $convertToMarkdownString())).toBe(edited);
+    expect(parses).toBe(editedExportParses);
+  });
+
   it('keeps edits to imported autolink literals', () => {
     using editor = buildEditorFromExtensions(
       MdastCommonMarkExtension,
@@ -626,6 +665,9 @@ describe('@lexical/mdast import/export', () => {
           'https://one.example https://two.example https://three.example',
         ),
       {discrete: true},
+    );
+    expect(editor.read(() => $convertToMarkdownString())).toBe(
+      'https://one.example https://two.example https://three.example',
     );
     const $links = () =>
       $assertNodeType($getRoot().getFirstChildOrThrow(), $isElementNode)

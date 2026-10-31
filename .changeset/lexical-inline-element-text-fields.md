@@ -1,5 +1,6 @@
 ---
 'lexical': patch
+'@lexical/clipboard': patch
 ---
 
 [fix] Stop serializing the textFormat and textStyle of an inline element whose text sits in another element inside it

@@ -1976,14 +1976,6 @@ export function eachOuterLevel(
 const INSTANCE_KEY = '#';
 
 /**
- * The format of one wrapper: one key, `w:<type>`, whose value is a flat
- * object of its schema fields and NodeState (`s:<key>`); a value that is not
- * a primitive, or a string that starts with NUL, is NUL and its JSON, since
- * Yjs compares format values one level deep. One key keeps a link at two
- * format items: concurrent changes to two fields of one wrapper do not merge
- * (the last one wins).
- */
-/**
  * Wrapper values (see $wrapperAttrs) of wrappers that hold text: their text
  * fields are not written (Lexical does not serialize them), so a value
  * without them does not remove text fields stored there (see
@@ -1998,6 +1990,14 @@ export function isTextHoldingWrapperValue(value: unknown): boolean {
   );
 }
 
+/**
+ * The format of one wrapper: one key, `w:<type>`, whose value is a flat
+ * object of its schema fields and NodeState (`s:<key>`); a value that is not
+ * a primitive, or a string that starts with NUL, is NUL and its JSON, since
+ * Yjs compares format values one level deep. One key keeps a link at two
+ * format items: concurrent changes to two fields of one wrapper do not merge
+ * (the last one wins).
+ */
 export function $wrapperAttrs(
   node: ElementNode,
   out: Attrs,
@@ -2173,7 +2173,8 @@ export function $lineAttrs(
 /**
  * An element's textFormat/textStyle, which Lexical serializes only while
  * the element has no text: every peer must hold the same values, so groups
- * and wrapper items always carry them (as lines do).
+ * and lines always carry them, and wrapper items while the wrapper holds no
+ * text (see $wrapperAttrs).
  */
 function $putTextFields(node: ElementNode, out: Attrs): void {
   const tf = node.getTextFormat();

@@ -84,7 +84,7 @@ export function importTextTransformers(
   // recursion, so that a long paragraph does not nest a call per match, and
   // with what was found in the whole text, which still holds for the rest of
   // it as long as no match there reached into what came before.
-  const deferred: (() => void)[] = [];
+  const deferred: Deferred[] = [];
   let rest: TextRest | null = [textNode, before, after, null];
   while (rest !== null) {
     rest = importOutermost(
@@ -98,14 +98,68 @@ export function importTextTransformers(
     );
   }
   for (let i = deferred.length - 1; i >= 0; i--) {
-    deferred[i]();
+    const [
+      nodeBefore,
+      beforeBefore,
+      beforeAfter,
+      inside,
+      insideBefore,
+      insideAfter,
+      matched,
+    ] = deferred[i];
+    if (canContainTransformableMarkdown(nodeBefore)) {
+      importTextTransformers(
+        nodeBefore,
+        textFormatTransformersIndex,
+        textMatchTransformers,
+        beforeBefore,
+        beforeAfter,
+      );
+    }
+    if (canContainTransformableMarkdown(inside)) {
+      importTextTransformers(
+        inside,
+        textFormatTransformersIndex,
+        textMatchTransformers,
+        insideBefore,
+        insideAfter,
+      );
+    } else if (
+      canContainTransformableMarkdown(matched) &&
+      matched.getParent() !== null
+    ) {
+      // A text match transformer that returned no node may leave the matched
+      // node in place or move it into a new parent. Read its escapes once
+      // without trying the same match again. A parent also exists when
+      // importing into a detached tree.
+      matched.setTextContent(unescapeText(matched.getTextContent()));
+    }
   }
 }
 
-/** The formats and links found in a text, for what is left of it. */
+/**
+ * What a match leaves to import once the text after it is done: the text
+ * before it, then the text inside it, each with the characters around it,
+ * or the matched node of a text match that returned none.
+ */
+type Deferred = [
+  nodeBefore: LexicalNode | undefined,
+  beforeBefore: string | undefined,
+  beforeAfter: string | undefined,
+  inside: LexicalNode | undefined,
+  insideBefore: string | undefined,
+  insideAfter: string | undefined,
+  matched: LexicalNode | undefined,
+];
+
+/**
+ * The formats and links found in a text, for what is left of it, which is
+ * `rest`.
+ */
 interface TextScan {
   formats: FormatScan;
   links: LinkMatches;
+  rest: string;
 }
 
 type TextRest = [
@@ -127,14 +181,11 @@ function importOutermost(
   before: string | undefined,
   after: string | undefined,
   previousScan: TextScan | null,
-  deferred: (() => void)[],
+  deferred: Deferred[],
 ): TextRest | null {
   const text = textNode.getTextContent();
   const scan: TextScan =
-    previousScan !== null &&
-    previousScan.formats.text.length - previousScan.formats.offset ===
-      text.length &&
-    previousScan.formats.text.endsWith(text)
+    previousScan !== null && previousScan.rest === text
       ? previousScan
       : {
           formats: scanTextFormats(
@@ -144,6 +195,7 @@ function importOutermost(
             after,
           ),
           links: new Map(),
+          rest: text,
         };
   const {formats} = scan;
   let foundTextFormat = findOutermostTextFormatTransformer(
@@ -198,36 +250,51 @@ function importOutermost(
   }
 
   // Defers the import of the text before a match from `startIndex` to
-  // `endIndex`, then of the text inside it with `importInside`, and returns
+  // `endIndex` and of `inside` (or the escapes of `matched`), and returns
   // the text after it, each with what lies beyond the run cut at its edge.
+  // A text match that ends inside a run of a delimiter cuts it, which the
+  // scan measured whole, so the rest is scanned again then.
   const importAround = (
     nodeBefore: LexicalNode | undefined,
     nodeAfter: LexicalNode | undefined,
     startIndex: number,
     endIndex: number,
-    importInside: () => void,
+    inside: LexicalNode | undefined,
+    insideBefore: string | undefined,
+    insideAfter: string | undefined,
+    matched: LexicalNode | undefined,
+    isTextMatch: boolean,
   ): TextRest | null => {
-    const beforeMatch = characterBeyondRun(text, startIndex, 1, after);
-    deferred.push(() => {
-      if (canContainTransformableMarkdown(nodeBefore)) {
-        importTextTransformers(
-          nodeBefore,
-          textFormatTransformersIndex,
-          textMatchTransformers,
-          before,
-          beforeMatch,
-        );
-      }
-      importInside();
-    });
-    return canContainTransformableMarkdown(nodeAfter)
-      ? [
-          nodeAfter,
-          characterBeyondRun(text, endIndex, -1, before),
-          after,
-          advanceFormatScan(formats, formats.offset + endIndex) ? scan : null,
-        ]
-      : null;
+    deferred.push([
+      nodeBefore,
+      before,
+      characterBeyondRun(text, startIndex, 1, after),
+      inside,
+      insideBefore,
+      insideAfter,
+      matched,
+    ]);
+    if (!canContainTransformableMarkdown(nodeAfter)) {
+      return null;
+    }
+    const cut = text[endIndex - 1];
+    const isReusable =
+      advanceFormatScan(formats, formats.offset + endIndex) &&
+      !(
+        isTextMatch &&
+        cut === text[endIndex] &&
+        (cut === '`' ||
+          Object.keys(textFormatTransformersIndex.transformersByTag).some(
+            tag => tag[0] === cut,
+          ))
+      );
+    scan.rest = nodeAfter.getTextContent();
+    return [
+      nodeAfter,
+      characterBeyondRun(text, endIndex, -1, before),
+      after,
+      isReusable ? scan : null,
+    ];
   };
 
   if (foundTextFormat) {
@@ -242,28 +309,20 @@ function importOutermost(
     const tagLength = foundTextFormat.match[1].length;
     // A code span's fence is not its tag's length, and its content is not
     // read for emphasis against what lies outside it.
-    const insideBefore = isCodeSpan
-      ? undefined
-      : characterBeyondRun(text, startIndex + tagLength, -1, before);
-    const insideAfter = isCodeSpan
-      ? undefined
-      : characterBeyondRun(text, endIndex - tagLength, 1, after);
     return importAround(
       result.nodeBefore,
       result.nodeAfter,
       startIndex,
       endIndex,
-      () => {
-        if (canContainTransformableMarkdown(result.transformedNode)) {
-          importTextTransformers(
-            result.transformedNode,
-            textFormatTransformersIndex,
-            textMatchTransformers,
-            insideBefore,
-            insideAfter,
-          );
-        }
-      },
+      result.transformedNode,
+      isCodeSpan
+        ? undefined
+        : characterBeyondRun(text, startIndex + tagLength, -1, before),
+      isCodeSpan
+        ? undefined
+        : characterBeyondRun(text, endIndex - tagLength, 1, after),
+      undefined,
+      false,
     );
   } else if (foundTextMatch) {
     const result = importFoundTextMatchTransformer(
@@ -281,26 +340,11 @@ function importOutermost(
       result.nodeAfter,
       foundTextMatch.startIndex,
       foundTextMatch.endIndex,
-      () => {
-        if (canContainTransformableMarkdown(result.transformedNode)) {
-          importTextTransformers(
-            result.transformedNode,
-            textFormatTransformersIndex,
-            textMatchTransformers,
-          );
-        } else if (
-          result.transformedNode === undefined &&
-          canContainTransformableMarkdown(result.matchedNode) &&
-          result.matchedNode.getParent() !== null
-        ) {
-          // A void return may leave the matched node in place or move it into
-          // a new parent. Read its escapes once without trying the same match
-          // again. A parent also exists when importing into a detached tree.
-          result.matchedNode.setTextContent(
-            unescapeText(result.matchedNode.getTextContent()),
-          );
-        }
-      },
+      result.transformedNode,
+      undefined,
+      undefined,
+      result.transformedNode === undefined ? result.matchedNode : undefined,
+      true,
     );
   }
 

@@ -11,11 +11,20 @@ import type {TextNode} from 'lexical';
 import {getLinkLabelOpener, LINK} from './MarkdownTransformers';
 import {isEscaped} from './utils';
 
-function matchLink(text: string, regExp: RegExp): RegExpExecArray | null {
+/**
+ * The first link match in `text` from `from` on, and where the search found
+ * it, which is before the match when its label holds the real opener.
+ */
+function matchLink(
+  text: string,
+  regExp: RegExp,
+  from: number,
+): [match: RegExpExecArray, found: number] | null {
   const search = new RegExp(
     regExp.source,
     regExp.flags.replace(/[gy]/g, '') + 'g',
   );
+  search.lastIndex = from;
   let match;
   while ((match = search.exec(text)) !== null) {
     // A `[` that the label holds outside a code span is the link's real
@@ -29,10 +38,19 @@ function matchLink(text: string, regExp: RegExp): RegExpExecArray | null {
       inner[1] = match[1].slice(cut);
       inner.index = match.index + cut;
       inner.input = text;
-      return inner;
+      const {indices} = match;
+      const whole = indices && indices[0];
+      const label = indices && indices[1];
+      if (indices && whole && label) {
+        const moved = [...indices] as RegExpIndicesArray;
+        moved[0] = [inner.index, whole[1]];
+        moved[1] = [label[0] + cut, label[1]];
+        inner.indices = moved;
+      }
+      return [inner, match.index];
     }
     if (!isEscaped(text, match.index)) {
-      return match;
+      return [match, match.index];
     }
     search.lastIndex = match.index + 1;
   }
@@ -40,15 +58,12 @@ function matchLink(text: string, regExp: RegExp): RegExpExecArray | null {
 }
 
 /**
- * The match each transformer with the built-in link syntax found in a text,
- * with where it starts in that text, or `null` when there is none. It is the
- * first match in what is left of the text after any offset up to its start,
- * since the link syntax does not look behind its match.
+ * Where the search for each transformer with the built-in link syntax found
+ * its match in a text, or `null` when there is none. The search finds the
+ * same match again from there in what is left of the text after any offset
+ * up to it, since the link syntax does not look behind its match.
  */
-export type LinkMatches = Map<
-  TextMatchTransformer,
-  {index: number; match: RegExpExecArray} | null
->;
+export type LinkMatches = Map<TextMatchTransformer, number | null>;
 
 export function findOutermostTextMatchTransformer(
   textNode_: TextNode,
@@ -82,21 +97,16 @@ export function findOutermostTextMatchTransformer(
       transformer.importRegExp.source === LINK.importRegExp.source
     ) {
       const found = links.get(transformer);
-      if (found === undefined || (found !== null && found.index < offset)) {
-        const linkMatch = matchLink(text, transformer.importRegExp);
-        links.set(
-          transformer,
-          linkMatch && {index: offset + linkMatch.index, match: linkMatch},
-        );
-        match = linkMatch;
-      } else if (found === null) {
-        match = null;
-      } else {
-        const moved = [...found.match] as RegExpMatchArray;
-        moved.index = found.index - offset;
-        moved.input = text;
-        match = moved;
-      }
+      const linkMatch =
+        found === null
+          ? null
+          : matchLink(
+              text,
+              transformer.importRegExp,
+              found === undefined || found < offset ? 0 : found - offset,
+            );
+      links.set(transformer, linkMatch && offset + linkMatch[1]);
+      match = linkMatch && linkMatch[0];
     } else {
       match = text.match(transformer.importRegExp);
     }

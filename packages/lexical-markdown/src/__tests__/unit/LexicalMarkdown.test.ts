@@ -5574,6 +5574,14 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       ],
       'x a@b.co**\u201cq\u201d**,http://x.co/ y',
     ],
+    [
+      'the letter before a URL scheme',
+      [
+        ['.', TEXT_TYPE_TO_FORMAT.bold],
+        ['ahttp://x.co', 0],
+      ],
+      '**.**ahttp://x.co',
+    ],
   ])('writes no reference inside %s', (_name, runs, markdown) => {
     const editor = createTestEditor();
     editor.update(

@@ -735,6 +735,9 @@ function isLinkCharacter(character: string): boolean {
 // `www.` after `_` too.
 const LINK_URL =
   /(?:^|[^a-z])(?:https?|ftp):\/\/|(?:^|[^a-z\d.-])www\.|(?:^|[^a-z\d.+-])(?:mailto|xmpp):/i;
+// The start of a scheme or `www.` anywhere: a reference for the letter before
+// it would put the `;` there, after which a URL starts.
+const URL_START = /(?:https?|ftp):\/\/|www\.|(?:mailto|xmpp):/gi;
 // Characters an email can hold (word characters, `.+@-`, and the backslash
 // that escapes one), and what makes one: GFM needs a dot in its domain.
 const ADDRESS_CHARACTER = /[\w.+@\\-]/;
@@ -875,6 +878,12 @@ function findLinkEdges(kinds: PieceKind[], values: string[]): Uint8Array {
     const urlStart =
       url === null ? end : start + url.index + (/^[a-z]/i.test(url[0]) ? 0 : 1);
     inLink.fill(1, urlStart, end);
+    const run = text.slice(start, urlStart);
+    for (const {index} of run.matchAll(URL_START)) {
+      if (index > 0) {
+        inLink[start + index - 1] = 1;
+      }
+    }
     for (let from = start; from < urlStart; ) {
       const to = runEnd(from, isAddressCharacter, urlStart);
       if (to === from) {

@@ -84,9 +84,10 @@ export function scanTextFormats(
 /**
  * Moves `scan` on to the text after `offset`. What it found there holds for
  * that text on its own as long as no code span or emphasis runs on from
- * before `offset` (a pair cannot reach past the end of the outermost one), no
- * run of a character is cut there, which the scan measured whole, and no
- * backslash before it escapes it; returns false otherwise.
+ * before `offset` (a pair cannot reach past the end of the outermost one),
+ * and no backslash before it escapes it; returns false otherwise. A run that
+ * the end of an emphasis match cuts was measured by what is left of it, as a
+ * scan of the rest would, but one that a text match cuts was not.
  */
 export function advanceFormatScan(scan: FormatScan, offset: number): boolean {
   const {codeSpans, emphasis, text} = scan;
@@ -107,7 +108,7 @@ export function advanceFormatScan(scan: FormatScan, offset: number): boolean {
       return false;
     }
   }
-  return text[offset - 1] !== '\\' && text[offset - 1] !== text[offset];
+  return text[offset - 1] !== '\\';
 }
 
 /**
@@ -221,7 +222,8 @@ export function scanCodeSpans(text: string): {
     }
   }
 
-  // The runs of each length, in order, to find a closer in.
+  // The runs of each length, in order, to find a closer in, and how many of
+  // them the openers, which only move forward, have passed.
   const runsByLength = new Map<number, number[]>();
   runs.forEach(({length}, index) => {
     const indexes = runsByLength.get(length);
@@ -231,20 +233,19 @@ export function scanCodeSpans(text: string): {
       runsByLength.set(length, [index]);
     }
   });
+  const passed = new Map<number, number>();
   // The first run after `index` that is `length` long, or -1.
   const findCloser = (index: number, length: number): number => {
-    const indexes = runsByLength.get(length) || [];
-    let low = 0;
-    let high = indexes.length;
-    while (low < high) {
-      const middle = (low + high) >> 1;
-      if (indexes[middle] <= index) {
-        low = middle + 1;
-      } else {
-        high = middle;
-      }
+    const indexes = runsByLength.get(length);
+    if (indexes === undefined) {
+      return -1;
     }
-    return low < indexes.length ? indexes[low] : -1;
+    let next = passed.get(length) || 0;
+    while (next < indexes.length && indexes[next] <= index) {
+      next++;
+    }
+    passed.set(length, next);
+    return next < indexes.length ? indexes[next] : -1;
   };
 
   const spans: {content: string; endIndex: number; startIndex: number}[] = [];

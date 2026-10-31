@@ -702,10 +702,11 @@ describe('R24B-F1: a comment resolved ‖ plain text typed before a character it
 });
 
 // F24A-1: every word of another format, comment or NodeState value typed at
-// one place and deleted again left two format items live, so a document's
-// items grew with its editing history. The run of deleted content and
-// format items a delete leaves holds a bounded number per key (see
-// Cursor#collapseGap).
+// one place and deleted again leaves its two format items (its opener and
+// its closer) live: a delete keeps the format items around and inside the
+// content it deletes, which a concurrent writer and an undo of the delete
+// rely on (D86). So the items grow by exactly two per such word, and by none
+// per keystroke of plain text.
 describe('F24A-1: words typed and deleted again at one place', () => {
   const live = (peer: Peer) => {
     let n = 0;
@@ -757,9 +758,8 @@ describe('F24A-1: words typed and deleted again at one place', () => {
         }
       }
       expect(await merged(t)).toBe('"start middle end"');
-      // As many after 60 words as after 20, and at most five per key.
-      expect(counts[2]).toBe(counts[0]);
-      expect(counts[2]).toBeLessThanOrEqual(pattern === 'formats' ? 20 : 5);
+      // Two per word: 40 after 20 words, 80 after 40, 120 after 60.
+      expect(counts).toEqual([40, 80, 120]);
     });
   }
 });
@@ -1077,9 +1077,12 @@ describe('F32A-1: undo after a collaborator changed part of the range and undid 
         '"abcdefghijkl" / "next"',
       ],
       [
+        // Its author's undo wins (D85): A's removal kept C's bold under an
+        // item of its own, C's undo took C's bold, and A's undo takes A's
+        // item, so nothing brings the bold back.
         'C bolds "i"; A unbolds it; C undoes; A undoes',
         [['c', bold(8, 9, true)], ['a', bold(8, 9, false)], 'c', 'a'],
-        '"abcdefgh" "i"[B] "jkl" / "next"',
+        '"abcdefghijkl" / "next"',
       ],
       [
         'A colors "ab" red; B colors "b" blue; A undoes',
@@ -1174,7 +1177,8 @@ describe('undo after a redo of a format change', () => {
         'c',
         'a',
       ],
-      '"abcdefgh" "i"[B] "jkl" / "next"',
+      // Its author's undo wins (D85): no bold comes back.
+      '"abcdefghijkl" / "next"',
     ],
     [
       'A colors "ab" red, undoes and redoes; B colors "b" blue; A undoes',
@@ -1388,9 +1392,11 @@ describe('an undo of a format change ‖ its removal by a collaborator, undone',
     sel.formatText('bold');
     $setSelection(null);
   };
-  // "y" keeps the value: the collaborator's undo brought it back.
+  // "y" has no value: its author undid it, and the collaborator's removal
+  // only covered it with an item of its own, which the collaborator's undo
+  // takes (D85). It never runs on.
   const cases: [string, () => void, () => void, string][] = [
-    ['bold', $bold, $bold, '"x" "y"[B] "ab cd" / "ef"'],
+    ['bold', $bold, $bold, '"xyab cd" / "ef"'],
     [
       'a comment',
       () => {
@@ -1398,7 +1404,7 @@ describe('an undo of a format change ‖ its removal by a collaborator, undone',
         $setSelection(null);
       },
       () => $removeMarkID('c1'),
-      '"x" "y"[c1] "ab cd" / "ef"',
+      '"xyab cd" / "ef"',
     ],
   ];
   for (const [name, $add, $remove, expected] of cases) {
@@ -1575,8 +1581,8 @@ describe('a value one client restates ‖ the undo of the change that gave it', 
     }
     // S7-10: a format's undo ‖ its removal from part of the range (the part
     // after it keeps the format, up to the end of the range), or from all of
-    // it, and then the removal's undo (which brings the format back on the
-    // range).
+    // it, and then the removal's undo (which brings nothing back: the
+    // format's author undid it, D85).
     for (const [format, tag] of [
       ['bold', 'B'],
       ['underline', 'U'],
@@ -1605,9 +1611,9 @@ describe('a value one client restates ‖ the undo of the change that gave it', 
         t.b.undo();
         await t.sync();
         t.a.undo();
-        expect(await merged(t)).toBe(
-          `"t5z " "t6z t7z t8z"[${tag}] " t9z" / "tail line"`,
-        );
+        // B undid its format, so A's undo of its removal brings nothing back
+        // (D85).
+        expect(await merged(t)).toBe('"t5z t6z t7z t8z t9z" / "tail line"');
       });
     }
     test(`S7-10: B comments "t9z" and undoes it ‖ A resolves it, then A undoes that (ids ${ids})`, async () => {
@@ -1621,9 +1627,9 @@ describe('a value one client restates ‖ the undo of the change that gave it', 
       t.b.undo();
       await t.sync();
       t.a.undo();
-      expect(await merged(t)).toBe(
-        '"t5z t6z t7z t8z " "t9z"[c2] / "tail line"',
-      );
+      // B undid its comment, so A's undo of resolving it brings nothing back
+      // (D85).
+      expect(await merged(t)).toBe('"t5z t6z t7z t8z t9z" / "tail line"');
     });
     // The nulls an undo writes after itself (see closeRestoredRuns) are read
     // as part of that undo: the selection it puts back stays, also where the
@@ -1677,9 +1683,8 @@ describe('a value one client restates ‖ the undo of the change that gave it', 
             : null;
         });
         expect(offsets).toEqual([4, 15]);
-        expect(await merged(t)).toBe(
-          '"t5z " "t6z t7z t8z"[B] " t9z" / "tail line"',
-        );
+        // B undid its bold, so A's undo brings none back (D85).
+        expect(await merged(t)).toBe('"t5z t6z t7z t8z t9z" / "tail line"');
       });
     }
     // S7-20: a comment's undo ‖ a list pasted inside the commented words.

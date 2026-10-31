@@ -1170,12 +1170,11 @@ not merge as a user might expect:
   the link there again. Where a collaborator overwrote a step of yours
   entirely, the undo manager skips that step as changing nothing, and the
   same undo also reverts your step before it. When you undo a format change
-  while a collaborator removes that format and undoes the removal, the text
-  keeps the format: the collaborator's undo brings it back. A comment or
-  format can run on past its end when writes two collaborators made inside
-  it are undone while another client deletes text across its end: it
-  carries on over the following words, possibly into the next line. No
-  text is lost. A format a collaborator applies
+  or a comment while a collaborator removes it and undoes the removal, in
+  either order, the text has no format: your undo wins, and the
+  collaborator's undo of the removal brings back nothing you undid (a
+  removal covers your format with an item of its own rather than deleting
+  yours, and its undo takes its own item). A format a collaborator applies
   starting right where a run of that format ends, or from inside the run
   past its end, can be lost on their text after the run when a client
   other than the one that formatted the run, at the same time, removes the
@@ -1262,12 +1261,12 @@ not merge as a user might expect:
   text typed inside it at the same time lands next to it, in an inline
   element of its old form. Where text was deleted, the format items it
   leaves are kept, so that a collaborator's concurrent edit inside or at
-  the deleted text keeps its formats, until a later delete at the same
-  place keeps a few per format key of them; text a collaborator types
-  inside the earlier deleted text after that, where its format changed
-  more than once along it, takes the format that text had at its start,
-  and so does that text where an undo brings it back after another
-  collaborator's delete there. Two joins at once into the same line both
+  the deleted text keeps its formats, and an undo of the delete brings the
+  text back with them (a document keeps two format items for each
+  formatted run whose text was deleted). Text typed at the start of a
+  range at the same time as a collaborator removes a format or a comment
+  from it can keep that format or comment, by the order Yjs gives the two
+  writes. Two joins at once into the same line both
   write its type, and Yjs keeps one of them by client id: a heading joined
   across a quote to the paragraph after it, while a collaborator joins that
   paragraph into the quote, can become a quote.

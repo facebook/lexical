@@ -698,14 +698,20 @@ describe('a node kept apart written where a peer removes the link or format arou
 });
 
 // Content inserted inside a link right before a node that opened the link in
-// the same write shares the link: when the link's author undoes or a
-// collaborator removes the link, it goes from that content too.
+// the same write shares the link: when the link's author undoes it, it goes
+// from that content too. A collaborator's removal at the same time keeps the
+// link's own items and covers them with its own (D85), so the content typed
+// at the start of the link at the same time, which Yjs orders after the
+// link's opener and before the removal's item, keeps the link: a removal
+// races text typed at the start of its range (y.md, Other races).
 describe('content written inside a link right before a node that opened it', () => {
   type Case = {
     name: string;
     $link: () => LexicalNode;
     $insert: () => void;
     then: 'undo' | 'unlink';
+    /** The first line after it, where some of it keeps the link. */
+    expected?: string;
   };
   const $firstOf = (type: string) =>
     $block([0])
@@ -728,6 +734,7 @@ describe('content written inside a link right before a node that opened it', () 
         $createLinkNode('https://example.com').append(
           $createHashtagNode('#BB'),
         ),
+      expected: 'paragraph("ab" link<https://example.com>("XY") "#BB" " cd")',
       name: 'text before a hashtag, C unlinks',
       then: 'unlink',
     },
@@ -738,6 +745,8 @@ describe('content written inside a link right before a node that opened it', () 
           $createTabNode(),
           $t('zz'),
         ),
+      expected:
+        'paragraph("ab" link<https://example.com>("\\t") "\\t" "zz cd")',
       name: 'a tab before a tab, C unlinks',
       then: 'unlink',
     },
@@ -776,9 +785,13 @@ describe('content written inside a link right before a node that opened it', () 
         }
         await t.sync();
         for (const peer of t.peers) {
-          expect(
-            peer.read(() => $block([0]).getChildren().some($isLinkNode)),
-          ).toBe(false);
+          if (c.expected === undefined) {
+            expect(
+              peer.read(() => $block([0]).getChildren().some($isLinkNode)),
+            ).toBe(false);
+          } else {
+            expect(peer.describe().split(' / ')[0]).toBe(c.expected);
+          }
         }
         await expectConverged(t.peers);
       });

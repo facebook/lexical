@@ -45,6 +45,7 @@ import {$innerBlockIdsOf, BlockIdSettler, NO_IDS} from './BlockIds';
 import {type Formats} from './Cursor';
 import {groupKeySig, groupSig} from './Groups';
 import {Hidden} from './Hidden';
+import {RunEdges} from './Inline';
 import {
   $foreignFlatKeys,
   $groupFields,
@@ -2341,11 +2342,14 @@ export class Reader {
     let tattrs: Attrs | null = null;
     let tsig = '';
     let wrappers: WrapperValue[] = [];
+    // The formats an edge insert shows instead (see RunEdges), for that item.
+    let edge: Formats | null = null;
+    const edges = new RunEdges();
     const snapshot = () => {
       if (tattrs === null) {
         tattrs = {};
         const all: Attrs = {};
-        current.forEach((v, k) => {
+        (edge ?? current).forEach((v, k) => {
           all[k] = v;
           if (!k.startsWith(WRAPPER_PREFIX)) {
             tattrs![k] = v;
@@ -2363,6 +2367,7 @@ export class Reader {
       }
       const content = it.content;
       if (content instanceof ContentFormat) {
+        edges.format(it, current);
         if (content.value === null) {
           current.delete(content.key);
         } else {
@@ -2373,6 +2378,11 @@ export class Reader {
       }
       if (!it.countable) {
         continue;
+      }
+      const itsEdge = edges.content(it, current);
+      if (itsEdge !== null || edge !== null) {
+        edge = itsEdge;
+        tattrs = null;
       }
       snapshot();
       if (content instanceof ContentString) {

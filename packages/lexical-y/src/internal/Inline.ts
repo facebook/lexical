@@ -28,6 +28,7 @@ import {
   $wrapperAttrs,
   type Attrs,
   decodeFormatValue,
+  FIELD_PREFIX,
   isMergeableText,
   MARKER,
   RUN_END,
@@ -252,6 +253,239 @@ export function $pushInline(
 }
 
 // ---------------------------------------------------------------------------
+// Inserts at the edge of a token or segmented run
+
+type ID = {client: number; clock: number};
+
+const holds = (it: Item, id: ID | null): boolean =>
+  id !== null &&
+  it.id.client === id.client &&
+  it.id.clock <= id.clock &&
+  id.clock < it.id.clock + it.length;
+
+/** Format keys and the values an edge insert shows for them. */
+type EdgeValues = Map<string, unknown>;
+
+/**
+ * Text a collaborator inserts at the edge of a node Lexical keeps apart
+ * (token or segmented text: a run of its own segment key, see SEGMENT_KEY)
+ * at the same time as another client makes that node from existing text
+ * (makes a word token text) lands inside the run or outside it by the order
+ * Yjs gives the two inserts, and inside it would take the run's mode: the
+ * mention would hold the collaborator's words (#9639). Such text is shown
+ * with the values of the run's keys on its side of the run instead.
+ *
+ * The run's opening format items were inserted right before its first
+ * character, and its closing ones right after its last, so text between the
+ * opening items and that first character, or between that last character
+ * and the closing items, was inserted at an edge: by a writer that did not
+ * know them, or later, next to such text. The closing items are the last
+ * ones that end the run on its line (a write inside an edge can close and
+ * reopen it around its own text). A run whose characters were written with
+ * it (typed after its opening items) has no such edges. Fed every item a
+ * reader shows of a sequence, in order.
+ */
+export class RunEdges {
+  private groupFirst: Item | null = null;
+  private groupBefore: Formats | null = null;
+  private groupKeys: string[] = [];
+  private groupSegment: Item | null = null;
+  private segment: unknown = null;
+  private edges: Map<Item, EdgeValues> | null = null;
+
+  /** A live format item, before it is applied to `current`. */
+  format(it: Item, current: Formats): void {
+    if (this.groupFirst === null) {
+      this.groupFirst = it;
+      this.groupBefore = new Map(current);
+      this.groupKeys = [];
+      this.groupSegment = null;
+    }
+    const key = (it.content as ContentFormat).key;
+    this.groupKeys.push(key);
+    if (key === SEGMENT_KEY) {
+      this.groupSegment = it;
+    }
+  }
+
+  /**
+   * A live content item under `current`: the formats to show it with
+   * instead, or null.
+   */
+  content(it: Item, current: Formats): Formats | null {
+    const first = this.groupFirst;
+    if (first !== null) {
+      const before = this.groupBefore!;
+      this.groupFirst = null;
+      this.groupBefore = null;
+      const segment = current.get(SEGMENT_KEY) ?? null;
+      if (
+        segment !== null &&
+        segment !== this.segment &&
+        segment !== (before.get(SEGMENT_KEY) ?? null) &&
+        isModeRun(current)
+      ) {
+        this.segment = segment;
+        this.edges = runEdges(
+          this.groupSegment!,
+          this.groupKeys,
+          before,
+          it,
+          current,
+        );
+      }
+    }
+    const values = this.edges === null ? undefined : this.edges.get(it);
+    if (values === undefined) {
+      return null;
+    }
+    const shown = new Map(current);
+    values.forEach((v, k) => {
+      if (v === undefined) {
+        shown.delete(k);
+      } else {
+        shown.set(k, v);
+      }
+    });
+    return shown;
+  }
+}
+
+/**
+ * Whether `formats` are those of token or segmented text: other runs of
+ * their own segment key (a code highlight token, a tab) are left to their
+ * own rules (a highlighter retypes its tokens).
+ */
+function isModeRun(formats: Formats): boolean {
+  const mode = decodeFormatValue(formats.get(FIELD_PREFIX + 'mode') ?? null);
+  return mode === 'token' || mode === 'segmented';
+}
+
+/** Whether `it` ends a line (or the inline content of a container). */
+const endsLine = (it: Item): boolean =>
+  it.content instanceof ContentType &&
+  (it.content.type.name === MARKER || it.content.type.name === RUN_END);
+
+/**
+ * The edge items (see RunEdges) of the segment run that `opener` (its
+ * opening segment key item; its group set `keys`) opens, whose first content
+ * item is `start`: the values of the run's keys each shows. The opening
+ * items of one write were inserted before the same item (their right
+ * origin), and the first of its closing items after the run's last
+ * character (its origin; the others follow it).
+ */
+function runEdges(
+  opener: Item,
+  keys: string[],
+  before: Formats,
+  start: Item,
+  current: Formats,
+): Map<Item, EdgeValues> | null {
+  const segment = current.get(SEGMENT_KEY);
+  const formats = new Map(current);
+  const items: Item[] = [];
+  const inRun: boolean[] = [];
+  let group: Item[] = [];
+  let groupStart: unknown = null;
+  let groupSegment: Item | null = null;
+  let close: {first: Item; end: number; values: EdgeValues} | null = null;
+  const endGroup = () => {
+    if (group.length === 0) {
+      return;
+    }
+    const now = formats.get(SEGMENT_KEY) ?? null;
+    if (groupStart === segment && now !== segment && groupSegment !== null) {
+      const values: EdgeValues = new Map();
+      for (const g of group) {
+        const k = (g.content as ContentFormat).key;
+        values.set(k, formats.get(k));
+      }
+      // The first closing item of the write that closed the run.
+      let first = groupSegment;
+      for (;;) {
+        const origin = first.origin;
+        const prev = group.find(g => holds(g, origin));
+        if (prev === undefined) {
+          break;
+        }
+        first = prev;
+      }
+      close = {end: items.length, first, values};
+    } else if (groupStart !== segment && now === segment) {
+      close = null;
+    }
+    group = [];
+    groupSegment = null;
+  };
+  for (let p: Item | null = start; p !== null && !endsLine(p); p = p.right) {
+    if (p.content instanceof ContentFormat) {
+      if (isGone(p)) {
+        continue;
+      }
+      if (group.length === 0) {
+        groupStart = formats.get(SEGMENT_KEY) ?? null;
+      }
+      group.push(p);
+      const was = formats.get(SEGMENT_KEY) ?? null;
+      applyFormat(formats, p.content);
+      if (
+        p.content.key === SEGMENT_KEY &&
+        was === segment &&
+        (formats.get(SEGMENT_KEY) ?? null) !== segment
+      ) {
+        groupSegment = p;
+      }
+      continue;
+    }
+    if (!isGone(p) && !p.countable) {
+      continue;
+    }
+    endGroup();
+    items.push(p);
+    inRun.push(!isGone(p) && (formats.get(SEGMENT_KEY) ?? null) === segment);
+  }
+  endGroup();
+  const closer = close as {
+    first: Item;
+    end: number;
+    values: EdgeValues;
+  } | null;
+  if (closer === null) {
+    return null;
+  }
+  let first = -1;
+  for (let k = 0; k < closer.end && first === -1; k++) {
+    if (holds(items[k], opener.rightOrigin)) {
+      first = k;
+    }
+  }
+  let last = -1;
+  for (let k = closer.end - 1; k >= 0 && last === -1; k--) {
+    if (holds(items[k], closer.first.origin)) {
+      last = k;
+    }
+  }
+  if (first === -1 || last < first) {
+    return null;
+  }
+  const opening: EdgeValues = new Map();
+  for (const k of keys) {
+    opening.set(k, before.get(k));
+  }
+  const edges = new Map<Item, EdgeValues>();
+  for (let k = 0; k < first; k++) {
+    if (inRun[k]) {
+      edges.set(items[k], opening);
+    }
+  }
+  for (let k = last + 1; k < closer.end; k++) {
+    if (inRun[k]) {
+      edges.set(items[k], closer.values);
+    }
+  }
+  return edges.size === 0 ? null : edges;
+}
+
 // Old atoms from Yjs
 
 /**
@@ -272,12 +506,18 @@ export function readAtoms(
   // The formats the editor shows: `current` without held-back ones.
   const shown = hidden === null ? current : new Map(formats);
   let attrs: Attrs | null = null;
+  // Whether `attrs` are an edge insert's (see RunEdges), for that item only.
+  let edged = false;
+  const edges = new RunEdges();
   for (let it = start; it !== null && it !== stop; it = it.right) {
     if (isGone(it)) {
       continue;
     }
     const content = it.content;
     if (content instanceof ContentFormat) {
+      if (shown === current || !hidden!.hides(it)) {
+        edges.format(it, shown);
+      }
       applyFormat(current, content);
       if (shown !== current && !hidden!.hides(it)) {
         applyFormat(shown, content);
@@ -288,8 +528,13 @@ export function readAtoms(
     if (!it.countable) {
       continue;
     }
-    if (attrs === null) {
+    const edge = edges.content(it, shown);
+    if (edge !== null) {
+      attrs = Object.fromEntries(edge);
+      edged = true;
+    } else if (attrs === null || edged) {
       attrs = Object.fromEntries(shown);
+      edged = false;
     }
     if (hidden !== null) {
       const runs = hidden.runs(it);

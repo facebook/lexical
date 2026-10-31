@@ -384,27 +384,30 @@ describe('an author and a fresh reader have the same JSON', () => {
   });
 });
 
-// A collaborator deletes the wrapped text but not a line break or an inline
-// decorator next to it, after (or while) the other client formats over the
-// wrapper: the wrapper now holds no text, so Lexical serializes its text
-// fields, and every client shows the stored ones (the formatting client's
-// own, set while the wrapper held text, were not stored).
-describe('a wrapper whose text a collaborator deletes, formatted by another client', () => {
+// A client deletes the wrapped text but not a line break or an inline
+// decorator next to it, after (or while) a client formats over the wrapper
+// (the other client, or the same one): the wrapper now holds no text, so
+// Lexical serializes its text fields, and every client shows the stored ones
+// (the formatting client's own, set while the wrapper held text, were not
+// stored).
+describe('a wrapper whose text a client deletes after a format over it', () => {
   const cells = SHAPES.filter(
     ({leaf}) => leaf === 'line-break' || leaf === 'text+decorator',
   ).flatMap(shape =>
     (['after', 'concurrent'] as const).flatMap(when =>
-      (
-        [
-          [1, 2],
-          [2, 1],
-        ] as [number, number][]
-      ).map(ids => ({...shape, ids, when})),
+      (['peer', 'self'] as const).flatMap(who =>
+        (
+          [
+            [1, 2],
+            [2, 1],
+          ] as [number, number][]
+        ).map(ids => ({...shape, ids, when, who})),
+      ),
     ),
   );
   test.each(cells)(
-    '$label: delete $when, ids $ids.0,$ids.1',
-    async ({chain, leaf, fields, ids, when}) => {
+    '$label: $who deletes $when, ids $ids.0,$ids.1',
+    async ({chain, leaf, fields, ids, when, who}) => {
       const seed = seedYState(config, () => $build(chain, leaf, fields));
       const a = client(seed, ids[0]);
       const b = client(seed, ids[1]);
@@ -419,7 +422,7 @@ describe('a wrapper whose text a collaborator deletes, formatted by another clie
         sync(a, b);
         await Promise.resolve();
       }
-      a.editor.update(
+      (who === 'peer' ? a : b).editor.update(
         () => {
           for (const text of $wrappedTexts()) {
             text.remove();
@@ -428,6 +431,7 @@ describe('a wrapper whose text a collaborator deletes, formatted by another clie
         },
         {discrete: true},
       );
+      await Promise.resolve();
       sync(a, b);
       await Promise.resolve();
       const expected = fresh(a.doc);

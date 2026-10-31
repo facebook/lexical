@@ -2935,54 +2935,14 @@ export class Reader {
    * as wrappers built by a read do (see $readInline's `finish`).
    */
   private $settleWrapperTextFields(): void {
-    for (const key of this.childrenSet) {
-      const el = $getNodeByKey(key);
-      let anchor = this.state.yByKey.get(key);
-      if (el === null || anchor === undefined) {
-        continue;
-      }
-      // The wrappers above a stored element are formats in the sequence
-      // that holds its item; above the next stored element, in that one's.
-      let values: WrapperValue[] | null = null;
-      for (
-        let w: LexicalNode | null = el.getParent();
-        $isElementNode(w);
-        w = w.getParent()
-      ) {
-        const wy = this.state.yByKey.get(w.getKey());
-        // Inline content ends at the line: a stored element that is not
-        // inline (OverflowNode) still sits in it where its parent is inline.
-        const parent = w.getParent();
-        if (
-          !w.isInline() &&
-          !(wy !== undefined && $isElementNode(parent) && parent.isInline())
-        ) {
-          break;
-        }
-        if (wy !== undefined) {
-          anchor = wy;
-          values = null;
-          continue;
-        }
-        if (
-          !$isWrapper(w) ||
-          (w.getTextFormat() === 0 && w.getTextStyle() === '') ||
-          !w.shouldSerializeTextStyles() ||
-          anchor._item === null
-        ) {
-          continue;
-        }
-        if (values === null) {
-          values = wrappersFromAttrs(attrsAt(anchor._item), this.wrapperFields);
-        }
-        const wrapper = w;
-        const value = values.find(v => v.type === wrapper.getType());
-        if (value !== undefined) {
-          this.$updateStored(wrapper, () =>
-            $setTextFields(wrapper.getLatest(), value.json),
-          );
-        }
-      }
+    for (const [wrapper, json] of $unstoredWrapperTextFields(
+      this.state,
+      this.childrenSet,
+      this.wrapperFields,
+    )) {
+      this.$updateStored(wrapper, () =>
+        $setTextFields(wrapper.getLatest(), json),
+      );
     }
     this.childrenSet.clear();
   }
@@ -3733,18 +3693,119 @@ function isDeleted(y: YNode): boolean {
   return false;
 }
 
-/** The formats stored in effect at `item`, in its parent's sequence. */
-function attrsAt(item: Item): Attrs {
-  const formats = new Map<string, unknown>();
-  const parent = item.parent as unknown as {_start: Item | null};
-  for (let it = parent._start; it !== null && it !== item; it = it.right) {
-    if (!isGone(it) && it.content instanceof ContentFormat) {
-      if (it.content.value === null) {
-        formats.delete(it.content.key);
-      } else {
-        formats.set(it.content.key, it.content.value);
+/**
+ * The wrappers around the stored elements `keys` (a link around a mark, and
+ * around that link's own stored ancestors up to the line) that hold no text
+ * and show other text fields than their stored value, with that value's.
+ * Lexical serializes a wrapper's textFormat and textStyle while it holds no
+ * text, and the binding stores them exactly then (see $wrapperAttrs), so
+ * every client must show the stored ones: one a client set while the
+ * wrapper held text was not stored. The wrappers above a stored element are
+ * formats in the sequence that holds its item; above the next stored
+ * element, in that one's.
+ */
+export function $unstoredWrapperTextFields(
+  state: State,
+  keys: Iterable<NodeKey>,
+  wrapperFields: (type: string) => OwnedFields | null,
+): [ElementNode, Attrs][] {
+  const candidates: [ElementNode, Item][] = [];
+  const seen = new Set<NodeKey>();
+  for (const key of keys) {
+    const el = $getNodeByKey(key);
+    let anchor = state.yByKey.get(key);
+    if (el === null || anchor === undefined) {
+      continue;
+    }
+    for (
+      let w: LexicalNode | null = el.getParent();
+      $isElementNode(w);
+      w = w.getParent()
+    ) {
+      const wy = state.yByKey.get(w.getKey());
+      // Inline content ends at the line: a stored element that is not
+      // inline (OverflowNode) still sits in it where its parent is inline.
+      const parent = w.getParent();
+      if (
+        !w.isInline() &&
+        !(wy !== undefined && $isElementNode(parent) && parent.isInline())
+      ) {
+        break;
+      }
+      if (wy !== undefined) {
+        anchor = wy;
+        continue;
+      }
+      if (
+        anchor._item !== null &&
+        !seen.has(w.getKey()) &&
+        $isWrapper(w) &&
+        (w.getTextFormat() !== 0 || w.getTextStyle() !== '') &&
+        w.shouldSerializeTextStyles()
+      ) {
+        seen.add(w.getKey());
+        candidates.push([w, anchor._item]);
       }
     }
   }
-  return Object.fromEntries(formats) as Attrs;
+  if (candidates.length === 0) {
+    return [];
+  }
+  const attrs = attrsAtItems(candidates.map(([, item]) => item));
+  const out: [ElementNode, Attrs][] = [];
+  for (const [w, item] of candidates) {
+    const value = wrappersFromAttrs(attrs.get(item)!, wrapperFields).find(
+      v => v.type === w.getType(),
+    );
+    if (value === undefined) {
+      continue;
+    }
+    const {textFormat, textStyle} = value.json;
+    if (
+      w.getTextFormat() !== (typeof textFormat === 'number' ? textFormat : 0) ||
+      w.getTextStyle() !== (typeof textStyle === 'string' ? textStyle : '')
+    ) {
+      out.push([w, value.json]);
+    }
+  }
+  return out;
+}
+
+/**
+ * The formats stored in effect at each of `items`: one pass along each
+ * sequence that holds some of them, up to the last one.
+ */
+function attrsAtItems(items: Item[]): Map<Item, Attrs> {
+  const bySequence = new Map<unknown, Set<Item>>();
+  for (const item of items) {
+    let set = bySequence.get(item.parent);
+    if (set === undefined) {
+      set = new Set();
+      bySequence.set(item.parent, set);
+    }
+    set.add(item);
+  }
+  const out = new Map<Item, Attrs>();
+  for (const [parent, wanted] of bySequence) {
+    const formats = new Map<string, unknown>();
+    let left = wanted.size;
+    for (
+      let it = (parent as {_start: Item | null})._start;
+      it !== null && left > 0;
+      it = it.right
+    ) {
+      if (wanted.has(it)) {
+        out.set(it, Object.fromEntries(formats) as Attrs);
+        left--;
+      }
+      if (!isGone(it) && it.content instanceof ContentFormat) {
+        if (it.content.value === null) {
+          formats.delete(it.content.key);
+        } else {
+          formats.set(it.content.key, it.content.value);
+        }
+      }
+    }
+  }
+  return out;
 }

@@ -19,7 +19,7 @@ import {
   type NodeMap,
 } from 'lexical';
 
-import {diffStrings, keptStretches, snapToWords} from './Inline';
+import {keptStretches, setTextEnds, snapToWords} from './Inline';
 import {$isWrapper} from './Schema';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
@@ -797,14 +797,7 @@ export class TextReplay {
         }
       }
     }
-    const diff = diffStrings(d, s, -1);
-    const {prefix, suffix} = snapToWords(
-      d,
-      s,
-      diff.prefix,
-      diff.suffix,
-      this.composing,
-    );
+    const {prefix, suffix} = setTextEnds(d, s, -1, this.composing);
     // The characters of `d` aligned with deleted text, in order.
     const cuts: [number, number][] = [];
     for (let i = 0, pos = 0; i < runs.length; i++) {
@@ -1804,14 +1797,7 @@ export class TextReplay {
       if (made) {
         keep = keptStretches(w, text, caret, this.composing);
       } else {
-        const diff = diffStrings(w, text, caret);
-        const {prefix, suffix} = snapToWords(
-          w,
-          text,
-          diff.prefix,
-          diff.suffix,
-          this.composing,
-        );
+        const {prefix, suffix} = setTextEnds(w, text, caret, this.composing);
         keep = [
           [0, prefix, 0],
           [tl - suffix, tl, shift],

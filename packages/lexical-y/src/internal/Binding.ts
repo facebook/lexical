@@ -42,6 +42,7 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $hasUpdateTag,
   $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
@@ -95,6 +96,7 @@ import {
   $isGroupNode,
   $isWrapper,
   $nodeAttrs,
+  $setTextFields,
   canStoreAs,
   deriveStorageKind,
   getGroupSpec,
@@ -1165,10 +1167,56 @@ export class YBinding {
         $flushSyncAfterUpdate();
       }
     };
+    // A local change that leaves a wrapper around a stored element holding
+    // no text (its own delete of the text in a mark inside a link) does not
+    // write the wrapper's value, so the text fields this client set while the
+    // wrapper held text, which Lexical now serializes, are stored nowhere:
+    // in the same update, the wrapper shows the stored ones, as every other
+    // client and a fresh reader do (see $unstoredWrapperTextFields), and
+    // nothing follows the update for an app to answer. The stored element is
+    // the one the change marks dirty.
+    const settleTextFields = (node: LexicalNode) =>
+      withPins(this._pins, () => {
+        const state = this.state;
+        if (
+          this._status !== 'active' ||
+          this.unread !== null ||
+          !state.yByKey.has(node.getKey()) ||
+          $hasUpdateTag(COLLABORATION_TAG)
+        ) {
+          return;
+        }
+        const editor = this._editor;
+        const found = $unstoredWrapperTextFields(state, [node.getKey()], type =>
+          wrapperFieldsOf(editor, type),
+        );
+        if (found.length === 0) {
+          return;
+        }
+        // Only a wrapper this update left without text, with the text fields
+        // it had: ones this update set on a wrapper without text are stored
+        // by the write.
+        const prev = editor.getEditorState();
+        const stale = prev.read(() =>
+          found.filter(([wrapper]) => {
+            const was = $getNodeByKey(wrapper.getKey());
+            return (
+              $isElementNode(was) &&
+              !was.shouldSerializeTextStyles() &&
+              was.getTextFormat() === wrapper.getTextFormat() &&
+              was.getTextStyle() === wrapper.getTextStyle()
+            );
+          }),
+        );
+        for (const [wrapper, json] of stale) {
+          $setTextFields(wrapper, json);
+        }
+      });
     for (const {klass} of this._editor._nodes.values()) {
       if (klass.prototype instanceof ElementNode) {
         this.disposers.push(
           this._editor.registerNodeTransform(klass, noteTransformed),
+          this._editor.registerNodeTransform(klass, settleTextFields),
           // The node structure normalization never reaches a named slot.
           this._editor.registerNodeTransform(klass, $wrapSlotShadowRootInline),
         );
@@ -3726,9 +3774,6 @@ export class YBinding {
         }
         this.pending.add('normalize');
       }
-      editorState.read(() =>
-        this.$noteUnstoredWrapperTextFields(state, roles, dirtyElements),
-      );
     }
     if (commit.userEdit) {
       this.rereads = 0;
@@ -4314,41 +4359,6 @@ export class YBinding {
       this.pending.add('reread');
     }
     return found;
-  }
-
-  /**
-   * A local change that leaves a wrapper around a stored element holding no
-   * text (its own delete of the text in a mark inside a link) does not write
-   * the wrapper's value, so the text fields the client set while the wrapper
-   * held text, which Lexical now serializes, are stored nowhere: the
-   * wrapper's container is read again (see refused), and shows the stored
-   * ones, as every other client and a fresh reader do.
-   */
-  private $noteUnstoredWrapperTextFields(
-    state: State,
-    roles: Roles,
-    dirtyElements: Map<NodeKey, boolean>,
-  ): void {
-    const stored = [...dirtyElements.keys()].filter(key =>
-      state.yByKey.has(key),
-    );
-    if (stored.length === 0) {
-      return;
-    }
-    const editor = this._editor;
-    for (const [wrapper] of $unstoredWrapperTextFields(state, stored, type =>
-      wrapperFieldsOf(editor, type),
-    )) {
-      const container = roles.$containerOf(wrapper);
-      const cs =
-        container === null || $isRootNode(container)
-          ? state.containers.get(this._root)
-          : state.csByKey.get(container.getKey());
-      if (cs !== undefined) {
-        this.refused.add(cs);
-        this.pending.add('reread');
-      }
-    }
   }
 
   /** Containers a write did not write a follow-up's change to (see refused). */

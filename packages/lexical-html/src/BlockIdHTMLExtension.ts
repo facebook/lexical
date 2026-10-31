@@ -35,6 +35,7 @@ import {
 // be bundled into this entry as a second copy, with its own
 // DOMImportExtension and ImportOverlays.
 import {
+  createImportState,
   defineImportRule,
   defineOverlayRules,
   DOMImportExtension,
@@ -159,10 +160,14 @@ const BlockIdImportRule = defineImportRule({
 
 /**
  * The nodes that elements carrying {@link BLOCK_WRAPPER_ID_ATTRIBUTE}
- * produced in the running import, with that id: the block that ends up
- * holding one of them alone gets the id (see BlockWrapperIdResolveRule).
+ * produced in an import, with that id: the block that ends up holding one of
+ * them alone gets the id (see BlockWrapperIdResolveRule). Per import session
+ * (an import run inside another has its own).
  */
-const pendingWrapperIds = new Map<NodeKey, string>();
+const PendingWrapperIds = createImportState<Map<NodeKey, string> | null>(
+  'blockWrapperIds',
+  () => null,
+);
 
 const BlockWrapperIdImportRule = defineImportRule({
   $import: (ctx, el, $next) => {
@@ -172,10 +177,11 @@ const BlockWrapperIdImportRule = defineImportRule({
       return nodes;
     }
     const id = blockIdState.parse(el.getAttribute(BLOCK_WRAPPER_ID_ATTRIBUTE));
-    if (id !== undefined) {
+    const pending = ctx.session.get(PendingWrapperIds);
+    if (id !== undefined && pending !== null) {
       for (const node of nodes) {
         if ($isBlockForId(node)) {
-          pendingWrapperIds.set(node.getKey(), id);
+          pending.set(node.getKey(), id);
           break;
         }
       }
@@ -187,30 +193,41 @@ const BlockWrapperIdImportRule = defineImportRule({
 });
 
 /**
- * After each element's import, while wrapper ids wait: the block that now
- * holds a waiting node and nothing else (the item the list importer wraps a
- * nested list in) takes its id, through the same rules as an imported id.
+ * After each element's import, while wrapper ids wait: a block among the
+ * children of the nodes the element produced that holds a waiting node and
+ * nothing else (the item the list importer wraps a nested list in, when it
+ * makes the outer list) takes its id, through the same rules as an imported
+ * id. Each produced node's children are looked at once.
  */
 const BlockWrapperIdResolveRule = defineImportRule({
   $import: (ctx, el, $next) => {
     const nodes = $next();
-    if (pendingWrapperIds.size === 0) {
+    const pending = ctx.session.get(PendingWrapperIds);
+    if (pending === null || pending.size === 0) {
       return nodes;
     }
     const {init} = $getExtensionDependency(BlockIdHTMLExtension);
-    for (const [key, id] of pendingWrapperIds) {
-      const node = $getNodeByKey(key);
-      const parent = node === null ? null : node.getParent();
-      if (
-        parent !== null &&
-        !$isRootOrShadowRoot(parent) &&
-        $isBlockForId(parent) &&
-        parent.getChildrenSize() === 1 &&
-        $getBlockId(parent) === null
-      ) {
-        $setState(parent, blockIdState, id);
-        (init as Set<NodeKey>).add(parent.getKey());
-        pendingWrapperIds.delete(key);
+    for (const produced of nodes) {
+      if (!$isElementNode(produced)) {
+        continue;
+      }
+      for (const holder of produced.getChildren()) {
+        if (
+          !$isElementNode(holder) ||
+          holder.getChildrenSize() !== 1 ||
+          $isRootOrShadowRoot(holder) ||
+          !$isBlockForId(holder) ||
+          $getBlockId(holder) !== null
+        ) {
+          continue;
+        }
+        const key = holder.getFirstChildOrThrow().getKey();
+        const id = pending.get(key);
+        if (id !== undefined) {
+          $setState(holder, blockIdState, id);
+          (init as Set<NodeKey>).add(holder.getKey());
+          pending.delete(key);
+        }
       }
     }
     return nodes;
@@ -233,19 +250,20 @@ const BlockWrapperIdResolveOverlay = defineOverlayRules([
  * import rules.
  */
 const $installBlockIdImportOverlay: DOMPreprocessFn = (dom, ctx, $next) => {
-  pendingWrapperIds.clear();
   // The resolver runs for every element, so only where the HTML carries a
   // wrapper id.
   const wrapped =
     'querySelector' in dom &&
     dom.querySelector(`[${BLOCK_WRAPPER_ID_ATTRIBUTE}]`) !== null;
+  if (wrapped) {
+    ctx.session.set(PendingWrapperIds, new Map());
+  }
   ctx.session.update(ImportOverlays, prev =>
     wrapped
       ? [...prev, BlockIdImportOverlay, BlockWrapperIdResolveOverlay]
       : [...prev, BlockIdImportOverlay],
   );
   $next();
-  pendingWrapperIds.clear();
 };
 
 /**

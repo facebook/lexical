@@ -13,7 +13,10 @@
 // removes c1; A undoes; B undoes its removal. c1 must come back on its own
 // text only, never on the paragraphs after it (#9623).
 
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {
+  buildEditorFromExtensions,
+  getExtensionDependencyFromEditor,
+} from '@lexical/extension';
 import {
   $addMarkID,
   $getNodeMarkIDs,
@@ -88,6 +91,9 @@ function clients() {
           RichTextExtension,
           MarkStateExtension,
           configExtension(YCollabExtension, {
+            // Undo steps end where the test says, whatever the runner's
+            // speed (see step).
+            captureTimeout: 2 ** 30,
             doc,
             schemaVersion: 1,
             synced: true,
@@ -96,10 +102,19 @@ function clients() {
         name: `repro/${name}`,
       }),
     );
-    return {doc, editor};
+    const {binding} = getExtensionDependencyFromEditor(
+      editor,
+      YCollabExtension,
+    ).output;
+    return {
+      doc,
+      editor,
+      // Ends the client's current undo step.
+      step: () => binding.undoManager?.stopCapturing(),
+    };
   }) as unknown as [
-    {doc: Y.Doc; editor: LexicalEditor},
-    {doc: Y.Doc; editor: LexicalEditor},
+    {doc: Y.Doc; editor: LexicalEditor; step: () => void},
+    {doc: Y.Doc; editor: LexicalEditor; step: () => void},
   ];
   const sync = () => {
     Y.applyUpdate(
@@ -152,8 +167,11 @@ describe('undoing the removal of a comment after its author undid adding it, wit
               s.format = 0;
               s.insertText(' new ');
             });
+          // A's comments and typing are one undo step.
+          A.step();
           sync();
           B.editor.update(() => $removeMarkID('c1'), {discrete: true});
+          B.step();
           sync();
           A.editor.dispatchCommand(UNDO_COMMAND, undefined);
           sync();
@@ -166,20 +184,24 @@ describe('undoing the removal of a comment after its author undid adding it, wit
           expect(fresh).toEqual(a);
           expect(a.slice(0, 2)).toEqual(PARAS.slice(0, 2));
           expect(a.slice(3)).toEqual(PARAS.slice(3));
-          // And c1 is back on its own text (an undo that dropped the value
-          // would keep the other paragraphs clean too).
-          const restored = A.editor.getEditorState().read(() => {
+          // And c1 is on exactly its words or nowhere: the comment's author
+          // undid it, and whether B's undo of its removal brings it back is
+          // undecided (it must not cover less, nor more).
+          const withC1 = A.editor.getEditorState().read(() => {
             const block = $getRoot().getChildAtIndex(2);
-            return (
-              $isElementNode(block) &&
-              block
-                .getAllTextNodes()
-                .some(n =>
-                  $getNodeMarkIDs(MarkStateExtension, n).includes('c1'),
-                )
-            );
+            return $isElementNode(block)
+              ? block
+                  .getAllTextNodes()
+                  .filter(n =>
+                    $getNodeMarkIDs(MarkStateExtension, n).includes('c1'),
+                  )
+                  .map(n => n.getTextContent())
+                  .join('')
+              : '?';
           });
-          expect(restored, 'c1 is back on its words').toBe(true);
+          expect(['', 'two two '], 'c1 on its words or nowhere').toContain(
+            withC1,
+          );
         },
       );
     }

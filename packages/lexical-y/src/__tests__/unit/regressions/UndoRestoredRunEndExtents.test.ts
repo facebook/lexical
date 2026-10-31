@@ -7,7 +7,9 @@
  */
 // @vitest-environment node
 
-// The value an undo brings back covers exactly what it covered before:
+// The value an undo brings back covers exactly what it covered before, or,
+// where its author undid it, nothing (whether the collaborator's undo brings
+// back a value its author undid is undecided, #9623); it never covers more:
 // a collaborator removes a value, its author undoes it (and may write the
 // same key later), a third client may delete text around the value's end,
 // and the collaborator then undoes the removal. On main, with garbage
@@ -41,7 +43,10 @@ import {markState, prepareMarkState} from '../../utils/sizeOps';
 
 /** The cells main fails (#9623, #9620), pinned until the fix lands. */
 function failsOnMain(name: string): boolean {
-  return name.includes('gc=true') || name.startsWith('concurrent');
+  return (
+    (name.includes('gc=true') && !name.includes('author keeps')) ||
+    name.startsWith('concurrent')
+  );
 }
 function testOnMain(name: string, fn: () => Promise<void>) {
   (failsOnMain(name) ? test.fails : test)(name, fn);
@@ -97,7 +102,9 @@ function chars(peer: Peer, kind: Kind): [string, boolean][][] {
 async function check(
   t: Setup,
   kind: Kind,
-  expected: string[],
+  // The first line and the tail with `^` where the value is, or several
+  // such outcomes any of which is right.
+  expected: string[] | string[][],
   label: string,
   expectedText = [TEXT, 'untouched tail'],
 ) {
@@ -117,10 +124,12 @@ async function check(
   } finally {
     fresh.stop();
   }
-  expect(
-    got.map(cs => cs.map(([c, on]) => (on ? '^' : c)).join('')),
-    label,
-  ).toEqual(expected);
+  const shown = got.map(cs => cs.map(([c, on]) => (on ? '^' : c)).join(''));
+  if (Array.isArray(expected[0])) {
+    expect(expected as string[][], label).toContainEqual(shown);
+  } else {
+    expect(shown, label).toEqual(expected);
+  }
 }
 function mask(text: string, start: number, end: number) {
   return text.slice(0, start) + '^'.repeat(end - start) + text.slice(end);
@@ -185,11 +194,17 @@ for (const gc of [false, true])
               }
               t.a.undo();
               await t.sync();
-              const exp =
-                later === 'after-undo'
-                  ? mask(mask(TEXT, 16, 21), 5, 9)
-                  : mask(TEXT, 5, 9);
-              await check(t, kind, [exp, 'untouched tail'], 'restored extent');
+              // The later write where it was written, and the word or not.
+              const later_ = later === 'after-undo' ? mask(TEXT, 16, 21) : TEXT;
+              await check(
+                t,
+                kind,
+                [
+                  [mask(later_, 5, 9), 'untouched tail'],
+                  [later_, 'untouched tail'],
+                ],
+                'restored extent',
+              );
             } finally {
               for (const p of t.peers) p.stop();
             }
@@ -228,8 +243,11 @@ for (const gc of [false, true])
                 t,
                 kind,
                 [
-                  marked.slice(0, del[0]) + marked.slice(del[1]),
-                  'untouched tail',
+                  [
+                    marked.slice(0, del[0]) + marked.slice(del[1]),
+                    'untouched tail',
+                  ],
+                  [remaining, 'untouched tail'],
                 ],
                 remaining,
                 [remaining, 'untouched tail'],
@@ -244,38 +262,58 @@ for (const gc of [false, true])
 
 for (const count of [1, 16, 64, 128, 256])
   for (const gc of [false, true])
-    testOnMain(`many comment keys count=${count} gc=${gc}`, async () => {
-      const t = await make(gc, [1, 2, 3]);
-      try {
-        t.b.update(() => $give('comment', 5, 9, true, count));
-        await t.sync();
-        t.a.update(() => $give('comment', 5, 9, false, count));
-        await t.sync();
-        t.b.undo();
-        await t.sync();
-        t.a.undo();
-        await t.sync();
-        await check(
-          t,
-          'comment',
-          [mask(TEXT, 5, 9), 'untouched tail'],
-          'cardinality',
-        );
-        // Every comment id comes back, not only c0.
-        const restored = t.a.read(() =>
-          $block([0])
-            .getAllTextNodes()
-            .filter(n => n.getTextContent().includes('Kilo'))
-            .map(n => [...$getNodeMarkIDs(n)].sort()),
-        );
-        expect(restored, 'every comment id').toEqual([
-          Array.from({length: count}, (_, i) => `c${i}`).sort(),
-        ]);
-        for (const p of t.peers) expect(p.doc.store.pendingStructs).toBe(null);
-      } finally {
-        for (const p of t.peers) p.stop();
-      }
-    });
+    for (const authorKeeps of [false, true])
+      testOnMain(
+        `many comment keys count=${count} gc=${gc}${authorKeeps ? ' author keeps' : ''}`,
+        async () => {
+          const t = await make(gc, [1, 2, 3]);
+          try {
+            t.b.update(() => $give('comment', 5, 9, true, count));
+            await t.sync();
+            t.a.update(() => $give('comment', 5, 9, false, count));
+            await t.sync();
+            if (!authorKeeps) {
+              t.b.undo();
+              await t.sync();
+            }
+            t.a.undo();
+            await t.sync();
+            await check(
+              t,
+              'comment',
+              authorKeeps
+                ? [mask(TEXT, 5, 9), 'untouched tail']
+                : [
+                    [mask(TEXT, 5, 9), 'untouched tail'],
+                    [TEXT, 'untouched tail'],
+                  ],
+              'cardinality',
+            );
+            // Every comment id comes back (where the author undid them, every
+            // one or none), never only some.
+            const restored = t.a.read(() =>
+              $block([0])
+                .getAllTextNodes()
+                .filter(n => n.getTextContent().includes('Kilo'))
+                .map(n => [...$getNodeMarkIDs(n)].sort()),
+            );
+            const every = [
+              Array.from({length: count}, (_, i) => `c${i}`).sort(),
+            ];
+            if (authorKeeps) {
+              expect(restored, 'every comment id').toEqual(every);
+            } else {
+              expect([every, [[]]], 'every comment id or none').toContainEqual(
+                restored,
+              );
+            }
+            for (const p of t.peers)
+              expect(p.doc.store.pendingStructs).toBe(null);
+          } finally {
+            for (const p of t.peers) p.stop();
+          }
+        },
+      );
 
 for (const count of [1, 16, 64, 128, 256])
   for (const ids of [

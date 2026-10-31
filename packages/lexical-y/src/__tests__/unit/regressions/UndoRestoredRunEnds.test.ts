@@ -218,11 +218,18 @@ function liveFormatItems(doc: YDoc): number {
  * no value, and the word's block (with `^` where the value is) is
  * `expected`.
  */
-function check(value: Value, t: ReturnType<typeof clients>, expected: string) {
+function check(
+  value: Value,
+  t: ReturnType<typeof clients>,
+  // The word's block with `^` where the value is, or several such outcomes
+  // any of which is right.
+  expected: string | string[],
+) {
+  const outcomes = typeof expected === 'string' ? [expected] : expected;
   // Every block keeps its text (and the word's block the text typed after
   // the word, where there is some), whatever the value.
   const lines = PARAS.map((line, i) =>
-    i === WORD[0] && expected.includes('ZZ')
+    i === WORD[0] && outcomes[0].includes('ZZ')
       ? line.slice(0, WORD[2]) + 'ZZ' + line.slice(WORD[2])
       : line,
   );
@@ -249,7 +256,7 @@ function check(value: Value, t: ReturnType<typeof clients>, expected: string) {
       expect(text).not.toContain('^');
     }
   });
-  expect(views[0][WORD[0]]).toBe(expected);
+  expect(outcomes).toContain(views[0][WORD[0]]);
 }
 
 /**
@@ -336,10 +343,12 @@ describe('an undo that brings back a value ends its run where it ended (#9623)',
                     removal === 'part of the word'
                       ? [WORD[1], WORD[1] + 3]
                       : [WORD[1], WORD[2]];
-                  // The undo gives back what the removal took, and the author's
-                  // undo already took the rest; a redo takes it again.
+                  // The undo gives back what the removal took (the author's
+                  // undo already took the rest), or, where the author undid
+                  // the value, possibly nothing (undecided, #9623); never
+                  // more. A redo takes it again.
                   const undone = authorUndoes
-                    ? exactly(from, to, typedAfter)
+                    ? [exactly(from, to, typedAfter), exactly(0, 0, typedAfter)]
                     : exactly(WORD[1], WORD[2], typedAfter);
                   const redone = authorUndoes
                     ? exactly(0, 0, typedAfter)

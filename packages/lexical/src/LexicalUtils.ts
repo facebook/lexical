@@ -3129,6 +3129,90 @@ export function $isKeyInSelectionNodes(
   return nodes.some(node => node.__key === key);
 }
 
+/**
+ * For each element of a committed (frozen) EditorState, whether it holds a
+ * TextNode at any depth, as ElementNode#shouldSerializeTextStyles asks for an
+ * inline element. Without it, serializing inline elements nested inside each
+ * other, each with a textFormat or textStyle, walks the same subtree once per
+ * level. A frozen state never changes, so its entries never go stale.
+ */
+const textInsideCache = new WeakMap<EditorState, Map<NodeKey, boolean>>();
+
+/**
+ * @internal
+ * The cache of $getTextInsideCache's frozen state for the active state, or
+ * null where none is known to hold: a pending state uses the cache of the
+ * committed state it was made from only while no node in it has been marked
+ * dirty (written, created or removed), when it holds exactly that state's
+ * nodes. A copy serializes in such an update.
+ */
+export function $getTextInsideCache(): Map<NodeKey, boolean> | null {
+  let editorState = getActiveEditorState();
+  if (!editorState._readOnly) {
+    const editor = internalGetActiveEditor();
+    if (
+      editor === null ||
+      editor._pendingEditorState !== editorState ||
+      editor._dirtyType !== NO_DIRTY_NODES ||
+      !editor._editorState._readOnly
+    ) {
+      return exportMemo !== null && exportMemo.editorState === editorState
+        ? exportMemo.holds
+        : null;
+    }
+    editorState = editor._editorState;
+  }
+  let cache = textInsideCache.get(editorState);
+  if (cache === undefined) {
+    cache = new Map();
+    textInsideCache.set(editorState, cache);
+  }
+  return cache;
+}
+
+/**
+ * The memo of one export walk in a pending state that has changed (see
+ * INTERNAL_$withExportMemo), or null.
+ */
+let exportMemo: null | {
+  editorState: EditorState;
+  holds: Map<NodeKey, boolean>;
+} = null;
+/** Whether an export walk is running (with or without its memo). */
+let exportWalk = false;
+
+/**
+ * @internal
+ * Run an export walk (EditorState#toJSON, the clipboard's selection export)
+ * with a memo of what $getTextInsideCache would hold, for an update whose
+ * pending state has changed and so has no cache of its own. The memo lives
+ * for the walk alone, which changes no node: a node made writable during the
+ * walk (see internalStopExportMemo) drops it for the rest of the walk, so it
+ * cannot answer for content that has changed.
+ */
+export function INTERNAL_$withExportMemo<T>(f: () => T): T {
+  if (exportWalk) {
+    return f();
+  }
+  const editorState = internalGetActiveEditorState();
+  exportWalk = true;
+  exportMemo =
+    editorState !== null && !editorState._readOnly
+      ? {editorState, holds: new Map()}
+      : null;
+  try {
+    return f();
+  } finally {
+    exportWalk = false;
+    exportMemo = null;
+  }
+}
+
+/** @internal Drop the export walk's memo (see INTERNAL_$withExportMemo). */
+export function internalStopExportMemo(): void {
+  exportMemo = null;
+}
+
 /** @internal */
 export type TypeToNodeMap = Map<string, NodeMap>;
 /**

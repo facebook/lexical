@@ -1202,7 +1202,8 @@ not merge as a user might expect:
   while a collaborator formats text inside it removes the link on every
   client: a format writes no link while the link holds text. A link with no
   text (only an inline decorator or a line break) still stores its text
-  format, and stays on its content:
+  format, and stays on its content, and so does such a link a collaborator
+  removes, or gives another URL, while you append text into it:
   [#9627](https://github.com/meta/lexical/issues/9627). Where a collaborator overwrote a step of yours
   entirely, the undo manager skips that step as changing nothing, and the
   same undo also reverts your step before it. When you undo a format change

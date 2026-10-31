@@ -167,3 +167,94 @@ test('wrappers a local delete leaves without text are settled in linear time', a
   expect(visits[1] / visits[0]).toBeLessThan(3);
   expect(visits[2] / visits[1]).toBeLessThan(3);
 }, 60_000);
+
+// One line of n links, each "wN" and a line break, bolded by the client
+// that then deletes every link's text in one update: each link shows the
+// text fields stored at its first atom, found in one walk of the line.
+// Counted as the items' `right` links followed during the update.
+test('links a local delete leaves without text in one line are settled in linear time', async () => {
+  const reads: number[] = [];
+  for (const n of [32, 64, 128]) {
+    const t = await setup(() => {
+      const paragraph = $createParagraphNode();
+      for (let i = 0; i < n; i++) {
+        paragraph.append(
+          $createTextNode(' '),
+          $createLinkNode(`https://link${i}.test`).append(
+            $createTextNode(`w${i}`),
+            $createLineBreakNode(),
+          ),
+        );
+      }
+      $getRoot().append(paragraph);
+    });
+    try {
+      t.b.update(() => {
+        const texts = $getRoot().getAllTextNodes();
+        const last = texts[texts.length - 1];
+        const selection = texts[0].select(0, 0);
+        selection.focus.set(last.getKey(), last.getTextContentSize(), 'text');
+        selection.formatText('bold');
+        $setSelection(null);
+      });
+      await t.sync();
+      let count = 0;
+      const restores: (() => void)[] = [];
+      const share = [
+        ...(t.b.doc as unknown as {share: Map<string, unknown>}).share.values(),
+      ][0] as {_start: {right: unknown} | null};
+      for (
+        let it = share._start as {right: unknown} | null;
+        it !== null;
+        it = it.right as {right: unknown} | null
+      ) {
+        const item = it;
+        const descriptor = Object.getOwnPropertyDescriptor(item, 'right')!;
+        const value = item.right;
+        Object.defineProperty(item, 'right', {
+          configurable: true,
+          get() {
+            count++;
+            return value;
+          },
+          set(v) {
+            Object.defineProperty(item, 'right', {
+              ...descriptor,
+              value: v,
+            });
+          },
+        });
+        restores.push(() => {
+          if (
+            Object.getOwnPropertyDescriptor(item, 'right')!.get !== undefined
+          ) {
+            Object.defineProperty(item, 'right', {...descriptor, value});
+          }
+        });
+      }
+      try {
+        t.b.update(() => {
+          for (const text of $getRoot().getAllTextNodes()) {
+            if (/^w\d+$/.test(text.getTextContent())) {
+              text.remove();
+            }
+          }
+          $setSelection(null);
+        });
+      } finally {
+        for (const restore of restores) {
+          restore();
+        }
+      }
+      reads.push(count);
+      await t.sync();
+      await expectConverged(t.peers);
+    } finally {
+      for (const p of t.peers) {
+        p.stop();
+      }
+    }
+  }
+  expect(reads[1] / reads[0]).toBeLessThan(3);
+  expect(reads[2] / reads[1]).toBeLessThan(3);
+}, 60_000);

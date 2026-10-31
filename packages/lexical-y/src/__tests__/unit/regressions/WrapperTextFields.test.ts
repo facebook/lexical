@@ -340,6 +340,25 @@ function count(editor: LexicalEditor, kind: Kind): number {
   });
 }
 
+/** The URLs of the wrappers `kind` (a link or an autolink). */
+function urls(editor: LexicalEditor, kind: Kind): string[] {
+  return editor.read(() => {
+    const out: string[] = [];
+    const visit = (node: ElementNode) => {
+      for (const child of node.getChildren()) {
+        if ($isElementNode(child)) {
+          if ($is(kind, child) && $isLinkNode(child)) {
+            out.push(child.getURL());
+          }
+          visit(child);
+        }
+      }
+    };
+    visit($getRoot());
+    return out;
+  });
+}
+
 const CHAINS = chains();
 
 type Shape = {chain: Kind[]; leaf: Leaf; fields: Fields; label: string};
@@ -439,6 +458,198 @@ describe('a wrapper whose text a client deletes after a format over it', () => {
       expect(json(b.editor), 'b = fresh').toEqual(expected);
     },
   );
+});
+
+// A client that formatted over a wrapper (synced) deletes the wrapper's text
+// but not a line break or an inline decorator next to it, while the other
+// client removes the wrapper, or for a link gives it another URL: the
+// removal or the new URL stays on every client (the delete leaves the
+// wrapper without text, and its text fields, set by the format while it
+// held text and never stored, must not write its value again).
+describe('a wrapper one client removes or retargets while the other deletes its text', () => {
+  const cells = SHAPES.filter(
+    ({leaf}) => leaf === 'line-break' || leaf === 'text+decorator',
+  ).flatMap(shape =>
+    shape.chain.flatMap(target =>
+      (target === 'link' || target === 'autolink'
+        ? (['remove', 'retarget'] as const)
+        : (['remove'] as const)
+      ).flatMap(change =>
+        (
+          [
+            [1, 2],
+            [2, 1],
+          ] as [number, number][]
+        ).map(ids => ({...shape, change, ids, target})),
+      ),
+    ),
+  );
+  test.each(cells)(
+    '$label: $change $target, ids $ids.0,$ids.1',
+    async ({chain, leaf, fields, change, ids, target}) => {
+      const seed = seedYState(config, () => $build(chain, leaf, fields));
+      const a = client(seed, ids[0]);
+      const b = client(seed, ids[1]);
+      await Promise.resolve();
+      b.editor.update(
+        () => {
+          $selectAll().formatText('bold');
+        },
+        {discrete: true},
+      );
+      sync(a, b);
+      await Promise.resolve();
+      a.editor.update(
+        () => {
+          if (change === 'remove') {
+            $unwrap(target);
+          } else {
+            const visit = (node: ElementNode) => {
+              for (const child of node.getChildren()) {
+                if ($isElementNode(child)) {
+                  if ($is(target, child) && $isLinkNode(child)) {
+                    child.setURL('https://new.test');
+                  }
+                  visit(child);
+                }
+              }
+            };
+            visit($getRoot());
+          }
+          $setSelection(null);
+        },
+        {discrete: true},
+      );
+      b.editor.update(
+        () => {
+          for (const text of $wrappedTexts()) {
+            text.remove();
+          }
+          $setSelection(null);
+        },
+        {discrete: true},
+      );
+      await Promise.resolve();
+      sync(a, b);
+      await Promise.resolve();
+      const expected = fresh(a.doc);
+      expect(json(a.editor), 'a = fresh').toEqual(expected);
+      expect(json(b.editor), 'b = fresh').toEqual(expected);
+      if (change === 'remove') {
+        expect(count(a.editor, target), 'a: removed').toBe(0);
+        expect(count(b.editor, target), 'b: removed').toBe(0);
+      } else {
+        for (const editor of [a.editor, b.editor]) {
+          expect(urls(editor, target), 'retargeted').toEqual([
+            'https://new.test',
+          ]);
+        }
+      }
+    },
+  );
+});
+
+// A wrapper with no text (only a line break or an inline decorator) that
+// stores text fields of its own: one client appends text into it while the
+// other removes it, or gives a link another URL. The append leaves the
+// wrapper holding text, so its text fields are no longer written, and its
+// value is written again without them over its old content: a removed or
+// retargeted link comes back (#9627, the same storage of a textless link's
+// text fields in its value).
+describe('a textless wrapper with stored text fields that a client appends text into', () => {
+  const cells = SHAPES.filter(
+    ({leaf, fields}) =>
+      fields === 'own' && (leaf === 'no-text' || leaf === 'decorator'),
+  ).flatMap(shape =>
+    shape.chain.flatMap(target =>
+      (target === 'link' || target === 'autolink'
+        ? (['remove', 'retarget'] as const)
+        : (['remove'] as const)
+      ).flatMap(change =>
+        (
+          [
+            [1, 2],
+            [2, 1],
+          ] as [number, number][]
+        ).map(ids => ({...shape, change, ids, target})),
+      ),
+    ),
+  );
+  // The text goes into the innermost inline wrapper the outermost one leads
+  // to (an overflow is not inline); known where that is the link.
+  const intoLink = ({chain, target}: {chain: Kind[]; target: Kind}) => {
+    let i = 0;
+    while (i + 1 < chain.length && chain[i + 1] !== 'overflow') {
+      i++;
+    }
+    return target === 'link' && chain[i] === 'link';
+  };
+  for (const [known, group] of [
+    [false, cells.filter(c => !intoLink(c))],
+    [true, cells.filter(intoLink)],
+  ] as const) {
+    (known ? test.fails : test).each(group)(
+      `$label: $change $target, ids $ids.0,$ids.1${known ? ' (#9627)' : ''}`,
+      async ({chain, leaf, fields, change, ids, target}) => {
+        const seed = seedYState(config, () => $build(chain, leaf, fields));
+        const a = client(seed, ids[0]);
+        const b = client(seed, ids[1]);
+        await Promise.resolve();
+        a.editor.update(
+          () => {
+            if (change === 'remove') {
+              $unwrap(target);
+            } else {
+              const visit = (node: ElementNode) => {
+                for (const child of node.getChildren()) {
+                  if ($isElementNode(child)) {
+                    if ($is(target, child) && $isLinkNode(child)) {
+                      child.setURL('https://new.test');
+                    }
+                    visit(child);
+                  }
+                }
+              };
+              visit($getRoot());
+            }
+            $setSelection(null);
+          },
+          {discrete: true},
+        );
+        b.editor.update(
+          () => {
+            // Into the innermost wrapper.
+            let node = ($getRoot().getFirstChildOrThrow() as ElementNode)
+              .getChildren()
+              .find($isElementNode) as ElementNode;
+            for (
+              let inner = node.getChildren().find($isElementNode);
+              inner !== undefined && $isElementNode(inner) && inner.isInline();
+              inner = node.getChildren().find($isElementNode)
+            ) {
+              node = inner as ElementNode;
+            }
+            node.append($createTextNode('typed'));
+            $setSelection(null);
+          },
+          {discrete: true},
+        );
+        await Promise.resolve();
+        sync(a, b);
+        await Promise.resolve();
+        const expected = fresh(a.doc);
+        expect(json(a.editor), 'a = fresh').toEqual(expected);
+        expect(json(b.editor), 'b = fresh').toEqual(expected);
+        if (change === 'remove') {
+          expect(count(a.editor, target), 'a: removed').toBe(0);
+        } else {
+          expect(urls(a.editor, target), 'retargeted').toEqual([
+            'https://new.test',
+          ]);
+        }
+      },
+    );
+  }
 });
 
 // Removal races: every wrapper of a chain, removed by one client while the

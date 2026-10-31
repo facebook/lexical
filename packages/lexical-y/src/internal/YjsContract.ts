@@ -194,6 +194,7 @@ export function yjsMembers() {
       deleted: (it: Item) => isBoolean(it.deleted),
       id: (it: Item) => isObject(it.id),
       integrate: (it: Item) => isFunction(it.integrate),
+      keep: (it: Item) => isBoolean(it.keep),
       lastId: (it: Item) => isObject(it.lastId),
       left: (it: Item) => isSet(it.left),
       length: (it: Item) => isNumber(it.length),

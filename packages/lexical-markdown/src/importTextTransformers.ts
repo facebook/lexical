@@ -225,6 +225,10 @@ function importOutermost(
     textMatchTransformers,
     scan.matches,
     formats.offset,
+    // The scan finds code spans only for a code transformer.
+    textFormatTransformersIndex.transformersByTag['`']
+      ? formats.codeSpans
+      : undefined,
   );
 
   if (foundTextFormat && foundTextMatch) {

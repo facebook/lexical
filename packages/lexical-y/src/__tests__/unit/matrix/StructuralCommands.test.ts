@@ -848,19 +848,10 @@ describe("structural commands keep the selected paragraph's inline content toget
       for (const where of cmd.type === undefined ? WHERE : WHERE.slice(0, 1)) {
         for (const ctx of INLINE_CTXS) {
           for (const mode of INLINE_MODES) {
-            // The deprecated $wrapNodes takes an OverflowNode (not inline by
-            // isInline(), though it is) and a link inside a mark for blocks of
-            // their own: it splits the paragraph and drops the overflow or
-            // the mark (#9612).
-            const failsUntilFixed =
-              cmd.name === '$wrapNodes in a quote' &&
-              ((shape.name === 'overflow/text' &&
-                where === 'caret inside it') ||
-                (shape.name === 'link/in-mark' && where !== 'caret before it'));
             // An inline decorator has no text node to put the caret in.
             const skip =
               where === 'caret inside it' && shape.kind === 'inline-decorator';
-            (skip ? test.skip : failsUntilFixed ? test.fails : test)(
+            (skip ? test.skip : test)(
               `${cmd.name}, ${where}, on a paragraph with ${shape.name} in ${ctxName(ctx)} [${mode}]${skip ? ' (skipped: no text node inside the decorator)' : ''}`,
               async () => {
                 const $inner = () => [

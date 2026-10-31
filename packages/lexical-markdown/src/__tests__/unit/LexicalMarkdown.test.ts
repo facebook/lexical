@@ -858,7 +858,7 @@ describe('Markdown', () => {
     {
       html: '<p><span style="white-space: pre-wrap;">[foo </span><a href="/uri"><span style="white-space: pre-wrap;">bar</span></a><span style="white-space: pre-wrap;">](/uri)</span></p>',
       md: '[foo [bar](/uri)](/uri)',
-      mdAfterExport: '&#91;foo [bar](/uri)&#93;(/uri)',
+      mdAfterExport: '[foo [bar](/uri)&#93;(/uri)',
     },
     {
       // https://spec.commonmark.org/0.31.2/#link-destination allows a balanced
@@ -979,37 +979,31 @@ describe('Markdown', () => {
     {
       html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">[h]ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">h[e]llo</span></a></p>',
       md: '[[h]ello](https://lexical.dev)[h[e]llo](https://lexical.dev)',
-      mdAfterExport:
-        '[&#91;h&#93;ello](https://lexical.dev)[h&#91;e&#93;llo](https://lexical.dev)',
     },
     {
       html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">h[e[ll]]o</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
       md: '[h[e[ll]]o](https://lexical.dev)[world](https://lexical.dev)',
-      mdAfterExport:
-        '[h&#91;e&#91;ll&#93;&#93;o](https://lexical.dev)[world](https://lexical.dev)',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">[hello]](https://lexical.dev)</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
       md: '[hello]](https://lexical.dev)[world](https://lexical.dev)',
       // GFM readers would run the URL on into the link after it.
       mdAfterExport:
-        '&#91;hello&#93;&#93;(https&#58;//lexical.dev)[world](https://lexical.dev)',
+        '[hello]&#93;(https&#58;//lexical.dev)[world](https://lexical.dev)',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">[h</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
       md: '[h[ello](https://lexical.dev)[world](https://lexical.dev)',
-      mdAfterExport:
-        '&#91;h[ello](https://lexical.dev)[world](https://lexical.dev)',
     },
     {
       html: '<p><i><em style="white-space: pre-wrap;">[h</em></i><a href="https://lexical.dev"><i><em style="white-space: pre-wrap;">ello</em></i></a></p>',
       md: '*[h[ello](https://lexical.dev)*',
-      mdAfterExport: '*&#91;h*[*ello*](https://lexical.dev)',
+      mdAfterExport: '*[h*[*ello*](https://lexical.dev)',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">[](https://lexical.dev)</span></p>',
       md: '[](https://lexical.dev)',
-      mdAfterExport: '&#91;&#93;(https://lexical.dev)',
+      mdAfterExport: '[&#93;(https://lexical.dev)',
     },
     {
       html: '<p><a href="https://lexical.dev"><b><strong style="white-space: pre-wrap;">link</strong></b></a><b><strong style="white-space: pre-wrap;">text</strong></b></p>',
@@ -1070,7 +1064,7 @@ describe('Markdown', () => {
     {
       html: '<p><span style="white-space: pre-wrap;">!"#$%&amp;\'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~</span></p>',
       md: '\\!\\"\\#\\$\\%\\&\\\'\\(\\)\\*\\+\\,\\-\\.\\/\\:\\;\\<\\=\\>\\?\\@\\[\\\\\\]\\^\\_\\`\\{\\|\\}\\~',
-      mdAfterExport: '!"#$%&\'()\\*+,-./:;&#60;=>?@&#91;\\\\&#93;^\\_\\`{|}\\~',
+      mdAfterExport: '!"#$%&\'()\\*+,-./:;&#60;=>?@[\\\\]^\\_\\`{|}\\~',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">\\→\\A\\a\\ \\3\\φ\\«</span></p>',

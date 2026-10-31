@@ -800,10 +800,13 @@ person's:
   then edits them. Where the line's text changed, the text of nodes made in
   place of removed ones keeps the start and end it shares with the line's
   text as it was, by character, whatever nodes held it (as y-prosemirror
-  keeps a text run's): a block's text nodes made again from its JSON with
-  one word changed write that word alone, so a letter a collaborator types
-  into another word of the line at the same time stays in that word, and a
-  character a collaborator deletes there stays deleted. A replacement
+  keeps a text run's), and between two changes every run of unchanged
+  words, with the white space around it that the two texts share: a block's
+  text nodes made again from its JSON with some words changed write those
+  words alone, so a letter a collaborator types into another word of the
+  line at the same time stays in that word, and a character a collaborator
+  deletes there stays deleted (and is not shown twice when the collaborator
+  undoes the delete). A replacement
   replaces whole words, as below, and so does an insertion between two
   letters or digits of a word or a deletion inside one, so that an edit
   computed before it that replaces the old word takes nothing out of the new
@@ -813,13 +816,43 @@ person's:
   between the changed words and the kept text is written with them, unless
   it was a node of its own (a tab, a line break, a node of spaces). A word
   joined to a changed word through an inline node, with no space between, is
-  written again with it; text between two separate changes is written
-  again, and an inline node made there is new where it is put. Prefer
+  written again with it, and an inline node made between two changes is new
+  where it is put. The words kept are the longest run of words the two
+  texts share in the same order, wherever that takes at most 2,048 word
+  edits among the words both texts have (words only added, or only
+  removed, between a start and an end those words share take none), so
+  that the comparison stays linear in the line's length. Where a word
+  repeats next to a change, which of its occurrences is kept can differ
+  from what the update meant: `aa bb` made again as `aa aa bb` keeps the
+  first `aa`, so a collaborator's concurrent edit of the old `aa` lands on
+  the first of the two. Beyond 2,048 edits (a line made again with most of
+  its words moved), only its common start and end are kept. A word that is
+  not kept is written again: one the update moved past kept words, and
+  beyond 2,048 edits, every word between the first and the last change.
+  Prefer
   these to `setTextContent`, which sets a node's text whole: such a change
   (and a change the browser makes to the DOM text, as an IME composition
   does) keeps the start and end its text shares with the node's old text,
   anchored at the caret, which cannot tell where an edit next to equal text
-  was made without one; a replacement found that way replaces whole words
+  was made without one, and between two changes the words the two texts
+  share, as text made again keeps them (a word a collaborator deletes there
+  at the same time stays deleted; not in an IME composition, and not where
+  the editor does not record text edits and the same update also changes
+  the node's format or style, which writes the node again:
+  [#9666](https://github.com/meta/lexical/issues/9666)). Without a caret that places it (none, or one at
+  the end of the node, past the edit or in a later node), an insertion or
+  a deletion found that way stays where the diff puts it if both its ends
+  are at word edges;
+  where that is inside a word, it goes to the first place where both are,
+  so it changes no word it does not add or remove (`t1z t2z t3z` set to
+  `t1z t3z` deletes ` t2z`, not `2z t`, and a collaborator's concurrent
+  delete of `t2z` leaves `t1z t3z`). Text a collaborator types right
+  against a word deleted that way at the same time, on the side of the
+  separator deleted with it (a space, a tab, a comma, an emoji), ends up
+  glued to the word beyond, as it does without this placement on the other
+  side (`q9z` typed before `t2z` shows as `t1zq9z`; on a line's first
+  word, which has no separator before it, text typed after it). A
+  replacement found that way replaces whole words
   (what a collaborator types inside the replaced words at the same time
   lands in one piece at the start of the new text, and the letters the new
   text shares are written again, so a collaborator's formatting of them at
@@ -992,19 +1025,31 @@ not merge as a user might expect:
   collaborator types in those items at the same time is lost.
 - **Text nodes made again with other text.** Where an update replaces a
   line's text nodes with new ones and the line's text changed (an AI rewrite
-  that makes a block's text nodes again with one word changed, or removes a
-  block's children and appends one new text node), a replaced node whose
-  text is not all there unchanged is written again whole: its characters are
-  deleted, and the new text is inserted. What a collaborator types into that
-  text at the same time, which the update's author has not seen, stays where
-  it was, so it lands outside the new text, before it (a letter typed at the
-  end of a word ends up in front of the rewritten text, out of its word),
-  and the collaborator's formatting of that text at the same time is not
-  kept. The concurrent typed text is kept, and every client shows the same
-  result. Edit the changed
-  words in place instead (`TextNode#spliceText`, the selection's
-  `insertText`; see [Edits made by code](#edits-made-by-code-agents-tools)):
-  only the changed characters are written.
+  that makes a block's text nodes again from their JSON with some words
+  changed, or removes a block's children and appends one new text node), the
+  unchanged text keeps its characters (see
+  [Edits made by code](#edits-made-by-code-agents-tools)), and each changed
+  word is written again whole: its characters are deleted, and the new word
+  is inserted. A word counts as changed when any character of it changed,
+  punctuation joined to it included (`t5z,` made again as `t5z`), and so
+  does a word joined to a changed word through an inline node. What a
+  collaborator types into a changed word at the same time, which the
+  update's author has not seen, stays where it was, so it lands next to the
+  new word, not in it (a letter typed at the end of the word ends up in
+  front of the new word), and the collaborator's formatting of the changed
+  word at the same time is not kept. So is a word the update moved past
+  the words it kept, and, where the words both texts have need more than
+  2,048 edits, everything between the first and the last change. A changed
+  word is written again even where only part of it changed: an insertion
+  between two letters of a word (`bbcc` made again as `bb xxcc`) writes
+  `bb` again, so a collaborator who deletes the old `bb` at the same time
+  and undoes the delete brings it back next to the new one, and `bb` shows
+  twice ([#9635](https://github.com/meta/lexical/issues/9635)), as when two
+  clients remove the same text and both undo (see Undo below).
+  The concurrent typed text is kept, and every client shows the same
+  result. Edit the changed words in place instead
+  (`TextNode#spliceText`, the selection's `insertText`): only the changed
+  characters are written.
 - **Delete wins.** Text typed into a container that a collaborator deletes at
   the same time is deleted with it, and so is a block moved into it.
 - **Last writer wins** for the fields of one link (URL and target change
@@ -1165,9 +1210,11 @@ not merge as a user might expect:
   whether you saw it before you undo or it arrives as you undo: bold
   `one two`, let a collaborator type plain ` mid` after `one`, then undo
   the bold, and ` two` stays bold. Undoing a link
-  while a collaborator formats text inside it keeps the link on its text:
-  formatting text in a link also sets the link's text format, which writes
-  the link there again. Where a collaborator overwrote a step of yours
+  while a collaborator formats text inside it removes the link on every
+  client: a format writes no link while the link holds text. A link with no
+  text (only an inline decorator or a line break) still stores its text
+  format, and stays on its content:
+  [#9627](https://github.com/meta/lexical/issues/9627). Where a collaborator overwrote a step of yours
   entirely, the undo manager skips that step as changing nothing, and the
   same undo also reverts your step before it. When you undo a format change
   while a collaborator removes that format and undoes the removal, the text
@@ -1246,7 +1293,12 @@ not merge as a user might expect:
   after a Backspace it takes the type of the line before (a paragraph after
   a heading becomes a heading), after undoing a split it keeps its own.
   Bold ‖ bold on adjacent ranges of one line
-  can leave part unformatted. A format removed from a range while a
+  can leave part unformatted, and so can bold ‖ bold on overlapping ranges
+  ([#9626](https://github.com/meta/lexical/issues/9626)). A link behaves
+  like a comment there: a range that crosses a link's edge can lose part
+  of its bold for either client id order, and a bold reaching into a
+  link's first word can lose it there when a collaborator one update
+  behind types inside the old bold range. A format removed from a range while a
   collaborator types inside it without that format (unbolding a word as
   they type into it, resolving a comment as they paste into it) comes back
   on the part of the range after their text: their write restores the
@@ -1287,9 +1339,6 @@ reproduces it:
 - An update listener that throws stops the listeners registered after it,
   so when it was registered before the binding, that commit is never
   written: [#9514](https://github.com/meta/lexical/issues/9514).
-- Undoing a link while a collaborator formats text over the link's start
-  keeps the link on its own text (see Undo above):
-  [#9521](https://github.com/meta/lexical/issues/9521).
 - A line without a marker joins the start of a paragraph a collaborator
   appends at the same time:
   [#9524](https://github.com/meta/lexical/issues/9524).

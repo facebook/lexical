@@ -638,7 +638,16 @@ Ids are not part of HTML by default. Add `BlockIdHTMLExtension` (from
 `@lexical/html/BlockIdHTMLExtension`) to the editor's dependencies to opt in:
 
 - **Export:** every identified block's element gets a `data-block-id`
-  attribute, in `$generateHtmlFromNodes` and in copied HTML.
+  attribute, in `$generateHtmlFromNodes` and in copied HTML. A list item
+  that only wraps a nested list has no element of its own (the nested list
+  is written inside the previous item's element), so its id goes on the
+  nested list's element in `data-block-wrapper-id`
+  (`BLOCK_WRAPPER_ID_ATTRIBUTE`), and import puts it back on the item that
+  wraps that list. HTML a Lexical editor exports keeps every such id; in HTML
+  another tool changed, extra elements between the nested list and its item
+  can make the item get a new id instead. A block whose node exports no element at all (as the
+  playground's page, of which only the content is written) keeps no id
+  through HTML.
 - **Import:** HTML imported through
   [`DOMImportExtension`](/docs/serialization/dom-import) (for example with
   `ClipboardDOMImportExtension`) reads `data-block-id` back onto the block

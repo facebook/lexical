@@ -1697,8 +1697,10 @@ describe('a value one client restates ‖ the undo of the change that gave it', 
       );
     });
     // S7-26: a link's undo ‖ a format change over the link's start, which
-    // also sets the link's textFormat (RangeSelection#formatText): that
-    // write restates the link over its text, which keeps it there.
+    // also sets the link's textFormat (RangeSelection#formatText). That
+    // write restated the link over its text and kept it there; a link's
+    // textFormat is no longer stored while it has text (#9597), so the
+    // format change writes no link and B's undo removes it on every peer.
     for (const format of ['italic', 'bold'] as const) {
       test(`S7-26: B links "t7z t8z t9z" and undoes it ‖ A makes "t5z t6z t7z" ${format} (ids ${ids})`, async () => {
         const t = await setup(
@@ -1717,7 +1719,7 @@ describe('a value one client restates ‖ the undo of the change that gave it', 
         await merged(t);
         const fresh = await freshReader(t.a);
         for (const p of [t.a, t.b, fresh]) {
-          expect(p.read($links)).toBe('t7z t8z t9z / ');
+          expect(p.read($links)).toBe(' / ');
         }
       });
     }

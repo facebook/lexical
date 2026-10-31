@@ -118,19 +118,12 @@ function $blockTypes(): [string, string][] {
 describe('C1/C2: HTML export and import with block ids, every shape', () => {
   for (const shape of NODE_SHAPES) {
     for (const exp of EXPORTS) {
-      // Identified blocks with no element of their own in exported HTML: a
-      // list item that only wraps a nested list (the nested list is written
-      // inside the previous item's element) and a page (only its content is
-      // written). Their ids are not written, and the round trip gives them
-      // new ones (#9606).
+      // A page exports no element of its own (only its content is written),
+      // so its id is not written (the Block IDs page says so, #9606). A list
+      // item that only wraps a nested list has its id on the nested list's
+      // element (data-block-wrapper-id).
       const failsUntilFixed =
-        exp === 'on' &&
-        [
-          'list/bullet-nested',
-          'list/number-nested',
-          'list/check-nested',
-          'page/content',
-        ].includes(shape.name);
+        exp === 'on' && ['page/content'].includes(shape.name);
       (failsUntilFixed ? test.fails : test)(
         `${shape.name}, export ${exp}`,
         () => {
@@ -147,7 +140,7 @@ describe('C1/C2: HTML export and import with block ids, every shape', () => {
               problems.push(`export threw: ${String(error).slice(0, 200)}`);
             }
             const written = Array.from(
-              html.matchAll(/data-block-id="([^"]*)"/g),
+              html.matchAll(/data-block-(?:wrapper-)?id="([^"]*)"/g),
               m => m[1],
             );
             if (exp === 'on') {

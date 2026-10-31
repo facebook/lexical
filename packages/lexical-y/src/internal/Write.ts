@@ -42,10 +42,10 @@ import {
   countLive,
   type DesiredContext,
   diffAtoms,
-  diffStrings,
   PENDING_LINE_BREAK,
   readAtoms,
   type Run,
+  setTextStretches,
   snapToWords,
 } from './Inline';
 import {
@@ -73,6 +73,7 @@ import {
   INLINE_PREFIX,
   isMergeableText,
   isTextFieldKey,
+  isTextHoldingWrapperValue,
   KIND_KEY,
   klassOf,
   LEVEL_KEY,
@@ -1008,7 +1009,7 @@ export class Writer {
       this.replay = editor._recordTextEdits
         ? new TextReplay(
             this.plan.textEdits ?? null,
-            this.prevState._nodeMap,
+            this.prevState,
             $isRangeSelection(selection) &&
               selection.isCollapsed() &&
               selection.anchor.type === 'text'
@@ -3044,8 +3045,9 @@ export class Writer {
     if (before === undefined || !$isElementNode(before)) {
       return false;
     }
-    let changed: TextNode | null = null;
-    let changedBefore: TextNode | null = null;
+    // The changed text nodes, each with its old version and the atom its
+    // old text starts at.
+    const changes: [TextNode, TextNode, number][] = [];
     let offset = 0;
     let a: NodeKey | null = before.__first;
     let b: LexicalNode | null = line.getFirstChild();
@@ -3060,7 +3062,6 @@ export class Writer {
       }
       if (prev !== now) {
         if (
-          changed !== null ||
           !$isTextNode(prev) ||
           !$isTextNode(now) ||
           prev.__type !== now.__type ||
@@ -3073,93 +3074,68 @@ export class Writer {
         ) {
           return false;
         }
-        changed = now;
-        changedBefore = prev;
+        changes.push([now, prev, offset]);
+        offset += prev.__text.length;
       } else {
         // An element child (a link) is the same object when only its
         // children changed: its subtree must be unchanged too.
         if ($isElementNode(now) && !sameSubtree(now, prevMap)) {
           return false;
         }
-        if (changed === null) {
-          offset += $atomSize(now);
-        }
+        offset += $atomSize(now);
       }
       a = prev.__next;
       b = b.getNextSibling();
     }
+    // Several changed nodes only where text edits are not recorded (the
+    // record's own path writes those as it did, through the line).
     if (
-      changed === null ||
-      changedBefore === null ||
-      $runsWithNeighbour(changed)
+      changes.length === 0 ||
+      (changes.length > 1 && this.state.editor._recordTextEdits) ||
+      changes.some(([changed]) => $runsWithNeighbour(changed))
     ) {
       return false;
     }
-    const oldText = changedBefore.__text;
-    const newText = changed.__text;
-    // The node's segment key as stored: one read without a key (a code
-    // highlight a client stored without one) keeps none, or the text
-    // inserted here would be stored, and read, as a node of its own.
-    const segment = isMergeableText(changed)
-      ? null
-      : (this.state.segments.get(changed.getKey()) ?? null);
-    // The edits Lexical recorded, exactly where they were made (see
-    // TextReplay), and as made: a replacement is not widened to whole
-    // words (see snapToWords), which a diff's guess at shared letters
-    // needs, and a record does not. A diff where the record does not
-    // explain the line; the line written whole where the node holds
-    // characters of another.
-    const edits = this.exactEdits(changed, oldText.length);
-    if (edits === false) {
-      return false;
-    }
-    if (edits !== null) {
+    // Every node's edits first (nothing is written where one cannot be),
+    // then written in one pass from the first node to the last, with one
+    // cursor (each node starts at its old offset moved by the edits written
+    // before it).
+    const writes: [TextNode, TextNode, number, [number, number, string][]][] =
+      [];
+    for (const [changed, changedBefore, at] of changes) {
+      const edits = this.$textEdits(changed, changedBefore);
+      if (edits === false) {
+        return false;
+      }
       if (edits.length > 0) {
-        this.$writeEdits(
-          u,
-          offset,
-          edits,
-          oldText,
-          newText,
-          $textAttrs(changed, segment),
-        );
+        writes.push([changed, changedBefore, at, edits]);
       }
-    } else {
-      const selection = $getSelection();
-      let cursor = -1;
-      if ($isRangeSelection(selection) && selection.isCollapsed()) {
-        if (selection.anchor.key === changed.getKey()) {
-          cursor = selection.anchor.offset;
-        } else {
-          // A caret right before or after the changed node (in a link
-          // ending there) anchors the diff at that edge.
-          const at = selection.anchor.getNode();
-          if (at.isBefore(changed)) {
-            cursor = 0;
-          } else if (changed.isBefore(at)) {
-            cursor = newText.length;
-          }
-        }
-      }
-      const diff = diffStrings(oldText, newText, cursor);
-      const {prefix, suffix} = snapToWords(
-        oldText,
-        newText,
-        diff.prefix,
-        diff.suffix,
-        this.state.editor._compositionKey !== null,
+    }
+    if (writes.length > 0) {
+      const c = this.cursor(
+        u.cs.y,
+        prevLiveEnd(u.end!, this.state.hidden),
+        u.start || EMPTY_FORMATS,
       );
-      const del = oldText.length - prefix - suffix;
-      const to = newText.length - suffix;
-      if (del > 0 || to > prefix) {
-        this.$writeEdits(
-          u,
-          offset,
-          [[prefix, del, newText.slice(prefix, to)]],
-          oldText,
-          newText,
-          $textAttrs(changed, segment),
-        );
+      // Where the cursor stands, in atoms of the line as written so far,
+      // and how far the edits written so far moved what comes after them.
+      let pos = 0;
+      let moved = 0;
+      for (const [changed, changedBefore, at, edits] of writes) {
+        // The node's segment key as stored: one read without a key (a code
+        // highlight a client stored without one) keeps none, or the text
+        // inserted here would be stored, and read, as a node of its own.
+        const segment = isMergeableText(changed)
+          ? null
+          : (this.state.segments.get(changed.getKey()) ?? null);
+        const start = at + moved;
+        c.advance(start - pos);
+        const old = changedBefore.__text;
+        const now = changed.__text;
+        pos =
+          start +
+          this.$writeEdits(c, edits, old, now, $textAttrs(changed, segment));
+        moved += now.length - old.length;
       }
     }
     this.$writeMarker(u.end, d);
@@ -3169,31 +3145,81 @@ export class Writer {
   }
 
   /**
+   * The edits that make text node `changed` of its old version
+   * `changedBefore`: as Lexical recorded them, exactly where they were made
+   * (see TextReplay), and as made: a replacement is not widened to whole
+   * words (see snapToWords), which a diff's guess at shared letters needs,
+   * and a record does not. Else a diff (see setTextStretches): its common
+   * start and end, anchored at the caret, and every run of unchanged words
+   * between its changes. False where the node holds characters of another
+   * (the line is written whole).
+   */
+  private $textEdits(
+    changed: TextNode,
+    changedBefore: TextNode,
+  ): [number, number, string][] | false {
+    const oldText = changedBefore.__text;
+    const newText = changed.__text;
+    const edits = this.exactEdits(changed, oldText.length);
+    if (edits !== null) {
+      return edits;
+    }
+    const selection = $getSelection();
+    let cursor = -1;
+    if ($isRangeSelection(selection) && selection.isCollapsed()) {
+      if (selection.anchor.key === changed.getKey()) {
+        cursor = selection.anchor.offset;
+      } else {
+        // A caret right before or after the changed node (in a link
+        // ending there) anchors the diff at that edge.
+        const at = selection.anchor.getNode();
+        if (at.isBefore(changed)) {
+          cursor = 0;
+        } else if (changed.isBefore(at)) {
+          cursor = newText.length;
+        }
+      }
+    }
+    // What it keeps of the old text, and the edits between.
+    const kept = setTextStretches(
+      oldText,
+      newText,
+      cursor,
+      this.state.editor._compositionKey !== null,
+    );
+    const diff: [number, number, string][] = [];
+    let lastA = 0;
+    let lastB = 0;
+    for (const [x0, x1, dx] of kept) {
+      if (x0 + dx > lastA || x0 > lastB) {
+        diff.push([lastA, x0 + dx - lastA, newText.slice(lastB, x0)]);
+      }
+      lastA = x1 + dx;
+      lastB = x1;
+    }
+    return diff;
+  }
+
+  /**
    * Write a text node's edits (see exactEdits), which make its text `now`
-   * of its old text `old`, in line `u`, where the node starts at atom
-   * `offset`, with the node's attributes `attrs`.
+   * of its old text `old`, with the cursor at the node's start and the
+   * node's attributes `attrs`. Returns how far past the node's start the
+   * cursor ends, in atoms of its new text.
    */
   private $writeEdits(
-    u: Unit,
-    offset: number,
+    c: Cursor,
     edits: [number, number, string][],
     old: string,
     now: string,
     attrs: Attrs,
-  ): void {
-    const c = this.cursor(
-      u.cs.y,
-      prevLiveEnd(u.end!, this.state.hidden),
-      u.start || EMPTY_FORMATS,
-    );
-    c.advance(offset);
+  ): number {
     const hunks: Hunk[] = [];
     let shift = 0;
     for (const [at, del, ins] of edits) {
       hunks.push([at, del, at + shift, at + shift + ins.length]);
       shift += ins.length - del;
     }
-    this.$writeHunks(c, old, now, hunks, (cursor, from, to) => {
+    return this.$writeHunks(c, old, now, hunks, (cursor, from, to) => {
       cursor.insert(
         new ContentString(now.slice(from, to)),
         this.inheritUnknown(cursor, attrs),
@@ -3213,7 +3239,8 @@ export class Writer {
    * U+FFFD under their ids (and a lone half reads as U+FFFD), so the
    * author's editor showed `😀` while every reader showed `��` (a splice of
    * one half; a pair kept by two islands, stepped over one atom at a
-   * time).
+   * time). Returns where the cursor ends: the desired atom after the last
+   * hunk.
    */
   private $writeHunks(
     c: Cursor,
@@ -3221,8 +3248,9 @@ export class Writer {
     now: string,
     hunks: readonly Hunk[],
     insert: (cursor: Cursor, from: number, to: number) => void,
-  ): void {
+  ): number {
     let pos = 0;
+    let end = 0;
     for (const [at, del, from, to] of codePointHunks(hunks, old, now)) {
       if (__DEV__) {
         invariant(
@@ -3241,7 +3269,9 @@ export class Writer {
         insert(c, from, to);
       }
       pos = at + del;
+      end = to;
     }
+    return end;
   }
 
   // -------------------------------------------------------------------------
@@ -3737,7 +3767,16 @@ export class Writer {
     ) {
       return value;
     }
-    const owns = (m: string) => ownsMember(m, fields);
+    // A wrapper that holds text writes no text fields (Lexical does not
+    // serialize them), and does not remove ones stored there either: when a
+    // wrapper with no text that stores them gets text (a line break in a
+    // link, then text appended), its value is not written again over the
+    // content it kept, over a collaborator's concurrent removal or change
+    // of it (see $wrapperAttrs).
+    const keepsText = isTextHoldingWrapperValue(value);
+    const owns = (m: string) =>
+      ownsMember(m, fields) &&
+      !(keepsText && (m === 'textFormat' || m === 'textStyle'));
     if (same) {
       const a = value as Attrs;
       const b = stored as Attrs;

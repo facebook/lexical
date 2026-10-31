@@ -475,6 +475,20 @@ export function diffAtoms(
   return {prefix, suffix};
 }
 
+/**
+ * Whether the caret at `cursor` of `b` places an edit that makes `b` of `a`
+ * (see diffStrings): the text after it is unchanged.
+ */
+function caretAnchors(a: string, b: string, cursor: number): boolean {
+  const delta = b.length - a.length;
+  return (
+    cursor >= 0 &&
+    cursor <= b.length &&
+    cursor - delta >= 0 &&
+    b.substring(cursor) === a.substring(cursor - delta)
+  );
+}
+
 /** Common prefix and suffix of two strings, the prefix limited by a cursor. */
 export function diffStrings(
   a: string,
@@ -501,13 +515,9 @@ export function diffStrings(
   // the change before the caret, where the user made it.
   // That holds only while the text after the caret is unchanged.
   const delta = b.length - a.length;
-  const limit =
-    cursor >= 0 &&
-    cursor <= b.length &&
-    cursor - delta >= 0 &&
-    b.substring(cursor) === a.substring(cursor - delta)
-      ? Math.max(0, Math.min(cursor - Math.max(0, delta), max))
-      : max;
+  const limit = caretAnchors(a, b, cursor)
+    ? Math.max(0, Math.min(cursor - Math.max(0, delta), max))
+    : max;
   let prefix = forward(0, limit);
   let suffix = 0;
   const count = max - prefix;
@@ -653,6 +663,157 @@ export function snapToWords(
 const NOT_SPACE = /\S|\n/;
 
 /**
+ * Where an insertion or a deletion that diffStrings found (`diff` covers the
+ * whole shorter text) changes no word, sliding it within the run of equal
+ * text it could be in. There if diffStrings put it at such a place (with
+ * `first`, both its ends at word edges); else, unless the caret placed it
+ * (it stopped the common start), at the first such place with `first`, at
+ * the last one without; null where every place is inside a word (between two letters or
+ * digits of one, for an insertion; with both ends inside words, for a
+ * deletion), or would split a surrogate pair. Without a caret, a diff takes
+ * the common start first, so `t1z t2z t3z` made `t1z t3z` deletes `2z t`
+ * (and a collaborator's concurrent delete of `t2z` then leaves `t1z 3z`);
+ * here it deletes ` t2z` (`first`) or `t2z `.
+ */
+function placeAtWordEdge(
+  a: string,
+  b: string,
+  diff: {prefix: number; suffix: number},
+  first = false,
+): {prefix: number; suffix: number} | null {
+  const n = Math.min(a.length, b.length);
+  // An insertion or a deletion of `m` characters at `k`: of `b` at
+  // `[k, k + m)` (an insertion) or of `a` (a deletion).
+  const m = Math.abs(b.length - a.length);
+  const longer = b.length > a.length ? b : a;
+  const splits = (s: string, i: number): boolean =>
+    i > 0 &&
+    i < s.length &&
+    isHighSurrogate(s.charCodeAt(i - 1)) &&
+    isLowSurrogate(s.charCodeAt(i));
+  // Inside a word: between two letters or digits of one (`t9|z`), not
+  // next to punctuation, an emoji or white space, and not in a script
+  // written without spaces, where each character is a word.
+  const inside = (i: number): boolean => isAlnum(a, i - 1) && isAlnum(a, i);
+  const changesNoWord = (k: number): boolean => {
+    if (splits(a, k) || splits(longer, k) || splits(longer, k + m)) {
+      return false;
+    }
+    // An insertion inside a word, or a deletion with both ends inside
+    // words, changed those words; at a word's edge (`foo` made again as
+    // `food`, `fooX.bar`) it is a word's text typed or deleted there.
+    return longer === b ? !inside(k) : !(inside(k) && inside(k + m));
+  };
+  // Moved from where the diff put it, the edit must start and end at word
+  // edges of the longer text, so that it neither takes nor gives a piece of
+  // a word that stays: `a ba c` made `a c` deletes ` ba`, not `a b` (which
+  // would keep the `a` of `ba` as the first word).
+  const edge = (i: number): boolean =>
+    !(isAlnum(longer, i - 1) && isAlnum(longer, i));
+  const moves = (k: number): boolean =>
+    changesNoWord(k) && edge(k) && edge(k + m);
+  // The places it could be: from the furthest the common end reaches to
+  // the furthest the common start reaches (diffStrings takes the common
+  // start first unless the caret stops it, at `diff.prefix`).
+  const CHUNK = 256;
+  let hi = diff.prefix;
+  while (
+    hi + CHUNK <= n &&
+    a.substring(hi, hi + CHUNK) === b.substring(hi, hi + CHUNK)
+  ) {
+    hi += CHUNK;
+  }
+  while (hi < n && a.charCodeAt(hi) === b.charCodeAt(hi)) {
+    hi++;
+  }
+  let end = diff.suffix;
+  while (
+    end + CHUNK <= n &&
+    a.substring(a.length - end - CHUNK, a.length - end) ===
+      b.substring(b.length - end - CHUNK, b.length - end)
+  ) {
+    end += CHUNK;
+  }
+  while (
+    end < n &&
+    a.charCodeAt(a.length - 1 - end) === b.charCodeAt(b.length - 1 - end)
+  ) {
+    end++;
+  }
+  if (first) {
+    // Kept where the diff put it unless that takes or gives a piece of a
+    // word (see `moves`).
+    if (moves(diff.prefix)) {
+      return diff;
+    }
+  } else {
+    if (changesNoWord(diff.prefix)) {
+      return diff;
+    }
+    // Where the caret placed it (it stopped the common start), there.
+    if (diff.prefix < hi) {
+      return null;
+    }
+  }
+  for (
+    let k = first ? n - end : hi;
+    first ? k <= hi : k >= n - end;
+    k += first ? 1 : -1
+  ) {
+    if (first ? moves(k) : changesNoWord(k)) {
+      return {prefix: k, suffix: n - k};
+    }
+  }
+  return null;
+}
+
+/**
+ * Whether the caret at `cursor` of `b` placed the insertion or deletion that
+ * makes `b` of `a`: it anchors the diff (caretAnchors) and its bound is in
+ * the run of equal text the edit could be in, the furthest place included.
+ * A caret past the furthest place (at the end of the node or past the edit,
+ * and the end of the node, which the writer passes for a caret in a later
+ * node) anchors every place of the run and places nothing.
+ */
+function caretPlaces(a: string, b: string, cursor: number): boolean {
+  return (
+    caretAnchors(a, b, cursor) &&
+    cursor - Math.max(0, b.length - a.length) <= diffStrings(a, b, -1).prefix
+  );
+}
+
+/**
+ * The common start and end that text set whole (`setTextContent`, a node's
+ * text made again, the DOM's text) keeps of the text it replaces, anchored
+ * at `cursor` (see diffStrings): a replacement keeps whole words
+ * (snapToWords); an insertion or a deletion keeps every other character,
+ * where the caret placed it (caretPlaces), or where the diff put it if both
+ * its ends are at word edges, else at the first place in the run of equal
+ * text it could be in where they are (placeAtWordEdge), else where the diff
+ * put it. The first:
+ * a word deleted with the space before it (` t2z` of `t1z t2z t3z`), so
+ * text a collaborator types after it at the same time, as typing goes (a
+ * space, then a word), keeps the space after it and stays a word of its own.
+ */
+export function setTextEnds(
+  a: string,
+  b: string,
+  cursor: number,
+  composing: boolean,
+): {prefix: number; suffix: number} {
+  const diff = diffStrings(a, b, cursor);
+  if (
+    diff.prefix + diff.suffix === Math.min(a.length, b.length) &&
+    a.length !== b.length
+  ) {
+    return composing || caretPlaces(a, b, cursor)
+      ? diff
+      : (placeAtWordEdge(a, b, diff, true) ?? diff);
+  }
+  return snapToWords(a, b, diff.prefix, diff.suffix, composing);
+}
+
+/**
  * The common start and end that text made in place of removed text (`b`,
  * see TextReplay#stretch) keeps of that text (`a`), as the characters they
  * were: the diff anchored at the caret (diffStrings).
@@ -686,67 +847,12 @@ export function keptEnds(
     if (composing || a.length === b.length) {
       return diff;
     }
-    // An insertion or a deletion of `m` characters at `k`: of `b` at
-    // `[k, k + m)` (an insertion) or of `a` (a deletion).
     const m = Math.abs(b.length - a.length);
     const longer = b.length > a.length ? b : a;
-    const splits = (s: string, i: number): boolean =>
-      i > 0 &&
-      i < s.length &&
-      isHighSurrogate(s.charCodeAt(i - 1)) &&
-      isLowSurrogate(s.charCodeAt(i));
-    // Inside a word: between two letters or digits of one (`t9|z`), not
-    // next to punctuation, an emoji or white space, and not in a script
-    // written without spaces, where each character is a word.
     const inside = (i: number): boolean => isAlnum(a, i - 1) && isAlnum(a, i);
-    const changesNoWord = (k: number): boolean => {
-      if (splits(a, k) || splits(longer, k) || splits(longer, k + m)) {
-        return false;
-      }
-      // An insertion inside a word, or a deletion with both ends inside
-      // words, changed those words; at a word's edge (`foo` made again as
-      // `food`, `fooX.bar`) it is a word's text typed or deleted there.
-      return longer === b ? !inside(k) : !(inside(k) && inside(k + m));
-    };
-    // The places it could be: from the furthest the common end reaches to
-    // the furthest the common start reaches (diffStrings takes the common
-    // start first unless the caret stops it, at `diff.prefix`).
-    const CHUNK = 256;
-    let hi = diff.prefix;
-    while (
-      hi + CHUNK <= n &&
-      a.substring(hi, hi + CHUNK) === b.substring(hi, hi + CHUNK)
-    ) {
-      hi += CHUNK;
-    }
-    while (hi < n && a.charCodeAt(hi) === b.charCodeAt(hi)) {
-      hi++;
-    }
-    let end = diff.suffix;
-    while (
-      end + CHUNK <= n &&
-      a.substring(a.length - end - CHUNK, a.length - end) ===
-        b.substring(b.length - end - CHUNK, b.length - end)
-    ) {
-      end += CHUNK;
-    }
-    while (
-      end < n &&
-      a.charCodeAt(a.length - 1 - end) === b.charCodeAt(b.length - 1 - end)
-    ) {
-      end++;
-    }
-    // Where the caret placed it (it stopped the common start), there.
-    const caretPlaced = diff.prefix < hi;
-    if (changesNoWord(diff.prefix)) {
-      return diff;
-    }
-    if (!caretPlaced) {
-      for (let k = hi; k >= n - end; k--) {
-        if (changesNoWord(k)) {
-          return {prefix: k, suffix: n - k};
-        }
-      }
+    const placed = placeAtWordEdge(a, b, diff);
+    if (placed !== null) {
+      return placed;
     }
     // It changed the word or words it is inside of: those are replaced
     // whole.
@@ -788,6 +894,317 @@ export function keptEnds(
     prefix: NOT_SPACE.test(a.slice(0, prefix)) ? prefix : 0,
     suffix: NOT_SPACE.test(a.slice(a.length - suffix)) ? suffix : 0,
   };
+}
+
+/** White space other than a line feed (a line break is a node of its own). */
+const isSeparator = (s: string, i: number): boolean =>
+  s[i] !== '\n' && SPACE.test(s[i]);
+
+/**
+ * The words of `s` from `from` to `to`, as `[start, end)` pairs: runs of
+ * word characters (see isWordChar), and single other characters that are not
+ * white space (an object character, a line feed, a character of a script
+ * written without spaces), each a whole character. White space between them
+ * is no word: it is compared only between two kept words.
+ */
+function words(s: string, from: number, to: number): [number, number][] {
+  const out: [number, number][] = [];
+  let i = from;
+  while (i < to) {
+    let j = i + 1;
+    if (isWordChar(s, i)) {
+      while (j < to && isWordChar(s, j)) {
+        j++;
+      }
+    } else if (j < to && isLowSurrogate(s.charCodeAt(j))) {
+      j++;
+    }
+    if (!isSeparator(s, i)) {
+      out.push([i, j]);
+    }
+    i = j;
+  }
+  return out;
+}
+
+/**
+ * The most edits the exact diff of a remade line's words looks for, among
+ * the words both texts have (see commonWords). It finds the longest common
+ * run of words in O((n + m) * EXACT_EDITS) time at most; past it, only the
+ * common start and end are kept. Words only added or only removed between
+ * a start and an end the words both texts have share need no search, and
+ * count none.
+ */
+const EXACT_EDITS = 2048;
+
+/**
+ * Myers' middle snake of `a[aLo, aHi)` and `b[bLo, bHi)` (both non-empty,
+ * different first and last words): `[x, y, u, v]`, relative to `aLo` and
+ * `bLo`, a run of equal words from (x, y) to (u, v) on a shortest edit
+ * script, or null past `max` edits.
+ */
+function middleSnake(
+  a: readonly number[],
+  aLo: number,
+  aHi: number,
+  b: readonly number[],
+  bLo: number,
+  bHi: number,
+  max: number,
+): [number, number, number, number] | null {
+  const n = aHi - aLo;
+  const m = bHi - bLo;
+  const delta = n - m;
+  const odd = (delta & 1) !== 0;
+  const half = Math.ceil((n + m) / 2);
+  const off = half + 1;
+  const vf = new Int32Array(2 * half + 3);
+  const vb = new Int32Array(2 * half + 3);
+  for (let d = 0; d <= half; d++) {
+    if (2 * d - 1 > max) {
+      return null;
+    }
+    for (let k = -d; k <= d; k += 2) {
+      let x =
+        k === -d || (k !== d && vf[off + k - 1] < vf[off + k + 1])
+          ? vf[off + k + 1]
+          : vf[off + k - 1] + 1;
+      let y = x - k;
+      const x0 = x;
+      const y0 = y;
+      while (x < n && y < m && a[aLo + x] === b[bLo + y]) {
+        x++;
+        y++;
+      }
+      vf[off + k] = x;
+      const c = delta - k;
+      if (odd && c >= -(d - 1) && c <= d - 1 && x + vb[off + c] >= n) {
+        return [x0, y0, x, y];
+      }
+    }
+    for (let c = -d; c <= d; c += 2) {
+      let x =
+        c === -d || (c !== d && vb[off + c - 1] < vb[off + c + 1])
+          ? vb[off + c + 1]
+          : vb[off + c - 1] + 1;
+      let y = x - c;
+      const x0 = x;
+      const y0 = y;
+      while (x < n && y < m && a[aHi - 1 - x] === b[bHi - 1 - y]) {
+        x++;
+        y++;
+      }
+      vb[off + c] = x;
+      const k = delta - c;
+      if (!odd && k >= -d && k <= d && x + vf[off + k] >= n) {
+        return [n - x, m - y, n - x0, m - y0];
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * The pairs of a longest common subsequence of `a[aLo, aHi)` and
+ * `b[bLo, bHi)`, in order, into `out` (Myers' linear space diff); false
+ * past `max` edits.
+ */
+function exactWords(
+  a: readonly number[],
+  aLo: number,
+  aHi: number,
+  b: readonly number[],
+  bLo: number,
+  bHi: number,
+  max: number,
+  out: [number, number][],
+): boolean {
+  while (aLo < aHi && bLo < bHi && a[aLo] === b[bLo]) {
+    out.push([aLo++, bLo++]);
+  }
+  let a1 = aHi;
+  let b1 = bHi;
+  while (a1 > aLo && b1 > bLo && a[a1 - 1] === b[b1 - 1]) {
+    a1--;
+    b1--;
+  }
+  if (aLo < a1 && bLo < b1) {
+    const snake = middleSnake(a, aLo, a1, b, bLo, b1, max);
+    if (snake === null) {
+      return false;
+    }
+    const [x, y, u, v] = snake;
+    exactWords(a, aLo, aLo + x, b, bLo, bLo + y, max, out);
+    for (let i = 0; i < u - x; i++) {
+      out.push([aLo + x + i, bLo + y + i]);
+    }
+    exactWords(a, aLo + u, a1, b, bLo + v, b1, max, out);
+  }
+  for (let i = 0; a1 + i < aHi; i++) {
+    out.push([a1 + i, b1 + i]);
+  }
+  return true;
+}
+
+/**
+ * The words equal in `a` and `b` that a remade line keeps, as pairs of
+ * indexes in increasing order of both: a longest common subsequence of the
+ * two (exactWords), found among the words both texts have (a word only one
+ * has is never kept, and leaving it out keeps the diff short). Past
+ * EXACT_EDITS edits among those, none.
+ */
+function commonWords(
+  a: readonly number[],
+  b: readonly number[],
+): [number, number][] {
+  const inA = new Set(a);
+  const inB = new Set(b);
+  const fa: number[] = [];
+  const fb: number[] = [];
+  for (let x = 0; x < a.length; x++) {
+    if (inB.has(a[x])) {
+      fa.push(x);
+    }
+  }
+  for (let y = 0; y < b.length; y++) {
+    if (inA.has(b[y])) {
+      fb.push(y);
+    }
+  }
+  const sa = fa.map(x => a[x]);
+  const sb = fb.map(y => b[y]);
+  const pairs: [number, number][] = [];
+  if (!exactWords(sa, 0, sa.length, sb, 0, sb.length, EXACT_EDITS, pairs)) {
+    return [];
+  }
+  return pairs.map(([x, y]) => [fa[x], fb[y]]);
+}
+
+/**
+ * What text made in place of removed text (`b`, see TextReplay#stretch)
+ * keeps of that text (`a`), as ranges `[x0, x1, dx]` of `b` whose character
+ * `x` was character `x + dx` of `a`, in order: the common start and end
+ * (keptEnds), and between them, where `b` replaced text, every run of whole
+ * words that a shortest word-by-word edit script of the rest keeps, with the
+ * white space around it that both texts share (`t1z t2z t3z t4z` made again
+ * as `t1z n9z t3z n8z` keeps ` t3z `), so that only the changed words are
+ * written: a character a collaborator deletes in an unchanged word between
+ * two changed ones stays deleted, and a letter it types there stays in that
+ * word. White space alone is never kept between two changes, as at the ends.
+ */
+export function keptStretches(
+  a: string,
+  b: string,
+  cursor: number,
+  composing: boolean,
+): [number, number, number][] {
+  const {prefix, suffix} = keptEnds(a, b, cursor, composing);
+  return withKeptWords(a, b, prefix, suffix, composing);
+}
+
+/**
+ * What text set whole (`setTextContent`, see setTextEnds) keeps of the text
+ * it replaces, as keptStretches gives it for text made again: its common
+ * start and end (setTextEnds, so a caret still places an insertion or a
+ * deletion), and between them every run of whole words a shortest
+ * word-by-word edit script keeps, so that a word a collaborator deletes
+ * between two changed words at the same time stays deleted.
+ */
+export function setTextStretches(
+  a: string,
+  b: string,
+  cursor: number,
+  composing: boolean,
+): [number, number, number][] {
+  const {prefix, suffix} = setTextEnds(a, b, cursor, composing);
+  return withKeptWords(a, b, prefix, suffix, composing);
+}
+
+/**
+ * The common start and end `prefix` and `suffix` of `a` and `b` as ranges
+ * (see keptStretches), with every run of whole words kept between them.
+ */
+function withKeptWords(
+  a: string,
+  b: string,
+  prefix: number,
+  suffix: number,
+  composing: boolean,
+): [number, number, number][] {
+  const shift = a.length - b.length;
+  const ends: [number, number, number][] = [
+    [0, prefix, 0],
+    [b.length - suffix, b.length, shift],
+  ];
+  const a1 = a.length - suffix;
+  const b1 = b.length - suffix;
+  if (composing || a1 <= prefix || b1 <= prefix) {
+    return ends;
+  }
+  const wa = words(a, prefix, a1);
+  const wb = words(b, prefix, b1);
+  const ids = new Map<string, number>();
+  const id = (text: string, [x0, x1]: [number, number]): number => {
+    const t = text.slice(x0, x1);
+    let x = ids.get(t);
+    if (x === undefined) {
+      x = ids.size;
+      ids.set(t, x);
+    }
+    return x;
+  };
+  const pairs = commonWords(
+    wa.map(w => id(a, w)),
+    wb.map(w => id(b, w)),
+  );
+  const out: [number, number, number][] = [ends[0]];
+  let lastA = prefix;
+  let lastB = prefix;
+  for (let i = 0; i < pairs.length; ) {
+    // Words kept one after the other with the same white space between
+    // them in both texts are one stretch.
+    let j = i + 1;
+    while (
+      j < pairs.length &&
+      pairs[j][0] === pairs[j - 1][0] + 1 &&
+      pairs[j][1] === pairs[j - 1][1] + 1 &&
+      a.slice(wa[pairs[j - 1][0]][1], wa[pairs[j][0]][0]) ===
+        b.slice(wb[pairs[j - 1][1]][1], wb[pairs[j][1]][0])
+    ) {
+      j++;
+    }
+    let ax = wa[pairs[i][0]][0];
+    let bx = wb[pairs[i][1]][0];
+    let bEnd = wb[pairs[j - 1][1]][1];
+    let aEnd = ax + bEnd - bx;
+    // With the white space around it that is the same in both texts (up to
+    // the stretch before it), as the start and end keep theirs: only the
+    // changed words are written.
+    while (
+      ax > lastA &&
+      bx > lastB &&
+      a.charCodeAt(ax - 1) === b.charCodeAt(bx - 1) &&
+      isSeparator(a, ax - 1)
+    ) {
+      ax--;
+      bx--;
+    }
+    while (
+      aEnd < a1 &&
+      bEnd < b1 &&
+      a.charCodeAt(aEnd) === b.charCodeAt(bEnd) &&
+      isSeparator(a, aEnd)
+    ) {
+      aEnd++;
+      bEnd++;
+    }
+    out.push([bx, bEnd, ax - bx]);
+    lastA = aEnd;
+    lastB = bEnd;
+    i = j;
+  }
+  out.push(ends[1]);
+  return out;
 }
 
 const isHighSurrogate = (c: number): boolean => c >= 0xd800 && c <= 0xdbff;

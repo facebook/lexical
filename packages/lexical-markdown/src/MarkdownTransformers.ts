@@ -182,7 +182,12 @@ export type TextFormatTransformer = Readonly<{
 export type TextMatchTransformer = Readonly<{
   dependencies: Klass<LexicalNode>[];
   /**
-   * Determines how a node should be exported to markdown
+   * Determines how a node should be exported to markdown. Return null when
+   * this transformer does not export `node`.
+   *
+   * Markdown export may also call this with placeholder callbacks only to learn
+   * whether the transformer writes `node` in its own syntax (to decide which
+   * neighbouring brackets to escape), so it should have no side effects.
    */
   export?: (
     node: LexicalNode,

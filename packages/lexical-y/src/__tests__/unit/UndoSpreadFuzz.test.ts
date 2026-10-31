@@ -180,11 +180,15 @@ function gen(seed: number): Op[] {
 
 const WORDS = ['alpha', 'beta', 'gamma', 'delta', 'note', 'run'];
 
-// Seeds main fails (#9623), pinned as test.fails until the fix lands.
-const FAILS_ON_MAIN = new Set([10, 12, 23, 26, 28, 35, 50, 51, 55]);
+// Seeds that spread a comment on main (#9623) with the default profile
+// (US_OPS and US_UNDO unchanged), pinned as test.fails until
+// the fix lands. Another profile makes other ops from the same seed, so it
+// pins nothing.
+const DEFAULT_PROFILE = OPS === 30 && UNDO === 0.15;
+const SPREADS_ON_MAIN = new Set([10, 12, 23, 26, 28, 35, 50, 51, 55]);
 
 for (let seed = START; seed < START + SEEDS; seed++) {
-  (FAILS_ON_MAIN.has(seed) ? test.fails : test)(
+  (DEFAULT_PROFILE && SPREADS_ON_MAIN.has(seed) ? test.fails : test)(
     `an undo never spreads a comment onto another block (seed ${seed})`,
     () => {
       const seeded = seedYState(CONFIG, () => {

@@ -166,6 +166,20 @@ describe('undoing the removal of a comment after its author undid adding it, wit
           expect(fresh).toEqual(a);
           expect(a.slice(0, 2)).toEqual(PARAS.slice(0, 2));
           expect(a.slice(3)).toEqual(PARAS.slice(3));
+          // And c1 is back on its own text (an undo that dropped the value
+          // would keep the other paragraphs clean too).
+          const restored = A.editor.getEditorState().read(() => {
+            const block = $getRoot().getChildAtIndex(2);
+            return (
+              $isElementNode(block) &&
+              block
+                .getAllTextNodes()
+                .some(n =>
+                  $getNodeMarkIDs(MarkStateExtension, n).includes('c1'),
+                )
+            );
+          });
+          expect(restored, 'c1 is back on its words').toBe(true);
         },
       );
     }

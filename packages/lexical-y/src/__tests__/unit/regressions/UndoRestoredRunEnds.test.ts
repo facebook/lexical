@@ -219,6 +219,23 @@ function liveFormatItems(doc: YDoc): number {
  * `expected`.
  */
 function check(value: Value, t: ReturnType<typeof clients>, expected: string) {
+  // Every block keeps its text (and the word's block the text typed after
+  // the word, where there is some), whatever the value.
+  const lines = PARAS.map((line, i) =>
+    i === WORD[0] && expected.includes('ZZ')
+      ? line.slice(0, WORD[2]) + 'ZZ' + line.slice(WORD[2])
+      : line,
+  );
+  for (const p of t.peers) {
+    expect(
+      p.editor.read(() =>
+        $getRoot()
+          .getChildren()
+          .map(block => block.getTextContent()),
+      ),
+      'the text',
+    ).toEqual(lines);
+  }
   const views = t.peers.map(p => p.editor.read(() => $marked(value)));
   const fresh = readYState(Y.encodeStateAsUpdate(t.peers[0].doc), CONFIG, () =>
     $marked(value),

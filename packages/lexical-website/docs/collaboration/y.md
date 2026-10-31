@@ -830,7 +830,15 @@ person's:
   (and a change the browser makes to the DOM text, as an IME composition
   does) keeps the start and end its text shares with the node's old text,
   anchored at the caret, which cannot tell where an edit next to equal text
-  was made without one; a replacement found that way replaces whole words
+  was made without one. Without a caret, an insertion or a deletion found
+  that way goes to the first word edge where it could be, so it changes no
+  word it does not add or remove (`t1z t2z t3z` set to `t1z t3z` deletes
+  ` t2z`, not `2z t`, and a collaborator's concurrent delete of `t2z` leaves
+  `t1z t3z`); text a collaborator types right against that word at the same
+  time, on the side of the space deleted with it, ends up glued to the word
+  beyond (`q9z` typed before `t2z` shows as `t1zq9z`; on a line's first
+  word, which has no space before it, text typed after it). A replacement
+  found that way replaces whole words
   (what a collaborator types inside the replaced words at the same time
   lands in one piece at the start of the new text, and the letters the new
   text shares are written again, so a collaborator's formatting of them at

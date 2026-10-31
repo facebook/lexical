@@ -4645,3 +4645,44 @@ describe('decimal character references that name no character', () => {
     ).toEqual([{title: 't\uFFFD', url: 'https://example.com/\uFFFD'}]);
   });
 });
+
+describe('backslash as ASCII punctuation in emphasis flanking (#9407)', () => {
+  const importText = (md: string): string => {
+    const editor = createTestEditor();
+    editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+      discrete: true,
+    });
+    return editor.read('latest', () => $getRoot().getTextContent());
+  };
+
+  const roundTrip = (md: string): string => {
+    const editor = createTestEditor();
+    editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+      discrete: true,
+    });
+    return editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS));
+  };
+
+  // The backslash is ASCII punctuation (CommonMark 0.31.2), so a delimiter run
+  // next to it has to flank exactly the way it does next to `.` or `!`.
+  it('imports emphasis that closes right before a backslash', () => {
+    expect(importText('_a_\\\nb')).toBe('a\nb');
+    expect(importText('**a.**\\x')).toBe('a.\\x');
+  });
+
+  it('imports emphasis that opens right after an escaped backslash', () => {
+    expect(importText('\\\\_a_')).toBe('\\a');
+  });
+
+  it('exports the emphasis it imported', () => {
+    expect(roundTrip('_a_\\\nb')).toBe('*a*\\\nb');
+    expect(roundTrip('**a.**\\x')).toBe('**a.**\\\\x');
+  });
+
+  it('keeps intraword underscores and escaped markers as text', () => {
+    expect(importText('snake_case\\_x')).toBe('snake_case_x');
+    expect(importText('a_b_\\c')).toBe('a_b_\\c');
+    expect(importText('\\_a_')).toBe('_a_');
+    expect(importText('_a\\_')).toBe('_a_');
+  });
+});

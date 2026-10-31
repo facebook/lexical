@@ -19,6 +19,7 @@
 
 import {
   $createParagraphNode,
+  $createRangeSelection,
   $createTextNode,
   $getRoot,
   $setSelection,
@@ -29,6 +30,7 @@ import {describe, expect, test, vi} from 'vitest';
 
 import {Cursor} from '../../../internal/Cursor';
 import {
+  $selectIn,
   expectConverged,
   flush,
   freshReader,
@@ -221,6 +223,57 @@ test('#9666: many text nodes set at once, diffed by the writer, in one pass', as
   // Four times the nodes: about four times the steps (it was sixteen).
   expect(steps[1] / steps[0]).toBeLessThan(6);
 }, 60_000);
+
+// A join and then a bold, two updates, while a collaborator bolds the same
+// words and then deletes them: one undo undoes the bold only (the writer
+// keeps the recorded path's lines of several changed nodes as they were).
+describe('#9666: one undo undoes one update', () => {
+  for (const ids of IDS) {
+    test(`a join, then a bold ‖ the peer bolds and deletes (ids ${ids})`, async () => {
+      const t = await setup(
+        () => {
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('s1z s2z s3z s4z')),
+            $createParagraphNode().append(
+              $createTextNode('s5z s6z').setFormat(1),
+            ),
+          );
+        },
+        {ids},
+      );
+      t.offline();
+      t.b.update(() => {
+        $selectIn([0], 8, 15).formatText('bold');
+        $setSelection(null);
+      });
+      t.a.update(() => {
+        const [l1, l2] = $getRoot().getChildren() as ElementNode[];
+        const last = l1.getLastDescendant() as TextNode;
+        const first = l2.getFirstDescendant() as TextNode;
+        const s = $createRangeSelection();
+        s.anchor.set(last.getKey(), last.getTextContentSize(), 'text');
+        s.focus.set(first.getKey(), 0, 'text');
+        $setSelection(s);
+        s.removeText();
+        $setSelection(null);
+      });
+      t.a.update(() => {
+        $selectIn([0], 8, 15).formatText('bold');
+        $setSelection(null);
+      });
+      await t.sync();
+      t.b.update(() => {
+        $selectIn([0], 3, 15).removeText();
+        $setSelection(null);
+      });
+      await t.sync();
+      t.a.undo();
+      await t.sync();
+      expect(t.a.read(() => $getRoot().getChildrenSize())).toBe(1);
+      await expectConverged(t.peers);
+    });
+  }
+});
 
 // A set that also changes the node's format: recorded, it keeps the
 // unchanged words; diffed by the writer, the node is written whole (its

@@ -3087,8 +3087,11 @@ export class Writer {
       a = prev.__next;
       b = b.getNextSibling();
     }
+    // Several changed nodes only where text edits are not recorded (the
+    // record's own path writes those as it did, through the line).
     if (
       changes.length === 0 ||
+      (changes.length > 1 && this.state.editor._recordTextEdits) ||
       changes.some(([changed]) => $runsWithNeighbour(changed))
     ) {
       return false;

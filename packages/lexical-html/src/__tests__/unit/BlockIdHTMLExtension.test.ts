@@ -29,6 +29,7 @@ import {
 import {
   BLOCK_HANDLE_ATTRIBUTE,
   BLOCK_ID_ATTRIBUTE,
+  BLOCK_WRAPPER_ID_ATTRIBUTE,
   type BlockIdHTMLConfig,
   BlockIdHTMLExtension,
 } from '@lexical/html/BlockIdHTMLExtension';
@@ -635,5 +636,107 @@ describe('BlockIdHTMLExtension: handles: true', () => {
         'Not shown to the model.',
       );
     });
+  });
+});
+
+// #9606: a list item that only wraps a nested list (Lexical's shape for a
+// nested list) has no element of its own in exported HTML: the nested list
+// is written inside the previous item's element. Its id goes on the nested
+// list's element in data-block-wrapper-id, and import puts it back on the
+// item the importer wraps that list in.
+describe('BlockIdHTMLExtension: a list item that only wraps a nested list', () => {
+  const NESTED =
+    '<ul><li>first</li><li>second<ul><li>inner one</li>' +
+    '<li>inner two<ol><li>deep</li></ol></li></ul></li><li>third</li></ul>';
+
+  test('exports its id on the nested list, and round-trips it', () => {
+    using source = build({prefix: 's'});
+    append(source, parseFixture(NESTED));
+    const outline = tree(source);
+    // first, second, the inner list's wrapper, inner one, inner two, the
+    // deep list's wrapper, deep, third.
+    expect(outline.filter(entry => entry.startsWith('listitem:'))).toHaveLength(
+      8,
+    );
+    const exported = exportDocument(source);
+    const wrapped = Array.from(
+      exported.querySelectorAll(`[${BLOCK_WRAPPER_ID_ATTRIBUTE}]`),
+    );
+    expect(wrapped.map(el => el.tagName)).toEqual(['UL', 'OL']);
+    // Every identified block's id is in the HTML exactly once.
+    const written = Array.from(
+      exported.querySelectorAll(
+        `[${BLOCK_ID_ATTRIBUTE}], [${BLOCK_WRAPPER_ID_ATTRIBUTE}]`,
+      ),
+    ).flatMap(el =>
+      [BLOCK_ID_ATTRIBUTE, BLOCK_WRAPPER_ID_ATTRIBUTE].flatMap(name => {
+        const id = el.getAttribute(name);
+        return id === null ? [] : [id];
+      }),
+    );
+    const ids = outline
+      .map(entry => entry.slice(entry.indexOf(':') + 1))
+      .filter(id => id !== 'null');
+    expect([...written].sort()).toEqual([...ids].sort());
+    using target = build({prefix: 't'});
+    append(target, exported);
+    expect(tree(target)).toEqual(outline);
+  });
+
+  test('pasted twice, the second copy gets fresh ids, the wrapper items too', () => {
+    using source = build({prefix: 's'});
+    append(source, parseFixture(NESTED));
+    const exported = exportDocument(source);
+    using target = build({prefix: 't'});
+    append(target, exported);
+    append(target, exported);
+    const ids = tree(target)
+      .map(entry => entry.slice(entry.indexOf(':') + 1))
+      .filter(id => id !== 'null');
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(tree(target).slice(0, tree(source).length)).toEqual(tree(source));
+  });
+
+  test('export: false writes no wrapper id; import: false reads none', () => {
+    using off = build({html: {export: false}, prefix: 's'});
+    append(off, parseFixture(NESTED));
+    expect(
+      exportDocument(off).querySelector(`[${BLOCK_WRAPPER_ID_ATTRIBUTE}]`),
+    ).toBe(null);
+    using source = build({prefix: 's'});
+    append(source, parseFixture(NESTED));
+    using target = build({html: {import: false}, prefix: 't'});
+    append(target, exportDocument(source));
+    expect(tree(target).some(entry => entry.includes(':s'))).toBe(false);
+  });
+
+  test('a wrapper id goes only on a block that holds that list alone', () => {
+    using editor = build({prefix: 'e'});
+    append(
+      editor,
+      parseFixture(
+        // A top-level list: its parent is the root, which takes no id.
+        '<ul data-block-wrapper-id="top"><li>a</li></ul>' +
+          // A nested list after the item's text: the importer wraps it in an
+          // item of its own, which takes the id.
+          '<ul><li data-block-id="item">text' +
+          '<ul data-block-wrapper-id="w"><li>inner</li></ul></li></ul>',
+      ),
+    );
+    const outline = tree(editor);
+    expect(outline).toContain('listitem:item');
+    expect(outline).toContain('listitem:w');
+    expect(outline.some(entry => entry.endsWith(':top'))).toBe(false);
+    expect(JSON.stringify(editor.getEditorState().toJSON())).not.toContain(
+      '"top"',
+    );
+  });
+
+  test('handles: true writes no wrapper id', () => {
+    using editor = build({html: {handles: true}, prefix: 'h'});
+    append(editor, parseFixture(NESTED));
+    const [doc] = exportWithHandles(editor);
+    expect(doc.querySelector(`[${BLOCK_WRAPPER_ID_ATTRIBUTE}]`)).toBe(null);
+    expect(doc.querySelector(`[${BLOCK_ID_ATTRIBUTE}]`)).toBe(null);
   });
 });

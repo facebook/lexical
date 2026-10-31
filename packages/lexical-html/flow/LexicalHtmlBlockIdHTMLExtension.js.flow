@@ -14,6 +14,8 @@ declare export var BLOCK_ID_ATTRIBUTE: 'data-block-id';
 
 declare export var BLOCK_HANDLE_ATTRIBUTE: 'data-block-handle';
 
+declare export var BLOCK_WRAPPER_ID_ATTRIBUTE: 'data-block-wrapper-id';
+
 export type BlockIdHTMLConfig = {
   export: boolean,
   handles?: boolean,

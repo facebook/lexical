@@ -14,9 +14,13 @@
 // plain typing, deletes and undos. A comment id on two blocks is a spread
 // (#9623: "X adds, Y removes, X undoes, Y undoes" put it on everything
 // after it). Env: US_SEEDS (default 60), US_START, US_OPS (default 30),
-// US_UNDO (default 0.15).
+// US_UNDO (default 0.15), US_STEP_END (default 0.1: the chance an undo
+// step ends after an op).
 
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {
+  buildEditorFromExtensions,
+  getExtensionDependencyFromEditor,
+} from '@lexical/extension';
 import {
   $addMarkID,
   $getNodeMarkIDs,
@@ -49,6 +53,7 @@ const SEEDS = Number(process.env.US_SEEDS ?? 60);
 const START = Number(process.env.US_START ?? 1);
 const OPS = Number(process.env.US_OPS ?? 30);
 const UNDO = Number(process.env.US_UNDO ?? 0.15);
+const STEP_END = Number(process.env.US_STEP_END ?? 0.1);
 const BLOCKS = 6;
 const CONFIG = {
   extensions: [RichTextExtension, MarkStateExtension],
@@ -181,11 +186,11 @@ function gen(seed: number): Op[] {
 const WORDS = ['alpha', 'beta', 'gamma', 'delta', 'note', 'run'];
 
 // Seeds that spread a comment on main (#9623) with the default profile
-// (US_OPS and US_UNDO unchanged), pinned as test.fails until
+// (US_OPS, US_UNDO and US_STEP_END unchanged), pinned as test.fails until
 // the fix lands. Another profile makes other ops from the same seed, so it
 // pins nothing.
-const DEFAULT_PROFILE = OPS === 30 && UNDO === 0.15;
-const SPREADS_ON_MAIN = new Set([10, 12, 23, 26, 28, 35, 50, 51, 55]);
+const DEFAULT_PROFILE = OPS === 30 && UNDO === 0.15 && STEP_END === 0.1;
+const SPREADS_ON_MAIN = new Set([10, 23, 26, 35, 51]);
 
 for (let seed = START; seed < START + SEEDS; seed++) {
   (DEFAULT_PROFILE && SPREADS_ON_MAIN.has(seed) ? test.fails : test)(
@@ -209,6 +214,9 @@ for (let seed = START; seed < START + SEEDS; seed++) {
               RichTextExtension,
               MarkStateExtension,
               configExtension(YCollabExtension, {
+                // Undo steps end where the script says, whatever the
+                // runner's speed (see below).
+                captureTimeout: 2 ** 30,
                 doc,
                 schemaVersion: 1,
                 synced: true,
@@ -220,7 +228,11 @@ for (let seed = START; seed < START + SEEDS; seed++) {
             },
           }),
         );
-        return {doc, editor};
+        const {binding} = getExtensionDependencyFromEditor(
+          editor,
+          YCollabExtension,
+        ).output;
+        return {binding, doc, editor};
       });
       const sync = () => {
         const [a, b] = peers;
@@ -234,6 +246,10 @@ for (let seed = START; seed < START + SEEDS; seed++) {
         );
       };
       const ops = gen(seed);
+      // Where an undo step ends: after an op with this chance (as edits a
+      // person makes in a burst share one step), from its own sequence so
+      // the ops stay those of the seed.
+      const steps = rng(seed * 40503 + 1);
       try {
         ops.forEach((op, i) => {
           const {editor} = peers[op.e];
@@ -241,6 +257,9 @@ for (let seed = START; seed < START + SEEDS; seed++) {
             editor.dispatchCommand(UNDO_COMMAND, undefined);
           } else {
             editor.update(() => $apply(op), {discrete: true});
+          }
+          if (steps() < STEP_END) {
+            peers[op.e].binding.undoManager?.stopCapturing();
           }
           sync();
           for (const peer of peers) {

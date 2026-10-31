@@ -29,10 +29,24 @@ function matchLink(text: string, regExp: RegExp): RegExpExecArray | null {
   // (https://spec.commonmark.org/0.31.2/#code-spans), so a link whose syntax
   // falls inside one is not a link.
   const codeSpans = text.includes('`') ? scanCodeSpans(text) : [];
-  const isInCode = (index: number) =>
-    codeSpans.some(
-      ({startIndex, endIndex}) => startIndex <= index && index < endIndex,
-    );
+  // The spans come in order, so a binary search finds the one that could hold
+  // `index`.
+  const isInCode = (index: number) => {
+    let low = 0;
+    let high = codeSpans.length - 1;
+    while (low <= high) {
+      const middle = (low + high) >> 1;
+      const {startIndex, endIndex} = codeSpans[middle];
+      if (index < startIndex) {
+        high = middle - 1;
+      } else if (index >= endIndex) {
+        low = middle + 1;
+      } else {
+        return true;
+      }
+    }
+    return false;
+  };
   let match;
   while ((match = search.exec(text)) !== null) {
     const labelEnd =

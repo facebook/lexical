@@ -1078,7 +1078,9 @@ function $nextExportedChar(
         return ']';
       }
       if (!$isTransparentInline(parent)) {
-        return '';
+        // Leaving an inline element written in its own syntax leads into
+        // text this pass cannot see.
+        return $isElementNode(parent) && parent.isInline() ? UNKNOWN : '';
       }
       current = parent;
       next = current.getNextSibling();
@@ -1120,7 +1122,8 @@ function $nextLeaf(
   while (next === null) {
     const parent = current.getParent();
     if (!$isTransparentInline(parent)) {
-      return null;
+      // An inline element written in its own syntax stands for that syntax.
+      return $isElementNode(parent) && parent.isInline() ? parent : null;
     }
     current = parent;
     next = current.getNextSibling();
@@ -1145,7 +1148,8 @@ function $previousLeaf(
   while (previous === null) {
     const parent = current.getParent();
     if (!$isTransparentInline(parent)) {
-      return null;
+      // An inline element written in its own syntax stands for that syntax.
+      return $isElementNode(parent) && parent.isInline() ? parent : null;
     }
     current = parent;
     previous = current.getPreviousSibling();

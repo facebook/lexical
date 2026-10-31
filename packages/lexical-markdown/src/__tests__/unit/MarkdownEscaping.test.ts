@@ -1370,6 +1370,44 @@ describe('brackets that cannot become Markdown syntax', () => {
       ).toBe('[a&#93;](custom)');
     });
 
+    it.each([
+      ['(note)', 'see [', 'a]', 'see [a&#93;(note)'],
+      [': note', '', '[a]', '&#91;a&#93;: note'],
+    ])(
+      'escapes at the edge of an element a transformer writes with %j after it',
+      (suffix, before, inner, expected) => {
+        const NOTE: TextMatchTransformer = {
+          dependencies: [TestInlineNode],
+          export: (node, exportChildren) =>
+            node instanceof TestInlineNode
+              ? `${exportChildren(node)}${suffix}`
+              : null,
+          importRegExp: /$^/,
+          regExp: /$^/,
+          type: 'text-match',
+        };
+        using editor = buildEditorFromExtensions(
+          MarkdownTestExtension,
+          TestInlineExtension,
+        );
+        editor.update(
+          () =>
+            $getRoot()
+              .clear()
+              .append(
+                $createParagraphNode().append(
+                  ...(before === '' ? [] : [$createTextNode(before)]),
+                  $create(TestInlineNode).append($createTextNode(inner)),
+                ),
+              ),
+          {discrete: true},
+        );
+        expect(
+          editor.read(() => $convertToMarkdownString([NOTE, ...TRANSFORMERS])),
+        ).toBe(expected);
+      },
+    );
+
     it('reads a link a transformer writes in another syntax as unknown', () => {
       using editor = buildEditorFromExtensions([MarkdownTestExtension]);
       editor.update(
@@ -1533,6 +1571,21 @@ describe('brackets that cannot become Markdown syntax', () => {
       expect(editor.read(() => $convertToMarkdownString())).toBe(text);
     },
   );
+
+  it('imports a line of many code spans holding link syntax', () => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    const markdown = '[a`](x)` '.repeat(2000);
+    const start = performance.now();
+    editor.update(() => $convertFromMarkdownString(markdown), {
+      discrete: true,
+    });
+    expect(performance.now() - start).toBeLessThan(10000);
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isElementNode(paragraph));
+      expect(paragraph.getChildren().some($isLinkNode)).toBe(false);
+    });
+  });
 
   it.each([
     [

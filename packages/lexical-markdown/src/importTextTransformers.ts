@@ -64,10 +64,10 @@ function characterBeyondRun(
 }
 
 /**
- * Handles applying both text format and text match transformers.
- * It finds the outermost text format or text match and applies it,
- * then recursively calls itself to apply the next outermost transformer,
- * until there are no more transformers to apply.
+ * Handles applying both text format and text match transformers. It finds
+ * the outermost text format or text match and applies it, imports the text
+ * before the match and then the text inside it the same way, and then goes
+ * on with the text after it, until there are no more transformers to apply.
  */
 export function importTextTransformers(
   textNode: TextNode,

@@ -120,25 +120,36 @@ function isFlankedByClass(primary: number, secondary: number): boolean {
   );
 }
 
+// micromark, which `@lexical/mdast` imports with, also lets a delimiter run
+// open before, and close after, another emphasis or strikethrough marker, so
+// that `**a***~~b~~*` and `**a***_b_*` nest as written.
+const ATTENTION_MARKER = /^[*_~]$/;
+
 /**
  * Whether a delimiter run of `marker` between `before` and `after` can open
  * and close emphasis; `_` opens or closes inside a word only beside
- * punctuation.
+ * punctuation. With `isBesideMarkerFlanking`, a run beside another marker
+ * flanks on that side, as micromark reads it.
  * https://spec.commonmark.org/0.31.2/#can-open-emphasis
  */
 export function getEmphasisSides(
   marker: string,
   before: string | undefined,
   after: string | undefined,
+  isBesideMarkerFlanking = false,
 ): {canOpen: boolean; canClose: boolean} {
   const beforeClass = classify(before);
   const afterClass = classify(after);
-  const isLeft = isFlankedByClass(afterClass, beforeClass);
-  const isRight = isFlankedByClass(beforeClass, afterClass);
+  const isLeft =
+    isFlankedByClass(afterClass, beforeClass) ||
+    (isBesideMarkerFlanking && ATTENTION_MARKER.test(after || ''));
+  const isRight =
+    isFlankedByClass(beforeClass, afterClass) ||
+    (isBesideMarkerFlanking && ATTENTION_MARKER.test(before || ''));
   return marker === '_'
     ? {
-        canClose: isRight && (!isLeft || afterClass === PUNCTUATION_CLASS),
-        canOpen: isLeft && (!isRight || beforeClass === PUNCTUATION_CLASS),
+        canClose: isRight && (!isLeft || afterClass !== OTHER_CLASS),
+        canOpen: isLeft && (!isRight || beforeClass !== OTHER_CLASS),
       }
     : {canClose: isRight, canOpen: isLeft};
 }

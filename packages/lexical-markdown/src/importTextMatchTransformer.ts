@@ -19,16 +19,22 @@ function matchLink(text: string, regExp: RegExp): RegExpExecArray | null {
   let match;
   while ((match = search.exec(text)) !== null) {
     // A `[` that the label holds outside a code span is the link's real
-    // opener, and what comes before it is ordinary text, so search again
-    // from there.
+    // opener, and what comes before it is ordinary text, so the match starts
+    // there; its label may then be empty, as in `x[[](u)`.
     const opener = getLinkLabelOpener(match[1]);
     if (opener !== null && opener >= 0) {
-      search.lastIndex = match.index + opener + 1;
-    } else if (!isEscaped(text, match.index)) {
-      return match;
-    } else {
-      search.lastIndex = match.index + 1;
+      const cut = opener + 1;
+      const inner = [...match] as RegExpExecArray;
+      inner[0] = match[0].slice(cut);
+      inner[1] = match[1].slice(cut);
+      inner.index = match.index + cut;
+      inner.input = text;
+      return inner;
     }
+    if (!isEscaped(text, match.index)) {
+      return match;
+    }
+    search.lastIndex = match.index + 1;
   }
   return null;
 }

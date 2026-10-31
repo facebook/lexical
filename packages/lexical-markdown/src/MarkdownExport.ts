@@ -24,6 +24,7 @@ import {
   type TextNode,
 } from 'lexical';
 
+import {scanCodeSpans} from './importTextFormatTransformer';
 import {
   type ElementTransformer,
   getCodeSpanDelimiter,
@@ -817,14 +818,33 @@ function joinPieces({kinds, values}: MarkdownPieces): string {
  * a bounded number of times. Raw output, such as an inline link's destination,
  * is not bare text, so it ends a run.
  */
+const SCHEME_CHARACTER = /[a-z\d+.-]/i;
+
+/**
+ * Raw output as the bare-URL scan sees it: spaces, except that the content
+ * of a code span is letters (and its whitespace stays whitespace).
+ */
+function maskRaw(value: string): string {
+  let masked = '';
+  let previous = 0;
+  for (const {startIndex, endIndex} of scanCodeSpans(value)) {
+    masked +=
+      ' '.repeat(startIndex - previous) +
+      value.slice(startIndex, endIndex).replace(/\S/g, 'x');
+    previous = endIndex;
+  }
+  return masked + ' '.repeat(value.length - previous);
+}
+
 function findLinkEdges(kinds: PieceKind[], values: string[]): Uint8Array {
-  // Raw output ends a run, so it is joined as a single space, except a code
-  // span: GFM autolinks run on through backticks, as in `https://a.com/`v`s`.
+  // Raw output ends a run, so it is joined as spaces, except a code span:
+  // GFM autolinks run on through backticks, as in `https://a.com/`v`s`, so
+  // its characters join as letters, which cannot start a URL themselves.
   let text = '';
   const starts = new Uint32Array(values.length + 1);
   for (let i = 0; i < values.length; i++) {
     starts[i] = text.length;
-    text += kinds[i] === RAW && values[i][0] !== '`' ? ' ' : values[i];
+    text += kinds[i] === RAW ? maskRaw(values[i]) : values[i];
   }
   starts[values.length] = text.length;
   const inLink = new Uint8Array(text.length);
@@ -845,8 +865,19 @@ function findLinkEdges(kinds: PieceKind[], values: string[]): Uint8Array {
       start++;
       continue;
     }
-    if (LINK_URL.test(text.slice(start, end).replace(/\\/g, ''))) {
-      inLink.fill(1, start, end);
+    const url = LINK_URL.exec(text.slice(start, end));
+    if (url !== null) {
+      // The URL starts at its scheme, `www.` or `mailto:`, and what comes
+      // before it in the run is ordinary text.
+      let urlStart = start + url.index;
+      if (url[0] === '://') {
+        while (urlStart > start && SCHEME_CHARACTER.test(text[urlStart - 1])) {
+          urlStart--;
+        }
+      } else if (!/^[wmx]/i.test(url[0])) {
+        urlStart++;
+      }
+      inLink.fill(1, urlStart, end);
     } else {
       for (let from = start; from < end; ) {
         const to = runEnd(from, isAddressCharacter, end);

@@ -5416,6 +5416,78 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     ]);
   });
 
+  it.each<[string, [string, number][], string]>([
+    [
+      'a URL inside a code span',
+      [
+        ['a', 0],
+        ['\u201cb\u201d', TEXT_TYPE_TO_FORMAT.bold],
+        ['http://y', TEXT_TYPE_TO_FORMAT.code],
+      ],
+      '&#97;**\u201cb\u201d**`http://y`',
+    ],
+    [
+      'a URL that starts later in the run',
+      [
+        ['foo', 0],
+        ['\u201cbar\u201d', TEXT_TYPE_TO_FORMAT.bold],
+        ['(www.x.com)', 0],
+      ],
+      'fo&#111;**\u201cbar\u201d**(www.x.com)',
+    ],
+  ])('writes a reference outside %s', (_name, runs, markdown) => {
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            ...runs.map(([text, format]) =>
+              $createTextNode(text).setFormat(format),
+            ),
+          ),
+        ),
+      {discrete: true},
+    );
+    expect(
+      editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
+    ).toBe(markdown);
+  });
+
+  it.each<[string, [string, number][]]>([
+    [
+      '**bold***~~gone~~*',
+      [
+        ['bold', TEXT_TYPE_TO_FORMAT.bold],
+        [
+          'gone',
+          TEXT_TYPE_TO_FORMAT.italic | TEXT_TYPE_TO_FORMAT.strikethrough,
+        ],
+      ],
+    ],
+    [
+      '**a***_b_*',
+      [
+        ['a', TEXT_TYPE_TO_FORMAT.bold],
+        ['b', TEXT_TYPE_TO_FORMAT.italic],
+      ],
+    ],
+  ])(
+    'reads a run beside another marker as micromark does in %j',
+    (markdown, runs) => {
+      const editor = createTestEditor();
+      editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
+        discrete: true,
+      });
+      expect(
+        editor.read('latest', () =>
+          $getRoot()
+            .getAllTextNodes()
+            .map(node => [node.getTextContent(), node.getFormat()]),
+        ),
+      ).toEqual(runs);
+    },
+  );
+
   it('writes no reference after a code span inside a bare URL', () => {
     const editor = createTestEditor();
     editor.update(

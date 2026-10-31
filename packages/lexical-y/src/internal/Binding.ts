@@ -1110,6 +1110,59 @@ export class YBinding {
         trackedOrigins: new Set([this]),
       });
       this._undoManager = um;
+      // Undo reads the format items of the changes on its stacks, and the
+      // end each of them gave a run it deleted (see isKeptByUndo,
+      // closeRestoredRuns, changeEnd), after a collaborator deleted them:
+      // keep those from garbage collection (Item.keep, as UndoManager keeps
+      // the items a change deletes) so a collected item's key and value
+      // stay readable (#9623). Local memory only: nothing is stored.
+      // What this keeps, cleared when a clear empties both stacks (as
+      // UndoManager clears what it keeps for its steps).
+      const kept = new Set<Item>();
+      const keep = (item: Item | null) => {
+        for (
+          let it = item;
+          it !== null && !it.keep;
+          it = (it.parent as YNode)._item
+        ) {
+          it.keep = true;
+          kept.add(it);
+        }
+      };
+      um.on('stack-cleared', () => {
+        if (um.undoStack.length === 0 && um.redoStack.length === 0) {
+          for (const it of kept) {
+            it.keep = false;
+          }
+          kept.clear();
+        }
+      });
+      const keepFormats = (tr: Transaction) => {
+        if (tr.origin !== this && tr.origin !== um) {
+          return;
+        }
+        const ends: Item[] = [];
+        iterateStructsByIdSet(tr, tr.deleteSet, s => {
+          if (
+            s instanceof Item &&
+            s.content instanceof ContentFormat &&
+            s.content.value !== null
+          ) {
+            const end = changeEnd(this._doc, s);
+            if (end !== null) {
+              ends.push(end);
+            }
+          }
+        });
+        ends.forEach(keep);
+        iterateStructsByIdSet(tr, tr.insertSet, s => {
+          if (s instanceof Item && s.content instanceof ContentFormat) {
+            keep(s);
+          }
+        });
+      };
+      this._doc.on('afterTransaction', keepFormats);
+      this.disposers.push(() => this._doc.off('afterTransaction', keepFormats));
       // Each step keeps the selection from before it, which undoing it
       // restores (as @lexical/history does): a local edit's from before the
       // edit, and the step an undo or redo pushes to the other stack the

@@ -2927,7 +2927,6 @@ export class Reader {
     );
   }
 
-  /** Make `el`'s children exactly `children`, keeping unchanged ends. */
   /**
    * The wrappers around a stored element (a link around a mark) whose
    * content this read changed, without reading the wrappers' line: one that
@@ -2947,6 +2946,7 @@ export class Reader {
     this.childrenSet.clear();
   }
 
+  /** Make `el`'s children exactly `children`, keeping unchanged ends. */
   $setChildren(el: ElementNode, children: LexicalNode[]): void {
     if (this.state.yByKey.has(el.getKey())) {
       this.childrenSet.add(el.getKey());

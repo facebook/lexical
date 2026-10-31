@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+// @vitest-environment node
 
 import {$generateJSONFromSelectedNodes} from '@lexical/clipboard';
 import {buildEditorFromExtensions} from '@lexical/extension';

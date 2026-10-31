@@ -472,7 +472,7 @@ describe('a wrapper one client removes stays removed while another formats over 
     [true, RACES.filter(knownTextlessLink)],
   ] as const) {
     (known ? test.fails : test).each(races)(
-      '$label: remove $removed, ids $ids.0,$ids.1',
+      `$label: remove $removed, ids $ids.0,$ids.1${known ? ' (#9627)' : ''}`,
       async ({chain, leaf, fields, removed, ids}) => {
         const seed = seedYState(config, () => $build(chain, leaf, fields));
         const a = client(seed, ids[0]);

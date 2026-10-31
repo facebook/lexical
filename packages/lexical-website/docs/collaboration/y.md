@@ -1199,9 +1199,11 @@ not merge as a user might expect:
   whether you saw it before you undo or it arrives as you undo: bold
   `one two`, let a collaborator type plain ` mid` after `one`, then undo
   the bold, and ` two` stays bold. Undoing a link
-  while a collaborator formats text inside it keeps the link on its text:
-  formatting text in a link also sets the link's text format, which writes
-  the link there again. Where a collaborator overwrote a step of yours
+  while a collaborator formats text inside it removes the link on every
+  client: a format writes no link while the link holds text. A link with no
+  text (only an inline decorator or a line break) still stores its text
+  format, and stays on its content:
+  [#9627](https://github.com/meta/lexical/issues/9627). Where a collaborator overwrote a step of yours
   entirely, the undo manager skips that step as changing nothing, and the
   same undo also reverts your step before it. When you undo a format change
   while a collaborator removes that format and undoes the removal, the text
@@ -1280,7 +1282,12 @@ not merge as a user might expect:
   after a Backspace it takes the type of the line before (a paragraph after
   a heading becomes a heading), after undoing a split it keeps its own.
   Bold ‖ bold on adjacent ranges of one line
-  can leave part unformatted. A format removed from a range while a
+  can leave part unformatted, and so can bold ‖ bold on overlapping ranges
+  ([#9626](https://github.com/meta/lexical/issues/9626)). A link behaves
+  like a comment there: a range that crosses a link's edge can lose part
+  of its bold for either client id order, and a bold reaching into a
+  link's first word can lose it there when a collaborator one update
+  behind types inside the old bold range. A format removed from a range while a
   collaborator types inside it without that format (unbolding a word as
   they type into it, resolving a comment as they paste into it) comes back
   on the part of the range after their text: their write restores the
@@ -1321,9 +1328,6 @@ reproduces it:
 - An update listener that throws stops the listeners registered after it,
   so when it was registered before the binding, that commit is never
   written: [#9514](https://github.com/meta/lexical/issues/9514).
-- Undoing a link while a collaborator formats text over the link's start
-  keeps the link on its own text (see Undo above):
-  [#9521](https://github.com/meta/lexical/issues/9521).
 - A line without a marker joins the start of a paragraph a collaborator
   appends at the same time:
   [#9524](https://github.com/meta/lexical/issues/9524).
@@ -1333,11 +1337,6 @@ reproduces it:
 - A comment can spread onto later words when a client types uncommented
   text inside it offline while a collaborator's deletes there drop the item
   that ended it: [#9564](https://github.com/meta/lexical/issues/9564).
-- A link a collaborator removes comes back when another collaborator
-  formats a range covering it at the same time; an update that makes a
-  line's text nodes again without the link while a stale edit formats a
-  range reaching past the link's text shows the same:
-  [#9597](https://github.com/meta/lexical/issues/9597).
 - Turning a paragraph inside a container that is itself inside a
   container (both not shadow roots) into a list removes the outer
   container and makes no list, in every `@lexical/y` editor (it runs

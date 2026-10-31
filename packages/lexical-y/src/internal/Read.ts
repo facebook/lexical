@@ -3546,15 +3546,25 @@ function $inShadowRoot(
       run = [];
     }
   };
+  const isBlock = (c: LexicalNode) =>
+    ($isElementNode(c) || $isDecoratorNode(c)) && !c.isInline();
   children.forEach((c, i) => {
-    if (($isElementNode(c) || $isDecoratorNode(c)) && !c.isInline()) {
-      flush();
-      out.push(c);
-    } else {
-      if (run.length === 0) {
-        first = items[i];
+    // An inline element around blocks only (a link run another writer left
+    // open over the shadow root's blocks): its blocks, without it.
+    const held =
+      $isElementNode(c) && c.isInline() && c.getChildrenSize() > 0
+        ? c.getChildren()
+        : null;
+    for (const node of held !== null && held.every(isBlock) ? held : [c]) {
+      if (isBlock(node)) {
+        flush();
+        out.push(node);
+      } else {
+        if (run.length === 0) {
+          first = items[i];
+        }
+        run.push(node);
       }
-      run.push(c);
     }
   });
   flush();

@@ -15,6 +15,7 @@ import {
   $getRoot,
   $getSlot,
   $getSlotNames,
+  $isDecoratorNode,
   $isElementNode,
   $parseSerializedNode,
   createEditor,
@@ -216,6 +217,20 @@ export function $checkWrite(writer: Writer): string[] {
         // a reader keeps such a node apart only by its type, mode or detail,
         // so it shows the key nowhere (see Reader#$readInline).
         if (k === SEGMENT_KEY && a[k] === undefined && !wrappersOnly) {
+          continue;
+        }
+        // A wrapper (a link run another writer left open) over a block in
+        // a shadow root: the reader shows the block without it (see
+        // $inShadowRoot), so the editor holds none.
+        const special = want.specials.get(i);
+        if (
+          k.startsWith(WRAPPER_PREFIX) &&
+          special !== undefined &&
+          special.kind === 'inline' &&
+          ($isElementNode(special.node) || $isDecoratorNode(special.node)) &&
+          !special.node.isInline() &&
+          a[k] === undefined
+        ) {
           continue;
         }
         // A wrapper's textFormat/textStyle at a character: Lexical's

@@ -684,7 +684,6 @@ function $escapeLiteralBrackets(
         text,
         $nextExportedChar(node, selection),
         budget => $labelClosesInCodeAfter(node, selection, budget),
-        budget => $closersBeforeLink(node, selection, budget),
       );
   if (escaped.size === 0) {
     return text;
@@ -839,20 +838,11 @@ function $literalBracketsToEscape(
   text: string,
   nextChar: string,
   $labelClosesAfter: (budget: number) => boolean,
-  $closersAfter: (budget: number) => number,
 ): Set<number> {
   const escaped = new Set<number>();
   const state = {...before};
-  const unclosed: number[] = [];
   for (let index = 0; index < text.length; index++) {
     const character = asLiteral(text[index]);
-    if (character === '[') {
-      unclosed.push(index);
-    } else if (character === ']') {
-      unclosed.pop();
-    } else if (character === '\n') {
-      unclosed.length = 0;
-    }
     if (character === ']') {
       const after = index + 1 < text.length ? text[index + 1] : nextChar;
       // The distance to the nearest opener, counting this `]`.
@@ -886,67 +876,7 @@ function $literalBracketsToEscape(
     }
     advanceLineState(state, character);
   }
-  if (unclosed.length > 0) {
-    // A `[` still open when a link starts on the same line would be read
-    // into that link's text by `LINK` on import, so the ones the text before
-    // the link does not close are escaped.
-    const closers = $closersAfter(MAX_LABEL_DISTANCE);
-    const open = closers === -1 ? 0 : unclosed.length - closers;
-    for (let index = 0; index < open; index++) {
-      escaped.add(unclosed[index]);
-    }
-  }
   return escaped;
-}
-
-/**
- * How many `]` close a `[` left open before them, in the exported text after
- * `node` up to the next link on the same line, or -1 when no link follows on
- * it. Unknown text, or more than `budget` characters, may hold a link, so it
- * counts as one.
- */
-function $closersBeforeLink(
-  node: LexicalNode,
-  selection: BaseSelection | null,
-  budget: number,
-): number {
-  let remaining = budget;
-  let depth = 0;
-  let closers = 0;
-  for (
-    let leaf = $nextLeaf(node, selection);
-    leaf !== null;
-    leaf = $nextLeaf(leaf, selection)
-  ) {
-    const kind = $exportKind(leaf);
-    if (kind === 'link' || kind === 'unknown') {
-      return closers;
-    } else if ($isLineBreakNode(leaf)) {
-      return -1;
-    } else if ($isTextNode(leaf)) {
-      const text = asLiteral($exportedText(leaf, selection));
-      if (!leaf.hasFormat('code')) {
-        for (const character of text) {
-          if (character === '\n') {
-            return -1;
-          } else if (character === '[') {
-            depth++;
-          } else if (character === ']') {
-            if (depth > 0) {
-              depth--;
-            } else {
-              closers++;
-            }
-          }
-        }
-      }
-      remaining -= text.length;
-      if (remaining <= 0) {
-        return closers;
-      }
-    }
-  }
-  return -1;
 }
 
 /**

@@ -37,6 +37,7 @@ import {
   DecoratorNode,
   defineExtension,
   ElementNode,
+  type LexicalNode,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 
@@ -707,22 +708,28 @@ describe('literal Markdown text', () => {
     },
   );
 
-  it('preserves existing literal prefix text before an unbalanced link', () => {
+  it('parses the text before an unbalanced link', () => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
-    const prefix = '[`\\`';
-    editor.update(() => $convertFromMarkdownString(prefix + '[x](u)'), {
+    // Code spans bind tighter than link brackets
+    // (https://spec.commonmark.org/0.31.2/#code-spans), so this is `[`, a code
+    // span and a link.
+    editor.update(() => $convertFromMarkdownString('[`\\`[x](u)'), {
       discrete: true,
     });
     editor.read(() => {
       const paragraph = $getRoot().getFirstChildOrThrow();
       assert($isElementNode(paragraph));
-      const [text, link] = paragraph.getChildren();
+      const [text, code, link] = paragraph.getChildren();
       assert($isTextNode(text));
-      expect(text.getTextContent()).toBe(prefix);
+      expect(text.getTextContent()).toBe('[');
+      assert($isTextNode(code));
+      expect(code.hasFormat('code')).toBe(true);
+      expect(code.getTextContent()).toBe('\\');
       assert($isLinkNode(link));
       expect(link.getURL()).toBe('u');
       expect(link.getTextContent()).toBe('x');
     });
+    expect(editor.read(() => $convertToMarkdownString())).toBe('[`\\`[x](u)');
   });
 
   it('keeps the existing raw-source newline mode', () => {
@@ -1119,6 +1126,49 @@ describe('brackets that cannot become Markdown syntax', () => {
         expect(written).toContain('&#93;:');
       },
     );
+  });
+
+  describe('round trips text with brackets before a link', () => {
+    function $describe(node: LexicalNode): string {
+      if ($isLinkNode(node)) {
+        return `{${node.getURL()}:${node.getChildren().map($describe).join('')}}`;
+      } else if ($isTextNode(node)) {
+        return `<${node.getFormat()}:${node.getTextContent()}>`;
+      }
+      return $isElementNode(node)
+        ? node.getChildren().map($describe).join('')
+        : node.getTextContent();
+    }
+
+    it.each([
+      [
+        'Claim [1] is *important*, see [source](https://example.com)',
+        '<0:Claim [1] is ><2:important><0:, see >{https://example.com:<0:source>}',
+      ],
+      ['[1] **bold** [link](u)', '<0:[1] ><1:bold><0: >{u:<0:link>}'],
+      ['[1] `c` [link](u)', '<0:[1] ><16:c><0: >{u:<0:link>}'],
+      ['**[1]** [l](u)', '<1:[1]><0: >{u:<0:l>}'],
+      ['[a](b) **x** [l](u)', '{b:<0:a>}<0: ><1:x><0: >{u:<0:l>}'],
+      ['[a&#93;(b) **x** [l](u)', '<0:[a](b) ><1:x><0: >{u:<0:l>}'],
+      [
+        'see [1] and ~~[2]~~ [link](u)',
+        '<0:see [1] and ><4:[2]><0: >{u:<0:link>}',
+      ],
+      ['[h[ello](u)', '<0:[h>{u:<0:ello>}'],
+      ['[foo [bar](/uri)&#93;(/uri)', '<0:[foo >{/uri:<0:bar>}<0:](/uri)>'],
+    ])('imports %j and exports it again unchanged', (markdown, nodes) => {
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      editor.update(() => $convertFromMarkdownString(markdown), {
+        discrete: true,
+      });
+      expect(editor.read(() => $describe($getRoot()))).toBe(nodes);
+      const written = editor.read(() => $convertToMarkdownString());
+      expect(written).toBe(markdown);
+      editor.update(() => $convertFromMarkdownString(written), {
+        discrete: true,
+      });
+      expect(editor.read(() => $describe($getRoot()))).toBe(nodes);
+    });
   });
 
   describe('around a decorator', () => {

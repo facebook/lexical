@@ -21,7 +21,7 @@ import {
 import {
   findOutermostTextMatchTransformer,
   importFoundTextMatchTransformer,
-  type LinkMatches,
+  type TextMatches,
 } from './importTextMatchTransformer';
 import {
   characterAt,
@@ -147,12 +147,12 @@ interface Deferred {
 }
 
 /**
- * The formats and links found in a text, for what is left of it, which is
+ * The formats and text matches found in a text, for what is left of it, which is
  * `rest`.
  */
 interface TextScan {
   formats: FormatScan;
-  links: LinkMatches;
+  matches: TextMatches;
   rest: string;
 }
 
@@ -186,7 +186,7 @@ function importOutermost(
             before,
             after,
           ),
-          links: new Map(),
+          matches: new Map(),
           rest: text,
         };
   const {formats} = scan;
@@ -199,7 +199,7 @@ function importOutermost(
   let foundTextMatch = findOutermostTextMatchTransformer(
     textNode,
     textMatchTransformers,
-    scan.links,
+    scan.matches,
     formats.offset,
   );
 

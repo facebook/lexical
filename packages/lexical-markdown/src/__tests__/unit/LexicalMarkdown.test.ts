@@ -5190,9 +5190,9 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
 
   // GFM readers would link a URL here, keeping a reference inside as text or
   // taking markers or a code span into it, so export writes the `.` or `:` of
-  // its prefix as a reference too, and no reader links it (@lexical/mdast
-  // links the decoded text, which keeps the formats). Readers find an email
-  // in the decoded text, so a reference inside one does not change it.
+  // its prefix (or the `@` of an email) as a reference too, and no reader
+  // links it as written (@lexical/mdast links the decoded text, which keeps
+  // the formats).
   it.each<[string, [string, number][], string]>([
     [
       'a `www.` host',
@@ -5203,12 +5203,12 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       'see www&#46;example.co&#109;**\u201cx\u201d**',
     ],
     [
-      'an email, whose references readers decode first',
+      'an email',
       [
         ['see me@example.com', 0],
         ['\u201cx\u201d', TEXT_TYPE_TO_FORMAT.bold],
       ],
-      'see me@example.co&#109;**\u201cx\u201d**',
+      'see me&#64;example.co&#109;**\u201cx\u201d**',
     ],
     [
       'a URL',
@@ -5219,7 +5219,7 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       'see https&#58;//example.com/&#97;**\u201cx\u201d**',
     ],
     [
-      'an `xmpp:` address, whose references readers decode first',
+      'the resource of an `xmpp:` address',
       [
         ['see xmpp:a@b.co/res', 0],
         ['\u201cx\u201d', TEXT_TYPE_TO_FORMAT.bold],
@@ -5280,7 +5280,7 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
         ['\u201cx\u201d', TEXT_TYPE_TO_FORMAT.bold],
         ['me@example.com', 0],
       ],
-      '**\u201cx\u201d**&#109;e@example.com',
+      '**\u201cx\u201d**&#109;e&#64;example.com',
     ],
     [
       'a URL that a reference before it would start',
@@ -5316,7 +5316,7 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
         ['\u201cq\u201d', TEXT_TYPE_TO_FORMAT.bold],
         [',http://x.co/ y', 0],
       ],
-      'x a@b.c&#111;**\u201cq\u201d**,http://x.co/ y',
+      'x a&#64;b.c&#111;**\u201cq\u201d**,http://x.co/ y',
     ],
     [
       'a URL that would take in a code span',
@@ -5419,7 +5419,7 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
         ['http://a.co/x@y.co', 0],
         ['!', TEXT_TYPE_TO_FORMAT.bold],
       ],
-      'http&#58;//a.co/x@y.c&#111;**!**',
+      'http&#58;//a.co/x&#64;y.c&#111;**!**',
     ],
   ])(
     'exports formatting beside %s, which both importers read back',
@@ -5499,6 +5499,50 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     },
   );
 
+  it('keeps an email that holds a reference whole for @lexical/mdast', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            $createTextNode('a@b.co'),
+            $createTextNode('\u201cx\u201d').toggleFormat('bold'),
+          ),
+        ),
+      {discrete: true},
+    );
+    const markdown = editor.read('latest', () =>
+      $convertToMarkdownString(TRANSFORMERS),
+    );
+    expect(markdown).toBe('a&#64;b.c&#111;**\u201cx\u201d**');
+    const mdastEditor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [MdastGfmExtension],
+        name: '[root]',
+      }),
+    );
+    onTestFinished(() => mdastEditor.dispose());
+    mdastEditor.update(() => $convertFromMdastMarkdownString(markdown), {
+      discrete: true,
+    });
+    expect(
+      mdastEditor.read('latest', () =>
+        $getRoot()
+          .getAllTextNodes()
+          .map(node => {
+            const parent = node.getParent();
+            return [
+              node.getTextContent(),
+              $isLinkNode(parent) ? parent.getURL() : null,
+            ];
+          }),
+      ),
+    ).toEqual([
+      ['a@b.co', 'mailto:a@b.co'],
+      ['\u201cx\u201d', null],
+    ]);
+  });
+
   it.each<[string, [string, number][], string]>([
     [
       'a backslash before a marker',
@@ -5507,6 +5551,14 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
         ['b', TEXT_TYPE_TO_FORMAT.bold],
       ],
       'see http&#58;//x.com/a&#92;**b**',
+    ],
+    [
+      'a backslash before a code span',
+      [
+        ['see http://x.com/a\\', 0],
+        ['b', TEXT_TYPE_TO_FORMAT.code],
+      ],
+      'see http&#58;//x.com/a&#92;`b`',
     ],
     [
       'a tag character before its marker',
@@ -5887,6 +5939,35 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       ).toBe(`**.**&#98;${text.slice(1)}`);
     },
   );
+
+  it('searches a line once for a text match that it does not hold', () => {
+    // The characters searched: each text left after a match was searched in
+    // full again before.
+    let searched = 0;
+    class CountingRegExp extends RegExp {
+      exec(text: string) {
+        searched += text.length;
+        return super.exec(text);
+      }
+    }
+    const NEVER: TextMatchTransformer = {
+      dependencies: [],
+      importRegExp: new CountingRegExp('\\$\\$[^$]+\\$\\$'),
+      regExp: /\$\$[^$]+\$\$$/,
+      replace: () => {},
+      type: 'text-match',
+    };
+    const markdown = '**a** [b](c) '.repeat(20);
+    const editor = createTestEditor();
+    editor.update(
+      () => $convertFromMarkdownString(markdown, [NEVER, ...TRANSFORMERS]),
+      {discrete: true},
+    );
+    expect(
+      editor.read('latest', () => $getRoot().getAllTextNodes().length),
+    ).toBe(80);
+    expect(searched).toBeLessThan(2 * markdown.length);
+  });
 
   it('scans the text after a match again when its transformer changes it', () => {
     const MENTION: TextMatchTransformer = {

@@ -732,15 +732,18 @@ function isLinkCharacter(character: string): boolean {
 // What starts a URL: `http://`, `https://` (and cmark-gfm's `ftp://`) with
 // a host after it, which may start with an emoji but not with other ASCII
 // punctuation than `-` and `_`, and `www.`, which micromark links with
-// anything after it.
-// GFM readers start `www.` only at the start of a run or after `*_~(`, and a
-// scheme after anything but a letter. They find an email, and the address
-// after `mailto:` or `xmpp:`, in the text with its references decoded, and
-// take no format into one.
+// anything after it. GFM readers start `www.` only at the start of a run or
+// after `*_~(`, and a scheme after anything but a letter.
 const LINK_PREFIX = /(?:https?|ftp):\/\/(?![\s\p{Cc}!-,./:-@[-^`{-~])|www\./giu;
 function startsLink(prefix: string, before: string): boolean {
   return /^w/i.test(prefix) ? '*_~('.includes(before) : !/[a-z]/i.test(before);
 }
+// Characters an email can hold (word characters, `.+@-`, and the backslash
+// that escapes one), and what makes one: GFM needs a dot in its domain. An
+// email takes in no format, and cmark-gfm finds it in the text with its
+// references decoded, but micromark only where its `@` is written as is.
+const ADDRESS_CHARACTER = /[\w.+@\\-]/;
+const ADDRESS = /[\w.+-]@[\w-]+\.[\w-]/;
 // Characters that GFM readers leave out at the end of a URL.
 const LINK_TRAIL = '?!.,:*_~';
 
@@ -799,11 +802,13 @@ function joinPieces({kinds, values}: MarkdownPieces): string {
       endLengths[index] = characterBefore(value, value.length)!.length;
     }
     // A backslash left unescaped (when preserving newlines, or in decorator
-    // text) would escape the reference or marker written after it.
+    // text) would escape the reference, marker or raw punctuation written
+    // after it, or end the line with a hard break.
     const bodyEnd = value.length - endLengths[index];
     escapesEnd[index] = Number(
       kinds[index] === TEXT &&
-        isMarker(kinds[index + 1]) &&
+        (isMarker(kinds[index + 1]) ||
+          (kinds[index + 1] === RAW && ESCAPABLE.test(values[index + 1]))) &&
         bodyEnd > startLengths[index] &&
         isEscaped(value, bodyEnd),
     );
@@ -837,6 +842,9 @@ function joinPieces({kinds, values}: MarkdownPieces): string {
   }
   return markdown;
 }
+
+// What a backslash before it escapes: ASCII punctuation or a line ending.
+const ESCAPABLE = /^[!-/:-@[-`{-~\n\r]/;
 
 // The character in `value`, if any, as a reference.
 function toReferences(value: string): string {
@@ -904,6 +912,27 @@ function findSpoiledLinks(
   const has = (sums: Uint32Array, from: number, to: number) =>
     from < to && sums[to] > sums[from];
   const spoiled: number[] = [];
+  // A reference in an email would cut a micromark reader's link short, so
+  // each `@` of one that holds a reference is spoiled.
+  const spoilEmails = (from: number, to: number) => {
+    for (let start = from; start < to; ) {
+      let end = start;
+      while (end < to && ADDRESS_CHARACTER.test(text[end])) {
+        end++;
+      }
+      if (
+        has(references, start, end) &&
+        ADDRESS.test(text.slice(start, end).replace(/\\/g, ''))
+      ) {
+        for (let i = start; i < end; i++) {
+          if (text[i] === '@' && !isReference[i]) {
+            spoiled.push(i);
+          }
+        }
+      }
+      start = Math.max(end, start + 1);
+    }
+  };
   for (let start = 0; start < text.length; ) {
     let end = start;
     while (end < text.length && isLinkCharacter(text[end])) {
@@ -923,7 +952,8 @@ function findSpoiledLinks(
     if (isEscaped(text, trimmed) && has(formats, trimmed, end)) {
       trimmed = end;
     }
-    // Where the next URL may start: after the prefix of a spoiled one.
+    // Where the text that is not part of a URL starts, which may hold an
+    // email, and where the next URL may start.
     let rest = start;
     for (const prefix of text.slice(start, end).matchAll(LINK_PREFIX)) {
       const at = start + prefix.index;
@@ -945,7 +975,9 @@ function findSpoiledLinks(
       if (!isLink) {
         continue;
       }
+      spoilEmails(rest, at);
       if (wasLink && !has(references, at, end) && !has(formats, at, trimmed)) {
+        rest = end;
         break;
       }
       rest = at + prefix[0].length;
@@ -954,6 +986,7 @@ function findSpoiledLinks(
         spoiled.push(at + prefix[0].search(/[.:]/));
       }
     }
+    spoilEmails(rest, end);
     start = end;
   }
   return {spoiled, starts};

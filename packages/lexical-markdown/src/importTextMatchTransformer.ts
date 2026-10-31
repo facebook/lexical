@@ -13,20 +13,33 @@ import {isEscaped} from './utils';
 
 /**
  * A copy of `match` for `text`, which is what is left of the text it was
- * found in after `distance` characters. The link syntax has no named groups.
+ * found in after `distance` characters, less the first `cut` characters of
+ * the match and of its first group, which starts with it.
  */
 function moveMatch(
   match: RegExpExecArray,
   text: string,
   distance: number,
+  cut = 0,
 ): RegExpExecArray {
   const moved = [...match] as RegExpExecArray;
-  moved.index = match.index - distance;
+  moved.index = match.index - distance + cut;
   moved.input = text;
+  moved.groups = match.groups;
+  if (cut > 0) {
+    moved[0] = match[0].slice(cut);
+    moved[1] = match[1].slice(cut);
+  }
   if (match.indices) {
-    moved.indices = match.indices.map(
-      range => range && [range[0] - distance, range[1] - distance],
+    const indices = match.indices.map(
+      (range, group) =>
+        range && [
+          range[0] - distance + (group < 2 ? cut : 0),
+          range[1] - distance,
+        ],
     ) as RegExpIndicesArray;
+    indices.groups = match.indices.groups;
+    moved.indices = indices;
   }
   return moved;
 }
@@ -50,16 +63,7 @@ function matchLink(
     // there; its label may then be empty, as in `x[[](u)`.
     const opener = getLinkLabelOpener(match[1]);
     if (opener !== null && opener >= 0) {
-      const cut = opener + 1;
-      const inner = moveMatch(match, text, 0);
-      inner[0] = match[0].slice(cut);
-      inner[1] = match[1].slice(cut);
-      inner.index += cut;
-      if (inner.indices && inner.indices[0] && inner.indices[1]) {
-        inner.indices[0][0] += cut;
-        inner.indices[1][0] += cut;
-      }
-      return [inner, match.index];
+      return [moveMatch(match, text, 0, opener + 1), match.index];
     }
     if (!isEscaped(text, match.index)) {
       return [match, match.index];
@@ -69,14 +73,46 @@ function matchLink(
   return null;
 }
 
+const lookless = new WeakMap<RegExp, boolean>();
+
 /**
- * The match each transformer with the built-in link syntax found in a text,
- * where its search found it and the offset of the text it was found in, or
- * `null` when there is none. It is the first match in what is left of the
- * text after any offset up to where it was found, since the link syntax does
- * not look behind its match.
+ * Whether a match of `regExp` depends only on the text from where it starts
+ * on: it has no `^`, word boundary or lookbehind outside a character class,
+ * and no flag that makes it keep state. Its first match in what is left of a
+ * text after a cut is then the first one found at or after the cut.
  */
-export type LinkMatches = Map<
+function looksOnlyAhead(regExp: RegExp): boolean {
+  let result = lookless.get(regExp);
+  if (result === undefined) {
+    const {source} = regExp;
+    result = !/[gyv]/.test(regExp.flags);
+    for (let i = 0, inClass = false; result && i < source.length; i++) {
+      const character = source[i];
+      if (character === '\\') {
+        result = inClass || !/[bB]/.test(source[++i]);
+      } else if (inClass) {
+        inClass = character !== ']';
+      } else if (character === '[') {
+        inClass = true;
+      } else {
+        result =
+          (character !== '^' && !source.startsWith('(?<', i)) ||
+          /^\(\?<[^=!]/.test(source.slice(i, i + 4));
+      }
+    }
+    lookless.set(regExp, result);
+  }
+  return result;
+}
+
+/**
+ * The match each text-match transformer found in a text, where its search
+ * found it and the offset of the text it was found in, or `null` when there
+ * is none. Kept for the built-in link syntax and for patterns that only look
+ * ahead, for which it is still the first match in what is left of the text
+ * after any offset up to where it was found.
+ */
+export type TextMatches = Map<
   TextMatchTransformer,
   {found: number; match: RegExpExecArray; offset: number} | null
 >;
@@ -84,9 +120,9 @@ export type LinkMatches = Map<
 export function findOutermostTextMatchTransformer(
   textNode_: TextNode,
   textMatchTransformers: TextMatchTransformer[],
-  // The link matches found earlier in the text that `textNode_` is what is
-  // left of from `offset`.
-  links: LinkMatches = new Map(),
+  // The matches found earlier in the text that `textNode_` is what is left
+  // of from `offset`.
+  matches: TextMatches = new Map(),
   offset = 0,
 ): {
   startIndex: number;
@@ -106,29 +142,33 @@ export function findOutermostTextMatchTransformer(
       continue;
     }
     const text = textNode.getTextContent();
-    let match: RegExpMatchArray | null;
-    // Transformers sharing the built-in link syntax need the same candidate rules.
-    if (
+    const {importRegExp} = transformer;
+    // Transformers sharing the built-in link syntax need the same candidate
+    // rules.
+    const isLink =
       LINK.importRegExp !== undefined &&
-      transformer.importRegExp.source === LINK.importRegExp.source
-    ) {
-      const found = links.get(transformer);
+      importRegExp.source === LINK.importRegExp.source;
+    let match: RegExpMatchArray | null;
+    if (isLink || looksOnlyAhead(importRegExp)) {
+      const found = matches.get(transformer);
       if (found === undefined || (found !== null && found.found < offset)) {
-        const linkMatch = matchLink(text, transformer.importRegExp);
-        links.set(
+        let result: [RegExpExecArray, number] | null;
+        if (isLink) {
+          result = matchLink(text, importRegExp);
+        } else {
+          const exec = importRegExp.exec(text);
+          result = exec && [exec, exec.index];
+        }
+        matches.set(
           transformer,
-          linkMatch && {
-            found: offset + linkMatch[1],
-            match: linkMatch[0],
-            offset,
-          },
+          result && {found: offset + result[1], match: result[0], offset},
         );
-        match = linkMatch && linkMatch[0];
+        match = result && result[0];
       } else {
         match = found && moveMatch(found.match, text, offset - found.offset);
       }
     } else {
-      match = text.match(transformer.importRegExp);
+      match = text.match(importRegExp);
     }
 
     if (!match) {

@@ -24,6 +24,7 @@ import {
   encodeStateAsUpdate,
   encodeStateVector,
   findIndexSS,
+  type ID,
   Item,
   iterateStructsByIdSet,
   Node as YNode,
@@ -86,6 +87,7 @@ import {
 import {
   changeEnd,
   equalFormatValue,
+  isChangeEnd,
   isFormatCloser,
   markFormatCloser,
 } from './Cursor';
@@ -806,6 +808,12 @@ export class YBinding {
    * collaborator's change is, and not part of the undo stack.
    */
   private readonly runEndOrigin = {binding: this, runEnd: true};
+  /**
+   * Of each format item that opens a value and that a change of this
+   * client's (a write, an undo or a redo) deleted, the null that ended its
+   * run right after that change, where a null did (see recordRunEnds).
+   */
+  private readonly runEndAtDelete = new WeakMap<Item, ID>();
   /** Stored nodes the running undo/redo restores (see isKeptByUndo). */
   private restoring: Set<string> | null = null;
   /** Stored nodes the running undo/redo deletes (it inserted them). */
@@ -1094,6 +1102,13 @@ export class YBinding {
         trackedOrigins: new Set([this]),
       });
       this._undoManager = um;
+      const recordEnds = (tr: Transaction) => {
+        if (tr.origin === this || tr.origin === um) {
+          this.recordRunEnds(tr);
+        }
+      };
+      this._doc.on('afterTransaction', recordEnds);
+      this.disposers.push(() => this._doc.off('afterTransaction', recordEnds));
       // Each step keeps the selection from before it, which undoing it
       // restores (as @lexical/history does): a local edit's from before the
       // edit, and the step an undo or redo pushes to the other stack the
@@ -5232,11 +5247,50 @@ export class YBinding {
   }
 
   /**
+   * Note, for each format item opening a value that `tr` (a change of this
+   * client's) deleted, the null that ended its run then: the first item of
+   * its key after it, live or deleted by `tr`, with another value, where
+   * that is a null (items of its own value continue the run). An undo that
+   * brings the item back ends its run there (see closeRestoredRuns), also
+   * when that null is gone by then: deleted by the undo of its own change
+   * (a comment added, removed by a collaborator, its add undone and then
+   * the removal undone put the comment on everything after it), and
+   * possibly collected (its place stays, as a deleted item).
+   */
+  private recordRunEnds(tr: Transaction): void {
+    iterateStructsByIdSet(tr, tr.deleteSet, s => {
+      if (
+        !(s instanceof Item) ||
+        !(s.content instanceof ContentFormat) ||
+        s.content.value === null
+      ) {
+        return;
+      }
+      const {key, value} = s.content;
+      for (let it = s.right; it !== null; it = it.right) {
+        if (
+          it.content instanceof ContentFormat &&
+          it.content.key === key &&
+          (!it.deleted || tr.deleteSet.hasId(it.id)) &&
+          !equalFormatValue(it.content.value, value)
+        ) {
+          if (it.content.value === null) {
+            this.runEndAtDelete.set(s, it.id);
+          }
+          return;
+        }
+      }
+    });
+  }
+
+  /**
    * End each run that a format item the undo or redo of `step` brought back
    * opens with an item of this client's own, where the item that ended it is
    * another client's: right before a live null of another client's that ends
-   * it, or right after the end the original's own change gave its run (see
-   * changeEnd), where that is gone and nothing ends the run before it. An
+   * it, or right after the null that ended the run when this client's
+   * change deleted the original (see recordRunEnds; else the end the
+   * original's own change gave its run, see changeEnd), where that is gone
+   * and nothing ends the run before it. An
    * undo brings back the items its change deleted, and the closer that ended
    * such a run was not among them: a collaborator's concurrent undo of the
    * change that wrote it removed it, and the value ran on to the end of the
@@ -5281,13 +5335,22 @@ export class YBinding {
         // The end of the run the original opened in its own write (see
         // changeEnd): where that is gone (the undo of that write), the
         // copy's run ends there.
-        const gone = opensRun(copy) ? changeEnd(doc, original) : null;
+        const recorded = this.runEndAtDelete.get(original);
+        const gone = opensRun(copy)
+          ? (changeEnd(doc, original) ??
+            (recorded === undefined ? null : store.getItem(recorded)))
+          : null;
+        // A gone end is ended where it was, and a live null that ends a
+        // run its client opened in the same write (see isChangeEnd) also
+        // where no content shows between the copy and it yet: that end can
+        // go at the same time as this undo (a collaborator's undo of the
+        // change that wrote it), and the run then took everything after. A
+        // null by which a change made text inside the run plain (a hole its
+        // client restores the value after) is no such end.
         let shown = false;
         for (let it = copy.right; it !== null; it = it.right) {
           if (it === gone && it.deleted) {
-            if (shown) {
-              ends.push([it, it.right, key]);
-            }
+            ends.push([it, it.right, key]);
             break;
           }
           if (it.deleted) {
@@ -5296,9 +5359,9 @@ export class YBinding {
           if (it.content instanceof ContentFormat) {
             if (it.content.key === key) {
               if (
-                shown &&
                 it.id.client !== client &&
-                it.content.value === null
+                it.content.value === null &&
+                (shown || isChangeEnd(doc, it))
               ) {
                 ends.push([it.left, it, key]);
               }

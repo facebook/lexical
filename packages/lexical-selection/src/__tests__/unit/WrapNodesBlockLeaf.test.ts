@@ -14,6 +14,12 @@ import {
   buildEditorFromExtensions,
   HorizontalRuleExtension,
 } from '@lexical/extension';
+import {
+  $createListItemNode,
+  $createListNode,
+  ListItemNode,
+  ListNode,
+} from '@lexical/list';
 import {$createQuoteNode, QuoteNode} from '@lexical/rich-text';
 import {$wrapNodes} from '@lexical/selection';
 import {
@@ -72,7 +78,7 @@ function build() {
     defineExtension({
       dependencies: [HorizontalRuleExtension],
       name: 'wrap-block-leaf',
-      nodes: [BoxNode, QuoteNode],
+      nodes: [BoxNode, QuoteNode, ListNode, ListItemNode],
     }),
   );
 }
@@ -444,6 +450,108 @@ describe('$wrapNodes with a block leaf in an element that is not a block contain
         't4',
         't5',
       ]);
+      expectAttachedSelection(editor);
+    });
+  }
+
+  for (const backward of [false, true]) {
+    for (const kind of ['box', 'list'] as const) {
+      test(`an empty first block keeps its preceding siblings in a ${kind} (${backward ? 'backward' : 'forward'})`, () => {
+        using editor = build();
+        let container: ElementNode;
+        let first: ElementNode;
+        editor.update(
+          () => {
+            const createBlock =
+              kind === 'list' ? $createListItemNode : $createParagraphNode;
+            first = createBlock().append($createTextNode('t1'));
+            const empty = createBlock();
+            const last = $createTextNode('t3');
+            container =
+              kind === 'list' ? $createListNode('bullet') : $create(BoxNode);
+            $getRoot()
+              .clear()
+              .append(
+                $createParagraphNode().append($createTextNode('t0')),
+                container.append(first, empty, createBlock().append(last)),
+              );
+            const selection = $createRangeSelection();
+            const [from, to] = backward
+              ? [selection.focus, selection.anchor]
+              : [selection.anchor, selection.focus];
+            from.set(empty.getKey(), 0, 'element');
+            to.set(last.getKey(), 2, 'text');
+            $setSelection(selection);
+            $wrapNodes(selection, () => $createQuoteNode());
+          },
+          {discrete: true},
+        );
+        expect(outline(editor)).toEqual({
+          all: ['t0', 't1', 't3'],
+          quoted: ['t3'],
+        });
+        editor.read(() => {
+          const children = $getRoot().getChildren();
+          expect(children[1].is(container)).toBe(true);
+          const siblings =
+            kind === 'list' ? children.slice(1) : container.getChildren();
+          expect(siblings.map(node => node.getType())).toEqual([
+            kind === 'list' ? 'list' : 'paragraph',
+            'quote',
+            'quote',
+          ]);
+          if (kind === 'list') {
+            expect(container.getChildren().map(node => node.getKey())).toEqual([
+              first.getKey(),
+            ]);
+          } else {
+            expect(siblings[0].is(first)).toBe(true);
+          }
+          expect(siblings[1].getTextContent()).toBe('');
+          expect(siblings[2].getTextContent()).toBe('t3');
+        });
+        expectAttachedSelection(editor);
+      });
+    }
+
+    test(`a covered empty first block moves with its whole mixed block (${backward ? 'backward' : 'forward'})`, () => {
+      using editor = build();
+      let empty: ElementNode;
+      let first: ElementNode;
+      let last: ElementNode;
+      editor.update(
+        () => {
+          first = $createParagraphNode().append($createTextNode('tA'));
+          empty = $createParagraphNode();
+          last = $createParagraphNode().append($createTextNode('tB'));
+          const direct = $createTextNode('tC');
+          $getRoot()
+            .clear()
+            .append($create(BoxNode).append(first, empty, last, direct));
+          const selection = $createRangeSelection();
+          const [from, to] = backward
+            ? [selection.focus, selection.anchor]
+            : [selection.anchor, selection.focus];
+          from.set(empty.getKey(), 0, 'element');
+          to.set(direct.getKey(), 2, 'text');
+          $setSelection(selection);
+          $wrapNodes(selection, () => $createQuoteNode());
+        },
+        {discrete: true},
+      );
+      expect(outline(editor)).toEqual({
+        all: ['tA', 'tB', 'tC'],
+        quoted: ['tA', 'tB', 'tC'],
+      });
+      editor.read(() => {
+        const quote = $getRoot().getFirstChildOrThrow();
+        expect(quote.getType()).toBe('quote');
+        expect($getRoot().getChildrenSize()).toBe(1);
+        expect(empty.isAttached()).toBe(true);
+        expect(empty.getParent()?.is(quote)).toBe(true);
+        expect(empty.getPreviousSibling()?.is(first)).toBe(true);
+        expect(empty.getNextSibling()?.is(last)).toBe(true);
+      });
       expectAttachedSelection(editor);
     });
   }

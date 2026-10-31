@@ -12,13 +12,13 @@ import {LinkNode} from '@lexical/link';
 import {$createQuoteNode} from '@lexical/rich-text';
 import * as Y from '@y/y';
 import {$getRoot, ElementNode} from 'lexical';
-import {expect, test} from 'vitest';
+import {expect, test, vi} from 'vitest';
 
 import {readYState, seedYState} from '../../../headless';
 import {NODES} from '../../utils/harness';
 import {deep, p} from './Review9654Fixtures';
 
-test('opening an unchanged wrapper-chain prefix is linear in depth', () => {
+test('taking apart wrappers with inline text at every depth is linear in depth', () => {
   const counts: number[] = [];
   for (const depth of [8, 16, 32, 64]) {
     const wrappers = Array.from({length: depth}, (_, i) => {
@@ -54,35 +54,16 @@ test('opening an unchanged wrapper-chain prefix is linear in depth', () => {
       for (let i = 0; i < depth; i++)
         root.insert(depth + 1 + i, 'R', attrs(depth - i));
     });
+    // Children enumerated during the read (each wrapper's once when it is
+    // taken apart).
     let reads = 0;
-    const original = Array.prototype.push;
-    // eslint-disable-next-line no-extend-native
-    Array.prototype.push = function (this: unknown[], ...items: unknown[]) {
-      for (const value of items) {
-        if (value !== null && typeof value === 'object') {
-          const frame = value as {
-            src?: unknown;
-            node?: unknown;
-            kids?: unknown;
-          };
-          if (
-            frame.src instanceof ElementNode &&
-            frame.node instanceof ElementNode &&
-            Array.isArray(frame.kids)
-          ) {
-            const src = frame.src;
-            Object.defineProperty(frame, 'src', {
-              configurable: true,
-              get: () => {
-                reads++;
-                return src;
-              },
-            });
-          }
-        }
-      }
-      return original.apply(this, items);
-    };
+    const original = ElementNode.prototype.getChildren;
+    const spy = vi
+      .spyOn(ElementNode.prototype, 'getChildren')
+      .mockImplementation(function (this: ElementNode) {
+        reads++;
+        return original.call(this);
+      });
     try {
       const shown = readYState(Y.encodeStateAsUpdate(doc), config, () =>
         deep($getRoot()),
@@ -99,11 +80,11 @@ test('opening an unchanged wrapper-chain prefix is linear in depth', () => {
         'L'.repeat(depth) + 'BODY' + 'R'.repeat(depth),
       );
     } finally {
-      // eslint-disable-next-line no-extend-native
-      Array.prototype.push = original;
+      spy.mockRestore();
       doc.destroy();
     }
     counts.push(reads);
   }
+  expect(counts[0]).toBeGreaterThan(0);
   expect(counts[3]).toBeLessThan(counts[2] * 2.5 + 128);
 });

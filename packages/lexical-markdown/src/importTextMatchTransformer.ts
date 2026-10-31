@@ -30,8 +30,8 @@ function matchLink(text: string, regExp: RegExp): RegExpExecArray | null {
   // falls inside one is not a link.
   const codeSpans = text.includes('`') ? scanCodeSpans(text) : [];
   // The spans come in order, so a binary search finds the one that could hold
-  // `index`.
-  const isInCode = (index: number) => {
+  // `index`. Returns the end of that span, or -1 outside every span.
+  const codeSpanEnd = (index: number) => {
     let low = 0;
     let high = codeSpans.length - 1;
     while (low <= high) {
@@ -42,20 +42,25 @@ function matchLink(text: string, regExp: RegExp): RegExpExecArray | null {
       } else if (index >= endIndex) {
         low = middle + 1;
       } else {
-        return true;
+        return endIndex;
       }
     }
-    return false;
+    return -1;
   };
   let match;
   while ((match = search.exec(text)) !== null) {
     const labelEnd =
       match.index + 1 + (match[1] !== undefined ? match[1].length : 0);
+    const openerCodeEnd = codeSpanEnd(match.index);
+    if (openerCodeEnd !== -1) {
+      // No link can open inside this code span.
+      search.lastIndex = openerCodeEnd;
+      continue;
+    }
     if (
       isEscaped(text, match.index) ||
-      isInCode(match.index) ||
-      isInCode(labelEnd) ||
-      isInCode(match.index + match[0].length - 1)
+      codeSpanEnd(labelEnd) !== -1 ||
+      codeSpanEnd(match.index + match[0].length - 1) !== -1
     ) {
       search.lastIndex = match.index + 1;
       continue;

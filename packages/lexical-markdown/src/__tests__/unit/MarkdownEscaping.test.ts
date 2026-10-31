@@ -1572,6 +1572,39 @@ describe('brackets that cannot become Markdown syntax', () => {
     },
   );
 
+  it('imports a code span full of [ before a link in linear time', () => {
+    using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+    const markdown = '`' + '['.repeat(80000) + '`](u)';
+    const start = performance.now();
+    editor.update(() => $convertFromMarkdownString(markdown), {
+      discrete: true,
+    });
+    expect(performance.now() - start).toBeLessThan(10000);
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isElementNode(paragraph));
+      expect(paragraph.getChildren().some($isLinkNode)).toBe(false);
+    });
+  });
+
+  it.each(['\u00A0[x] done', '\u3000[ ] todo'])(
+    'escapes a task marker indented with Unicode whitespace: %j',
+    text => {
+      using editor = buildEditorFromExtensions([MarkdownTestExtension]);
+      editor.update(() => $exportParagraph(text), {discrete: true});
+      const written = editor.read(() =>
+        $convertToMarkdownString([CHECK_LIST, ...TRANSFORMERS]),
+      );
+      expect(written).toBe(text.replace(']', '&#93;'));
+      editor.update(
+        () =>
+          $convertFromMarkdownString(written, [CHECK_LIST, ...TRANSFORMERS]),
+        {discrete: true},
+      );
+      expect(editor.read(() => $getRoot().getTextContent())).toBe(text);
+    },
+  );
+
   it('imports a line of many code spans holding link syntax', () => {
     using editor = buildEditorFromExtensions([MarkdownTestExtension]);
     const markdown = '[a`](x)` '.repeat(2000);

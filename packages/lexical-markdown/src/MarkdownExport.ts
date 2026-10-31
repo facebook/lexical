@@ -752,7 +752,8 @@ function nextLinePhase(phase: LinePhase, character: string): LinePhase {
     // Unknown text may end with a line break, so what follows may start a line.
     return 'start';
   }
-  const isSpace = character === ' ' || character === '\t';
+  // `CHECK_LIST` and the list transformers accept any `\s` as indentation.
+  const isSpace = /\s/.test(character);
   switch (phase) {
     case 'start':
       return isSpace || character === '>'

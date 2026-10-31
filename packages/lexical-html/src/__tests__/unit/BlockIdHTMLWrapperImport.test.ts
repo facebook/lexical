@@ -176,3 +176,59 @@ test('HTML without wrapper ids reads the same with an import run inside it', () 
   append(nested, fixture('<aside data-reenter></aside>'));
   expect(blocks(nested)).toEqual(blocks(plain));
 });
+
+test('an unknown element that hoists the same list again does not make import look at it again', () => {
+  const counts: number[] = [];
+  for (const n of [32, 64, 128]) {
+    using editor = buildEditorFromExtensions({
+      $initialEditorState: null,
+      dependencies: [
+        RichTextExtension,
+        ListExtension,
+        BlockIdExtension,
+        BlockIdHTMLExtension,
+      ],
+      name: 'block-wrapper-id-hoist',
+      onError: e => {
+        throw e;
+      },
+    });
+    // Each unrecognized wrapper hoists the same ListNode, whose n child
+    // items have already been constructed. The valid top-level wrapper
+    // id remains unresolved, because no wrapping block is created.
+    const dom = new DOMParser().parseFromString(
+      '<x-transparent>'.repeat(n) +
+        '<ul data-block-wrapper-id="foreign">' +
+        '<li>x</li>'.repeat(n) +
+        '</ul>' +
+        '</x-transparent>'.repeat(n),
+      'text/html',
+    );
+    let count = 0;
+    editor.update(
+      () => {
+        const original = ElementNode.prototype.getChildrenSize;
+        const spy = vi
+          .spyOn(ElementNode.prototype, 'getChildrenSize')
+          .mockImplementation(function (this: LexicalNode) {
+            count++;
+            return original.call(this);
+          });
+        try {
+          const nodes =
+            $getExtensionOutput(DOMImportExtension).$generateNodesFromDOM(dom);
+          expect(nodes).toHaveLength(1);
+          expect(nodes[0].getTextContent().replace(/\s/g, '')).toBe(
+            'x'.repeat(n),
+          );
+        } finally {
+          spy.mockRestore();
+        }
+      },
+      {discrete: true},
+    );
+    counts.push(count);
+  }
+  expect(counts[1]).toBeLessThan(counts[0] * 3);
+  expect(counts[2]).toBeLessThan(counts[1] * 3);
+});

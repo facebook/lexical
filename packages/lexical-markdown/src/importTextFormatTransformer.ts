@@ -84,8 +84,9 @@ export function scanTextFormats(
 /**
  * Moves `scan` on to the text after `offset`. What it found there holds for
  * that text on its own as long as no code span or emphasis runs on from
- * before `offset` (a pair cannot reach past the end of the outermost one), and
- * no backslash before it escapes it; returns false otherwise.
+ * before `offset` (a pair cannot reach past the end of the outermost one), no
+ * run of a character is cut there, which the scan measured whole, and no
+ * backslash before it escapes it; returns false otherwise.
  */
 export function advanceFormatScan(scan: FormatScan, offset: number): boolean {
   const {codeSpans, emphasis, text} = scan;
@@ -106,7 +107,7 @@ export function advanceFormatScan(scan: FormatScan, offset: number): boolean {
       return false;
     }
   }
-  return text[offset - 1] !== '\\';
+  return text[offset - 1] !== '\\' && text[offset - 1] !== text[offset];
 }
 
 /**
@@ -196,8 +197,9 @@ export function findOutermostTextFormatTransformer(
 
 // Finds all inline code spans, left to right and non-overlapping, per CommonMark
 // rules: https://spec.commonmark.org/#code-spans. A run opens a span and the
-// next run of equal length closes it. An escaped backtick (`\``) cannot open a
-// span, but backslashes are otherwise literal and don't prevent closing.
+// next run of equal length closes it. An escaped backtick (`\``) is literal,
+// and the rest of its run may open a span, but backslashes are otherwise
+// literal and don't prevent closing.
 export function scanCodeSpans(text: string): {
   startIndex: number;
   endIndex: number;
@@ -219,24 +221,49 @@ export function scanCodeSpans(text: string): {
     }
   }
 
+  // The runs of each length, in order, to find a closer in.
+  const runsByLength = new Map<number, number[]>();
+  runs.forEach(({length}, index) => {
+    const indexes = runsByLength.get(length);
+    if (indexes) {
+      indexes.push(index);
+    } else {
+      runsByLength.set(length, [index]);
+    }
+  });
+  // The first run after `index` that is `length` long, or -1.
+  const findCloser = (index: number, length: number): number => {
+    const indexes = runsByLength.get(length) || [];
+    let low = 0;
+    let high = indexes.length;
+    while (low < high) {
+      const middle = (low + high) >> 1;
+      if (indexes[middle] <= index) {
+        low = middle + 1;
+      } else {
+        high = middle;
+      }
+    }
+    return low < indexes.length ? indexes[low] : -1;
+  };
+
   const spans: {content: string; endIndex: number; startIndex: number}[] = [];
   let openIdx = 0;
   while (openIdx < runs.length) {
-    const opener = runs[openIdx];
+    let opener = runs[openIdx];
 
-    // An escaped backtick run is a literal backtick and cannot open a span.
+    // An escaped backtick is a literal backtick, and the rest of its run is
+    // a run of its own that can open a span. Inside a span a backslash is
+    // literal, so the whole run still closes one.
     if (isEscaped(text, opener.index)) {
-      openIdx++;
-      continue;
+      if (opener.length === 1) {
+        openIdx++;
+        continue;
+      }
+      opener = {index: opener.index + 1, length: opener.length - 1};
     }
 
-    let closeIdx = -1;
-    for (let c = openIdx + 1; c < runs.length; c++) {
-      if (runs[c].length === opener.length) {
-        closeIdx = c;
-        break;
-      }
-    }
+    const closeIdx = findCloser(openIdx, opener.length);
 
     if (closeIdx === -1) {
       // No matching closer; treat this run as literal and try the next one.

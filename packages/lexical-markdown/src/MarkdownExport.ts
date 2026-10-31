@@ -815,8 +815,8 @@ function joinPieces({kinds, values}: MarkdownPieces): string {
 }
 
 /**
- * Raw output as the bare-URL scan sees it: spaces, except that the content
- * of a code span is letters (and its whitespace stays whitespace).
+ * Raw output as the bare-URL scan sees it: spaces, except that a code span
+ * keeps its backticks and its whitespace, and the rest of it is letters.
  */
 function maskRaw(value: string): string {
   let masked = '';
@@ -824,7 +824,7 @@ function maskRaw(value: string): string {
   for (const {startIndex, endIndex} of scanCodeSpans(value)) {
     masked +=
       ' '.repeat(startIndex - previous) +
-      value.slice(startIndex, endIndex).replace(/\S/g, 'x');
+      value.slice(startIndex, endIndex).replace(/[^\s`]/g, 'x');
     previous = endIndex;
   }
   return masked + ' '.repeat(value.length - previous);
@@ -841,8 +841,9 @@ function maskRaw(value: string): string {
  */
 function findLinkEdges(kinds: PieceKind[], values: string[]): Uint8Array {
   // Raw output ends a run, so it is joined as spaces, except a code span:
-  // GFM autolinks run on through backticks, as in `https://a.com/`v`s`, so
-  // its characters join as letters, which cannot start a URL themselves.
+  // GFM autolinks run on through backticks, as in `https://a.com/`v`s`, and
+  // start after them, so it joins as its backticks around letters, which
+  // cannot start a URL themselves.
   let text = '';
   const starts = new Uint32Array(values.length + 1);
   for (let i = 0; i < values.length; i++) {
@@ -868,24 +869,22 @@ function findLinkEdges(kinds: PieceKind[], values: string[]): Uint8Array {
       start++;
       continue;
     }
+    // The URL starts at its scheme, `www.` or `mailto:`, and what comes
+    // before it in the run is ordinary text, which may hold an email.
     const url = LINK_URL.exec(text.slice(start, end));
-    if (url !== null) {
-      // The URL starts at its scheme, `www.` or `mailto:`, and what comes
-      // before it in the run is ordinary text.
-      const urlStart = start + url.index + (/^[a-z]/i.test(url[0]) ? 0 : 1);
-      inLink.fill(1, urlStart, end);
-    } else {
-      for (let from = start; from < end; ) {
-        const to = runEnd(from, isAddressCharacter, end);
-        if (to === from) {
-          from++;
-          continue;
-        }
-        if (ADDRESS.test(text.slice(from, to).replace(/\\/g, ''))) {
-          inLink.fill(1, from, to);
-        }
-        from = to;
+    const urlStart =
+      url === null ? end : start + url.index + (/^[a-z]/i.test(url[0]) ? 0 : 1);
+    inLink.fill(1, urlStart, end);
+    for (let from = start; from < urlStart; ) {
+      const to = runEnd(from, isAddressCharacter, urlStart);
+      if (to === from) {
+        from++;
+        continue;
       }
+      if (ADDRESS.test(text.slice(from, to).replace(/\\/g, ''))) {
+        inLink.fill(1, from, to);
+      }
+      from = to;
     }
     start = end;
   }

@@ -21,6 +21,7 @@ import {
 import {
   findOutermostTextMatchTransformer,
   importFoundTextMatchTransformer,
+  type LinkMatches,
 } from './importTextMatchTransformer';
 import {
   characterAt,
@@ -65,9 +66,10 @@ function characterBeyondRun(
 
 /**
  * Handles applying both text format and text match transformers. It finds
- * the outermost text format or text match and applies it, imports the text
- * before the match and then the text inside it the same way, and then goes
- * on with the text after it, until there are no more transformers to apply.
+ * the outermost text format or text match and applies it, goes on with the
+ * text after it the same way, and then, from the last match back to the
+ * first, imports the text before each match and then the text inside it,
+ * until there are no more transformers to apply.
  */
 export function importTextTransformers(
   textNode: TextNode,
@@ -80,8 +82,9 @@ export function importTextTransformers(
 ) {
   // The text after each match is imported in this loop rather than by
   // recursion, so that a long paragraph does not nest a call per match, and
-  // with the formats found in the whole text, which still hold for the rest
-  // of it as long as no match there reached into what came before.
+  // with what was found in the whole text, which still holds for the rest of
+  // it as long as no match there reached into what came before.
+  const deferred: (() => void)[] = [];
   let rest: TextRest | null = [textNode, before, after, null];
   while (rest !== null) {
     rest = importOutermost(
@@ -91,21 +94,31 @@ export function importTextTransformers(
       rest[1],
       rest[2],
       rest[3],
+      deferred,
     );
   }
+  for (let i = deferred.length - 1; i >= 0; i--) {
+    deferred[i]();
+  }
+}
+
+/** The formats and links found in a text, for what is left of it. */
+interface TextScan {
+  formats: FormatScan;
+  links: LinkMatches;
 }
 
 type TextRest = [
   textNode: TextNode,
   before: string | undefined,
   after: string | undefined,
-  scan: FormatScan | null,
+  scan: TextScan | null,
 ];
 
 /**
- * Applies the outermost transformer in `textNode`, imports the text before
- * and inside its match, and returns the text after it, for the caller to
- * import next.
+ * Applies the outermost transformer in `textNode`, adds the import of the
+ * text before and inside its match to `deferred`, and returns the text after
+ * it, for the caller to import next.
  */
 function importOutermost(
   textNode: TextNode,
@@ -113,23 +126,37 @@ function importOutermost(
   textMatchTransformers: TextMatchTransformer[],
   before: string | undefined,
   after: string | undefined,
-  previousScan: FormatScan | null,
+  previousScan: TextScan | null,
+  deferred: (() => void)[],
 ): TextRest | null {
   const text = textNode.getTextContent();
-  const scan =
+  const scan: TextScan =
     previousScan !== null &&
-    previousScan.text.length - previousScan.offset === text.length
+    previousScan.formats.text.length - previousScan.formats.offset ===
+      text.length &&
+    previousScan.formats.text.endsWith(text)
       ? previousScan
-      : scanTextFormats(text, textFormatTransformersIndex, before, after);
+      : {
+          formats: scanTextFormats(
+            text,
+            textFormatTransformersIndex,
+            before,
+            after,
+          ),
+          links: new Map(),
+        };
+  const {formats} = scan;
   let foundTextFormat = findOutermostTextFormatTransformer(
     text,
     textFormatTransformersIndex,
-    scan,
+    formats,
   );
 
   let foundTextMatch = findOutermostTextMatchTransformer(
     textNode,
     textMatchTransformers,
+    scan.links,
+    formats.offset,
   );
 
   if (foundTextFormat && foundTextMatch) {
@@ -139,7 +166,7 @@ function importOutermost(
     // case the span is part of the match's raw content).
     // https://github.com/meta/lexical/issues/8687
     const {startIndex, endIndex} = foundTextMatch;
-    if (partlyHoldsCodeSpan(scan, startIndex, endIndex)) {
+    if (partlyHoldsCodeSpan(formats, startIndex, endIndex)) {
       // Apply the code span, or the emphasis before it, and not the text
       // match, which would take part of the span.
       foundTextMatch = null;
@@ -170,30 +197,35 @@ function importOutermost(
     }
   }
 
-  // Imports the text before a match from `startIndex` to `endIndex`, and
-  // returns the text after it, each with what lies beyond the run cut at its
-  // edge.
+  // Defers the import of the text before a match from `startIndex` to
+  // `endIndex`, then of the text inside it with `importInside`, and returns
+  // the text after it, each with what lies beyond the run cut at its edge.
   const importAround = (
     nodeBefore: LexicalNode | undefined,
     nodeAfter: LexicalNode | undefined,
     startIndex: number,
     endIndex: number,
+    importInside: () => void,
   ): TextRest | null => {
-    if (canContainTransformableMarkdown(nodeBefore)) {
-      importTextTransformers(
-        nodeBefore,
-        textFormatTransformersIndex,
-        textMatchTransformers,
-        before,
-        characterBeyondRun(text, startIndex, 1, after),
-      );
-    }
+    const beforeMatch = characterBeyondRun(text, startIndex, 1, after);
+    deferred.push(() => {
+      if (canContainTransformableMarkdown(nodeBefore)) {
+        importTextTransformers(
+          nodeBefore,
+          textFormatTransformersIndex,
+          textMatchTransformers,
+          before,
+          beforeMatch,
+        );
+      }
+      importInside();
+    });
     return canContainTransformableMarkdown(nodeAfter)
       ? [
           nodeAfter,
           characterBeyondRun(text, endIndex, -1, before),
           after,
-          advanceFormatScan(scan, scan.offset + endIndex) ? scan : null,
+          advanceFormatScan(formats, formats.offset + endIndex) ? scan : null,
         ]
       : null;
   };
@@ -206,31 +238,33 @@ function importOutermost(
       foundTextFormat.transformer,
       foundTextFormat.match,
     );
-    const {startIndex, endIndex} = foundTextFormat;
+    const {startIndex, endIndex, isCodeSpan} = foundTextFormat;
     const tagLength = foundTextFormat.match[1].length;
-    const rest = importAround(
+    // A code span's fence is not its tag's length, and its content is not
+    // read for emphasis against what lies outside it.
+    const insideBefore = isCodeSpan
+      ? undefined
+      : characterBeyondRun(text, startIndex + tagLength, -1, before);
+    const insideAfter = isCodeSpan
+      ? undefined
+      : characterBeyondRun(text, endIndex - tagLength, 1, after);
+    return importAround(
       result.nodeBefore,
       result.nodeAfter,
       startIndex,
       endIndex,
+      () => {
+        if (canContainTransformableMarkdown(result.transformedNode)) {
+          importTextTransformers(
+            result.transformedNode,
+            textFormatTransformersIndex,
+            textMatchTransformers,
+            insideBefore,
+            insideAfter,
+          );
+        }
+      },
     );
-    if (canContainTransformableMarkdown(result.transformedNode)) {
-      // A code span's fence is not its tag's length, and its content is not
-      // read for emphasis against what lies outside it.
-      const {isCodeSpan} = foundTextFormat;
-      importTextTransformers(
-        result.transformedNode,
-        textFormatTransformersIndex,
-        textMatchTransformers,
-        isCodeSpan
-          ? undefined
-          : characterBeyondRun(text, startIndex + tagLength, -1, before),
-        isCodeSpan
-          ? undefined
-          : characterBeyondRun(text, endIndex - tagLength, 1, after),
-      );
-    }
-    return rest;
   } else if (foundTextMatch) {
     const result = importFoundTextMatchTransformer(
       textNode,
@@ -242,31 +276,32 @@ function importOutermost(
     if (!result) {
       return null;
     }
-    const rest = importAround(
+    return importAround(
       result.nodeBefore,
       result.nodeAfter,
       foundTextMatch.startIndex,
       foundTextMatch.endIndex,
+      () => {
+        if (canContainTransformableMarkdown(result.transformedNode)) {
+          importTextTransformers(
+            result.transformedNode,
+            textFormatTransformersIndex,
+            textMatchTransformers,
+          );
+        } else if (
+          result.transformedNode === undefined &&
+          canContainTransformableMarkdown(result.matchedNode) &&
+          result.matchedNode.getParent() !== null
+        ) {
+          // A void return may leave the matched node in place or move it into
+          // a new parent. Read its escapes once without trying the same match
+          // again. A parent also exists when importing into a detached tree.
+          result.matchedNode.setTextContent(
+            unescapeText(result.matchedNode.getTextContent()),
+          );
+        }
+      },
     );
-    if (canContainTransformableMarkdown(result.transformedNode)) {
-      importTextTransformers(
-        result.transformedNode,
-        textFormatTransformersIndex,
-        textMatchTransformers,
-      );
-    } else if (
-      result.transformedNode === undefined &&
-      canContainTransformableMarkdown(result.matchedNode) &&
-      result.matchedNode.getParent() !== null
-    ) {
-      // A void return may leave the matched node in place or move it into a
-      // new parent. Read its escapes once without trying the same match again.
-      // A parent also exists when importing into a detached tree.
-      result.matchedNode.setTextContent(
-        unescapeText(result.matchedNode.getTextContent()),
-      );
-    }
-    return rest;
   }
 
   // Handle escape characters. Only a node that no transformer matched gets

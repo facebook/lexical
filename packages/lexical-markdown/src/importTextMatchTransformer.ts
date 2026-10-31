@@ -39,9 +39,24 @@ function matchLink(text: string, regExp: RegExp): RegExpExecArray | null {
   return null;
 }
 
+/**
+ * The match each transformer with the built-in link syntax found in a text,
+ * with where it starts in that text, or `null` when there is none. It is the
+ * first match in what is left of the text after any offset up to its start,
+ * since the link syntax does not look behind its match.
+ */
+export type LinkMatches = Map<
+  TextMatchTransformer,
+  {index: number; match: RegExpExecArray} | null
+>;
+
 export function findOutermostTextMatchTransformer(
   textNode_: TextNode,
   textMatchTransformers: TextMatchTransformer[],
+  // The link matches found earlier in the text that `textNode_` is what is
+  // left of from `offset`.
+  links: LinkMatches = new Map(),
+  offset = 0,
 ): {
   startIndex: number;
   endIndex: number;
@@ -60,12 +75,31 @@ export function findOutermostTextMatchTransformer(
       continue;
     }
     const text = textNode.getTextContent();
+    let match: RegExpMatchArray | null;
     // Transformers sharing the built-in link syntax need the same candidate rules.
-    const match =
+    if (
       LINK.importRegExp !== undefined &&
       transformer.importRegExp.source === LINK.importRegExp.source
-        ? matchLink(text, transformer.importRegExp)
-        : text.match(transformer.importRegExp);
+    ) {
+      const found = links.get(transformer);
+      if (found === undefined || (found !== null && found.index < offset)) {
+        const linkMatch = matchLink(text, transformer.importRegExp);
+        links.set(
+          transformer,
+          linkMatch && {index: offset + linkMatch.index, match: linkMatch},
+        );
+        match = linkMatch;
+      } else if (found === null) {
+        match = null;
+      } else {
+        const moved = [...found.match] as RegExpMatchArray;
+        moved.index = found.index - offset;
+        moved.input = text;
+        match = moved;
+      }
+    } else {
+      match = text.match(transformer.importRegExp);
+    }
 
     if (!match) {
       continue;

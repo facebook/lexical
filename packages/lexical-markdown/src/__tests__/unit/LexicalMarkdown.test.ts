@@ -5553,6 +5553,133 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     },
   );
 
+  it.each<[string, [string, number][], string]>([
+    [
+      'a URL right after a code span',
+      [
+        ['x ', 0],
+        ['a', TEXT_TYPE_TO_FORMAT.code],
+        ['http://x.co/b', 0],
+        ['\u201cq\u201d', TEXT_TYPE_TO_FORMAT.bold],
+        [' y', 0],
+      ],
+      'x `a`http://x.co/b**\u201cq\u201d** y',
+    ],
+    [
+      'an email before a URL',
+      [
+        ['x a@b.co', 0],
+        ['\u201cq\u201d', TEXT_TYPE_TO_FORMAT.bold],
+        [',http://x.co/ y', 0],
+      ],
+      'x a@b.co**\u201cq\u201d**,http://x.co/ y',
+    ],
+  ])('writes no reference inside %s', (_name, runs, markdown) => {
+    const editor = createTestEditor();
+    editor.update(
+      () =>
+        $getRoot().append(
+          $createParagraphNode().append(
+            ...runs.map(([text, format]) =>
+              $createTextNode(text).setFormat(format),
+            ),
+          ),
+        ),
+      {discrete: true},
+    );
+    expect(
+      editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
+    ).toBe(markdown);
+  });
+
+  it.each<[string, [string, number][]]>([
+    [
+      'x\\``bb`x',
+      [
+        ['x`', 0],
+        ['bb', TEXT_TYPE_TO_FORMAT.code],
+        ['x', 0],
+      ],
+    ],
+    [
+      '\\``a` `b`',
+      [
+        ['`', 0],
+        ['a', TEXT_TYPE_TO_FORMAT.code],
+        [' ', 0],
+        ['b', TEXT_TYPE_TO_FORMAT.code],
+      ],
+    ],
+    ['`a\\`', [['a\\', TEXT_TYPE_TO_FORMAT.code]]],
+  ])('opens a code span after an escaped backtick in %j', (markdown, runs) => {
+    const editor = createTestEditor();
+    editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
+      discrete: true,
+    });
+    expect(
+      editor.read('latest', () =>
+        $getRoot()
+          .getAllTextNodes()
+          .map(node => [node.getTextContent(), node.getFormat()]),
+      ),
+    ).toEqual(runs);
+  });
+
+  it.each<[string, [string, number][]]>([
+    [
+      ':a**b*',
+      [
+        ['X', 0],
+        ['b', TEXT_TYPE_TO_FORMAT.italic],
+      ],
+    ],
+    [':a***b*', [['X**b*', 0]]],
+  ])(
+    'reads the rest of a run that a text match cuts in %j on its own',
+    (markdown, runs) => {
+      const TAG: TextMatchTransformer = {
+        dependencies: [],
+        importRegExp: /:[a-z]+\*/,
+        regExp: /:[a-z]+\*$/,
+        replace: textNode => {
+          textNode.setTextContent('X');
+        },
+        type: 'text-match',
+      };
+      const editor = createTestEditor();
+      editor.update(
+        () => $convertFromMarkdownString(markdown, [TAG, ...TRANSFORMERS]),
+        {discrete: true},
+      );
+      expect(
+        editor.read('latest', () =>
+          $getRoot()
+            .getAllTextNodes()
+            .map(node => [node.getTextContent(), node.getFormat()]),
+        ),
+      ).toEqual(runs);
+    },
+  );
+
+  it('imports the text after a match before the text inside it', () => {
+    const seen: string[] = [];
+    const TAG: TextMatchTransformer = {
+      dependencies: [],
+      importRegExp: /@x/,
+      regExp: /@x$/,
+      replace: textNode => {
+        seen.push(textNode.getParentOrThrow().getTextContent());
+      },
+      type: 'text-match',
+    };
+    const editor = createTestEditor();
+    editor.update(
+      () => $convertFromMarkdownString('**_a_** @x', [TAG, ...TRANSFORMERS]),
+      {discrete: true},
+    );
+    expect(seen).toEqual(['_a_ @x']);
+  });
+
   it('writes no reference after a code span inside a bare URL', () => {
     const editor = createTestEditor();
     editor.update(

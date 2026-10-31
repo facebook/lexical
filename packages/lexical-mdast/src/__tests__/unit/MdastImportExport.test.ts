@@ -703,6 +703,50 @@ describe('@lexical/mdast import/export', () => {
     expect(parses).toBe(warmedParses);
   });
 
+  it('retains the literal labels used by the latest document export', () => {
+    let parses = 0;
+    using editor = buildEditorFromExtensions(
+      MdastCommonMarkExtension,
+      MdastAutolinkLiteralExtension,
+      configExtension(MdastExtension, {
+        mdastExtensions: [
+          {
+            transforms: [
+              () => {
+                parses++;
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    const markdown = Array.from(
+      {length: 1001},
+      (_, i) => `https://example.com/${i}`,
+    ).join('\n\n');
+    editor.update(() => $convertFromMarkdownString(markdown), {
+      discrete: true,
+    });
+    expect(editor.read(() => $convertToMarkdownString())).toBe(markdown);
+    const warmedParses = parses;
+    expect(editor.read(() => $convertToMarkdownString())).toBe(markdown);
+    expect(parses).toBe(warmedParses);
+    editor.update(() => $getRoot().getLastChildOrThrow().remove(), {
+      discrete: true,
+    });
+    const shortened = markdown.slice(0, markdown.lastIndexOf('\n\n'));
+    expect(editor.read(() => $convertToMarkdownString($getRoot()))).toBe(
+      shortened,
+    );
+    expect(parses).toBe(warmedParses);
+    editor.update(() => $convertFromMarkdownString(markdown), {
+      discrete: true,
+    });
+    parses = 0;
+    expect(editor.read(() => $convertToMarkdownString())).toBe(markdown);
+    expect(parses).toBe(1);
+  });
+
   it('keeps edits to imported autolink literals', () => {
     using editor = buildEditorFromExtensions(
       MdastCommonMarkExtension,

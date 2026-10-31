@@ -41,6 +41,7 @@ import {
   $isElementNode,
   $isLineBreakNode,
   $isRangeSelection,
+  $isRootNode,
   $isSlotHost,
   $isTextNode,
   IS_BOLD,
@@ -657,7 +658,7 @@ export function createMdastExport(compiled: CompiledMdast): {
   // The unfiltered exporter has no per-call state and is shared by every
   // whole-document export; selection exports build a fresh one per call.
   const documentExporter = createNodeExporter(compiled);
-  const literalUrls = new Map<string, string | null>();
+  let literalUrls = new Map<string, string | null>();
 
   const $toMdast = (
     root: ElementNode,
@@ -669,7 +670,14 @@ export function createMdastExport(compiled: CompiledMdast): {
     type: 'root',
   });
 
-  const $serialize = (tree: Root, root: ElementNode): string => {
+  const $serialize = (
+    tree: Root,
+    root: ElementNode,
+    isDocumentExport: boolean,
+  ): string => {
+    const nextLiteralUrls = isDocumentExport
+      ? new Map<string, string | null>()
+      : literalUrls;
     const getLiteralUrl = (text: string): string | null => {
       let url = literalUrls.get(text);
       if (url === undefined) {
@@ -691,10 +699,8 @@ export function createMdastExport(compiled: CompiledMdast): {
             ? literal.url
             : null;
         literalUrls.set(text, url);
-        if (literalUrls.size > 1000) {
-          literalUrls.delete(literalUrls.keys().next().value!);
-        }
       }
+      nextLiteralUrls.set(text, url);
       return url;
     };
     // Emphasis/strong delimiters are document-level: `_` when one was
@@ -718,6 +724,9 @@ export function createMdastExport(compiled: CompiledMdast): {
         syntaxToMarkdown(getLiteralUrl, collectHardBreaks(tree)),
       ],
     });
+    if (isDocumentExport) {
+      literalUrls = nextLiteralUrls;
+    }
     // toMarkdown always appends a trailing newline; drop it so callers get the
     // same shape as `@lexical/markdown`'s `$convertToMarkdownString`.
     return out.replace(/\n$/, '');
@@ -728,7 +737,11 @@ export function createMdastExport(compiled: CompiledMdast): {
 
   const $exportToMarkdown = (node?: ElementNode): string => {
     const root = node || $getRoot();
-    return $serialize($toMdast(root, documentExporter), root);
+    return $serialize(
+      $toMdast(root, documentExporter),
+      root,
+      $isRootNode(root),
+    );
   };
 
   const $exportSelectionToMarkdown = (
@@ -748,7 +761,11 @@ export function createMdastExport(compiled: CompiledMdast): {
     return $withRenderContext([
       contextValue(RenderContextMarkdownSelection, selection),
     ])(() =>
-      $serialize($toMdast(root, createNodeExporter(compiled, selection)), root),
+      $serialize(
+        $toMdast(root, createNodeExporter(compiled, selection)),
+        root,
+        false,
+      ),
     );
   };
 

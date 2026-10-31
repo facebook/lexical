@@ -25,8 +25,9 @@ import {
   type ElementNode,
   type TextNode,
 } from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {describe, expect, test, vi} from 'vitest';
 
+import {Cursor} from '../../../internal/Cursor';
 import {
   expectConverged,
   flush,
@@ -179,6 +180,47 @@ describe('#9666: several text nodes of a line set at once', () => {
     }
   }
 });
+
+// The writer's diff of many text nodes set at once walks the line once:
+// its cursor steps grow with the line, not with the line times the nodes.
+test('#9666: many text nodes set at once, diffed by the writer, in one pass', async () => {
+  const steps: number[] = [];
+  for (const n of [256, 1024]) {
+    const old = Array.from(
+      {length: n},
+      (_, i) => `old${i} keep${i} end${i}` + (i < n - 1 ? ' ' : ''),
+    );
+    const next = old.map(text =>
+      text.replace('old', 'new').replace('end', 'tail'),
+    );
+    const t = await setup(() => {
+      $getRoot().append(
+        $createParagraphNode().append($createTextNode('Title')),
+        $createParagraphNode().append(
+          ...old.map((text, i) => $createTextNode(text).setFormat(i % 2)),
+        ),
+      );
+    });
+    const recording = t.a.editor._recordTextEdits;
+    const forward = vi.spyOn(Cursor.prototype, 'forward');
+    try {
+      t.a.editor._recordTextEdits = false;
+      t.a.update(() => {
+        ($line().getChildren() as TextNode[]).forEach((leaf, i) =>
+          leaf.setTextContent(next[i]),
+        );
+        $setSelection(null);
+      });
+      expect(lineText(t.a)).toBe(next.join(''));
+      steps.push(forward.mock.calls.length);
+    } finally {
+      forward.mockRestore();
+      t.a.editor._recordTextEdits = recording;
+    }
+  }
+  // Four times the nodes: about four times the steps (it was sixteen).
+  expect(steps[1] / steps[0]).toBeLessThan(6);
+}, 60_000);
 
 // A set that also changes the node's format: recorded, it keeps the
 // unchanged words; diffed by the writer, the node is written whole (its

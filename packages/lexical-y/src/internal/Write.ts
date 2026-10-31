@@ -3094,33 +3094,45 @@ export class Writer {
       return false;
     }
     // Every node's edits first (nothing is written where one cannot be),
-    // then written from the last node to the first, so that each is written
-    // at its old offset.
-    const writes: [TextNode, number, [number, number, string][]][] = [];
+    // then written in one pass from the first node to the last, with one
+    // cursor (each node starts at its old offset moved by the edits written
+    // before it).
+    const writes: [TextNode, TextNode, number, [number, number, string][]][] =
+      [];
     for (const [changed, changedBefore, at] of changes) {
       const edits = this.$textEdits(changed, changedBefore);
       if (edits === false) {
         return false;
       }
-      writes.push([changed, at, edits]);
-    }
-    for (let k = writes.length - 1; k >= 0; k--) {
-      const [changed, at, edits] = writes[k];
       if (edits.length > 0) {
+        writes.push([changed, changedBefore, at, edits]);
+      }
+    }
+    if (writes.length > 0) {
+      const c = this.cursor(
+        u.cs.y,
+        prevLiveEnd(u.end!, this.state.hidden),
+        u.start || EMPTY_FORMATS,
+      );
+      // Where the cursor stands, in atoms of the line as written so far,
+      // and how far the edits written so far moved what comes after them.
+      let pos = 0;
+      let moved = 0;
+      for (const [changed, changedBefore, at, edits] of writes) {
         // The node's segment key as stored: one read without a key (a code
         // highlight a client stored without one) keeps none, or the text
         // inserted here would be stored, and read, as a node of its own.
         const segment = isMergeableText(changed)
           ? null
           : (this.state.segments.get(changed.getKey()) ?? null);
-        this.$writeEdits(
-          u,
-          at,
-          edits,
-          changes[k][1].__text,
-          changed.__text,
-          $textAttrs(changed, segment),
-        );
+        const start = at + moved;
+        c.advance(start - pos);
+        const old = changedBefore.__text;
+        const now = changed.__text;
+        pos =
+          start +
+          this.$writeEdits(c, edits, old, now, $textAttrs(changed, segment));
+        moved += now.length - old.length;
       }
     }
     this.$writeMarker(u.end, d);
@@ -3187,30 +3199,24 @@ export class Writer {
 
   /**
    * Write a text node's edits (see exactEdits), which make its text `now`
-   * of its old text `old`, in line `u`, where the node starts at atom
-   * `offset`, with the node's attributes `attrs`.
+   * of its old text `old`, with the cursor at the node's start and the
+   * node's attributes `attrs`. Returns how far past the node's start the
+   * cursor ends, in atoms of its new text.
    */
   private $writeEdits(
-    u: Unit,
-    offset: number,
+    c: Cursor,
     edits: [number, number, string][],
     old: string,
     now: string,
     attrs: Attrs,
-  ): void {
-    const c = this.cursor(
-      u.cs.y,
-      prevLiveEnd(u.end!, this.state.hidden),
-      u.start || EMPTY_FORMATS,
-    );
-    c.advance(offset);
+  ): number {
     const hunks: Hunk[] = [];
     let shift = 0;
     for (const [at, del, ins] of edits) {
       hunks.push([at, del, at + shift, at + shift + ins.length]);
       shift += ins.length - del;
     }
-    this.$writeHunks(c, old, now, hunks, (cursor, from, to) => {
+    return this.$writeHunks(c, old, now, hunks, (cursor, from, to) => {
       cursor.insert(
         new ContentString(now.slice(from, to)),
         this.inheritUnknown(cursor, attrs),
@@ -3230,7 +3236,8 @@ export class Writer {
    * U+FFFD under their ids (and a lone half reads as U+FFFD), so the
    * author's editor showed `😀` while every reader showed `��` (a splice of
    * one half; a pair kept by two islands, stepped over one atom at a
-   * time).
+   * time). Returns where the cursor ends: the desired atom after the last
+   * hunk.
    */
   private $writeHunks(
     c: Cursor,
@@ -3238,8 +3245,9 @@ export class Writer {
     now: string,
     hunks: readonly Hunk[],
     insert: (cursor: Cursor, from: number, to: number) => void,
-  ): void {
+  ): number {
     let pos = 0;
+    let end = 0;
     for (const [at, del, from, to] of codePointHunks(hunks, old, now)) {
       if (__DEV__) {
         invariant(
@@ -3258,7 +3266,9 @@ export class Writer {
         insert(c, from, to);
       }
       pos = at + del;
+      end = to;
     }
+    return end;
   }
 
   // -------------------------------------------------------------------------

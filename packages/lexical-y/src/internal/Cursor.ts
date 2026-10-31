@@ -901,7 +901,8 @@ export class Cursor {
    * 1. Inside the range, it removes its own client's items of the keys it
    *    changes and no other item (another client's are kept, rule 6). Before
    *    the range's first content it removes only the earlier items of a key
-   *    whose value it opens there, which the last one overrides.
+   *    whose value it opens there that its own client wrote, which the last
+   *    one overrides.
    * 2. It keeps the closer of the content before the range (Yjs removes it
    *    to extend that run over the range), and, of each key whose value it
    *    opens before the range's first content, the last item there, and opens
@@ -1048,8 +1049,13 @@ export class Cursor {
               // whose value this write opens there: kept, the last of its
               // key there (an earlier one, which it overrides, is removed),
               // and the range's value opened after it, before that content.
+              // Another client's earlier item is kept too (rule 6): the last
+              // one overrides it.
               const earlier = atStart.get(key);
-              if (earlier !== undefined) {
+              if (
+                earlier !== undefined &&
+                earlier.id.client === this.tr.doc.clientID
+              ) {
                 deleteItem(earlier, this.tr);
               }
               atStart.set(key, r);

@@ -792,8 +792,8 @@ export function keptEnds(
 
 /**
  * The most edits one shortest edit script of a remade line's changed words
- * looks for (see commonWords): past it, the words unique to both texts
- * anchor the rest, so the diff stays linear in the line's length.
+ * looks for (see commonWords): past it, words the two texts share anchor the
+ * rest, so the diff stays linear in the line's length.
  */
 const MAX_EDITS = 128;
 
@@ -889,18 +889,96 @@ function commonTokens(
 }
 
 /**
+ * The longest run of `pairs` (in order of their second index) whose first
+ * indexes increase too: patience sorting, O(k log k).
+ */
+function increasing(pairs: readonly [number, number][]): [number, number][] {
+  const tops: number[] = [];
+  const prev = new Int32Array(pairs.length).fill(-1);
+  for (let i = 0; i < pairs.length; i++) {
+    let lo = 0;
+    let hi = tops.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (pairs[tops[mid]][0] < pairs[i][0]) {
+        lo = mid + 1;
+      } else {
+        hi = mid;
+      }
+    }
+    prev[i] = lo > 0 ? tops[lo - 1] : -1;
+    tops[lo] = i;
+  }
+  const out: [number, number][] = [];
+  for (let i = tops.length > 0 ? tops[tops.length - 1] : -1; i >= 0; ) {
+    out.push(pairs[i]);
+    i = prev[i];
+  }
+  return out.reverse();
+}
+
+/**
+ * Pairs of the same word in `a` and `b` from `a0` to `a1` and `b0` to `b1`,
+ * in order of `b`: with `unique`, the words that occur once in each; else
+ * every word that occurs in both, its k-th occurrence in `a` with its k-th
+ * in `b`.
+ */
+function wordPairs(
+  a: readonly number[],
+  b: readonly number[],
+  [a0, a1, b0, b1]: [number, number, number, number],
+  unique: boolean,
+): [number, number][] {
+  const inA = new Map<number, number[]>();
+  for (let x = a0; x < a1; x++) {
+    const at = inA.get(a[x]);
+    if (at === undefined) {
+      inA.set(a[x], [x]);
+    } else {
+      at.push(x);
+    }
+  }
+  const seen = new Map<number, number>();
+  for (let y = b0; y < b1; y++) {
+    seen.set(b[y], (seen.get(b[y]) ?? 0) + 1);
+  }
+  const out: [number, number][] = [];
+  const nth = new Map<number, number>();
+  for (let y = b0; y < b1; y++) {
+    const at = inA.get(b[y]);
+    if (
+      at === undefined ||
+      (unique && (at.length > 1 || seen.get(b[y])! > 1))
+    ) {
+      continue;
+    }
+    const k = nth.get(b[y]) ?? 0;
+    nth.set(b[y], k + 1);
+    if (k < at.length) {
+      out.push([at[k], y]);
+    }
+  }
+  return out;
+}
+
+/**
  * The words equal in `a` and `b` that are kept, as pairs of indexes, in
- * order: their common start and end, then a shortest edit script of the rest
- * (commonTokens) where it takes at most MAX_EDITS edits; past that, the
- * words that occur once in each text, in the longest run of them in the
- * same order in both (patience diff), and the same between each two of
- * those, once (between them, past MAX_EDITS edits, only their common start
- * and end). O((n + m) * MAX_EDITS + n log n).
+ * increasing order of both: their common start and end, then a shortest edit
+ * script of the rest (commonTokens) where it takes at most MAX_EDITS edits.
+ * Past that, the words that occur once in each text anchor the rest, in the
+ * longest run of them in the same order in both (patience diff), and
+ * between two anchors, past MAX_EDITS edits again, so does every word that
+ * occurs in both, its k-th occurrence in one text paired with its k-th in
+ * the other (a run of repeated words with other words changed between them,
+ * `old echo old echo` made again as `new echo new echo`, keeps every
+ * `echo`). What is kept is a common subsequence of the two texts, so a kept
+ * word keeps its characters; a word is written again only where it is not
+ * paired. O((n + m) * MAX_EDITS + (n + m) log(n + m)).
  */
 function commonWords(
   a: readonly number[],
   b: readonly number[],
-  anchored = false,
+  level = 0,
 ): [number, number][] {
   const out: [number, number][] = [];
   let a0 = 0;
@@ -920,57 +998,17 @@ function commonWords(
       for (const [x, y] of pairs) {
         out.push([x + a0, y + b0]);
       }
-    } else if (!anchored) {
-      // Words that occur once in each text.
-      const count = new Map<number, number>();
-      const atA = new Map<number, number>();
-      for (let x = a0; x < a1; x++) {
-        count.set(a[x], (count.get(a[x]) ?? 0) + 1);
-        atA.set(a[x], x);
-      }
-      const inB = new Map<number, number>();
-      const atB = new Map<number, number>();
-      for (let y = b0; y < b1; y++) {
-        inB.set(b[y], (inB.get(b[y]) ?? 0) + 1);
-        atB.set(b[y], y);
-      }
-      const unique: [number, number][] = [];
-      for (let y = b0; y < b1; y++) {
-        if (count.get(b[y]) === 1 && inB.get(b[y]) === 1) {
-          unique.push([atA.get(b[y])!, atB.get(b[y])!]);
-        }
-      }
-      // The longest run of them in the same order in both (in order of
-      // `b`, increasing in `a`): patience sorting.
-      const tops: number[] = [];
-      const prev = new Int32Array(unique.length).fill(-1);
-      for (let i = 0; i < unique.length; i++) {
-        let lo = 0;
-        let hi = tops.length;
-        while (lo < hi) {
-          const mid = (lo + hi) >> 1;
-          if (unique[tops[mid]][0] < unique[i][0]) {
-            lo = mid + 1;
-          } else {
-            hi = mid;
-          }
-        }
-        prev[i] = lo > 0 ? tops[lo - 1] : -1;
-        tops[lo] = i;
-      }
-      const anchors: [number, number][] = [];
-      for (let i = tops.length > 0 ? tops[tops.length - 1] : -1; i >= 0; ) {
-        anchors.push(unique[i]);
-        i = prev[i];
-      }
-      anchors.reverse();
+    } else if (level < 2) {
+      const anchors = increasing(
+        wordPairs(a, b, [a0, a1, b0, b1], level === 0),
+      );
       let x = a0;
       let y = b0;
       for (const [ax, by] of [...anchors, [a1, b1] as [number, number]]) {
         for (const [px, py] of commonWords(
           a.slice(x, ax),
           b.slice(y, by),
-          true,
+          level + 1,
         )) {
           out.push([px + x, py + y]);
         }

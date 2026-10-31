@@ -817,10 +817,16 @@ person's:
   it was a node of its own (a tab, a line break, a node of spaces). A word
   joined to a changed word through an inline node, with no space between, is
   written again with it, and an inline node made between two changes is new
-  where it is put. The comparison stays linear in the line's length: where
-  a line has more than 128 changed words, the unchanged words found once in
-  both texts anchor it, so a word that occurs more than once in the line
-  and sits between such a word and a change may be written again. Prefer
+  where it is put. The words kept are the longest run of words the two
+  texts share in the same order, wherever the word diff needs at most 128
+  edits (about 64 replaced words, each a delete and an insert). Beyond
+  that, so that the comparison stays linear in the line's length, the
+  words found once in both texts anchor it, and between two of them every
+  word found in both is paired with itself by occurrence (its first with
+  its first, and so on). A word that is not kept is written again: one the
+  update moved past kept words, and beyond 128 edits, a repeated word whose
+  occurrences that pairing does not line up (the update added or removed
+  some of them). Prefer
   these to `setTextContent`, which sets a node's text whole: such a change
   (and a change the browser makes to the DOM text, as an IME composition
   does) keeps the start and end its text shares with the node's old text,
@@ -1010,9 +1016,11 @@ not merge as a user might expect:
   update's author has not seen, stays where it was, so it lands next to the
   new word, not in it (a letter typed at the end of the word ends up in
   front of the new word), and the collaborator's formatting of the changed
-  word at the same time is not kept. In a line with more than 128 changed
-  words, an unchanged word that occurs more than once in the line may be
-  written again.
+  word at the same time is not kept. So is a word the update moved past
+  the words it kept, and, where the line's word diff needs more than 128
+  edits (about 64 replaced words), a repeated word whose occurrences the
+  update added to or removed from between two words found once in both
+  texts.
   The concurrent typed text is kept, and every client shows the same
   result. Edit the changed words in place instead
   (`TextNode#spliceText`, the selection's `insertText`): only the changed
@@ -1311,6 +1319,11 @@ reproduces it:
 - A comment can spread onto later words when a client types uncommented
   text inside it offline while a collaborator's deletes there drop the item
   that ended it: [#9564](https://github.com/meta/lexical/issues/9564).
+- A link a collaborator removes comes back when another collaborator
+  formats a range covering it at the same time; an update that makes a
+  line's text nodes again without the link while a stale edit formats a
+  range reaching past the link's text shows the same:
+  [#9597](https://github.com/meta/lexical/issues/9597).
 - Turning a paragraph inside a container that is itself inside a
   container (both not shadow roots) into a list removes the outer
   container and makes no list, in every `@lexical/y` editor (it runs

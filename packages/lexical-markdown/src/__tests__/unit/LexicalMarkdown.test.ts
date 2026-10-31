@@ -990,8 +990,9 @@ describe('Markdown', () => {
     {
       html: '<p><span style="white-space: pre-wrap;">[hello]](https://lexical.dev)</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
       md: '[hello]](https://lexical.dev)[world](https://lexical.dev)',
+      // GFM readers would run the URL on into the link after it.
       mdAfterExport:
-        '&#91;hello&#93;&#93;(https://lexical.dev)[world](https://lexical.dev)',
+        '&#91;hello&#93;&#93;(https&#58;//lexical.dev)[world](https://lexical.dev)',
     },
     {
       html: '<p><span style="white-space: pre-wrap;">[h</span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">ello</span></a><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a></p>',
@@ -5187,40 +5188,285 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     ).toBe(true);
   });
 
-  it.each([
-    ['www.example.com', 'www.example.com'],
-    ['me@example.com', 'me@example.com'],
-    ['https://example.com/a', 'https://example.com/a'],
-    ['https://example.com/a_b', 'https://example.com/a\\_b'],
-    ['xmpp:a@b.co/res', 'xmpp:a@b.co/res'],
-    ['https://example.com/a|b', 'https://example.com/a|b'],
-    ['x_www.example.co', 'x\\_www.example.co'],
-    ['https://example.com/\u00e9a', 'https://example.com/\u00e9a'],
-    ['https://\u4f8b\u3048.jp/a', 'https://\u4f8b\u3048.jp/a'],
-    ['www.\u4f8b\u3048.jp', 'www.\u4f8b\u3048.jp'],
-    ['https://example.com/a\u{1f600}b', 'https://example.com/a\u{1f600}b'],
+  // GFM readers would link a URL here, keeping a reference inside as text or
+  // taking markers or a code span into it, so export writes the `.` or `:` of
+  // its prefix as a reference too, and no reader links it (@lexical/mdast
+  // links the decoded text, which keeps the formats). Readers find an email
+  // in the decoded text, so a reference inside one does not change it.
+  it.each<[string, [string, number][], string]>([
+    [
+      'a `www.` host',
+      [
+        ['see www.example.com', 0],
+        ['\u201cx\u201d', TEXT_TYPE_TO_FORMAT.bold],
+      ],
+      'see www&#46;example.co&#109;**\u201cx\u201d**',
+    ],
+    [
+      'an email, whose references readers decode first',
+      [
+        ['see me@example.com', 0],
+        ['\u201cx\u201d', TEXT_TYPE_TO_FORMAT.bold],
+      ],
+      'see me@example.co&#109;**\u201cx\u201d**',
+    ],
+    [
+      'a URL',
+      [
+        ['see https://example.com/a', 0],
+        ['\u201cx\u201d', TEXT_TYPE_TO_FORMAT.bold],
+      ],
+      'see https&#58;//example.com/&#97;**\u201cx\u201d**',
+    ],
+    [
+      'an `xmpp:` address, whose references readers decode first',
+      [
+        ['see xmpp:a@b.co/res', 0],
+        ['\u201cx\u201d', TEXT_TYPE_TO_FORMAT.bold],
+      ],
+      'see xmpp:a@b.co/re&#115;**\u201cx\u201d**',
+    ],
+    [
+      'a `www.` host after `_`',
+      [
+        ['see x_www.example.co', 0],
+        ['\u201cx\u201d', TEXT_TYPE_TO_FORMAT.bold],
+      ],
+      'see x\\_www&#46;example.c&#111;**\u201cx\u201d**',
+    ],
+    [
+      'a URL with a Unicode host',
+      [
+        ['see https://\u4f8b\u3048.jp/a', 0],
+        ['\u201cx\u201d', TEXT_TYPE_TO_FORMAT.bold],
+      ],
+      'see https&#58;//\u4f8b\u3048.jp/&#97;**\u201cx\u201d**',
+    ],
+    [
+      'a URL that holds an emoji',
+      [
+        ['see https://example.com/a\u{1f600}b', 0],
+        ['\u201cx\u201d', TEXT_TYPE_TO_FORMAT.bold],
+      ],
+      'see https&#58;//example.com/a\u{1f600}&#98;**\u201cx\u201d**',
+    ],
+    [
+      'the start of a `www.` host, which its reference spoils',
+      [
+        ['\u201cx\u201d', TEXT_TYPE_TO_FORMAT.bold],
+        ['www.example.com', 0],
+      ],
+      '**\u201cx\u201d**&#119;ww.example.com',
+    ],
+    [
+      'the start of a URL, which its reference spoils',
+      [
+        ['\u201cx\u201d', TEXT_TYPE_TO_FORMAT.bold],
+        ['https://example.com', 0],
+      ],
+      '**\u201cx\u201d**&#104;ttps://example.com',
+    ],
+    [
+      'the start of `mailto:`, which its reference spoils',
+      [
+        ['\u201cx\u201d', TEXT_TYPE_TO_FORMAT.bold],
+        ['mailto:me@example.com', 0],
+      ],
+      '**\u201cx\u201d**&#109;ailto:me@example.com',
+    ],
+    [
+      'the start of an email',
+      [
+        ['\u201cx\u201d', TEXT_TYPE_TO_FORMAT.bold],
+        ['me@example.com', 0],
+      ],
+      '**\u201cx\u201d**&#109;e@example.com',
+    ],
+    [
+      'a URL that a reference before it would start',
+      [
+        ['.', TEXT_TYPE_TO_FORMAT.bold],
+        ['ahttp://x.co', 0],
+      ],
+      '**.**&#97;http&#58;//x.co',
+    ],
+    [
+      '`mailto:`, which a reference before it does not change',
+      [
+        ['.', TEXT_TYPE_TO_FORMAT.bold],
+        ['bmailto:a@b.co', 0],
+      ],
+      '**.**&#98;mailto:a@b.co',
+    ],
+    [
+      'a URL right after a code span',
+      [
+        ['x ', 0],
+        ['a', TEXT_TYPE_TO_FORMAT.code],
+        ['http://x.co/b', 0],
+        ['\u201cq\u201d', TEXT_TYPE_TO_FORMAT.bold],
+        [' y', 0],
+      ],
+      'x `a`http&#58;//x.co/&#98;**\u201cq\u201d** y',
+    ],
+    [
+      'an email before a URL',
+      [
+        ['x a@b.co', 0],
+        ['\u201cq\u201d', TEXT_TYPE_TO_FORMAT.bold],
+        [',http://x.co/ y', 0],
+      ],
+      'x a@b.c&#111;**\u201cq\u201d**,http://x.co/ y',
+    ],
+    [
+      'a URL that would take in a code span',
+      [
+        ['see https://a.com/', 0],
+        ['v2', TEXT_TYPE_TO_FORMAT.code],
+        ['s', 0],
+        ['(beta)', TEXT_TYPE_TO_FORMAT.bold],
+      ],
+      'see https&#58;//a.com/`v2`&#115;**(beta)**',
+    ],
+    [
+      'a URL that runs on through formats',
+      [
+        ['https://x.com/', TEXT_TYPE_TO_FORMAT.bold],
+        ['ab', 0],
+        ['\u201cc\u201d', TEXT_TYPE_TO_FORMAT.italic],
+      ],
+      '**https&#58;//x.com/**&#97;&#98;*\u201cc\u201d*',
+    ],
+    [
+      'a `www.` host that would take in markers',
+      [
+        ['www.x.co', TEXT_TYPE_TO_FORMAT.bold],
+        ['a', 0],
+      ],
+      '**www&#46;x.co**a',
+    ],
+    [
+      'a `www.` host that would take in italic',
+      [
+        ['www.x.co', 0],
+        ['a', TEXT_TYPE_TO_FORMAT.italic],
+        ['b', 0],
+      ],
+      'www&#46;x.co*a*b',
+    ],
+    [
+      'a `www.` host that would take in markers after `:`',
+      [
+        ['www.x.co:', 0],
+        ['a', TEXT_TYPE_TO_FORMAT.bold],
+        [' z', 0],
+      ],
+      'www&#46;x.co:**a** z',
+    ],
+    [
+      'a `www.` host that would take in a code span',
+      [
+        ['www.x.co', 0],
+        ['v', TEXT_TYPE_TO_FORMAT.code],
+        ['s', 0],
+      ],
+      'www&#46;x.co`v`s',
+    ],
+    [
+      'a URL that would take in strikethrough',
+      [
+        ['see https://x.com/a', 0],
+        ['b', TEXT_TYPE_TO_FORMAT.strikethrough],
+      ],
+      'see https&#58;//x.com/a~~b~~',
+    ],
+    [
+      'a URL that holds a `www.` host',
+      [
+        ['http://a.co/www.x.co', 0],
+        ['!', TEXT_TYPE_TO_FORMAT.bold],
+      ],
+      'http&#58;//a.co/www.x.c&#111;**!**',
+    ],
+    [
+      'a URL that would take in the backslash of an escape at its end',
+      [
+        ['see ', 0],
+        ['https://a*', TEXT_TYPE_TO_FORMAT.italic],
+      ],
+      'see *https&#58;//a\\**',
+    ],
+    [
+      'a `www.` host that leaves out the markers after it',
+      [
+        ['www.x.co', TEXT_TYPE_TO_FORMAT.bold],
+        [' a', 0],
+      ],
+      '**www.x.co** a',
+    ],
+    [
+      'a `www.` host after `/`, which starts no link',
+      [
+        ['/www.x.co', 0],
+        ['a', TEXT_TYPE_TO_FORMAT.italic],
+        ['b', 0],
+      ],
+      '/www.x.co*a*b',
+    ],
+    [
+      'a URL that holds an email',
+      [
+        ['http://a.co/x@y.co', 0],
+        ['!', TEXT_TYPE_TO_FORMAT.bold],
+      ],
+      'http&#58;//a.co/x@y.c&#111;**!**',
+    ],
   ])(
-    'writes no reference inside %j, which readers may autolink',
-    (link, markdown) => {
+    'exports formatting beside %s, which both importers read back',
+    (_name, runs, markdown) => {
+      // Links split the text, and @lexical/mdast keeps its own links.
+      const $runs = () => {
+        const merged: [string, number][] = [];
+        for (const node of $getRoot().getAllTextNodes()) {
+          const last = merged[merged.length - 1];
+          if (last !== undefined && last[1] === node.getFormat()) {
+            last[0] += node.getTextContent();
+          } else {
+            merged.push([node.getTextContent(), node.getFormat()]);
+          }
+        }
+        return merged;
+      };
       const editor = createTestEditor();
       editor.update(
         () =>
           $getRoot().append(
             $createParagraphNode().append(
-              $createTextNode(`see ${link}`),
-              $createTextNode(
-                `${LEFT_DOUBLE_QUOTE}x${RIGHT_DOUBLE_QUOTE}`,
-              ).toggleFormat('bold'),
+              ...runs.map(([text, format]) =>
+                $createTextNode(text).setFormat(format),
+              ),
             ),
           ),
         {discrete: true},
       );
-      const prefix = `see ${markdown}**`;
       expect(
-        editor
-          .read('latest', () => $convertToMarkdownString(TRANSFORMERS))
-          .slice(0, prefix.length),
-      ).toBe(prefix);
+        editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
+      ).toBe(markdown);
+      editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMERS), {
+        discrete: true,
+      });
+      expect(editor.read('latest', $runs)).toEqual(runs);
+      const mdastEditor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [MdastGfmExtension],
+          name: '[root]',
+        }),
+      );
+      onTestFinished(() => mdastEditor.dispose());
+      mdastEditor.update(() => $convertFromMdastMarkdownString(markdown), {
+        discrete: true,
+      });
+      expect(mdastEditor.read('latest', $runs)).toEqual(runs);
     },
   );
 
@@ -5253,41 +5499,36 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     },
   );
 
-  it.each([
-    'www.example.com',
-    'me@example.com',
-    'https://example.com',
-    'mailto:me@example.com',
-  ])(
-    'writes no reference at the start of %j, which readers may autolink',
-    link => {
-      const editor = createTestEditor();
-      editor.update(
-        () =>
-          $getRoot().append(
-            $createParagraphNode().append(
-              $createTextNode(
-                `${LEFT_DOUBLE_QUOTE}x${RIGHT_DOUBLE_QUOTE}`,
-              ).toggleFormat('bold'),
-              $createTextNode(link),
-            ),
-          ),
-        {discrete: true},
-      );
-      expect(
-        editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
-      ).toBe(`**${LEFT_DOUBLE_QUOTE}x${RIGHT_DOUBLE_QUOTE}**${link}`);
-    },
-  );
-
-  it('writes no backslash reference inside a URL', () => {
+  it.each<[string, [string, number][], string]>([
+    [
+      'a backslash before a marker',
+      [
+        ['see http://x.com/a\\', 0],
+        ['b', TEXT_TYPE_TO_FORMAT.bold],
+      ],
+      'see http&#58;//x.com/a&#92;**b**',
+    ],
+    [
+      'a tag character before its marker',
+      [
+        ['see https://x.com/?a=', 0],
+        ['b', TEXT_TYPE_TO_FORMAT.highlight],
+      ],
+      'see https&#58;//x.com/?a&#61;==b==',
+    ],
+  ])('spoils a URL for the reference to %s', (_name, runs, markdown) => {
+    const $runs = () =>
+      $getRoot()
+        .getAllTextNodes()
+        .map(node => [node.getTextContent(), node.getFormat()]);
     const editor = createTestEditor();
     editor.update(
       () =>
         $getRoot().append(
           $createParagraphNode().append(
-            $createTextNode('see http://x.com/a\\'),
-            $createTextNode('b').toggleFormat('bold'),
+            ...runs.map(([text, format]) =>
+              $createTextNode(text).setFormat(format),
+            ),
           ),
         ),
       {discrete: true},
@@ -5296,24 +5537,12 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       editor.read('latest', () =>
         $convertToMarkdownString(TRANSFORMERS, undefined, true),
       ),
-    ).toBe('see http://x.com/a\\**b**');
-  });
-
-  it('writes no reference for a tag character inside a URL', () => {
-    const editor = createTestEditor();
+    ).toBe(markdown);
     editor.update(
-      () =>
-        $getRoot().append(
-          $createParagraphNode().append(
-            $createTextNode('see https://x.com/?a='),
-            $createTextNode('b').toggleFormat('highlight'),
-          ),
-        ),
+      () => $convertFromMarkdownString(markdown, TRANSFORMERS, undefined, true),
       {discrete: true},
     );
-    expect(
-      editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
-    ).toBe('see https://x.com/?a===b==');
+    expect(editor.read('latest', $runs)).toEqual(runs);
   });
 
   it('writes a reference after CJK punctuation that ends bold before a CJK character', () => {
@@ -5568,61 +5797,6 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
     },
   );
 
-  it.each<[string, [string, number][], string]>([
-    [
-      'a URL right after a code span',
-      [
-        ['x ', 0],
-        ['a', TEXT_TYPE_TO_FORMAT.code],
-        ['http://x.co/b', 0],
-        ['\u201cq\u201d', TEXT_TYPE_TO_FORMAT.bold],
-        [' y', 0],
-      ],
-      'x `a`http://x.co/b**\u201cq\u201d** y',
-    ],
-    [
-      'an email before a URL',
-      [
-        ['x a@b.co', 0],
-        ['\u201cq\u201d', TEXT_TYPE_TO_FORMAT.bold],
-        [',http://x.co/ y', 0],
-      ],
-      'x a@b.co**\u201cq\u201d**,http://x.co/ y',
-    ],
-    [
-      'the letter before a URL scheme',
-      [
-        ['.', TEXT_TYPE_TO_FORMAT.bold],
-        ['ahttp://x.co', 0],
-      ],
-      '**.**ahttp://x.co',
-    ],
-    [
-      'the letter before `mailto:`, which cmark-gfm would then link',
-      [
-        ['.', TEXT_TYPE_TO_FORMAT.bold],
-        ['bmailto:a@b.co', 0],
-      ],
-      '**.**bmailto:a@b.co',
-    ],
-  ])('writes no reference inside %s', (_name, runs, markdown) => {
-    const editor = createTestEditor();
-    editor.update(
-      () =>
-        $getRoot().append(
-          $createParagraphNode().append(
-            ...runs.map(([text, format]) =>
-              $createTextNode(text).setFormat(format),
-            ),
-          ),
-        ),
-      {discrete: true},
-    );
-    expect(
-      editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
-    ).toBe(markdown);
-  });
-
   it.each<[string, [string, number][]]>([
     [
       'x\\``bb`x',
@@ -5799,25 +5973,6 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       {discrete: true},
     );
     expect(seen).toEqual(['_a_ @x']);
-  });
-
-  it('writes no reference after a code span inside a bare URL', () => {
-    const editor = createTestEditor();
-    editor.update(
-      () =>
-        $getRoot().append(
-          $createParagraphNode().append(
-            $createTextNode('see https://a.com/'),
-            $createTextNode('v2').toggleFormat('code'),
-            $createTextNode('s'),
-            $createTextNode('(beta)').toggleFormat('bold'),
-          ),
-        ),
-      {discrete: true},
-    );
-    expect(
-      editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
-    ).toBe('see https://a.com/`v2`s**(beta)**');
   });
 
   it("guards a letter right after an inline link's destination", () => {
@@ -6007,26 +6162,6 @@ describe('emphasis next to Unicode punctuation and symbols', () => {
       [' ', false, false],
       ['c](d)', false, true],
     ]);
-  });
-
-  it('writes no reference inside a URL that runs on through formats', () => {
-    const editor = createTestEditor();
-    editor.update(
-      () =>
-        $getRoot().append(
-          $createParagraphNode().append(
-            $createTextNode('https://x.com/').toggleFormat('bold'),
-            $createTextNode('ab'),
-            $createTextNode(
-              `${LEFT_DOUBLE_QUOTE}c${RIGHT_DOUBLE_QUOTE}`,
-            ).toggleFormat('italic'),
-          ),
-        ),
-      {discrete: true},
-    );
-    expect(
-      editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
-    ).toBe(`**https://x.com/**ab*${LEFT_DOUBLE_QUOTE}c${RIGHT_DOUBLE_QUOTE}*`);
   });
 
   it('guards word characters in a selection export', () => {

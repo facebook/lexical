@@ -24,7 +24,6 @@ import {
   type TextNode,
 } from 'lexical';
 
-import {scanCodeSpans} from './importTextFormatTransformer';
 import {
   type ElementTransformer,
   getCodeSpanDelimiter,
@@ -730,23 +729,20 @@ const LINK_END = /[\s\p{Cc}<]/u;
 function isLinkCharacter(character: string): boolean {
   return !LINK_END.test(character);
 }
-// A URL or `www.` host in a run of link characters: GFM links `http://`,
-// `https://` (and cmark-gfm `ftp://`) after anything but a letter, and starts
-// `www.` after `_` too, each only with a host after it, and `mailto:` or
-// `xmpp:` only with an address.
-const LINK_URL =
-  /(?:^|[^a-z])(?:https?|ftp):\/\/(?=[\p{L}\p{N}_-])|(?:^|[^a-z\d.-])www\.(?=[\p{L}\p{N}_-])|(?:^|[^a-z\d.+-])(?:mailto|xmpp):(?=[\w.+-]+@)/iu;
-// A URL scheme anywhere: a reference for the letter before it would put the
-// `;` there, after which a URL starts (`www.` needs whitespace or `*_~(`).
-const URL_START =
-  /(?:https?|ftp):\/\/(?=[\p{L}\p{N}_-])|(?:mailto|xmpp):(?=[\w.+-]+@)/giu;
-// Characters an email can hold (word characters, `.+@-`, and the backslash
-// that escapes one), and what makes one: GFM needs a dot in its domain.
-const ADDRESS_CHARACTER = /[\w.+@\\-]/;
-function isAddressCharacter(character: string): boolean {
-  return ADDRESS_CHARACTER.test(character);
+// What starts a URL: `http://`, `https://` (and cmark-gfm's `ftp://`) with
+// a host after it, which may start with an emoji but not with other ASCII
+// punctuation than `-` and `_`, and `www.`, which micromark links with
+// anything after it.
+// GFM readers start `www.` only at the start of a run or after `*_~(`, and a
+// scheme after anything but a letter. They find an email, and the address
+// after `mailto:` or `xmpp:`, in the text with its references decoded, and
+// take no format into one.
+const LINK_PREFIX = /(?:https?|ftp):\/\/(?![\s\p{Cc}!-,./:-@[-^`{-~])|www\./giu;
+function startsLink(prefix: string, before: string): boolean {
+  return /^w/i.test(prefix) ? '*_~('.includes(before) : !/[a-z]/i.test(before);
 }
-const ADDRESS = /[\w.+-]@[\w-]+\.[\w-]/;
+// Characters that GFM readers leave out at the end of a URL.
+const LINK_TRAIL = '?!.,:*_~';
 
 // Characters that a reference does not stand in for everywhere: CommonMark
 // readers and HTML decode references to control characters, unpaired
@@ -784,71 +780,101 @@ interface MarkerRun {
  * reference instead, whose `&` or `;` is punctuation: `&#97;**\***`.
  */
 function joinPieces({kinds, values}: MarkdownPieces): string {
-  if (!kinds.some(isMarker)) {
+  if (kinds.every(kind => kind === TEXT)) {
     return values.join('');
   }
-  const {encodeStart, encodeEnd, isLinkish} = decideReferences(kinds, values);
-  let markdown = '';
-  for (let index = 0; index < kinds.length; index++) {
-    let value = values[index];
-    let start = '';
-    let end = '';
+  const {encodeStart, encodeEnd} = decideReferences(kinds, values);
+  const count = kinds.length;
+  // How many code units of each piece go out as a reference at its start
+  // and at its end, and whether the backslash before the end does.
+  const startLengths = new Uint8Array(count);
+  const endLengths = new Uint8Array(count);
+  const escapesEnd = new Uint8Array(count);
+  for (let index = 0; index < count; index++) {
+    const value = values[index];
     if (encodeStart[index]) {
-      const first = characterAt(value, 0)!;
-      start = toCharacterReference(first);
-      value = value.slice(first.length);
+      startLengths[index] = characterAt(value, 0)!.length;
     }
-    if (encodeEnd[index] && value !== '') {
-      const last = characterBefore(value, value.length)!;
-      end = toCharacterReference(last);
-      value = value.slice(0, -last.length);
+    if (encodeEnd[index] && value.length > startLengths[index]) {
+      endLengths[index] = characterBefore(value, value.length)!.length;
     }
     // A backslash left unescaped (when preserving newlines, or in decorator
-    // text) would escape the reference or marker written after it, though
-    // not inside a bare URL, where no reference is written.
-    if (
+    // text) would escape the reference or marker written after it.
+    const bodyEnd = value.length - endLengths[index];
+    escapesEnd[index] = Number(
       kinds[index] === TEXT &&
-      isMarker(kinds[index + 1]) &&
-      isEscaped(value, value.length) &&
-      !isLinkish(index, true)
+        isMarker(kinds[index + 1]) &&
+        bodyEnd > startLengths[index] &&
+        isEscaped(value, bodyEnd),
+    );
+  }
+  const {starts, spoiled} = findSpoiledLinks(kinds, values, (index, mark) => {
+    mark(0, startLengths[index]);
+    const end = values[index].length - endLengths[index];
+    mark(end - escapesEnd[index], values[index].length);
+  });
+  let markdown = '';
+  let next = 0;
+  for (let index = 0; index < count; index++) {
+    const value = values[index];
+    const base = starts[index];
+    const end = value.length - endLengths[index] - escapesEnd[index];
+    let from = startLengths[index];
+    markdown += toReferences(value.slice(0, from));
+    for (
+      ;
+      next < spoiled.length && spoiled[next] < base + value.length;
+      next++
     ) {
-      value = value.slice(0, -1) + toCharacterReference('\\');
+      const at = spoiled[next] - base;
+      markdown += value.slice(from, at) + toCharacterReference(value[at]);
+      from = at + 1;
     }
-    markdown += start + value + end;
+    markdown +=
+      value.slice(from, end) +
+      toReferences(value.slice(end, end + escapesEnd[index])) +
+      toReferences(value.slice(end + escapesEnd[index]));
   }
   return markdown;
 }
 
-/**
- * Raw output as the bare-URL scan sees it: spaces, except that a code span
- * keeps its backticks and its whitespace, and the rest of it is letters.
- */
-function maskRaw(value: string): string {
-  let masked = '';
-  let previous = 0;
-  for (const {startIndex, endIndex} of scanCodeSpans(value)) {
-    masked +=
-      ' '.repeat(startIndex - previous) +
-      value.slice(startIndex, endIndex).replace(/[^\s`]/g, 'x');
-    previous = endIndex;
-  }
-  return masked + ' '.repeat(value.length - previous);
+// The character in `value`, if any, as a reference.
+function toReferences(value: string): string {
+  return value === '' ? '' : toCharacterReference(value);
 }
 
 /**
- * For each piece, 1 when its first character is part of a bare URL, `www.`
- * host or email, plus 2 when its last one is. A reference inside one
- * would change what an autolinking reader links to, so the format is lost
- * there instead, as before. The pieces are read as one text, since a URL can
- * run on through markers and other formats, and each character is looked at
- * a bounded number of times. Raw output, such as an inline link's destination,
- * is not bare text, so it ends a run.
+ * Raw output as the bare-URL scan sees it. It keeps whitespace and `<`, which
+ * end a URL, `*_~(`, after which `www.` starts one, and ASCII letters, before
+ * which no scheme starts one, as `x`, and is `#` elsewhere. So no URL starts
+ * inside it, but one before it runs on into it, as GFM readers run a URL on
+ * through a code span or a link.
  */
-function findLinkEdges(kinds: PieceKind[], values: string[]): Uint8Array {
-  // Raw output ends a run, so it is joined as spaces, except a code span:
-  // GFM autolinks run on through backticks, as in `https://a.com/`v`s`, and
-  // start after them, so it joins as its backticks around letters, which
-  // cannot start a URL themselves.
+function maskRaw(value: string): string {
+  return value.replace(/[a-z]/gi, 'x').replace(/[^\sx<*_~(]/g, '#');
+}
+
+/**
+ * Finds the bare URLs and `www.` hosts that GFM readers would link in the
+ * joined pieces, and that a reference would land in or that would take in
+ * the markers, code span or other raw output after them: the reader would
+ * keep the reference's characters in the link, or the markers and code as
+ * text. Such a URL is spoiled instead, by writing the `.` of `www.` or the
+ * `:` after its scheme as a reference, so that no reader links it and its
+ * text and formats come through. So is a URL that a reference before it
+ * would start. `markReferences` is given each text piece and a function that
+ * marks the code units of it, from one offset to another, that go out as
+ * references. Returns where each piece starts in the joined text and, in
+ * order, the code units of it to write as references.
+ */
+function findSpoiledLinks(
+  kinds: PieceKind[],
+  values: string[],
+  markReferences: (
+    index: number,
+    mark: (from: number, to: number) => void,
+  ) => void,
+): {starts: Uint32Array; spoiled: number[]} {
   let text = '';
   const starts = new Uint32Array(values.length + 1);
   for (let i = 0; i < values.length; i++) {
@@ -856,54 +882,81 @@ function findLinkEdges(kinds: PieceKind[], values: string[]): Uint8Array {
     text += kinds[i] === RAW ? maskRaw(values[i]) : values[i];
   }
   starts[values.length] = text.length;
-  const inLink = new Uint8Array(text.length);
-  const runEnd = (
-    start: number,
-    isPart: (character: string) => boolean,
-    limit: number,
-  ) => {
+  const isReference = new Uint8Array(text.length);
+  for (let i = 0; i < values.length; i++) {
+    if (kinds[i] === TEXT) {
+      markReferences(i, (from, to) =>
+        isReference.fill(1, starts[i] + from, starts[i] + to),
+      );
+    }
+  }
+  // Running counts of referenced code units and of code units that are not
+  // text, so that whether any lie in a span is a subtraction.
+  const references = new Uint32Array(text.length + 1);
+  const formats = new Uint32Array(text.length + 1);
+  for (let i = 0, piece = 0; i < text.length; i++) {
+    while (starts[piece + 1] <= i) {
+      piece++;
+    }
+    references[i + 1] = references[i] + isReference[i];
+    formats[i + 1] = formats[i] + Number(kinds[piece] !== TEXT);
+  }
+  const has = (sums: Uint32Array, from: number, to: number) =>
+    from < to && sums[to] > sums[from];
+  const spoiled: number[] = [];
+  for (let start = 0; start < text.length; ) {
     let end = start;
-    while (end < limit && isPart(text[end])) {
+    while (end < text.length && isLinkCharacter(text[end])) {
       end++;
     }
-    return end;
-  };
-  for (let start = 0; start < text.length; ) {
-    const end = runEnd(start, isLinkCharacter, text.length);
     if (end === start) {
       start++;
       continue;
     }
-    // The URL starts at its scheme, `www.` or `mailto:`, and what comes
-    // before it in the run is ordinary text, which may hold an email.
-    const url = LINK_URL.exec(text.slice(start, end));
-    const urlStart =
-      url === null ? end : start + url.index + (/^[a-z]/i.test(url[0]) ? 0 : 1);
-    inLink.fill(1, urlStart, end);
-    const run = text.slice(start, urlStart);
-    for (const {index} of run.matchAll(URL_START)) {
-      if (index > 0) {
-        inLink[start + index - 1] = 1;
-      }
+    // A URL runs to the end of the run, less the punctuation at its end. It
+    // takes in a backslash before that punctuation, which then no longer
+    // escapes it, so the punctuation can join the markers after it.
+    let trimmed = end;
+    while (trimmed > start && LINK_TRAIL.includes(text[trimmed - 1])) {
+      trimmed--;
     }
-    for (let from = start; from < urlStart; ) {
-      const to = runEnd(from, isAddressCharacter, urlStart);
-      if (to === from) {
-        from++;
+    if (isEscaped(text, trimmed) && has(formats, trimmed, end)) {
+      trimmed = end;
+    }
+    // Where the next URL may start: after the prefix of a spoiled one.
+    let rest = start;
+    for (const prefix of text.slice(start, end).matchAll(LINK_PREFIX)) {
+      const at = start + prefix.index;
+      if (at < rest) {
         continue;
       }
-      if (ADDRESS.test(text.slice(from, to).replace(/\\/g, ''))) {
-        inLink.fill(1, from, to);
+      // A reference before the prefix, or a spoiled `.` or `:`, puts `;`
+      // there.
+      const before = at > start ? text[at - 1] : '';
+      const wasLink = at === start || startsLink(prefix[0], before);
+      const isLink =
+        at === start ||
+        startsLink(
+          prefix[0],
+          isReference[at - 1] || spoiled[spoiled.length - 1] === at - 1
+            ? ';'
+            : before,
+        );
+      if (!isLink) {
+        continue;
       }
-      from = to;
+      if (wasLink && !has(references, at, end) && !has(formats, at, trimmed)) {
+        break;
+      }
+      rest = at + prefix[0].length;
+      // A reference in the prefix spoils it already.
+      if (!has(references, at, rest)) {
+        spoiled.push(at + prefix[0].search(/[.:]/));
+      }
     }
     start = end;
   }
-  const edges = new Uint8Array(values.length);
-  for (let i = 0; i < values.length; i++) {
-    edges[i] = inLink[starts[i]] | (inLink[starts[i + 1] - 1] << 1);
-  }
-  return edges;
+  return {spoiled, starts};
 }
 
 /**
@@ -949,7 +1002,6 @@ function decideReferences(
 ): {
   encodeStart: Uint8Array;
   encodeEnd: Uint8Array;
-  isLinkish: (index: number, atEnd: boolean) => boolean;
 } {
   const count = kinds.length;
   const encodeStart = new Uint8Array(count);
@@ -1021,24 +1073,13 @@ function decideReferences(
       : encodeEnd[index] || isEncoded(index)
         ? ';'
         : lastChar(index);
-  // Whether the last (or first) character of the piece at `index` is part of
-  // a bare URL, `www.` host, or email, worked out for every piece the
-  // first time it is asked.
-  let linkEdges: Uint8Array | undefined;
-  const isLinkish = (index: number, atEnd: boolean): boolean => {
-    if (linkEdges === undefined) {
-      linkEdges = findLinkEdges(kinds, values);
-    }
-    return (linkEdges[index] & (atEnd ? 2 : 1)) !== 0;
-  };
   // Whether the last (or first) character of the piece at `index` can go out
   // as a reference.
   const canReference = (index: number, atEnd: boolean): boolean =>
     index >= 0 &&
     index < count &&
     kinds[index] === TEXT &&
-    isReferenceable(atEnd ? endChar(index) : startChar(index)) &&
-    !isLinkish(index, atEnd);
+    isReferenceable(atEnd ? endChar(index) : startChar(index));
   // Writing a one-character piece as a reference makes its other edge
   // punctuation too. That can stop the delimiter run touching that edge from
   // flanking unless the piece past it is written as a reference as well, and
@@ -1129,23 +1170,20 @@ function decideReferences(
   };
   // Text does not escape every tag character (the `=` of `==`, say), and one
   // right beside a marker of the same character would join its delimiter
-  // run, so it goes out as a reference, except in a bare URL, as with any
-  // reference.
+  // run, so it goes out as a reference.
   for (let i = 0; i < count; i++) {
     const value = values[i];
     if (kinds[i] === TEXT) {
       if (
         isMarker(kinds[i + 1]) &&
         value[value.length - 1] === values[i + 1][0] &&
-        !isEscaped(value, value.length - 1) &&
-        !isLinkish(i, true)
+        !isEscaped(value, value.length - 1)
       ) {
         encodeEnd[i] = 1;
       }
       if (
         isMarker(kinds[i - 1]) &&
-        value[0] === values[i - 1][values[i - 1].length - 1] &&
-        !isLinkish(i, false)
+        value[0] === values[i - 1][values[i - 1].length - 1]
       ) {
         encodeStart[i] = 1;
       }
@@ -1185,7 +1223,7 @@ function decideReferences(
       }
     }
   }
-  return {encodeEnd, encodeStart, isLinkish};
+  return {encodeEnd, encodeStart};
 }
 
 function getTextSibling(node: TextNode, backward: boolean): TextNode | null {

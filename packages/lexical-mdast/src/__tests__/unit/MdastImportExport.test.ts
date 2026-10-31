@@ -614,6 +614,65 @@ describe('@lexical/mdast import/export', () => {
     }
   });
 
+  it('keeps edits to imported autolink literals', () => {
+    using editor = buildEditorFromExtensions(
+      MdastCommonMarkExtension,
+      MdastAutolinkLiteralExtension,
+      MdastExtension,
+    );
+    editor.update(
+      () =>
+        $convertFromMarkdownString(
+          'https://one.example https://two.example https://three.example',
+        ),
+      {discrete: true},
+    );
+    const $links = () =>
+      $assertNodeType($getRoot().getFirstChildOrThrow(), $isElementNode)
+        .getChildren()
+        .filter($isLinkNode);
+    editor.update(
+      () => {
+        const [destination, label, formatted] = $links();
+        destination.setURL('https://changed.example');
+        $assertNodeType(
+          label.getFirstChildOrThrow(),
+          $isTextNode,
+        ).setTextContent('caption');
+        $assertNodeType(
+          formatted.getFirstChildOrThrow(),
+          $isTextNode,
+        ).setFormat('bold');
+      },
+      {discrete: true},
+    );
+    const markdown = editor.read(() => $convertToMarkdownString());
+    expect(markdown).toBe(
+      '[https://one.example](https://changed.example) ' +
+        '[caption](https://two.example) ' +
+        '[**https://three.example**](https://three.example)',
+    );
+    editor.update(() => $convertFromMarkdownString(markdown), {
+      discrete: true,
+    });
+    editor.read(() => {
+      expect(
+        $links().map(link => [link.getURL(), link.getTextContent()]),
+      ).toEqual([
+        ['https://changed.example', 'https://one.example'],
+        ['https://two.example', 'caption'],
+        ['https://three.example', 'https://three.example'],
+      ]);
+      expect(
+        $assertNodeType(
+          $links()[2].getFirstChildOrThrow(),
+          $isTextNode,
+        ).hasFormat('bold'),
+      ).toBe(true);
+      expect($convertToMarkdownString()).toBe(markdown);
+    });
+  });
+
   describe('mdast tree interop', () => {
     it('$convertToMdast exposes the mdast tree before serialization', () => {
       using editor = createEditor();

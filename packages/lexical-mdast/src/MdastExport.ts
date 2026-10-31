@@ -48,6 +48,7 @@ import {
   IS_ITALIC,
   IS_STRIKETHROUGH,
 } from 'lexical';
+import {fromMarkdown} from 'mdast-util-from-markdown';
 import {defaultHandlers, toMarkdown} from 'mdast-util-to-markdown';
 import {toString as mdastToString} from 'mdast-util-to-string';
 
@@ -148,6 +149,7 @@ function collectHardBreaks(tree: Root): Set<Nodes> {
  * options (and contributed `toMarkdownExtensions`) still apply to them.
  */
 const syntaxToMarkdown = (
+  compiled: CompiledMdast,
   hardBreaks: ReadonlySet<Nodes>,
 ): ToMarkdownExtension => ({
   handlers: {
@@ -196,11 +198,34 @@ const syntaxToMarkdown = (
       // A title can't be expressed in autolink/literal form, so links with a
       // title always fall through to the default (resource form).
       const style = node.data && node.data.mdastLinkStyle;
-      if (style === 'literal' && node.title == null) {
-        // A bare GFM autolink literal: emit the visible text as-is. The
-        // gfm-autolink-literal to-markdown extension keeps surrounding
-        // escaping consistent so it re-parses as the same literal.
-        return mdastToString(node);
+      if (
+        style === 'literal' &&
+        node.title == null &&
+        node.children.length === 1 &&
+        node.children[0].type === 'text'
+      ) {
+        // Preserve the bare form only while it still parses as the same link.
+        // Edits to its destination, label or formatting need resource syntax.
+        const text = node.children[0].value;
+        const tree = fromMarkdown(text, {
+          extensions: compiled.micromarkExtensions,
+          mdastExtensions: compiled.mdastExtensions,
+        });
+        const paragraph = tree.children[0];
+        const literal =
+          tree.children.length === 1 &&
+          paragraph.type === 'paragraph' &&
+          paragraph.children.length === 1
+            ? paragraph.children[0]
+            : null;
+        if (
+          literal !== null &&
+          literal.type === 'link' &&
+          literal.url === node.url &&
+          mdastToString(literal) === text
+        ) {
+          return text;
+        }
       }
       if (style === 'inline') {
         // Force `[text](url)` even when the text equals the URL (the
@@ -677,7 +702,7 @@ export function createMdastExport(compiled: CompiledMdast): {
       extensions: [
         defaults,
         ...compiled.toMarkdownExtensions,
-        syntaxToMarkdown(collectHardBreaks(tree)),
+        syntaxToMarkdown(compiled, collectHardBreaks(tree)),
       ],
     });
     // toMarkdown always appends a trailing newline; drop it so callers get the

@@ -11,6 +11,7 @@ import type {CompiledMdast} from './types';
 import type {ElementNode, LexicalEditor, LexicalNode, TextNode} from 'lexical';
 
 import {$createCodeNode, $isCodeNode} from '@lexical/code-core';
+import {$createHorizontalRuleNode} from '@lexical/extension';
 import {
   $createListItemNode,
   $createListNode,
@@ -23,8 +24,11 @@ import {
   $isQuoteNode,
   type QuoteNode,
 } from '@lexical/rich-text';
+import {$isTableCellNode} from '@lexical/table';
 import {
   $addUpdateTag,
+  $createParagraphNode,
+  $findMatchingParent,
   $getNodeByKey,
   $getSelection,
   $isBlockContainer,
@@ -43,7 +47,7 @@ import {
 
 import {$append, $listTypeFromMdast} from './handlers';
 import {MarkdownStreamScanner} from './MdastStream';
-import {codeFenceState, codeMetaState} from './state';
+import {codeFenceState, codeMetaState, hrMarkerState} from './state';
 
 /**
  * Block markers are at most a few characters (`'###### '`, `'   999. '`,
@@ -84,12 +88,44 @@ function $stripLeading(element: ElementNode, n: number): void {
  * it legal, which is not the tree {@link MdastShadowRootQuoteExtension}
  * imports for `> ## H2`.
  */
-function $placeBlock(container: ElementNode, block: ElementNode): void {
+function $placeBlock(container: ElementNode, block: LexicalNode): void {
   if ($isQuoteNode(container)) {
     container.setIsShadowRoot(true).append(block);
   } else {
     container.replace(block);
   }
+}
+
+/**
+ * Replaces `container` with a horizontal rule, and puts the caret in a new
+ * empty paragraph under it: the new line that the typed space or Enter asks
+ * for. The marker must be the whole line. `--- text` is a paragraph in
+ * Markdown, so a space typed between `---` and text converts nothing.
+ *
+ * A table cell has no Markdown for a rule (the GFM table export writes one
+ * after the table), so `---` typed in a cell stays text.
+ */
+function $applyThematicBreak(
+  container: ElementNode,
+  markerLength: number,
+): boolean {
+  const line = container.getTextContent();
+  if (
+    line.length !== markerLength ||
+    !container.getChildren().every($isTextNode) ||
+    $findMatchingParent(container, $isTableCellNode)
+  ) {
+    return false;
+  }
+  $stripLeading(container, markerLength);
+  const rule = $createHorizontalRuleNode();
+  // Keep the typed marker (`-`, `*` or `_`) so export writes the same rule.
+  $setState(rule, hrMarkerState, line.trimStart()[0]);
+  const next = $createParagraphNode();
+  $placeBlock(container, rule);
+  rule.insertAfter(next);
+  next.select();
+  return true;
 }
 
 /**
@@ -99,6 +135,9 @@ function $placeBlock(container: ElementNode, block: ElementNode): void {
  * rather than being replaced by it.
  */
 function $applyBlock(paragraph: ElementNode, match: MdastBlockMatch): boolean {
+  if (match.kind === 'thematicBreak') {
+    return $applyThematicBreak(paragraph, match.markerLength);
+  }
   // Capture the fence before the marker is stripped from the paragraph.
   const fence =
     match.kind === 'code'
@@ -329,6 +368,9 @@ function $isShortcutContainer(
  *   matching what import produces for `> ## H2`.
  * - A marker-only line (`` ```lang ``, `## `, `- `) converts on
  *   <kbd>Enter</kbd>.
+ * - A thematic break (`---`, `***`, `___`) alone on its line converts to a
+ *   horizontal rule on space or <kbd>Enter</kbd>, with the caret in a new
+ *   paragraph under it.
  * - Inline constructs (`*em*`, `**strong**`, `` `code` ``, `~~del~~`,
  *   `[text](url)`, plus registered `inlineShortcutTypes`) convert when their
  *   closing delimiter is typed.
@@ -491,7 +533,7 @@ export function registerMarkdownShortcuts(
           return false;
         }
         const match = scanner.scanBlock(parent.getTextContent());
-        // Only convert when the whole line is the marker (`## `, `- `,
+        // Only convert when the whole line is the marker (`## `, `- `, `---`,
         // '```lang title=x'). A line with content after the marker was either
         // already converted at the trailing space, or deliberately reverted
         // with undo — Enter must not re-convert it.

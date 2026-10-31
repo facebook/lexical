@@ -10,12 +10,21 @@
 
 import {$isCodeNode} from '@lexical/code-core';
 import {
+  $isHorizontalRuleNode,
   buildEditorFromExtensions,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
 import {$isLinkNode} from '@lexical/link';
 import {$isListItemNode, $isListNode} from '@lexical/list';
 import {$isHeadingNode, $isQuoteNode} from '@lexical/rich-text';
+import {
+  $createTableCellNode,
+  $createTableNode,
+  $createTableRowNode,
+  $isTableCellNode,
+  $isTableNode,
+  $isTableRowNode,
+} from '@lexical/table';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -35,6 +44,7 @@ import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {describe, expect, it} from 'vitest';
 
 import {
+  $convertToMarkdownString,
   MdastCommonMarkExtension,
   MdastGfmExtension,
   MdastShortcutsExtension,
@@ -222,6 +232,21 @@ describe('@lexical/mdast streaming shortcuts', () => {
       });
     });
 
+    it('--- -> horizontal rule nested in the quote', () => {
+      using editor = createEditor();
+      type(editor, ['>', ' ', '-', '-', '-', ' ', 'after']);
+      editor.read(() => {
+        const quote = $assertNodeType($getRoot().getFirstChild(), $isQuoteNode);
+        expect(quote.isShadowRoot()).toBe(true);
+        const [rule, next, ...rest] = quote.getChildren();
+        $assertNodeType(rule, $isHorizontalRuleNode);
+        const paragraph = $assertNodeType(next, $isParagraphNode);
+        expect(paragraph.getTextContent()).toBe('after');
+        expect(rest).toEqual([]);
+        expect($convertToMarkdownString()).toBe('> ---\n>\n> after');
+      });
+    });
+
     it('leaves the quote alone once it holds a block', () => {
       using editor = createEditor();
       type(editor, ['>', ' ', '#', ' ', 'A']);
@@ -339,6 +364,114 @@ describe('@lexical/mdast streaming shortcuts', () => {
         expect(code.getLanguage()).toBe('js');
         expect($getState(code, codeMetaState)).toBe('title=x');
         expect($getState(code, codeFenceState)).toBe('~~~');
+      });
+    });
+  });
+
+  describe('horizontal rule (on space or Enter)', () => {
+    /**
+     * Asserts the root holds a rule and then the paragraph the caret moved
+     * to, and that the rule is exported with the marker it was typed with.
+     */
+    function expectRuleThenLine(editor: LexicalEditor, marker: string): void {
+      editor.read(() => {
+        const [rule, next, ...rest] = $getRoot().getChildren();
+        $assertNodeType(rule, $isHorizontalRuleNode);
+        const paragraph = $assertNodeType(next, $isParagraphNode);
+        expect(paragraph.getTextContent()).toBe('after');
+        expect(rest).toEqual([]);
+        expect($convertToMarkdownString()).toBe(`${marker}\n\nafter`);
+      });
+    }
+
+    describe.each(['---', '***', '___'])('%s', marker => {
+      it('+ space -> horizontal rule, caret on a new line under it', () => {
+        using editor = createEditor();
+        type(editor, [...marker, ' ', 'after']);
+        expectRuleThenLine(editor, marker);
+      });
+
+      it('+ Enter -> horizontal rule, caret on a new line under it', () => {
+        using editor = createEditor();
+        type(editor, [...marker]);
+        editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+        type(editor, ['after']);
+        expectRuleThenLine(editor, marker);
+      });
+    });
+
+    it('-- + Enter stays text', () => {
+      using editor = createEditor();
+      type(editor, ['-', '-']);
+      editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+      editor.read(() => {
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
+        expect(paragraph.getTextContent()).toBe('--');
+        expect($getRoot().getChildren().some($isHorizontalRuleNode)).toBe(
+          false,
+        );
+      });
+    });
+
+    it('a space typed between --- and text converts nothing', () => {
+      using editor = createEditor();
+      // `--- after` is a paragraph in Markdown, not a rule followed by text,
+      // even though the text up to the caret (`--- `) is a rule.
+      editor.update(
+        () => {
+          const paragraph = $createParagraphNode();
+          const text = $createTextNode('---after');
+          paragraph.append(text);
+          $getRoot().clear().append(paragraph);
+          text.select(3, 3);
+        },
+        {discrete: true},
+      );
+      type(editor, [' ']);
+      $expectFirstChild(editor, $isParagraphNode);
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toBe('--- after');
+      });
+    });
+
+    it.each([
+      ['space', ' '],
+      ['Enter', null],
+    ])('--- + %s in a table cell stays text', (_key, key) => {
+      using editor = createEditor();
+      // A cell has no Markdown for a rule: the table export would write it
+      // after the table.
+      editor.update(
+        () => {
+          const paragraph = $createParagraphNode();
+          $getRoot()
+            .clear()
+            .append(
+              $createTableNode().append(
+                $createTableRowNode().append(
+                  $createTableCellNode().append(paragraph),
+                ),
+              ),
+            );
+          paragraph.select();
+        },
+        {discrete: true},
+      );
+      type(editor, ['-', '-', '-']);
+      if (key === null) {
+        editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+      } else {
+        type(editor, [key]);
+      }
+      editor.read(() => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        const row = $assertNodeType(table.getFirstChild(), $isTableRowNode);
+        const cell = $assertNodeType(row.getFirstChild(), $isTableCellNode);
+        expect(cell.getChildren().some($isHorizontalRuleNode)).toBe(false);
+        expect(cell.getTextContent()).toContain('---');
       });
     });
   });

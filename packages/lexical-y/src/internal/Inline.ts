@@ -263,6 +263,63 @@ const holds = (it: Item, id: ID | null): boolean =>
   it.id.clock <= id.clock &&
   id.clock < it.id.clock + it.length;
 
+type Store = {getItem(id: ID): unknown};
+
+const storeOf = (it: Item): Store =>
+  (it.parent as unknown as {doc: {store: Store}}).doc.store;
+
+/**
+ * The item a redo copied `it` from, or `it` itself. A redo inserts its copy
+ * of a deleted format item right before it, so the copy's right origin is a
+ * deleted format item of the same key and value (Yjs's own record of the
+ * copy, `redone`, is not shared with other clients).
+ */
+function original(it: Item, store: Store): Item {
+  for (let item = it, n = 0; n < 64; n++) {
+    const from =
+      item.rightOrigin === null
+        ? null
+        : (store.getItem(item.rightOrigin) as Item | undefined);
+    if (
+      from === null ||
+      from === undefined ||
+      !from.deleted ||
+      !(from.content instanceof ContentFormat) ||
+      !(item.content instanceof ContentFormat) ||
+      from.content.key !== item.content.key ||
+      !equalValues(from.content.value, item.content.value)
+    ) {
+      return item;
+    }
+    item = from;
+  }
+  return it;
+}
+
+const equalValues = (a: unknown, b: unknown): boolean =>
+  a === b || JSON.stringify(a) === JSON.stringify(b);
+
+/**
+ * The content item an opening (`next`: right origins) or closing (origins)
+ * format item of a run was inserted next to, through the format items it was
+ * inserted next to: the run's first or last character, as it was written
+ * (before a redo copied the format item next to text typed there since).
+ */
+function besideFormats(it: Item, next: boolean): ID | null {
+  const store = storeOf(it);
+  let id = next ? original(it, store).rightOrigin : original(it, store).origin;
+  for (let n = 0; id !== null && n < 64; n++) {
+    const item = store.getItem(id) as Item | undefined;
+    if (item === undefined || !(item.content instanceof ContentFormat)) {
+      return id;
+    }
+    id = next
+      ? original(item, store).rightOrigin
+      : original(item, store).origin;
+  }
+  return id;
+}
+
 /** Format keys and the values an edge insert shows for them. */
 type EdgeValues = Map<string, unknown>;
 
@@ -279,32 +336,52 @@ type EdgeValues = Map<string, unknown>;
  * character, and its closing ones right after its last, so text between the
  * opening items and that first character, or between that last character
  * and the closing items, was inserted at an edge: by a writer that did not
- * know them, or later, next to such text. The closing items are the last
- * ones that end the run on its line (a write inside an edge can close and
- * reopen it around its own text). A run whose characters were written with
- * it (typed after its opening items) has no such edges. Fed every item a
- * reader shows of a sequence, in order.
+ * know them, or later, next to such text. Only the keys the run's own write
+ * set there are shown as on the other side (the mode and segment key): the
+ * text's other formats and comments are its own. The closing items are the
+ * last ones that end the run on its line (a write inside an edge can close
+ * and reopen it around its own text), and a redo's copy of an opening or
+ * closing item stands where the item it copies stood. A run whose characters
+ * were written with it (typed after its opening items) has no such edges,
+ * and neither has a node that was already one of its own (an unmergeable
+ * text node) made token text: its mode items sit next to its segment key's.
+ * Fed every item a reader shows of a sequence, in order, after `prime`.
  */
 export class RunEdges {
   private groupFirst: Item | null = null;
   private groupBefore: Formats | null = null;
-  private groupKeys: string[] = [];
-  private groupSegment: Item | null = null;
-  private segment: unknown = null;
+  // The edge items of the runs from one a line opens to the line's end,
+  // found in one pass (see lineEdges), and those runs' segment keys: a run
+  // opened where none of them is starts the next pass.
   private edges: Map<Item, EdgeValues> | null = null;
+  private runs: Set<unknown> = new Set();
+
+  /**
+   * Called before the first item when a read starts at `start` (under
+   * `current`) rather than at its line's start: inside a token or segmented
+   * run, that run's edges are found from the line's start (the reader reads
+   * from where a change is; the run's opening items are before it).
+   */
+  prime(start: Item | null, current: Formats): void {
+    if (start === null || !current.has(SEGMENT_KEY) || !isModeRun(current)) {
+      return;
+    }
+    let first = start;
+    while (first.left !== null && !endsLine(first.left)) {
+      first = first.left;
+    }
+    if (first !== start) {
+      const found = lineEdges(first, new Map());
+      this.edges = found.edges;
+      this.runs = found.runs;
+    }
+  }
 
   /** A live format item, before it is applied to `current`. */
   format(it: Item, current: Formats): void {
     if (this.groupFirst === null) {
       this.groupFirst = it;
       this.groupBefore = new Map(current);
-      this.groupKeys = [];
-      this.groupSegment = null;
-    }
-    const key = (it.content as ContentFormat).key;
-    this.groupKeys.push(key);
-    if (key === SEGMENT_KEY) {
-      this.groupSegment = it;
     }
   }
 
@@ -321,18 +398,13 @@ export class RunEdges {
       const segment = current.get(SEGMENT_KEY) ?? null;
       if (
         segment !== null &&
-        segment !== this.segment &&
         segment !== (before.get(SEGMENT_KEY) ?? null) &&
+        !this.runs.has(segment) &&
         isModeRun(current)
       ) {
-        this.segment = segment;
-        this.edges = runEdges(
-          this.groupSegment!,
-          this.groupKeys,
-          before,
-          it,
-          current,
-        );
+        const found = lineEdges(first, before);
+        this.edges = found.edges;
+        this.runs = found.runs;
       }
     }
     const values = this.edges === null ? undefined : this.edges.get(it);
@@ -366,56 +438,109 @@ const endsLine = (it: Item): boolean =>
   it.content instanceof ContentType &&
   (it.content.type.name === MARKER || it.content.type.name === RUN_END);
 
+type ModeRun = {
+  /** Its opening segment key item: inserted before the run's first character. */
+  opener: Item;
+  /** The values its opening group's keys had before it. */
+  opening: EdgeValues;
+  /** The content items under its segment key (deleted ones too). */
+  items: Item[];
+  /** The closing items that end it (see RunEdges), or null. */
+  close: {first: Item; end: number; values: EdgeValues} | null;
+};
+
 /**
- * The edge items (see RunEdges) of the segment run that `opener` (its
- * opening segment key item; its group set `keys`) opens, whose first content
- * item is `start`: the values of the run's keys each shows. The opening
- * items of one write were inserted before the same item (their right
- * origin), and the first of its closing items after the run's last
- * character (its origin; the others follow it).
+ * The items of `group` written with `item` (by the same write: its client's,
+ * linked to it by their origins), whose keys are the ones that write changed
+ * there: other items of the group (a collaborator's bold or comment opening
+ * at the same spot) keep their own.
  */
-function runEdges(
-  opener: Item,
-  keys: string[],
-  before: Formats,
+function sameWrite(group: Item[], item: Item): Item[] {
+  // Linked through the items a redo copied them from, if it did.
+  const store = storeOf(item);
+  const from = new Map(group.map(g => [g, original(g, store)]));
+  const chain = [item];
+  for (let grew = true; grew; ) {
+    grew = false;
+    for (const g of group) {
+      const og = from.get(g)!;
+      if (
+        !chain.includes(g) &&
+        g.id.client === item.id.client &&
+        chain.some(c => {
+          const oc = from.get(c)!;
+          return holds(oc, og.origin) || holds(og, oc.origin);
+        })
+      ) {
+        chain.push(g);
+        grew = true;
+      }
+    }
+  }
+  return chain;
+}
+
+/**
+ * The edge items (see RunEdges) of every token or segmented run from the
+ * format group `start` begins (under `before`) to the end of its line, with
+ * the values of the run's keys each shows: one pass along the line, each run
+ * keeping its own state (a run can close and reopen, and another run can
+ * sit inside it). The opening items of one write were inserted before the
+ * same item (their right origin), and the first of its closing items after
+ * the run's last character (its origin; the others follow it).
+ */
+function lineEdges(
   start: Item,
-  current: Formats,
-): Map<Item, EdgeValues> | null {
-  const segment = current.get(SEGMENT_KEY);
-  const formats = new Map(current);
-  const items: Item[] = [];
-  const inRun: boolean[] = [];
+  before: Formats,
+): {edges: Map<Item, EdgeValues>; runs: Set<unknown>} {
+  const runs = new Map<unknown, ModeRun>();
+  const formats = new Map(before);
   let group: Item[] = [];
-  let groupStart: unknown = null;
-  let groupSegment: Item | null = null;
-  let close: {first: Item; end: number; values: EdgeValues} | null = null;
+  let groupBefore: Formats = formats;
+  let segmentItem: Item | null = null;
   const endGroup = () => {
     if (group.length === 0) {
       return;
     }
-    const now = formats.get(SEGMENT_KEY) ?? null;
-    if (groupStart === segment && now !== segment && groupSegment !== null) {
-      const values: EdgeValues = new Map();
-      for (const g of group) {
-        const k = (g.content as ContentFormat).key;
-        values.set(k, formats.get(k));
-      }
-      // The first closing item of the write that closed the run.
-      let first = groupSegment;
-      for (;;) {
-        const origin = first.origin;
-        const prev = group.find(g => holds(g, origin));
-        if (prev === undefined) {
-          break;
+    const from = groupBefore.get(SEGMENT_KEY) ?? null;
+    const to = formats.get(SEGMENT_KEY) ?? null;
+    if (from !== to && segmentItem !== null) {
+      const closed = from === null ? undefined : runs.get(from);
+      if (closed !== undefined) {
+        const chain = sameWrite(group, segmentItem);
+        const values: EdgeValues = new Map();
+        for (const g of chain) {
+          const k = (g.content as ContentFormat).key;
+          values.set(k, formats.get(k));
         }
-        first = prev;
+        // The first closing item of the write that closed the run.
+        let first = segmentItem;
+        for (;;) {
+          const origin = first.origin;
+          const prev = chain.find(g => holds(g, origin));
+          if (prev === undefined) {
+            break;
+          }
+          first = prev;
+        }
+        closed.close = {end: closed.items.length, first, values};
       }
-      close = {end: items.length, first, values};
-    } else if (groupStart !== segment && now === segment) {
-      close = null;
+      if (to !== null) {
+        const reopened = runs.get(to);
+        if (reopened !== undefined) {
+          reopened.close = null;
+        } else if (isModeRun(formats)) {
+          const opening: EdgeValues = new Map();
+          for (const g of sameWrite(group, segmentItem)) {
+            const k = (g.content as ContentFormat).key;
+            opening.set(k, groupBefore.get(k));
+          }
+          runs.set(to, {close: null, items: [], opener: segmentItem, opening});
+        }
+      }
     }
     group = [];
-    groupSegment = null;
+    segmentItem = null;
   };
   for (let p: Item | null = start; p !== null && !endsLine(p); p = p.right) {
     if (p.content instanceof ContentFormat) {
@@ -423,17 +548,18 @@ function runEdges(
         continue;
       }
       if (group.length === 0) {
-        groupStart = formats.get(SEGMENT_KEY) ?? null;
+        groupBefore = new Map(formats);
       }
       group.push(p);
       const was = formats.get(SEGMENT_KEY) ?? null;
       applyFormat(formats, p.content);
+      // The segment key item that changed the run (a later one of another
+      // write that sets the same value again does not).
       if (
         p.content.key === SEGMENT_KEY &&
-        was === segment &&
-        (formats.get(SEGMENT_KEY) ?? null) !== segment
+        (formats.get(SEGMENT_KEY) ?? null) !== was
       ) {
-        groupSegment = p;
+        segmentItem = p;
       }
       continue;
     }
@@ -441,49 +567,49 @@ function runEdges(
       continue;
     }
     endGroup();
-    items.push(p);
-    inRun.push(!isGone(p) && (formats.get(SEGMENT_KEY) ?? null) === segment);
+    const segment = formats.get(SEGMENT_KEY) ?? null;
+    const run = segment === null ? undefined : runs.get(segment);
+    if (run !== undefined) {
+      run.items.push(p);
+    }
   }
   endGroup();
-  const closer = close as {
-    first: Item;
-    end: number;
-    values: EdgeValues;
-  } | null;
-  if (closer === null) {
-    return null;
-  }
-  let first = -1;
-  for (let k = 0; k < closer.end && first === -1; k++) {
-    if (holds(items[k], opener.rightOrigin)) {
-      first = k;
-    }
-  }
-  let last = -1;
-  for (let k = closer.end - 1; k >= 0 && last === -1; k--) {
-    if (holds(items[k], closer.first.origin)) {
-      last = k;
-    }
-  }
-  if (first === -1 || last < first) {
-    return null;
-  }
-  const opening: EdgeValues = new Map();
-  for (const k of keys) {
-    opening.set(k, before.get(k));
-  }
   const edges = new Map<Item, EdgeValues>();
-  for (let k = 0; k < first; k++) {
-    if (inRun[k]) {
-      edges.set(items[k], opening);
+  for (const run of runs.values()) {
+    const close = run.close;
+    if (close === null) {
+      continue;
+    }
+    const {items} = run;
+    const firstID = besideFormats(run.opener, true);
+    const lastID = besideFormats(close.first, false);
+    let first = -1;
+    for (let k = 0; k < close.end && first === -1; k++) {
+      if (holds(items[k], firstID)) {
+        first = k;
+      }
+    }
+    let last = -1;
+    for (let k = close.end - 1; k >= 0 && last === -1; k--) {
+      if (holds(items[k], lastID)) {
+        last = k;
+      }
+    }
+    if (first === -1 || last < first) {
+      continue;
+    }
+    for (let k = 0; k < first; k++) {
+      if (!isGone(items[k])) {
+        edges.set(items[k], run.opening);
+      }
+    }
+    for (let k = last + 1; k < close.end; k++) {
+      if (!isGone(items[k])) {
+        edges.set(items[k], close.values);
+      }
     }
   }
-  for (let k = last + 1; k < closer.end; k++) {
-    if (inRun[k]) {
-      edges.set(items[k], closer.values);
-    }
-  }
-  return edges.size === 0 ? null : edges;
+  return {edges, runs: new Set(runs.keys())};
 }
 
 // Old atoms from Yjs
@@ -509,6 +635,7 @@ export function readAtoms(
   // Whether `attrs` are an edge insert's (see RunEdges), for that item only.
   let edged = false;
   const edges = new RunEdges();
+  edges.prime(start, shown);
   for (let it = start; it !== null && it !== stop; it = it.right) {
     if (isGone(it)) {
       continue;

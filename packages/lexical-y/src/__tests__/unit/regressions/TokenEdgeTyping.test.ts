@@ -12,9 +12,17 @@
 // collaborator's text is not part of the token: the token holds just the
 // word, on every client, in both client id orders, whether the text is typed
 // in one insert or a character at a time. Controls: typing after the next
-// space, and typing after a word that was token text before.
+// space, and typing after a word that was token text before. The typed
+// text keeps its own formats and comments, and stays out when the first
+// client undoes and redoes making the token (a redo writes the run's format
+// items again, next to the typed text). Not covered: a node that was
+// already a node of its own (an unmergeable or custom text node) made token
+// or segmented text, typed after for one client id order (expected
+// failures).
 
+import {$addMarkID, $getNodeMarkIDs} from '@lexical/mark';
 import {
+  $create,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
@@ -22,11 +30,12 @@ import {
   $setSelection,
   type ElementNode,
   type TextModeType,
-  type TextNode,
+  TextNode,
 } from 'lexical';
 import {expect, test} from 'vitest';
 
-import {expectConverged, setup} from '../../utils/harness';
+import {expectConverged, NODES, setup} from '../../utils/harness';
+import {prepareMarkState} from '../../utils/sizeOps';
 
 const $line = () => $getRoot().getFirstChildOrThrow() as ElementNode;
 
@@ -147,5 +156,205 @@ for (const mode of ['token', 'segmented'] as TextModeType[]) {
       expect(t.a.read(() => $line().getTextContent())).toContain('q9z');
       expect(special(t)).toEqual([[mode, 't3z']]);
     });
+  }
+}
+
+for (const mode of ['token', 'segmented'] as TextModeType[]) {
+  for (const side of ['before', 'after'] as const) {
+    for (const ids of [
+      [1, 2],
+      [2, 1],
+    ]) {
+      test(`A makes "word" ${mode} text || B types bold, commented text ${side} it, ids ${ids}`, async () => {
+        const t = await setup(
+          () =>
+            $getRoot().append(
+              $createParagraphNode().append($createTextNode('aa word zz')),
+            ),
+          {ids, prepare: prepareMarkState},
+        );
+        const $typed = () =>
+          $line()
+            .getAllTextNodes()
+            .filter(n => n.getTextContent().includes('X'))
+            .map(n => ({
+              bold: n.hasFormat('bold'),
+              comments: $getNodeMarkIDs(n),
+              mode: n.getMode(),
+              text: n.getTextContent(),
+            }));
+        const expected = [
+          {bold: true, comments: ['edge'], mode: 'normal', text: 'X'},
+        ];
+        try {
+          t.offline();
+          t.a.update(() => {
+            const n = $line().getFirstChildOrThrow() as TextNode;
+            const [, word] = n.splitText(3, 7);
+            word.setMode(mode);
+            $setSelection(null);
+          });
+          t.b.update(() => {
+            const n = $line().getFirstChildOrThrow() as TextNode;
+            const at = side === 'before' ? 3 : 7;
+            const selection = n.select(at, at);
+            selection.format = 1;
+            selection.insertText('X');
+            const x = $line()
+              .getAllTextNodes()
+              .find(text => text.getTextContent() === 'X')!;
+            $addMarkID('edge', x.select(0, 1));
+            $setSelection(null);
+          });
+          expect(t.b.read($typed)).toEqual(expected);
+          await t.sync();
+          await expectConverged(t.peers);
+          for (const p of t.peers) {
+            expect(p.read($typed)).toEqual(expected);
+          }
+        } finally {
+          for (const p of t.peers) {
+            p.stop();
+          }
+        }
+      });
+    }
+  }
+}
+
+class CustomText extends TextNode {
+  $config() {
+    return this.config('token-edge-custom-text', {extends: TextNode});
+  }
+}
+
+for (const kind of ['custom', 'unmergeable'] as const) {
+  for (const mode of ['token', 'segmented'] as TextModeType[]) {
+    for (const side of ['before', 'after'] as const) {
+      for (const ids of [
+        [1, 2],
+        [2, 1],
+      ]) {
+        // Not covered (see the top): text typed after a node that was
+        // already one of its own lands inside its mode for this order.
+        const known = side === 'after' && ids[0] === 2;
+        (known ? test.fails : test)(
+          `A makes an existing ${kind} node ${mode} text || B types ${side} it, ids ${ids}`,
+          async () => {
+            const t = await setup(
+              () => {
+                const word =
+                  kind === 'custom'
+                    ? $create(CustomText).setTextContent('word')
+                    : $createTextNode('word').toggleUnmergeable();
+                $getRoot().append(
+                  $createParagraphNode().append(
+                    $createTextNode('aa '),
+                    word,
+                    $createTextNode(' zz'),
+                  ),
+                );
+              },
+              {ids, nodes: [...NODES, CustomText]},
+            );
+            try {
+              t.offline();
+              t.a.update(() => {
+                ($line().getChildAtIndex(1) as TextNode).setMode(mode);
+                $setSelection(null);
+              });
+              t.b.update(() => {
+                const n = (
+                  side === 'before'
+                    ? $line().getFirstChildOrThrow()
+                    : $line().getLastChildOrThrow()
+                ) as TextNode;
+                const at = side === 'before' ? 3 : 0;
+                n.select(at, at).insertText(
+                  side === 'before' ? 'extra words ' : ' extra words',
+                );
+                $setSelection(null);
+              });
+              await t.sync();
+              await expectConverged(t.peers);
+              expect(t.a.read(() => $line().getTextContent())).toBe(
+                side === 'before'
+                  ? 'aa extra words word zz'
+                  : 'aa word extra words zz',
+              );
+              expect(
+                t.a.read(() =>
+                  $line()
+                    .getAllTextNodes()
+                    .filter(n => n.getTextContent().includes('extra'))
+                    .map(n => n.getMode()),
+                ),
+              ).toEqual(['normal']);
+            } finally {
+              for (const p of t.peers) {
+                p.stop();
+              }
+            }
+          },
+        );
+      }
+    }
+  }
+}
+
+for (const mode of ['token', 'segmented'] as TextModeType[]) {
+  for (const side of ['before', 'after'] as const) {
+    for (const ids of [
+      [1, 2],
+      [2, 1],
+    ]) {
+      test(`A makes "word" ${mode} text || B types ${side} it, then A undoes, redoes and deletes the token, ids ${ids}`, async () => {
+        const t = await setup(
+          () =>
+            $getRoot().append(
+              $createParagraphNode().append($createTextNode('aa word zz')),
+            ),
+          {ids},
+        );
+        try {
+          t.offline();
+          t.a.update(() => {
+            const n = $line().getFirstChildOrThrow() as TextNode;
+            const [, word] = n.splitText(3, 7);
+            word.setMode(mode);
+            $setSelection(null);
+          });
+          t.b.update(() => {
+            const n = $line().getFirstChildOrThrow() as TextNode;
+            const at = side === 'before' ? 3 : 7;
+            n.select(at, at).insertText('X');
+            $setSelection(null);
+          });
+          await t.sync();
+          expect(special(t)).toEqual([[mode, 'word']]);
+          t.a.undo();
+          await t.sync();
+          expect(special(t)).toEqual([]);
+          t.a.binding.redo();
+          await t.sync();
+          await expectConverged(t.peers);
+          expect(special(t)).toEqual([[mode, 'word']]);
+          t.a.update(() => {
+            $line()
+              .getAllTextNodes()
+              .find(n => n.getTextContent() === 'word')!
+              .remove();
+            $setSelection(null);
+          });
+          await t.sync();
+          await expectConverged(t.peers);
+          expect(t.a.read(() => $line().getTextContent())).toBe('aa X zz');
+        } finally {
+          for (const p of t.peers) {
+            p.stop();
+          }
+        }
+      });
+    }
   }
 }

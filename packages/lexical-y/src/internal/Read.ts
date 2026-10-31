@@ -2345,6 +2345,7 @@ export class Reader {
     // The formats an edge insert shows instead (see RunEdges), for that item.
     let edge: Formats | null = null;
     const edges = new RunEdges();
+    edges.prime(start, current);
     const snapshot = () => {
       if (tattrs === null) {
         tattrs = {};

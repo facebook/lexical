@@ -726,7 +726,7 @@ describe('F24A-1: words typed and deleted again at one place', () => {
     'code',
   ] as const;
   for (const pattern of ['formats', 'comments'] as const) {
-    test(`leave a bounded number of format items (${pattern})`, async () => {
+    test(`leave two format items per deleted formatted word (${pattern})`, async () => {
       const t = await setup(() => {
         $getRoot().append(
           $createParagraphNode().append($createTextNode('start middle end')),

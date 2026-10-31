@@ -845,7 +845,7 @@ export class Cursor {
   /**
    * Delete `n` content units. The format items around and inside them stay:
    * a concurrent writer that has not seen the delete relies on them, and an
-   * undo of the delete brings the content back between them (D24).
+   * undo of the delete brings the content back between them (D24, D86).
    */
   delete(n: number): void {
     while (n > 0 && this.right !== null) {

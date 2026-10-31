@@ -149,10 +149,11 @@ describe('@lexical/y a delete collapsing a run keeps the end a concurrent restor
       expect(words(t.a, 1)).toBe('tail line');
     });
 
-    test(`#9609: the comment's end stays through a later collapse of the same run (ids ${ids})`, async () => {
-      // As above, and B then deletes "cc " too: the first collapse removed
-      // the comment's opener and kept its end, which the second collapse
-      // must keep although, for B, nothing opens the comment before it.
+    test(`#9609: the comment's end stays through a later delete next to the same run (ids ${ids})`, async () => {
+      // As above, and B then deletes "cc " too. While a delete collapsed the
+      // run it left, the first delete removed the comment's opener and kept
+      // its end, which the second had to keep although, for B, nothing opens
+      // the comment before it; a delete now keeps every format item (D86).
       const t = await setup(
         () => $getRoot().append($p(LINE), $p('tail line')),
         {

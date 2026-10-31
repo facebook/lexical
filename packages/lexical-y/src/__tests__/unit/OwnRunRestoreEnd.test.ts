@@ -250,8 +250,8 @@ describe('@lexical/y a restore of a comment its own client opened', () => {
     // S9-12: one write of A types uncommented text at two places inside A's
     // own comment, so both of its restores end at the comment's end. Rule 5
     // gives that end one null of A's own (not one per restore: the undo
-    // removes them together, and a second one would push the comment's end
-    // out of the last items a collaborator's collapse keeps). A undoes the
+    // removes them together, and a second one pushed the comment's end out
+    // of the last items a collaborator's collapse kept, before D86). A undoes the
     // write while B, which has not seen the undo, deletes the rest of the
     // comment and then the text after it.
     test(`S9-12: ends where the comment ended when its author undoes a write with two inserts inside it while a collaborator deletes past its end (ids ${ids})`, async () => {
@@ -290,9 +290,9 @@ describe('@lexical/y a restore of a comment its own client opened', () => {
     });
     // S9-12b: as S9-12, but A types "X" and "Y" in two writes. Main passes:
     // it writes no null of A's own for A's own run. With #9562 each write put
-    // a null of A's own right after the comment's end, B's collapse kept
-    // those two nulls (a key's last items) and dropped the end, and the
-    // comment ran on once A undid both writes.
+    // a null of A's own right after the comment's end, B's collapse (gone
+    // since D86) kept those two nulls (a key's last items) and dropped the
+    // end, and the comment ran on once A undid both writes.
     test(`S9-12b: ends where the comment ended when its author undoes two writes inside it while a collaborator deletes past its end (ids ${ids})`, async () => {
       const t = await setup(
         () => $getRoot().append($p('aa Kilometer bb cc dd'), $p('tail line')),

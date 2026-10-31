@@ -3622,32 +3622,24 @@ function $splitAroundBlocks(
   const out: LexicalNode[] = [];
   // The wrappers walked into, outermost first.
   const chain: ElementNode[] = [];
-  // The wrappers open for inline content now (a prefix of `chain`, as
-  // written), and the children each gets.
+  // The wrappers open for inline content now, and the children each gets.
   const open: {src: ElementNode; node: ElementNode; kids: LexicalNode[]}[] = [];
   const made: [ElementNode, LexicalNode[]][] = [];
   const walked: ElementNode[] = [];
   const used = new Set<NodeKey>();
+  // Invariant: `open` is a prefix of `chain` (a block empties it, leaving a
+  // wrapper shortens it), so only the wrappers past it are opened.
   const target = (): LexicalNode[] => {
-    const depth = chain.length;
-    if (open.length < depth || open[depth - 1].src !== chain[depth - 1]) {
-      let d = 0;
-      while (d < open.length && d < depth && open[d].src === chain[d]) {
-        d++;
-      }
-      open.length = d;
-      for (; d < depth; d++) {
-        const src = chain[d];
-        const node = used.has(src.getKey()) ? $copyNode(src) : src;
-        used.add(src.getKey());
-        const kids: LexicalNode[] = [];
-        made.push([node, kids]);
-        (d === 0 ? out : open[d - 1].kids).push(node);
-        open.push({kids, node, src});
-      }
+    for (let d = open.length; d < chain.length; d++) {
+      const src = chain[d];
+      const node = used.has(src.getKey()) ? $copyNode(src) : src;
+      used.add(src.getKey());
+      const kids: LexicalNode[] = [];
+      made.push([node, kids]);
+      (d === 0 ? out : open[d - 1].kids).push(node);
+      open.push({kids, node, src});
     }
-    open.length = depth;
-    return open[depth - 1].kids;
+    return open[chain.length - 1].kids;
   };
   const walk = (el: ElementNode) => {
     chain.push(el);
@@ -3663,6 +3655,9 @@ function $splitAroundBlocks(
       }
     }
     chain.pop();
+    if (open.length > chain.length) {
+      open.length = chain.length;
+    }
   };
   walk(top);
   for (const el of walked) {

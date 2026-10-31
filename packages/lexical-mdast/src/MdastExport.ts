@@ -41,6 +41,7 @@ import {
   $isElementNode,
   $isLineBreakNode,
   $isRangeSelection,
+  $isRootNode,
   $isSlotHost,
   $isTextNode,
   IS_BOLD,
@@ -48,6 +49,7 @@ import {
   IS_ITALIC,
   IS_STRIKETHROUGH,
 } from 'lexical';
+import {fromMarkdown} from 'mdast-util-from-markdown';
 import {defaultHandlers, toMarkdown} from 'mdast-util-to-markdown';
 import {toString as mdastToString} from 'mdast-util-to-string';
 
@@ -148,6 +150,7 @@ function collectHardBreaks(tree: Root): Set<Nodes> {
  * options (and contributed `toMarkdownExtensions`) still apply to them.
  */
 const syntaxToMarkdown = (
+  getLiteralUrl: (text: string) => string | null,
   hardBreaks: ReadonlySet<Nodes>,
 ): ToMarkdownExtension => ({
   handlers: {
@@ -196,11 +199,19 @@ const syntaxToMarkdown = (
       // A title can't be expressed in autolink/literal form, so links with a
       // title always fall through to the default (resource form).
       const style = node.data && node.data.mdastLinkStyle;
-      if (style === 'literal' && node.title == null) {
-        // A bare GFM autolink literal: emit the visible text as-is. The
-        // gfm-autolink-literal to-markdown extension keeps surrounding
-        // escaping consistent so it re-parses as the same literal.
-        return mdastToString(node);
+      if (
+        style === 'literal' &&
+        node.title == null &&
+        node.children.length === 1 &&
+        node.children[0].type === 'text'
+      ) {
+        // Preserve the bare form only while it still parses as the same link.
+        // Edits to its destination, label or formatting need resource syntax.
+        // Neighbouring text can still change how the bare form re-parses.
+        const text = node.children[0].value;
+        if (getLiteralUrl(text) === node.url) {
+          return text;
+        }
       }
       if (style === 'inline') {
         // Force `[text](url)` even when the text equals the URL (the
@@ -647,6 +658,7 @@ export function createMdastExport(compiled: CompiledMdast): {
   // The unfiltered exporter has no per-call state and is shared by every
   // whole-document export; selection exports build a fresh one per call.
   const documentExporter = createNodeExporter(compiled);
+  let literalUrls = new Map<string, string | null>();
 
   const $toMdast = (
     root: ElementNode,
@@ -658,7 +670,39 @@ export function createMdastExport(compiled: CompiledMdast): {
     type: 'root',
   });
 
-  const $serialize = (tree: Root, root: ElementNode): string => {
+  const $serialize = (
+    tree: Root,
+    root: ElementNode,
+    isDocumentExport: boolean,
+  ): string => {
+    const nextLiteralUrls = isDocumentExport
+      ? new Map<string, string | null>()
+      : literalUrls;
+    const getLiteralUrl = (text: string): string | null => {
+      let url = literalUrls.get(text);
+      if (url === undefined) {
+        const parsed = fromMarkdown(text, {
+          extensions: compiled.micromarkExtensions,
+          mdastExtensions: compiled.mdastExtensions,
+        });
+        const paragraph = parsed.children[0];
+        const literal =
+          parsed.children.length === 1 &&
+          paragraph.type === 'paragraph' &&
+          paragraph.children.length === 1
+            ? paragraph.children[0]
+            : null;
+        url =
+          literal !== null &&
+          literal.type === 'link' &&
+          mdastToString(literal) === text
+            ? literal.url
+            : null;
+        literalUrls.set(text, url);
+      }
+      nextLiteralUrls.set(text, url);
+      return url;
+    };
     // Emphasis/strong delimiters are document-level: `_` when one was
     // recorded on import, unless contributed toMarkdownExtensions set them.
     // Defaults (with the '-' bullet baseline) ride as the FIRST extension so
@@ -677,9 +721,12 @@ export function createMdastExport(compiled: CompiledMdast): {
       extensions: [
         defaults,
         ...compiled.toMarkdownExtensions,
-        syntaxToMarkdown(collectHardBreaks(tree)),
+        syntaxToMarkdown(getLiteralUrl, collectHardBreaks(tree)),
       ],
     });
+    if (isDocumentExport) {
+      literalUrls = nextLiteralUrls;
+    }
     // toMarkdown always appends a trailing newline; drop it so callers get the
     // same shape as `@lexical/markdown`'s `$convertToMarkdownString`.
     return out.replace(/\n$/, '');
@@ -690,7 +737,11 @@ export function createMdastExport(compiled: CompiledMdast): {
 
   const $exportToMarkdown = (node?: ElementNode): string => {
     const root = node || $getRoot();
-    return $serialize($toMdast(root, documentExporter), root);
+    return $serialize(
+      $toMdast(root, documentExporter),
+      root,
+      $isRootNode(root),
+    );
   };
 
   const $exportSelectionToMarkdown = (
@@ -710,7 +761,11 @@ export function createMdastExport(compiled: CompiledMdast): {
     return $withRenderContext([
       contextValue(RenderContextMarkdownSelection, selection),
     ])(() =>
-      $serialize($toMdast(root, createNodeExporter(compiled, selection)), root),
+      $serialize(
+        $toMdast(root, createNodeExporter(compiled, selection)),
+        root,
+        false,
+      ),
     );
   };
 

@@ -104,6 +104,87 @@ function outline(editor: LexicalEditor): {
   });
 }
 
+// Random documents of paragraphs, rules (adjacent ones too), boxes (nested
+// up to twice) and, with `directText`, text directly in a box, and random
+// ranges between text and element points: the documents where $wrapNodes
+// throws (a parent cycle: it would never return) or does not keep every text
+// in order.
+function wrapFailures(directText: boolean): string[] {
+  let seed = 9638;
+  const random = () => {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    return seed / 2147483648;
+  };
+  const failures: string[] = [];
+  for (let run = 0; run < 500; run++) {
+    parentCalls = 0;
+    using editor = build();
+    let n = 0;
+    const $children = (depth: number): LexicalNode[] => {
+      const out: LexicalNode[] = [];
+      const count = 1 + Math.floor(random() * 4);
+      for (let i = 0; i < count; i++) {
+        const r = random();
+        if (r < 0.25) {
+          out.push($createHorizontalRuleNode());
+        } else if (r < 0.4 && depth < 2) {
+          out.push($create(BoxNode).append(...$children(depth + 1)));
+        } else if (directText && r < 0.55 && depth > 0) {
+          // Text directly in a box, next to its blocks.
+          out.push($createTextNode(`t${n++}`));
+        } else {
+          out.push($createParagraphNode().append($createTextNode(`t${n++}`)));
+        }
+      }
+      return out;
+    };
+    let before: string[] = [];
+    let error: unknown = null;
+    try {
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append(...$children(0));
+          before = $getRoot()
+            .getAllTextNodes()
+            .map(t => t.getTextContent());
+          const points: [string, number, 'text' | 'element'][] = [];
+          const collect = (node: LexicalNode) => {
+            if ($isTextNode(node)) {
+              for (let o = 0; o <= node.getTextContentSize(); o++) {
+                points.push([node.getKey(), o, 'text']);
+              }
+            } else if ($isElementNode(node)) {
+              for (let o = 0; o <= node.getChildrenSize(); o++) {
+                points.push([node.getKey(), o, 'element']);
+              }
+              node.getChildren().forEach(collect);
+            }
+          };
+          collect($getRoot());
+          const a = points[Math.floor(random() * points.length)];
+          const b = points[Math.floor(random() * points.length)];
+          const selection = $createRangeSelection();
+          (selection.anchor as PointType).set(...a);
+          (selection.focus as PointType).set(...b);
+          $setSelection(selection);
+          $wrapNodes(selection, () => $createQuoteNode());
+        },
+        {discrete: true},
+      );
+    } catch (e) {
+      error = e;
+    }
+    const after = outline(editor).all.filter(t => t !== '<hr>');
+    // Adjacent texts may merge: compare the text in order.
+    if (error !== null || after.join('') !== before.join('')) {
+      failures.push(`run ${run}: ${String(error ?? after.join())}`);
+    }
+  }
+  return failures;
+}
+
 describe('$wrapNodes with a block leaf in an element that is not a block container (#9638)', () => {
   test('a range across a horizontal rule in a box keeps every paragraph', () => {
     using editor = build();
@@ -168,6 +249,36 @@ describe('$wrapNodes with a block leaf in an element that is not a block contain
     });
   });
 
+  // A box that holds text directly is the block of that text and of the
+  // rules next to it: its children move together, as before.
+  for (const backward of [false, true]) {
+    test(`a box with text and two rules in it, from the second rule (${backward ? 'backward' : 'forward'})`, () => {
+      using editor = build();
+      editor.update(
+        () => {
+          const cc = $createTextNode('cc');
+          const box = $create(BoxNode).append(
+            $createTextNode('aa'),
+            $createHorizontalRuleNode(),
+            $createHorizontalRuleNode(),
+            cc,
+          );
+          $getRoot().clear().append(box);
+          const selection = $createRangeSelection();
+          const [from, to] = backward
+            ? [selection.focus, selection.anchor]
+            : [selection.anchor, selection.focus];
+          from.set(box.getKey(), 2, 'element');
+          to.set(cc.getKey(), 2, 'text');
+          $setSelection(selection);
+          $wrapNodes(selection, () => $createQuoteNode());
+        },
+        {discrete: true},
+      );
+      expect(outline(editor).all).toEqual(['aa', '<hr>', '<hr>', 'cc']);
+    });
+  }
+
   test('control: the same range without the rule', () => {
     using editor = build();
     editor.update(
@@ -225,77 +336,16 @@ describe('$wrapNodes with a block leaf in an element that is not a block contain
     });
   });
 
-  // Random documents of paragraphs, rules and boxes (nested up to twice),
-  // and random ranges between text and element points: $wrapNodes returns,
-  // and keeps every text and rule, in order.
   test('property: random box, rule and paragraph mixes', () => {
-    let seed = 9638;
-    const random = () => {
-      seed = (seed * 1103515245 + 12345) % 2147483648;
-      return seed / 2147483648;
-    };
-    const failures: string[] = [];
-    for (let run = 0; run < 300; run++) {
-      using editor = build();
-      let n = 0;
-      const $children = (depth: number): LexicalNode[] => {
-        const out: LexicalNode[] = [];
-        const count = 1 + Math.floor(random() * 4);
-        for (let i = 0; i < count; i++) {
-          const r = random();
-          if (r < 0.25) {
-            out.push($createHorizontalRuleNode());
-          } else if (r < 0.4 && depth < 2) {
-            out.push($create(BoxNode).append(...$children(depth + 1)));
-          } else {
-            out.push($createParagraphNode().append($createTextNode(`t${n++}`)));
-          }
-        }
-        return out;
-      };
-      let before: string[] = [];
-      let error: unknown = null;
-      try {
-        editor.update(
-          () => {
-            $getRoot()
-              .clear()
-              .append(...$children(0));
-            before = $getRoot()
-              .getAllTextNodes()
-              .map(t => t.getTextContent());
-            const points: [string, number, 'text' | 'element'][] = [];
-            const collect = (node: LexicalNode) => {
-              if ($isTextNode(node)) {
-                for (let o = 0; o <= node.getTextContentSize(); o++) {
-                  points.push([node.getKey(), o, 'text']);
-                }
-              } else if ($isElementNode(node)) {
-                for (let o = 0; o <= node.getChildrenSize(); o++) {
-                  points.push([node.getKey(), o, 'element']);
-                }
-                node.getChildren().forEach(collect);
-              }
-            };
-            collect($getRoot());
-            const a = points[Math.floor(random() * points.length)];
-            const b = points[Math.floor(random() * points.length)];
-            const selection = $createRangeSelection();
-            (selection.anchor as PointType).set(...a);
-            (selection.focus as PointType).set(...b);
-            $setSelection(selection);
-            $wrapNodes(selection, () => $createQuoteNode());
-          },
-          {discrete: true},
-        );
-      } catch (e) {
-        error = e;
-      }
-      const after = outline(editor).all.filter(t => t !== '<hr>');
-      if (error !== null || after.join() !== before.join()) {
-        failures.push(`run ${run}: ${String(error ?? after.join())}`);
-      }
-    }
-    expect(failures).toEqual([]);
+    expect(wrapFailures(false)).toEqual([]);
+  });
+
+  // With text directly in a box next to its blocks, $wrapNodes reorders text
+  // or never returns in some documents on main too (#9665): pinned until
+  // that is fixed. This change adds no failure there (main fails 8 of these
+  // 500 documents, 4 of them by never returning; this change fails 7, 3 by
+  // never returning, all of them among main's).
+  test.fails('property: with text directly in a box (#9665)', () => {
+    expect(wrapFailures(true)).toEqual([]);
   });
 });

@@ -34,7 +34,12 @@ import {
   type TextMatchTransformer,
   type Transformer,
 } from './MarkdownTransformers';
-import {isEmptyParagraph, transformersByType} from './utils';
+import {
+  isEmptyParagraph,
+  PUNCTUATION,
+  transformersByType,
+  WHITESPACE,
+} from './utils';
 
 /**
  * Renders string from markdown. The selection is moved to the start after the operation.
@@ -535,6 +540,16 @@ function $exportTextFormat(
         selection,
       );
     }
+  }
+
+  if (!isCode) {
+    output = $keepRunsFlanking(
+      node,
+      textContent,
+      output,
+      textTransformers,
+      selection,
+    );
   }
 
   const holdsTag = canHoldTag(textContent);
@@ -1219,6 +1234,274 @@ function $lineStateBefore(
     state = next;
   }
   return state;
+}
+
+/** CommonMark's punctuation (Unicode P and S) and white space. */
+const UNICODE_PUNCTUATION = /[\p{P}\p{S}]/u;
+
+/**
+ * Whether a run of tags with `before` and `after` next to it fails to flank
+ * by the punctuation `isPunctuation` defines: one side punctuation, the
+ * other a letter or digit, the punctuation on the side of the text the run
+ * belongs to (`before` for a closing run).
+ */
+function failsToFlank(
+  inner: string,
+  outer: string,
+  isPunctuation: (char: string) => boolean,
+): boolean {
+  return (
+    isPunctuation(inner) && !WHITESPACE.test(outer) && !isPunctuation(outer)
+  );
+}
+
+/**
+ * Whether a character must not touch the outer side of a run of tags whose
+ * inner side is `inner`: by CommonMark (Unicode punctuation) or by this
+ * package's import (ASCII punctuation, see utils' PUNCTUATION), a letter or
+ * digit after punctuation keeps the run from closing, and before it from
+ * opening. Where the run stacks tags of two kinds (`**~~`), its inner side
+ * is the other kind's delimiter, punctuation; only white space or ASCII
+ * punctuation may touch it.
+ */
+function mustEncode(inner: string, outer: string, kinds: number): boolean {
+  if (outer === '' || WHITESPACE.test(outer) || PUNCTUATION.test(outer)) {
+    return false;
+  }
+  return (
+    kinds > 1 ||
+    failsToFlank(inner, outer, char => UNICODE_PUNCTUATION.test(char)) ||
+    failsToFlank(inner, outer, char => PUNCTUATION.test(char))
+  );
+}
+
+/** The first character of each tag `node` is written with, by format. */
+function tagChars(
+  node: TextNode,
+  textTransformers: TextFormatTransformer[],
+): Map<string, string> {
+  const chars = new Map<string, string>();
+  for (const transformer of textTransformers) {
+    const format = transformer.format[0];
+    if (format !== 'code' && node.hasFormat(format) && !chars.has(format)) {
+      chars.set(format, transformer.tag[0]);
+    }
+  }
+  return chars;
+}
+
+function firstCodePoint(text: string): string {
+  return text === '' ? '' : String.fromCodePoint(text.codePointAt(0)!);
+}
+
+function lastCodePoint(text: string): string {
+  if (text === '') {
+    return '';
+  }
+  const last = text.charCodeAt(text.length - 1);
+  return last >= 0xdc00 && last <= 0xdfff && text.length > 1
+    ? text.slice(-2)
+    : text.slice(-1);
+}
+
+/** How far a chain of one-character texts is followed (see $boundaryReferences). */
+const MAX_REFERENCE_CHAIN = 64;
+
+/** A text node of a chain of text siblings, as the export writes it. */
+interface ChainNode {
+  /** The first and last characters of its exported text (a backtick for inline code). */
+  first: string;
+  last: string;
+  /** Its text is one character: written as a reference, both ends change. */
+  single: boolean;
+  code: boolean;
+  tags: Map<string, string>;
+  encodeFirst: boolean;
+  encodeLast: boolean;
+}
+
+function chainNode(
+  node: TextNode,
+  text: string,
+  textTransformers: TextFormatTransformer[],
+): ChainNode {
+  const code = node.hasFormat('code');
+  const first = code ? '`' : firstCodePoint(text);
+  return {
+    code,
+    encodeFirst: false,
+    encodeLast: false,
+    first,
+    last: code ? '`' : lastCodePoint(text),
+    // Only a letter or a digit is ever written as a reference.
+    single:
+      !code &&
+      first.length === text.length &&
+      text !== '' &&
+      !WHITESPACE.test(first) &&
+      !PUNCTUATION.test(first),
+    // Text that is only white space is written without tags.
+    tags: canHoldTag(text)
+      ? tagChars(node, textTransformers)
+      : new Map<string, string>(),
+  };
+}
+
+/** The character of `side` next to a boundary, as written. */
+function writtenChar(side: ChainNode, atEnd: boolean): string {
+  const encoded = side.single
+    ? side.encodeFirst || side.encodeLast
+    : atEnd
+      ? side.encodeLast
+      : side.encodeFirst;
+  return encoded ? (atEnd ? ';' : '&') : atEnd ? side.last : side.first;
+}
+
+/**
+ * Decide which characters next to the boundary between `left` and `right`
+ * are written as references so that the run of tags there opens and closes
+ * (see mustEncode): a run of one side's tags meets the other side's
+ * character; where both sides open or close tags of the same kind there,
+ * the one run they make has to open and close, which takes the same kind of
+ * character on both sides by either definition of punctuation (tags of
+ * different kinds meet each other instead, which keeps both flanking).
+ * Returns whether anything changed.
+ */
+function decideBoundary(left: ChainNode, right: ChainNode): boolean {
+  const l = writtenChar(left, true);
+  const r = writtenChar(right, false);
+  if (l === '' || r === '' || WHITESPACE.test(l) || WHITESPACE.test(r)) {
+    return false;
+  }
+  const leftOnly = new Set<string>();
+  for (const [format, char] of left.tags) {
+    if (!right.tags.has(format)) {
+      leftOnly.add(char);
+    }
+  }
+  const rightOnly = new Set<string>();
+  for (const [format, char] of right.tags) {
+    if (!left.tags.has(format)) {
+      rightOnly.add(char);
+    }
+  }
+  let encodeLeft = false;
+  let encodeRight = false;
+  if (leftOnly.size > 0 && rightOnly.size === 0) {
+    encodeRight = mustEncode(l, r, leftOnly.size);
+  } else if (rightOnly.size > 0 && leftOnly.size === 0) {
+    encodeLeft = mustEncode(r, l, rightOnly.size);
+  } else if ([...leftOnly].some(char => rightOnly.has(char))) {
+    const needs =
+      leftOnly.size > 1 ||
+      rightOnly.size > 1 ||
+      UNICODE_PUNCTUATION.test(l) !== UNICODE_PUNCTUATION.test(r) ||
+      PUNCTUATION.test(l) !== PUNCTUATION.test(r);
+    encodeLeft = needs && !PUNCTUATION.test(l);
+    encodeRight = needs && !PUNCTUATION.test(r);
+  }
+  let changed = false;
+  if (encodeLeft && !left.code && !left.encodeLast) {
+    left.encodeLast = true;
+    changed = true;
+  }
+  if (encodeRight && !right.code && !right.encodeFirst) {
+    right.encodeFirst = true;
+    changed = true;
+  }
+  return changed;
+}
+
+/**
+ * Whether the first and the last character of `node` are written as
+ * references (see $keepRunsFlanking). A character written that way changes
+ * both ends of a text of one character, so the decision is made over the
+ * chain of text siblings around `node` up to the first text of more than one
+ * character on each side, until nothing changes.
+ */
+function $boundaryReferences(
+  node: TextNode,
+  textContent: string,
+  textTransformers: TextFormatTransformer[],
+  selection: BaseSelection | null,
+): [boolean, boolean] {
+  const self = chainNode(node, textContent, textTransformers);
+  const chain: ChainNode[] = [self];
+  let index = 0;
+  for (const backward of [true, false]) {
+    let current: TextNode = node;
+    let end = self;
+    // Bounded, so that a long chain of one-character texts stays linear;
+    // past it, the far ends are taken as written.
+    for (
+      let steps = 0;
+      (end === self || end.single) && steps < MAX_REFERENCE_CHAIN;
+      steps++
+    ) {
+      const sibling = getTextSibling(current, backward);
+      if (
+        sibling === null ||
+        (selection !== null && !sibling.isSelected(selection))
+      ) {
+        break;
+      }
+      end = chainNode(
+        sibling,
+        $exportedText(sibling, selection),
+        textTransformers,
+      );
+      if (backward) {
+        chain.unshift(end);
+        index++;
+      } else {
+        chain.push(end);
+      }
+      current = sibling;
+    }
+  }
+  for (let changed = true; changed; ) {
+    changed = false;
+    for (let i = 0; i + 1 < chain.length; i++) {
+      changed = decideBoundary(chain[i], chain[i + 1]) || changed;
+    }
+  }
+  return [chain[index].encodeFirst, chain[index].encodeLast];
+}
+
+/**
+ * Keep a run of tags between `node` and a text node next to it able to open
+ * and close (https://spec.commonmark.org/0.31.2/#left-flanking-delimiter-run):
+ * a run with punctuation on its inner side and a letter or digit on its
+ * outer side cannot close (`**Hello,**world`) or open (`x*(beta)*`), so the
+ * Markdown imported again kept the asterisks as text. That letter or digit
+ * of `node` is written as a numeric character reference
+ * (`**Hello,**&#119;orld`, `&#120;*(beta)*`): punctuation to the run, and the
+ * same character once imported, so the text a reader sees is unchanged.
+ */
+function $keepRunsFlanking(
+  node: TextNode,
+  textContent: string,
+  output: string,
+  textTransformers: TextFormatTransformer[],
+  selection: BaseSelection | null,
+): string {
+  const first = firstCodePoint(output);
+  const last = lastCodePoint(output);
+  const [before, after] = $boundaryReferences(
+    node,
+    textContent,
+    textTransformers,
+    selection,
+  );
+  const reference = (char: string) => `&#${char.codePointAt(0)};`;
+  if (first.length === output.length) {
+    return before || after ? reference(first) : output;
+  }
+  return (
+    (before ? reference(first) : first) +
+    output.slice(first.length, output.length - last.length) +
+    (after ? reference(last) : last)
+  );
 }
 
 function getTextSibling(node: TextNode, backward: boolean): TextNode | null {

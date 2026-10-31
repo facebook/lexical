@@ -915,8 +915,10 @@ function words(s: string, from: number, to: number): [number, number][] {
 /**
  * The most edits the exact diff of a remade line's words looks for, among
  * the words both texts have (see commonWords). It finds the longest common
- * run of words in O((n + m) * EXACT_EDITS) time at most (about 30 ms for a
- * 5,000-word line); past it, only the common start and end are kept.
+ * run of words in O((n + m) * EXACT_EDITS) time at most; past it, only the
+ * common start and end are kept. Words only added or only removed between
+ * a start and an end the words both texts have share need no search, and
+ * count none.
  */
 const EXACT_EDITS = 2048;
 

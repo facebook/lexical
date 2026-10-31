@@ -818,14 +818,18 @@ person's:
   joined to a changed word through an inline node, with no space between, is
   written again with it, and an inline node made between two changes is new
   where it is put. The words kept are the longest run of words the two
-  texts share in the same order (where a word repeats, which of its
-  occurrences is kept can differ from what the update meant), wherever
-  that takes at most 2,048 word edits among the words both texts have, so
-  that the comparison stays within about 30 ms for a 5,000-word line.
-  Beyond that (a line made again with most of its words moved), only its
-  common start and end are kept. A word that is not kept is written again:
-  one the update moved past kept words, and beyond 2,048 edits, every word
-  between the first and the last change. Prefer
+  texts share in the same order, wherever that takes at most 2,048 word
+  edits among the words both texts have (words only added, or only
+  removed, between a start and an end those words share take none), so
+  that the comparison stays linear in the line's length. Where a word
+  repeats next to a change, which of its occurrences is kept can differ
+  from what the update meant: `aa bb` made again as `aa aa bb` keeps the
+  first `aa`, so a collaborator's concurrent edit of the old `aa` lands on
+  the first of the two. Beyond 2,048 edits (a line made again with most of
+  its words moved), only its common start and end are kept. A word that is
+  not kept is written again: one the update moved past kept words, and
+  beyond 2,048 edits, every word between the first and the last change.
+  Prefer
   these to `setTextContent`, which sets a node's text whole: such a change
   (and a change the browser makes to the DOM text, as an IME composition
   does) keeps the start and end its text shares with the node's old text,
